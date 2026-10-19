@@ -52,6 +52,7 @@ Future<void> showDailyChest(BuildContext context) {
 
 /// [open], [quests], [balance], [refresh], [now] and [onOpenShop] default to the live coins service and the router.
 /// A test or a render passes its own.
+@RoutePage()
 class DailyChestPage extends StatefulWidget {
   const DailyChestPage({super.key, this.open, this.quests, this.balance, this.refresh, this.now, this.onOpenShop});
 

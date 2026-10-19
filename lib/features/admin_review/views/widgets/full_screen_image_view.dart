@@ -1,8 +1,10 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// A full-screen wallpaper with pinch zoom to 5x and double-tap to zoom in and out.
+@RoutePage(name: 'FullScreenImageRoute')
 class FullScreenImageView extends StatefulWidget {
   const FullScreenImageView({super.key, required this.imageUrl});
 

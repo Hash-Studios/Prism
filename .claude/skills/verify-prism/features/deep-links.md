@@ -1,36 +1,57 @@
 # Deep links
 
-Prism accepts `https://prismwalls.com/...` universal/app links on both platforms, plus a custom `prism://` scheme (`lib/core/router/deep_link_navigation.dart`). Parsing is in `lib/core/router/deep_link_parser.dart`, route mapping in `deep_link_navigation.dart`. Confirmed intent filters: `android/app/src/main/AndroidManifest.xml` (`pathPrefix` for `/share`, `/user`, `/setup`, `/refer`, `/l`, host `prismwalls.com`). Confirmed iOS: `ios/Runner/Runner.entitlements` has `applinks:prismwalls.com`; `ios/Runner/Info.plist` registers the `prism` URL scheme.
+Prism opens app pages from `https://prismwalls.com/...`, `https://www.prismwalls.com/...`, and `prism://...`. External links, push taps, and in-app links share `lib/core/router/deep_link_dispatcher.dart`. The parser and route catalog validate URLs; the catalog resolver supplies typed page arguments. Startup waits and `auth_navigation_continuation.dart` preserve destinations across onboarding and sign-in.
 
 ## Sub-features
 
-- `share` (`/share/<wallId>?source=&url=&thumb=...` or query-only): opens `WallpaperDetailRoute` (see `features/wallpaper-detail.md`). Requires a wall id and at least a wallpaper or thumbnail URL; missing both falls through to `UnknownIntent` (no navigation).
-- `user` / `fprofile` / `follower-profile` / `profile` roots: opens `ProfileRoute(profileIdentifier: ...)` (see `features/profile.md`). Identifier comes from the second path segment or `identifier`/`username`/`user`/`email` query params.
-- `refer` / `referral` roots: parsed into a `ReferLinkIntent`, but `_mapActionToRoute` currently returns `null` for it, no navigation happens yet even though the intent parses.
-- `l` root (short codes, e.g. `/l/<code>`): resolved via `https://prismwalls.com/api/links` before re-mapping to one of the above; needs network.
-- Push-notification routing is a separate mapper, `lib/core/router/notification_route_mapper.dart` (see `features/notifications.md`); it uses `route` values (`wall`, `wall_of_the_day`, `streak_reminder`, `follower`, `announcement`), not URL paths.
+- App pages: `/settings`, `/dashboard/search`, `/dashboard/search/users`, `/dashboard/rewards`, `/library?tab=downloads`, and the other paths in `DeepLinkRouteCatalog.examples`. Confirm the selected nested tab, not just the presence of the dashboard.
+- Image workflows: `/wallpaper-filter`, `/upload-wall`, `/edit-wall`, `/download-wallpaper`, `/wallpaper-position`, and `/live-wallpaper` open a gallery chooser when no wallpaper ID is supplied. Local photo/clock previews use `/choose-wallpaper?workflow=photoPreview` or `workflow=clockPreview`. `Choose image` opens the picker; cancelling keeps the chooser open. Wallpaper IDs on supported action/preview routes resolve through provider repositories. External file paths and arbitrary image URL arguments are rejected.
+- Profiles: `/user/<identifier>` and legacy `fprofile`, `follower-profile`, and `profile` aliases open the requested profile. Relationship links resolve the requested account's followers or following.
+- Legacy shares: `/share/<wallId>?source=&url=&thumb=...` or query-only shares require an ID and an image or thumbnail URL. `/wallpaper/<wallId>?source=prism` can resolve a wallpaper by ID. Missing or invalid targets open not-found; they are not silent no-ops.
+- Referrals: `/refer/<inviterId>` and `/referral/<inviterId>` save the inviter after bootstrap and open Rewards after startup. Signed-in users attempt an eligible referral claim; signed-out users see a saved-referral message. Use an approved QA fixture because this can affect coin rewards.
+- Short links: `/l/<code>` resolves through `https://prismwalls.com/api/links/<code>`. Network failures defer one retry until connectivity returns or an online app resume; unavailable codes open not-found.
+- Push and inbox taps: URL payloads and legacy metadata (`wall`, `wall_of_the_day`, `streak_reminder`, `follower`, `announcement`) feed the same dispatcher through `notification_route_mapper.dart`. Unavailable push targets fall back to the inbox. A wall-of-the-day push without a usable wall can open Home.
+- Protected pages: `/shop`, uploads, and other signed-in routes retain their target while sign-in is active. Admin pages also require an admin account after sign-in. Cancelling a guarded sign-in clears its continuation.
 
 ## How to get to it (user POV)
 
-- Tap a real `https://prismwalls.com/...` link (Messages, browser, another app) with the app installed.
-- Open it directly in the simulator/emulator (see below) without needing a real link source.
+- Tap an app link in Messages, a browser, or another app with Prism installed.
+- Tap an existing QA inbox row or a received QA push carrying the same destination. These exercise different entry adapters; opening a URL directly does not prove push delivery or inbox handling.
+- Use the native URL commands below for repeatable warm-process and cold-process checks.
 
 ## Driving it with the helper
 
-Preconditions:
+Run `doctor`, then `launch` for the selected platform and own its helper lock before driving. Use only `Prism QA iPhone 17 Pro` and `emulator-5580`; leave other devices alone. Do not use `launch --fresh` for ordinary cold-process checks because it resets session state. Firebase-free builds can prove local chooser and settings UI; live profiles, referral claims, resource hydration, and push delivery need configured services and QA data.
 
-- App installed and, for `/l/<code>`, network access (it calls the real `prismwalls.com/api/links` endpoint).
+After the iOS helper has launched, read the device ID from that run's state:
 
-- **iOS.** Universal links do not reliably open from `xcrun simctl openurl` inside a plain debug build; open the URL from the Simulator's own Safari and tap the smart-app banner, or use `xcrun simctl openurl <udid> "https://prismwalls.com/share/<id>?url=<encoded>"` and confirm it routes (fall back to the custom scheme `prism://share/<id>?...` if the universal link does not trigger, since `Runner.entitlements` covers `applinks:prismwalls.com` but the association file on the real domain is out of this skill's control).
-- **Android.** `adb -s emulator-5580 shell am start -a android.intent.action.VIEW -d "https://prismwalls.com/share/<id>?url=<encoded>" com.hash.prism`.
-- **Share.** Open a `/share/<id>` link with a `url` or `thumb` query param; assert `WallpaperDetailRoute` opens for that id. Try one with neither and confirm it is a no-op (`UnknownIntent`), not a crash.
-- **User.** Open `/user/<identifier>`; assert `ProfileRoute` opens for that identifier.
-- **Refer.** Open `/refer/<id>`; today this is a documented no-op (parses, does not navigate). Confirm that stays true rather than assuming it is broken.
-- **Short code.** Open `/l/<code>` for a code you know resolves; confirm it re-maps to the right screen. Confirm an unknown code degrades to a no-op, not a crash.
-- **Proof.** Snapshot the state before opening the link (Home) and after (the destination screen), plus the exact link tested.
+```sh
+PRISM_QA_UDID=$(sed -n 's/^device_id=//p' /tmp/prism-verify-ios.state)
+xcrun simctl openurl "$PRISM_QA_UDID" 'prism://settings'
+```
+
+On Android:
+
+```sh
+adb -s emulator-5580 shell am start -a android.intent.action.VIEW -d 'prism://settings' com.hash.prism
+```
+
+Repeat these checks on each platform, using `describe`, labeled taps, and `snapshot --tag <case>` from the helper:
+
+1. **Warm settings and tabs.** With Prism already on Home, open `prism://settings`, then `prism://dashboard/search/users` and `prism://dashboard/rewards`. Assert Settings, user search, and Rewards respectively. Repeat one destination from a real QA inbox link and a received QA push when available.
+2. **Cold settings.** While still owning the lock, terminate only Prism with `xcrun simctl terminate "$PRISM_QA_UDID" com.hash.prism` or `adb -s emulator-5580 shell am force-stop com.hash.prism`, then open the settings URL. After bootstrap and any mandatory onboarding, Settings must become visible instead of being lost when the startup stack is replaced. Retain the existing session; do not clear app data.
+3. **Chooser.** Open `prism://wallpaper-filter`. Assert `Choose image` and no automatic picker. Tap it, cancel the native picker, and assert the chooser remains. Repeat with a known QA gallery image and assert the filter tool shows that image. Do not save, upload, purchase, or set a wallpaper during this navigation smoke.
+4. **Auth pending and success.** From a browsable signed-out session, open `prism://shop`. Assert onboarding appears and Shop stays absent. Let the human complete real sign-in and onboarding; assert Shop opens once after bootstrap. For a cold signed-out launch, repeat the URL and check that mandatory onboarding also preserves the target. Never automate credentials or treat injected session flags as sign-in proof.
+5. **Auth cancellation.** From a browsable guest session, repeat the guarded Shop link. Cancel the provider flow and assert Shop has not opened. Back out of the pushed sign-in screen, or complete the iOS guest path, and assert the protected destination is discarded. A later unrelated human sign-in must not reopen it. Android has no guest onboarding path; report that case as unavailable when no browsable signed-out baseline exists.
+6. **Failures and retry.** Open an invalid app URL such as `prism://wallpaper-filter?filePath=%2Ftmp%2Fwall.jpg` and assert not-found. With an approved short-code fixture, test successful resolution, an unavailable code, and an offline network failure followed by reconnect. The network case should retain the link and retry once. For push fallback, use an existing QA notification whose target is unavailable and assert the inbox.
+
+Capture the before state, the resulting screen, and the exact URL or payload with platform, warm/cold state, and auth state. A protected or data-backed case without its preconditions is skipped with that specific reason. Finish with the helper's platform cleanup; keep the artifacts.
 
 ## Gotchas
 
-- `refer`/`referral` links parse successfully but intentionally do not navigate anywhere yet (`_mapActionToRoute` returns `null` for `ReferLinkIntent`). Do not report that as a bug without checking this file first; it may be a known gap, not a regression.
-- `/l/<code>` calls a real backend endpoint; it needs network and will not resolve under an offline or heavily mocked test run.
-- `deep_link_parser.dart` accepts several aliases for the same root (`user`, `fprofile`, `follower-profile`, `profile` all mean "profile"; `setup` and `share-setup` both mean "setup"). Test at least one alias per group, do not assume they behave identically without checking.
+- Custom-scheme success proves local app navigation. It does not prove universal/app links, production association files, push transport, hosted CI, or a store release.
+- HTTPS opening depends on the installed app's signed capabilities, Android certificate, OS association cache, and deployed AASA/asset-links files on both hosts. Test real HTTPS links separately. If Safari or a store opens, record that behavior; do not relabel a successful `prism://` fallback as association proof. A package-targeted Android intent likewise does not prove unqualified OS association.
+- Local association and Worker edits require a separately approved deployment. After deployment, check both hosts' association responses and real HTTPS opening; `/`, `/privacy`, and `/terms` remain website pages. Do not deploy as part of this recipe.
+- Legacy `setup`/`share-setup` links open Home with an unavailable-feature message. Invalid URLs dispatched as app links open not-found; website-only HTTPS links stay external. Unavailable push targets use the inbox fallback. Check the adapter and payload before comparing outcomes.
+- A protected target held by startup is distinct from an auth continuation created by a guard. Cancelling a provider leaves onboarding active; leaving a guard's sign-in screen cancels that continuation. Logout and signed-in account switches discard old session navigation and deferred retries.
+- Test encoded identifiers and at least one legacy alias without replacing them with a simpler URL. Avoid a real inviter, upload, coin spend, or user notification unless that effect is explicitly authorized.

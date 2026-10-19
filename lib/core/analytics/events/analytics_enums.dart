@@ -145,6 +145,7 @@ enum AnalyticsReasonValue {
   error,
   missingData,
   notSignedIn,
+  notAuthorized,
   emptyInput,
   unknown;
 
@@ -247,7 +248,9 @@ enum NotificationPreferenceValue {
 }
 
 enum DeepLinkSourceValue {
-  appLinks;
+  appLinks,
+  push,
+  inApp;
 
   String get wireValue => _snakeCase(name);
 }

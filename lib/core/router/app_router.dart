@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
@@ -12,14 +14,20 @@ import 'package:Prism/features/admin_review/data/admin_moderation_repository.dar
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
+import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
+import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
+import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
+import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
 import 'package:Prism/features/draw/draw.dart';
+import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
+import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/pages/drops_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
@@ -32,6 +40,7 @@ import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/features/premium/views/pages/premium_page.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
@@ -42,6 +51,7 @@ import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/shop/shop.dart';
+import 'package:Prism/features/spin_wheel/views/pages/spin_wheel_page.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
@@ -52,12 +62,14 @@ import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
-import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -131,6 +143,24 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
+    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page),
+    AutoRoute(path: '/premium', page: PremiumRoute.page),
+    RedirectRoute(path: '/paywall', redirectTo: '/premium'),
+    AutoRoute(path: '/photo-preview', page: ReviewPhotoPreviewRoute.page, fullscreenDialog: true),
+    CustomRoute(
+      path: '/clock-preview',
+      page: ClockPreviewRoute.page,
+      fullscreenDialog: true,
+      opaque: false,
+      duration: PrismDurations.base,
+      reverseDuration: PrismDurations.fast,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) => context.reduceMotion
+          ? child
+          : FadeTransition(
+              opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
+              child: child,
+            ),
+    ),
     // Standalone path so Edit Profile works when ProfileScreen was opened via
     // root-level ProfileRoute (/user/:id), e.g. home header avatar — nested
     // /dashboard/profile/edit is not reachable from that stack.
@@ -155,6 +185,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/following', page: FollowingListRoute.page),
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/admin-review/image', page: FullScreenImageRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
@@ -165,13 +196,55 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page),
+    CustomRoute(
+      path: '/daily-chest',
+      page: DailyChestRoute.page,
+      guards: [_signedInGuard],
+      duration: PrismDurations.base,
+      reverseDuration: PrismDurations.base,
+      transitionsBuilder: _rewardTransition,
+    ),
+    CustomRoute(
+      path: '/spin-wheel',
+      page: SpinWheelRoute.page,
+      guards: [_signedInGuard],
+      duration: PrismDurations.base,
+      reverseDuration: PrismDurations.base,
+      transitionsBuilder: _rewardTransition,
+    ),
     AutoRoute(path: '/shop', page: ShopRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/drops', page: DropsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/drops/:weekKey', page: DropDetailRoute.page, guards: [_signedInGuard]),
+    CustomRoute(
+      path: '/drops/:weekKey/preview/:wallId',
+      page: DropPreviewRoute.page,
+      guards: [_signedInGuard],
+      fullscreenDialog: true,
+      duration: const Duration(milliseconds: 280),
+      reverseDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          _previewTransition(context, animation, child, Curves.easeOutCubic),
+    ),
     AutoRoute(path: '/leaderboard', page: LeaderboardRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/draw', page: DrawRoute.page, guards: [_signedInGuard]),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),
   ];
+}
+
+Widget _rewardTransition(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) => _previewTransition(context, animation, child, PrismCurves.enter);
+
+Widget _previewTransition(BuildContext context, Animation<double> animation, Widget child, Curve curve) {
+  if (context.reduceMotion) return child;
+  final Animation<double> eased = CurvedAnimation(parent: animation, curve: curve);
+  return FadeTransition(
+    opacity: eased,
+    child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(eased), child: child),
+  );
 }

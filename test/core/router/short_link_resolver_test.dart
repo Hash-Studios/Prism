@@ -34,7 +34,10 @@ void main() {
     final result = await resolver.resolve('abc');
 
     expect(result, isA<ShortLinkResolved>());
-    expect((result as ShortLinkResolved).action, isA<UserLinkIntent>());
+    expect(
+      (result as ShortLinkResolved).action,
+      isA<PageLinkIntent>().having((action) => action.path, 'canonical target', '/user/akshay'),
+    );
   });
 
   test('a 2xx response without a canonical url fails with missing data', () async {

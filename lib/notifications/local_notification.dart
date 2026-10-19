@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -18,7 +16,6 @@ class LocalNotification {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   // The live `_MyAppState` sets these. RestartWidget re-creates that state, and the new one replaces them.
-  AppRouter? router;
   Future<void> Function(Map<String, dynamic> data)? onPushTap;
   VoidCallback? onForegroundPush;
   bool _listeningForPush = false;
@@ -34,12 +31,8 @@ class LocalNotification {
     flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload == 'downloaded') {
-          router?.push(const DownloadRoute());
-        } else {
-          final Map<String, dynamic>? data = _pushData(response.payload);
-          if (data != null) unawaited(onPushTap?.call(data));
-        }
+        final Map<String, dynamic>? data = _pushData(response.payload);
+        if (data != null) unawaited(onPushTap?.call(data));
       },
     );
   }
@@ -70,21 +63,14 @@ class LocalNotification {
         .getNotificationAppLaunchDetails();
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
     final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
-    if (payload == 'downloaded') {
-      final AppRouter? launchRouter = router;
-      if (launchRouter == null) return;
-      // The splash would replace a route pushed now.
-      final bool canRoute = await waitForStartupEnd(launchRouter, isMounted: () => identical(router, launchRouter));
-      if (canRoute) launchRouter.push(const DownloadRoute());
-    } else {
-      final Map<String, dynamic>? data = _pushData(payload);
-      if (data != null) await onPushTap?.call(data);
-    }
+    final Map<String, dynamic>? data = _pushData(payload);
+    if (data != null) await onPushTap?.call(data);
   }
 
   /// Push data stored by [showPushNotification]. Older builds stored only the route string.
   static Map<String, dynamic>? _pushData(String? payload) {
     if (payload == null || payload.isEmpty || payload == 'downloadProgress') return null;
+    if (payload == 'downloaded') return <String, dynamic>{'route': '/downloads'};
     try {
       final Object? decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) return decoded;

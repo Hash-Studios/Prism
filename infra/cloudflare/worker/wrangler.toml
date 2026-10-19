@@ -23,19 +23,681 @@ pattern = "prismwalls.com/apple-app-site-association"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share*"
+pattern = "prismwalls.com/share"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/user*"
+pattern = "prismwalls.com/share/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/setup*"
+pattern = "prismwalls.com/user"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/refer*"
+pattern = "prismwalls.com/user/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/fprofile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/fprofile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/follower-profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/follower-profile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/profile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/setup"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/setup/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/share-setup"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/share-setup/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/refer"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/refer/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/referral"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/referral/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/collection"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/collection/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/category"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/category/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/l"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/onboarding/v2"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/home"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/search"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/search/users"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/rewards"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/streak"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/dashboard/collection"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/ai"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper-detail"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wotd-archive"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/download-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper-filter"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/choose-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/premium"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "prismwalls.com/paywall"
+zone_name = "prismwalls.com"
+
+
+[[routes]]
+pattern = "prismwalls.com/edit-profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/share-prism"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/settings"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/blocked-accounts"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/about"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/fav-walls"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/downloads"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/library"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/upload-wall"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/edit-wall"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/review"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/coin-transactions"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/theme"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/notifications"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/collection-view"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/followers"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/following"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/admin-review"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/admin-review/swipe"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/admin-firestore-telemetry"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/debug-panel"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/quick-tile-settings"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/auto-rotate"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/ios-shortcuts"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper-history"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wallpaper-position"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/live-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/rewards"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/coin-history"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/shop"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/drops"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/drops/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/leaderboard"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/draw"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/daily-chest"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "prismwalls.com/spin-wheel"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "prismwalls.com/photo-preview"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "prismwalls.com/clock-preview"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "prismwalls.com/admin-review/image"
+zone_name = "prismwalls.com"
+
+
+[[routes]]
+pattern = "prismwalls.com/streak"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/not-found"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/api/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/l/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/og/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/.well-known/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/apple-app-site-association"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/share"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/share/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/user"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/user/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/fprofile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/fprofile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/follower-profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/follower-profile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/profile/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/setup"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/setup/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/share-setup"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/share-setup/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/refer"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/refer/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/referral"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/referral/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/collection"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/collection/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/category"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/category/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/l"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/onboarding/v2"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/home"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/search"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/search/users"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/rewards"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/streak"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/dashboard/collection"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/ai"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper-detail"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wotd-archive"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/download-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper-filter"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/choose-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/premium"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "www.prismwalls.com/paywall"
+zone_name = "prismwalls.com"
+
+
+[[routes]]
+pattern = "www.prismwalls.com/edit-profile"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/share-prism"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/settings"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/blocked-accounts"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/about"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/fav-walls"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/downloads"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/library"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/upload-wall"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/edit-wall"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/review"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/coin-transactions"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/theme"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/notifications"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/collection-view"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/followers"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/following"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-review"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-review/swipe"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-firestore-telemetry"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/debug-panel"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/quick-tile-settings"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/auto-rotate"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/ios-shortcuts"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper-history"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wallpaper-position"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/live-wallpaper"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/rewards"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/coin-history"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/shop"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/drops"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/drops/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/leaderboard"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/draw"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/daily-chest"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "www.prismwalls.com/spin-wheel"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "www.prismwalls.com/photo-preview"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "www.prismwalls.com/clock-preview"
+zone_name = "prismwalls.com"
+[[routes]]
+pattern = "www.prismwalls.com/admin-review/image"
+zone_name = "prismwalls.com"
+
+
+[[routes]]
+pattern = "www.prismwalls.com/streak"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/not-found"
 zone_name = "prismwalls.com"
 
 [vars]

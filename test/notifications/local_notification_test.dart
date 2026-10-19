@@ -2,15 +2,12 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:firebase_messaging_platform_interface/firebase_messaging_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../support/stub_app_router.dart';
 
 const MethodChannel _channel = MethodChannel('dexterous.com/flutter/local_notifications');
 
@@ -147,6 +144,7 @@ void main() {
       for (final payload in <String>[
         '{"route":"follower","url":"https://prismwalls.com/user/bob"}',
         'notifications',
+        'downloaded',
         'downloadProgress',
       ]) {
         await messenger.handlePlatformMessage(
@@ -162,6 +160,7 @@ void main() {
       expect(received, <Map<String, dynamic>>[
         <String, dynamic>{'route': 'follower', 'url': 'https://prismwalls.com/user/bob'},
         <String, dynamic>{'route': 'notifications'},
+        <String, dynamic>{'route': '/downloads'},
       ]);
     });
 
@@ -208,78 +207,33 @@ void main() {
       expect(received, isEmpty);
     });
 
-    testWidgets('a cold launch from the downloads notification opens Downloads after the splash, once', (tester) async {
+    testWidgets('a cold downloads launch uses the shared callback once and waits for it', (tester) async {
       messenger.setMockMethodCallHandler(_channel, (call) async {
         if (call.method == 'getNotificationAppLaunchDetails') {
           return <String, Object?>{'notificationLaunchedApp': true, 'notificationResponse': _response('downloaded')};
         }
         return true;
       });
-      final router = StubAppRouter();
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
-      await tester.pumpAndSettle();
-      final notification = LocalNotification()..router = router;
-
-      unawaited(notification.fetchNotificationData());
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(router.topRoute.name, SplashWidgetRoute.name);
-
-      unawaited(router.replaceAll([const DashboardRoute()]));
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
-      expect(router.topRoute.name, DownloadRoute.name);
-
-      // RestartWidget re-creates the app state, which calls this again with the same launch details.
-      unawaited(router.replaceAll([const DashboardRoute()]));
-      await notification.fetchNotificationData();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-      expect(router.topRoute.name, DashboardRoute.name);
-    });
-
-    testWidgets('a cold downloads launch waits for startup before mounting the router', (tester) async {
-      messenger.setMockMethodCallHandler(_channel, (call) async {
-        if (call.method == 'getNotificationAppLaunchDetails') {
-          return <String, Object?>{'notificationLaunchedApp': true, 'notificationResponse': _response('downloaded')};
-        }
-        return true;
-      });
-      final router = StubAppRouter();
-      final notification = LocalNotification()..router = router;
+      final notification = LocalNotification();
+      final callback = Completer<void>();
+      final received = <Map<String, dynamic>>[];
+      notification.onPushTap = (data) {
+        received.add(data);
+        return callback.future;
+      };
       var completed = false;
       final Future<void> fetch = notification.fetchNotificationData().whenComplete(() => completed = true);
       await tester.pump();
-
       expect(completed, isFalse);
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
-      await tester.pumpAndSettle();
-      expect(router.topRoute.name, SplashWidgetRoute.name);
-
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(completed, isFalse);
-      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
-
-      unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(completed, isFalse);
-      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
-
-      unawaited(router.replaceAll([const SplashWidgetRoute()]));
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(completed, isFalse);
-      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
-
-      unawaited(router.replaceAll([const DashboardRoute()]));
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+      expect(received, <Map<String, dynamic>>[
+        <String, dynamic>{'route': '/downloads'},
+      ]);
+      callback.complete();
+      await tester.pump();
       await fetch;
-
       expect(completed, isTrue);
-      expect(router.stackData.map((route) => route.name).toList(), <String>[DashboardRoute.name, DownloadRoute.name]);
+      await notification.fetchNotificationData();
+      expect(received, hasLength(1));
     });
 
     testWidgets('push messages reach only the latest app state, once', (tester) async {

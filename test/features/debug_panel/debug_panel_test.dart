@@ -52,6 +52,14 @@ void main() {
       }
     });
 
+    testWidgets('a tab link opens the requested page directly', (tester) async {
+      await tester.pumpWidget(_app(const DebugPanelPage(tab: 'mascot')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Still poses'), findsOneWidget);
+      expect(find.text('Empty list'), findsOneWidget);
+    });
+
     testWidgets('the Mascot tab names the use case of each mood', (tester) async {
       await tester.pumpWidget(_app(const DebugPanelPage()));
       await tester.tap(find.text('Mascot'));

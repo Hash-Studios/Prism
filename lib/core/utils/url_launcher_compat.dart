@@ -1,5 +1,6 @@
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
@@ -30,12 +31,10 @@ Future<bool> openPrismLink(
   }
 
   if (opensInApp(parsed)) {
-    final PageRouteInfo? route = await _deepLinkNavigation.mapUriToRoute(parsed);
-    if (!context.mounted) {
-      return false;
-    }
-    context.router.navigate(route ?? const NotFoundRoute());
-    return true;
+    final DeepLinkDispatcher? dispatcher = DeepLinkDispatcher.maybeOf(context.router);
+    if (dispatcher == null) return false;
+    final DeepLinkDispatchResult result = await dispatcher.openUri(parsed, source: DeepLinkSourceValue.inApp);
+    return result == DeepLinkDispatchResult.navigated || result == DeepLinkDispatchResult.deferred;
   }
 
   final bool isPrismWebPage = _deepLinkNavigation.isPrismDeepLink(parsed);

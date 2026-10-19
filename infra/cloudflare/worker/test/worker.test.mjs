@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { AiQuotaCoordinator, gptImageSize, seedreamImageSize } from '../src/ai.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
@@ -78,9 +80,10 @@ test('Worker routes association requests and rejects unauthenticated AI generati
     { waitUntil() {} },
   );
   assert.equal(association.status, 200);
-  assert.deepEqual((await association.json()).applinks.details[0].paths, [
-    '/share', '/share*', '/share/*', '/user/*', '/setup/*', '/refer/*', '/l/*',
-  ]);
+  const associatedPaths = (await association.json()).applinks.details[0].paths;
+  for (const path of ['/share', '/share/*', '/user/*', '/shop', '/drops', '/leaderboard', '/draw', '/coin-history']) {
+    assert.ok(associatedPaths.includes(path), `AASA paths missing ${path}`);
+  }
 
   const aiResponse = await worker.fetch(
     new Request('https://prismwalls.com/api/ai/generations', {
@@ -234,6 +237,131 @@ test('share landing page drops preview images from hosts that are not allowliste
   assert.doesNotMatch(body, /src="[^"]*evil\.example\.com/);
   assert.doesNotMatch(body, /og:image" content="[^"]*evil\.example\.com/);
   assert.equal((await getShare(ANDROID_UA, '/share')).status, 200);
+});
+
+test('allowlisted app pages have safe generic landings on both web hosts', async () => {
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    const response = await worker.fetch(
+      new Request(`https://${host}/dashboard/search?utm_campaign=a%2Fb`, { headers: { 'user-agent': ANDROID_UA } }),
+      workerEnv({
+        PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+        APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+      }),
+      { waitUntil() {} },
+    );
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.match(body, /Open in Prism/);
+    assert.match(body, /Get it on Google Play/);
+    assert.match(body, /intent:\/\/prismwalls\.com\/dashboard\/search\?utm_campaign=a%2Fb#Intent;scheme=https/);
+  }
+
+  const unsupported = await worker.fetch(new Request('https://prismwalls.com/shopper'), workerEnv(), { waitUntil() {} });
+  assert.equal(unsupported.status, 404);
+});
+
+test('every Dart deep-link catalog example resolves to a Worker landing', async () => {
+  const catalogPath = new URL('../../../../lib/core/router/deep_link_route_catalog.dart', import.meta.url);
+  const source = readFileSync(fileURLToPath(catalogPath), 'utf8');
+  const examples = [
+    ...[...source.matchAll(/DeepLinkRouteExample\(\s*'([^']+)'/g)].map((match) => match[1]),
+    '/wallpaper/wall1/position?provider=wallhaven&utm_campaign=warm%2Fwood',
+    '/clock-preview?wallpaperId=wall1&provider=prism',
+    '/choose-wallpaper?workflow=photoPreview',
+    '/choose-wallpaper?workflow=clockPreview',
+  ];
+  assert.ok(examples.length > 0, 'expected deep-link route catalog examples');
+
+  for (const example of examples) {
+    const uri = new URL(example, 'https://prismwalls.com');
+    if (uri.pathname === '/') continue; // Next.js owns the marketing homepage.
+    for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+      const response = await worker.fetch(
+        new Request(`https://${host}${uri.pathname}${uri.search}`, { headers: { 'user-agent': ANDROID_UA } }),
+        workerEnv({
+          PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+          APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+        }),
+        { waitUntil() {} },
+      );
+      assert.equal(response.status, 200, `${host}${uri.pathname}${uri.search}`);
+    }
+  }
+});
+
+test('direct app landings preserve encoded query values and reject unsupported workflows', async () => {
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+  const path = '/wallpaper/wall1/position?provider=wallhaven&utm_campaign=warm%2Fwood';
+  const response = await worker.fetch(
+    new Request(`https://prismwalls.com${path}`, { headers: { 'user-agent': ANDROID_UA } }),
+    env,
+    { waitUntil() {} },
+  );
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /intent:\/\/prismwalls\.com\/wallpaper\/wall1\/position\?provider=wallhaven&amp;utm_campaign=warm%2Fwood#Intent;scheme=https/);
+
+  for (const path of [
+    '/choose-wallpaper?workflow=unsupported',
+    '/choose-wallpaper?workflow=photoPreview&workflow=clockPreview',
+    '/clock-preview?wallpaperId=wall1&provider=unsupported',
+    '/wallpaper/wall1/position?provider=downloaded',
+    '/dashboard/search?q=sunset',
+  ]) {
+    const invalid = await worker.fetch(new Request(`https://prismwalls.com${path}`), env, { waitUntil() {} });
+    assert.equal(invalid.status, 302, path);
+    assert.match(invalid.headers.get('location') ?? '', /^https:\/\/play\.google\.com\//, path);
+  }
+});
+
+test('page short links preserve typed app paths and reject schemes, hosts and unlisted paths', async () => {
+  const env = workerEnv();
+  const valid = await postLink(env, { type: 'page', payload: { path: '/drops/week-42?utm_source=mail&utm_campaign=a%2Fb' } });
+  assert.equal(valid.status, 201);
+  const saved = JSON.parse(await env.LINKS_KV.get((await valid.json()).code));
+  assert.equal(saved.type, 'page');
+  assert.equal(saved.canonical_url, 'https://prismwalls.com/drops/week-42?utm_source=mail&utm_campaign=a%2Fb');
+
+  const encodedCollection = await postLink(env, {
+    type: 'page',
+    payload: { path: '/collection/soft%20light?utm_source=mail&utm_campaign=room%2Fone' },
+  });
+  assert.equal(encodedCollection.status, 201);
+  const encodedRecord = JSON.parse(await env.LINKS_KV.get((await encodedCollection.json()).code));
+  assert.equal(encodedRecord.canonical_url, 'https://prismwalls.com/collection/soft%20light?utm_source=mail&utm_campaign=room%2Fone');
+
+  for (const path of [
+    'https://evil.example/redirect', '//evil.example/redirect', 'prism://shop', '/privacy',
+    '/drops/..%2Fprivacy', '/collection/%2Fsecret', '/coin-history?next=javascript%3Aalert%281%29',
+  ]) {
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 400, path);
+    assert.equal((await response.json()).error, 'invalid_canonical_url', path);
+  }
+});
+
+test('legacy user, setup and referral aliases remain safe on web landings', async () => {
+  for (const path of [
+    '/profile/maya?utm_source=mail',
+    '/fprofile?username=maya',
+    '/share-setup?setupName=calm-room',
+    '/referral?inviterId=inviter-1&utm_campaign=summer',
+    '/user?identifier=maya&utm_source=mail',
+    '/refer?userID=inviter-1',
+  ]) {
+    const response = await getShare(
+      ANDROID_UA,
+      path,
+      workerEnv({
+        PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+        APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+      }),
+    );
+    assert.equal(response.status, 200, path);
+    assert.match(await response.text(), /Open in Prism/, path);
+  }
 });
 
 test('short link page for a stored share record renders the same landing', async () => {

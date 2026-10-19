@@ -52,6 +52,15 @@ final class ScreenLinkIntent extends DeepLinkActionEntity {
   final DeepLinkScreen screen;
 }
 
+/// A canonical app path accepted by [DeepLinkRouteCatalog]. This carries only URL-safe values; route arguments that
+/// need local files or fetched entities are resolved by the route catalog, never decoded from arbitrary objects.
+final class PageLinkIntent extends DeepLinkActionEntity {
+  const PageLinkIntent({required this.path, required super.rawUri});
+
+  /// A validated app path, including only the query keys supported by its route definition.
+  final String path;
+}
+
 final class UnknownIntent extends DeepLinkActionEntity {
   const UnknownIntent({required super.rawUri});
 }

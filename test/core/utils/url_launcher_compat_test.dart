@@ -10,6 +10,7 @@ void main() {
         'https://prismwalls.com/l/abc',
         'https://prismwalls.com/refer/u1',
         'https://www.prismwalls.com/user/x',
+        'https://prismwalls.com/',
         'prism://share/x',
         'prism://user/x',
       ]) {
@@ -22,7 +23,6 @@ void main() {
         'https://prismwalls.com/privacy',
         'https://prismwalls.com/terms',
         'https://www.prismwalls.com/privacy',
-        'https://prismwalls.com/',
         'https://prismwalls.com/share',
       ]) {
         expect(opensInApp(Uri.parse(link)), isFalse, reason: link);

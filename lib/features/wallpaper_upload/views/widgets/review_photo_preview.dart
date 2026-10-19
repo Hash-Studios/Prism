@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
@@ -14,11 +17,13 @@ Future<void> showReviewPhotoPreview(BuildContext context, {required String url, 
   );
 }
 
+@RoutePage(name: 'ReviewPhotoPreviewRoute')
 class ReviewPhotoPreview extends StatelessWidget {
-  const ReviewPhotoPreview({super.key, required this.url, required this.thumbUrl});
+  const ReviewPhotoPreview({super.key, required this.url, required this.thumbUrl, this.file = false});
 
   final String url;
   final String thumbUrl;
+  final bool file;
 
   @override
   Widget build(BuildContext context) {
@@ -29,15 +34,17 @@ class ReviewPhotoPreview extends StatelessWidget {
         children: <Widget>[
           PhotoView(
             backgroundDecoration: const BoxDecoration(color: Colors.black),
-            imageProvider: CachedNetworkImageProvider(url),
+            imageProvider: file ? FileImage(File(url)) : CachedNetworkImageProvider(url) as ImageProvider,
             minScale: PhotoViewComputedScale.contained,
             maxScale: PhotoViewComputedScale.covered * 3,
             loadingBuilder: (context, event) => Center(
-              child: CachedNetworkImage(
-                imageUrl: thumbUrl,
-                fit: BoxFit.contain,
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
-              ),
+              child: file
+                  ? Image.file(File(thumbUrl), fit: BoxFit.contain)
+                  : CachedNetworkImage(
+                      imageUrl: thumbUrl,
+                      fit: BoxFit.contain,
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    ),
             ),
             errorBuilder: (context, error, stackTrace) => Center(
               child: Column(

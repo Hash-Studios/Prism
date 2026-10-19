@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 
 class DeepLinkParser {
@@ -36,7 +37,13 @@ class DeepLinkParser {
 
   DeepLinkActionEntity parse(Uri uri) {
     try {
-      return _parse(uri);
+      if (!_isSupportedOrigin(uri)) return UnknownIntent(rawUri: uri.toString());
+      // Decode once before transforming custom-scheme hosts. Malformed URLs remain unknown to the parser even though
+      // `transform` intentionally sends them to not-found for AutoRoute's platform hook.
+      uri.pathSegments;
+      uri.queryParameters;
+      uri.host;
+      return _parse(transform(uri));
     } on FormatException {
       // Malformed percent encoding (for example %FF) in the path or query.
       return UnknownIntent(rawUri: uri.toString());
@@ -44,6 +51,14 @@ class DeepLinkParser {
   }
 
   DeepLinkActionEntity _parse(Uri uri) {
+    final DeepLinkRouteMatch? page = DeepLinkRouteCatalog.match(uri);
+    if (page != null) {
+      return PageLinkIntent(path: page.path, rawUri: uri.toString());
+    }
+    if (DeepLinkRouteCatalog.ownsPath(uri)) {
+      return UnknownIntent(rawUri: uri.toString());
+    }
+
     final List<String> segments = _segments(uri);
     if (segments.isEmpty) {
       return UnknownIntent(rawUri: uri.toString());
@@ -51,6 +66,7 @@ class DeepLinkParser {
 
     final String root = segments.first.toLowerCase();
     if (_shareRoots.contains(root)) {
+      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
       final String wallId = _firstNonEmpty(<String?>[segments.safeAt(1), uri.queryParameters['id']]);
       final WallpaperSource source = WallpaperSourceX.fromWire(
         _firstNonEmpty(<String?>[
@@ -85,6 +101,9 @@ class DeepLinkParser {
     }
 
     if (_userRoots.contains(root)) {
+      if (segments.length > 2 || (root == 'user' && segments.length == 2)) {
+        return UnknownIntent(rawUri: uri.toString());
+      }
       final String profileIdentifier = _firstNonEmpty(<String?>[
         segments.safeAt(1),
         uri.queryParameters['identifier'],
@@ -103,6 +122,7 @@ class DeepLinkParser {
     }
 
     if (_referRoots.contains(root)) {
+      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
       final String inviterId = _firstNonEmpty(<String?>[
         segments.safeAt(1),
         uri.queryParameters['inviterId'],
@@ -118,6 +138,7 @@ class DeepLinkParser {
     }
 
     if (_shortCodeRoots.contains(root)) {
+      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
       final String code = _firstNonEmpty(<String?>[segments.safeAt(1), uri.queryParameters['code']]);
       if (code.isEmpty) {
         return UnknownIntent(rawUri: uri.toString());
@@ -151,6 +172,17 @@ class DeepLinkParser {
   bool _isCustomScheme(Uri uri) {
     final String scheme = uri.scheme.toLowerCase();
     return scheme.isNotEmpty && scheme != 'http' && scheme != 'https';
+  }
+
+  bool _isSupportedOrigin(Uri uri) {
+    final String scheme = uri.scheme.toLowerCase();
+    if (scheme.isEmpty) return true;
+    if (scheme == 'prism') return true;
+    if (scheme != 'http' && scheme != 'https') return false;
+    final String host = uri.host.toLowerCase();
+    if (uri.userInfo.isNotEmpty || (host != 'prismwalls.com' && host != 'www.prismwalls.com')) return false;
+    return (scheme == 'https' && (!uri.hasPort || uri.port == 443)) ||
+        (scheme == 'http' && (!uri.hasPort || uri.port == 80));
   }
 
   bool _isDomainHost(String host) {

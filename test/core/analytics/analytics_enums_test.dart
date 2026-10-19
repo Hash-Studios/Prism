@@ -139,6 +139,7 @@ void main() {
         'error',
         'missing_data',
         'not_signed_in',
+        'not_authorized',
         'empty_input',
         'unknown',
       ],
@@ -153,7 +154,7 @@ void main() {
       'AuthMethodValue': <String>['google', 'apple'],
       'NavTabValue': <String>['home', 'search', 'streak', 'collection'],
       'NotificationPreferenceValue': <String>['followers', 'posts', 'in_app', 'recommendations', 'streak_reminders'],
-      'DeepLinkSourceValue': <String>['app_links'],
+      'DeepLinkSourceValue': <String>['app_links', 'push', 'in_app'],
       'ShareTypeValue': <String>['wallpaper', 'user', 'refer'],
       'AnalyticsSurfaceValue': <String>[
         'wallpaper_screen',

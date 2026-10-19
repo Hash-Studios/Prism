@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
@@ -33,10 +34,11 @@ void main() {
     );
     getIt.registerSingleton<FirestoreClient>(firestore);
 
-    final PageRouteInfo? route = await const NotificationRouteMapper().fromPayload(<String, dynamic>{
+    final action = await const NotificationRouteMapper().actionFromPayload(<String, dynamic>{
       'route': 'wall_of_the_day',
       'wall_id': 'new-wall-doc',
     }, sourceTag: 'test');
+    final PageRouteInfo? route = action == null ? null : (await const DeepLinkNavigation().resolveAction(action)).route;
 
     expect(route, isA<WallpaperDetailRoute>());
     final WallpaperDetailRouteArgs args = (route! as WallpaperDetailRoute).args!;
