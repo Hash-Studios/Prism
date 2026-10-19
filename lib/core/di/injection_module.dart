@@ -17,7 +17,7 @@ abstract class AppModule {
 
   @lazySingleton
   FirestoreTelemetrySink get firestoreTelemetrySink => CompositeFirestoreTelemetrySink(<FirestoreTelemetrySink>[
-    if (kDebugMode) const FirestoreConsoleTelemetrySink(),
+    if (kDebugMode || kProfileMode) const FirestoreConsoleTelemetrySink(),
     FirestoreFileTelemetrySink(),
   ]);
 

@@ -1,5 +1,4 @@
-import {ImageAnnotatorClient} from "@google-cloud/vision";
-import sharp from "sharp";
+import type {ImageAnnotatorClient} from "@google-cloud/vision";
 import {str} from "../common";
 import type {WallDepth} from "../wallDepth";
 
@@ -85,6 +84,7 @@ export function sizeCheck(width: number, height: number): {reasons: string[]; de
  * because their black areas give the same bits. Correlation of thumbnails looks only at how the image varies.
  */
 export async function imageSignature(bytes: Buffer): Promise<string> {
+  const sharp = (await import("sharp")).default;
   const {data, info} = await sharp(bytes).flatten().resize(STUDIO_SIGNATURE_WIDTH, STUDIO_SIGNATURE_HEIGHT, {fit: "fill"})
     .grayscale().raw().toBuffer({resolveWithObject: true});
   const grey = Buffer.alloc(SIGNATURE_BYTES);
@@ -178,6 +178,7 @@ let visionClient: ImageAnnotatorClient | undefined;
 
 /** Safe search, text and logo detection in one Vision call. */
 export const annotateWithVision: VisionAnnotate = async (jpeg) => {
+  const {ImageAnnotatorClient} = await import("@google-cloud/vision");
   visionClient ??= new ImageAnnotatorClient();
   const [result] = await visionClient.annotateImage({
     image: {content: jpeg},
@@ -196,6 +197,7 @@ export async function runGates(
   bytes: Buffer,
   deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>; depth?: DepthCheck},
 ): Promise<GateResult> {
+  const sharp = (await import("sharp")).default;
   let width = 0;
   let height = 0;
   let signature = "";

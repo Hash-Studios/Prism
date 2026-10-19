@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, REGION} from "./common";
+import {db, REGION, CALLABLE_REGIONS} from "./common";
 import {
   bumpDaily,
   claimRateDoc,
@@ -33,7 +33,7 @@ function normalizeAction(raw: unknown): WallAction {
  */
 export const recordWallpaperAction = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
     maxInstances: 10,
   },

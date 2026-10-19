@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -89,12 +90,38 @@ class _FirestoreBatchBridge implements FirestoreBatch {
 }
 
 class FirestoreTrackedClient implements FirestoreClient {
-  FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry) : _firestoreFactory = (() => firestore);
+  FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry)
+    : _firestoreFactory = (() => firestore),
+      _waitUntilReady = null,
+      _ready = true;
 
-  FirestoreTrackedClient.deferred(this._firestoreFactory, this._telemetry);
+  /// Every operation first waits for Firebase, so a read that starts before `Firebase.initializeApp` ends does not
+  /// fail with `no-app`. If Firebase never becomes ready the call proceeds and fails as before.
+  FirestoreTrackedClient.deferred(this._firestoreFactory, this._telemetry, {Future<bool> Function()? waitUntilReady})
+    : _waitUntilReady = waitUntilReady ?? _waitForFirebaseInit,
+      _ready = false;
+
+  static Future<bool> _waitForFirebaseInit() async {
+    try {
+      return await FirebaseInit.waitUntilReady();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  final Future<bool> Function()? _waitUntilReady;
+  bool _ready;
 
   final FirebaseFirestore Function() _firestoreFactory;
   FirebaseFirestore get _firestore => _firestoreFactory();
+
+  Future<void> _ensureReady() async {
+    if (_ready) {
+      return;
+    }
+    _ready = await _waitUntilReady!();
+  }
+
   final FirestoreTelemetrySink _telemetry;
   final Map<String, Future<_QueryCacheEntry>> _inflightQueries = <String, Future<_QueryCacheEntry>>{};
   final Map<String, _QueryCacheEntry> _queryCache = <String, _QueryCacheEntry>{};
@@ -165,6 +192,7 @@ class FirestoreTrackedClient implements FirestoreClient {
         return 0;
       case FirestoreCachePolicy.staleWhileRevalidate:
       case FirestoreCachePolicy.memoryFirst:
+      case FirestoreCachePolicy.diskFirst:
         return _defaultCacheWindowMs;
     }
   }
@@ -238,6 +266,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     int? Function(T result)? resultCount,
     String? Function(T result)? docIdOf,
   }) async {
+    await _ensureReady();
     final Stopwatch sw = Stopwatch()..start();
     try {
       final T result = await body();
@@ -334,6 +363,59 @@ class FirestoreTrackedClient implements FirestoreClient {
     );
   }
 
+  /// Reads the SDK disk cache. Returns null when the cache has no usable answer (miss, error, or a cursor doc that is
+  /// not cached), so the caller falls back to the network.
+  Future<_QueryCacheEntry?> _readDiskCache(FirestoreQuerySpec spec) async {
+    await _ensureReady();
+    final Stopwatch sw = Stopwatch()..start();
+    try {
+      Query<Map<String, dynamic>> query = _applySpec(spec);
+      final String? startAfterDocId = spec.startAfterDocId;
+      if (startAfterDocId != null && startAfterDocId.isNotEmpty) {
+        DocumentSnapshot<Map<String, dynamic>>? cursor =
+            _cursorDocCache[_cursorDocKey(spec.collection, startAfterDocId)];
+        cursor ??= await _firestore
+            .collection(spec.collection)
+            .doc(startAfterDocId)
+            .get(const GetOptions(source: Source.cache));
+        if (!cursor.exists) {
+          return null;
+        }
+        query = query.startAfterDocument(cursor);
+      }
+      final QuerySnapshot<Map<String, dynamic>> result = await query.get(const GetOptions(source: Source.cache));
+      final int? limit = spec.limit;
+      if (result.docs.isEmpty || (limit != null && result.docs.length < limit)) {
+        return null;
+      }
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
+        _cacheCursorDoc(doc, spec.collection);
+      }
+      unawaited(
+        _telemetry.emit(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: spec.sourceTag,
+            operation: FirestoreOperation.queryGet,
+            collection: spec.collection,
+            filtersHash: spec.filtersHash,
+            orderBy: _orderByList(spec),
+            limit: spec.limit,
+            durationMs: sw.elapsedMilliseconds,
+            resultCount: result.docs.length,
+            success: true,
+          ),
+        ),
+      );
+      return _QueryCacheEntry(
+        result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
+        DateTime.now(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     final String key = _queryKey(spec);
@@ -343,6 +425,18 @@ class FirestoreTrackedClient implements FirestoreClient {
         _refreshInBackground(spec);
       }
       return _mapCachedDocs(cached, map);
+    }
+    if (spec.cachePolicy == FirestoreCachePolicy.diskFirst) {
+      final _QueryCacheEntry? fromDisk = await _readDiskCache(spec);
+      final _QueryCacheEntry? refreshed = _queryCache[key];
+      if (refreshed != null && _isCacheFresh(refreshed, spec)) {
+        return _mapCachedDocs(refreshed, map);
+      }
+      if (fromDisk != null) {
+        _saveQueryCache(key, fromDisk);
+        _refreshInBackground(spec);
+        return _mapCachedDocs(fromDisk, map);
+      }
     }
     final Future<_QueryCacheEntry>? inflight = _inflightQueries[key];
     if (inflight != null) {
@@ -370,6 +464,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     bool preferCacheFirst = false,
   }) async {
     if (preferCacheFirst) {
+      await _ensureReady();
       try {
         final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
         final Stopwatch swCache = Stopwatch()..start();
@@ -534,9 +629,18 @@ class FirestoreTrackedClient implements FirestoreClient {
     T Function(Map<String, dynamic> data, String docId) map, {
     required bool includeMetadataChanges,
   }) {
-    return Stream<({List<T> items, bool isFromCache})>.multi((controller) {
-      final DateTime start = DateTime.now();
+    return Stream<({List<T> items, bool isFromCache})>.multi((controller) async {
       StreamSubscription<({List<T> items, bool isFromCache})>? subscription;
+      var cancelled = false;
+      controller.onCancel = () {
+        cancelled = true;
+        return subscription?.cancel();
+      };
+      await _ensureReady();
+      if (cancelled) {
+        return;
+      }
+      final DateTime start = DateTime.now();
       try {
         final Query<Map<String, dynamic>> query = _applySpec(spec);
         final Stream<({List<T> items, bool isFromCache})> snapshots = query
@@ -611,7 +715,6 @@ class FirestoreTrackedClient implements FirestoreClient {
         controller.addError(mapped, stackTrace);
         controller.close();
       }
-      controller.onCancel = () => subscription?.cancel();
     });
   }
 }

@@ -115,7 +115,7 @@ reach that step.
 | Android aab output | `build/app/outputs/bundle/release/app-release.aab` |
 | iOS ipa output | `build/ios/ipa/Prism.ipa` |
 | Functions region | `asia-south1` (all callables) |
-| Functions secrets (human sets, never echoed) | `GH_TOKEN`, `REVENUECAT_SECRET_KEY` |
+| Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_KEY` |
 | Functions plain env vars | `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS` |
 
 ## Flags
@@ -198,59 +198,95 @@ git fetch origin && git diff --stat HEAD origin/master   # must be empty: master
 ```
 Builds can start from the bump commit while `ci` runs.
 
-### 3. Backend first: Cloud Functions and Firestore indexes
+### 3. Functions secrets and env (Doppler `prd` is the source)
+
+Do this step before step 4. A deploy fails when a function binds a secret that is not in Firebase
+yet. Compare the secrets in Doppler with the secrets in Firebase:
+```sh
+doppler secrets --project prism --config prd --only-names
+firebase functions:secrets:get <NAME> --project prism-wallpapers --account <email>   # once per name in FUNCTIONS_SECRETS
+```
+`FUNCTIONS_SECRETS` in the `Makefile` is the full list. It must contain every
+`defineSecret("...")` name in `functions/src`. If a new function adds a secret, add the name to
+`FUNCTIONS_SECRETS` in the same PR.
+
+Doppler `prd` holds the values. The human sets or rotates a secret in Doppler only (the command
+prompts, so the value stays out of shell history):
+```sh
+doppler secrets set <NAME> --project prism --config prd
+```
+- `GH_TOKEN`: a fine-grained token owned by `codenameakshay2`, only `prism-walls` and
+  `prism-setups`, Contents read/write. Never the old classic token that shipped in the app.
+- `REVENUECAT_SECRET_KEY`: RevenueCat, Project settings, API keys, new secret key, **API
+  version V1** (`sk_...`). `syncSubscription` calls the v1 API.
+- `STUDIO_SECRET`: shared secret for the Prism Studio pipeline (`functions/src/studio/process.ts`).
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`: Studio review alerts (`functions/src/studio/telegram.ts`).
+- `FAL_KEY`: fal.ai key for the Depth Effect detector (`functions/src/wallDepth.ts`).
+
+Then the agent pipes them into Firebase after the human's go. Values are never printed:
+```sh
+make functions-secrets-sync FIREBASE_ACCOUNT=<email>
+firebase functions:secrets:get <NAME> --project prism-wallpapers --account <email>   # version ENABLED
+```
+`make functions-secrets-sync` stops at the first name that has no value in Doppler `prd`. Fix
+Doppler, then run it again.
+
+Plain settings (`GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`) go into the gitignored
+`functions/.env` via `make functions-env`. `make functions-deploy` runs it for you.
+
+### 4. Backend: Firestore rules, then indexes, then Cloud Functions
 
 Deploy backend changes **before** any client build that calls a new or changed callable. The
 callables today: `awardCoins`, `spendCoins`, `processReferral` (`functions/src/coinsCallables.ts`),
 `githubPutFile`, `githubDeleteFile` (`functions/src/githubContent.ts`), `syncSubscription`
 (`functions/src/syncSubscription.ts`), `deleteAccount` (`functions/src/deleteAccount.ts`).
 
+Order:
+1. Secrets (step 3).
+2. Firestore rules, **only** if the release adds rules that new functions or new client code need,
+   and the change does not refuse a write that shipped clients make. Rules that refuse such writes
+   wait for step 6.
+3. Firestore indexes, so that new queries work when the functions go live.
+4. Cloud Functions.
+
 Before asking for the go, show the human the exact diff against production:
 ```sh
+git diff <last release tag> -- firestore.rules                            # empty: skip the rules deploy
 firebase functions:list --project prism-wallpapers --account <email>     # compare with functions/src/index.ts exports
 firebase firestore:indexes --project prism-wallpapers --account <email>   # compare with firestore.indexes.json
 cd functions && npm ci && npm run build && node --test lib/__tests__/*.test.js && cd ..
 git checkout -- functions/lib   # the build rewrites tracked output; keep it out of the diff
 ```
-List the functions that will be created, updated, and deleted, and the indexes that will be
-added. Firestore adds `__name__` to live indexes on its own, so compare index fields without it.
-`firestore.indexes.json` must list every live index. A forced deploy deletes indexes that are
-missing from the file.
+List the rules that change, the functions that will be created, updated, and deleted, and the
+indexes that will be added. Firestore adds `__name__` to live indexes on its own, so compare index
+fields without it. `firestore.indexes.json` must list every live index. A forced deploy deletes
+indexes that are missing from the file.
 
-Deploy (human-approval step):
+If the rules changed, read each change. A change that only adds access (a new collection, a new
+field that the server writes) can go now. A change that refuses a write from an old client goes to
+step 6. Run the rules smoke test (`make rules-test`), then deploy (human-approval step):
 ```sh
+firebase deploy --only firestore:rules --project prism-wallpapers --account <email> --non-interactive
+```
+
+Then indexes and functions (human-approval step):
+```sh
+firebase deploy --only firestore:indexes --project prism-wallpapers --account <email> --non-interactive
 make functions-deploy FIREBASE_ACCOUNT=<email>
 # = make functions-env (functions/.env from Doppler prd), npm run build,
 #   firebase deploy --only functions,firestore:indexes
 ```
+A new index can take minutes to build. Check that `firebase firestore:indexes` shows it before
+the functions that query it take traffic. `make functions-deploy` deploys the indexes again, which
+is safe.
+
 Add `--non-interactive` when running `firebase deploy` by hand, and never `--force`, so a deploy
 can never delete a function or an index. After the deploy: `firebase functions:list` shows every
 export, and `firebase functions:log --lines 60` shows no new errors. Then `git checkout --
 functions/lib`.
 
-`firebase.json`'s `predeploy` also runs `npm run build`. Deploying `firestore:indexes` here (not
-`firestore:rules`) is deliberate. See step 6.
-
-### 4. Functions secrets and env (Doppler `prd` is the source)
-
-Doppler `prd` holds the values. The human sets or rotates a secret in Doppler only (the command
-prompts, so the value stays out of shell history):
-```sh
-doppler secrets set GH_TOKEN --project prism --config prd
-doppler secrets set REVENUECAT_SECRET_KEY --project prism --config prd
-```
-- `GH_TOKEN`: a fine-grained token owned by `codenameakshay2`, only `prism-walls` and
-  `prism-setups`, Contents read/write. Never the old classic token that shipped in the app.
-- `REVENUECAT_SECRET_KEY`: RevenueCat, Project settings, API keys, new secret key, **API
-  version V1** (`sk_...`). `syncSubscription` calls the v1 API.
-
-Then the agent pipes them into Firebase after the human's go. Values are never printed:
-```sh
-make functions-secrets-sync FIREBASE_ACCOUNT=<email>
-firebase functions:secrets:get GH_TOKEN --project prism-wallpapers --account <email>   # version ENABLED
-```
-Plain settings (`GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`) go into the gitignored
-`functions/.env` via `make functions-env`. `make functions-deploy` runs it for you.
+`firebase.json`'s `predeploy` also runs `npm run build`. `make functions-deploy` does not deploy
+`firestore:rules`. This is deliberate. See step 6.
 
 ### 5. Data migrations (dry run, then human-approved apply)
 
@@ -280,9 +316,9 @@ migration. Never chain dry-run and apply in the same unattended step.
 *creation* (`canCreateUserDoc`), but older store builds may still write these fields directly on
 *update*. Deploying a rules change that blocks direct client writes to coins/premium is safe only
 once most users are on a client build that goes through `awardCoins`/`spendCoins`/
-`syncSubscription` instead. **Do not deploy `firestore:rules` as part of a routine release.**
-Raise it as a separate, explicitly-timed step and let the human decide when enough of the install
-base has updated:
+`syncSubscription` instead. **Do not deploy a rules change that refuses old-client writes as part of a routine release.**
+(Rules that only add access go out in step 4.) Raise it as a separate, explicitly-timed step and
+let the human decide when enough of the install base has updated:
 
 ```sh
 firebase deploy --only firestore:rules
@@ -438,7 +474,8 @@ Report only what actually ran:
 Prism release: version <VERSION>, build <N>.
   Backend:            deployed functions <list> + firestore indexes   (or "skipped")
   Migrations:         <name> dry run (scanned=X changed=Y)            (or "applied" if approved)
-  Firestore rules:    not touched this release (human decides timing)
+  Secrets:            synced <names>                                 (or "no change")
+  Firestore rules:    deployed additive rules <summary>              (or "not touched")
   Android aab:        build/app/outputs/bundle/release/app-release.aab (<size>)   (or "skipped")
   Android upload:     <track/mechanism, or "left to human">
   iOS ipa:            build/ios/ipa/Prism.ipa                          (or "skipped")

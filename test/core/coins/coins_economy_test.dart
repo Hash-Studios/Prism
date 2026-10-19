@@ -5,11 +5,13 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/in_memory_local_store.dart';
 
 Map<String, Object?> _paid({
   int before = 100,
@@ -48,6 +50,16 @@ Map<String, Object?> _quests({bool chestOpened = false, int progress = 0}) => <S
   'weekKey': '2026-W42',
   'weekly': <String, Object?>{'id': 'weekly_set_5', 'event': 'set_wallpaper', 'target': 5, 'progress': 2},
 };
+
+class _MarkerThrowingSettings extends SettingsLocalDataSource {
+  _MarkerThrowingSettings(super.store);
+
+  @override
+  Future<void> set(String key, Object? value) {
+    if (key.startsWith('questReported.')) throw StateError('disk full');
+    return super.set(key, value);
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -148,15 +160,33 @@ void main() {
       expect(service.adsRewardNow, 10);
     });
 
-    test("a credited ad ticks today's watch_ad bonus quest and reconciles rank rewards", () async {
+    test("a credited ad ticks today's watch_ad bonus quest without reconciling rank rewards", () async {
       final Map<String, Object?> today = <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())};
-      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': today});
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': today,
+          'xpPolicyVersion': 1,
+          'xp': 0,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 0},
+        },
+      );
       await service.progressQuest(null);
       calls.clear();
-      reply((_, _) => _paid(after: 120));
+      reply(
+        (_, _) => _paid(
+          after: 120,
+          extra: <String, Object?>{
+            'xpPolicyVersion': 1,
+            'xp': 10,
+            'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 10},
+          },
+        ),
+      );
       await service.award(CoinEarnAction.rewardedAd);
       expect(service.questsNotifier.value?.bonus?.claimed, isTrue);
-      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins', 'reconcileRankRewards']);
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins']);
     });
   });
 
@@ -215,7 +245,7 @@ void main() {
       expect(calls.first.$1, 'progressQuest');
       expect(calls.first.$2['event'], 'view_wotd');
       expect(calls.first.$2['eventId'], matches(idPattern));
-      expect(calls.last.$1, 'reconcileRankRewards');
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['progressQuest']);
       expect(state?.items.first.isDone, isTrue);
       expect(service.questAwardsNotifier.value.single.coins, 2);
       expect(service.xpNotifier.value.xp, 25);
@@ -238,6 +268,97 @@ void main() {
       await service.progressQuest(QuestEvent.setWallpaper);
       await pumpEventQueue();
       expect(calls, isEmpty);
+    });
+
+    test('a second viewTrending on the same day makes no call', () async {
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())},
+          'reason': 'quest_progressed',
+        },
+      );
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(1));
+      service.reportQuestEvent(QuestEvent.viewWotd);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('a reply from the previous UTC day does not suppress the current day event', () async {
+      final String yesterday = economyDayKey(DateTime.now().subtract(const Duration(days: 1)));
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': <String, Object?>{..._quests(), 'dayKey': yesterday},
+          'reason': 'quest_progressed',
+        },
+      );
+
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('a stale reply does not write the reported-today marker', () async {
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 5, 'quests': _quests(progress: 1)});
+      await service.progressQuest(null);
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 4,
+          'quests': <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())},
+        },
+      );
+      await service.progressQuest(QuestEvent.viewTrending);
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      expect(settings.get<String>('questReported.view_trending', defaultValue: ''), isEmpty);
+      expect(service.questsNotifier.value?.items.first.progress, 1);
+    });
+
+    test('a failing marker write still applies the quest reply', () async {
+      await getIt.unregister<SettingsLocalDataSource>();
+      getIt.registerSingleton<SettingsLocalDataSource>(_MarkerThrowingSettings(InMemoryLocalStore()));
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 6,
+          'quests': <String, Object?>{..._quests(progress: 1), 'dayKey': economyDayKey(DateTime.now())},
+        },
+      );
+      final QuestState? state = await service.progressQuest(QuestEvent.viewTrending);
+      expect(state?.items.first.progress, 1);
+      expect(service.questsNotifier.value?.items.first.progress, 1);
+    });
+
+    test('a failed report is retried and the next day calls again', () async {
+      backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'internal', message: 'x');
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': _quests()});
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(1));
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      await settings.set('questReported.view_trending', '${backend.userId}|2000-01-01');
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('an event the client never reports is not deduped by progressQuest', () async {
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': _quests()});
+      await service.progressQuest(QuestEvent.viewTrending);
+      await service.progressQuest(QuestEvent.viewTrending);
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
     });
 
     test('guests send nothing', () async {

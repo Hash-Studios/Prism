@@ -1,3 +1,4 @@
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -27,7 +28,8 @@ class InternetConnectivityService implements ConnectivityService {
   final InternetConnectionChecker _checker;
 
   @override
-  Future<bool> hasConnection() => _checker.hasConnection;
+  Future<bool> hasConnection() =>
+      PerformanceProbe.measure('network', 'connectivity.has_connection', () => _checker.hasConnection);
 
   @override
   Stream<bool> get onConnectionChange =>

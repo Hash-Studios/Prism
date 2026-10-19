@@ -217,4 +217,65 @@ void main() {
 
     expect(local.items.singleWhere((item) => item.title == 'first').read, isTrue);
   });
+
+  test('a startup sync skips the fetch when the last fetch was under 5 minutes ago', () async {
+    local.lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 2));
+
+    await syncInAppNotificationsFromRemote();
+
+    expect(client.querySpecs, isEmpty);
+  });
+
+  test('a startup sync still prunes blocked actors while its fetch is cooling down', () async {
+    local.lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 2));
+    local.items = <InAppNotificationEntity>[
+      InAppNotificationEntity(
+        id: 'blocked',
+        title: 'blocked actor',
+        pageName: 'profile',
+        body: 'body',
+        imageUrl: '',
+        arguments: const <Object>[],
+        url: '',
+        createdAt: recent,
+        read: false,
+        followerEmail: 'blocked@example.com',
+      ),
+    ];
+    (getIt<UserBlockRepository>() as FakeUserBlockRepository).completeInitial(<String>{'blocked@example.com'});
+
+    await syncInAppNotificationsFromRemote();
+
+    expect(client.querySpecs, isEmpty);
+    expect(local.items, isEmpty);
+  });
+
+  test('a future persisted fetch time does not suppress synchronization', () async {
+    final DateTime now = DateTime.now().toUtc();
+    local.lastFetch = now.add(const Duration(days: 1));
+
+    await syncInAppNotificationsFromRemote();
+
+    final Object? since = client.querySpecs.single.filters.firstWhere((filter) => filter.field == 'createdAt').value;
+    expect(since, isA<DateTime>());
+    expect((since! as DateTime).isBefore(now), isTrue);
+    expect(local.lastFetch!.isBefore(now.add(const Duration(seconds: 1))), isTrue);
+  });
+
+  test('a startup sync fetches only newer notifications when the last fetch was over 5 minutes ago', () async {
+    final DateTime lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 10));
+    local.lastFetch = lastFetch;
+
+    await syncInAppNotificationsFromRemote();
+
+    expect(client.querySpecs.single.sourceTag, 'notifications.latest');
+  });
+
+  test('a forced sync fetches even when the last fetch was under 5 minutes ago', () async {
+    local.lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 2));
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(client.querySpecs, hasLength(1));
+  });
 }

@@ -56,6 +56,9 @@ class PersistenceKeys {
   static const String notificationInstallId = 'retention.notificationInstallId';
   static const String notificationSignalUserId = 'retention.notificationSignalUserId';
 
+  // Last obsoleteVersion Remote Config reported, so a returning user can route home before bootstrap ends.
+  static const String obsoleteAppVersion = 'startup.obsoleteAppVersion';
+
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
 

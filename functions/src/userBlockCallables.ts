@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, readDailyCount, REGION, utcDateString} from "./common";
+import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 
 const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
@@ -81,7 +81,7 @@ export function isSameTargetCooldownActive(lastAtMs: number | undefined, nowMs: 
 
 export const blockUser = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{targetUserId?: string}>): Promise<OkResponse> => {
@@ -214,7 +214,7 @@ export const blockUser = onCall(
 
 export const unblockUser = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{targetUserId?: string}>): Promise<OkResponse> => {

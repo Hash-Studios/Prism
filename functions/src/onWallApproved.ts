@@ -4,7 +4,7 @@ import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
-import {isStudioWall} from "./studio/process";
+import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {fileWallInCollection} from "./wallCollections";
 import {

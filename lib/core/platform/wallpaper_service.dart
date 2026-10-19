@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
@@ -270,7 +271,11 @@ class WallpaperService {
       scaleMode: scaleMode,
       strategy: strategy,
     );
-    return aw.AsyncWallpaper.applyWallpaper(request).timeout(const Duration(seconds: 30));
+    return PerformanceProbe.measure(
+      'native',
+      'set_wallpaper.${target.name}',
+      () => aw.AsyncWallpaper.applyWallpaper(request).timeout(const Duration(seconds: 30)),
+    );
   }
 
   /// True for a local file in the temp or cache directory. Those files go away, so history cannot reopen them.

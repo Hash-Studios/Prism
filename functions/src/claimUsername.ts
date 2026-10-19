@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION} from "./common";
+import {db, CALLABLE_REGIONS} from "./common";
 import {usernameLowerOf} from "./usernameLower";
 
 const USERNAMES = "usernames";
@@ -24,7 +24,7 @@ export function parseUsername(raw: unknown): string {
  */
 export const claimUsername = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
     maxInstances: 10,
   },

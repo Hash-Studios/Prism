@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, readDailyCount, REGION, str, utcDateString} from "./common";
+import {coinTransactionDoc, db, int, readDailyCount, CALLABLE_REGIONS, str, utcDateString} from "./common";
 import {
   DEFAULT_ECONOMY, type EconomyConfig, grantXp, isPrice, loadEconomy, proPrice, type WheelSegment, weightedPick,
   xpReceipt, type XpReceipt,
@@ -8,7 +8,7 @@ import {
 import {applyQuestEvent, buildQuestState, type QuestState} from "./questCatalog";
 import {pickChestCosmetic} from "./shopCatalog";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
-import {isStudioWall} from "./studio/process";
+import {isStudioWall} from "./studio/isStudioWall";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
@@ -62,7 +62,7 @@ const REFERRAL_NEW_ACCOUNT_MS = 14 * 86_400_000;
 // Mirrors defaultProfilePhotoUrl in lib/core/constants/app_constants.dart.
 const DEFAULT_PROFILE_PHOTO =
   "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4";
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 const AD_RATE_MIN_GAP_MS = 20_000;
 
 function requiredText(value: unknown, field: string): string {
@@ -764,10 +764,8 @@ export const spinWheel = onCall(
     const today = utcDateString(new Date(nowMs));
 
     return db.runTransaction<SpinWheelReply>(async (tx) => {
-      const snap = await tx.get(userRef);
+      const [snap, txSnap, privateSnap] = await Promise.all([tx.get(userRef), tx.get(txRef), tx.get(privateRef)]);
       if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-      const txSnap = await tx.get(txRef);
-      const privateSnap = await tx.get(privateRef);
       const data = snap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const balance = int(data.coins, 0);
@@ -911,10 +909,12 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
 
   await db.runTransaction(async (tx) => {
     response = {...initialResponse};
-    const snap = await tx.get(userRef);
+    const [snap, spendTxSnap, privateSnap] = await Promise.all([
+      tx.get(userRef),
+      spendTxRef ? tx.get(spendTxRef) : null,
+      tx.get(privateRef),
+    ]);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const spendTxSnap = spendTxRef ? await tx.get(spendTxRef) : null;
-    const privateSnap = await tx.get(privateRef);
     const data = snap.data() ?? {};
     const privateData = privateSnap.data() ?? {};
     const passes = coinState(privateData.passes);

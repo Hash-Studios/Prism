@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -65,27 +66,29 @@ class AdConsent {
     }
   }
 
-  Future<bool> _run() async {
-    try {
-      await _requestInfoUpdate().timeout(updateTimeout);
-      await _showFormIfRequired();
-    } catch (error, stackTrace) {
-      logger.w(
-        'Ad consent flow failed; using the stored consent.',
-        tag: 'AdConsent',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-    bool canRequest;
-    try {
-      canRequest = await _canRequestAds();
-    } catch (error, stackTrace) {
-      logger.w('Could not read ad consent.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
-      canRequest = false;
-    }
-    unawaited(analytics.track(AdConsentResultEvent(status: canRequest ? 'can_request' : 'refused')));
-    return canRequest;
+  Future<bool> _run() {
+    return PerformanceProbe.measure('startup', 'ad_consent', () async {
+      try {
+        await _requestInfoUpdate().timeout(updateTimeout);
+        await _showFormIfRequired();
+      } catch (error, stackTrace) {
+        logger.w(
+          'Ad consent flow failed; using the stored consent.',
+          tag: 'AdConsent',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      bool canRequest;
+      try {
+        canRequest = await _canRequestAds();
+      } catch (error, stackTrace) {
+        logger.w('Could not read ad consent.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
+        canRequest = false;
+      }
+      unawaited(analytics.track(AdConsentResultEvent(status: canRequest ? 'can_request' : 'refused')));
+      return canRequest;
+    });
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>

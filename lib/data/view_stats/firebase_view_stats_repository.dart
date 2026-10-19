@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
@@ -14,6 +17,8 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
   static const String _statsCollection = 'wallpaper_stats';
 
   final FirestoreClient _firestoreClient;
+  final Map<(String, String), String> _viewsThisSession = <(String, String), String>{};
+  final Map<(String, String), Future<Result<String>>> _viewsInFlight = <(String, String), Future<Result<String>>>{};
 
   @override
   Future<Result<String>> recordWallpaperView(String wallId) async {
@@ -21,13 +26,30 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
     if (id.isEmpty) {
       return Result.error(const ServerFailure('Invalid wall id'));
     }
+    final (String, String) key = (app_state.prismUser.loggedIn ? app_state.prismUser.id : '', id);
+    final String? known = _viewsThisSession[key];
+    if (known != null) return Result.success(known);
+    final Future<Result<String>>? pending = _viewsInFlight[key];
+    if (pending != null) return pending;
+    final Future<Result<String>> request = _recordView(key, id);
+    _viewsInFlight[key] = request;
+    try {
+      return await request;
+    } finally {
+      unawaited(_viewsInFlight.remove(key));
+    }
+  }
+
+  Future<Result<String>> _recordView((String, String) key, String id) async {
     try {
       final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'recordWallpaperView',
         options: cf.HttpsCallableOptions(timeout: _callableTimeout),
       );
       final cf.HttpsCallableResult result = await callable.call(<String, dynamic>{'wallId': id});
-      return Result.success(_viewsString(result.data));
+      final String views = _viewsString(result.data);
+      _viewsThisSession[key] = views;
+      return Result.success(views);
     } on cf.FirebaseFunctionsException catch (e) {
       return Result.error(ServerFailure('Failed to record wallpaper view: ${e.message ?? e.code}'));
     } catch (e) {
