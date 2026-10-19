@@ -2,6 +2,14 @@
 
 Prism uses Flutter `gen-l10n`. `lib/l10n/app_en.arb` is the English template. The app follows the device locale and falls back to English when the device language is unsupported. Keep `en` in `preferred-supported-locales` in `l10n.yaml` when adding catalogs.
 
+## Shared English foundation
+
+The shared English localization foundation is already integrated in baseline `bdd3e48c3543c81c007ac13d0ee896f9128c048a`. It contains 2,401 message keys in `app_en.arb`; extend this catalog when app copy changes, rather than extracting the existing copy again. Keep ARB message keys stable and preserve each typed placeholder's name, type, and format across translations. Translate full messages and retain valid ICU plural/select structure.
+
+The Spanish thread publishes shared fixes as separate English-only commits on `t3/localisation-es`. Reuse `785403a67` and `0b562d29b` for the first 97 additional messages, then `b86755b35` and `133170f10` for caller-only fixes. A follow-up adds `economyExportFailedLabel`, bringing the catalog to 2,499 stable keys. These commits cover indirect AI prompts, progress and error messages, sign-in feature names, shortcuts, categories, transaction labels, and decimal presentation. Locale branches must translate the additions and regenerate their own locale files. Spanish resources are in separate commits and are not required for reuse.
+
+Flutter `gen-l10n` discovers `app_<locale>.arb` catalogs and generates `supportedLocales`; adding a catalog registers that locale without a separate Dart locale list. English remains the fallback through `preferred-supported-locales: [en]`. Each supported language still needs its native Android and iOS resources, including strings used by notifications and other background or platform UI, because Dart localization may not be available there. See the platform and notification steps below before shipping a locale.
+
 1. Copy `lib/l10n/app_en.arb` to `lib/l10n/app_<locale>.arb` and set `@@locale` to the new locale.
 2. Translate complete messages. Preserve message keys, placeholder names, and ICU plural and select syntax. Add the plural cases required by the target language.
 3. Run `fvm flutter gen-l10n`. Flutter derives `supportedLocales` from the ARB catalogs; no manual locale list is needed. Commit the catalog and generated Dart files in `lib/l10n/generated/` together.
@@ -14,7 +22,7 @@ Do not ship machine-generated or placeholder translations as a supported locale.
 
 ## Change app copy
 
-Import `package:Prism/l10n/l10n.dart` and use `context.l10n` in widgets. Pass an `AppLocalizations` instance to presentation helpers that do not have a widget context. For background work, call `loadAppLocalizations(locale)` with an explicit locale.
+Import `package:Prism/l10n/l10n.dart` and use `context.l10n` in widgets. Pass an `AppLocalizations` instance to presentation helpers that do not have a widget context. For device-local background work, use `loadDeviceAppLocalizations()` so the full preferred-language list resolves like `MaterialApp`. Use `loadAppLocalizations(locale)` when the caller supplies an explicit locale.
 
 Keep whole sentences in ARB messages. Use typed placeholders for user data and ICU plurals for counts. Flutter does not expand ICU `#`; write the named number placeholder in each plural branch. Give numeric placeholders an appropriate `intl` format (usually `decimalPattern`) so separators follow the active locale. Do not join translated sentence fragments or derive labels by capitalizing stored identifiers.
 

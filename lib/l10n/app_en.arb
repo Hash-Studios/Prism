@@ -1,5 +1,9 @@
 {
   "@@locale": "en",
+  "economyExportFailedLabel": "Export failed",
+  "@economyExportFailedLabel": {
+    "description": "Failed filter export action inserted before refund status."
+  },
   "coreSignInCreatorSearchFeature": "creator search",
   "@coreSignInCreatorSearchFeature": {
     "description": "Feature name inserted into the sign-in title for creator search."
