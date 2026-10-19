@@ -10,7 +10,6 @@ import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/widgets.dart';
 
 export 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 
