@@ -20,13 +20,19 @@ make ci
 ```
 
 The contract checks pass for all 2,406 Hindi messages with English metadata,
-ICU selectors, and interpolation identifiers preserved. The focused localisation
-suite passed all 11 tests before the five-key shared update. The updated suite
-and full CI gate are running. The baseline AST scan found zero
-probable direct literals and 4,870 indirect candidates; treat the latter as
-review leads, not confirmed untranslated UI. Key assembly (2,401) and native
-localisation inventory (58 Android strings, 50 iOS strings, 3 permissions) were
-validated. Full baseline analysis passed with existing informational findings.
+ICU selectors, and interpolation identifiers preserved. The updated focused
+localisation suite passed all 11 tests (`/tmp/prism-hi-2406-tests.log`). Full CI
+was intentionally aborted before the source updates and clean merge from master;
+it did not pass and must be rerun against the merged tree. An Android native
+build was also aborted because its tree was stale and the host was under swap
+pressure; this is not evidence of a platform build failure. Master commit
+`f51c177d8` merged cleanly. The shared prompt-pool catalogue unit is still
+pending from the Spanish work, so Hindi coverage is not final. The baseline AST
+scan found zero probable direct literals and 4,870 indirect candidates; treat
+the latter as review leads, not confirmed untranslated UI. Key assembly (2,401)
+and native localisation inventory (58 Android strings, 50 iOS strings, 3
+permissions) were validated. Full baseline analysis passed with existing
+informational findings.
 The tests cover Hindi locale resolution, English fallback, Indian digit grouping,
 dates, plural zero/one/many forms, nested selectors, and a real narrow sheet at 2x text.
 
