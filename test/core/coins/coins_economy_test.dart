@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -247,6 +248,40 @@ void main() {
       await service.progressQuest(QuestEvent.setWallpaper);
       await pumpEventQueue();
       expect(calls, isEmpty);
+    });
+
+    test('a second viewTrending on the same day makes no call', () async {
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': _quests(), 'reason': 'quest_progressed'});
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(1));
+      service.reportQuestEvent(QuestEvent.viewWotd);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('a failed report is retried and the next day calls again', () async {
+      backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'internal', message: 'x');
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': _quests()});
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(1));
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      await settings.set('questReported.view_trending', '${backend.userId}|2000-01-01');
+      service.reportQuestEvent(QuestEvent.viewTrending);
+      await pumpEventQueue();
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('an event the client never reports is not deduped by progressQuest', () async {
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': _quests()});
+      await service.progressQuest(QuestEvent.viewTrending);
+      await service.progressQuest(QuestEvent.viewTrending);
+      expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
     });
 
     test('guests send nothing', () async {

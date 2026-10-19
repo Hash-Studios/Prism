@@ -516,7 +516,7 @@ void main() {
     verify(() => feedRepository.fetchPopular()).called(1);
   });
 
-  testWidgets('every visit to the Trending tab reports the daily trending quest', (tester) async {
+  testWidgets('the Trending tab reports the daily trending quest once a day', (tester) async {
     final CoinsTestBackend backend = CoinsTestBackend();
     final List<String> events = <String>[];
     await tester.runAsync(backend.install);
@@ -531,7 +531,7 @@ void main() {
       await _settle(tester);
     }
 
-    expect(events, <String>['view_trending', 'view_trending']);
+    expect(events, <String>['view_trending']);
   });
 
   testWidgets('opening the home alone reports no trending quest, the Trending tab does', (tester) async {

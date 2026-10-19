@@ -2539,6 +2539,7 @@ class CoinsService with WidgetsBindingObserver {
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply == null || reply.errorCode != null) return questsNotifier.value;
+    if (event != null && reply.success) await _markQuestReported(event, userId);
     bool stale = reply.stale || _staleEconomyReply(reply.data);
     if (!stale && reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
     if (!stale) _applyQuestReply(reply.data);
@@ -2571,11 +2572,27 @@ class CoinsService with WidgetsBindingObserver {
   /// Fire-and-forget quest report for UI code. A no-op for guests and for events the server counts itself.
   void reportQuestEvent(QuestEvent event) {
     if (!_canMutateCoins() || !event.clientReported) return;
+    if (_questReportedToday(event, app_state.prismUser.id)) return;
     try {
       unawaited(progressQuest(event));
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.quests.report', error: error, stackTrace: stackTrace);
     }
+  }
+
+  // Every client-reported quest has a target of 1, so the first accepted report of the UTC day finishes it.
+  String _questReportedKey(QuestEvent event) => 'questReported.${event.wireValue}';
+
+  String _questReportedValue(String userId) => '$userId|${economyDayKey(DateTime.now())}';
+
+  bool _questReportedToday(QuestEvent event, String userId) =>
+      getIt.isRegistered<SettingsLocalDataSource>() &&
+      _settings.isOpen &&
+      _settings.get<String>(_questReportedKey(event), defaultValue: '') == _questReportedValue(userId);
+
+  Future<void> _markQuestReported(QuestEvent event, String userId) async {
+    if (!getIt.isRegistered<SettingsLocalDataSource>() || !_settings.isOpen) return;
+    await _settings.set(_questReportedKey(event), _questReportedValue(userId));
   }
 
   /// Recomputes [spinWheelNotifier] from the cached economy, Pro and the loaded config. Every change of those calls it.
