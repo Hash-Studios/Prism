@@ -8,6 +8,24 @@ import '../../support/in_memory_local_store.dart';
 
 void main() {
   final now = DateTime.utc(2026);
+  for (final source in <WallpaperSource?>[null, WallpaperSource.unknown, WallpaperSource.downloaded]) {
+    for (final url in ['https://untrusted.test/original', 'HTTPS://untrusted.test/original']) {
+      test('remote $source fails closed for $url', () async {
+        var calls = 0;
+        final service = OriginalAccessService(
+          call: (_) async {
+            calls++;
+            return {};
+          },
+        );
+        await expectLater(
+          service.resolve(url: url, wallpaperId: 'wall', wallpaperSource: source, action: OriginalAccessAction.set),
+          throwsStateError,
+        );
+        expect(calls, 0);
+      });
+    }
+  }
   test('price discovery is quote-only and does not acquire an original', () async {
     final inputs = <Map<String, dynamic>>[];
     final service = OriginalAccessService(

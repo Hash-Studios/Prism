@@ -42,6 +42,7 @@ Old installed clients query reviewed walls without the new filters and will need
 Do not treat a green PR or a deployed callable as proof that legacy originals are private.
 
 Deployment requires a reviewed private storage bucket, signer permissions, the sibling owned-delivery functions, and indexes.
+Deploy the original-access callable in both configured app regions, including `us-central1`.
 New original ingest must use private storage rather than create another public GitHub original.
 The delivery implementation and dry-run migration belong to issue #523.
 

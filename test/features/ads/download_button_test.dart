@@ -9,6 +9,7 @@ import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -130,7 +131,9 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
-          home: Scaffold(body: DownloadButton(link: link)),
+          home: Scaffold(
+            body: DownloadButton(wallpaperSource: source.value ? null : WallpaperSource.wallhaven, link: link),
+          ),
         ),
       );
       await tester.tap(find.byType(CircularMenuButton));
@@ -170,7 +173,11 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
 
         home: Scaffold(
-          body: DownloadButton(link: 'https://example.com/wall.jpg', label: 'Save'),
+          body: DownloadButton(
+            wallpaperSource: WallpaperSource.wallhaven,
+            link: 'https://example.com/wall.jpg',
+            label: 'Save',
+          ),
         ),
       ),
     );
@@ -206,7 +213,11 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
 
         home: Scaffold(
-          body: DownloadButton(link: 'https://example.com/wall.jpg', onDownloaded: () => callbackCount++),
+          body: DownloadButton(
+            wallpaperSource: WallpaperSource.wallhaven,
+            link: 'https://example.com/wall.jpg',
+            onDownloaded: () => callbackCount++,
+          ),
         ),
       ),
     );
@@ -252,7 +263,9 @@ void main() {
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
@@ -270,7 +283,13 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
+        home: Scaffold(
+          body: DownloadButton(
+            wallpaperSource: WallpaperSource.wallhaven,
+            link: 'https://example.com/wall.jpg',
+            primary: true,
+          ),
+        ),
       ),
     );
 
@@ -285,7 +304,13 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', labelled: true)),
+        home: Scaffold(
+          body: DownloadButton(
+            wallpaperSource: WallpaperSource.wallhaven,
+            link: 'https://example.com/wall.jpg',
+            labelled: true,
+          ),
+        ),
       ),
     );
 
@@ -306,7 +331,13 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
-          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
+          home: Scaffold(
+            body: DownloadButton(
+              wallpaperSource: WallpaperSource.wallhaven,
+              link: 'https://example.com/wall.jpg',
+              primary: true,
+            ),
+          ),
         ),
       );
 
@@ -357,7 +388,9 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
@@ -387,7 +420,9 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
       ),
     );
 
@@ -413,7 +448,9 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
       ),
     );
 
@@ -444,7 +481,9 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
-          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+          home: Scaffold(
+            body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+          ),
         ),
       ),
     );
@@ -473,7 +512,9 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
@@ -528,7 +569,11 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
 
           home: Scaffold(
-            body: DownloadButton(link: 'https://example.com/wall.jpg', depthTier: depthTier),
+            body: DownloadButton(
+              wallpaperSource: WallpaperSource.wallhaven,
+              link: 'https://example.com/wall.jpg',
+              depthTier: depthTier,
+            ),
           ),
         ),
       );

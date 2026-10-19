@@ -247,10 +247,11 @@ class OriginalAccessService {
     String? requestId,
     int? maxCoins,
   }) async {
+    final scheme = Uri.tryParse(url.trim())?.scheme.toLowerCase();
     if ((wallpaperSource == null ||
             wallpaperSource == WallpaperSource.unknown ||
             wallpaperSource == WallpaperSource.downloaded) &&
-        (url.startsWith('https:') || url.startsWith('http:'))) {
+        (scheme == 'https' || scheme == 'http')) {
       throw StateError('Wallpaper source unavailable');
     }
     if (!requiresGrant(url, wallpaperId, wallpaperSource)) return url;

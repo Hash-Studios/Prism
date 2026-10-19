@@ -12,7 +12,7 @@ function bucket() {
   if (!process.env.OWNED_ASSET_BUCKET) throw new Error("Owned asset storage is not configured");
   return admin.storage().bucket(process.env.OWNED_ASSET_BUCKET);
 }
-type UploadIdentity = {repo: string; path: string; sha: string};
+type UploadIdentity = {repo: string; path: string; sha: string; sourceKind?: "owned"};
 export type StoredUpload = UploadIdentity & {
   bucket: string; object: string; generation: string; sha256: string; uid: string;
 };
@@ -20,7 +20,7 @@ function objectName(input: UploadIdentity): string {
   if (!input.repo || ![process.env.GH_REPO_WALLS, process.env.GH_REPO_SETUPS].includes(input.repo) || !/^[a-f0-9]{40}$/.test(input.sha) ||
     !input.path || input.path.length > 1024 || input.path.startsWith("/") || input.path.includes("\\") ||
     input.path.split("/").some((part) => !part || part === "." || part === "..")) throw new Error("Invalid upload identity");
-  return `retained/${hash(`${input.repo}\0${input.path}\0${input.sha}`)}`;
+  return `${input.sourceKind === "owned" ? "private-originals" : "retained"}/${hash(`${input.repo}\0${input.path}\0${input.sha}`)}`;
 }
 export async function retainUpload(input: UploadIdentity & {uid: string; bytes: Buffer}): Promise<StoredUpload> {
   if (!validId(input.uid) || !input.bytes.length) throw new Error("Invalid retained upload");
@@ -45,6 +45,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
     throw new Error("Retained upload mismatch");
   }
   return {repo: input.repo, path: input.path, sha: input.sha, uid: input.uid,
+    ...(input.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
     bucket: target.name, object, generation: String(metadata.generation), sha256: digest};
 }
 export async function deleteRetainedUpload(input: UploadIdentity): Promise<void> {
@@ -71,7 +72,9 @@ export async function deleteRetainedUpload(input: UploadIdentity): Promise<void>
 function stored(value: unknown): value is StoredUpload {
   if (!value || typeof value !== "object") return false;
   return "bucket" in value && value.bucket === process.env.OWNED_ASSET_BUCKET &&
-    "object" in value && typeof value.object === "string" && /^retained\/[a-f0-9]{64}$/.test(value.object) &&
+    "object" in value && typeof value.object === "string" &&
+    (("sourceKind" in value && value.sourceKind === "owned" && /^private-originals\/[a-f0-9]{64}$/.test(value.object)) ||
+      (!("sourceKind" in value) && /^retained\/[a-f0-9]{64}$/.test(value.object))) &&
     "generation" in value && typeof value.generation === "string" && /^\d+$/.test(value.generation) &&
     "sha256" in value && typeof value.sha256 === "string" && /^[a-f0-9]{64}$/.test(value.sha256) &&
     "uid" in value && validId(value.uid) && "repo" in value && typeof value.repo === "string" &&
@@ -102,6 +105,8 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   }
   const raw = data[prefix === "thumb" ? "wallpaper_thumb" : "wallpaper_url"];
   if (typeof raw !== "string") return null;
+  const privateOriginal = raw === "" && prefix === "wallpaper";
+  const keyPrefix = privateOriginal ? "owned_" : "";
   try {
     if (raw !== "" || prefix !== "wallpaper") {
       const url = new URL(raw);
@@ -114,28 +119,39 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   } catch {
     return null;
   }
-  const rows = await tx.get(db.collection("githubUploads").where("path", "==", path).limit(8));
-  if (rows.size >= 8) return null;
-  const records = rows.docs.filter((doc) => doc.data().repo === repo);
-  const receipt = records.find((doc) => doc.id === `file_${hash(`${repo}\0${path}\0${sha}`)}`)?.data();
-  const intent = (await tx.get(db.collection("githubUploadIntents").doc(`path_${hash(`${repo}\0${path}`)}`))).data();
+  let query = db.collection("githubUploads").where("path", "==", path).orderBy(admin.firestore.FieldPath.documentId()).limit(8);
+  const records: admin.firestore.QueryDocumentSnapshot[] = [];
+  while (true) {
+    const rows = await tx.get(query);
+    records.push(...rows.docs.filter((doc) => doc.data().repo === repo &&
+      (privateOriginal ? doc.data().sourceKind === "owned" : doc.data().sourceKind !== "owned")));
+    if (records.length >= 8) return null;
+    if (rows.size < 8) break;
+    query = query.startAfter(rows.docs[rows.docs.length - 1]);
+  }
+  const receipt = records.find((doc) => doc.id === `${keyPrefix}file_${hash(`${repo}\0${path}\0${sha}`)}`)?.data();
+  const intent = (await tx.get(db.collection("githubUploadIntents").doc(`${keyPrefix}path_${hash(`${repo}\0${path}`)}`))).data();
   if (!receipt || !validId(receipt.uid) || records.some((doc) => doc.data().uid !== receipt.uid) ||
     receipt.sha !== sha || intent?.status !== "complete" || intent.uid !== receipt.uid || intent.repo !== repo ||
     intent.path !== path || intent.blobSha !== sha || intent.response?.content?.path !== path ||
     intent.response?.content?.sha !== sha || intent.response?.content?.download_url !== raw) return null;
   const retained = receipt.retainedAsset;
   const intentAsset = intent.retainedAsset;
-  const privateOriginal = raw === "" && prefix === "wallpaper";
   if (privateOriginal && (receipt.sourceKind !== "owned" || intent.sourceKind !== "owned" ||
     !stored(intentAsset) || !stored(retained) ||
-    (["repo", "path", "sha", "uid", "bucket", "object", "generation", "sha256"] as const)
+    (["repo", "path", "sha", "uid", "bucket", "object", "generation", "sha256", "sourceKind"] as const)
       .some((field) => intentAsset[field] !== retained[field]))) return null;
   if (!privateOriginal && (receipt.sourceKind === "owned" || intent.sourceKind === "owned")) return null;
   if (!stored(retained) || retained.uid !== receipt.uid || retained.repo !== repo || retained.path !== path || retained.sha !== sha ||
-    retained.object !== objectName({repo, path, sha})) return null;
-  const [metadata] = await bucket().file(retained.object, {generation: retained.generation}).getMetadata();
+    (retained.sourceKind === "owned") !== privateOriginal || retained.object !== objectName(retained)) return null;
+  const metadata = await bucket().file(retained.object, {generation: retained.generation}).getMetadata()
+    .then(([value]) => value).catch((error: unknown) => {
+      if (error && typeof error === "object" && "code" in error && Number(error.code) === 404) return null;
+      throw error;
+    });
+  if (!metadata) return null;
   if (String(metadata.generation) !== retained.generation || metadata.metadata?.sha256 !== retained.sha256 ||
-    metadata.metadata?.firebaseStorageDownloadTokens) throw new Error("Retained object is not durable");
+    metadata.metadata?.firebaseStorageDownloadTokens) return null;
   return {upload: retained, url: raw, kind: privateOriginal ? "owned" : "github"};
 }
 
@@ -187,7 +203,8 @@ export const getOwnedWallDelivery = delivery;
 export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath: string; incarnation: number;
   incarnationNanos: number;
   originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload}): Promise<void> {
-  if (!validId(input.wallId) || !stored(input.original) || !stored(input.thumb)) throw new Error("Invalid legacy binding");
+  if (!validId(input.wallId) || !stored(input.original) || !stored(input.thumb) ||
+    input.original.sourceKind || input.thumb.sourceKind) throw new Error("Invalid legacy binding");
   for (const [asset, raw] of [[input.original, input.originalUrl], [input.thumb, input.thumbUrl]] as const) {
     const url = new URL(raw);
     const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);

@@ -2,12 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -15,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/wait_for_real_io.dart';
+import '../../../support/coins_test_backend.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -37,7 +43,14 @@ class _PendingOfflineAssetStore extends OfflineAssetStore {
 
 const String _tinyGif = 'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
-Widget _host(StackRouter router, String? url, {Future<String> Function()? prepareSource}) => MaterialApp(
+Widget _host(
+  StackRouter router,
+  String? url, {
+  Future<String> Function()? prepareSource,
+  Future<String> Function(String)? prepareAuthorized,
+  WallpaperSource? source = WallpaperSource.wallhaven,
+  String? wallpaperId,
+}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
 
@@ -45,7 +58,13 @@ Widget _host(StackRouter router, String? url, {Future<String> Function()? prepar
     controller: router,
     stateHash: 0,
     child: Scaffold(
-      body: EditButton(url: url, prepareSource: prepareSource),
+      body: EditButton(
+        url: url,
+        wallpaperId: wallpaperId,
+        wallpaperSource: source,
+        prepareSource: prepareSource,
+        prepareAuthorized: prepareAuthorized,
+      ),
     ),
   ),
 );
@@ -78,12 +97,88 @@ void main() {
     messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
   });
 
-  tearDown(() {
+  tearDown(() async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await getIt.reset();
     OfflineAssetStore.testOverride = null;
     messenger.setMockMethodCallHandler(pathChannel, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     directory.deleteSync(recursive: true);
   });
+
+  for (final source in <WallpaperSource?>[null, WallpaperSource.unknown, WallpaperSource.downloaded]) {
+    testWidgets('rejects remote $source before preparing or loading an editor source', (tester) async {
+      final router = _MockStackRouter();
+      var preparations = 0;
+      await tester.pumpWidget(
+        _host(
+          router,
+          'https://img.test/original.jpg',
+          source: source,
+          prepareAuthorized: (_) async {
+            preparations++;
+            return '${directory.path}/export.png';
+          },
+        ),
+      );
+      await tester.tap(find.byType(EditButton));
+      await tester.pump();
+      await tester.pump();
+
+      expect(preparations, 0);
+      verifyNever(() => cacheManager.getSingleFile(any()));
+      verifyNever(() => cacheManager.getFileFromCache(any()));
+      verifyNever(() => router.push(any()));
+      expect(temporaryDirectoryCalls, 0);
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
+
+  for (final code in <String>['unauthenticated', 'permission-denied']) {
+    testWidgets('a $code original grant cannot prepare or fall back to the public URL', (tester) async {
+      final backend = CoinsTestBackend();
+      await backend.install();
+      final calls = <Map<String, dynamic>>[];
+      backend.onCall = (name, input) async {
+        expect(name, 'resolveOriginalAccess');
+        calls.add(input);
+        if (input['mode'] == 'quote') {
+          return <String, dynamic>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+        }
+        throw FirebaseFunctionsException(code: code, message: 'Denied');
+      };
+      final router = _MockStackRouter();
+      var preparations = 0;
+      await tester.pumpWidget(
+        _host(
+          router,
+          'https://img.test/public-original.jpg',
+          source: WallpaperSource.prism,
+          wallpaperId: 'protected-edit-$code',
+          prepareSource: () async {
+            preparations++;
+            return '${directory.path}/export.png';
+          },
+        ),
+      );
+      await tester.tap(find.byType(EditButton));
+      await tester.pumpAndSettle();
+
+      expect(calls, hasLength(2));
+      expect(calls.every((call) => call['action'] == 'edit'), isTrue);
+      expect(calls.last['maxCoins'], 0);
+      expect(preparations, 0);
+      verifyNever(() => cacheManager.getSingleFile(any()));
+      verifyNever(() => cacheManager.getFileFromCache(any()));
+      verifyNever(() => router.push(any()));
+      expect(temporaryDirectoryCalls, 0);
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
 
   testWidgets('keeps another editor source and removes only its own session after the route closes', (tester) async {
     final Directory editDirectory = Directory('${directory.path}/prism_edit')..createSync();
@@ -144,7 +239,8 @@ void main() {
       await tester.pumpWidget(
         _host(
           router,
-          'http://127.0.0.1:9/wallpaper',
+          prepared.path,
+          source: WallpaperSource.downloaded,
           prepareSource: () async {
             calls++;
             return prepared.path;
