@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
-import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
@@ -42,7 +46,7 @@ class WallpaperSearchService {
     this._settingsLocal,
     this._prismSearch, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
-    @ignoreParam Set<String> Function()? blockedEmails,
+    @ignoreParam FutureOr<Set<String>> Function()? blockedEmails,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
        _blockedEmails = blockedEmails ?? _currentBlockedEmails;
 
@@ -51,7 +55,7 @@ class WallpaperSearchService {
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
-  final Set<String> Function() _blockedEmails;
+  final FutureOr<Set<String>> Function() _blockedEmails;
   final Map<String, _CachedSearch> _pageCache = <String, _CachedSearch>{};
   static const int _pageCacheSize = 16;
   static const Duration _pageCacheTtl = Duration(minutes: 10);
@@ -72,8 +76,9 @@ class WallpaperSearchService {
   }
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
-    if (filters.depthOnly) return _depthSearch(query, filters);
-    final String cacheKey = _cacheKey(query, filters);
+    final Set<String> blocked = await _blockedEmails();
+    if (filters.depthOnly) return _withoutBlocked(await _depthSearch(query, filters));
+    final String cacheKey = _cacheKey(query, filters, blocked);
     final _CachedSearch? hit = _pageCache.remove(cacheKey);
     if (hit != null && DateTime.now().isBefore(hit.expiresAt)) {
       _pageCache[cacheKey] = hit;
@@ -85,14 +90,23 @@ class WallpaperSearchService {
       _pageCache[cacheKey] = _CachedSearch(page, _paginationKey(query, filters), DateTime.now().add(_pageCacheTtl));
       if (_pageCache.length > _pageCacheSize) _pageCache.remove(_pageCache.keys.first);
     }
-    return page;
+    return _withoutBlocked(page);
   }
 
-  String _cacheKey(String query, SearchFilters filters) =>
-      '${query.trim()}|${filters.portraitOnly}|${filters.minResolution}|${filters.sort.name}|${filters.color?.id}';
+  String _cacheKey(String query, SearchFilters filters, Set<String> blocked) => jsonEncode(<Object?>[
+    query.trim(),
+    filters.portraitOnly,
+    filters.minResolution,
+    filters.sort.name,
+    filters.color?.id,
+    _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+    _settingsLocal.get<int>('WHpurity', defaultValue: 100),
+    app_state.prismUser.id,
+    blocked.toList()..sort(),
+  ]);
 
-  WallpaperSearchPage _withoutBlocked(WallpaperSearchPage page) {
-    final Set<String> blocked = _blockedEmails();
+  Future<WallpaperSearchPage> _withoutBlocked(WallpaperSearchPage page) async {
+    final Set<String> blocked = await _blockedEmails();
     if (blocked.isEmpty) return page;
     return (
       provider: page.provider,
@@ -102,8 +116,8 @@ class WallpaperSearchService {
     );
   }
 
-  static Set<String> _currentBlockedEmails() => GetIt.instance.isRegistered<UserBlockRepository>()
-      ? GetIt.instance<UserBlockRepository>().cachedBlockedCreatorEmails
+  static FutureOr<Set<String>> _currentBlockedEmails() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true)
       : const <String>{};
 
   Future<WallpaperSearchPage> _searchNetwork(String query, SearchFilters filters) async {
@@ -251,7 +265,7 @@ class WallpaperSearchService {
     _pageCache.removeWhere((_, entry) => entry.pageKey == pageKey);
     if (provider == SearchProviderValue.pexels) {
       final result = await _pexelsRepository.fetchFeed(
-        categoryName: query,
+        categoryName: query.trim(),
         refresh: refresh,
         paginationKey: _paginationKey(query, filters),
         portraitOnly: filters.portraitOnly,
@@ -266,7 +280,7 @@ class WallpaperSearchService {
       );
     }
     final result = await _wallhavenRepository.fetchFeed(
-      categoryName: query,
+      categoryName: query.trim(),
       refresh: refresh,
       paginationKey: _paginationKey(query, filters),
       categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
@@ -284,7 +298,7 @@ class WallpaperSearchService {
   }
 
   String _paginationKey(String query, SearchFilters filters) =>
-      filters.color == null ? 'search:$query' : 'search:$query:color:${filters.color!.id}';
+      filters.color == null ? 'search:${query.trim()}' : 'search:${query.trim()}:color:${filters.color!.id}';
 
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
     final List<PrismWallpaper> walls = await _prismSearch.search(

@@ -52,9 +52,10 @@ void prefetchTileImages(BuildContext context, List<FeedItemEntity> items, {requi
     return;
   }
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted || LowDataMode.enabled.value) return;
     for (final String url in urls) {
       _pending.add(() {
-        if (!context.mounted) {
+        if (!context.mounted || LowDataMode.enabled.value) {
           return Future<void>.value();
         }
         return precacheImage(

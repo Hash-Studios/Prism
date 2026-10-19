@@ -8,6 +8,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Hero tag for a wallpaper tile. It is unique per grid ([scope]), position and wallpaper, so the same wallpaper
@@ -50,7 +51,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   int _attempt = 0;
   bool _retrying = false;
   bool _loadReported = false;
-  final Stopwatch _loadWatch = Stopwatch()..start();
+  final Stopwatch? _loadWatch = kReleaseMode ? null : (Stopwatch()..start());
   late Future<File?> _localFileFuture;
 
   @override
@@ -67,7 +68,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
       _retrying = false;
       _loadReported = false;
       _loadWatch
-        ..reset()
+        ?..reset()
         ..start();
       _localFileFuture = _lookupLocalFile();
     }
@@ -134,12 +135,12 @@ class _PrismImageTileState extends State<PrismImageTile> {
   );
 
   void _reportImage(String name, {required bool success}) {
-    if (_loadReported) return;
+    if (kReleaseMode || _loadReported) return;
     _loadReported = true;
     PerformanceProbe.emit(
       kind: 'image.thumb',
       name: name,
-      durationMs: _loadWatch.elapsedMilliseconds,
+      durationMs: _loadWatch!.elapsedMilliseconds,
       success: success,
     );
   }
@@ -154,10 +155,17 @@ class _PrismImageTileState extends State<PrismImageTile> {
     fadeOutDuration: context.motion(PrismDurations.fast),
     memCacheHeight: decodeHeight,
     memCacheWidth: widget.memCacheWidth,
-    imageBuilder: (BuildContext context, ImageProvider imageProvider) {
-      _reportImage('decoded', success: true);
-      return Image(image: imageProvider, fit: BoxFit.cover);
-    },
+    imageBuilder: kReleaseMode
+        ? null
+        : (BuildContext context, ImageProvider imageProvider) {
+            _reportImage('decoded', success: true);
+            return Image(
+              image: ResizeImage.resizeIfNeeded(widget.memCacheWidth, decodeHeight, imageProvider),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            );
+          },
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
     errorWidget: (context, _, _) {
       _reportImage('error', success: false);

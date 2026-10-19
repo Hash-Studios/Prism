@@ -154,6 +154,12 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(opened.length, greaterThan(kPrefetchMaxConcurrent));
+    await tester.pumpWidget(const SizedBox());
+    for (final Completer<FileResponse> c in opened.where((c) => !c.isCompleted).toList()) {
+      c.completeError(const SocketException('offline'));
+    }
+    await tester.pump();
+    await tester.pump();
   });
 
   testWidgets('does nothing in Data saver mode', (tester) async {
@@ -173,6 +179,56 @@ void main() {
         withProgress: any(named: 'withProgress'),
       ),
     );
+  });
+
+  testWidgets('does not start scheduled downloads after Data saver is enabled', (tester) async {
+    final BuildContext context = await pumpContext(tester);
+    prefetchTileImages(context, <FeedItemEntity>[_item(0)], memCacheHeight: 300);
+    LowDataMode.enabled.value = true;
+    addTearDown(() => LowDataMode.enabled.value = false);
+
+    await tester.pump();
+    await tester.pump();
+
+    verifyNever(
+      () => cache.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: any(named: 'withProgress'),
+      ),
+    );
+  });
+
+  testWidgets('does not start queued downloads after Data saver is enabled', (tester) async {
+    final List<Completer<FileResponse>> opened = <Completer<FileResponse>>[];
+    when(
+      () => cache.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: any(named: 'withProgress'),
+      ),
+    ).thenAnswer((_) {
+      final Completer<FileResponse> response = Completer<FileResponse>();
+      opened.add(response);
+      return Stream<FileResponse>.fromFuture(response.future);
+    });
+    final BuildContext context = await pumpContext(tester);
+    prefetchTileImages(context, <FeedItemEntity>[for (int i = 0; i < 10; i++) _item(i)], memCacheHeight: 300);
+    await tester.pump();
+    await tester.pump();
+    expect(opened, hasLength(kPrefetchMaxConcurrent));
+
+    LowDataMode.enabled.value = true;
+    addTearDown(() => LowDataMode.enabled.value = false);
+    for (final response in opened.toList()) {
+      response.completeError(const SocketException('offline'));
+    }
+    await tester.pump();
+    await tester.pump();
+
+    expect(opened, hasLength(kPrefetchMaxConcurrent));
   });
 
   testWidgets('counts the tiles that fit on the first screen', (tester) async {

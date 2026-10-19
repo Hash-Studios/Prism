@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
-import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -16,10 +18,12 @@ import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../support/fake_firestore_client.dart';
 import '../../support/fake_user_block_repository.dart';
@@ -249,6 +253,119 @@ void main() {
   });
 
   group('repeated search', () {
+    tearDown(() async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await GetIt.instance.reset();
+    });
+
+    test('changing saved content settings does not reuse the previous first page', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final store = InMemoryLocalStore();
+      final settings = SettingsLocalDataSource(store);
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository, store: store);
+
+      await service.search('nature');
+      await settings.set('WHcategories', 111);
+      await service.search('nature');
+      expect(repository.calls, 2);
+      expect(repository.lastCategories, 111);
+
+      await settings.set('WHpurity', 110);
+      await service.search('nature');
+      expect(repository.calls, 3);
+      expect(repository.lastPurity, 110);
+    });
+
+    test('a whitespace-equivalent cache hit keeps the same provider cursor', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('nature');
+      await service.search(' nature ');
+      await service.fetchPage(SearchProviderValue.wallhaven, ' nature ', refresh: false);
+
+      expect(repository.calls, 2);
+      expect(repository.lastPaginationKey, 'search:nature');
+      expect(repository.lastCategoryName, 'nature');
+    });
+
+    test('unblocking a creator restores Prism results excluded before caching', () async {
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'creator@example.com'});
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', email: 'creator@example.com'))],
+      );
+      GetIt.instance.registerSingleton<UserBlockRepository>(blocks);
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, blocks),
+      );
+
+      expect((await service.search('nature')).prismResults, isEmpty);
+      blocks.completeInitial(<String>{});
+
+      expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
+    });
+
+    test('switching accounts does not retain the previous account Prism omissions', () async {
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+      int prismCalls = 0;
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) {
+          if (spec.sourceTag == 'PrismWallSearch.tags') {
+            prismCalls++;
+            return prismCalls == 1 ? const <FakeDocRow>[] : <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))];
+          }
+          return const <FakeDocRow>[];
+        },
+      );
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = WallpaperSearchService(
+        repository,
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, blocks),
+      );
+
+      app_state.prismUser = app_constants.createGuestPrismUser()..id = 'first-account';
+      expect((await service.search('nature')).prismResults, isEmpty);
+      app_state.prismUser = app_constants.createGuestPrismUser()..id = 'second-account';
+
+      expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
+      expect(repository.calls, 2);
+    });
+
+    test('a cached page waits for the active block list before returning creators', () async {
+      final initialBlocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+      GetIt.instance.registerSingleton<UserBlockRepository>(initialBlocks);
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', email: 'creator@example.com'))],
+      );
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, initialBlocks),
+      );
+      await service.search('nature');
+      await GetIt.instance.unregister<UserBlockRepository>();
+      final pendingBlocks = FakeUserBlockRepository.pending();
+      GetIt.instance.registerSingleton<UserBlockRepository>(pendingBlocks);
+      bool returned = false;
+      final result = service.search('nature').then((page) {
+        returned = true;
+        return page;
+      });
+      await Future<void>.delayed(Duration.zero);
+      final bool returnedBeforeBlocks = returned;
+      pendingBlocks.completeInitial(<String>{'creator@example.com'});
+      final page = await result;
+
+      expect(returnedBeforeBlocks, isFalse);
+      expect(page.prismResults, isEmpty);
+    });
+
     test('a repeated identical search makes no provider call and returns the same results', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
       final firestore = FakeFirestoreClient(
