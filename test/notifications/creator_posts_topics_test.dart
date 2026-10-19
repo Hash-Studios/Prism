@@ -43,8 +43,11 @@ void main() {
     await setCreatorPostsTopics(messaging, creators, subscribed: false, sourceTag: 'test');
     await setCreatorPostsTopics(messaging, creators, subscribed: true, sourceTag: 'test');
 
-    expect(messaging.unsubscribed, <String>['ana_posts', 'j.doeart_posts']);
-    expect(messaging.subscribed, messaging.unsubscribed);
+    expect(
+      messaging.unsubscribed,
+      containsAll(<String>['ana_posts', 'ana_posts_loc_v1', 'j.doeart_posts', 'j.doeart_posts_loc_v1']),
+    );
+    expect(messaging.subscribed, <String>['ana_posts_loc_v1', 'j.doeart_posts_loc_v1']);
   });
 
   test('starts all creator topic unsubscriptions without waiting for each one', () async {
@@ -62,6 +65,10 @@ void main() {
 
     messaging.unsubscribeGate!.complete();
     await unsubscribe;
+    expect(
+      messaging.unsubscribed,
+      unorderedEquals(<String>['ana_posts', 'ana_posts_loc_v1', 'lee_posts', 'lee_posts_loc_v1']),
+    );
   });
 
   test('continues creator topic unsubscriptions when one topic fails', () async {
@@ -74,7 +81,7 @@ void main() {
       sourceTag: 'test',
     );
 
-    expect(messaging.unsubscribed, <String>['ana_posts', 'lee_posts']);
+    expect(messaging.unsubscribed, <String>['ana_posts', 'lee_posts', 'lee_posts_loc_v1']);
   });
 
   test('missing APNS token bounds many creator unsubscriptions to one retry window', () {

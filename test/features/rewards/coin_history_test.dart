@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
 import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -95,7 +96,13 @@ void main() {
           ? <FakeDocRow>[_row(0, delta: 8, action: 'dailyLogin'), for (int i = 1; i < 40; i++) _row(i, delta: 0)]
           : <FakeDocRow>[_row(40, delta: -10)];
 
-      await tester.pumpWidget(const MaterialApp(home: CoinHistoryPage()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CoinHistoryPage(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
 
@@ -122,7 +129,13 @@ void main() {
         return <FakeDocRow>[for (int i = p * 40; i < p * 40 + 40; i++) _row(i, delta: p == 6 && i == p * 40 ? -10 : 0)];
       };
 
-      await tester.pumpWidget(const MaterialApp(home: CoinHistoryPage()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CoinHistoryPage(),
+        ),
+      );
       for (int i = 0; i < 10; i++) {
         await tester.pump();
       }
@@ -147,7 +160,13 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       getIt.registerSingleton<FirestoreClient>(firestore);
-      await tester.pumpWidget(const MaterialApp(home: CoinHistoryPage()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CoinHistoryPage(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
     }
@@ -226,8 +245,20 @@ void main() {
 
       firestore.queryError = StateError('offline');
       firestore.onQuery = (_) => <FakeDocRow>[_row(0)];
-      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
-      await tester.pumpWidget(const MaterialApp(home: CoinHistoryPage()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SizedBox.shrink(),
+        ),
+      );
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CoinHistoryPage(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
       expect(find.text("Couldn't load your coin history."), findsOneWidget);

@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 const int _maxRecentlySet = 8;
@@ -46,7 +47,10 @@ class RecentlySetRow extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-          child: Text('Recently set', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.secondary)),
+          child: Text(
+            context.l10n.wallpaperRecentlySet,
+            style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.secondary),
+          ),
         ),
         SizedBox(
           height: 88,
@@ -59,7 +63,7 @@ class RecentlySetRow extends StatelessWidget {
               final AppliedWallpaper item = recent[index];
               return Semantics(
                 button: true,
-                label: 'Set this wallpaper again',
+                label: context.l10n.wallpaperSetAgain,
                 child: AspectRatio(
                   aspectRatio: 0.6,
                   child: ClipRRect(

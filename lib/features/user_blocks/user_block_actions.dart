@@ -9,6 +9,7 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -20,11 +21,11 @@ void _trackBlockAction(String action, {required bool success}) {
 
 bool _isPendingSync(Result<void> result) => result.failure?.message.startsWith('Pending sync:') ?? false;
 
-void _showBlockResult(Result<void> result, {required String successMessage}) {
+void _showBlockResult(BuildContext context, Result<void> result, {required String successMessage}) {
   if (_isPendingSync(result)) {
-    toasts.info(result.failure!.message.substring('Pending sync:'.length).trim());
+    toasts.info(context.l10n.accountBlockActionPendingSync);
   } else if (result.isFailure) {
-    toasts.error(result.failure?.message ?? 'Could not update blocked accounts');
+    toasts.error(context.l10n.accountBlockActionFailed);
   } else {
     toasts.success(successMessage);
   }
@@ -32,16 +33,17 @@ void _showBlockResult(Result<void> result, {required String successMessage}) {
 
 /// Unblocks a user and tells the viewer how it went. Returns whether it worked.
 Future<bool> unblockUserWithFeedback(BuildContext context, String targetUserId) async {
+  final AppLocalizations l10n = context.l10n;
   final Result<void> result = await getIt<UserBlockRepository>().unblockUser(targetUserId: targetUserId);
   if (!context.mounted) {
     return false;
   }
   _trackBlockAction('unblock', success: result.isSuccess || _isPendingSync(result));
   if (result.isFailure) {
-    _showBlockResult(result, successMessage: 'Unblocked');
+    _showBlockResult(context, result, successMessage: l10n.accountUserUnblocked);
     return _isPendingSync(result);
   }
-  _showBlockResult(result, successMessage: 'Unblocked');
+  _showBlockResult(context, result, successMessage: l10n.accountUserUnblocked);
   return true;
 }
 
@@ -52,14 +54,15 @@ Future<void> confirmAndBlockUser({
   required String targetEmail,
   String? displayName,
 }) async {
-  final String name = displayName == null || displayName.trim().isEmpty ? 'this user' : displayName.trim();
+  final AppLocalizations l10n = context.l10n;
+  final String name = displayName == null || displayName.trim().isEmpty
+      ? l10n.accountBlockConfirmationUserFallback
+      : displayName.trim();
   final bool ok = await showPrismConfirm(
     context,
-    title: 'Block $name?',
-    message:
-        'You will unfollow $name, stop seeing their wallpapers in feeds, '
-        'and no longer get notifications about their new posts.',
-    confirmLabel: 'Block',
+    title: l10n.accountBlockThisUserTitle(name),
+    message: l10n.accountBlockUserMessage(name),
+    confirmLabel: l10n.accountBlock,
     destructive: true,
   );
   if (!ok || !context.mounted) {
@@ -74,7 +77,7 @@ Future<void> confirmAndBlockUser({
   }
   _trackBlockAction('block', success: result.isSuccess || _isPendingSync(result));
   if (result.isFailure) {
-    _showBlockResult(result, successMessage: 'Blocked $name');
+    _showBlockResult(context, result, successMessage: l10n.accountUserBlocked(name));
     return;
   }
 
@@ -94,5 +97,6 @@ Future<void> confirmAndBlockUser({
     await session.updateFollowing(next);
   }
 
-  _showBlockResult(result, successMessage: 'Blocked $name');
+  if (!context.mounted) return;
+  _showBlockResult(context, result, successMessage: l10n.accountUserBlocked(name));
 }

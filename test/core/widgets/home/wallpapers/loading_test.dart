@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +12,13 @@ BorderRadius? _firstTileRadius(WidgetTester tester) {
 
 void main() {
   testWidgets('LoadingCards uses the wallpaper tile radius by default', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: LoadingCards())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: LoadingCards()),
+      ),
+    );
     await tester.pump();
 
     expect(_firstTileRadius(tester), PrismWallGrid.tileRadius);
@@ -20,6 +27,9 @@ void main() {
   testWidgets('LoadingCards uses the given borderRadius', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: LoadingCards(borderRadius: BorderRadius.all(Radius.circular(20)))),
       ),
     );

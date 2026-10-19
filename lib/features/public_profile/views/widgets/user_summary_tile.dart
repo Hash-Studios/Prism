@@ -5,6 +5,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// One person in a list: avatar, name, username and a Follow or Following button.
@@ -18,7 +19,11 @@ class UserSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = creatorLabel(name: user.name, username: user.username);
+    final String name = creatorLabel(
+      name: user.name,
+      username: user.username,
+      fallback: context.l10n.accountCreatorFallback,
+    );
     void openProfile() {
       PrismHaptics.tap();
       onTap();
@@ -34,7 +39,7 @@ class UserSummaryTile extends StatelessWidget {
               scale: 0.98,
               child: Semantics(
                 button: true,
-                label: user.username.isEmpty ? name : '$name, @${user.username}',
+                label: user.username.isEmpty ? name : context.l10n.accountProfilePersonSemantics(name, user.username),
                 excludeSemantics: true,
                 onTap: openProfile,
                 child: GestureDetector(
@@ -100,7 +105,7 @@ class _FollowPill extends StatelessWidget {
     return PressScale(
       child: Semantics(
         button: true,
-        label: following ? 'Unfollow ${user.name}' : 'Follow ${user.name}',
+        label: following ? context.l10n.accountUnfollowPerson(user.name) : context.l10n.accountFollowPerson(user.name),
         excludeSemantics: true,
         onTap: () => _onPressed(context),
         child: GestureDetector(
@@ -121,7 +126,10 @@ class _FollowPill extends StatelessWidget {
                   style: PrismTextStyles.button.copyWith(fontSize: 14, color: fg),
                   child: AnimatedSwitcher(
                     duration: context.motion(PrismDurations.fast),
-                    child: Text(following ? 'Following' : 'Follow', key: ValueKey<bool>(following)),
+                    child: Text(
+                      following ? context.l10n.accountFollowing : context.l10n.accountFollow,
+                      key: ValueKey<bool>(following),
+                    ),
                   ),
                 ),
               ),

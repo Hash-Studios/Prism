@@ -166,7 +166,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         stackTrace: stackTrace,
         fields: <String, Object?>{'category': category},
       );
-      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
+      return Result.error(ServerFailure(wallpaperLoadFailureMessage, code: mapFirestoreError(error).code));
     }
   }
 
@@ -275,7 +275,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed'}.contains(code)) {
       return NetworkFailure(wallpaperLoadFailureMessage, code: code);
     }
-    return const ServerFailure(wallpaperLoadFailureMessage);
+    return ServerFailure(wallpaperLoadFailureMessage, code: code);
   }
 
   Future<void> _writeCache({

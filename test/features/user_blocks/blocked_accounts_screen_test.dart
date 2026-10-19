@@ -6,6 +6,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +56,13 @@ void main() {
   Future<_RowsRepository> pumpScreen(WidgetTester tester, Result<List<BlockedUserListRow>> result) async {
     final repo = _RowsRepository(result);
     getIt.registerSingleton<UserBlockRepository>(repo);
-    await tester.pumpWidget(const MaterialApp(home: BlockedAccountsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlockedAccountsScreen(),
+      ),
+    );
     return repo;
   }
 
@@ -181,6 +188,9 @@ void main() {
     getIt.registerSingleton<UserBlockRepository>(repo);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlockedUserProfileShell(targetUserId: 'u9', targetEmail: 'sam@example.com', displayName: 'Sam K'),
       ),
     );

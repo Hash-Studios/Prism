@@ -18,6 +18,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -74,6 +75,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -146,6 +150,9 @@ void main() {
   testWidgets('does not show See more for an empty first page', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(query: 'nothing', provider: SearchProviderValue.pexels, initialResults: <FeedItemEntity>[]),
         ),
@@ -168,6 +175,9 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(100)]);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -198,6 +208,9 @@ void main() {
     ).thenThrow(StateError('offline'));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -221,6 +234,9 @@ void main() {
   testWidgets('labels local search results and does not offer remote pagination', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'forest',
@@ -256,6 +272,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -282,6 +301,9 @@ void main() {
   testWidgets('shows the From Prism row above the provider results', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -308,6 +330,9 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(200), _wallpaper(201)]);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -337,6 +362,9 @@ void main() {
   testWidgets('a Prism-only page never asks the external providers for more or a refresh', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -379,6 +407,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -420,6 +451,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -463,6 +497,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -489,6 +526,9 @@ void main() {
   testWidgets('a loaded grid runs no skeleton ticker behind it', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -520,6 +560,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',
@@ -546,6 +589,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'landscape',

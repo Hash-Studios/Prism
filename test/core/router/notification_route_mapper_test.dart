@@ -7,9 +7,11 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -23,6 +25,13 @@ void main() {
 
   late FakeFirestoreClient firestore;
   late FakeAppAnalytics analyticsSink;
+  late AppLocalizations l10n;
+  late String unavailable;
+
+  setUpAll(() async {
+    l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    unavailable = l10n.coreContentNotAvailable;
+  });
 
   setUp(() async {
     analyticsSink = FakeAppAnalytics();
@@ -114,8 +123,6 @@ void main() {
     }, sourceTag: 'test');
     expect(route, isA<ProfileRoute>());
   });
-
-  const String unavailable = 'That item is no longer available';
 
   Map<String, dynamic> wall({required bool review}) => <String, dynamic>{
     'id': 'w1',

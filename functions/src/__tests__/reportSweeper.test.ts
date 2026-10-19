@@ -25,8 +25,16 @@ test("the sweeper pings the admins once for an old open report and stamps escala
     "contentReports/new": {status: "open", contentType: "wall", targetFirestoreDocId: "w2", reason: "spam", createdAt: ts(2)},
     "contentReports/done": {status: "reviewed", contentType: "wall", targetFirestoreDocId: "w3", createdAt: ts(40)},
   });
-  const sent: Array<{topic?: string; data?: Record<string, string>}> = [];
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; data?: Record<string, string>}) => {
+  const sent: Array<{
+    topic?: string;
+    data?: Record<string, string>;
+    notification?: {title: string; body: string};
+  }> = [];
+  t.mock.method(admin.messaging(), "send", async (message: {
+    topic?: string;
+    data?: Record<string, string>;
+    notification?: {title: string; body: string};
+  }) => {
     sent.push(message);
     return "id";
   });
@@ -36,7 +44,13 @@ test("the sweeper pings the admins once for an old open report and stamps escala
   assert.equal(store.get("contentReports/new")?.escalatedAt, undefined);
   assert.equal(store.get("contentReports/done")?.escalatedAt, undefined);
   const pings = sent.filter((m) => m.data?.report_id === "old");
-  assert.ok(pings.length >= 1);
+  assert.deepEqual(pings.map((message) => message.topic).sort(), [
+    "u_adm1",
+    "u_adm1_loc_v1",
+  ]);
+  assert.equal(pings.find((message) => message.topic === "u_adm1")?.notification?.body,
+    "A content report has been waiting for review for over 12 hours.");
+  assert.equal(pings.find((message) => message.topic === "u_adm1_loc_v1")?.notification, undefined);
   assert.ok(sent.every((m) => m.data?.report_id === "old"));
 
   const before = sent.length;
@@ -66,21 +80,25 @@ test("pages past escalated and recent reports, caps escalations, and does not pi
     };
   }
   const store = installFakeDb(t, seed);
-  const sent: string[] = [];
-  t.mock.method(admin.messaging(), "send", async (message: {data?: Record<string, string>}) => {
-    sent.push(message.data?.report_id ?? "");
+  const sent: Array<{topic?: string; reportId: string}> = [];
+  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; data?: Record<string, string>}) => {
+    sent.push({topic: message.topic, reportId: message.data?.report_id ?? ""});
     return "id";
   });
   const run = () => sweepOpenReports.run({jobName: "t", scheduleTime: NOW.toISOString()});
   await run();
-  assert.equal(new Set(sent).size, 200);
+  assert.equal(new Set(sent.map((message) => message.reportId)).size, 200);
   assert.ok(store.get("contentReports/599")?.escalatedAt);
   assert.equal(store.get("contentReports/600")?.escalatedAt, undefined);
   assert.equal(store.get("contentReports/200")?.escalatedAt, undefined);
   await run();
   assert.ok(store.get("contentReports/600")?.escalatedAt);
-  assert.equal(new Set(sent).size, 201);
-  assert.equal(sent.length, 201);
+  assert.equal(new Set(sent.map((message) => message.reportId)).size, 201);
+  assert.equal(sent.length, 402);
+  for (const {reportId, topic} of sent) {
+    assert.ok(["u_adm1", "u_adm1_loc_v1"].includes(topic ?? ""), `unexpected report topic ${topic}`);
+    assert.equal(sent.filter((message) => message.reportId === reportId).length, 2);
+  }
   const count = sent.length;
   await run();
   assert.equal(sent.length, count);

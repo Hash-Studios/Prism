@@ -16,6 +16,7 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actio
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -183,7 +184,7 @@ class _SearchGridState extends State<SearchGrid> {
     } catch (error, stackTrace) {
       if (!mounted || generation != _loadGeneration) return;
       logger.e('Failed to refresh search results.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't refresh. Pull down to try again.");
+      toasts.error(context.l10n.accountCouldNotRefreshSearch);
       _trackResultsLoaded(page: 1, result: EventResultValue.failure);
     }
   }
@@ -260,7 +261,7 @@ class _SearchGridState extends State<SearchGrid> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.sm, PrismSpace.md, PrismSpace.xs),
-                  child: Text('Saved on this device', style: Theme.of(context).textTheme.labelMedium),
+                  child: Text(context.l10n.accountSavedOnThisDevice, style: Theme.of(context).textTheme.labelMedium),
                 ),
               ),
             if (widget.prismResults.isNotEmpty)
@@ -289,7 +290,7 @@ class _SearchGridState extends State<SearchGrid> {
                       fallbackUrl: wallpaper.fullUrl,
                       memCacheHeight: decodeHeight,
                       heroTag: prismHeroTag(this, index, wallpaper.id),
-                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
                       overlay: depthTagFor(depthTierOf(wallpaper)),
                       onTap: () {
                         PrismHaptics.tap();
@@ -324,8 +325,8 @@ class _FromPrismRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'From Prism',
+        PrismSectionHeader(
+          title: context.l10n.accountFromPrism,
           small: true,
           padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
         ),
@@ -353,7 +354,7 @@ class _FromPrismRow extends StatelessWidget {
                     fallbackUrl: wallpaper.fullUrl,
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),
-                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
                     overlay: depthTagFor(depthTierOf(wallpaper)),
                     onTap: () {
                       PrismHaptics.tap();

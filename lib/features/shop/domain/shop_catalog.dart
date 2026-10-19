@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 enum ShopItemKind { theme, appIcon, frame, nameGlow }
 
@@ -97,6 +98,41 @@ ShopItem? shopItem(String id) {
 /// The catalog price unless the economy config overrides it.
 int shopPriceFor(ShopItem item) => EconomyConfig.current.shopPrices[item.id] ?? item.price;
 
+/// The catalog name shown to users. IDs remain stable for storage and purchases.
+String shopItemName(ShopItem item, AppLocalizations l10n) => switch (item.id) {
+  'theme_rose' => l10n.economyShopRose,
+  'theme_cotton_blue' => l10n.economyShopCottonBlue,
+  'theme_olive' => l10n.economyShopOlive,
+  'theme_deep_ocean' => l10n.economyShopDeepOcean,
+  'theme_jungle' => l10n.economyShopJungle,
+  'theme_pepper' => l10n.economyShopPepper,
+  'theme_sky' => l10n.economyShopSky,
+  'theme_steel' => l10n.economyShopSteel,
+  'icon_noir' => l10n.economyShopNoir,
+  'icon_glass' => l10n.economyShopGlass,
+  'icon_sunset' => l10n.economyShopSunset,
+  'icon_mono' => l10n.economyShopMono,
+  'frame_ring' => l10n.economyShopRing,
+  'frame_aurora' => l10n.economyShopAurora,
+  'frame_prism' => l10n.economyShopPrism,
+  'frame_gold' => l10n.economyShopGold,
+  'frame_founders' => l10n.economyShopFounders,
+  'glow_ember' => l10n.economyShopEmber,
+  'glow_ocean' => l10n.economyShopOcean,
+  'glow_aurora' => l10n.economyShopAurora,
+  'glow_prism' => l10n.economyShopPrism,
+  'glow_founders' => l10n.economyShopFounders,
+  _ => l10n.economyUnknownCosmetic,
+};
+
+String shopRankName(String id, AppLocalizations l10n) => switch (id) {
+  'bronze' => l10n.economyRankBronze,
+  'silver' => l10n.economyRankSilver,
+  'gold' => l10n.economyRankGold,
+  'prism' => l10n.economyRankPrism,
+  _ => l10n.economyRankUnknown,
+};
+
 /// The lowest price among the items on sale at [now], with config overrides applied.
 int shopFromPrice(DateTime now, {EconomyConfig? config}) {
   final EconomyConfig economy = config ?? EconomyConfig.current;
@@ -141,5 +177,3 @@ ShopAvailability shopAvailability(
 /// Owned by purchase, or a theme the device already used before the shop existed.
 bool shopItemOwned(ShopItem item, {required Set<String> owned, required Set<String> legacyThemes}) =>
     owned.contains(item.id) || (item.themeId != null && legacyThemes.contains(item.themeId));
-
-String shopRankName(String id) => id.isEmpty ? id : '${id[0].toUpperCase()}${id.substring(1)}';

@@ -1,13 +1,35 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/data/share/create_dynamic_link.dart' as share;
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import '../../support/fake_app_analytics.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
+
+Future<String?> createDynamicLink(
+  String id,
+  WallpaperSource source,
+  String? url,
+  String thumbUrl, {
+  String? title,
+  WallpaperCore? core,
+}) => share.createDynamicLink(id, source, url, thumbUrl, title: title, core: core, l10n: _l10n);
+
+Future<bool> copyWallpaperLink(
+  String id,
+  WallpaperSource source,
+  String? url,
+  String thumbUrl, {
+  String? title,
+  WallpaperCore? core,
+}) => share.copyWallpaperLink(id, source, url, thumbUrl, title: title, core: core, l10n: _l10n);
 
 class _ThrowingAnalytics extends FakeAppAnalytics {
   @override
@@ -73,7 +95,7 @@ void main() {
     AnalyticsRuntime.instance = fake;
 
     expect(
-      canonicalWallpaperLink(
+      share.canonicalWallpaperLink(
         id: 'starter-sunset',
         source: WallpaperSource.prism,
         url: '/tmp/prism-bundled-wallpapers/starter-sunset.jpg',

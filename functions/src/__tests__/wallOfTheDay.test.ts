@@ -15,6 +15,13 @@ import {
 const scheduled = (at = new Date()) => ({jobName: "t", scheduleTime: at.toISOString()}) satisfies ScheduledEvent;
 const PREMIUM = ["space", "abstract"];
 
+function assertLocalizedTopicFanout(actual: string[], legacyTopics: string[]): void {
+  assert.deepEqual(
+    [...actual].sort(),
+    legacyTopics.flatMap((topic) => [topic, `${topic}_loc_v1`]).sort(),
+  );
+}
+
 test("bucket topics name the UTC offset in hours and minutes", () => {
   assert.equal(wotdBucketTopic(330), "wall_of_the_day_utc_p0530");
   assert.equal(wotdBucketTopic(345), "wall_of_the_day_utc_p0545");
@@ -216,7 +223,7 @@ test("a retry after the pick was saved but not announced only sends the push", a
   });
   await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.sets, []);
-  assert.deepEqual(h.topics, ["wall_of_the_day"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
   assert.equal(h.updates.length, 1);
   assert.ok(h.updates[0].pushedAt);
 });
@@ -232,7 +239,7 @@ test("the daily pick skips streak-exclusive and premium walls", async (t) => {
   await wallOfTheDay.run(scheduled());
   assert.equal(h.sets.length, 1);
   assert.equal(h.sets[0].wallId, "ok");
-  assert.deepEqual(h.topics, ["wall_of_the_day", "wall_of_the_day_utc_p0530"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", "wall_of_the_day_utc_p0530"]);
 });
 
 test("no eligible wall makes the run fail so the scheduler retries", async (t) => {
@@ -257,7 +264,7 @@ test("the bucket job pushes to the offset where it is 09:00", async (t) => {
     wallDoc: {title: "Dunes"},
   });
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day_utc_p0530"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day_utc_p0530"]);
 });
 
 test("the bucket job sends both ends of the date line at 21:00 UTC", async (t) => {
@@ -267,7 +274,7 @@ test("the bucket job sends both ends of the date line at 21:00 UTC", async (t) =
     wallDoc: {title: "Dunes"},
   });
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day_utc_p1200", "wall_of_the_day_utc_m1200"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day_utc_p1200", "wall_of_the_day_utc_m1200"]);
 });
 
 test("the bucket job does not push a stale or missing pick", async (t) => {
@@ -294,12 +301,12 @@ test("same slot, bucket job first: no stale resend, then today's wall reaches +0
 
   await wallOfTheDay.run(scheduled());
   assert.equal(h.sets[0].wallId, "today");
-  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", bucket]);
   assert.equal(deliveredWall(h, bucket), "today");
 
   await sendWallOfTheDayBuckets.run(scheduled());
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", bucket]);
 });
 
 test("same slot, picker first: the bucket job does not resend today's wall", async (t) => {
@@ -313,7 +320,7 @@ test("same slot, picker first: the bucket job does not resend today's wall", asy
   });
   await wallOfTheDay.run(scheduled());
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", bucket]);
 });
 
 test("yesterday's delivery of a wall does not block today's pick of the same wall", async (t) => {
@@ -325,7 +332,7 @@ test("yesterday's delivery of a wall does not block today's pick of the same wal
   });
   await sendWallOfTheDayBuckets.run(scheduled());
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, [bucket]);
+  assertLocalizedTopicFanout(h.topics, [bucket]);
   assert.equal((h.deliveries[bucket] as {date?: string}).date, "2026-01-02");
 });
 
@@ -348,7 +355,7 @@ test("repeated bucket runs send one wall once per bucket", async (t) => {
   });
   await sendWallOfTheDayBuckets.run(scheduled());
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, [bucket]);
+  assertLocalizedTopicFanout(h.topics, [bucket]);
   assert.equal(deliveredWall(h, bucket), "w1");
 });
 
@@ -378,12 +385,12 @@ test("a bucket claim started before the picker committed never resends yesterday
   const release = h.gateFirstTransaction();
   const bucketJob = sendWallOfTheDayBuckets.run(scheduled());
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", bucket]);
   release();
   await bucketJob;
   await sendWallOfTheDayBuckets.run(scheduled());
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", bucket]);
   assert.equal(deliveredWall(h, bucket), "today");
 });
 
@@ -407,7 +414,7 @@ test("a legacy string marker for another wall is replaced by the current pick", 
     deliveries: {[bucket]: "old"},
   });
   await sendWallOfTheDayBuckets.run(scheduled());
-  assert.deepEqual(h.topics, [bucket]);
+  assertLocalizedTopicFanout(h.topics, [bucket]);
   assert.equal(deliveredWall(h, bucket), "w1");
 });
 
@@ -438,7 +445,7 @@ test("the creator gets one personal notice with a fixed inbox id when their wall
     deliveries: {[bucket]: entry("w1", "2026-01-02")},
   });
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day", "u_maker1"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", "u_maker1"]);
   assert.deepEqual(h.inboxIds, ["wotd_2026-01-02", "wotd_creator_2026-01-02"]);
 });
 
@@ -450,7 +457,7 @@ test("a pick without a creator email sends no personal notice", async (t) => {
     deliveries: {[bucket]: entry("w1", "2026-01-02")},
   });
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
   assert.deepEqual(h.inboxIds, ["wotd_2026-01-02"]);
 });
 
@@ -462,11 +469,11 @@ test("a creator notice that cannot be delivered does not fail the public push", 
     creator: {id: "maker1", data: {email: "maker@example.com"}},
     deliveries: {[bucket]: entry("w1", "2026-01-02")},
     onSend: (state) => {
-      if (state.topics.length > 0) throw new Error("fcm down for the creator");
+      if (state.topics.length >= 2) throw new Error("fcm down for the creator");
     },
   });
   await wallOfTheDay.run(scheduled());
-  assert.deepEqual(h.topics, ["wall_of_the_day"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
   assert.equal(h.updates.length, 1);
 });
 
@@ -478,5 +485,5 @@ test("a run that starts late still sends to the bucket of its scheduled slot", a
     wallDoc: {title: "Dunes"},
   });
   await sendWallOfTheDayBuckets.run(scheduled(new Date("2026-01-02T03:30:00Z")));
-  assert.deepEqual(h.topics, [bucket]);
+  assertLocalizedTopicFanout(h.topics, [bucket]);
 });

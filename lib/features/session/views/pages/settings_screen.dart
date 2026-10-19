@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
-import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -37,6 +36,7 @@ import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -44,15 +44,18 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const Map<String, String> _applyTargetLabels = <String, String>{
-  'ask': 'Ask every time',
-  'home': 'Home screen',
-  'lock': 'Lock screen',
-  'both': 'Home and lock screens',
+const Set<String> _applyTargetKeys = <String>{'ask', 'home', 'lock', 'both'};
+
+Map<String, String> _applyTargetLabels(AppLocalizations l10n) => <String, String>{
+  'ask': l10n.accountAskEveryTime,
+  'home': l10n.accountHomeScreen,
+  'lock': l10n.accountLockScreen,
+  'both': l10n.accountHomeAndLockScreens,
 };
 
 const String _privacyUrl = 'https://prismwalls.com/privacy';
@@ -74,11 +77,18 @@ bool animeEnabledFromCategories(int categories) => categories >= 110;
 int categoriesForAnime(bool enabled) => enabled ? 110 : 100;
 
 @visibleForTesting
-String formatStorageBytes(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
-  if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+String formatStorageBytes(AppLocalizations l10n, int bytes) {
+  final NumberFormat number = NumberFormat.decimalPattern(l10n.localeName);
+  if (bytes < 1024) return l10n.accountStorageSizeBytes(number.format(bytes));
+  if (bytes < 1024 * 1024) return l10n.accountStorageSizeKilobytes(number.format((bytes / 1024).round()));
+  if (bytes < 1024 * 1024 * 1024) {
+    number.minimumFractionDigits = 1;
+    number.maximumFractionDigits = 1;
+    return l10n.accountStorageSizeMegabytes(number.format(bytes / (1024 * 1024)));
+  }
+  number.minimumFractionDigits = 2;
+  number.maximumFractionDigits = 2;
+  return l10n.accountStorageSizeGigabytes(number.format(bytes / (1024 * 1024 * 1024)));
 }
 
 Future<int?> _imageCacheBytes() async {
@@ -137,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
-    _defaultApplyTarget = _applyTargetLabels.containsKey(storedTarget) ? storedTarget : 'ask';
+    _defaultApplyTarget = _applyTargetKeys.contains(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
     unawaited(_loadAdPrivacyChoices());
     if (defaultTargetPlatform == TargetPlatform.iOS) unawaited(_loadIosShortcutsSupport());
@@ -215,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         PrismSectionHeader(
           title: title,
           small: true,
-          padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
+          padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
         PrismGroup(children: rows),
       ],
@@ -236,25 +246,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _accountRows() => <Widget>[
     PrismRow(
       icon: Icons.fact_check_rounded,
-      title: 'Review status',
-      subtitle: 'Track your submitted wallpapers',
+      title: context.l10n.accountReviewStatus,
+      subtitle: context.l10n.accountTrackSubmittedWallpapers,
       onTap: () => context.router.push(const ReviewRoute()),
     ),
     PrismRow(
       icon: Icons.person_off_rounded,
-      title: 'Blocked accounts',
-      subtitle: 'Manage people you have blocked',
+      title: context.l10n.accountBlockedAccounts,
+      subtitle: context.l10n.accountManageBlockedPeople,
       onTap: () => context.router.push(const BlockedAccountsRoute()),
     ),
     PrismRow(
       icon: Icons.ios_share_rounded,
-      title: 'Share your profile',
-      subtitle: 'Send a link to your Prism profile',
+      title: context.l10n.accountShareYourProfile,
+      subtitle: context.l10n.accountSendProfileLink,
       onTap: _shareProfile,
     ),
   ];
 
   Future<void> _shareProfile() async {
+    final AppLocalizations l10n = context.l10n;
     try {
       await createUserDynamicLink(
         app_state.prismUser.name,
@@ -264,24 +275,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         app_state.prismUser.profilePhoto,
         context: context,
         followerCount: app_state.prismUser.followers.length,
+        l10n: l10n,
       );
     } catch (error, stackTrace) {
       logger.w('Sharing the profile link failed.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't create the link. Try again.");
+      toasts.error(l10n.accountShareProfileLinkFailed);
     }
   }
 
   List<Widget> _appearanceRows() => <Widget>[
     PrismRow(
       icon: Icons.palette_rounded,
-      title: 'Themes',
-      subtitle: 'Light, dark and accent colour',
+      title: context.l10n.accountThemes,
+      subtitle: context.l10n.accountLightDarkAccentColour,
       onTap: () => context.router.push(const ThemeViewRoute()),
     ),
     PrismRow(
       icon: Icons.storefront_rounded,
-      title: 'Shop',
-      subtitle: 'Themes, icons, frames',
+      title: context.l10n.accountShop,
+      subtitle: context.l10n.accountThemesIconsFrames,
       onTap: () {
         _trackRow('shop');
         context.router.push(const ShopRoute());
@@ -291,8 +303,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     MergeSemantics(
       child: PrismRow(
         icon: Icons.vibration_rounded,
-        title: 'Haptic feedback',
-        subtitle: 'Vibrate on taps and actions',
+        title: context.l10n.accountHapticFeedback,
+        subtitle: context.l10n.accountVibrateOnTapsAndActions,
         onTap: () => _setHaptics(!_haptics),
         trailing: Switch(value: _haptics, onChanged: _setHaptics),
       ),
@@ -311,8 +323,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_iosShortcuts)
       PrismRow(
         icon: Icons.autorenew_rounded,
-        title: 'Change automatically',
-        subtitle: 'Use a Shortcuts automation',
+        title: context.l10n.accountChangeAutomatically,
+        subtitle: context.l10n.accountUseShortcutsAutomation,
         onTap: () => context.router.push(const IosShortcutsGuideRoute()),
       ),
     if (_isAndroid) ..._androidPersonaliseRows(),
@@ -321,32 +333,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _androidPersonaliseRows() => <Widget>[
     PrismRow(
       icon: Icons.autorenew_rounded,
-      title: 'Auto-rotate wallpapers',
-      subtitle: 'Change your wallpaper on a timer',
+      title: context.l10n.accountAutoRotateWallpapers,
+      subtitle: context.l10n.accountChangeWallpaperOnTimer,
       onTap: () => context.router.push(const AutoRotateRoute()),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,
-      title: 'Live wallpapers',
-      subtitle: 'Moving gradients, motion and video',
+      title: context.l10n.accountLiveWallpapers,
+      subtitle: context.l10n.accountMovingGradientsMotionVideo,
       onTap: () => context.router.push(LiveWallpaperRoute()),
     ),
     PrismRow(
       icon: Icons.grid_view_rounded,
-      title: 'Quick tiles',
-      subtitle: 'Set up your Quick Settings tiles',
+      title: context.l10n.accountQuickTiles,
+      subtitle: context.l10n.accountSetUpQuickTiles,
       onTap: () => context.router.push(const QuickTileSettingsRoute()),
     ),
     PrismRow(
       icon: Icons.history_rounded,
-      title: 'Wallpaper history',
-      subtitle: 'Wallpapers you set before',
+      title: context.l10n.accountWallpaperHistory,
+      subtitle: context.l10n.accountWallpapersSetBefore,
       onTap: () => context.router.push(const WallpaperHistoryRoute()),
     ),
     PrismRow(
       icon: Icons.wallpaper_rounded,
-      title: 'Default action for Set',
-      value: _applyTargetLabels[_defaultApplyTarget],
+      title: context.l10n.accountDefaultActionForSet,
+      value: _applyTargetLabels(context.l10n)[_defaultApplyTarget],
       onTap: _showDefaultApplyTargetSheet,
     ),
   ];
@@ -357,10 +369,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) {
         final ColorScheme cs = Theme.of(ctx).colorScheme;
         return PrismSheetBody(
-          title: 'Default action for Set',
+          title: ctx.l10n.accountDefaultActionForSet,
           child: Column(
             children: <Widget>[
-              for (final MapEntry<String, String> option in _applyTargetLabels.entries)
+              for (final MapEntry<String, String> option in _applyTargetLabels(ctx.l10n).entries)
                 PrismRow(
                   title: option.value,
                   padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
@@ -383,7 +395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _contentRows() => <Widget>[
     PrismSwitchRow(
       icon: Icons.animation_rounded,
-      title: 'Show anime wallpapers',
+      title: context.l10n.accountShowAnimeWallpapers,
       value: _showAnime,
       onChanged: (value) {
         setState(() => _showAnime = value);
@@ -395,7 +407,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!Platform.isIOS)
       PrismSwitchRow(
         icon: Icons.visibility_rounded,
-        title: 'Show sketchy wallpapers',
+        title: context.l10n.accountShowSketchyWallpapers,
         value: _showSketchy,
         onChanged: (value) {
           setState(() => _showSketchy = value);
@@ -418,8 +430,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _notificationRows() => <Widget>[
     PrismRow(
       icon: Icons.notifications_none_rounded,
-      title: 'Notification preferences',
-      subtitle: 'Wall of the Day, followers, posts and more',
+      title: context.l10n.accountNotificationPreferences,
+      subtitle: context.l10n.accountNotificationTypes,
       onTap: () => showNotificationSettingsSheet(context),
     ),
   ];
@@ -427,9 +439,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _storageRows() => <Widget>[
     PrismSwitchRow(
       icon: Icons.data_saver_on_rounded,
-      title: 'Data saver',
-      subtitle:
-          'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.',
+      title: context.l10n.accountDataSaver,
+      subtitle: context.l10n.accountDataSaverDescription,
       value: _lowData,
       onChanged: (value) {
         setState(() => _lowData = value);
@@ -439,38 +450,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ),
     PrismRow(
       icon: Icons.cleaning_services_rounded,
-      title: 'Clear cache',
+      title: context.l10n.accountClearCacheTitle,
       subtitle: _imageCacheSize == null
-          ? 'Clear locally cached images'
-          : '${formatStorageBytes(_imageCacheSize!)} of cached images',
+          ? context.l10n.accountClearCachedImages
+          : context.l10n.accountCachedImageSize(formatStorageBytes(context.l10n, _imageCacheSize!)),
       showChevron: false,
       onTap: _clearCache,
     ),
     PrismRow(
       icon: Icons.download_done_rounded,
-      title: 'Clear all downloads',
+      title: context.l10n.accountClearAllDownloads,
       subtitle: _downloads == null
-          ? 'Remove files from Downloads; saved offline copies stay'
-          : _downloads == 0
-          ? 'No downloaded wallpapers; saved offline copies stay'
-          : '$_downloads downloaded ${_downloads == 1 ? 'wallpaper' : 'wallpapers'} · saved offline copies stay',
+          ? context.l10n.accountRemoveFilesDownloadsOfflineStay
+          : context.l10n.accountDownloadedWallpaperCount(_downloads ?? 0),
       showChevron: false,
       onTap: _confirmClearDownloads,
     ),
     PrismRow(
       icon: Icons.offline_pin_rounded,
-      title: 'Saved offline',
+      title: context.l10n.accountSavedOffline,
       subtitle: _savedOfflineSize == null
-          ? 'Storage unavailable · ${_savedOfflineLimitBytes ~/ (1024 * 1024)} MiB limit'
-          : '${formatStorageBytes(_savedOfflineSize!)} used · ${_savedOfflineLimitBytes ~/ (1024 * 1024)} MiB limit',
+          ? context.l10n.accountSavedOfflineStorageUnavailable(_savedOfflineLimitBytes ~/ (1024 * 1024))
+          : context.l10n.accountSavedOfflineStorageUsed(
+              formatStorageBytes(context.l10n, _savedOfflineSize!),
+              _savedOfflineLimitBytes ~/ (1024 * 1024),
+            ),
       showChevron: false,
       onTap: _confirmClearSavedOffline,
     ),
     if (app_state.prismUser.loggedIn)
       PrismRow(
         icon: Icons.favorite_border_rounded,
-        title: 'Clear favourite wallpapers',
-        subtitle: 'Remove all favourite wallpapers',
+        title: context.l10n.accountClearFavouriteWallpapers,
+        subtitle: context.l10n.accountRemoveAllFavouriteWallpapers,
         showChevron: false,
         onTap: () {
           _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
@@ -480,15 +492,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _clearCache() async {
+    final AppLocalizations l10n = context.l10n;
     _trackSettingsAction(AnalyticsActionValue.clearCacheTapped);
     final int? size = _imageCacheSize;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Clear cache?',
+      title: context.l10n.accountClearCacheQuestion,
       message: size == null
-          ? 'Cached images are removed. They load again when you need them.'
-          : '${formatStorageBytes(size)} of cached images are removed. They load again when you need them.',
-      confirmLabel: 'Clear cache',
+          ? context.l10n.accountClearCacheConfirmMessage
+          : context.l10n.accountClearCacheConfirmSizeMessage(formatStorageBytes(l10n, size)),
+      confirmLabel: context.l10n.accountClearCache,
       destructive: true,
     );
     if (!confirmed) return;
@@ -496,19 +509,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _cacheMaintenance.clearTransientCache();
     final int? after = await _imageCacheBytes();
     final int freed = (before ?? 0) - (after ?? 0);
-    toasts.success(freed > 0 ? 'Cleared ${formatStorageBytes(freed)}.' : 'Cache cleared.');
+    toasts.success(
+      freed > 0 ? l10n.accountCacheClearedBytes(formatStorageBytes(l10n, freed)) : l10n.accountCacheCleared,
+    );
     if (mounted) setState(() => _imageCacheSize = after);
   }
 
   Future<void> _confirmClearDownloads() async {
+    final AppLocalizations l10n = context.l10n;
     final int? count = _downloads;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Delete all downloads?',
+      title: context.l10n.accountDeleteAllDownloadsQuestion,
       message: count != null && count > 0
-          ? '${count == 1 ? '1 downloaded wallpaper is' : '$count downloaded wallpapers are'} deleted from Downloads. Saved offline copies are not affected. This cannot be undone.'
-          : 'Downloaded wallpapers are deleted from Downloads. Saved offline copies are not affected. This cannot be undone.',
-      confirmLabel: 'Delete all',
+          ? context.l10n.accountDeleteDownloadsCountMessage(count)
+          : context.l10n.accountDeleteDownloadsMessage,
+      confirmLabel: context.l10n.accountDeleteAll,
       destructive: true,
     );
     if (!confirmed) return;
@@ -520,24 +536,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     if (result != null && result.success) {
       await getIt<DownloadedWallIndex>().clear();
-      toasts.success('Deleted all downloads.');
+      toasts.success(l10n.accountDownloadsDeleted);
       if (mounted) setState(() => _downloads = 0);
     } else if (result?.errorCode == 'NO_DOWNLOADS') {
-      toasts.success('You have no downloads to remove.', haptic: false);
+      toasts.success(l10n.accountNoDownloadsToRemove, haptic: false);
     } else {
-      toasts.error(result?.message ?? "Couldn't delete downloads. Try again.");
+      toasts.error(l10n.accountCouldNotDeleteDownloads);
     }
   }
 
   Future<void> _confirmClearSavedOffline() async {
+    final AppLocalizations l10n = context.l10n;
     final int? size = _savedOfflineSize;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Remove saved offline wallpapers?',
+      title: context.l10n.accountRemoveSavedOfflineQuestion,
       message: size == null
-          ? 'Remove retained offline originals from this device. Downloads, drafts and catalog data stay untouched.'
-          : '${formatStorageBytes(size)} of retained offline originals are removed. Downloads, drafts and catalog data stay untouched.',
-      confirmLabel: 'Remove saved offline',
+          ? context.l10n.accountRemoveSavedOfflineMessage
+          : context.l10n.accountRemoveSavedOfflineCountMessage(formatStorageBytes(l10n, size)),
+      confirmLabel: context.l10n.accountRemoveSavedOffline,
       destructive: true,
     );
     if (!confirmed) return;
@@ -545,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _cacheMaintenance.clearRetainedAssets();
     } catch (error, stackTrace) {
       logger.w('Clearing saved offline wallpapers failed.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't remove saved offline wallpapers. Try again.");
+      toasts.error(l10n.accountCouldNotRemoveSavedOffline);
       return;
     }
     int? after;
@@ -556,10 +573,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     if (!mounted) return;
     setState(() => _savedOfflineSize = after);
-    toasts.success('Saved offline wallpapers removed.');
+    toasts.success(l10n.accountSavedOfflineRemoved);
   }
 
   Future<void> _confirmClearFavourites() async {
+    final AppLocalizations l10n = context.l10n;
     int? count;
     try {
       count = (await context.favouriteWallsAdapter(listen: false).getDataBase())?.length;
@@ -569,11 +587,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Clear all favourites?',
+      title: context.l10n.accountClearAllFavouritesQuestion,
       message: count != null && count > 0
-          ? '${count == 1 ? '1 favourite wallpaper is' : '$count favourite wallpapers are'} removed from your account. This cannot be undone.'
-          : 'All your favourite wallpapers are removed from your account. This cannot be undone.',
-      confirmLabel: 'Clear favourites',
+          ? context.l10n.accountClearFavouritesCountMessage(count)
+          : context.l10n.accountClearFavouritesMessage,
+      confirmLabel: context.l10n.accountClearFavourites,
       destructive: true,
     );
     if (!confirmed || !mounted) return;
@@ -581,9 +599,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final cleared = await context.favouriteWallsAdapter(listen: false).deleteData();
     if (!mounted) return;
     if (cleared) {
-      toasts.success('Cleared all favourite wallpapers.');
+      toasts.success(l10n.accountFavouritesCleared);
     } else {
-      toasts.error("Couldn't clear favourite wallpapers. Try again.");
+      toasts.error(l10n.accountCouldNotClearFavourites);
     }
   }
 
@@ -591,8 +609,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!app_state.prismUser.premium)
       PrismRow(
         icon: Icons.workspace_premium_rounded,
-        title: 'Buy premium',
-        subtitle: 'Unlimited uploads and filters',
+        title: context.l10n.accountBuyPremium,
+        subtitle: context.l10n.accountUnlimitedUploadsFilters,
         onTap: () {
           _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
           PaywallOrchestrator.instance.presentOrRequireSignIn(
@@ -604,16 +622,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     PrismRow(
       icon: Icons.restore_rounded,
-      title: 'Restore purchases',
-      subtitle: 'Bring back a previous subscription',
+      title: context.l10n.accountRestorePurchases,
+      subtitle: context.l10n.accountBringBackSubscription,
       showChevron: false,
       onTap: _restoring ? null : _restorePurchases,
     ),
     if (app_state.prismUser.premium)
       PrismRow(
         icon: Icons.card_membership_rounded,
-        title: 'Manage subscription',
-        subtitle: 'Change or cancel in the store',
+        title: context.l10n.accountManageSubscription,
+        subtitle: context.l10n.accountChangeOrCancelStore,
         trailing: Icon(
           Icons.open_in_new_rounded,
           size: 18,
@@ -624,20 +642,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _restorePurchases() async {
+    final AppLocalizations l10n = context.l10n;
     _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
     setState(() => _restoring = true);
-    toasts.success('Restoring purchases…', haptic: false);
+    toasts.success(l10n.accountRestoringPurchases, haptic: false);
     try {
       final bool premium = await PurchasesService.instance.restore();
-      premium ? toasts.success('Purchases restored.') : toasts.error('No purchases to restore for this account.');
+      premium ? toasts.success(l10n.accountPurchasesRestored) : toasts.error(l10n.accountNoPurchasesToRestore);
     } catch (e) {
-      toasts.error('Could not restore purchases. Try again.');
+      toasts.error(l10n.accountCouldNotRestorePurchases);
     } finally {
       if (mounted) setState(() => _restoring = false);
     }
   }
 
   Future<void> _openManageSubscription() async {
+    final AppLocalizations l10n = context.l10n;
     final String url = defaultTargetPlatform == TargetPlatform.iOS ? _iosSubscriptionsUrl : _androidSubscriptionsUrl;
     bool launched = false;
     try {
@@ -645,7 +665,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       logger.w('Opening the subscription page failed.', error: e);
     }
-    if (!launched) toasts.error("Couldn't open the store. Try again.");
+    if (!launched) toasts.error(l10n.accountCouldNotOpenStore);
   }
 
   Icon _external(BuildContext context) =>
@@ -654,21 +674,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _privacyRows() => <Widget>[
     PrismRow(
       icon: Icons.privacy_tip_outlined,
-      title: 'Privacy policy',
+      title: context.l10n.accountPrivacyPolicy,
       trailing: _external(context),
       onTap: () => _openLink(_privacyUrl, 'privacy_policy'),
     ),
     PrismRow(
       icon: Icons.description_outlined,
-      title: 'Terms of use',
+      title: context.l10n.accountTermsOfUse,
       trailing: _external(context),
       onTap: () => _openLink(_termsUrl, 'terms'),
     ),
     if (_adPrivacyChoices)
       PrismRow(
         icon: Icons.tune_rounded,
-        title: 'Ad privacy choices',
-        subtitle: 'Review or change your ad consent',
+        title: context.l10n.accountAdPrivacyChoices,
+        subtitle: context.l10n.accountReviewOrChangeAdConsent,
         onTap: () {
           _trackRow('ad_privacy_choices');
           unawaited(AdConsent.instance.showPrivacyOptions());
@@ -676,15 +696,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     PrismRow(
       icon: Icons.auto_awesome_outlined,
-      title: 'Clear learned taste',
-      subtitle: 'Forget what your feed learned from you',
+      title: context.l10n.accountClearLearnedTaste,
+      subtitle: context.l10n.accountForgetFeedLearned,
       showChevron: false,
       onTap: _clearLearnedTaste,
     ),
     PrismRow(
       icon: Icons.file_download_outlined,
-      title: 'Export favourites',
-      subtitle: 'Save a copy of your favourites as a file',
+      title: context.l10n.accountExportFavourites,
+      subtitle: context.l10n.accountSaveFavouritesAsFile,
       onTap: () {
         _trackRow('export_favourites');
         context.router.push(LibraryRoute());
@@ -693,6 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _openLink(String url, String row) async {
+    final AppLocalizations l10n = context.l10n;
     _trackRow(row);
     bool opened = false;
     try {
@@ -700,23 +721,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (error) {
       logger.w('Opening $url failed.', error: error);
     }
-    if (!opened) toasts.error("Couldn't open the link. Try again.");
+    if (!opened) toasts.error(l10n.accountCouldNotOpenLink);
   }
 
   Future<void> _clearLearnedTaste() async {
+    final AppLocalizations l10n = context.l10n;
     _trackRow('clear_learned_taste');
     final TasteSignalStore store = getIt<TasteSignalStore>();
     final int learned = store.read().length;
     if (learned == 0) {
-      toasts.info('Prism has not learned anything yet.');
+      toasts.info(l10n.accountNothingLearnedYet);
       return;
     }
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Clear learned taste?',
-      message:
-          'Prism forgets ${learned == 1 ? 'the 1 thing' : 'the $learned things'} it learned from what you viewed and saved. Your feed uses your chosen interests again. This cannot be undone.',
-      confirmLabel: 'Clear',
+      title: l10n.accountClearLearnedTasteQuestion,
+      message: l10n.accountClearLearnedTasteCountMessage(learned),
+      confirmLabel: l10n.accountClear,
       destructive: true,
     );
     if (!confirmed) return;
@@ -724,30 +745,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await store.clear();
     } catch (error) {
       logger.w('Clearing learned taste failed.', error: error);
-      toasts.error("Couldn't clear learned taste. Try again.");
+      toasts.error(l10n.accountCouldNotClearLearnedTaste);
       return;
     }
     personalizedFeedSettingsRevision.value += 1;
-    toasts.success('Learned taste cleared.');
+    toasts.success(l10n.accountLearnedTasteCleared);
   }
 
   List<Widget> _adminRows() => <Widget>[
     PrismRow(
       icon: Icons.bug_report_rounded,
-      title: 'Debug panel',
-      subtitle: 'Logs, network, tools and storage',
+      title: context.l10n.accountDebugPanel,
+      subtitle: context.l10n.accountLogsNetworkToolsStorage,
       onTap: () => context.router.pushPath('/debug-panel'),
     ),
     PrismRow(
       icon: Icons.shield_rounded,
-      title: 'Admin moderation',
-      subtitle: 'Review submitted content',
+      title: context.l10n.accountAdminModeration,
+      subtitle: context.l10n.accountReviewSubmittedContent,
       onTap: () => context.router.push(AdminReviewRoute()),
     ),
     PrismRow(
       icon: Icons.analytics_rounded,
-      title: 'Firestore telemetry',
-      subtitle: 'Database usage and stats',
+      title: context.l10n.accountFirestoreTelemetry,
+      subtitle: context.l10n.accountDatabaseUsageStats,
       onTap: () => context.router.push(const FirestoreTelemetryRoute()),
     ),
   ];
@@ -755,21 +776,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Widget> _helpRows() => <Widget>[
     PrismRow(
       icon: Icons.report_problem_outlined,
-      title: 'Report a problem',
-      subtitle: 'Share your app logs with the Prism team',
+      title: context.l10n.accountReportAProblem,
+      subtitle: context.l10n.accountReportProblemSubtitle,
       onTap: () {
         _trackRow('report_a_problem');
         unawaited(showReportProblemSheet(context, source: 'settings'));
       },
     ),
-    PrismRow(icon: Icons.info_rounded, title: 'About Prism', onTap: () => context.router.push(AboutRoute())),
+    PrismRow(
+      icon: Icons.info_rounded,
+      title: context.l10n.accountAboutPrism,
+      onTap: () => context.router.push(AboutRoute()),
+    ),
   ];
 
   List<Widget> _sessionRows() => <Widget>[
-    PrismRow(icon: Icons.logout_rounded, title: 'Log out', showChevron: false, onTap: _confirmLogOut),
+    PrismRow(icon: Icons.logout_rounded, title: context.l10n.accountLogOut, showChevron: false, onTap: _confirmLogOut),
     PrismRow(
       icon: Icons.delete_forever_rounded,
-      title: 'Delete account',
+      title: context.l10n.accountDeleteAccount,
       destructive: true,
       showChevron: false,
       onTap: _confirmDeleteAccount,
@@ -779,15 +804,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _confirmLogOut() async {
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Log out?',
-      message: logoutConfirmMessage,
-      confirmLabel: 'Log out',
+      title: context.l10n.accountLogOutQuestion,
+      message: context.l10n.accountLogoutConfirmation,
+      confirmLabel: context.l10n.accountLogOut,
     );
     if (!ok || !mounted) return;
     await _logout();
   }
 
   Future<void> _logout() async {
+    final AppLocalizations l10n = context.l10n;
     _trackSettingsAction(AnalyticsActionValue.logoutTapped);
     try {
       final bool signedOut = await settingsSignOut();
@@ -797,7 +823,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         reason: signedOut ? null : AnalyticsReasonValue.error,
       );
       if (!signedOut) {
-        toasts.error(logoutFailedMessage);
+        toasts.error(l10n.accountLogoutFailed);
         return;
       }
       await resetOnboardingLocalState(_settingsLocal);
@@ -811,7 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         result: EventResultValue.failure,
         reason: AnalyticsReasonValue.error,
       );
-      toasts.error(logoutFailedMessage);
+      toasts.error(l10n.accountLogoutFailed);
     }
   }
 
@@ -821,20 +847,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => PrismSheetBody(
-        title: 'Delete your account?',
-        message:
-            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+        title: sheetContext.l10n.accountDeleteYourAccountQuestion,
+        message: sheetContext.l10n.accountDeleteAccountConfirmation,
         mood: GlintMood.sad,
         centered: true,
         actions: <Widget>[
           PrismButton(
-            label: 'Delete account',
+            label: sheetContext.l10n.accountDeleteAccount,
             expand: true,
             variant: PrismButtonVariant.danger,
             onPressed: () => Navigator.of(sheetContext).pop(true),
           ),
           PrismButton(
-            label: 'Cancel',
+            label: sheetContext.l10n.accountCancel,
             expand: true,
             variant: PrismButtonVariant.ghost,
             onPressed: () => Navigator.of(sheetContext).pop(false),
@@ -843,19 +868,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           children: <Widget>[
             Text(
-              deleteAccountReauthNote,
+              sheetContext.l10n.accountDeleteAccountReauthNote,
               textAlign: TextAlign.center,
               style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4),
             ),
             if (premium) ...<Widget>[
               const SizedBox(height: PrismSpace.sm),
               Text(
-                'Your store subscription is not cancelled when you delete your account. '
-                'It keeps billing until you cancel it in the store.',
+                sheetContext.l10n.accountAccountDeletionSubscriptionWarning,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4),
               ),
-              TextButton(onPressed: _openManageSubscription, child: const Text('Manage subscription')),
+              TextButton(onPressed: _openManageSubscription, child: Text(sheetContext.l10n.accountManageSubscription)),
             ],
           ],
         ),
@@ -866,6 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _deleteAccount() async {
+    final AppLocalizations l10n = context.l10n;
     final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
     unawaited(
       showPrismSheet<void>(
@@ -873,9 +898,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         isDismissible: false,
         enableDrag: false,
         useRootNavigator: true,
-        builder: (_) => const PopScope(
+        builder: (_) => PopScope(
           canPop: false,
-          child: PrismSheetBody(mood: GlintMood.curious, centered: true, title: 'Deleting your account'),
+          child: PrismSheetBody(mood: GlintMood.curious, centered: true, title: l10n.accountDeletingYourAccount),
         ),
       ),
     );
@@ -888,13 +913,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (isReauthCancelled(error)) return;
       if (error is WrongAccountException) {
         logger.w('Delete account cancelled: wrong account selected.', error: error);
-        toasts.error('Please select the account you are currently signed in with.');
+        toasts.error(l10n.accountCurrentSignedInAccountRequired);
         return;
       }
       logger.e('Delete account failed.', error: error);
       final String message = error.toString().contains('requires-recent-login')
-          ? 'Please sign out and sign in again, then try deleting your account.'
-          : 'Something went wrong. Try again.';
+          ? l10n.accountSignInAgainToDelete
+          : l10n.accountSomethingWentWrongTryAgain;
       toasts.error(message);
     }
   }
@@ -903,7 +928,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final bool loggedIn = app_state.prismUser.loggedIn;
     return PrismPage(
-      title: 'Settings',
+      title: context.l10n.accountSettings,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
         children: <Widget>[
@@ -911,16 +936,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onSignIn: _signIn,
             onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
           ),
-          if (loggedIn) _group('Account', _accountRows()),
-          _group('Appearance', _appearanceRows()),
-          if (_isAndroid || _iosShortcuts) _group('Personalise', _personaliseRows()),
-          _group('Content', _contentRows()),
-          _group('Notifications', _notificationRows()),
-          _group('Storage', _storageRows()),
-          _group('Purchases', _purchaseRows()),
-          _group('Privacy and data', _privacyRows()),
-          if (app_state.isAdminUser()) _group('Admin', _adminRows()),
-          _group('Help', _helpRows()),
+          if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
+          _group(context.l10n.accountAppearance, _appearanceRows()),
+          if (_isAndroid || _iosShortcuts) _group(context.l10n.accountPersonalise, _personaliseRows()),
+          _group(context.l10n.accountContent, _contentRows()),
+          _group(context.l10n.accountNotifications, _notificationRows()),
+          _group(context.l10n.accountStorage, _storageRows()),
+          _group(context.l10n.accountPurchases, _purchaseRows()),
+          _group(context.l10n.accountPrivacyAndData, _privacyRows()),
+          if (app_state.isAdminUser()) _group(context.l10n.accountAdmin, _adminRows()),
+          _group(context.l10n.accountHelp, _helpRows()),
           if (loggedIn) ...<Widget>[const SizedBox(height: PrismSpace.xl), PrismGroup(children: _sessionRows())],
         ],
       ),

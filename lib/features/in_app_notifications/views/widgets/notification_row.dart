@@ -8,8 +8,10 @@ import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -91,14 +93,16 @@ class NotificationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String timeStr = notificationTimeLabel(notification.createdAt);
-    final String title = cleanNotificationTitle(notification.title);
-    final String semanticLine = compactInGroup
-        ? (notification.body.trim().isNotEmpty ? notification.body.trim() : title)
-        : '$title. ${notification.body}';
+    final AppLocalizations l10n = context.l10n;
+    final Locale locale = Localizations.localeOf(context);
+    final localized = localizedNotificationCopy(notification, l10n);
+    final String timeStr = notificationTimeLabel(notification.createdAt, l10n: l10n, locale: locale);
+    final String title = cleanNotificationTitle(localized.title);
+    final String body = localized.body;
+    final String semanticLine = compactInGroup ? (body.trim().isNotEmpty ? body.trim() : title) : '$title. $body';
     return Semantics(
       button: true,
-      label: '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
+      label: l10n.notifSemanticsRow(semanticLine, timeStr, notification.read ? l10n.notifRead : l10n.notifUnread),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -113,7 +117,9 @@ class NotificationRow extends StatelessWidget {
     final String trimmedOverride = compactBodyOverride?.trim() ?? '';
     final String displayBody = trimmedOverride.isNotEmpty
         ? trimmedOverride
-        : (notification.body.trim().isEmpty ? notification.title.trim() : notification.body.trim());
+        : (localizedNotificationCopy(notification, context.l10n).body.trim().isEmpty
+              ? notification.title.trim()
+              : localizedNotificationCopy(notification, context.l10n).body.trim());
     return Padding(
       padding: const EdgeInsets.fromLTRB(notificationTextInset, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
       child: Row(
@@ -148,17 +154,20 @@ class NotificationRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          NotificationIconTile(title: notification.title, body: notification.body),
+          NotificationIconTile(
+            title: localizedNotificationCopy(notification, context.l10n).title,
+            body: localizedNotificationCopy(notification, context.l10n).body,
+          ),
           const SizedBox(width: PrismSpace.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 NotificationTitleLine(title: title, time: timeStr, unread: !notification.read),
-                if (notification.body.trim().isNotEmpty) ...<Widget>[
+                if (localizedNotificationCopy(notification, context.l10n).body.trim().isNotEmpty) ...<Widget>[
                   const SizedBox(height: 2),
                   Text(
-                    notification.body,
+                    localizedNotificationCopy(notification, context.l10n).body,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.body(context),

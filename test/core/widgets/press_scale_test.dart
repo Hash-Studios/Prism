@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +50,9 @@ void main() {
     int taps = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: PressScale(
             child: GestureDetector(
@@ -79,6 +83,9 @@ void main() {
   testWidgets('presses down at once and lets go at once, with no slow start either way', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(child: PressScale(child: SizedBox(width: 100, height: 100))),
       ),
     );
@@ -104,6 +111,9 @@ void main() {
       RepaintBoundary(
         key: boundary,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Stack(
             children: <Widget>[
               Positioned.fill(child: CustomPaint(painter: _Stripes())),

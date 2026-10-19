@@ -43,7 +43,7 @@ test("3 different trusted reporters take an approved wall back to review", async
   assert.equal(wall?.review, false);
   assert.equal(wall?.heldForReview, true);
   assert.ok(wall?.heldAt instanceof admin.firestore.Timestamp);
-  assert.deepEqual(pushes, ["u_adm1"]);
+  assert.deepEqual(pushes.sort(), ["u_adm1", "u_adm1_loc_v1"]);
 });
 
 test("2 reporters do not hold the wall", async (t) => {
@@ -94,5 +94,5 @@ test("a user report is pushed to the admins and holds nothing", async (t) => {
   const userReport = {contentType: "user", targetFirestoreDocId: "u9", reason: "harassment", reporterUid: "a"};
   const {pushes} = setup(t, {r1: userReport}, {a: 30});
   await fire("r1", userReport);
-  assert.deepEqual(pushes, ["u_adm1"]);
+  assert.deepEqual(pushes.sort(), ["u_adm1", "u_adm1_loc_v1"]);
 });

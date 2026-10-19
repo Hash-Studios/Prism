@@ -9,12 +9,19 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-typedef ShareCardRender = Future<File> Function({required String imageUrl, required String link, String? contextLine});
+typedef ShareCardRender =
+    Future<File> Function({
+      required String imageUrl,
+      required String link,
+      required String brandName,
+      String? contextLine,
+    });
 typedef ShareCardImageResolver = Future<ui.Image> Function(ImageProvider provider);
 typedef ShareCardSend =
     Future<ShareResult> Function({required String text, required File file, required BuildContext context});
@@ -37,10 +44,15 @@ Future<ShareCardResult> shareWallpaperCard(
   ShareCardSend sendCard = _sendCard,
   ShareTextSend sendText = _sendText,
 }) async {
-  final String text = '🔥Check this out ➜ $link';
+  final String text = context.l10n.coreShareCardClipboard(link);
   File? file;
   try {
-    file = await render(imageUrl: imageUrl, link: link, contextLine: shareSafeText(contextLine));
+    file = await render(
+      imageUrl: imageUrl,
+      link: link,
+      brandName: context.l10n.appTitle,
+      contextLine: shareSafeText(contextLine),
+    );
     if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
     final ShareResult sent = await sendCard(text: text, file: file, context: context);
     return (format: ShareFormatValue.card, dismissed: sent.status == ShareResultStatus.dismissed);
@@ -64,6 +76,7 @@ Future<ShareCardResult> shareWallpaperCard(
 Future<File> renderShareCardFile({
   required String imageUrl,
   required String link,
+  required String brandName,
   String? contextLine,
   ImageProvider? wallpaperProvider,
   ImageProvider? logoProvider,
@@ -83,7 +96,7 @@ Future<File> renderShareCardFile({
     wallpaper = await resolveImage(ResizeImage(provider, width: 1080, height: 1920, policy: ResizeImagePolicy.fit));
     logo = await resolveImage(logoProvider ?? const AssetImage(ShareCardStyle.logoAsset));
     final ByteData? bytes = await paintShareCard(
-      ShareCard(wallpaper: wallpaper, logo: logo, link: link, contextLine: contextLine),
+      ShareCard(wallpaper: wallpaper, logo: logo, link: link, brandName: brandName, contextLine: contextLine),
     );
     if (bytes == null) throw StateError('share card encode failed');
     final Directory dir = await getTemporaryDirectory();

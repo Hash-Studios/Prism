@@ -1,5 +1,6 @@
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +8,8 @@ void main() {
   testWidgets('keeps a warm fill if the welcome wallpaper cannot decode', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: SizedBox(
           width: 393,
           height: 852,

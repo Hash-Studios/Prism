@@ -15,7 +15,7 @@ void main() {
     ]) {
       final LiveApplyOutcome outcome = liveApplyOutcomeFromResult(_result(status));
       expect(outcome.status, LiveApplyStatus.confirmInPreview);
-      expect(outcome.message, 'Confirm in the system preview.');
+      expect(outcome.failure, isNull);
       expect(outcome.isError, isFalse);
     }
   });
@@ -29,7 +29,7 @@ void main() {
   test('cancelled is silent', () {
     final LiveApplyOutcome outcome = liveApplyOutcomeFromResult(_result(aw.WallpaperOperationStatus.cancelled));
     expect(outcome.status, LiveApplyStatus.cancelled);
-    expect(outcome.message, isEmpty);
+    expect(outcome.failure, isNull);
   });
 
   test('unsupported and foreground errors are clear', () {
@@ -41,20 +41,17 @@ void main() {
       _result(aw.WallpaperOperationStatus.foregroundRequired),
     );
     expect(foreground.isError, isTrue);
-    expect(foreground.message, 'Keep Prism open and try again.');
+    expect(foreground.failure, LiveApplyFailure.keepPrismOpen);
   });
 
-  test('plugin error codes map to plain messages', () {
-    String message(String code) =>
-        liveApplyOutcomeFromResult(_result(aw.WallpaperOperationStatus.failed, code: code)).message;
-    expect(message('source-too-large'), 'That file is too large for a live wallpaper.');
-    expect(message('invalid-video'), contains('Try another clip'));
-    expect(message('shader-compilation-failed'), contains('Try another one'));
-    expect(message('out-of-memory'), contains('Not enough memory'));
-    expect(message('something-new'), "Couldn't set the live wallpaper. Try again.");
-    expect(
-      liveApplyOutcomeFromResult(_result(aw.WallpaperOperationStatus.failed)).message,
-      "Couldn't set the live wallpaper. Try again.",
-    );
+  test('plugin error codes map to typed failures', () {
+    LiveApplyFailure? failure(String code) =>
+        liveApplyOutcomeFromResult(_result(aw.WallpaperOperationStatus.failed, code: code)).failure;
+    expect(failure('source-too-large'), LiveApplyFailure.fileTooLarge);
+    expect(failure('invalid-video'), LiveApplyFailure.invalidVideo);
+    expect(failure('shader-compilation-failed'), LiveApplyFailure.styleUnavailable);
+    expect(failure('out-of-memory'), LiveApplyFailure.outOfMemory);
+    expect(failure('something-new'), LiveApplyFailure.setFailed);
+    expect(liveApplyOutcomeFromResult(_result(aw.WallpaperOperationStatus.failed)).failure, LiveApplyFailure.setFailed);
   });
 }

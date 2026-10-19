@@ -2,6 +2,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,7 +38,13 @@ void main() {
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
   Future<void> pumpTabs(WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
   }

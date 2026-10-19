@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,9 @@ void main() {
     final animation = _TrackedAnimation();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) {
             for (var i = 0; i < 100; i++) {

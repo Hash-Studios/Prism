@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -28,13 +29,14 @@ class AiGenerateBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool hasCoins = balance >= cost;
     final String? reason = loading
         ? null
         : !hasCoins
-        ? 'You need $cost coins. You have $balance.'
+        ? l10n.economyAiCoinsNeeded(cost, balance)
         : !hasPrompt
-        ? 'Describe a scene to generate.'
+        ? l10n.economyAiDescribeScene
         : null;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -46,7 +48,7 @@ class AiGenerateBar extends StatelessWidget {
             child: Text(reason, textAlign: TextAlign.center, style: PrismTextStyles.caption(context)),
           ),
         PrismButton(
-          label: hasCoins ? 'Generate' : 'Get coins',
+          label: hasCoins ? l10n.economyAiGenerate : l10n.economyEarnCoins,
           expand: true,
           loading: loading,
           variant: prominent ? PrismButtonVariant.primary : PrismButtonVariant.tonal,
@@ -56,7 +58,7 @@ class AiGenerateBar extends StatelessWidget {
                   children: <Widget>[
                     const PrismCoinIcon(size: 18),
                     const SizedBox(width: PrismSpace.xxs),
-                    Text('$cost'),
+                    Text(formatLocalizedNumber(cost, l10n)),
                   ],
                 )
               : null,

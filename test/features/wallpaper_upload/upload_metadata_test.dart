@@ -10,6 +10,7 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -126,7 +127,13 @@ void main() {
             save ?? ({required id, required metadata}) async => wall_store.WallSubmissionResult.submitted,
       ),
     );
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await router.navigatePath('/');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Open uploader'));
@@ -316,7 +323,13 @@ void main() {
           createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
         ),
       );
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
       await router.navigatePath('/');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Open uploader'));
@@ -385,7 +398,13 @@ void main() {
           createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
         ),
       );
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
       await router.navigatePath('/');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Open uploader'));

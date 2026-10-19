@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -22,15 +23,16 @@ class DropVault extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     if (drops.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const _GoldHeader(title: 'YOUR VAULT'),
+        _GoldHeader(title: l10n.economyDropYourVault),
         for (final DropEntity drop in drops) ...<Widget>[
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(PrismWallGrid.margin + 4, PrismSpace.xxs, 0, PrismSpace.xxs),
-            child: Text(drop.title, style: PrismTextStyles.caption(context)),
+            child: Text(drop.displayTitle(context.l10n), style: PrismTextStyles.caption(context)),
           ),
           SizedBox(
             height: _tileHeight,
@@ -45,7 +47,9 @@ class DropVault extends StatelessWidget {
                   width: _tileWidth,
                   child: PrismWallTile(
                     url: wall.thumb,
-                    semanticLabel: wall.by.isEmpty ? 'Unlocked wall' : 'Unlocked wall by ${wall.by}',
+                    semanticLabel: wall.by.isEmpty
+                        ? l10n.economyDropUnlockedWall
+                        : l10n.economyDropUnlockedWallBy(wall.by),
                     onTap: () => openDropWall(context, wall, unlocked[wall.id]!),
                     overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
                   ),
@@ -68,19 +72,23 @@ class PastDropRows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     if (drops.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const _GoldHeader(title: 'PAST DROPS'),
+        _GoldHeader(title: l10n.economyDropPastDrops),
         Padding(
           padding: PrismWallGrid.padding,
           child: PrismGroup(
             children: <Widget>[
               for (final DropEntity drop in drops)
                 PrismRow(
-                  title: drop.title,
-                  subtitle: '${drop.walls.where((w) => unlocked.containsKey(w.id)).length}/${drop.count} unlocked',
+                  title: drop.displayTitle(context.l10n),
+                  subtitle: l10n.economyDropUnlockedCount(
+                    drop.walls.where((w) => unlocked.containsKey(w.id)).length,
+                    drop.count,
+                  ),
                   onTap: () {
                     PrismHaptics.tap();
                     unawaited(context.router.push(DropDetailRoute(weekKey: drop.weekKey)));

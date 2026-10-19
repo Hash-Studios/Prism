@@ -93,7 +93,7 @@ void main() {
 
     expect(
       bloc.state,
-      const WallpaperDetailError(message: 'Check your connection and try again.', thumbnailUrl: 'https://img/t.jpg'),
+      const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable, thumbnailUrl: 'https://img/t.jpg'),
     );
   });
 
@@ -103,7 +103,7 @@ void main() {
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
 
-    expect(bloc.state, const WallpaperDetailError(message: 'Check your connection and try again.'));
+    expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable));
   });
 
   test('a missing wallpaper keeps the not found message', () async {
@@ -112,7 +112,7 @@ void main() {
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
 
-    expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
+    expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
   });
 
   test('an ID lookup uses the local catalog after a transport failure', () async {
@@ -177,7 +177,7 @@ void main() {
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
 
-    expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
+    expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
     verify(() => prism.fetchById('abc')).called(1);
   });
 

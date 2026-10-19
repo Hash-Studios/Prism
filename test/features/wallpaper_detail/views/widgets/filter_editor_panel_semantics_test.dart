@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/filter_editor_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -87,6 +88,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: FilterEditorPanel(
               thumbProvider: MemoryImage(Uint8List.fromList(pixel)),

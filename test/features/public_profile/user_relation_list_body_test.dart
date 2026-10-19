@@ -5,6 +5,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_relation_list_body.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +45,9 @@ void main() {
     whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UserRelationListBody(kind: kind, emails: emails),
       ),
     );

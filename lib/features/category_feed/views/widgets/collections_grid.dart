@@ -15,6 +15,7 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -88,16 +89,22 @@ class _CollectionsGridState extends State<CollectionsGrid> {
   Future<CoinGateChoice> _choosePreviewAction(CoinGatePrompt prompt) async {
     final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
       context,
-      title: 'Premium collection',
+      title: context.l10n.wallpaperPremiumCollection,
       cost: CoinPolicy.premiumPreview24h,
       message: (missing) => missing > 0
-          ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
-          : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
+          ? context.l10n.wallpaperPreviewUnlockCostMissing(CoinPolicy.premiumPreview24h, missing)
+          : context.l10n.wallpaperPreviewUnlockCost(CoinPolicy.premiumPreview24h),
       options: [
-        CoinGateOption(label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})', value: CoinGateChoice.spend),
+        CoinGateOption(
+          label: context.l10n.wallpaperPreviewUnlock24Hours(CoinPolicy.premiumPreview24h),
+          value: CoinGateChoice.spend,
+        ),
         if (prompt.missing > 0 && prompt.canWatchAd)
-          CoinGateOption(label: '${watchAdOptionLabel()} and unlock', value: CoinGateChoice.watchAd),
-        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+          CoinGateOption(
+            label: context.l10n.wallpaperPreviewWatchAdUnlock(watchAdOptionLabel(context.l10n)),
+            value: CoinGateChoice.watchAd,
+          ),
+        CoinGateOption(label: context.l10n.wallpaperSeePrismPro, value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;
@@ -144,7 +151,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
             coinsSpent: CoinPolicy.premiumPreview24h,
           ),
         );
-        toasts.success('Preview unlocked for 24 hours (-${CoinPolicy.premiumPreview24h} coins).');
+        toasts.success(context.l10n.wallpaperCollectionPreviewUnlocked(CoinPolicy.premiumPreview24h));
       },
       perform: () async {
         if (mounted) {
@@ -234,17 +241,17 @@ class _CollectionsGridState extends State<CollectionsGrid> {
             SliverFillRemaining(
               child: GlintState(
                 kind: GlintStateKind.empty,
-                title: 'No collections yet',
-                body: 'Pull down to refresh, or check back soon.',
-                actionLabel: 'Refresh',
+                title: context.l10n.wallpaperCollectionsEmptyTitle,
+                body: context.l10n.wallpaperCollectionsEmptyBody,
+                actionLabel: context.l10n.wallpaperRefresh,
                 onAction: () => unawaited(refreshList()),
               ),
             ),
           if (collections.isNotEmpty) _cards(collections),
           if (categories.isNotEmpty) ...<Widget>[
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: PrismSectionHeader(
-                title: 'Categories',
+                title: context.l10n.wallpaperCategories,
                 padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
               ),
             ),

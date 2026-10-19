@@ -3,6 +3,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,6 +32,9 @@ void main() {
   Future<void> pumpTile(WidgetTester tester, UserSummaryEntity user, {VoidCallback? onTap}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,
@@ -103,6 +107,9 @@ void main() {
       MediaQuery(
         data: const MediaQueryData(size: Size(320, 600), textScaler: TextScaler.linear(1.5)),
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: BlocProvider<PublicProfileBloc>.value(
               value: bloc,

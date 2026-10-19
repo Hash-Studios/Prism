@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,6 +17,9 @@ void main() {
     PairPick? picked;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async {

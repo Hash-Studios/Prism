@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,6 +9,9 @@ void main() {
     ModalBottomSheetRoute<void>? route;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => showPrismSheet<void>(
@@ -32,6 +36,9 @@ void main() {
   testWidgets('PrismSheet opens and closes', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => showPrismSheet<void>(context: context, builder: (_) => const Text('sheet body')),

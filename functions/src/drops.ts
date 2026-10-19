@@ -1,11 +1,16 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
-import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {
+  HttpsError,
+  onCall,
+  type CallableRequest,
+} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
 import {sendNotification} from "./notificationHelper";
+import {notificationCopyPayload} from "./notificationCatalog";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -44,7 +49,10 @@ export interface UnlockedWall {
 }
 
 /** The drop fields a client may see: no full image url. */
-export function snapshotWall(doc: {id: string; data: () => admin.firestore.DocumentData | undefined}): DropWall {
+export function snapshotWall(doc: {
+  id: string;
+  data: () => admin.firestore.DocumentData | undefined;
+}): DropWall {
   const data = doc.data() ?? {};
   return {
     id: doc.id,
@@ -56,27 +64,47 @@ export function snapshotWall(doc: {id: string; data: () => admin.firestore.Docum
   };
 }
 
-export function isDropLive(drop: {startsAt?: unknown; endsAt?: unknown}, nowMs: number): boolean {
-  return typeof drop.startsAt === "number" && typeof drop.endsAt === "number" &&
-    drop.startsAt <= nowMs && nowMs < drop.endsAt;
+export function isDropLive(
+  drop: { startsAt?: unknown; endsAt?: unknown },
+  nowMs: number,
+): boolean {
+  return (
+    typeof drop.startsAt === "number" &&
+    typeof drop.endsAt === "number" &&
+    drop.startsAt <= nowMs &&
+    nowMs < drop.endsAt
+  );
 }
 
 /** Pack price before the Pro discount. A pack never costs more than buying the rest one by one. */
-export function packPrice(priceWall: number, pricePack: number, remaining: number): number {
+export function packPrice(
+  priceWall: number,
+  pricePack: number,
+  remaining: number,
+): number {
   return Math.min(pricePack, remaining * priceWall);
 }
 
 /** Puts the walls of drops that ended over 30 days ago in the public feed. Returns the drops released. */
 export async function releaseOldDrops(nowMs: number): Promise<number> {
-  const old = await db.collection("drops").where("endsAt", "<", nowMs - RELEASE_AFTER_MS).get();
+  const old = await db
+    .collection("drops")
+    .where("endsAt", "<", nowMs - RELEASE_AFTER_MS)
+    .get();
   let released = 0;
   for (const doc of old.docs.filter((d) => d.data().released !== true)) {
-    const walls = Array.isArray(doc.data().walls) ? (doc.data().walls as Array<{id?: unknown}>) : [];
-    const refs = walls.map((w) => str(w.id)).filter((id) => WALL_ID.test(id))
+    const walls = Array.isArray(doc.data().walls) ?
+      (doc.data().walls as Array<{ id?: unknown }>) :
+      [];
+    const refs = walls
+      .map((w) => str(w.id))
+      .filter((id) => WALL_ID.test(id))
       .map((id) => db.collection("walls").doc(id));
     await db.runTransaction(async (tx) => {
       const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
-      for (const snap of snaps) if (snap.exists) tx.update(snap.ref, {review: true});
+      for (const snap of snaps) {
+        if (snap.exists) tx.update(snap.ref, {review: true});
+      }
       tx.update(doc.ref, {released: true});
     });
     released += 1;
@@ -94,7 +122,8 @@ export const planWeeklyDrop = onSchedule(
     const dropRef = db.collection("drops").doc(key);
     if ((await dropRef.get()).exists) return;
 
-    const reserved = await db.collection("walls")
+    const reserved = await db
+      .collection("walls")
       .where("dropReserved", "==", true)
       .where("review", "==", false)
       .orderBy("createdAt", "asc")
@@ -102,16 +131,22 @@ export const planWeeklyDrop = onSchedule(
       .get();
     const docs = reserved.docs.filter((doc) => doc.data().origin === "studio");
     if (docs.length < MIN_DROP_WALLS) {
-      logger.info("drops: not enough reserved walls", {weekKey: key, count: docs.length});
+      logger.info("drops: not enough reserved walls", {
+        weekKey: key,
+        count: docs.length,
+      });
       return;
     }
 
     const config = await loadEconomy(nowMs);
     const titleSnap = await db.doc("studioConfig/current").get();
     const titles = titleSnap.data()?.dropTitles;
-    const custom = titles && typeof titles === "object" ? str((titles as Record<string, unknown>)[key]) : "";
+    const custom =
+      titles && typeof titles === "object" ?
+        str((titles as Record<string, unknown>)[key]) :
+        "";
     const {start, end} = weekBounds(nowMs);
-    const drop: DropDoc & {createdAt: admin.firestore.FieldValue} = {
+    const drop: DropDoc & { createdAt: admin.firestore.FieldValue } = {
       weekKey: key,
       title: custom || `Drop ${key}`,
       startsAt: start,
@@ -125,10 +160,14 @@ export const planWeeklyDrop = onSchedule(
     const planned = await db.runTransaction(async (tx) => {
       if ((await tx.get(dropRef)).exists) return false;
       tx.set(dropRef, drop);
-      for (const doc of docs) tx.update(doc.ref, {dropReserved: false, dropWeek: key});
+      for (const doc of docs) {
+        tx.update(doc.ref, {dropReserved: false, dropWeek: key});
+      }
       return true;
     });
-    if (planned) logger.info("drops: planned", {weekKey: key, count: docs.length});
+    if (planned) {
+      logger.info("drops: planned", {weekKey: key, count: docs.length});
+    }
   },
 );
 
@@ -139,17 +178,28 @@ const priceOr = (value: unknown, fallback: number): number => {
 
 export const unlockDrop = onCall(
   {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
-  async (request: CallableRequest<{weekKey?: unknown; wallId?: unknown; requestId?: unknown}>) => {
+  async (
+    request: CallableRequest<{
+      weekKey?: unknown;
+      wallId?: unknown;
+      requestId?: unknown;
+    }>,
+  ) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
     const {requestId} = request.data ?? {};
     const dropKey = request.data?.weekKey;
     const wallId = request.data?.wallId ?? null;
-    if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+    if (!isValidRequestId(requestId)) {
+      throw new HttpsError("invalid-argument", "requestId is invalid.");
+    }
     if (typeof dropKey !== "string" || !WEEK_KEY.test(dropKey)) {
       throw new HttpsError("invalid-argument", "weekKey is invalid.");
     }
-    if (wallId !== null && (typeof wallId !== "string" || !WALL_ID.test(wallId))) {
+    if (
+      wallId !== null &&
+      (typeof wallId !== "string" || !WALL_ID.test(wallId))
+    ) {
       throw new HttpsError("invalid-argument", "wallId is invalid.");
     }
 
@@ -175,9 +225,14 @@ export const unlockDrop = onCall(
 
     await db.runTransaction(async (tx) => {
       const [txSnap, userSnap, privateSnap, dropSnap] = await Promise.all([
-        tx.get(txRef), tx.get(userRef), tx.get(privateRef), tx.get(dropRef),
+        tx.get(txRef),
+        tx.get(userRef),
+        tx.get(privateRef),
+        tx.get(dropRef),
       ]);
-      if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
+      if (!userSnap.exists) {
+        throw new HttpsError("not-found", "User profile was not found.");
+      }
       const user = userSnap.data() ?? {};
       const balance = int(user.coins, 0);
       const current = {previousBalance: balance, currentBalance: balance};
@@ -213,7 +268,10 @@ export const unlockDrop = onCall(
       }
 
       const privateData = privateSnap.data() ?? {};
-      const owned = (privateData.drops?.unlocked ?? {}) as Record<string, {url?: unknown}>;
+      const owned = (privateData.drops?.unlocked ?? {}) as Record<
+        string,
+        { url?: unknown }
+      >;
       const remaining = dropWalls.filter((w) => !owned[w.id]).map((w) => w.id);
       if (wallId !== null && owned[wallId]) {
         response = {
@@ -225,12 +283,20 @@ export const unlockDrop = onCall(
       }
       const targets = wallId !== null ? [wallId] : remaining;
       if (targets.length === 0) {
-        response = {...skipped("drop_pack_nothing_left", current), success: true};
+        response = {
+          ...skipped("drop_pack_nothing_left", current),
+          success: true,
+        };
         return;
       }
 
-      const wallSnaps = await Promise.all(targets.map((id) => tx.get(db.collection("walls").doc(id))));
-      const unlocked: UnlockedWall[] = targets.map((id, i) => ({id, url: str(wallSnaps[i].data()?.wallpaper_url)}));
+      const wallSnaps = await Promise.all(
+        targets.map((id) => tx.get(db.collection("walls").doc(id))),
+      );
+      const unlocked: UnlockedWall[] = targets.map((id, i) => ({
+        id,
+        url: str(wallSnaps[i].data()?.wallpaper_url),
+      }));
       if (unlocked.some((w) => w.url === "")) {
         response = skipped("drop_wall_unavailable", current);
         return;
@@ -239,25 +305,45 @@ export const unlockDrop = onCall(
       const priceWall = priceOr(drop.priceWall, config.spend.dropWall);
       const pricePack = priceOr(drop.pricePack, config.spend.dropPack);
       const action = wallId !== null ? "dropWall" : "dropPack";
-      const base = wallId !== null ? priceWall : packPrice(priceWall, pricePack, targets.length);
+      const base =
+        wallId !== null ?
+          priceWall :
+          packPrice(priceWall, pricePack, targets.length);
       const price = proPrice(base, user.premium === true);
       if (balance < price) {
-        response = {...skipped(`${action}_insufficient_balance`, current), insufficientBalance: true};
+        response = {
+          ...skipped(`${action}_insufficient_balance`, current),
+          insufficientBalance: true,
+        };
         return;
       }
 
-      const firstOfDrop = !Object.values(owned).some((entry) => (entry as {weekKey?: unknown}).weekKey === dropKey);
+      const firstOfDrop = !Object.values(owned).some(
+        (entry) => (entry as { weekKey?: unknown }).weekKey === dropKey,
+      );
       const after = balance - price;
       const rev = int(privateData.rev, 0) + 1;
       tx.update(userRef, {coins: after});
-      if (firstOfDrop) tx.update(dropRef, {collectors: admin.firestore.FieldValue.increment(1)});
+      if (firstOfDrop) {
+        tx.update(dropRef, {
+          collectors: admin.firestore.FieldValue.increment(1),
+        });
+      }
       if (privateSnap.exists) {
         const fields: Record<string, unknown> = {rev};
-        for (const w of unlocked) fields[`drops.unlocked.${w.id}`] = {weekKey: dropKey, url: w.url};
+        for (const w of unlocked) {
+          fields[`drops.unlocked.${w.id}`] = {weekKey: dropKey, url: w.url};
+        }
         tx.update(privateRef, fields);
       } else {
-        const entries = Object.fromEntries(unlocked.map((w) => [w.id, {weekKey: dropKey, url: w.url}]));
-        tx.set(privateRef, {rev, drops: {unlocked: entries}}, {merge: true});
+        const entries = Object.fromEntries(
+          unlocked.map((w) => [w.id, {weekKey: dropKey, url: w.url}]),
+        );
+        tx.set(
+          privateRef,
+          {rev, drops: {unlocked: entries}},
+          {merge: true},
+        );
       }
       tx.set(txRef, {
         ...coinTransactionDoc({
@@ -267,7 +353,8 @@ export const unlockDrop = onCall(
           delta: -price,
           balanceBefore: balance,
           action,
-          description: wallId !== null ? "Weekly Drop wallpaper" : "Weekly Drop pack",
+          description:
+            wallId !== null ? "Weekly Drop wallpaper" : "Weekly Drop pack",
           sourceTag: "drops.unlock.callable",
           reason: `drop_${dropKey}`,
         }),
@@ -295,8 +382,10 @@ interface DropPushSpec {
   kind: DropPushKind;
   isDue: (drop: DropDoc, nowMs: number) => boolean;
   supersededBy?: DropPushKind;
-  title: string;
-  body: (drop: DropDoc, nowMs: number) => string;
+  copy: (
+    drop: DropDoc,
+    nowMs: number,
+  ) => ReturnType<typeof notificationCopyPayload>;
 }
 
 export const DROP_PUSHES: readonly DropPushSpec[] = [
@@ -304,16 +393,19 @@ export const DROP_PUSHES: readonly DropPushSpec[] = [
     kind: "live",
     isDue: (drop, nowMs) => nowMs >= drop.startsAt + 4 * HOUR_MS,
     supersededBy: "lastCall",
-    title: "A new Drop is live",
-    body: (drop) => `${drop.count} walls, this week only. Preview them before they are gone.`,
+    copy: (drop) =>
+      notificationCopyPayload({kind: "dropLive", wallCount: drop.count}),
   },
   {
     kind: "lastCall",
     isDue: (drop, nowMs) => drop.endsAt - nowMs <= 12 * HOUR_MS,
-    title: "Last call on this week's Drop",
-    body: (drop, nowMs) => {
+    copy: (drop, nowMs) => {
       const hours = Math.max(1, Math.floor((drop.endsAt - nowMs) / HOUR_MS));
-      return `${drop.title} ends in ${hours} ${hours === 1 ? "hour" : "hours"}. Then these walls are gone for a month.`;
+      return notificationCopyPayload({
+        kind: "dropLastCall",
+        dropTitle: drop.title,
+        hoursLeft: hours,
+      });
     },
   },
 ];
@@ -329,29 +421,46 @@ export function duePushKinds(drop: DropDoc, nowMs: number): DropPushKind[] {
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 
-async function claimPush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
+async function claimPush(
+  dropRef: admin.firestore.DocumentReference,
+  kind: DropPushKind,
+  nowMs: number,
+) {
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(dropRef)).data();
     if (data?.pushes?.[kind] !== undefined) return false;
     const claimedAt = data?.pushClaims?.[kind];
-    if (typeof claimedAt === "number" && nowMs - claimedAt < CLAIM_TTL_MS) return false;
+    if (typeof claimedAt === "number" && nowMs - claimedAt < CLAIM_TTL_MS) {
+      return false;
+    }
     tx.update(dropRef, {[`pushClaims.${kind}`]: nowMs});
     return true;
   });
 }
 
-async function markPushSent(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
+async function markPushSent(
+  dropRef: admin.firestore.DocumentReference,
+  kind: DropPushKind,
+  nowMs: number,
+) {
   await dropRef.update({
     [`pushes.${kind}`]: nowMs,
     [`pushClaims.${kind}`]: admin.firestore.FieldValue.delete(),
   });
 }
 
-async function releasePush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, claimedAt: number) {
+async function releasePush(
+  dropRef: admin.firestore.DocumentReference,
+  kind: DropPushKind,
+  claimedAt: number,
+) {
   await db.runTransaction(async (tx) => {
-    const claims = (await tx.get(dropRef)).data()?.pushClaims as Record<string, unknown> | undefined;
+    const claims = (await tx.get(dropRef)).data()?.pushClaims as
+      Record<string, unknown> | undefined;
     if (claims?.[kind] !== claimedAt) return;
-    tx.update(dropRef, {[`pushClaims.${kind}`]: admin.firestore.FieldValue.delete()});
+    tx.update(dropRef, {
+      [`pushClaims.${kind}`]: admin.firestore.FieldValue.delete(),
+    });
   });
 }
 
@@ -363,7 +472,12 @@ async function releasePush(dropRef: admin.firestore.DocumentReference, kind: Dro
 export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
   const config = await loadEconomy(nowMs);
   if (!config.flags.dropsEnabled) return [];
-  const found = await db.collection("drops").where("endsAt", ">", nowMs).orderBy("endsAt", "asc").limit(1).get();
+  const found = await db
+    .collection("drops")
+    .where("endsAt", ">", nowMs)
+    .orderBy("endsAt", "asc")
+    .limit(1)
+    .get();
   const dropSnap = found.docs[0];
   const drop = dropSnap?.data() as DropDoc | undefined;
   if (!dropSnap || !drop || !isDropLive(drop, nowMs)) return [];
@@ -371,13 +485,12 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
   const weekKeyOfDrop = str(drop.weekKey) || dropSnap.id;
   const sent: DropPushKind[] = [];
   for (const kind of duePushKinds(drop, nowMs)) {
-    if (!await claimPush(dropSnap.ref, kind, nowMs)) continue;
+    if (!(await claimPush(dropSnap.ref, kind, nowMs))) continue;
     const spec = DROP_PUSHES.find((s) => s.kind === kind) as DropPushSpec;
     let delivered = false;
     try {
       delivered = await sendNotification({
-        title: spec.title,
-        body: spec.body(drop, nowMs),
+        ...spec.copy(drop, nowMs),
         data: {route: "drops", week_key: weekKeyOfDrop},
         imageUrl: drop.walls?.[0]?.thumb || undefined,
         modifier: "all",
@@ -390,7 +503,9 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
     } finally {
       if (!delivered) await releasePush(dropSnap.ref, kind, nowMs);
     }
-    if (!delivered) throw new Error(`Drop ${kind} push failed for ${weekKeyOfDrop}.`);
+    if (!delivered) {
+      throw new Error(`Drop ${kind} push failed for ${weekKeyOfDrop}.`);
+    }
     await markPushSent(dropSnap.ref, kind, nowMs);
     sent.push(kind);
     logger.info("drops: push sent", {weekKey: weekKeyOfDrop, kind});

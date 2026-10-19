@@ -54,7 +54,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   bool _closing = false;
 
   static const String notFoundMessage = 'Wallpaper not found';
-  static const String loadFailedMessage = 'Check your connection and try again.';
   static const Duration _cachedLookupDecisionBudget = Duration(seconds: 2);
   static const Duration _wallpaperLookupTimeout = Duration(seconds: 30);
 
@@ -80,7 +79,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (_closing) return;
     final failure = result.failure;
     if (failure != null) {
-      emit(WallpaperDetailError(message: _loadErrorMessage(failure), thumbnailUrl: event.thumbnailUrl));
+      emit(WallpaperDetailError(failure: _loadErrorKind(failure), thumbnailUrl: event.thumbnailUrl));
       return;
     }
 
@@ -90,9 +89,11 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     await _loadPalette(entity, emit, event.localFilePath);
   }
 
-  /// Text a person can read. Raw failure text from Firestore or the network never reaches the screen.
-  String _loadErrorMessage(Failure failure) =>
-      failure is UnknownFailure && failure.message == notFoundMessage ? notFoundMessage : loadFailedMessage;
+  /// Keep the server failure separate from its presentation so the view can localize it.
+  WallpaperDetailLoadFailure _loadErrorKind(Failure failure) =>
+      failure is UnknownFailure && failure.message == notFoundMessage
+      ? WallpaperDetailLoadFailure.notFound
+      : WallpaperDetailLoadFailure.unavailable;
 
   Future<void> _onFetchViews(FetchViews event, Emitter<WallpaperDetailState> emit) async {
     final currentState = state;

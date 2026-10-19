@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,7 +67,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final File image = await makeImage(tester);
-    await tester.pumpWidget(MaterialApp(home: EditWallScreen(image: image)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: EditWallScreen(image: image),
+      ),
+    );
     await tester.pump();
   }
 

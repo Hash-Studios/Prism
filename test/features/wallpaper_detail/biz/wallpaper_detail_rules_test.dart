@@ -5,7 +5,10 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
 FeedItemEntity _prism({
   List<String>? collections,
@@ -113,14 +116,14 @@ void main() {
     });
 
     test('lists the low resolution and landscape notes that apply', () {
-      expect(wallpaperResolutionNotes(_prism(w: 1080, h: 2400).wallpaperCore, screen), isEmpty);
-      expect(wallpaperResolutionNotes(_prism(w: 720, h: 1280).wallpaperCore, screen), [
+      expect(wallpaperResolutionNotes(_l10n, _prism(w: 1080, h: 2400).wallpaperCore, screen), isEmpty);
+      expect(wallpaperResolutionNotes(_l10n, _prism(w: 720, h: 1280).wallpaperCore, screen), [
         'Low resolution for your screen',
       ]);
-      expect(wallpaperResolutionNotes(_prism(w: 3840, h: 2160).wallpaperCore, screen), [
+      expect(wallpaperResolutionNotes(_l10n, _prism(w: 3840, h: 2160).wallpaperCore, screen), [
         'Landscape wallpaper: the sides will be cropped',
       ]);
-      expect(wallpaperResolutionNotes(_prism(w: 1280, h: 720).wallpaperCore, screen), [
+      expect(wallpaperResolutionNotes(_l10n, _prism(w: 1280, h: 720).wallpaperCore, screen), [
         'Low resolution for your screen',
         'Landscape wallpaper: the sides will be cropped',
       ]);
@@ -129,18 +132,18 @@ void main() {
 
   group('wallpaperTitle', () {
     test('shows the title the creator gave', () {
-      expect(wallpaperTitle(_prism(title: ' Misty pines ', author: 'Akshay')), 'Misty pines');
+      expect(wallpaperTitle(_l10n, _prism(title: ' Misty pines ', author: 'Akshay')), 'Misty pines');
     });
 
     test('falls back to the creator name', () {
-      expect(wallpaperTitle(_prism(author: ' Akshay ')), 'Wallpaper by Akshay');
-      expect(wallpaperTitle(_prism(title: '  ', author: 'Akshay')), 'Wallpaper by Akshay');
+      expect(wallpaperTitle(_l10n, _prism(author: ' Akshay ')), 'Wallpaper by Akshay');
+      expect(wallpaperTitle(_l10n, _prism(title: '  ', author: 'Akshay')), 'Wallpaper by Akshay');
     });
 
     test('never shows an email as the creator name', () {
-      expect(wallpaperTitle(_prism(author: 'akshay@example.com')), 'Wallpaper by Prism creator');
-      expect(wallpaperTitle(_prism()), 'Wallpaper by Prism creator');
-      expect(wallpaperTitle(_prism(author: '  ')), 'Wallpaper by Prism creator');
+      expect(wallpaperTitle(_l10n, _prism(author: 'akshay@example.com')), 'Wallpaper by Prism creator');
+      expect(wallpaperTitle(_l10n, _prism()), 'Wallpaper by Prism creator');
+      expect(wallpaperTitle(_l10n, _prism(author: '  ')), 'Wallpaper by Prism creator');
     });
 
     test('a Wallhaven wall without a name keeps the plain title', () {
@@ -150,12 +153,12 @@ void main() {
           core: WallpaperCore(id: 'w', source: WallpaperSource.wallhaven, fullUrl: 'f', thumbnailUrl: 't'),
         ),
       );
-      expect(wallpaperTitle(wallhaven), 'Wallpaper on Prism');
+      expect(wallpaperTitle(_l10n, wallhaven), 'Wallpaper on Prism');
     });
 
     test('the share title is the same as the headline', () {
-      expect(wallpaperPreviewTitle(_prism(title: 'Misty pines')), 'Misty pines');
-      expect(wallpaperPreviewTitle(_prism(author: 'akshay@example.com')), 'Wallpaper by Prism creator');
+      expect(wallpaperPreviewTitle(_l10n, _prism(title: 'Misty pines')), 'Misty pines');
+      expect(wallpaperPreviewTitle(_l10n, _prism(author: 'akshay@example.com')), 'Wallpaper by Prism creator');
     });
   });
 

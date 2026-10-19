@@ -181,7 +181,8 @@ String? userTopicFromId(String uid) {
   return sanitized.isEmpty ? null : 'u_$sanitized';
 }
 
-const String _pushTopicsSyncedKey = 'pushTopicsSyncedFor';
+const String _pushTopicsSyncedKey = 'pushTopicsSyncedForLocV1';
+const String _nativeLocalizationTopicSuffix = '_loc_v1';
 const String _legacyWotdTopic = 'wall_of_the_day';
 const String _wotdBucketKey = 'wotdBucketTopic';
 const String _wotdPendingCleanupKey = 'wotdPendingCleanupTopics';
@@ -340,8 +341,15 @@ Future<bool> _changeTopic(
   if (normalizedTopic.isEmpty) {
     return false;
   }
+  final String legacyTopic = normalizedTopic.endsWith(_nativeLocalizationTopicSuffix)
+      ? normalizedTopic.substring(0, normalizedTopic.length - _nativeLocalizationTopicSuffix.length)
+      : normalizedTopic;
+  final String localizationTopic = '$legacyTopic$_nativeLocalizationTopicSuffix';
   final String noun = subscribe ? 'subscription' : 'unsubscription';
-  final Map<String, Object?> fields = <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag};
+  final Map<String, Object?> fields = <String, Object?>{
+    'topic': subscribe ? localizationTopic : legacyTopic,
+    'sourceTag': sourceTag,
+  };
   try {
     final bool canProceed = await _canProceedWithTopicCall(messaging);
     if (!canProceed) {
@@ -349,9 +357,15 @@ Future<bool> _changeTopic(
       return false;
     }
     if (subscribe) {
-      await messaging.subscribeToTopic(normalizedTopic);
+      await messaging.subscribeToTopic(localizationTopic);
+      if (legacyTopic != localizationTopic) {
+        await messaging.unsubscribeFromTopic(legacyTopic);
+      }
     } else {
-      await messaging.unsubscribeFromTopic(normalizedTopic);
+      await messaging.unsubscribeFromTopic(legacyTopic);
+      if (legacyTopic != localizationTopic) {
+        await messaging.unsubscribeFromTopic(localizationTopic);
+      }
     }
     return true;
   } catch (error, stackTrace) {

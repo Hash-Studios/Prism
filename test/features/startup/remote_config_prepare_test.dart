@@ -42,6 +42,16 @@ void main() {
     expect(calls, <String>['settings', 'defaults', 'activate', 'fetch']);
   });
 
+  test('banner default is an empty sentinel so the feed can localize its fallback', () async {
+    when(() => rc.fetchAndActivate()).thenAnswer((_) async => true);
+
+    await prepareRemoteConfig(rc, release: true);
+
+    final Map<String, dynamic> defaults =
+        verify(() => rc.setDefaults(captureAny())).captured.single as Map<String, dynamic>;
+    expect(defaults['bannerText'], isEmpty);
+  });
+
   test('release builds use a 3 s timeout and a 1 h minimum interval, debug builds fetch every time', () async {
     when(() => rc.fetchAndActivate()).thenAnswer((_) async => true);
 

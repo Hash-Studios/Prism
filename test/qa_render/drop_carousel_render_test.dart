@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,9 @@ void main() {
         shot.frame(
           brightness: theme.brightness,
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             debugShowCheckedModeBanner: false,
             theme: theme,
             home: BlocProvider<WotdBloc>.value(

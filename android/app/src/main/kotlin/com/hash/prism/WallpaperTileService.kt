@@ -105,7 +105,9 @@ internal abstract class WallpaperTileService : TileService() {
         val ready = isConfigured(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
         qsTile?.apply {
             state = if (!ready) Tile.STATE_UNAVAILABLE else if (applying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) subtitle = if (ready) null else "Open Prism to set up"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                subtitle = if (ready) null else applicationContext.getString(R.string.tile_setup_subtitle)
+            }
             updateTile()
         }
     }

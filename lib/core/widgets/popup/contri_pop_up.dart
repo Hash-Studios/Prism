@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/popup/popup_link.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
@@ -38,9 +39,9 @@ class _ContributorSheetState extends State<_ContributorSheet> {
           return PrismSheetBody(
             child: GlintState(
               kind: GlintStateKind.error,
-              title: 'Could not load this profile',
-              body: 'Check your connection and try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.coreContributorCouldNotLoad,
+              body: context.l10n.accountCheckConnectionTryAgain,
+              actionLabel: context.l10n.coreRetry,
               onAction: _retry,
             ),
           );
@@ -141,12 +142,17 @@ class _ContributorBody extends StatelessWidget {
               if (blog != null && blog.isNotEmpty)
                 PopupLinkChip(
                   icon: JamIcons.link,
-                  label: 'Website',
+                  label: context.l10n.coreContributorWebsite,
                   link: blog.startsWith('http') ? blog : 'https://$blog',
                 ),
-              if (htmlUrl != null) PopupLinkChip(icon: JamIcons.github, label: 'GitHub', link: htmlUrl),
+              if (htmlUrl != null)
+                PopupLinkChip(icon: JamIcons.github, label: context.l10n.coreContributorGithub, link: htmlUrl),
               if (twitter != null && twitter.isNotEmpty)
-                PopupLinkChip(icon: JamIcons.twitter, label: 'Twitter', link: 'https://www.twitter.com/$twitter'),
+                PopupLinkChip(
+                  icon: JamIcons.twitter,
+                  label: context.l10n.coreContributorTwitter,
+                  link: 'https://www.twitter.com/$twitter',
+                ),
             ],
           ),
         ],

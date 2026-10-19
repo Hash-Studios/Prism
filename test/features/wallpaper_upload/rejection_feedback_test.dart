@@ -1,10 +1,15 @@
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget harness(String? reason, {double width = 320, TextScaler? textScaler}) {
     return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: Scaffold(
         body: SingleChildScrollView(
           child: Center(
@@ -31,7 +36,7 @@ void main() {
   testWidgets('uses a helpful fallback when a legacy rejection has no reason', (WidgetTester tester) async {
     await tester.pumpWidget(harness('  '));
 
-    expect(find.text(RejectionFeedback.fallbackReason), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().wallpaperUploadRejectionFallback), findsOneWidget);
   });
 
   testWidgets('wraps a long reason on a narrow viewport at 2x text size', (WidgetTester tester) async {

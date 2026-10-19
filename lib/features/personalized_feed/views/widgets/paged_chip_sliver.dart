@@ -4,6 +4,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,8 +45,8 @@ class PagedChipSliver extends StatelessWidget {
               child: GlintState(
                 kind: GlintStateKind.error,
                 title: failureTitle,
-                body: 'Check your connection and try again.',
-                actionLabel: 'Try again',
+                body: context.l10n.wallpaperCheckConnection,
+                actionLabel: context.l10n.wallpaperTryAgain,
                 onAction: () => bloc.add(const PagedFeedEvent.refreshRequested()),
               ),
             );
@@ -84,7 +85,7 @@ class PagedChipSliver extends StatelessWidget {
                 }, childCount: state.items.length),
               ),
             ),
-            SliverToBoxAdapter(child: _footer(state)),
+            SliverToBoxAdapter(child: _footer(context, state)),
             const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
           ],
         );
@@ -92,13 +93,13 @@ class PagedChipSliver extends StatelessWidget {
     );
   }
 
-  Widget _footer(PagedFeedState state) {
+  Widget _footer(BuildContext context, PagedFeedState state) {
     if (state.actionStatus == ActionStatus.failure && !state.isFetchingMore) {
       return Padding(
         padding: const EdgeInsets.all(PrismSpace.md),
         child: Center(
           child: PrismButton(
-            label: "Couldn't load more. Try again",
+            label: context.l10n.wallpaperFeedLoadMoreError,
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: () {

@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +8,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -148,6 +147,9 @@ void main() {
         firestore.fail = stage == 'profile update';
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: Builder(
               builder: (context) => Scaffold(
                 body: TextButton(

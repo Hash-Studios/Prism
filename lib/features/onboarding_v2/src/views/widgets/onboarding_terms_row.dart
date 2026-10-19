@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,38 @@ class OnboardingTermsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle text = PrismTextStyles.body(context).copyWith(color: Colors.white.withValues(alpha: 0.85));
+    final AppLocalizations l10n = context.l10n;
+    const String termsMarker = '\u{e000}terms\u{e001}';
+    const String privacyMarker = '\u{e000}privacy\u{e001}';
+    final String agreement = l10n.accountTermsAgreementSemanticLabel(termsMarker, privacyMarker);
+    final TextStyle linkStyle = text.copyWith(decoration: TextDecoration.underline, color: Colors.white);
+    final List<InlineSpan> agreementSpans = <InlineSpan>[];
+    int cursor = 0;
+    while (cursor < agreement.length) {
+      final int termsIndex = agreement.indexOf(termsMarker, cursor);
+      final int privacyIndex = agreement.indexOf(privacyMarker, cursor);
+      final bool isTerms = termsIndex >= 0 && (privacyIndex < 0 || termsIndex < privacyIndex);
+      final int markerIndex = isTerms ? termsIndex : privacyIndex;
+      if (markerIndex < 0) {
+        agreementSpans.add(TextSpan(text: agreement.substring(cursor)));
+        break;
+      }
+      if (markerIndex > cursor) {
+        agreementSpans.add(TextSpan(text: agreement.substring(cursor, markerIndex)));
+      }
+      final String marker = isTerms ? termsMarker : privacyMarker;
+      agreementSpans.add(
+        TextSpan(
+          text: isTerms ? l10n.accountTerms : l10n.accountPrivacyPolicy,
+          style: linkStyle,
+          recognizer: isTerms ? legalTap : privacyTap,
+        ),
+      );
+      cursor = markerIndex + marker.length;
+    }
+    if (agreementSpans.isEmpty) {
+      agreementSpans.add(TextSpan(text: agreement));
+    }
     void toggle() {
       PrismHaptics.selection();
       onChanged(!accepted);
@@ -36,11 +69,11 @@ class OnboardingTermsRow extends StatelessWidget {
     return Semantics(
       container: true,
       checked: accepted,
-      label: 'By continuing you agree to the Terms and Privacy policy',
+      label: context.l10n.accountTermsAgreementSemanticLabel(l10n.accountTerms, l10n.accountPrivacyPolicy),
       onTap: toggle,
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-        const CustomSemanticsAction(label: 'Open Terms'): () => legalTap.onTap?.call(),
-        const CustomSemanticsAction(label: 'Open Privacy policy'): () => privacyTap.onTap?.call(),
+        CustomSemanticsAction(label: l10n.accountTerms): () => legalTap.onTap?.call(),
+        CustomSemanticsAction(label: l10n.accountPrivacyPolicy): () => privacyTap.onTap?.call(),
       },
       child: ExcludeSemantics(
         child: GestureDetector(
@@ -53,25 +86,7 @@ class OnboardingTermsRow extends StatelessWidget {
                 _Check(accepted: accepted),
                 const SizedBox(width: PrismSpace.sm),
                 Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      style: text,
-                      children: <InlineSpan>[
-                        const TextSpan(text: 'By continuing you agree to the '),
-                        TextSpan(
-                          text: 'Terms',
-                          style: text.copyWith(decoration: TextDecoration.underline, color: Colors.white),
-                          recognizer: legalTap,
-                        ),
-                        const TextSpan(text: ' and '),
-                        TextSpan(
-                          text: 'Privacy policy',
-                          style: text.copyWith(decoration: TextDecoration.underline, color: Colors.white),
-                          recognizer: privacyTap,
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: Text.rich(TextSpan(style: text, children: agreementSpans)),
                 ),
               ],
             ),

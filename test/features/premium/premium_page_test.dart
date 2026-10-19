@@ -3,9 +3,10 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,21 +44,33 @@ void main() {
   });
 
   testWidgets('opening Premium waits for the user to view plans', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: PremiumPage()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const PremiumPage(),
+      ),
+    );
     await tester.pump();
 
-    expect(find.text('Prism Premium'), findsOneWidget);
-    expect(find.text('View plans'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().premiumPageTitle), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().premiumPageViewPlans), findsOneWidget);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
   });
 
   testWidgets('unavailable native plans leave a persistent retry action', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: PremiumPage()));
-    await tester.tap(find.text('View plans'));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const PremiumPage(),
+      ),
+    );
+    await tester.tap(find.text(AppLocalizationsEn().premiumPageViewPlans));
     await tester.pumpAndSettle();
 
-    expect(find.text(PaywallOrchestrator.plansUnavailableMessage), findsOneWidget);
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().premiumPagePlansUnavailable), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().premiumPageTryAgain), findsOneWidget);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), hasLength(1));
     expect(analytics.events.whereType<PaywallResultEvent>(), hasLength(1));
     await tester.pump(const Duration(seconds: 2));

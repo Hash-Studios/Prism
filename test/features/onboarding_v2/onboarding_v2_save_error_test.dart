@@ -10,10 +10,9 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app_main;
-// ignore: depend_on_referenced_packages
 import 'package:analyzer/dart/analysis/utilities.dart';
-// ignore: depend_on_referenced_packages
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -175,6 +174,8 @@ void main() {
     await tester.pumpWidget(
       app_main.RestartWidget(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: _MountCounter(
             onMount: onMount ?? () {},
             child: OnboardingV2Shell(signOutForRecovery: signOutForRecovery),
@@ -318,7 +319,7 @@ void main() {
       );
 
       expect(find.text('Try again'), findsOneWidget);
-      expect(find.textContaining("Couldn't finish setup. Check"), findsOneWidget);
+      expect(find.textContaining("couldn't finish setup. check"), findsOneWidget);
       expect(find.textContaining('I agree to the'), findsNothing);
       expect(find.text('Continue with Apple'), findsNothing);
       expect(find.text('Browse without an account'), findsNothing);
@@ -397,7 +398,13 @@ void main() {
     getIt.registerSingleton<OnboardingV2Bloc>(bloc);
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
 
-    await tester.pumpWidget(const MaterialApp(home: OnboardingV2Shell()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: OnboardingV2Shell(),
+      ),
+    );
     await tester.pump(const Duration(seconds: 1));
 
     expect(toasts, <String>["Couldn't follow these creators. Try again."]);
@@ -420,7 +427,13 @@ void main() {
     getIt.registerSingleton<OnboardingV2Bloc>(bloc);
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
 
-    await tester.pumpWidget(const MaterialApp(home: OnboardingV2Shell()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: OnboardingV2Shell(),
+      ),
+    );
     await tester.pump(const Duration(seconds: 1));
 
     expect(toasts, <String>["Couldn't finish setup. Try again."]);

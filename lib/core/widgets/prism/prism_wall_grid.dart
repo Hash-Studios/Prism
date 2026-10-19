@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -45,7 +46,7 @@ class PrismWallTile extends StatelessWidget {
     this.heroTag,
     this.onTap,
     this.onLongPress,
-    this.semanticLabel = 'Wallpaper',
+    this.semanticLabel,
     this.overlay,
     this.borderRadius = PrismWallGrid.tileRadius,
     this.memCacheHeight,
@@ -58,7 +59,7 @@ class PrismWallTile extends StatelessWidget {
   final String? heroTag;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final String semanticLabel;
+  final String? semanticLabel;
 
   /// Drawn above the image, for example a premium badge or a selection tick. It fills the tile: position its
   /// content with [Align] or [Positioned].
@@ -69,13 +70,14 @@ class PrismWallTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool dark = Theme.of(context).brightness == Brightness.dark;
+    final String resolvedSemanticLabel = semanticLabel ?? context.l10n.coreWallpaperSemanticLabel;
     return PressScale(
       scale: 0.97,
       enabled: onTap != null,
       child: Semantics(
         button: onTap != null,
         image: true,
-        label: semanticLabel,
+        label: resolvedSemanticLabel,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,

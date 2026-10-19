@@ -2,6 +2,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,6 +12,9 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
   late BuildContext captured;
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: Builder(
         builder: (context) {
           captured = context;

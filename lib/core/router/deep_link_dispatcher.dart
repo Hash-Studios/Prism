@@ -8,8 +8,10 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/widgets.dart';
 
 enum DeepLinkDispatchResult { navigated, failure, blocked, cancelled, deferred }
 
@@ -236,12 +238,14 @@ class DeepLinkDispatcher {
       if (route == null && resolution.isNetwork && action is ShortCodeIntent && !isRetry && onRetryNeeded != null) {
         _deferred.add((action, source));
         onRetryNeeded!(action, source);
-        toasts.info('No connection. We will open this link when you are back online.');
+        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        toasts.info(l10n.appLinkRetryWhenOnline);
         return DeepLinkDispatchResult.deferred;
       }
       if (route == null) {
         if (source == DeepLinkSourceValue.push && action.rawUri.trim().isNotEmpty) {
-          toasts.error('That item is no longer available');
+          final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          toasts.error(l10n.coreContentNotAvailable);
         }
         await _navigate(
           source == DeepLinkSourceValue.push ? const NotificationRoute() : const NotFoundRoute(),

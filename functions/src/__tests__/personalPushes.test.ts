@@ -66,7 +66,7 @@ for (const [email, user, topic, state] of [
       data: {data: () => ({title: "t", body: "b", modifier: email})},
     } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
     assert.equal(inbox.length, 1);
-    assert.deepEqual(topics, [topic]);
+    assert.deepEqual(topics.sort(), [topic, `${topic}_loc_v1`]);
   });
 }
 
@@ -91,7 +91,10 @@ test("campaign email target also pushes to the stored token, once per device", a
     params: {requestId: "r1"},
     data: {data: () => ({title: "t", body: "b", modifier: "in@example.com"})},
   } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
-  assert.deepEqual(messages.map((m) => m.topic ?? m.token), ["u_uid-in", "legacy-token"]);
+  assert.deepEqual(
+    messages.map((m) => m.topic ?? m.token).sort(),
+    ["u_uid-in", "u_uid-in_loc_v1", "legacy-token"].sort(),
+  );
   assert.deepEqual(topics, []);
 });
 
@@ -103,7 +106,7 @@ for (const [modifier, expectedTopic] of [["all", "recommendations"], ["premium",
       data: {data: () => ({title: "t", body: "b", modifier})},
     } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
     assert.equal(inbox.length, 1);
-    assert.deepEqual(topics, [expectedTopic]);
+    assert.deepEqual(topics.sort(), [expectedTopic, `${expectedTopic}_loc_v1`]);
     assert.equal(userLookups(), 0);
   });
 }
@@ -158,5 +161,5 @@ test("signed-out artist and admins keep inbox entries while artist followers sti
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
   assert.equal(inbox.length, 2);
-  assert.deepEqual(topics, ["artist_posts", "posts_uid-artist"]);
+  assert.deepEqual(topics.sort(), ["artist_posts", "artist_posts_loc_v1", "posts_uid-artist", "posts_uid-artist_loc_v1"]);
 });

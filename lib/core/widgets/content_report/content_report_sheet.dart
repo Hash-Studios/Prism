@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,13 +15,15 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Reason keys must match Cloud Function [ALLOWED_REASONS].
-const List<(String wire, String label)> kContentReportReasons = <(String, String)>[
-  ('copyright', 'Copyright / ownership'),
-  ('harassment', 'Harassment or hate'),
-  ('sexual', 'Sexual or adult content'),
-  ('spam', 'Spam or misleading'),
-  ('other', 'Other'),
-];
+const List<String> kContentReportReasons = <String>['copyright', 'harassment', 'sexual', 'spam', 'other'];
+
+String _contentReportReasonLabel(String wire, AppLocalizations l10n) => switch (wire) {
+  'copyright' => l10n.coreReportReasonCopyright,
+  'harassment' => l10n.coreReportReasonHarassment,
+  'sexual' => l10n.coreReportReasonSexual,
+  'spam' => l10n.coreReportReasonSpam,
+  _ => l10n.coreReportReasonOther,
+};
 
 /// Opens the report sheet. A guest gets the sign-in sheet first, and the report sheet opens again after sign-in.
 ///
@@ -36,7 +39,7 @@ Future<void> showContentReportSheet(
     return;
   }
   if (FirebaseAuth.instance.currentUser == null) {
-    toasts.error('Sign in to report content');
+    toasts.error(context.l10n.coreSignInToReportContent);
     googleSignInPopUp(context, () {
       if (!context.mounted) return;
       unawaited(
@@ -86,12 +89,12 @@ class ContentReportSheetBody extends StatefulWidget {
   State<ContentReportSheetBody> createState() => ContentReportSheetBodyState();
 }
 
-String _contentTypeLabel(String contentType) {
+String _contentTypeLabel(String contentType, AppLocalizations l10n) {
   switch (contentType) {
     case 'user':
-      return 'user';
+      return l10n.coreContentReportUser;
     default:
-      return 'wallpaper';
+      return l10n.coreContentReportWallpaper;
   }
 }
 
@@ -108,9 +111,10 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
   }
 
   Future<void> _submit() async {
+    final AppLocalizations l10n = context.l10n;
     final String? reason = _selectedWire;
     if (reason == null || reason.isEmpty) {
-      toasts.error('Choose a reason');
+      toasts.error(l10n.coreChooseReportReason);
       return;
     }
     setState(() => _submitting = true);
@@ -145,7 +149,7 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
             reason: f.message,
           ),
         );
-        toasts.error(f.message);
+        toasts.error(l10n.coreReportCouldNotSubmit);
       },
       onSuccess: (_) {
         analytics.track(
@@ -155,15 +159,15 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
         final VoidCallback? blockCreator = widget.onBlockCreator;
         Navigator.of(context).pop();
         if (messenger == null || blockCreator == null) {
-          toasts.success('Report sent. Thank you.');
+          toasts.success(l10n.coreReportSent);
           return;
         }
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: const Text('Report sent. Thank you.'),
-              action: SnackBarAction(label: 'Also block this creator', onPressed: blockCreator),
+              content: Text(l10n.coreReportSent),
+              action: SnackBarAction(label: l10n.coreBlockCreatorAfterReport, onPressed: blockCreator),
             ),
           );
       },
@@ -172,27 +176,30 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
 
   @override
   Widget build(BuildContext context) {
-    final String label = _contentTypeLabel(widget.contentType);
+    final AppLocalizations l10n = context.l10n;
+    final String label = _contentTypeLabel(widget.contentType, l10n);
     final String? subtitle = widget.subtitle;
     return PrismSheetBody(
-      title: 'Report',
+      title: l10n.coreReport,
       message: subtitle == null || subtitle.isEmpty
-          ? 'Why are you reporting this $label?'
-          : 'Why are you reporting this $label ($subtitle)?',
+          ? l10n.coreContentReportWhy(label)
+          : l10n.coreContentReportWhyWithDetails(label, subtitle),
       scrollable: true,
-      actions: <Widget>[PrismButton(label: 'Send report', expand: true, loading: _submitting, onPressed: _submit)],
+      actions: <Widget>[
+        PrismButton(label: l10n.coreSendReport, expand: true, loading: _submitting, onPressed: _submit),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           PrismGroup(
             children: <Widget>[
-              for (final (String wire, String reason) in kContentReportReasons)
+              for (final String wire in kContentReportReasons)
                 Semantics(
                   inMutuallyExclusiveGroup: true,
                   selected: _selectedWire == wire,
                   child: PrismRow(
-                    title: reason,
+                    title: _contentReportReasonLabel(wire, l10n),
                     trailing: _ReasonTick(selected: _selectedWire == wire),
                     onTap: _submitting
                         ? null
@@ -208,8 +215,8 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
           PrismTextField(
             controller: _details,
             enabled: !_submitting,
-            label: 'Details (optional)',
-            hint: 'Anything else we should know',
+            label: l10n.coreReportDetailsOptional,
+            hint: l10n.coreReportDetailsHint,
             minLines: 3,
             maxLines: 3,
             maxLength: 2000,

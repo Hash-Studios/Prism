@@ -1,4 +1,5 @@
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +7,8 @@ void main() {
   testWidgets('screen readers hear the button label once', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Center(
           child: OnboardingPrimaryButton(label: 'continue with Google', onPressed: () {}),
         ),
@@ -29,6 +32,8 @@ void main() {
   testWidgets('an icon renders next to the label only when provided', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Center(
           child: OnboardingPrimaryButton(label: 'Continue with Apple', icon: Icons.apple, onPressed: () {}),
         ),
@@ -40,6 +45,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Center(
           child: OnboardingPrimaryButton(label: 'continue with Google', onPressed: () {}),
         ),

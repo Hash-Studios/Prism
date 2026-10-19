@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -23,19 +24,19 @@ class NotFoundPage extends StatelessWidget {
                   const Glint(mood: GlintMood.surprised, size: 120),
                   const SizedBox(height: PrismSpace.lg),
                   Text(
-                    'This page does not exist',
+                    context.l10n.coreThisPageDoesNotExist,
                     textAlign: TextAlign.center,
                     style: PrismTextStyles.sectionTitle(context),
                   ),
                   const SizedBox(height: PrismSpace.xs),
                   Text(
-                    'The link you opened is invalid or no longer available.',
+                    context.l10n.coreInvalidLinkBody,
                     textAlign: TextAlign.center,
                     style: PrismTextStyles.body(context),
                   ),
                   const SizedBox(height: PrismSpace.xl),
                   PrismButton(
-                    label: 'Go home',
+                    label: context.l10n.coreGoHome,
                     variant: PrismButtonVariant.tonal,
                     onPressed: () {
                       context.router.replaceAll(<PageRouteInfo>[const DashboardRoute()]);

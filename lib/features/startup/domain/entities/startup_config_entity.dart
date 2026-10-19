@@ -16,6 +16,8 @@ class StartupConfigEntity {
   });
 
   final String topImageLink;
+
+  /// Remote campaign copy. Empty means the UI should use its localized default.
   final String bannerText;
   final bool bannerTextOn;
   final String bannerUrl;

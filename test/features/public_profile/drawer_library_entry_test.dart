@@ -5,6 +5,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,

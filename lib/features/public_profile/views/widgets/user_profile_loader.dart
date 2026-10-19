@@ -3,6 +3,7 @@ import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -65,8 +66,8 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
           return SliverToBoxAdapter(
             child: GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load wallpapers",
-              actionLabel: 'Retry',
+              title: context.l10n.accountCouldNotLoadWallpapers,
+              actionLabel: context.l10n.accountTryAgain,
               onAction: () => context.read<PublicProfileBloc>().add(const PublicProfileEvent.refreshRequested()),
             ),
           );

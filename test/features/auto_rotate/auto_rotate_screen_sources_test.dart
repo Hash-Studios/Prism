@@ -15,6 +15,7 @@ import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -97,6 +98,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MultiBlocProvider(
           providers: [
             BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
@@ -185,7 +189,7 @@ void main() {
     await pumpScreen(tester);
 
     expect(find.text('Category: Space'), findsOneWidget);
-    expect(find.text('12 Space wallpapers in the mix'), findsOneWidget);
+    expect(find.text('12 wallpapers from Space in the mix'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('says when a source cannot be loaded and retries by turning rotation on', (tester) async {

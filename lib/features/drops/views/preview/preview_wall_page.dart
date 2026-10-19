@@ -5,6 +5,7 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/preview/phone_frame.dart';
 import 'package:Prism/features/drops/views/preview/phone_screen_overlay.dart';
 import 'package:Prism/features/drops/views/preview/preview_painters.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// One wall in a phone. While [owned] is false a watermark and a light frost sit over it. When it turns true they
@@ -80,7 +81,9 @@ class _PreviewWallPageState extends State<PreviewWallPage> with SingleTickerProv
                 image,
                 PhoneScreenOverlay(mode: widget.mode, now: widget.now),
                 IgnorePointer(
-                  child: CustomPaint(painter: DropWatermarkPainter(opacity: veil)),
+                  child: CustomPaint(
+                    painter: DropWatermarkPainter(opacity: veil, label: context.l10n.economyDropWatermarkLabel),
+                  ),
                 ),
                 IgnorePointer(
                   child: CustomPaint(painter: DropSheenPainter(progress: _reveal.value)),

@@ -4,6 +4,7 @@ import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
@@ -89,12 +90,12 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => PrismSheetBody(
-        title: 'Filter by tag',
+        title: context.l10n.debugFilterByTag,
         scrollable: true,
         child: PrismGroup(
           children: <Widget>[
             PrismRow(
-              title: 'All tags',
+              title: context.l10n.debugAllTags,
               showChevron: false,
               trailing: _selectedTag == null ? const Icon(Icons.check_rounded, size: 20) : null,
               onTap: () => Navigator.of(sheetContext).pop(''),
@@ -117,9 +118,9 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
   Future<void> _clear() async {
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Clear logs?',
-      message: 'This removes every log entry held in memory.',
-      confirmLabel: 'Clear logs',
+      title: context.l10n.debugClearLogsTitle,
+      message: context.l10n.debugClearLogsBody,
+      confirmLabel: context.l10n.debugClear,
       destructive: true,
     );
     if (!ok || !mounted) return;
@@ -138,7 +139,7 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xs),
-          child: DebugSearchField(controller: _searchCtrl, hintText: 'Search logs'),
+          child: DebugSearchField(controller: _searchCtrl, hintText: context.l10n.debugSearchLogs),
         ),
         SizedBox(
           height: 40,
@@ -163,7 +164,7 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
                 ),
               if (tags.isNotEmpty)
                 PrismChip(
-                  label: _selectedTag ?? 'All tags',
+                  label: _selectedTag ?? context.l10n.debugAllTags,
                   icon: Icons.sell_rounded,
                   selected: _selectedTag != null,
                   onTap: () => _pickTag(tags),
@@ -175,27 +176,28 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.xs, 0),
           child: Row(
             children: [
-              Text('${filtered.length} entries', style: PrismTextStyles.caption(context)),
+              Text(context.l10n.debugLogEntryCount(filtered.length), style: PrismTextStyles.caption(context)),
               const Spacer(),
               PrismIconButton(
-                tooltip: _autoScroll ? 'Turn off auto-scroll' : 'Turn on auto-scroll',
+                tooltip: _autoScroll ? context.l10n.debugAutoScrollOff : context.l10n.debugAutoScrollOn,
                 icon: Icons.vertical_align_bottom_rounded,
                 filled: _autoScroll,
                 onPressed: () => setState(() => _autoScroll = !_autoScroll),
               ),
               PrismIconButton(
-                tooltip: 'Copy all (filtered)',
+                tooltip: context.l10n.debugCopyFiltered,
                 icon: Icons.copy_rounded,
-                onPressed: () => copyToClipboard(context, _formatAll(filtered), label: 'Copied to clipboard'),
+                onPressed: () =>
+                    copyToClipboard(context, _formatAll(filtered), label: context.l10n.debugCopiedToClipboard),
               ),
               PrismIconButton(
-                tooltip: 'Export as file',
+                tooltip: context.l10n.debugExportFile,
                 icon: Icons.ios_share_rounded,
                 onPressed: () {
                   SharePlus.instance.share(ShareParams(text: _formatAll(filtered), subject: 'Prism Debug Logs'));
                 },
               ),
-              PrismIconButton(tooltip: 'Clear', icon: Icons.delete_outline_rounded, onPressed: _clear),
+              PrismIconButton(tooltip: context.l10n.debugClear, icon: Icons.delete_outline_rounded, onPressed: _clear),
             ],
           ),
         ),
@@ -204,10 +206,8 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
           child: filtered.isEmpty
               ? GlintState(
                   kind: GlintStateKind.empty,
-                  title: 'No logs',
-                  body: _records.isEmpty
-                      ? 'Log lines show up here as the app runs.'
-                      : 'No log line matches the filters.',
+                  title: context.l10n.debugNoLogs,
+                  body: _records.isEmpty ? context.l10n.debugLogsAppearHere : context.l10n.debugNoMatchingLogs,
                 )
               : ListView.builder(
                   controller: _scrollCtrl,
@@ -322,28 +322,28 @@ class _LogDetailSheet extends StatelessWidget {
     }
 
     return PrismSheetBody(
-      title: 'Log detail',
+      title: context.l10n.debugLogDetail,
       scrollable: true,
       actions: <Widget>[
         PrismButton(
-          label: 'Copy full detail',
+          label: context.l10n.debugCopyFullDetail,
           icon: Icons.copy_rounded,
           variant: PrismButtonVariant.tonal,
           expand: true,
-          onPressed: () => copyToClipboard(context, fullDetail(), label: 'Copied to clipboard'),
+          onPressed: () => copyToClipboard(context, fullDetail(), label: context.l10n.debugCopiedToClipboard),
         ),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _DetailRow(label: 'Time', value: record.timestamp.toIso8601String()),
-          _DetailRow(label: 'Level', value: record.level.name.toUpperCase()),
+          _DetailRow(label: context.l10n.debugTime, value: record.timestamp.toIso8601String()),
+          _DetailRow(label: context.l10n.debugLevel, value: record.level.name.toUpperCase()),
           if (record.tag != null) _DetailRow(label: 'Tag', value: record.tag!),
-          _DetailRow(label: 'Sequence', value: '#${record.sequence}'),
-          _DetailRow(label: 'Message', value: record.message),
+          _DetailRow(label: context.l10n.debugSequence, value: '#${record.sequence}'),
+          _DetailRow(label: context.l10n.debugMessage, value: record.message),
           if (record.fields.isNotEmpty) ...[
-            const PrismSectionHeader(
-              title: 'Fields',
+            PrismSectionHeader(
+              title: context.l10n.accountFields,
               small: true,
               padding: EdgeInsets.only(top: PrismSpace.md),
             ),
@@ -351,17 +351,17 @@ class _LogDetailSheet extends StatelessWidget {
           ],
           if (errorStr.isNotEmpty)
             _DetailBlock(
-              title: 'Error',
+              title: context.l10n.debugError,
               text: errorStr,
               color: cs.error,
-              onCopy: () => copyToClipboard(context, errorStr, label: 'Error copied'),
+              onCopy: () => copyToClipboard(context, errorStr, label: context.l10n.debugErrorCopied),
             ),
           if (stackTraceStr.isNotEmpty)
             _DetailBlock(
-              title: 'Stack trace',
+              title: context.l10n.debugStackTrace,
               text: stackTraceStr,
               size: 11,
-              onCopy: () => copyToClipboard(context, stackTraceStr, label: 'Stack trace copied'),
+              onCopy: () => copyToClipboard(context, stackTraceStr, label: context.l10n.debugStackTraceCopied),
             ),
         ],
       ),
@@ -418,7 +418,11 @@ class _DetailBlock extends StatelessWidget {
                 ),
               ),
             ),
-            PrismIconButton(tooltip: 'Copy ${title.toLowerCase()}', icon: Icons.copy_rounded, onPressed: onCopy),
+            PrismIconButton(
+              tooltip: context.l10n.debugCopyTitle(title.toLowerCase()),
+              icon: Icons.copy_rounded,
+              onPressed: onCopy,
+            ),
           ],
         ),
         SelectableText(text, style: color == null ? mono : mono.copyWith(color: color)),

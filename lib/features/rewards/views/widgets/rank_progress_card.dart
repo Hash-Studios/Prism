@@ -5,6 +5,7 @@ import 'package:Prism/features/rewards/domain/rank_progress.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class RankProgressCard extends StatelessWidget {
@@ -52,24 +53,30 @@ class XpProgressCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(child: Text('YOUR XP', style: PrismTextStyles.eyebrow(context))),
+              Expanded(child: Text(context.l10n.economyYourXp, style: PrismTextStyles.eyebrow(context))),
               IconButton(
-                tooltip: 'How XP and rank rewards work',
+                tooltip: context.l10n.economyRankRewardsHelp,
                 style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
                 onPressed: () => showXpExplanation(context, progress: progress, onOpenShop: onOpenShop),
                 icon: const Icon(Icons.info_outline_rounded, size: 20),
               ),
             ],
           ),
-          Text(rankTitle(progress.rank.id), style: PrismTextStyles.cardTitle(context)),
+          Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
           const SizedBox(height: PrismSpace.xxs),
-          Text('${groupedXp(progress.xp)} lifetime XP', style: PrismTextStyles.body(context)),
+          Text(
+            context.l10n.economyLifetimeXp(groupedXp(progress.xp, context.l10n)),
+            style: PrismTextStyles.body(context),
+          ),
           const SizedBox(height: PrismSpace.md),
           Semantics(
-            label: '${rankTitle(progress.rank.id)} rank progress',
+            label: context.l10n.economyRankProgressSemantics(rankTitle(progress.rank.id, context.l10n)),
             value: next == null
-                ? 'Highest rank reached: ${rankTitle(progress.rank.id)}'
-                : '${groupedXp(progress.remainingXp)} XP to ${rankTitle(next.id)}',
+                ? context.l10n.economyHighestRankReached(rankTitle(progress.rank.id, context.l10n))
+                : context.l10n.economyXpToRank(
+                    groupedXp(progress.remainingXp, context.l10n),
+                    rankTitle(next.id, context.l10n),
+                  ),
             excludeSemantics: true,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(PrismRadius.pill),
@@ -83,7 +90,12 @@ class XpProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: PrismSpace.xs),
           Text(
-            next == null ? 'Highest rank reached' : '${groupedXp(progress.remainingXp)} XP to ${rankTitle(next.id)}',
+            next == null
+                ? context.l10n.economyHighestRankReachedShort
+                : context.l10n.economyXpToRank(
+                    groupedXp(progress.remainingXp, context.l10n),
+                    rankTitle(next.id, context.l10n),
+                  ),
             style: PrismTextStyles.caption(context),
           ),
           const SizedBox(height: PrismSpace.md),
@@ -93,15 +105,20 @@ class XpProgressCard extends StatelessWidget {
             _RewardSummary(reward: reward)
           else ...<Widget>[
             Text(
-              progress.rewards.isEmpty ? 'Your rank grows with lifetime XP.' : 'All rank rewards collected',
+              progress.rewards.isEmpty
+                  ? context.l10n.economyRankGrowsWithXp
+                  : context.l10n.economyAllRankRewardsCollected,
               style: PrismTextStyles.rowTitle(context),
             ),
             const SizedBox(height: PrismSpace.xxs),
-            Text('Lifetime XP never resets.', style: PrismTextStyles.caption(context)),
+            Text(context.l10n.economyLifetimeXpNeverResets, style: PrismTextStyles.caption(context)),
           ],
           if (onUseReward != null && ownedReward != null) ...<Widget>[
             const SizedBox(height: PrismSpace.xs),
-            TextButton(onPressed: () => onUseReward!(ownedReward.item), child: Text('Use ${ownedReward.name}')),
+            TextButton(
+              onPressed: () => onUseReward!(ownedReward.item),
+              child: Text(context.l10n.economyUseReward(ownedReward.name(context.l10n))),
+            ),
           ],
         ],
       ),
@@ -121,14 +138,19 @@ class _RewardSummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          reward.earned ? '${reward.name} earned' : 'Next reward: ${reward.name}',
+          reward.earned
+              ? context.l10n.economyRewardEarned(reward.name(context.l10n))
+              : context.l10n.economyNextReward(reward.name(context.l10n)),
           style: PrismTextStyles.rowTitle(context),
         ),
         const SizedBox(height: PrismSpace.xxs),
         Text(
           reward.earned
-              ? 'Syncing to your inventory. It is yours to keep.'
-              : 'Yours automatically at ${rankTitle(reward.rank.id)} · ${groupedXp(reward.rank.min)} XP',
+              ? context.l10n.economyRankRewardSyncing
+              : context.l10n.economyRankRewardAtRank(
+                  rankTitle(reward.rank.id, context.l10n),
+                  groupedXp(reward.rank.min, context.l10n),
+                ),
           style: PrismTextStyles.caption(context),
         ),
       ],
@@ -167,11 +189,11 @@ class RankInfoChip extends StatelessWidget {
   Widget build(BuildContext context) => ValueListenableBuilder<EconomyConfig>(
     valueListenable: EconomyConfig.notifier,
     builder: (context, config, _) {
-      final String title = rankTitle(config.rankFor(xp).id);
+      final String title = rankTitle(config.rankFor(xp).id, context.l10n);
       return TextButton(
         onPressed: () => showXpExplanation(context),
         child: Semantics(
-          label: '$title rank. How XP and rank rewards work',
+          label: context.l10n.economyRankInfoSemantics(title),
           excludeSemantics: true,
           child: Text(title),
         ),
@@ -210,9 +232,9 @@ class XpExplanationSheet extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(child: Text('XP, ranks & rewards', style: PrismTextStyles.sectionTitle(context))),
+                Expanded(child: Text(context.l10n.economyXpRanksRewards, style: PrismTextStyles.sectionTitle(context))),
                 IconButton(
-                  tooltip: 'Close XP explanation',
+                  tooltip: context.l10n.economyCloseXpExplanation,
                   style: IconButton.styleFrom(
                     minimumSize: const Size.square(48),
                     visualDensity: VisualDensity.standard,
@@ -224,42 +246,49 @@ class XpExplanationSheet extends StatelessWidget {
             ),
             const SizedBox(height: PrismSpace.md),
             _Explanation(
-              title: 'Earn XP as you go',
-              text:
-                  'Daily streaks earn ${activities.dailyStreak} XP, plus ${activities.streakWeek} XP for completing a seven-day cycle. Quest chests earn ${activities.questChest} XP. Your first valid upload earns ${activities.firstWallpaperUpload} XP; profile completion earns ${activities.profileCompletion} XP. Daily quests award ${awards.questXp} XP each; the weekly quest awards ${awards.weeklyQuestXp} XP. Some badges and creator milestones also earn XP.',
+              title: context.l10n.economyEarnXpAsYouGo,
+              text: context.l10n.economyXpActivityDetails(
+                activities.dailyStreak,
+                activities.streakWeek,
+                activities.questChest,
+                activities.firstWallpaperUpload,
+                activities.profileCompletion,
+                awards.questXp,
+                awards.weeklyQuestXp,
+              ),
             ),
-            const _Explanation(
-              title: 'The same activity earns the same XP',
-              text:
-                  'Ads, Pro spins, Pro daily bonuses, referrals and refunds earn no XP. Pro and coin multipliers do not increase XP. Coin rewards stay separate.',
+            _Explanation(
+              title: context.l10n.economySameActivitySameXp,
+              text: context.l10n.economySameActivityXpDetails,
             ),
-            const _Explanation(
-              title: 'Lifetime progress, permanent rewards',
-              text:
-                  'Lifetime XP sets your rank and never resets. Rank cosmetics arrive automatically in your inventory, cost no coins and stay yours. Choose when to equip them in the Shop.',
+            _Explanation(
+              title: context.l10n.economyLifetimePermanentRewards,
+              text: context.l10n.economyLifetimePermanentDetails,
             ),
             for (final RankRewardProgress reward in milestones.rewards)
               Padding(
                 padding: const EdgeInsets.only(bottom: PrismSpace.sm),
                 child: Text(
-                  '${rankTitle(reward.rank.id)} · ${groupedXp(reward.rank.min)} XP\n${reward.name}',
+                  context.l10n.economyRankRewardMilestone(
+                    rankTitle(reward.rank.id, context.l10n),
+                    groupedXp(reward.rank.min, context.l10n),
+                    reward.name(context.l10n),
+                  ),
                   style: PrismTextStyles.body(context),
                 ),
               ),
             const SizedBox(height: PrismSpace.sm),
-            const _Explanation(
-              title: 'A fresh leaderboard each week',
-              text:
-                  'The leaderboard uses weekly XP, which resets every Monday at 00:00 UTC. Your lifetime XP, rank and earned cosmetics stay.',
+            _Explanation(
+              title: context.l10n.economyFreshLeaderboardWeekly,
+              text: context.l10n.economyFreshLeaderboardDetails,
             ),
-            const _Explanation(
-              title: 'Coins are yours to spend',
-              text:
-                  'Coins pay for wallpapers, tools and Shop items. XP is progress, not a balance you spend. Spending coins never lowers your XP.',
+            _Explanation(
+              title: context.l10n.economyCoinsAreYoursToSpend,
+              text: context.l10n.economyCoinsSpendingDetails,
             ),
             if (onOpenShop != null)
               PrismButton(
-                label: 'Open Shop',
+                label: context.l10n.economyOpenShop,
                 expand: true,
                 onPressed: () {
                   Navigator.of(context).pop();

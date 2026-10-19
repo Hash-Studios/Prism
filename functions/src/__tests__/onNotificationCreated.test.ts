@@ -84,9 +84,11 @@ test("an admin-written inbox entry also goes out as a push", async (t) => {
     notification: {title: "Wallpaper Rejected", body: "Low quality"},
     data: {route: "announcement", imageUrl: "", arguments: []},
   }, t);
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
   assert.equal(sent[0].topic, "u_u1");
   assert.equal(sent[0].notification?.title, "Wallpaper Rejected");
+  assert.equal(sent[1].topic, "u_u1_loc_v1");
+  assert.equal(sent[1].notification?.title, "Wallpaper Rejected");
   assert.equal(sent[0].data?.route, "announcement");
 });
 
@@ -95,9 +97,10 @@ test("an admin-written inbox entry reaches the user's uid topic and token once p
     modifier: "artist@example.com",
     notification: {title: "Wallpaper Rejected", body: "Low quality"},
   }, t, {token: "tok-1"});
-  assert.deepEqual(sent.map((m) => m.topic ?? "token"), ["u_u1", "token"]);
-  assert.equal(sent[1].token, "tok-1");
+  assert.deepEqual(sent.map((m) => m.topic ?? "token"), ["u_u1", "u_u1_loc_v1", "token"]);
+  assert.equal(sent[2].token, "tok-1");
   assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
+  assert.equal(sent[1].android?.notification?.tag, sent[2].android?.notification?.tag);
   assert.ok(sent[0].android?.notification?.tag);
 });
 
@@ -116,7 +119,7 @@ test("concurrent and redelivered create events attempt only one push", async (t)
     modifier: "all",
     notification: {title: "t", body: "b"},
   }, t, {deliveries: 2});
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
 });
 
 test("a transaction retried after another invocation claims the entry does not push", async (t) => {

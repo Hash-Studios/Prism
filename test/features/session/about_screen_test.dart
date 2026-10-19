@@ -3,11 +3,11 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:github/github.dart';
-// ignore: depend_on_referenced_packages
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -34,7 +34,7 @@ Contributor _contributor(String? login, {int commits = 5}) =>
 
 void main() {
   test('the feedback link is a mailto with the version and platform prefilled', () {
-    final link = buildFeedbackLink(version: '3.3.0', build: '339', platform: 'android 14');
+    final link = buildFeedbackLink(version: '3.3.0', build: '339', platform: 'android 14', subject: 'Prism feedback');
     final uri = Uri.parse(link);
 
     expect(uri.scheme, 'mailto');
@@ -77,7 +77,14 @@ void main() {
       tester.view.physicalSize = const Size(800, 3000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(theme: theme, home: const AboutScreen()));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: theme,
+          home: const AboutScreen(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
     }
@@ -296,7 +303,13 @@ void main() {
       tester.view.physicalSize = const Size(800, 700);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AboutScreen(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
 
@@ -330,7 +343,13 @@ void main() {
         _contributor('other_contributor_login_for_the_list', commits: 7),
       ];
 
-      await tester.pumpWidget(MaterialApp(home: AboutScreen(loadContributors: () async => contributors)));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AboutScreen(loadContributors: () async => contributors),
+        ),
+      );
       await tester.pump();
       await tester.pump();
 

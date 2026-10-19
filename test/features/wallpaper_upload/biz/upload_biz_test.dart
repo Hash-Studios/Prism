@@ -4,6 +4,7 @@ import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -61,6 +62,7 @@ void main() {
 
   group('UploadBatch', () {
     final files = <File>[File('a.png'), File('b.png'), File('c.png')];
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
 
     test('steps through the files and counts what was sent', () {
       final batch = UploadBatch(files);
@@ -81,7 +83,7 @@ void main() {
         UploadItemOutcome.failed,
       ]);
       expect(batch.submittedCount, 1);
-      expect(batch.summary, '1 of 3 wallpapers submitted. 2 not sent.');
+      expect(batch.summary(l10n), '1 of 3 wallpapers submitted. 2 not sent.');
     });
 
     test('advance stops at the last file', () {
@@ -97,7 +99,7 @@ void main() {
       batch.finishCurrent(UploadItemOutcome.submitted);
       batch.advance();
       batch.finishCurrent(UploadItemOutcome.submitted);
-      expect(batch.summary, '2 of 2 wallpapers submitted');
+      expect(batch.summary(l10n), '2 of 2 wallpapers submitted');
       expect(UploadBatch(<File>[File('a.png')]).isMulti, isFalse);
     });
   });

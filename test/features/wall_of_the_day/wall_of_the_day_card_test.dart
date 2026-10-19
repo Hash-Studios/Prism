@@ -13,6 +13,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -49,6 +50,9 @@ void main() {
     for (var loop = 0; loop < 3; loop++) {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BlocProvider<WotdBloc>.value(
             value: bloc,
             child: WallOfTheDayCard(key: ValueKey<int>(loop)),
@@ -74,6 +78,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WotdBloc>.value(
           value: bloc,
           child: const SizedBox(width: 366, height: 205, child: WallOfTheDayCard()),
@@ -99,6 +106,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WotdBloc>.value(value: bloc, child: const WallOfTheDayCard()),
       ),
     );
@@ -155,6 +165,9 @@ void main() {
       when(() => bloc.state).thenReturn(WotdState.initial().copyWith(status: LoadStatus.success, entity: entity));
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
             child: child!,

@@ -1,6 +1,7 @@
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,6 +54,9 @@ void main() {
       late BuildContext context;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Builder(
             builder: (BuildContext builderContext) {
               context = builderContext;

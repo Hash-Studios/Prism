@@ -9,6 +9,8 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,6 +55,9 @@ void main() {
   });
 
   Widget host(Widget child) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     theme: ThemeData.light(),
     home: Scaffold(body: child),
   );
@@ -135,7 +140,7 @@ void main() {
       await pumpTile(tester, 'frame_founders');
 
       expect(find.text('Until Nov 30'), findsOneWidget);
-      expect(find.text('1000'), findsOneWidget);
+      expect(find.text(formatLocalizedNumber(1000, AppLocalizationsEn())), findsOneWidget);
     });
   });
 
@@ -240,7 +245,7 @@ void main() {
 
       expect(find.text('Get Pro'), findsOneWidget);
       expect(find.textContaining('Buy for'), findsNothing);
-      expect(find.text('Only Pro members can buy this.'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyShopProOnly), findsOneWidget);
     });
 
     testWidgets('a rank reward below its rank points to XP without selling it', (tester) async {
@@ -303,7 +308,7 @@ void main() {
       });
       await openSheet(tester, 'frame_founders');
 
-      expect(find.text('This limited item is sold out.'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyShopSoldOut), findsOneWidget);
       expect(find.byType(PrismButton), findsNothing);
     });
   });
@@ -314,7 +319,14 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       coins.inventoryNotifier.value = const Inventory(owned: <String>{'theme_rose'});
-      await tester.pumpWidget(MaterialApp(theme: ThemeData.light(), home: const ShopPage()));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ShopPage(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
 
@@ -334,7 +346,14 @@ void main() {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(theme: ThemeData.light(), home: const ShopPage()));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ShopPage(),
+        ),
+      );
       await tester.pump();
 
       await tester.tap(find.text('Rose'));

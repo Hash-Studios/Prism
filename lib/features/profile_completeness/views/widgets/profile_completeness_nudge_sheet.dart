@@ -1,6 +1,8 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_copy.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 enum ProfileCompletenessNudgeAction { completeNow, notNow }
@@ -30,19 +32,18 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
     return PrismSheetBody(
       mood: GlintMood.proud,
       centered: true,
-      title: 'Finish your profile',
-      message:
-          'Your profile is ${status.percent}% complete. Finish it to earn ${CoinPolicy.profileCompletion} Prism coins.',
+      title: context.l10n.accountFinishYourProfile,
+      message: context.l10n.accountProfileNudgeMessage(status.percent, CoinPolicy.profileCompletion),
       actions: <Widget>[
         PrismButton(
-          label: 'Complete profile',
+          label: context.l10n.accountCompleteProfile,
           expand: true,
           onPressed: () {
             Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow);
           },
         ),
         PrismButton(
-          label: 'Later',
+          label: context.l10n.accountLater,
           expand: true,
           variant: PrismButtonVariant.ghost,
           onPressed: () => Navigator.of(context).pop(ProfileCompletenessNudgeAction.notNow),
@@ -58,7 +59,12 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
                 children: <Widget>[
                   Icon(Icons.radio_button_unchecked_rounded, size: 18, color: cs.onSurface.withValues(alpha: 0.4)),
                   const SizedBox(width: PrismSpace.xs),
-                  Flexible(child: Text(step.label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14))),
+                  Flexible(
+                    child: Text(
+                      profileCompletenessStepLabel(context.l10n, step),
+                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
+                    ),
+                  ),
                 ],
               ),
             ),

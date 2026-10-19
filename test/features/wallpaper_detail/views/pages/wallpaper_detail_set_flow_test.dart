@@ -24,8 +24,8 @@ import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
-// ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -164,6 +164,9 @@ void main() {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MultiBlocProvider(
           providers: [
             BlocProvider<WallpaperDetailBloc>.value(value: bloc),
@@ -282,6 +285,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: ThemeData.dark(),
         home: MultiBlocProvider(
           providers: [

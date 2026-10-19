@@ -1,6 +1,7 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/deep_link_input/biz/deep_link_input_service.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -30,7 +31,7 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
       if (!mounted) return;
       if (destination != null) await context.router.replace<void>(destination);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not open your gallery. Please try again.');
+      if (mounted) setState(() => _error = context.l10n.deepLinkInputGalleryError);
     } finally {
       if (mounted) setState(() => _choosing = false);
     }
@@ -38,15 +39,16 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final String title = switch (widget.workflow) {
-      DeepLinkInputWorkflow.uploadWall => 'Upload a wallpaper',
-      DeepLinkInputWorkflow.editWall => 'Edit a wallpaper',
-      DeepLinkInputWorkflow.wallpaperFilter => 'Wallpaper filters',
-      DeepLinkInputWorkflow.downloadWallpaper => 'Wallpaper preview',
-      DeepLinkInputWorkflow.wallpaperPosition => 'Position a wallpaper',
-      DeepLinkInputWorkflow.liveWallpaper => 'Live wallpaper',
-      DeepLinkInputWorkflow.clockPreview => 'Clock preview',
-      DeepLinkInputWorkflow.photoPreview => 'Photo preview',
+      DeepLinkInputWorkflow.uploadWall => l10n.deepLinkInputUploadTitle,
+      DeepLinkInputWorkflow.editWall => l10n.deepLinkInputEditTitle,
+      DeepLinkInputWorkflow.wallpaperFilter => l10n.deepLinkInputFiltersTitle,
+      DeepLinkInputWorkflow.downloadWallpaper => l10n.deepLinkInputWallpaperPreviewTitle,
+      DeepLinkInputWorkflow.wallpaperPosition => l10n.deepLinkInputPositionTitle,
+      DeepLinkInputWorkflow.liveWallpaper => l10n.deepLinkInputLiveTitle,
+      DeepLinkInputWorkflow.clockPreview => l10n.deepLinkInputClockPreviewTitle,
+      DeepLinkInputWorkflow.photoPreview => l10n.deepLinkInputPhotoPreviewTitle,
     };
     return PrismPage(
       title: title,
@@ -59,7 +61,7 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
               Icon(Icons.photo_library_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: PrismSpace.lg),
               Text(
-                'Choose an image from your gallery to continue.',
+                l10n.deepLinkInputChooseImageDescription,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.body(context),
               ),
@@ -75,7 +77,7 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
                 ),
               ],
               const SizedBox(height: PrismSpace.xl),
-              PrismButton(label: 'Choose image', onPressed: _chooseImage, loading: _choosing),
+              PrismButton(label: l10n.deepLinkInputChooseImage, onPressed: _chooseImage, loading: _choosing),
             ],
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_quests_repository.dart';
@@ -10,6 +11,7 @@ void main() {
   const EconomyAward award = EconomyAward(questCoins: 3, questXp: 40, weeklyQuestCoins: 50, weeklyQuestXp: 200);
   const String today = '2026-10-18';
   const int price = 8;
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
 
   List<QuestItem> dailyItems({required int claimed}) => <QuestItem>[
     questItem('set_wall', QuestEvent.setWallpaper, claimed: claimed > 0, progress: claimed > 0 ? 1 : 0),
@@ -29,6 +31,7 @@ void main() {
         award,
         today: today,
         price: price,
+        l10n: l10n,
       )!;
 
   group('rewards', () {
@@ -85,6 +88,7 @@ void main() {
         award,
         today: today,
         price: 12,
+        l10n: l10n,
       )!;
 
       expect(board.chest.price, 12);
@@ -97,6 +101,7 @@ void main() {
           award,
           today: today,
           price: price,
+          l10n: l10n,
         ),
         isNull,
       );
@@ -106,6 +111,7 @@ void main() {
           award,
           today: today,
           price: price,
+          l10n: l10n,
         ),
         isNull,
       );
@@ -163,6 +169,7 @@ void main() {
         award,
         today: today,
         price: price,
+        l10n: l10n,
       )!;
 
       expect(board.booster, isNull);
@@ -192,19 +199,19 @@ void main() {
 
   group('formatCountdown', () {
     test('shows days and hours from one day up', () {
-      expect(formatCountdown(const Duration(days: 4, hours: 2, minutes: 5)), '4d 2h');
+      expect(formatCountdown(l10n, const Duration(days: 4, hours: 2, minutes: 5)), '4d 2h');
     });
 
     test('shows hours and minutes under a day', () {
-      expect(formatCountdown(const Duration(hours: 13, minutes: 40)), '13h 40m');
+      expect(formatCountdown(l10n, const Duration(hours: 13, minutes: 40)), '13h 40m');
     });
 
     test('shows minutes under an hour', () {
-      expect(formatCountdown(const Duration(minutes: 40)), '40m');
+      expect(formatCountdown(l10n, const Duration(minutes: 40)), '40m');
     });
 
     test('never shows less than a minute', () {
-      expect(formatCountdown(const Duration(seconds: 20)), '1m');
+      expect(formatCountdown(l10n, const Duration(seconds: 20)), '1m');
     });
   });
 }

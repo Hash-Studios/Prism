@@ -1,3 +1,5 @@
+import 'package:Prism/l10n/l10n.dart';
+
 /// Codes the wallpaper plugin returns that a retry cannot fix.
 const Set<String> _permanentWallpaperErrors = <String>{'image-too-large', 'wallpaper-not-allowed', 'invalid-image'};
 
@@ -5,39 +7,39 @@ const Set<String> _permanentWallpaperErrors = <String>{'image-too-large', 'wallp
 bool canRetryWallpaperError(String? code) => !_permanentWallpaperErrors.contains(code);
 
 /// One short, plain sentence for a plugin error [code]. [live] picks the wording for live wallpapers.
-String wallpaperErrorMessage(String? code, {bool live = false}) {
+String wallpaperErrorMessage(String? code, AppLocalizations l10n, {bool live = false}) {
   switch (code) {
     case 'source-too-large':
     case 'texture-source-too-large':
-      return 'That file is too large for a live wallpaper.';
+      return l10n.coreWallpaperErrorSourceTooLarge;
     case 'image-too-large':
-      return live ? 'That file is too large for a live wallpaper.' : 'This image is too large for your device to set.';
+      return live ? l10n.coreWallpaperErrorSourceTooLarge : l10n.coreWallpaperErrorImageTooLarge;
     case 'texture-dimensions-exceeded':
-      return 'That image is too large for a live wallpaper.';
+      return l10n.coreWallpaperErrorTextureDimensions;
     case 'wallpaper-not-allowed':
-      return 'Your device or work profile does not allow wallpaper changes.';
+      return l10n.coreWallpaperErrorNotAllowed;
     case 'out-of-memory':
-      return 'Not enough memory. Close other apps and try again.';
+      return l10n.coreWallpaperErrorMemory;
     case 'timeout':
-      return 'Timed out. Check your connection and try again.';
+      return l10n.coreWallpaperErrorTimeout;
     case 'invalid-video':
     case 'video-preparation-failed':
-      return 'That video cannot be played as a wallpaper. Try another clip.';
+      return l10n.coreWallpaperErrorInvalidVideo;
     case 'source-unavailable':
     case 'texture-source-unavailable':
-      return "Couldn't read the file. Try again.";
+      return l10n.coreWallpaperErrorReadFile;
     case 'permission-denied':
-      return 'Prism does not have permission to read that file.';
+      return l10n.coreWallpaperErrorPermission;
     case 'shader-compilation-failed':
     case 'shader-link-failed':
     case 'opengl-configuration-failed':
     case 'egl-unavailable':
     case 'egl-initialization-failed':
-      return 'This device could not start that style. Try another one.';
+      return l10n.coreWallpaperErrorStyle;
     case 'system-ui-unavailable':
     case 'system-ui-failed':
-      return "Couldn't open the system preview.";
+      return l10n.coreWallpaperErrorSystemPreview;
     default:
-      return live ? "Couldn't set the live wallpaper. Try again." : "Couldn't set the wallpaper.";
+      return live ? l10n.coreWallpaperErrorLiveGeneric : l10n.coreWallpaperErrorGeneric;
   }
 }

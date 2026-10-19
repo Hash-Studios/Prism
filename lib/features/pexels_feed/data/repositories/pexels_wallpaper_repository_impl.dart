@@ -193,11 +193,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   }
 
   Failure _lookupFailure(Object error) => switch (error) {
-    SocketException() ||
-    HandshakeException() ||
-    TimeoutException() ||
-    http.ClientException() => const NetworkFailure(wallpaperLoadFailureMessage),
-    _ => ServerFailure('Failed to fetch Pexels wallpaper by id: $error'),
+    SocketException() => const NetworkFailure(wallpaperLoadFailureMessage, code: 'socket_error'),
+    HandshakeException() => const NetworkFailure(wallpaperLoadFailureMessage, code: 'tls_error'),
+    TimeoutException() => const NetworkFailure(wallpaperLoadFailureMessage, code: 'timeout'),
+    http.ClientException() => const NetworkFailure(wallpaperLoadFailureMessage, code: 'http_client_error'),
+    _ => ServerFailure('Failed to fetch Pexels wallpaper by id: $error', code: error.runtimeType.toString()),
   };
 
   Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({

@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -87,7 +88,13 @@ void main() {
     tester.view.physicalSize = const Size(1000, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTileSettingsScreen(),
+      ),
+    );
     if (settle) await tester.pumpAndSettle();
   }
 

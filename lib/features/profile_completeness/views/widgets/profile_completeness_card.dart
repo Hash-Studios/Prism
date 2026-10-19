@@ -4,6 +4,8 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_copy.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
@@ -24,7 +26,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
   Future<void> _handleComplete() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
-    SemanticsService.sendAnnouncement(View.of(context), 'Opening profile editor', TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), context.l10n.accountOpeningProfileEditor, TextDirection.ltr);
     try {
       await widget.onCompleteNow();
     } finally {
@@ -44,11 +46,14 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
-              Expanded(child: Text('Complete your profile', style: PrismTextStyles.cardTitle(context))),
+              Expanded(child: Text(context.l10n.accountCompleteYourProfile, style: PrismTextStyles.cardTitle(context))),
               Semantics(
-                label: 'Profile ${status.percent}% complete',
+                label: context.l10n.accountProfilePercentComplete(status.percent),
                 excludeSemantics: true,
-                child: Text('${status.percent}%', style: PrismTextStyles.numeral(context, 22)),
+                child: Text(
+                  '${formatLocalizedNumber(status.percent, context.l10n)}%',
+                  style: PrismTextStyles.numeral(context, 22),
+                ),
               ),
             ],
           ),
@@ -59,7 +64,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Earn ${CoinPolicy.profileCompletion} coins when you finish',
+                  context.l10n.accountEarnProfileCompletionCoins(CoinPolicy.profileCompletion),
                   style: PrismTextStyles.caption(context),
                 ),
               ),
@@ -86,13 +91,18 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
                 children: <Widget>[
                   Icon(Icons.radio_button_unchecked_rounded, size: 18, color: cs.onSurface.withValues(alpha: 0.4)),
                   const SizedBox(width: PrismSpace.xs),
-                  Expanded(child: Text(step.label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14))),
+                  Expanded(
+                    child: Text(
+                      profileCompletenessStepLabel(context.l10n, step),
+                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
+                    ),
+                  ),
                 ],
               ),
             ),
           const SizedBox(height: PrismSpace.xs),
           PrismButton(
-            label: 'Complete profile',
+            label: context.l10n.accountCompleteProfile,
             variant: PrismButtonVariant.tonal,
             size: PrismButtonSize.compact,
             loading: _isLoading,

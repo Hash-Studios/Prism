@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Prism</string>
     <string name="quick_settings">Shuffle wallpaper</string>
     <string name="quick_settings_wotd">Wall of the Day</string>
     <string name="quick_settings_favs">Random Favourite</string>
@@ -10,6 +11,7 @@
     <string name="tile_error_setup">Open Prism to finish setting up this tile.</string>
     <string name="tile_error_unavailable">Wallpaper changes are not available on this device.</string>
     <string name="tile_error_generic">Could not apply the wallpaper. Try again.</string>
+    <string name="tile_setup_subtitle">Open Prism to set up</string>
     <string name="wotd_widget_label">Prism</string>
     <string name="wotd_widget_hint">Today\'s wallpaper appears here when you are online</string>
     <string name="wotd_widget_description">Today\'s wallpaper. Tap to open it in Prism. Tap Set to use it as your wallpaper.</string>
@@ -17,4 +19,43 @@
     <string name="wotd_widget_set_description">Set today\'s wallpaper</string>
     <string name="wotd_widget_set_done">Wallpaper set</string>
     <string name="wotd_widget_set_failed">Could not set wallpaper</string>
+    <string name="media_saved_in_pictures">Saved in Pictures/%1$s!</string>
+    <string name="notif_push_wall_approved_for_artist_title">Your wallpaper is live! 🎉</string>
+    <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" has been approved and is now visible to everyone.</string>
+    <string name="notif_push_wall_approved_for_artist_body_untitled">Your wallpaper has been approved and is now visible to everyone.</string>
+    <string name="notif_push_wall_live_for_followers_title">New wall by %1$s</string>
+    <string name="notif_push_wall_live_for_followers_body">\"%1$s\" is now live on Prism.</string>
+    <string name="notif_push_wall_approved_for_admin_title">Wall approved ✅</string>
+    <string name="notif_push_wall_approved_for_admin_body">\"%1$s\" by %2$s is now live.</string>
+    <string name="notif_push_new_follower_title">You have a new follower! 🎉</string>
+    <string name="notif_push_new_follower_body">%1$s is now following you.</string>
+    <string name="notif_push_streak_reminder_title">Your streak is about to break!</string>
+    <string name="notif_push_streak_reminder_body">Open Prism now to keep your login streak alive 🔥</string>
+    <string name="notif_push_wotd_for_creator_title">Your wallpaper is the Wall of the Day</string>
+    <string name="notif_push_wotd_for_creator_body">Prism picked your wallpaper for everyone today. Thank you for sharing it.</string>
+    <string name="notif_push_wotd_for_audience_title">Today\'s Wall of the Day is here</string>
+    <string name="notif_push_wotd_for_audience_body">%1$s</string>
+    <string name="notif_push_wotd_for_audience_body_untitled">Open Prism to see today\'s Wall of the Day.</string>
+    <string name="notif_push_win_back7_title">Your feed has new walls</string>
+    <string name="notif_push_win_back7_body">Fresh wallpapers landed while you were away.</string>
+    <string name="notif_push_win_back14_title">New walls are waiting</string>
+    <string name="notif_push_win_back14_body">Come see what creators added this fortnight.</string>
+    <string name="notif_push_win_back30_title">New AI styles to try</string>
+    <string name="notif_push_win_back30_body">Make a wallpaper that feels like you.</string>
+    <string name="notif_push_win_back60_title">Prism misses you</string>
+    <string name="notif_push_win_back60_body">Your next favourite wall is a tap away.</string>
+    <string name="notif_push_drop_live_title">A new Drop is live</string>
+    <string name="notif_push_drop_live_body">Wallpapers in this week\'s Drop: %1$s. Preview the Drop before it closes.</string>
+    <string name="notif_push_drop_last_call_title">Last call on this week\'s Drop</string>
+    <string name="notif_push_drop_last_call_body">%1$s ends in %2$s h. Wallpapers are unavailable for a month afterward.</string>
+    <string name="notif_push_draw_winner_title">You won the Prism Draw</string>
+    <string name="notif_push_draw_winner_body">One month of Pro and the Prism frame are yours.</string>
+    <string name="notif_push_gift_received_title">%1$s sent you a 24-hour Pro pass</string>
+    <string name="notif_push_gift_received_body">Premium collections and premium walls are open until tomorrow.</string>
+    <string name="notif_push_report_needs_review_title">Report waiting for review</string>
+    <string name="notif_push_report_needs_review_body">A content report has been waiting for review for over 12 hours.</string>
+    <string name="notif_push_new_content_report_title">New content report</string>
+    <string name="notif_push_new_content_report_body">A new content report is ready for review.</string>
+    <string name="notif_push_wall_submitted_for_review_title">New Premium Wall for review! 🎉</string>
+    <string name="notif_push_wall_submitted_for_review_body">New post by %1$s (%2$s) is up for review.</string>
 </resources>

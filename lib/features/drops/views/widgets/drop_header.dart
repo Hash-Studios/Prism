@@ -4,6 +4,7 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/painters/ticket_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -18,9 +19,10 @@ class DropHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool isPro = app_state.prismUser.premium;
-    final String walls = drop.count == 1 ? '1 wall' : '${drop.count} walls';
-    final String stats = drop.collectors > 0 ? '$walls · ${drop.collectors} collectors' : walls;
+    final String walls = l10n.economyDropWallCount(drop.count);
+    final String stats = drop.collectors > 0 ? l10n.economyDropStats(walls, drop.collectors) : walls;
     final int owned = drop.count - remaining;
     return Padding(
       padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.md),
@@ -31,10 +33,10 @@ class DropHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('THE DROP · ${dropWeekLabel(drop.weekKey)}', style: dropCapsStyle()),
+              Text(l10n.economyDropHeader(dropWeekLabel(drop.weekKey)), style: dropCapsStyle()),
               const SizedBox(height: PrismSpace.sm),
               Text(
-                drop.title,
+                drop.displayTitle(context.l10n),
                 style: const TextStyle(
                   fontFamily: PrismFonts.fraunces,
                   fontSize: 30,
@@ -58,7 +60,7 @@ class DropHeader extends StatelessWidget {
               if (live)
                 DropCountdown(drop: drop, now: now)
               else
-                Text('This Drop has ended', style: dropCapsStyle(color: DropPalette.inkMuted, spacing: 1.6)),
+                Text(l10n.economyDropEndedHeadline, style: dropCapsStyle(color: DropPalette.inkMuted, spacing: 1.6)),
               const SizedBox(height: PrismSpace.lg),
               if (live && remaining > 0)
                 _PriceTicket(drop: drop, remaining: remaining, isPro: isPro)
@@ -80,11 +82,12 @@ class _Collected extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Row(
       children: <Widget>[
         const Icon(Icons.verified_outlined, size: 16, color: DropPalette.gold),
         const SizedBox(width: PrismSpace.xs),
-        Text('Collected · $owned/$count', style: dropCapsStyle(spacing: 1.4)),
+        Text(l10n.economyDropCollected(owned, count), style: dropCapsStyle(spacing: 1.4)),
       ],
     );
   }
@@ -99,6 +102,7 @@ class _PriceTicket extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool pack = remaining > 1;
     final int saving = packSaving(drop, remaining: remaining, isPro: isPro);
     return LayoutBuilder(
@@ -114,7 +118,7 @@ class _PriceTicket extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: _Price(
-                  caption: isPro ? 'A WALL · PRO' : 'A WALL',
+                  caption: isPro ? l10n.economyDropWallPro : l10n.economyDropWall,
                   price: drop.wallPrice(isPro: isPro),
                 ),
               ),
@@ -123,9 +127,9 @@ class _PriceTicket extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsetsDirectional.only(start: PrismSpace.md),
                     child: _Price(
-                      caption: 'THE PACK',
+                      caption: l10n.economyDropPack,
                       price: drop.packPrice(remaining: remaining, isPro: isPro),
-                      badge: saving > 0 ? 'save $saving' : null,
+                      badge: saving > 0 ? l10n.economyDropSave(saving) : null,
                     ),
                   ),
                 ),
@@ -156,7 +160,7 @@ class _Price extends StatelessWidget {
             const PrismCoinIcon(size: 18),
             const SizedBox(width: 6),
             Text(
-              '$price',
+              formatLocalizedNumber(price, context.l10n),
               style: const TextStyle(
                 fontFamily: PrismFonts.fraunces,
                 fontSize: 24,

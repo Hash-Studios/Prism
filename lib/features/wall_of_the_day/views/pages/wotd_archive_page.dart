@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,7 +42,7 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
   Widget build(BuildContext context) {
     return PrismPage(
       maxContentWidth: double.infinity,
-      title: 'Past picks',
+      title: context.l10n.wallpaperPastPicksTitle,
       body: BlocBuilder<WotdArchiveBloc, WotdArchiveState>(
         builder: (context, state) {
           if (state.picks.isEmpty && state.status != LoadStatus.success && state.status != LoadStatus.failure) {
@@ -51,9 +52,9 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
             final bool failed = state.status == LoadStatus.failure;
             return RefreshableGlintState(
               kind: failed ? GlintStateKind.error : GlintStateKind.empty,
-              title: failed ? "Couldn't load past picks" : 'No past picks yet',
-              body: failed ? 'Check your connection and try again.' : 'Check back tomorrow.',
-              actionLabel: failed ? 'Try again' : null,
+              title: failed ? context.l10n.wallpaperPastPicksLoadError : context.l10n.wallpaperPastPicksEmpty,
+              body: failed ? context.l10n.wallpaperCheckConnection : context.l10n.wallpaperCheckBackTomorrow,
+              actionLabel: failed ? context.l10n.wallpaperTryAgain : null,
               onAction: failed ? () => unawaited(_refresh(context)) : null,
               onRefresh: () => _refresh(context),
             );
@@ -109,7 +110,8 @@ class _PickTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String dateLabel = DateFormat('EEE d MMM').format(pick.date.toLocal());
+    final String locale = Localizations.localeOf(context).toString();
+    final String dateLabel = DateFormat.yMMMd(locale).format(pick.date.toLocal());
     final String heroTag = prismHeroTag(pick, index, pick.wallpaper.id);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: 2);
     return Column(
@@ -121,7 +123,10 @@ class _PickTile extends StatelessWidget {
             fallbackUrl: pick.wallpaper.fullUrl,
             memCacheHeight: decodeHeight,
             heroTag: heroTag,
-            semanticLabel: '${wallpaperSemanticLabel(pick.wallpaper.core.authorName)}, picked $dateLabel',
+            semanticLabel: context.l10n.wallpaperWotdPickedOn(
+              wallpaperSemanticLabel(pick.wallpaper.core.authorName, context.l10n),
+              dateLabel,
+            ),
             overlay: depthTagFor(pick.wallpaper.depthTier),
             onTap: () => _open(context, heroTag),
           ),

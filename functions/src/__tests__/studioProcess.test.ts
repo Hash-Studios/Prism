@@ -531,7 +531,7 @@ test("a user wall that only claims origin studio still gets the owner sync", asy
       void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Someone Else");
-  assert.equal(send.mock.callCount(), 1, "the spoofed Studio wall still notifies admins");
+  assert.equal(send.mock.callCount(), 2, "the spoofed Studio wall notifies both legacy and localized topics");
 });
 
 test("onWallSubmitted stops before owner sync or notification when the candidate read fails", async (t) => {

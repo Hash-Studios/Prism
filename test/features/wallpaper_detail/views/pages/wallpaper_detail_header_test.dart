@@ -11,12 +11,13 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -106,6 +107,9 @@ void main() {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: WallpaperDetailScreen(
@@ -239,7 +243,7 @@ void main() {
       await pump(
         tester,
         const WallpaperDetailError(
-          message: 'Check your connection and try again.',
+          failure: WallpaperDetailLoadFailure.unavailable,
           thumbnailUrl: 'https://img.test/thumb.jpg',
         ),
       );
@@ -254,7 +258,7 @@ void main() {
     });
 
     testWidgets('a missing wallpaper keeps the not found message', (tester) async {
-      await pump(tester, const WallpaperDetailError(message: 'Wallpaper not found'));
+      await pump(tester, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
 
       expect(find.text('Wallpaper not found'), findsOneWidget);
       expect(find.byType(CachedNetworkImage), findsNothing);
@@ -268,6 +272,9 @@ void main() {
       var opened = 0;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: MakeItLiveChip(onPressed: () => opened++, supportProbe: () async => true),
           ),
@@ -290,6 +297,9 @@ void main() {
     testWidgets('shrinks a little under the finger', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => true),
           ),
@@ -321,6 +331,9 @@ void main() {
     }) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           themeAnimationDuration: Duration.zero,
           theme: ThemeData(brightness: brightness, primaryColor: const Color(0xFF204060)),
           builder: (BuildContext context, Widget? child) => MediaQuery(
@@ -389,6 +402,9 @@ void main() {
     testWidgets('stays hidden when the device does not support live wallpapers', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => false),
           ),

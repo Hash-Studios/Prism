@@ -6,8 +6,8 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
-// ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,7 +58,11 @@ Future<void> _waitForFailure(WidgetTester tester) async {
   );
 }
 
-Widget _screenHost(String sourcePath) => MaterialApp(home: WallpaperFilterScreen(filePath: sourcePath));
+Widget _screenHost(String sourcePath) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: WallpaperFilterScreen(filePath: sourcePath),
+);
 
 class _PreviewWallpaperClient implements WallpaperClient {
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
@@ -297,11 +301,11 @@ void main() {
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(
       tester,
-      () => find.text('Home Screen').evaluate().isNotEmpty,
+      () => find.text('home screen').evaluate().isNotEmpty,
       reason: 'wallpaper target options open',
     );
-    expect(find.text('Home Screen'), findsOneWidget);
-    final Finder homeTarget = find.ancestor(of: find.text('Home Screen'), matching: find.byType(GestureDetector)).last;
+    expect(find.text('home screen'), findsOneWidget);
+    final Finder homeTarget = find.ancestor(of: find.text('home screen'), matching: find.byType(GestureDetector)).last;
     tester.widget<GestureDetector>(homeTarget).onTap!();
     await tester.pump(const Duration(milliseconds: 500));
 

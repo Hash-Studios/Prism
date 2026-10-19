@@ -7,6 +7,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -49,8 +50,8 @@ class _EditButtonState extends State<EditButton> {
   @override
   Widget build(BuildContext context) {
     return CircularMenuButton(
-      label: 'Edit',
-      caption: widget.labelled ? 'Edit' : null,
+      label: context.l10n.coreEdit,
+      caption: widget.labelled ? context.l10n.coreEdit : null,
       onTap: () {
         if (!isLoading) {
           onEdit(widget.url);
@@ -62,18 +63,19 @@ class _EditButtonState extends State<EditButton> {
   }
 
   Future<void> onEdit(String? url) async {
+    final AppLocalizations l10n = context.l10n;
     if (url == null) {
-      toasts.error('No wallpaper URL available');
+      toasts.error(l10n.coreNoWallpaperUrl);
       return;
     }
     PrismHaptics.tap();
     setState(() {
       isLoading = true;
     });
-    toasts.success('Loading Wallpaper', haptic: false);
+    toasts.success(l10n.coreLoadingWallpaper, haptic: false);
     final Future<String> Function()? prepare = widget.prepareSource;
     if (prepare != null) {
-      final String? prepared = await runPrepareSource(prepare);
+      final String? prepared = await runPrepareSource(prepare, l10n: l10n);
       if (!mounted) return;
       setState(() {
         isLoading = false;
@@ -90,7 +92,7 @@ class _EditButtonState extends State<EditButton> {
       ).timeout(const Duration(seconds: 30));
       final List<int> bytes = await source.readAsBytes();
       if (bytes.isEmpty) {
-        toasts.error('Could not load wallpaper for editing');
+        toasts.error(l10n.coreCouldNotLoadWallpaperForEditing);
         if (mounted) {
           setState(() {
             isLoading = false;
@@ -111,11 +113,11 @@ class _EditButtonState extends State<EditButton> {
       await context.router.push(WallpaperFilterRoute(filePath: file.path));
     } on TimeoutException {
       if (mounted) {
-        toasts.error('Timed out loading the wallpaper. Check your connection and try again.');
+        toasts.error(l10n.coreWallpaperLoadTimedOut);
       }
     } catch (_) {
       if (mounted) {
-        toasts.error('Could not load wallpaper for editing');
+        toasts.error(l10n.coreCouldNotLoadWallpaperForEditing);
       }
     } finally {
       try {

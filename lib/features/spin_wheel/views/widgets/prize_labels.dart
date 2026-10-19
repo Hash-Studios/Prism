@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 Widget prizeIcon(WheelPrize prize) => SizedBox.square(
@@ -13,14 +14,14 @@ Widget prizeIcon(WheelPrize prize) => SizedBox.square(
   ),
 );
 
-String prizeTitle(WheelPrize prize) => switch (prize) {
-  CoinsPrize(:final int coins) => '$coins ${coins == 1 ? 'coin' : 'coins'}',
-  XpPrize(:final int xp) => '$xp XP',
-  CosmeticPrize() => 'Mystery cosmetic',
+String prizeTitle(WheelPrize prize, AppLocalizations l10n) => switch (prize) {
+  CoinsPrize(:final int coins) => l10n.economyCoins(coins),
+  XpPrize(:final int xp) => l10n.economyXp(xp),
+  CosmeticPrize() => l10n.economyMysteryCosmetic,
 };
 
 /// The line under a prize's title, or null when it needs none.
-String? prizeNote(WheelPrize prize) => switch (prize) {
-  CosmeticPrize(:final int fallbackCoins) when fallbackCoins > 0 => 'Pays $fallbackCoins coins if you own them all',
+String? prizeNote(WheelPrize prize, AppLocalizations l10n) => switch (prize) {
+  CosmeticPrize(:final int fallbackCoins) when fallbackCoins > 0 => l10n.economyFallbackCoins(fallbackCoins),
   _ => null,
 };

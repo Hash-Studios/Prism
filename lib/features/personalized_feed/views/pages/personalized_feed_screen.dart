@@ -17,6 +17,7 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
@@ -186,7 +187,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         identical(impressions, _impressions) &&
         _bloc.state.chip == chip) {
       if (result.refreshFailed) {
-        toasts.error("Couldn't refresh your feed.");
+        toasts.error(context.l10n.wallpaperFeedRefreshError);
       } else if (result.status == LoadStatus.success && !result.isRefreshing) {
         setState(() => _impressions = WallpaperImpressionSession());
       }
@@ -201,9 +202,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text("Got it. You'll see fewer like this."),
+          content: Text(context.l10n.wallpaperGotItFewerLikeThis),
           action: SnackBarAction(
-            label: 'Undo',
+            label: context.l10n.wallpaperFewerLikeThisUndo,
             onPressed: () => _bloc.add(PersonalizedFeedEvent.lessLikeThisUndone(item, index: index)),
           ),
         ),
@@ -362,9 +363,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.latest)!,
-            failureTitle: "Couldn't load the latest wallpapers",
-            emptyTitle: 'No wallpapers yet',
-            emptyBody: 'Pull down to refresh.',
+            failureTitle: context.l10n.wallpaperFeedLatestLoadError,
+            emptyTitle: context.l10n.accountNoWallpapersYet,
+            emptyBody: context.l10n.wallpaperFeedPullToRefresh,
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
           ),
@@ -376,9 +377,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.following)!,
-            failureTitle: "Couldn't load your following feed",
-            emptyTitle: 'Follow creators to see their new wallpapers here',
-            emptyActionLabel: 'Find creators',
+            failureTitle: context.l10n.wallpaperFeedFollowingLoadError,
+            emptyTitle: context.l10n.wallpaperFeedFollowingEmptyTitle,
+            emptyActionLabel: context.l10n.accountFindCreators,
             onEmptyAction: () => unawaited(context.router.push(const UserSearchRoute())),
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
@@ -392,9 +393,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.popular)!,
-            failureTitle: "Couldn't load popular wallpapers",
-            emptyTitle: 'No popular wallpapers yet',
-            emptyBody: 'Pull down to refresh.',
+            failureTitle: context.l10n.wallpaperFeedPopularLoadError,
+            emptyTitle: context.l10n.wallpaperFeedPopularEmptyTitle,
+            emptyBody: context.l10n.wallpaperFeedPullToRefresh,
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
           ),
@@ -464,9 +465,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           SliverToBoxAdapter(
             child: GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load your feed",
-              body: 'Check your connection, then try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.wallpaperFeedLoadError,
+              body: context.l10n.wallpaperCheckConnection,
+              actionLabel: context.l10n.wallpaperTryAgain,
               onAction: () => unawaited(_refresh()),
             ),
           ),
@@ -503,9 +504,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     if (state.items.isEmpty) {
       return GlintState(
         kind: GlintStateKind.empty,
-        title: 'Shape this feed',
-        body: 'Follow creators or choose interests so we can surface more of what you like.',
-        actionLabel: widget.onTuneTap == null ? null : 'Tune your feed',
+        title: context.l10n.wallpaperFeedEmptyTitle,
+        body: context.l10n.wallpaperFeedEmptyBody,
+        actionLabel: widget.onTuneTap == null ? null : context.l10n.wallpaperFeedTuneTitle,
         onAction: widget.onTuneTap,
       );
     }
@@ -515,7 +516,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         padding: const EdgeInsets.all(PrismSpace.md),
         child: Center(
           child: PrismButton(
-            label: "Couldn't load more. Try again",
+            label: context.l10n.wallpaperFeedLoadMoreError,
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: () {
@@ -534,11 +535,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       return const SizedBox(height: PrismFeedLayout.endOfPageSpacerHeight);
     }
 
-    return const GlintState(
+    return GlintState(
       kind: GlintStateKind.nothingNew,
       glintSize: 64,
-      title: 'You are all caught up',
-      body: 'Pull down to refresh. New picks will land here.',
+      title: context.l10n.wallpaperFeedCaughtUpTitle,
+      body: context.l10n.wallpaperFeedCaughtUpBody,
       padding: EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.xl, PrismSpace.xl, 0),
     );
   }

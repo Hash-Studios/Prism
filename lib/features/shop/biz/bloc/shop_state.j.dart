@@ -1,11 +1,27 @@
 part of 'shop_bloc.j.dart';
 
+enum ShopNoticeKind {
+  rankRewardSynced,
+  purchased,
+  alreadyOwned,
+  proOnly,
+  rankLocked,
+  soldOut,
+  insufficient,
+  purchaseFailed,
+  equipped,
+  unequipped,
+  equipFailed,
+}
+
 /// A one-shot message for the UI to toast. A new instance each time, so the same text can show twice.
 class ShopNotice {
-  const ShopNotice(this.message, {required this.success});
+  const ShopNotice(this.kind, {required this.success, required this.itemId, this.rankId});
 
-  final String message;
+  final ShopNoticeKind kind;
   final bool success;
+  final String itemId;
+  final String? rankId;
 }
 
 @freezed

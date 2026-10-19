@@ -1,6 +1,7 @@
 import 'package:Prism/core/constants/profile_links.dart';
-import 'package:Prism/core/utils/string_extensions.dart';
+import 'package:Prism/core/profile/profile_link_type_label.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Opens the list of link types. [values] holds what is already set per type. Resolves the picked type.
@@ -14,14 +15,14 @@ Future<ProfileLinkKind?> showLinkKindSheet(
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) => PrismSheetBody(
-      title: 'Link type',
+      title: context.l10n.accountLinkType,
       scrollable: true,
       child: PrismGroup(
         children: <Widget>[
           for (final ProfileLinkKind kind in profileLinkKinds)
             PrismRow(
               icon: kind.icon,
-              title: kind.name.inCaps,
+              title: profileLinkTypeLabel(context.l10n, kind.type),
               subtitle: (values[kind.name] ?? '').isEmpty ? null : values[kind.name],
               showChevron: false,
               trailing: kind.name == selected.name ? Icon(Icons.check_rounded, size: 22, color: cs.primary) : null,
@@ -61,7 +62,7 @@ class EditProfileLinkField extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: PrismSpace.xxs, bottom: PrismSpace.xs),
           child: Text(
-            'Link',
+            context.l10n.accountLink,
             style: PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ),
@@ -71,7 +72,7 @@ class EditProfileLinkField extends StatelessWidget {
             PressScale(
               child: Semantics(
                 button: true,
-                label: 'Link type, ${kind.name.inCaps}',
+                label: context.l10n.accountLinkTypeSemanticLabel(profileLinkTypeLabel(context.l10n, kind.type)),
                 excludeSemantics: true,
                 onTap: onPickKind,
                 child: GestureDetector(
@@ -109,7 +110,7 @@ class EditProfileLinkField extends StatelessWidget {
                     ? null
                     : PrismIconButton(
                         icon: Icons.close_rounded,
-                        tooltip: 'Remove link',
+                        tooltip: context.l10n.accountRemoveLink,
                         iconSize: 20,
                         onPressed: onRemove,
                       ),

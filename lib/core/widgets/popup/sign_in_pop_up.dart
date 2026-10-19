@@ -5,6 +5,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 /// Opens the sign-in sheet. [func] runs after a successful sign-in.
 void googleSignInPopUp(BuildContext context, VoidCallback func) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: true);
+  final AppLocalizations l10n = context.l10n;
   bool loaderVisible = false;
 
   void closeLoaderIfVisible() {
@@ -31,13 +33,13 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
       useRootNavigator: true,
       isDismissible: false,
       enableDrag: false,
-      builder: (_) => const PopScope(
+      builder: (_) => PopScope(
         canPop: false,
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: PrismSpace.xxl),
-            child: GlintState(kind: GlintStateKind.loading, title: 'Signing in'),
+            padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+            child: GlintState(kind: GlintStateKind.loading, title: l10n.coreSigningIn),
           ),
         ),
       ),
@@ -62,7 +64,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           logger.d(e.toString());
           closeLoaderIfVisible();
-          toasts.error('Something went wrong. Try again.');
+          toasts.error(l10n.coreSomethingWentWrong);
         });
   }
 
@@ -73,20 +75,20 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
     builder: (_) => PrismSheetBody(
       mood: GlintMood.happy,
       centered: true,
-      title: 'Sign in to Prism',
-      message: 'Keep your favourites, uploads and coins on every device.',
+      title: l10n.coreSignInPopupTitle,
+      message: l10n.coreSignInPopupBody,
       actions: <Widget>[
         if (Platform.isIOS || Platform.isMacOS)
-          _AppleButton(onPressed: () => runSignIn(globalAppleAuth.signInWithApple)),
+          _AppleButton(l10n: l10n, onPressed: () => runSignIn(globalAppleAuth.signInWithApple)),
         PrismButton(
-          label: 'Continue with Google',
+          label: l10n.coreContinueWithGoogle,
           icon: JamIcons.google,
           variant: PrismButtonVariant.tonal,
           expand: true,
           onPressed: () => runSignIn(globalGoogleAuth.signInWithGoogle),
         ),
         PrismButton(
-          label: 'Not now',
+          label: l10n.coreCancelSignIn,
           variant: PrismButtonVariant.ghost,
           expand: true,
           onPressed: () => navigator.pop(),
@@ -98,8 +100,9 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
 
 /// "Continue with Apple" in Apple's own colours: black on light themes, white on dark themes.
 class _AppleButton extends StatelessWidget {
-  const _AppleButton({required this.onPressed});
+  const _AppleButton({required this.l10n, required this.onPressed});
 
+  final AppLocalizations l10n;
   final VoidCallback onPressed;
 
   @override
@@ -114,7 +117,7 @@ class _AppleButton extends StatelessWidget {
           onPressed();
         },
         icon: const Icon(Icons.apple, size: 22),
-        label: const Text('Continue with Apple'),
+        label: Text(l10n.coreContinueWithApple),
         style: FilledButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,

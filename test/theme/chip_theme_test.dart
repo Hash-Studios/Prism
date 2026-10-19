@@ -1,4 +1,6 @@
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
@@ -8,11 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 const int _violet = 0xFF7C4DFF;
 
 PrismThemeOption _option(List<PrismThemeOption> options, String label) =>
-    options.firstWhere((PrismThemeOption option) => option.label == label);
+    options.firstWhere((PrismThemeOption option) => prismThemeDisplayName(option, AppLocalizationsEn()) == label);
 
 Future<void> _pump(WidgetTester tester, ThemeData theme, {required bool selected, Widget? chip}) {
   return tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       theme: theme,
       home: Scaffold(
         backgroundColor: theme.primaryColor,
@@ -147,7 +152,7 @@ void main() {
         final PrismThemeOption option = <PrismThemeOption>[
           ...prismLightThemes,
           ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => o.label == label);
+        ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == label);
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
         expect(prismReadableInk(theme).toARGB32(), theme.colorScheme.secondary.toARGB32());
@@ -174,7 +179,7 @@ void main() {
     });
 
     for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-      test('${option.label}: the soft ink reads on the page at 4.5:1', () {
+      test('${prismThemeDisplayName(option, AppLocalizationsEn())}: the soft ink reads on the page at 4.5:1', () {
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
         expect(
@@ -186,20 +191,23 @@ void main() {
   });
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('${option.label}: chip labels read on their fills at the default accent', (tester) async {
-      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+    testWidgets(
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: chip labels read on their fills at the default accent',
+      (tester) async {
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
-      await _pump(tester, theme, selected: false);
-      final Color restFill = Color.alphaBlend(_surface(tester).color!, theme.primaryColor);
-      expect(contrastRatio(_labelColor(tester), restFill), greaterThanOrEqualTo(4.5), reason: 'unselected');
+        await _pump(tester, theme, selected: false);
+        final Color restFill = Color.alphaBlend(_surface(tester).color!, theme.primaryColor);
+        expect(contrastRatio(_labelColor(tester), restFill), greaterThanOrEqualTo(4.5), reason: 'unselected');
 
-      await _pump(tester, theme, selected: true);
-      await tester.pumpAndSettle();
-      expect(
-        contrastRatio(_labelColor(tester), _surface(tester).color!),
-        greaterThanOrEqualTo(4.5),
-        reason: 'selected',
-      );
-    });
+        await _pump(tester, theme, selected: true);
+        await tester.pumpAndSettle();
+        expect(
+          contrastRatio(_labelColor(tester), _surface(tester).color!),
+          greaterThanOrEqualTo(4.5),
+          reason: 'selected',
+        );
+      },
+    );
   }
 }

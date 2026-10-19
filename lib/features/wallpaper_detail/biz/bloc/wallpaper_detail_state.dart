@@ -9,6 +9,8 @@ sealed class WallpaperDetailState extends Equatable {
   List<Object?> get props => [];
 }
 
+enum WallpaperDetailLoadFailure { notFound, unavailable }
+
 final class WallpaperDetailInitial extends WallpaperDetailState {
   const WallpaperDetailInitial();
 }
@@ -99,13 +101,13 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
 }
 
 final class WallpaperDetailError extends WallpaperDetailState {
-  const WallpaperDetailError({required this.message, this.thumbnailUrl});
+  const WallpaperDetailError({required this.failure, this.thumbnailUrl});
 
-  final String message;
+  final WallpaperDetailLoadFailure failure;
 
   /// The thumbnail the link or tile carried, shown behind the message.
   final String? thumbnailUrl;
 
   @override
-  List<Object?> get props => [message, thumbnailUrl];
+  List<Object?> get props => [failure, thumbnailUrl];
 }

@@ -1,6 +1,7 @@
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,13 @@ void main() {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: cards)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: cards),
+      ),
+    );
   }
 
   testWidgets('the skeleton has the columns, tile ratio and margins of the wallpaper grids by default', (tester) async {

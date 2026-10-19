@@ -1,7 +1,7 @@
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-// ignore: depend_on_referenced_packages
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 class _RecordingUrlLauncher extends UrlLauncherPlatform {
@@ -24,7 +24,13 @@ Future<void> _pump(WidgetTester tester) async {
   tester.view.physicalSize = const Size(800, 1800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(const MaterialApp(home: IosShortcutsGuideScreen()));
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const IosShortcutsGuideScreen(),
+    ),
+  );
 }
 
 void main() {
@@ -37,8 +43,9 @@ void main() {
     await _pump(tester);
 
     expect(find.text('Change your wallpaper automatically'), findsOneWidget);
-    expect(shortcutsGuideSteps, hasLength(4));
-    for (final String step in shortcutsGuideSteps) {
+    final List<String> steps = shortcutsGuideSteps(tester.element(find.byType(IosShortcutsGuideScreen)).l10n);
+    expect(steps, hasLength(4));
+    for (final String step in steps) {
       expect(find.text(step), findsOneWidget);
     }
     expect(find.textContaining('Get Prism Wallpaper'), findsOneWidget);

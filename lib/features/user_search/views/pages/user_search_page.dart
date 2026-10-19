@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,13 +73,13 @@ class _UserSearchState extends State<UserSearch> {
     // usersV2 reads require auth per firestore.rules; guests must sign in first.
     final bool loggedIn = app_state.prismUser.loggedIn;
     return PrismPage(
-      title: 'Find creators',
+      title: context.l10n.accountFindCreators,
       headerBottom: loggedIn
           ? Padding(
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),
               child: PrismSearchField(
                 controller: searchController,
-                hint: 'Search creators',
+                hint: context.l10n.accountSearchCreators,
                 autofocus: true,
                 onChanged: _onChanged,
                 onSubmitted: (text) => _search(text, sourceContext: 'user_search_textfield'),
@@ -112,17 +113,17 @@ class _UserSearchLoader extends StatelessWidget {
         if (state.status == LoadStatus.failure) {
           return GlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't search creators",
-            body: 'Check your connection and try again.',
-            actionLabel: 'Try again',
+            title: context.l10n.accountCouldNotSearchCreators,
+            body: context.l10n.accountCheckConnectionTryAgain,
+            actionLabel: context.l10n.accountTryAgain,
             onAction: () => context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: state.query)),
           );
         }
         if (state.users.isEmpty) {
-          return const GlintState(
+          return GlintState(
             kind: GlintStateKind.empty,
-            title: 'No creators found',
-            body: 'Check the spelling or try another name.',
+            title: context.l10n.accountNoCreatorsFound,
+            body: context.l10n.accountCreatorSearchEmptyBody,
           );
         }
         return _CreatorList(users: state.users, queryLength: state.query.trim().length, searchId: searchId);
@@ -143,7 +144,7 @@ class _SearchHint extends StatelessWidget {
           children: <Widget>[
             const Glint(mood: GlintMood.curious),
             const SizedBox(height: PrismSpace.md),
-            Text('Search creators by name', style: PrismTextStyles.body(context)),
+            Text(context.l10n.accountSearchCreatorsByName, style: PrismTextStyles.body(context)),
           ],
         ),
       ),
@@ -179,7 +180,7 @@ class _CreatorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String followers = '${user.followerCount} ${user.followerCount == 1 ? 'follower' : 'followers'}';
+    final String followers = context.l10n.accountFollowersCount(user.followerCount);
     return PrismRow(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
       leading: PrismAvatar(url: user.profilePhoto, name: user.name),

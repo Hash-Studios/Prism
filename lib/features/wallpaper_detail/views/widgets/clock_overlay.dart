@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,14 +20,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-enum ClockPreviewMode {
-  lock('Lock'),
-  home('Home');
-
-  const ClockPreviewMode(this.label);
-
-  final String label;
-}
+enum ClockPreviewMode { lock, home }
 
 /// Width of the decode used to pick the clock text colour.
 const int _sampleWidth = 32;
@@ -238,7 +232,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
           ),
           Semantics(
             button: true,
-            label: 'Close preview',
+            label: context.l10n.wallpaperClosePreview,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
@@ -318,7 +312,10 @@ class _ModeToggle extends StatelessWidget {
                     for (final ClockPreviewMode value in ClockPreviewMode.values)
                       Expanded(
                         child: _Segment(
-                          label: value.label,
+                          label: switch (value) {
+                            ClockPreviewMode.lock => context.l10n.wallpaperPreviewLock,
+                            ClockPreviewMode.home => context.l10n.wallpaperPreviewHome,
+                          },
                           selected: value == mode,
                           duration: duration,
                           curve: _slide,

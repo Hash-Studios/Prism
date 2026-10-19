@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/core/coins/daily_chest.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// The rarity colours are game colours: a rare chest is blue on every theme and accent, like Glint's logo colours.
 extension ChestTierLook on ChestTier {
@@ -11,10 +12,10 @@ extension ChestTierLook on ChestTier {
     ChestTier.legendary => const Color(0xFFF5B83D),
   };
 
-  String get label => switch (this) {
-    ChestTier.common => 'Common',
-    ChestTier.rare => 'Rare',
-    ChestTier.epic => 'Epic',
-    ChestTier.legendary => 'Legendary',
+  String label(AppLocalizations l10n) => switch (this) {
+    ChestTier.common => l10n.economyChestTierCommon,
+    ChestTier.rare => l10n.economyChestTierRare,
+    ChestTier.epic => l10n.economyChestTierEpic,
+    ChestTier.legendary => l10n.economyChestTierLegendary,
   };
 }

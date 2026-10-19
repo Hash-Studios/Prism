@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,9 @@ void main() {
     final List<String?> calls = <String?>[];
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -65,6 +69,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -97,6 +104,9 @@ void main() {
     var shareCalls = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -145,6 +155,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StatefulBuilder(
           builder: (context, setState) {
             update = setState;
@@ -197,6 +210,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -213,7 +229,13 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pump();
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     share.complete((format: ShareFormatValue.card, dismissed: false));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     await tester.pump();
@@ -229,6 +251,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -258,6 +283,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -289,6 +317,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'wall-1',
@@ -321,6 +352,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ShareButton(
             id: 'starter-sunset',

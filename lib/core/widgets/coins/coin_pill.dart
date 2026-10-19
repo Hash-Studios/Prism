@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -78,7 +79,10 @@ class CoinBalancePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l10n = context.l10n;
     final bool earned = delta > 0;
+    final String formattedBalance = formatLocalizedNumber(balance, l10n);
+    final String formattedDelta = formatLocalizedNumber(delta.abs(), l10n);
     final Color? accent = earned
         ? PrismColors.success
         : low
@@ -91,8 +95,8 @@ class CoinBalancePill extends StatelessWidget {
       curve: PrismCurves.pop,
       child: StatPill(
         semanticLabel: delta == 0
-            ? '$balance Prism coins'
-            : '$balance Prism coins, ${earned ? 'up $delta' : 'down ${-delta}'}',
+            ? l10n.coreCoinBalance(balance)
+            : l10n.coreCoinBalanceChange(formattedBalance, earned ? l10n.coreUp(delta) : l10n.coreDown(-delta)),
         onTap: onTap,
         tint: earned ? PrismColors.success.withValues(alpha: 0.12) : null,
         borderColor: accent?.withValues(alpha: 0.6),
@@ -101,12 +105,12 @@ class CoinBalancePill extends StatelessWidget {
           children: <Widget>[
             const PrismCoinIcon(size: 18),
             const SizedBox(width: 6),
-            Text('$balance', style: PrismTextStyles.rowTitle(context)),
+            Text(formattedBalance, style: PrismTextStyles.rowTitle(context)),
             if (delta != 0) ...<Widget>[
               const SizedBox(width: 6),
               Icon(earned ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded, size: 12, color: deltaColor),
               Text(
-                '${delta.abs()}',
+                formattedDelta,
                 style: PrismTextStyles.caption(context).copyWith(color: deltaColor, fontWeight: FontWeight.w700),
               ),
             ],

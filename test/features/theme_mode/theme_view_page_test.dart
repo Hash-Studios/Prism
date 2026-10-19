@@ -3,6 +3,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -39,7 +41,12 @@ void main() {
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
-        child: MaterialApp(theme: ThemeData.light(), home: const ThemeView()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ThemeView(),
+        ),
       ),
     );
   }
@@ -70,16 +77,24 @@ void main() {
       final Finder row = find.byType(ListView).at(rowIndex);
       final Finder scrollable = find.descendant(of: row, matching: find.byType(Scrollable));
       for (final PrismThemeOption option in themeGroups[rowIndex]) {
-        await tester.scrollUntilVisible(find.text(option.label), 200, scrollable: scrollable);
+        await tester.scrollUntilVisible(
+          find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
+          200,
+          scrollable: scrollable,
+        );
 
-        final Text label = tester.widget<Text>(find.text(option.label));
+        final Text label = tester.widget<Text>(find.text(prismThemeDisplayName(option, AppLocalizationsEn())));
         expect(label.style!.color, option.theme.colorScheme.onSurface);
         expect(
           contrastRatio(option.theme.colorScheme.onSurface, option.theme.colorScheme.surfaceContainerHigh),
           greaterThanOrEqualTo(4.5),
-          reason: '${option.label} label must be readable against its chip fill',
+          reason: '${prismThemeDisplayName(option, AppLocalizationsEn())} label must be readable against its chip fill',
         );
-        expect(tester.takeException(), isNull, reason: '${option.label} chip must fit its row');
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${prismThemeDisplayName(option, AppLocalizationsEn())} chip must fit its row',
+        );
       }
     }
   });
@@ -91,7 +106,12 @@ void main() {
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
-        child: MaterialApp(theme: hostTheme, home: const ThemeView()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: hostTheme,
+          home: const ThemeView(),
+        ),
       ),
     );
 
@@ -104,7 +124,7 @@ void main() {
     final BoxDecoration previewDecoration = tester.widget<Container>(preview.first).decoration! as BoxDecoration;
     expect(previewDecoration.boxShadow!.first.color, shadow.withValues(alpha: 0.15));
 
-    final Finder label = find.text(prismLightThemes.first.label);
+    final Finder label = find.text(prismThemeDisplayName(prismLightThemes.first, AppLocalizationsEn()));
     final Finder chip = find.ancestor(of: label, matching: find.byType(Container)).first;
     final BoxDecoration chipDecoration = tester.widget<Container>(chip).decoration! as BoxDecoration;
     expect(chipDecoration.border!.top.color, prismLightThemes.first.theme.colorScheme.scrim.withValues(alpha: 0.12));
@@ -176,6 +196,9 @@ void main() {
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: ThemeData.light(),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
@@ -205,6 +228,9 @@ void main() {
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: ThemeData.light(),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
@@ -245,7 +271,12 @@ void main() {
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
-        child: MaterialApp(theme: ThemeData.light(), home: const ThemeView()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ThemeView(),
+        ),
       ),
     );
 
@@ -305,17 +336,17 @@ void main() {
         expect(
           contrastRatio(scheme.onPrimary, scheme.primary),
           greaterThanOrEqualTo(4.5),
-          reason: 'onPrimary on $pick in ${option.label}',
+          reason: 'onPrimary on $pick in ${prismThemeDisplayName(option, AppLocalizationsEn())}',
         );
         expect(
           contrastRatio(scheme.onError, scheme.error),
           greaterThanOrEqualTo(4.5),
-          reason: 'onError on $pick in ${option.label}',
+          reason: 'onError on $pick in ${prismThemeDisplayName(option, AppLocalizationsEn())}',
         );
         expect(
           contrastRatio(scheme.primary, theme.primaryColor),
           greaterThanOrEqualTo(1.5),
-          reason: '$pick against the ${option.label} background',
+          reason: '$pick against the ${prismThemeDisplayName(option, AppLocalizationsEn())} background',
         );
       }
     }

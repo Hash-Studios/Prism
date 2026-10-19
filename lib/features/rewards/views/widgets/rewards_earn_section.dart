@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -44,10 +45,11 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       sourceTag: 'coins.hub.rewarded_ad',
       upsellSource: 'coin_hub_rewarded_ad',
       isMounted: () => mounted,
-      adErrorMessage: 'Ad was not completed.',
+      adErrorMessage: context.l10n.economyAdNotCompleted,
     );
+    if (!mounted) return;
     if (credited) {
-      toasts.success('+$reward coins');
+      toasts.success(context.l10n.economyCoinsEarned(reward));
     }
   }
 
@@ -69,54 +71,57 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
     final List<Widget> rows = <Widget>[
       _EarnRow(
         icon: Icons.local_fire_department_rounded,
-        title: 'Daily streak',
-        subtitle: isPro ? 'Open Prism every day. Pro earns x$proMultiplier.' : 'Open Prism every day.',
-        reward: '+${CoinPolicy.streakDay1To2Daily} to +${CoinPolicy.streakDay7Daily}',
+        title: context.l10n.economyDailyStreak,
+        subtitle: isPro ? context.l10n.economyOpenDailyPro(proMultiplier) : context.l10n.economyOpenDaily,
+        reward: context.l10n.economyCoinsRange(CoinPolicy.streakDay1To2Daily, CoinPolicy.streakDay7Daily),
       ),
       _EarnRow(
         icon: Icons.redeem_rounded,
-        title: 'Day 7 chest',
-        subtitle: 'Finish a week of streak days.',
-        reward: '+${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}',
+        title: context.l10n.economyDay7Chest,
+        subtitle: context.l10n.economyFinishStreakWeek,
+        reward: context.l10n.economyCoinsRange(CoinPolicy.streakChestMin, CoinPolicy.streakChestMax),
       ),
       if (isPro)
         _EarnRow(
           icon: Icons.workspace_premium_outlined,
-          title: 'Free daily spin',
-          subtitle: 'Once a day',
-          reward: 'Up to +${maxWheelCoins(CoinPolicy.spinWheel)}',
+          title: context.l10n.economyFreeDailySpin,
+          subtitle: context.l10n.economyOnceADay,
+          reward: context.l10n.economyUpToCoins(maxWheelCoins(CoinPolicy.spinWheel)),
         ),
       _EarnRow(
         icon: Icons.play_circle_outline_rounded,
-        title: 'Watch a video',
+        title: context.l10n.economyWatchVideo,
         subtitle: _loadingReward
-            ? 'Loading a video'
-            : 'First one of the day +${CoinPolicy.rewardedAdFirstOfDay}, then +${CoinPolicy.rewardedAd}. '
-                  'Up to ${EconomyConfig.current.award.rewardedAdMaxPerDay} a day.',
-        reward: '+${CoinsService.instance.adsRewardNow}',
+            ? context.l10n.economyLoadingVideo
+            : context.l10n.economyAdRewardDetails(
+                CoinPolicy.rewardedAdFirstOfDay,
+                CoinPolicy.rewardedAd,
+                EconomyConfig.current.award.rewardedAdMaxPerDay,
+              ),
+        reward: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
         loading: _loadingReward,
         onTap: _onWatchAdTapped,
       ),
       _EarnRow(
         icon: Icons.group_add_outlined,
-        title: 'Invite a friend',
-        subtitle: 'You both get ${CoinPolicy.referral} coins',
-        reward: '+${CoinPolicy.referral}',
+        title: context.l10n.economyInviteFriend,
+        subtitle: context.l10n.economyReferralBothGet(CoinPolicy.referral),
+        reward: context.l10n.economyCoinsEarned(CoinPolicy.referral),
         onTap: () => context.router.root.push(const SharePrismRoute()),
       ),
       _EarnRow(
         icon: Icons.upload_rounded,
-        title: 'First upload',
-        subtitle: flags.firstUploadRewarded ? 'Done' : 'Share a wallpaper',
-        reward: '+${CoinPolicy.firstWallpaperUpload}',
+        title: context.l10n.economyFirstUpload,
+        subtitle: flags.firstUploadRewarded ? context.l10n.actionDone : context.l10n.economyShareWallpaper,
+        reward: context.l10n.economyCoinsEarned(CoinPolicy.firstWallpaperUpload),
         done: flags.firstUploadRewarded,
         onTap: _openUploadSheet,
       ),
       _EarnRow(
         icon: Icons.person_outline_rounded,
-        title: 'Complete your profile',
-        subtitle: flags.profileCompletionRewarded ? 'Done' : 'Add a photo and a bio',
-        reward: '+${CoinPolicy.profileCompletion}',
+        title: context.l10n.economyCompleteProfile,
+        subtitle: flags.profileCompletionRewarded ? context.l10n.actionDone : context.l10n.economyAddPhotoBio,
+        reward: context.l10n.economyCoinsEarned(CoinPolicy.profileCompletion),
         done: flags.profileCompletionRewarded,
         onTap: () => context.router.root.push(const EditProfilePanelRoute()),
       ),
@@ -124,8 +129,8 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'Earn coins',
+        PrismSectionHeader(
+          title: context.l10n.economyEarnCoins,
           padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
         PrismGroup(children: rows),
@@ -172,7 +177,7 @@ class _EarnRow extends StatelessWidget {
     return PrismRow(
       icon: icon,
       title: title,
-      subtitle: done ? 'Done' : subtitle,
+      subtitle: done ? context.l10n.actionDone : subtitle,
       trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
       showChevron: tappable,
       onTap: tappable

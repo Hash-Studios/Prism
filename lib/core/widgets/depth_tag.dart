@@ -1,6 +1,7 @@
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:flutter/material.dart';
 
@@ -19,20 +20,18 @@ Widget? depthTagFor(WallDepthTier? tier) => showsDepthEffect(tier) ? const _Posi
 class DepthTag extends StatelessWidget {
   const DepthTag({super.key});
 
-  static const String semanticLabel = 'Works with Depth Effect';
-
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Semantics(
-      label: semanticLabel,
+      label: context.l10n.coreDepthEffectBadgeSemantic,
       child: ExcludeSemantics(
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: cs.surface.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
-          child: const PrismTag(label: 'Depth', icon: Icons.layers_rounded),
+          child: PrismTag(label: context.l10n.coreDepthEffectBadge, icon: Icons.layers_rounded),
         ),
       ),
     );

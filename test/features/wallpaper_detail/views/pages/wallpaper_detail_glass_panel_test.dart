@@ -27,6 +27,7 @@ import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -146,6 +147,9 @@ void main() {
       RepaintBoundary(
         key: boundary,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: BlocProvider<WallpaperDetailBloc>.value(
@@ -465,6 +469,9 @@ void main() {
       addTearDown(bloc.close);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BlocProvider<WallpaperDetailBloc>.value(
             value: bloc,
             child: WallpaperDetailScreen(entity: _prism()),

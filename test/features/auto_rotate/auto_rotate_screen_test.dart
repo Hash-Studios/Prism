@@ -15,6 +15,7 @@ import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -82,6 +83,9 @@ void main() {
 
   Future<void> pumpScreen(WidgetTester tester) => tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: MultiBlocProvider(
         providers: [
           BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
@@ -172,7 +176,7 @@ void main() {
     autoRotateStates.add(freeState.copyWith(isPro: true, favouriteCount: 2));
     await tester.pump();
 
-    expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
+    expect(find.text('Auto-rotate'), findsWidgets);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('does not send favourites across an account change while loading', (tester) async {
@@ -241,7 +245,13 @@ void main() {
   testWidgets('disposal leaves the shared AutoRotateBloc open', (tester) async {
     await pumpScreen(tester);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
 
     verifyNever(() => autoRotateBloc.close());
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
@@ -253,7 +263,13 @@ void main() {
 
     await pumpScreen(tester);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     sessionStates.add(SessionState.initial().copyWith(status: LoadStatus.success));
     await tester.pump();
 
@@ -276,8 +292,8 @@ void main() {
     await pumpScreen(tester);
     await tester.pump();
 
-    expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
-    expect(find.text('3 favourites in the mix'), findsOneWidget);
+    expect(find.text('Auto-rotate'), findsWidgets);
+    expect(find.text('3 wallpapers from favourites in the mix'), findsOneWidget);
     expect(find.text('Every hour'), findsOneWidget);
     expect(find.text('Home screen'), findsOneWidget);
     expect(find.text('Shuffle'), findsOneWidget);
@@ -323,14 +339,8 @@ void main() {
       );
 
       expect(find.text('Preparing 3 wallpapers'), findsOneWidget);
-      expect(
-        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).value,
-        isTrue,
-      );
-      expect(
-        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).onChanged,
-        isNull,
-      );
+      expect(tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate')).value, isTrue);
+      expect(tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate')).onChanged, isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('shows cached of total and the cap note', (tester) async {
@@ -373,10 +383,7 @@ void main() {
 
       expect(find.text('Favourite at least 2 wallpapers to rotate them.'), findsOneWidget);
       expect(find.text('Downloads'), findsOneWidget);
-      expect(
-        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).onChanged,
-        isNull,
-      );
+      expect(tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate')).onChanged, isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('shows the battery tip once and lets the user dismiss it', (tester) async {

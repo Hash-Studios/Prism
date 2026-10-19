@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -23,6 +21,7 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/features/ads/domain/usecases/ads_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/pigeon_impl_api.dart' as wallpaper_api;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -46,6 +45,9 @@ const StandardMessageCodec _codec = StandardMessageCodec();
 Finder _iconButton(String tooltip) => find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton));
 
 Widget _screenHost(String sourcePath, {AdsBloc? adsBloc}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   home: adsBloc == null
       ? WallpaperFilterScreen(filePath: sourcePath)
       : BlocProvider<AdsBloc>.value(
@@ -449,10 +451,10 @@ void main() {
     await _waitForEditorReady(tester);
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
-    await _waitForText(tester, 'Set wallpaper');
+    await _waitForText(tester, 'Set as wallpaper');
 
     AnalyticsRuntime.instance = _ThrowOnSetWallpaperAnalytics();
-    await tester.tap(find.text('Home Screen'));
+    await tester.tap(find.text('home screen'));
     await _waitForCount(tester, () => setCalls, 1, 'native wallpaper set');
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -576,7 +578,7 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
 
-    final Finder optionsTitle = find.text('Set wallpaper');
+    final Finder optionsTitle = find.text('Set as wallpaper');
     await waitForRealIo(tester, () => optionsTitle.evaluate().isNotEmpty, reason: 'wallpaper set options open');
     expect(optionsTitle, findsOneWidget);
 

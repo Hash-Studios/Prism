@@ -6,6 +6,7 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_fade_m
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_load_failure.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,7 +54,7 @@ class F1InterestsPage extends StatelessWidget {
                                 ),
                               )
                             : OnboardingLoadFailure(
-                                message: 'We could not load categories.',
+                                message: context.l10n.onboardingLoadCategoriesFailed,
                                 onRetry: () =>
                                     context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.loadRetried()),
                               )

@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:intl/intl.dart';
 
 /// The most coins any slice pays. Cosmetic fallbacks are not counted: they pay only when every cosmetic is owned.
 int maxWheelCoins(List<WheelSegment> segments) {
@@ -47,17 +49,15 @@ List<WheelOdds> wheelOdds(List<WheelSegment> segments) {
 }
 
 /// "18%", or "0.5%" for a rare slice so it does not round to a lie.
-String oddsLabel(double percent) {
-  if (percent <= 0) return '0%';
-  if (percent < 1) return '${percent.toStringAsFixed(1)}%';
-  return '${percent.round()}%';
+String oddsLabel(double percent, AppLocalizations l10n) {
+  final NumberFormat format = NumberFormat('0.#%', l10n.localeName);
+  return format.format(math.max(0, percent) / 100);
 }
 
 /// The line under the odds pill: what is left today.
-String spinsLeftCaption(SpinWheelStatus status) {
+String spinsLeftCaption(AppLocalizations l10n, SpinWheelStatus status) {
   final int paid = status.paidSpinsLeft;
-  final String paidText = paid == 1 ? '1 paid spin left' : '$paid paid spins left';
-  if (status.freeSpinAvailable) return paid > 0 ? 'Free spin ready. $paidText today.' : 'Free spin ready.';
-  if (paid <= 0) return 'No spins left today.';
-  return '${paid == 1 ? '1 spin' : '$paid spins'} left today.';
+  if (status.freeSpinAvailable) return l10n.economyFreeSpinReady(paid);
+  if (paid <= 0) return l10n.economyNoSpinsLeft;
+  return l10n.economySpinsLeftToday(paid);
 }

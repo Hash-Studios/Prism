@@ -6,12 +6,14 @@ import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/pexels_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -79,7 +81,9 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = (_isCategoryView ? _decodedCategoryName : widget.collectionName).inCaps;
+    final title = _isCategoryView
+        ? categoryDisplayName(_decodedCategoryName, context.l10n)
+        : widget.collectionName.inCaps;
     return PrismPage(
       maxContentWidth: double.infinity,
       title: title,
@@ -99,9 +103,9 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
         if (snapshot.hasError) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't load this collection",
-            body: 'Check your connection and try again.',
-            actionLabel: 'Try again',
+            title: context.l10n.wallpaperCollectionLoadError,
+            body: context.l10n.wallpaperCheckConnection,
+            actionLabel: context.l10n.wallpaperTryAgain,
             onAction: () => unawaited(_retryCollection()),
             onRefresh: _retryCollection,
           );
@@ -138,9 +142,9 @@ class _CategoryFeedContent extends StatelessWidget {
         if (state.items.isEmpty && state.status == LoadStatus.failure) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't load wallpapers",
-            body: 'Check your connection and try again.',
-            actionLabel: 'Try again',
+            title: context.l10n.wallpaperFeedWallsLoadError,
+            body: context.l10n.wallpaperCheckConnection,
+            actionLabel: context.l10n.wallpaperTryAgain,
             onAction: () => unawaited(onRetry()),
             onRefresh: () {
               PrismHaptics.impact();

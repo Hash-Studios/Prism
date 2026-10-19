@@ -2,6 +2,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
@@ -13,8 +14,9 @@ FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
 
 void main() {
   test('tiles are named after their author when there is one', () {
-    expect(_item(author: 'Ana').semanticLabel, 'Wallpaper by Ana');
-    expect(_item().semanticLabel, 'Wallpaper');
-    expect(_item(author: '').semanticLabel, 'Wallpaper');
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(_item(author: 'Ana').semanticLabel(l10n), 'Wallpaper by Ana');
+    expect(_item().semanticLabel(l10n), 'Wallpaper');
+    expect(_item(author: '').semanticLabel(l10n), 'Wallpaper');
   });
 }

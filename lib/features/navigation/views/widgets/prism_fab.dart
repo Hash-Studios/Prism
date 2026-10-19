@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// The round create button: four layered rainbow rings, the middle and the top ones turning slowly.
@@ -70,7 +71,7 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Upload',
+      label: context.l10n.wallpaperUploadAction,
       excludeSemantics: true,
       onTap: _onPressed,
       child: PressScale(

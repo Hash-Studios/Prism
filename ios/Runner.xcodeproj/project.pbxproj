@@ -17,6 +17,8 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		C0C000012F00000500C0C0C0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C0C000032F00000500C0C0C0 /* Localizable.xcstrings */; };
+		C0C000022F00000500C0C0C0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0C000042F00000500C0C0C0 /* InfoPlist.strings */; };
 		A11A00012F00000100A1A1A1 /* PrismMediaApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */; };
 		A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */; };
 		A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */; };
@@ -86,6 +88,8 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C0C000032F00000500C0C0C0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		C0C000052F00000500C0C0C0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaApi.swift; sourceTree = "<group>"; };
 		A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaHostApiImpl.swift; sourceTree = "<group>"; };
 		A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconApi.swift; sourceTree = "<group>"; };
@@ -187,6 +191,8 @@
 				BDEF4D472F75E279000D5834 /* AppIcon.icon */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
+				C0C000032F00000500C0C0C0 /* Localizable.xcstrings */,
+				C0C000042F00000500C0C0C0 /* InfoPlist.strings */,
 				AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */,
 				77A10F9D2F4BE9E300A7A4C1 /* Runner.entitlements */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
@@ -200,6 +206,14 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		C0C000042F00000500C0C0C0 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C0C000052F00000500C0C0C0 /* en */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 		A11A00052F00000100A1A1A1 /* Pigeon */ = {
@@ -350,6 +364,8 @@
 				C15845A222C3C334C3EA4BB9 /* GoogleService-Info.plist in Resources */,
 				BDEF4D482F75E279000D5834 /* AppIcon.icon in Resources */,
 				AB12CD352F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy in Resources */,
+				C0C000012F00000500C0C0C0 /* Localizable.xcstrings in Resources */,
+				C0C000022F00000500C0C0C0 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

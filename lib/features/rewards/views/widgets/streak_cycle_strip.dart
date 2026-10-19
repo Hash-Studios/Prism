@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -117,19 +118,19 @@ class _DayCell extends StatelessWidget {
     final TextStyle caption = PrismTextStyles.caption(context);
     final TextStyle strong = caption.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600);
     final String state = done
-        ? ', done'
+        ? 'done'
         : today
-        ? ', today'
-        : '';
+        ? 'today'
+        : 'other';
     return Semantics(
-      label: showReward ? 'Day $label, plus $reward coins$state' : 'Day $label$state',
+      label: context.l10n.economyStreakCycleSemantics(label, showReward ? 'true' : 'false', reward, state),
       excludeSemantics: true,
       child: Column(
         children: <Widget>[
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'Day $label',
+              context.l10n.economyDayLabel(label),
               maxLines: 1,
               softWrap: false,
               style: (done || today ? strong : caption).copyWith(fontSize: 11),
@@ -160,7 +161,10 @@ class _DayCell extends StatelessWidget {
           ),
           if (showReward) ...<Widget>[
             const SizedBox(height: PrismSpace.xs),
-            Text('+$reward', style: done || today ? strong : caption.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              context.l10n.economyCoinsEarned(reward),
+              style: done || today ? strong : caption.copyWith(fontWeight: FontWeight.w600),
+            ),
           ],
         ],
       ),

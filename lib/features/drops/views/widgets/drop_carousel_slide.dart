@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -20,7 +21,7 @@ class DropCarouselSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool lastCall = drop.phaseAt(now) == DropPhase.lastCall;
     final String cover = drop.walls.isEmpty ? '' : drop.walls.first.thumb;
-    final String detail = '${drop.count} walls · ${drop.endsInLabel(now)}';
+    final String detail = context.l10n.economyDropCarouselDetail(drop.count, drop.endsInLabel(context.l10n, now));
     final BorderRadius radius = BorderRadius.circular(PrismRadius.lg);
     const double inset = 8;
     final TextStyle eyebrow = PrismTextStyles.eyebrow(context).copyWith(color: DropPalette.gold, letterSpacing: 2.4);
@@ -28,7 +29,7 @@ class DropCarouselSlide extends StatelessWidget {
       scale: 0.98,
       child: Semantics(
         button: true,
-        label: 'The Drop, ${drop.title}, $detail${lastCall ? ', last call' : ''}',
+        label: context.l10n.economyDropCarouselSemantics(drop.displayTitle(context.l10n), detail, lastCall.toString()),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
@@ -75,10 +76,13 @@ class DropCarouselSlide extends StatelessWidget {
                       children: <Widget>[
                         Row(
                           children: <Widget>[
-                            Text('THE DROP', style: eyebrow),
+                            Text(context.l10n.economyDropBrandTitle, style: eyebrow),
                             if (lastCall) ...<Widget>[
                               const SizedBox(width: PrismSpace.sm),
-                              Text('Last call', style: eyebrow.copyWith(color: DropPalette.urgent, letterSpacing: 0.4)),
+                              Text(
+                                context.l10n.economyDropLastCallLabel,
+                                style: eyebrow.copyWith(color: DropPalette.urgent, letterSpacing: 0.4),
+                              ),
                             ],
                           ],
                         ),
@@ -92,7 +96,7 @@ class DropCarouselSlide extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
                                   Text(
-                                    drop.title,
+                                    drop.displayTitle(context.l10n),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: PrismTextStyles.sectionTitle(context).copyWith(color: DropPalette.ink),
@@ -133,7 +137,10 @@ class _PreviewPill extends StatelessWidget {
       decoration: BoxDecoration(color: DropPalette.gold, borderRadius: BorderRadius.circular(PrismRadius.pill)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 7),
-        child: Text('Preview', style: PrismTextStyles.button.copyWith(fontSize: 13, color: DropPalette.obsidian)),
+        child: Text(
+          context.l10n.economyDropPreview,
+          style: PrismTextStyles.button.copyWith(fontSize: 13, color: DropPalette.obsidian),
+        ),
       ),
     );
   }

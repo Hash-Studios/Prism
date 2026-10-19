@@ -11,6 +11,7 @@ import 'package:Prism/features/badges/views/widgets/badge_celebrate_host.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_sheet.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_test/flutter_test.dart';
@@ -30,7 +31,11 @@ class _Repo implements BadgeRepository {
   void markSeen(String id) => queue.value = queue.value.where((b) => b.id != id).toList();
 }
 
-Widget _app(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _app(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 void main() {
   test('catalog matches the server badge ids', () {

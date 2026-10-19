@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -53,14 +54,17 @@ class _Wordmark extends StatelessWidget {
     final Color ink = Theme.of(context).colorScheme.onSurface;
     return Semantics(
       header: true,
-      label: 'Prism',
+      label: context.l10n.wallpaperHomeAppName,
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           SvgPicture.string(prismVector, width: 11, height: 13, colorFilter: ColorFilter.mode(ink, BlendMode.srcIn)),
           const SizedBox(width: 6),
-          Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 18, color: ink)),
+          Text(
+            context.l10n.appTitle.toLowerCase(),
+            style: PrismTextStyles.brandName.copyWith(fontSize: 18, color: ink),
+          ),
         ],
       ),
     );
@@ -81,15 +85,15 @@ class _NotificationButton extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'Open notifications',
+      label: context.l10n.wallpaperOpenNotifications,
       button: true,
-      hint: hasUnread ? 'Has unread items' : null,
+      hint: hasUnread ? context.l10n.wallpaperUnreadItems : null,
       excludeSemantics: true,
       onTap: open,
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          PrismIconButton(icon: Icons.notifications_none_rounded, tooltip: 'Notifications', onPressed: open),
+          PrismIconButton(icon: Icons.notifications_none_rounded, tooltip: context.l10n.notifTitle, onPressed: open),
           if (hasUnread)
             Positioned(
               top: 10,
@@ -124,7 +128,7 @@ class _ProfileAvatar extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Your profile',
+      label: context.l10n.wallpaperYourProfile,
       excludeSemantics: true,
       onTap: openProfile,
       child: PressScale(

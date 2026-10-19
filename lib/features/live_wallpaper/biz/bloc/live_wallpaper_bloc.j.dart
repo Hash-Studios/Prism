@@ -91,7 +91,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
   }
 
   Future<void> _onVideoPicked(_VideoPicked event, Emitter<LiveWallpaperState> emit) async {
-    final String? problem = await _repository.validateVideo(event.path);
+    final LiveApplyFailure? problem = await _repository.validateVideo(event.path);
     if (problem != null) {
       emit(state.copyWith(videoPath: null, outcome: LiveApplyOutcome.failed(problem)));
       return;

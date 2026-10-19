@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: prismDarkThemes.first.theme,
         home: Scaffold(
           body: Builder(

@@ -5,6 +5,7 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,7 +47,12 @@ void main() {
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
-        child: MaterialApp(theme: ThemeData.light(), home: const ThemeView()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ThemeView(),
+        ),
       ),
     );
     await tester.pump();

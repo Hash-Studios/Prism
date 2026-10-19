@@ -4,6 +4,7 @@ import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.da
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,19 +24,19 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
     try {
       await getIt<CacheMaintenanceService>().clearTransientCache();
       if (!context.mounted) return;
-      showDebugSnackBar(context, 'App cache cleared');
+      showDebugSnackBar(context, context.l10n.debugCacheCleared);
     } catch (e) {
       if (!context.mounted) return;
-      showDebugSnackBar(context, 'Could not clear the app cache: $e', isError: true);
+      showDebugSnackBar(context, context.l10n.debugCouldNotClearCache(e.toString()), isError: true);
     }
   }
 
   Future<void> _forceCrash(BuildContext context) async {
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Force crash?',
-      message: 'This throws an exception to check that Sentry reports errors.',
-      confirmLabel: 'Crash the app',
+      title: context.l10n.debugForceCrashTitle,
+      message: context.l10n.debugForceCrashBody,
+      confirmLabel: context.l10n.debugCrashApp,
       destructive: true,
     );
     if (ok) throw StateError('[DebugPanel] Force crash triggered by admin for Sentry test.');
@@ -49,41 +50,41 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
       builder: (context, _) => ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxl),
         children: [
-          const _Section('Rendering'),
+          _Section(context.l10n.debugRendering),
           PrismGroup(
             children: [
               PrismSwitchRow(
                 icon: Icons.grid_on_rounded,
-                title: 'Paint size',
-                subtitle: 'Show layout bounds on all widgets',
+                title: context.l10n.debugPaintSize,
+                subtitle: context.l10n.debugPaintSizeDescription,
                 value: DebugFlags.instance.paintSizeEnabled,
                 onChanged: (v) => DebugFlags.instance.paintSizeEnabled = v,
               ),
               PrismSwitchRow(
                 icon: Icons.color_lens_outlined,
-                title: 'Repaint rainbow',
-                subtitle: 'Highlight repainted areas in rotating colors',
+                title: context.l10n.debugRepaintRainbow,
+                subtitle: context.l10n.debugRepaintRainbowDescription,
                 value: DebugFlags.instance.repaintRainbow,
                 onChanged: (v) => DebugFlags.instance.repaintRainbow = v,
               ),
               PrismSwitchRow(
                 icon: Icons.text_fields_rounded,
-                title: 'Paint baselines',
-                subtitle: 'Show text baseline guides',
+                title: context.l10n.debugPaintBaselines,
+                subtitle: context.l10n.debugPaintBaselinesDescription,
                 value: DebugFlags.instance.paintBaselines,
                 onChanged: (v) => DebugFlags.instance.paintBaselines = v,
               ),
               PrismSwitchRow(
                 icon: Icons.speed_rounded,
-                title: 'Performance overlay',
-                subtitle: 'GPU and CPU usage graphs',
+                title: context.l10n.debugPerformanceOverlay,
+                subtitle: context.l10n.debugPerformanceOverlayDescription,
                 value: DebugFlags.instance.showPerformanceOverlay,
                 onChanged: (v) => DebugFlags.instance.showPerformanceOverlay = v,
               ),
               PrismSwitchRow(
                 icon: Icons.accessibility_new_rounded,
-                title: 'Semantics debugger',
-                subtitle: 'Overlay accessibility tree labels',
+                title: context.l10n.debugSemanticsDebugger,
+                subtitle: context.l10n.debugSemanticsDebuggerDescription,
                 value: DebugFlags.instance.showSemanticsDebugger,
                 onChanged: (v) => DebugFlags.instance.showSemanticsDebugger = v,
               ),
@@ -92,86 +93,83 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
           if (!kReleaseMode)
             Padding(
               padding: const EdgeInsets.only(top: PrismSpace.xs, left: PrismSpace.xxs),
-              child: Text(
-                'Paint size, repaint rainbow and baselines only work in debug and profile builds.',
-                style: PrismTextStyles.caption(context),
-              ),
+              child: Text(context.l10n.debugPaintSizeWarning, style: PrismTextStyles.caption(context)),
             ),
-          const _Section('Animation speed'),
+          _Section(context.l10n.debugAnimationSpeed),
           const _AnimationSpeedCard(),
-          const _Section('Logging and network'),
+          _Section(context.l10n.debugLoggingAndNetwork),
           PrismGroup(
             children: [
               PrismSwitchRow(
                 icon: Icons.notifications_active_outlined,
-                title: 'Show log toasts',
-                subtitle: 'Display log entries as brief overlay toasts',
+                title: context.l10n.debugShowLogToasts,
+                subtitle: context.l10n.debugShowLogToastsDescription,
                 value: DebugFlags.instance.showLogToasts,
                 onChanged: (v) => DebugFlags.instance.showLogToasts = v,
               ),
               PrismSwitchRow(
                 icon: Icons.wifi_off_rounded,
-                title: 'Simulate no internet',
-                subtitle: 'Overrides connectivity checks to report offline',
+                title: context.l10n.debugSimulateNoInternet,
+                subtitle: context.l10n.debugSimulateNoInternetDescription,
                 value: DebugFlags.instance.simulateNoInternet,
                 onChanged: (v) => DebugFlags.instance.simulateNoInternet = v,
               ),
             ],
           ),
-          const _Section('Maintenance'),
+          _Section(context.l10n.debugMaintenance),
           PrismGroup(
             children: [
               PrismRow(
                 icon: Icons.image_not_supported_outlined,
-                title: 'Clear image cache',
-                subtitle: 'Evict in-memory image cache',
+                title: context.l10n.debugClearImageCache,
+                subtitle: context.l10n.debugClearImageCacheDescription,
                 onTap: () {
                   PaintingBinding.instance.imageCache.clear();
                   PaintingBinding.instance.imageCache.clearLiveImages();
-                  showDebugSnackBar(context, 'Image cache cleared');
+                  showDebugSnackBar(context, context.l10n.debugImageCacheCleared);
                 },
               ),
               PrismRow(
                 icon: Icons.delete_sweep_outlined,
-                title: 'Clear app cache',
-                subtitle: 'Clear images, feed and notification cache',
+                title: context.l10n.debugClearAppCache,
+                subtitle: context.l10n.debugClearAppCacheDescription,
                 onTap: () => _clearAppCache(context),
               ),
               PrismRow(
                 icon: Icons.restart_alt_rounded,
-                title: 'Reset all debug flags',
-                subtitle: 'Restore all toggles to default values',
+                title: context.l10n.debugResetFlags,
+                subtitle: context.l10n.debugResetFlagsDescription,
                 onTap: () {
                   DebugFlags.instance.reset();
-                  showDebugSnackBar(context, 'Debug flags reset');
+                  showDebugSnackBar(context, context.l10n.debugFlagsReset);
                 },
               ),
             ],
           ),
-          const _Section('Admin shortcuts'),
+          _Section(context.l10n.debugAdminShortcuts),
           PrismGroup(
             children: [
               PrismRow(
                 icon: Icons.analytics_outlined,
-                title: 'Firestore telemetry',
-                subtitle: 'View Firestore read and write profiling',
+                title: context.l10n.adminFirestoreTelemetry,
+                subtitle: context.l10n.debugFirestoreTelemetryDescription,
                 onTap: () => context.router.push(const FirestoreTelemetryRoute()),
               ),
               PrismRow(
                 icon: Icons.admin_panel_settings_outlined,
-                title: 'Admin review',
-                subtitle: 'Content moderation and push notification tool',
+                title: context.l10n.adminTitle,
+                subtitle: context.l10n.debugAdminReviewDescription,
                 onTap: () => context.router.push(AdminReviewRoute()),
               ),
             ],
           ),
-          const _Section('Danger zone'),
+          _Section(context.l10n.debugDangerZone),
           PrismGroup(
             children: [
               PrismRow(
                 icon: Icons.warning_amber_rounded,
-                title: 'Force crash',
-                subtitle: 'Throw an exception to test Sentry reporting',
+                title: context.l10n.debugForceCrash,
+                subtitle: context.l10n.debugForceCrashDescription,
                 destructive: true,
                 onTap: () => _forceCrash(context),
               ),
@@ -211,7 +209,7 @@ class _AnimationSpeedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Speed', style: PrismTextStyles.rowTitle(context))),
+              Expanded(child: Text(context.l10n.debugSpeed, style: PrismTextStyles.rowTitle(context))),
               Text('${speed.toStringAsFixed(1)}×', style: PrismTextStyles.rowTitle(context)),
             ],
           ),

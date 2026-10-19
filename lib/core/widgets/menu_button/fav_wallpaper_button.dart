@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -52,7 +53,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     final bool flat = FlatMenuButtons.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     return CircularMenuButton(
-      label: 'Favourite',
+      label: context.l10n.coreFavourite,
       selected: isFavorite,
       isLoading: isLoading,
       padding: EdgeInsets.zero,
@@ -77,6 +78,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
 
   Future<bool> onFav(FavouriteWallEntity? wall, {required bool desired}) async {
     if (wall == null) return false;
+    final AppLocalizations l10n = context.l10n;
     setState(() {
       isLoading = true;
     });
@@ -96,10 +98,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       }
       if (desired) {
         if (mounted) showGlintToast(context, mood: GlintMood.love);
-        if (app_state.prismUser.id.isEmpty) await _noteGuestSave();
+        if (app_state.prismUser.id.isEmpty) await _noteGuestSave(l10n);
       }
     } else {
-      toasts.error("Couldn't update favourites. Try again.");
+      toasts.error(l10n.coreCouldNotUpdateFavourites);
     }
     if (!mounted) return success;
     setState(() {
@@ -111,9 +113,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     return success;
   }
 
-  Future<void> _noteGuestSave() async {
+  Future<void> _noteGuestSave(AppLocalizations l10n) async {
     analytics.track(const FavouriteSavedAsGuestEvent());
     final int saved = (await getIt<GuestFavouritesStore>().readAll()).length;
-    if (saved == 3) toasts.info('Sign in to keep your favourites on every device');
+    if (saved == 3) toasts.info(l10n.coreSignInToSyncFavourites);
   }
 }

@@ -5,10 +5,10 @@ import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 const int _maxPreviewCacheWidth = 2160;
 const int _maxTags = 10;
-const String _defaultPreviewTitle = 'Wallpaper on Prism';
 
 /// Only Prism walls can sit in a premium collection. Wallhaven and Pexels walls are never premium.
 bool isPremiumFeedItem(FeedItemEntity item, List<String> premiumCollections) {
@@ -60,22 +60,22 @@ bool isLandscapeWallpaper(WallpaperCore core) {
 }
 
 /// Short warnings for the set sheet and the details panel. Empty when the wall suits the screen.
-List<String> wallpaperResolutionNotes(WallpaperCore core, Size screenPixels) => <String>[
-  if (isLowResolutionForScreen(core, screenPixels)) 'Low resolution for your screen',
-  if (isLandscapeWallpaper(core)) 'Landscape wallpaper: the sides will be cropped',
+List<String> wallpaperResolutionNotes(AppLocalizations l10n, WallpaperCore core, Size screenPixels) => <String>[
+  if (isLowResolutionForScreen(core, screenPixels)) l10n.wallpaperLowResolutionScreen,
+  if (isLandscapeWallpaper(core)) l10n.wallpaperLandscapeCrop,
 ];
 
 /// Headline for a wall: the creator's title, else "Wallpaper by" and the creator name. An email is never shown.
-String wallpaperTitle(FeedItemEntity item) {
+String wallpaperTitle(AppLocalizations l10n, FeedItemEntity item) {
   final String title = item.maybeWhen(prism: (_, wall) => wall.title?.trim(), orElse: () => null) ?? '';
   if (title.isNotEmpty) return title;
   final String name = item.wallpaperCore.authorName?.trim() ?? '';
-  if (name.isNotEmpty && !name.contains('@')) return 'Wallpaper by $name';
-  return item.source == WallpaperSource.prism ? 'Wallpaper by Prism creator' : _defaultPreviewTitle;
+  if (name.isNotEmpty && !name.contains('@')) return l10n.wallpaperByCreator(name);
+  return item.source == WallpaperSource.prism ? l10n.wallpaperByPrismCreator : l10n.wallpaperOnPrism;
 }
 
 /// Title for the link preview. Same as the headline.
-String wallpaperPreviewTitle(FeedItemEntity item) => wallpaperTitle(item);
+String wallpaperPreviewTitle(AppLocalizations l10n, FeedItemEntity item) => wallpaperTitle(l10n, item);
 
 /// Tags shown as chips: trimmed, unique, case-insensitive, capped.
 List<String> wallpaperTags(FeedItemEntity item) {

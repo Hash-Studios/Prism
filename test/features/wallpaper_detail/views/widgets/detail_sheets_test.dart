@@ -7,6 +7,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +36,9 @@ class _FakeReports implements ContentReportRepository {
 }
 
 Widget _host(Widget Function(BuildContext) sheet) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   home: Builder(
     builder: (context) => Scaffold(
       body: TextButton(
@@ -78,10 +82,10 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Set wallpaper'), findsOneWidget);
+      expect(find.text('Set as wallpaper'), findsOneWidget);
       expect(find.byType(PrismRow), findsAtLeastNWidgets(3));
-      await tester.tap(find.text('Home Screen'));
-      await tester.tap(find.text('Lock Screen'));
+      await tester.tap(find.text('home screen'));
+      await tester.tap(find.text('lock screen'));
       await tester.tap(find.text('Both'));
 
       expect(taps, <String>['home', 'lock', 'both']);
@@ -123,7 +127,13 @@ void main() {
 
       expect(find.text('Report'), findsOneWidget);
       expect(find.text('Why are you reporting this wallpaper (Z3ZF)?'), findsOneWidget);
-      for (final (String _, String label) in kContentReportReasons) {
+      for (final String label in <String>[
+        'Copyright / ownership',
+        'Harassment or hate',
+        'Sexual or adult content',
+        'Spam or misleading',
+        'Other',
+      ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
       expect(find.widgetWithText(FilledButton, 'Send report'), findsOneWidget);

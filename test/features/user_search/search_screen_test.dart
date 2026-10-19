@@ -23,6 +23,8 @@ import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -87,7 +89,13 @@ void main() {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SearchScreen(),
+      ),
+    );
     await tester.pump();
   }
 
@@ -98,7 +106,13 @@ void main() {
   }
 
   Future<void> submit(WidgetTester tester, String query) async {
-    await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SearchScreen(),
+      ),
+    );
     await enterQuery(tester, query);
   }
 
@@ -142,7 +156,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Results for "anime"'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().accountResultsForQuery('anime')), findsOneWidget);
     expect(find.byType(PrismWallTile), findsNWidgets(4));
     expect(find.text('Find creators'), findsNothing);
     expect(analytics.events.whereType<SearchSubmittedEvent>(), hasLength(1));
@@ -156,7 +170,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('No wallpapers found for "zzz"'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().accountNoWallpapersFoundForQuery('zzz')), findsOneWidget);
     expect(find.text('Try a shorter or a different word.'), findsOneWidget);
   });
 
@@ -214,7 +228,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Results for "Nature"'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().accountResultsForQuery('Nature')), findsOneWidget);
     verify(() => service.search('Nature', filters: any(named: 'filters'))).called(1);
   });
 
@@ -258,7 +272,7 @@ void main() {
     await submit(tester, 'zzzz');
     await tester.pump();
 
-    expect(find.text('No wallpapers found for "zzzz"'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().accountNoWallpapersFoundForQuery('zzzz')), findsOneWidget);
     expect(find.text("Couldn't search right now"), findsNothing);
   });
 
@@ -352,7 +366,13 @@ void main() {
     pendingTagSearch.value = 'mountains';
     addTearDown(() => pendingTagSearch.value = null);
 
-    await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SearchScreen(),
+      ),
+    );
     await tester.pump();
     await tester.pump();
 
@@ -370,7 +390,13 @@ void main() {
         isLocal: false,
       ),
     );
-    await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SearchScreen(),
+      ),
+    );
 
     pendingTagSearch.value = 'ocean';
     await tester.pump();
@@ -454,7 +480,14 @@ void main() {
 
   testWidgets('the tag row lists the classifier names in the same order every time the screen opens', (tester) async {
     Future<List<String>> openTags() async {
-      await tester.pumpWidget(MaterialApp(key: UniqueKey(), home: const SearchScreen()));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          key: UniqueKey(),
+          home: const SearchScreen(),
+        ),
+      );
       final Iterable<Text> labels = tester.widgetList<Text>(
         find.descendant(of: find.byType(PrismChip), matching: find.byType(Text)),
       );
@@ -513,7 +546,13 @@ void main() {
     }
 
     Future<void> tapSwatch(WidgetTester tester, String name) async {
-      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SearchScreen(),
+        ),
+      );
       await tester.pump();
       await tester.tap(find.bySemanticsLabel(name));
       await tester.pump();
@@ -568,7 +607,7 @@ void main() {
 
       await tapSwatch(tester, 'Teal');
 
-      expect(find.text('No teal wallpapers found'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().accountNoWallpapersForFilters('teal')), findsOneWidget);
     });
 
     testWidgets('clearing the colour chip returns to discover', (tester) async {
@@ -614,7 +653,13 @@ void main() {
 
     testWidgets('picking a colour in the filter sheet with an empty field runs a colour-only search', (tester) async {
       answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
-      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SearchScreen(),
+        ),
+      );
 
       await tester.tap(find.byTooltip('Filters'));
       await tester.pump();
@@ -644,7 +689,13 @@ void main() {
 
     testWidgets('an empty field and no colour does not search', (tester) async {
       answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
-      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SearchScreen(),
+        ),
+      );
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pump();
 

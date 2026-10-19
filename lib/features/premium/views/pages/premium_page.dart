@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -45,8 +46,9 @@ class _PremiumPageState extends State<PremiumPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return PrismPage(
-      title: 'Prism Premium',
+      title: l10n.premiumPageTitle,
       body: Center(
         child: Padding(
           padding: PrismSpace.pageInsets,
@@ -54,13 +56,13 @@ class _PremiumPageState extends State<PremiumPage> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                _unavailable ? PaywallOrchestrator.plansUnavailableMessage : 'Explore Prism Premium plans.',
+                _unavailable ? l10n.premiumPagePlansUnavailable : l10n.premiumPageExplorePlans,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.body(context),
               ),
               const SizedBox(height: PrismSpace.lg),
               PrismButton(
-                label: _unavailable ? 'Try again' : 'View plans',
+                label: _unavailable ? l10n.premiumPageTryAgain : l10n.premiumPageViewPlans,
                 loading: _presenting,
                 onPressed: _viewPlans,
               ),

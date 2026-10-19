@@ -1,9 +1,13 @@
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _dots({required int current, bool reduceMotion = false}) {
   return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
       child: child!,
@@ -46,6 +50,9 @@ void main() {
     var taps = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Stack(
             children: <Widget>[

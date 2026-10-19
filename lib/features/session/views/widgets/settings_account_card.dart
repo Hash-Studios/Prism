@@ -1,6 +1,6 @@
-import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Top of the settings page. Signed-in users see who they are and open their profile; guests see a sign-in prompt.
@@ -28,21 +28,21 @@ class SettingsAccountCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Sign in to Prism', style: PrismTextStyles.cardTitle(context)),
+                  Text(context.l10n.accountSignInToPrism, style: PrismTextStyles.cardTitle(context)),
                   const SizedBox(height: 2),
-                  Text(signInBenefitsLine, style: PrismTextStyles.caption(context)),
+                  Text(context.l10n.accountSignInBenefits, style: PrismTextStyles.caption(context)),
                 ],
               ),
             ),
             const SizedBox(width: PrismSpace.sm),
-            PrismButton(label: 'Sign in', size: PrismButtonSize.compact, onPressed: onSignIn),
+            PrismButton(label: context.l10n.accountSignIn, size: PrismButtonSize.compact, onPressed: onSignIn),
           ],
         ),
       );
     }
     final String name = app_state.prismUser.name;
     return PrismCard(
-      semanticLabel: 'Open your profile',
+      semanticLabel: context.l10n.accountOpenYourProfile,
       onTap: onOpenProfile,
       child: Row(
         children: <Widget>[
@@ -64,7 +64,7 @@ class SettingsAccountCard extends StatelessWidget {
                     ),
                     if (app_state.prismUser.premium) ...<Widget>[
                       const SizedBox(width: PrismSpace.xs),
-                      const PrismTag(label: 'Pro', tone: PrismTone.accent),
+                      PrismTag(label: context.l10n.accountProBadge, tone: PrismTone.accent),
                     ],
                   ],
                 ),

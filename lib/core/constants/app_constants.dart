@@ -9,7 +9,8 @@ const String currentAppVersion = '3.7.0';
 const String currentAppVersionCode = '345';
 const String defaultObsoleteAppVersion = '2.6.0';
 
-const String defaultBannerText = 'Join our Telegram';
+// Empty means the UI should use its localized default banner copy.
+const String defaultBannerText = '';
 const String appStoreUrl = 'https://apps.apple.com/app/id6670200846';
 const String playStoreUrl = 'https://play.google.com/store/apps/details?id=com.hash.prism';
 const String shortLinkApiUrl = 'https://prismwalls.com/api/links';

@@ -15,6 +15,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,8 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
-import '../../support/fake_firestore_client.dart';
 import '../../support/fake_feed_cache_local_data_source.dart';
+import '../../support/fake_firestore_client.dart';
 import '../../support/fake_user_block_repository.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
@@ -72,6 +73,9 @@ void main() {
 
   Future<void> pumpScreen(WidgetTester tester, [String name = 'category:Dark']) => tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: BlocProvider<CategoryFeedBloc>.value(
         value: bloc,
         child: CollectionViewScreen(collectionName: name),
@@ -147,7 +151,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(CollectionViewGrid), findsOneWidget);
-    expect(find.widgetWithText(GlintState, 'Nothing in this collection yet'), findsOneWidget);
+    expect(find.widgetWithText(GlintState, 'No collections yet'), findsOneWidget);
   });
 
   testWidgets('a collection that fails to load shows an error and retries on tap', (tester) async {

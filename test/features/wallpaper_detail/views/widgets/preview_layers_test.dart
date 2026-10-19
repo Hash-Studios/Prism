@@ -1,23 +1,32 @@
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _host(Widget child, {Size size = const Size(400, 800), double statusBar = 0, double navigationBar = 0}) =>
-    MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: const Size(400, 800),
-          padding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
-          viewPadding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
-          alwaysUse24HourFormat: true,
-        ),
-        child: Scaffold(
-          body: Center(
-            child: SizedBox(width: size.width, height: size.height, child: child),
-          ),
-        ),
+Widget _host(
+  Widget child, {
+  Size size = const Size(400, 800),
+  double statusBar = 0,
+  double navigationBar = 0,
+  bool alwaysUse24HourFormat = true,
+}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
+  home: MediaQuery(
+    data: MediaQueryData(
+      size: const Size(400, 800),
+      padding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
+      viewPadding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
+      alwaysUse24HourFormat: alwaysUse24HourFormat,
+    ),
+    child: Scaffold(
+      body: Center(
+        child: SizedBox(width: size.width, height: size.height, child: child),
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   final DateTime now = DateTime(2026, 3, 4, 15, 7);
@@ -52,15 +61,15 @@ void main() {
   testWidgets('the iOS lock layer shows the date above a large time', (tester) async {
     await tester.pumpWidget(_host(LockPreviewLayer(textColor: Colors.black, now: now)));
 
-    expect(find.text('Wednesday 4 March'), findsOneWidget);
+    expect(find.text('Wednesday, March 4'), findsOneWidget);
     expect(tester.widget<Text>(find.text('15:07')).style?.fontSize, 96);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('the Android home layer shows the date and five dock icons', (tester) async {
     await tester.pumpWidget(_host(HomePreviewLayer(textColor: Colors.white, now: now)));
 
-    expect(find.text('Wednesday,'), findsOneWidget);
-    expect(find.text('March 4ᵗʰ'), findsOneWidget);
+    expect(find.text('Wednesday'), findsOneWidget);
+    expect(find.text('March 4'), findsOneWidget);
     expect(find.byType(Image), findsNWidgets(5));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -86,13 +95,13 @@ void main() {
     testWidgets('the iOS lock date starts 24 below the status bar', (tester) async {
       await pumpOnPhoneScreen(tester, LockPreviewLayer(textColor: Colors.white, now: now), statusBar: 40);
 
-      expect(top(tester, find.text('Wednesday 4 March'), LockPreviewLayer), 64);
+      expect(top(tester, find.text('Wednesday, March 4'), LockPreviewLayer), 64);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the iOS lock date starts 24 from the top when there is no status bar', (tester) async {
       await pumpOnPhoneScreen(tester, LockPreviewLayer(textColor: Colors.white, now: now));
 
-      expect(top(tester, find.text('Wednesday 4 March'), LockPreviewLayer), 24);
+      expect(top(tester, find.text('Wednesday, March 4'), LockPreviewLayer), 24);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the Android lock block is centred in the top third below the status bar', (tester) async {
@@ -106,8 +115,8 @@ void main() {
     testWidgets('the Android home block is centred in the top third below the status bar', (tester) async {
       await pumpOnPhoneScreen(tester, HomePreviewLayer(textColor: Colors.white, now: now), statusBar: 40);
 
-      final double blockTop = top(tester, find.text('Wednesday,'), HomePreviewLayer);
-      final double blockBottom = bottom(tester, find.text('March 4ᵗʰ'), HomePreviewLayer);
+      final double blockTop = top(tester, find.text('Wednesday'), HomePreviewLayer);
+      final double blockBottom = bottom(tester, find.text('March 4'), HomePreviewLayer);
       expect((blockTop + blockBottom) / 2, closeTo(40 + (800 - 40) / 6, 0.01));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -129,7 +138,7 @@ void main() {
         statusBar: 40,
       );
 
-      expect(top(tester, find.text('Wednesday 4 March'), LockPreviewLayer), 20 + 12);
+      expect(top(tester, find.text('Wednesday, March 4'), LockPreviewLayer), 20 + 12);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a layer in a half-size frame scales the Android offset with the frame', (tester) async {
@@ -140,8 +149,8 @@ void main() {
         statusBar: 40,
       );
 
-      final double blockTop = top(tester, find.text('Wednesday,'), HomePreviewLayer);
-      final double blockBottom = bottom(tester, find.text('March 4ᵗʰ'), HomePreviewLayer);
+      final double blockTop = top(tester, find.text('Wednesday'), HomePreviewLayer);
+      final double blockBottom = bottom(tester, find.text('March 4'), HomePreviewLayer);
       expect((blockTop + blockBottom) / 2, closeTo(20 + (400 - 20) / 6, 0.01));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
@@ -170,20 +179,11 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
-  test('ordinal suffixes and the clock follow the 12 or 24 hour setting', () {
-    expect(<int>[1, 2, 3, 4, 11, 12, 13, 21, 22, 23].map(ordinalSuffix).toList(), <String>[
-      'ˢᵗ',
-      'ⁿᵈ',
-      'ʳᵈ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ˢᵗ',
-      'ⁿᵈ',
-      'ʳᵈ',
-    ]);
-    expect(formatClockTime(now, use24Hour: false), '3:07');
-    expect(formatClockTime(now, use24Hour: true), '15:07');
-  });
+  testWidgets('the lock layer displays time in the device hour setting', (tester) async {
+    await tester.pumpWidget(_host(LockPreviewLayer(textColor: Colors.white, now: now), alwaysUse24HourFormat: false));
+    expect(find.text('3:07'), findsOneWidget);
+
+    await tester.pumpWidget(_host(LockPreviewLayer(textColor: Colors.white, now: now)));
+    expect(find.text('15:07'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

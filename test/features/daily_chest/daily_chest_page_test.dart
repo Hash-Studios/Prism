@@ -8,6 +8,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -131,7 +133,12 @@ void main() {
     await tester.pumpWidget(
       MediaQuery(
         data: MediaQueryData(size: size, disableAnimations: reduceMotion),
-        child: MaterialApp(theme: kLightTheme, home: page()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: kLightTheme,
+          home: page(),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 100));
@@ -142,7 +149,14 @@ void main() {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(theme: kLightTheme, home: const SizedBox()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: const SizedBox(),
+      ),
+    );
     final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
     unawaited(navigator.push<void>(MaterialPageRoute<void>(builder: (_) => page())));
     await pumpFor(tester, const Duration(milliseconds: 500));
@@ -435,7 +449,7 @@ void main() {
       expect(find.text('Done'), findsOneWidget);
       expect(find.text('See the odds'), findsNothing);
       expect(find.text('See it in the Shop'), findsNothing);
-      expect(find.text('Doubled by your bonus quest'), findsNothing);
+      expect(find.text(AppLocalizationsEn().economyChestDoubledByBonus), findsNothing);
       expect(find.text('352'), findsOneWidget);
       expect(phase(tester), ChestPhase.revealed);
       expect(haptics, <String>['tap', 'success']);
@@ -465,7 +479,7 @@ void main() {
       await openWith(tester, _won(3, coins: 40, cost: 0, doubled: true), label: 'Open free');
 
       expect(find.text('+40'), findsOneWidget);
-      expect(find.text('Doubled by your bonus quest'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyChestDoubledByBonus), findsOneWidget);
       expect(find.text('380'), findsOneWidget);
     });
 
@@ -521,7 +535,7 @@ void main() {
       await openWith(tester, _won(3, coins: 40, cost: 0, doubled: true, xp: 10), label: 'Open free');
 
       expect(find.text('+40'), findsOneWidget);
-      expect(find.text('Doubled by your bonus quest'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyChestDoubledByBonus), findsOneWidget);
       expect(find.text('+10 XP'), findsOneWidget);
     });
 
@@ -785,6 +799,9 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: kLightTheme,
           home: DailyChestPage(
             open: ({required int maxCost}) async => throw StateError('boom'),
@@ -831,7 +848,13 @@ void main() {
       final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
       Widget app({required bool reduceMotion}) => MediaQuery(
         data: MediaQueryData(size: const Size(390, 844), disableAnimations: reduceMotion),
-        child: MaterialApp(theme: kLightTheme, navigatorKey: navigator, home: const SizedBox()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: kLightTheme,
+          navigatorKey: navigator,
+          home: const SizedBox(),
+        ),
       );
       await tester.pumpWidget(app(reduceMotion: false));
       unawaited(navigator.currentState!.push<void>(MaterialPageRoute<void>(builder: (_) => page())));
@@ -905,7 +928,12 @@ void main() {
           await tester.pumpWidget(
             MediaQuery(
               data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
-              child: MaterialApp(theme: kLightTheme, home: page()),
+              child: MaterialApp(
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                theme: kLightTheme,
+                home: page(),
+              ),
             ),
           );
           await tester.pump(const Duration(milliseconds: 100));

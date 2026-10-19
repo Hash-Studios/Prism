@@ -1,6 +1,5 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -53,6 +52,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(

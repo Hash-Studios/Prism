@@ -3,13 +3,52 @@ import 'dart:convert';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/data/share/create_dynamic_link.dart' as share;
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import '../../support/fake_app_analytics.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
+
+Future<void> createUserDynamicLink(
+  String name,
+  String username,
+  String email,
+  String bio,
+  String userPhoto, {
+  BuildContext? context,
+  int? followerCount,
+  int? wallpaperCount,
+  List<String> gallery = const <String>[],
+}) => share.createUserDynamicLink(
+  name,
+  username,
+  email,
+  bio,
+  userPhoto,
+  context: context,
+  followerCount: followerCount,
+  wallpaperCount: wallpaperCount,
+  gallery: gallery,
+  l10n: _l10n,
+);
+
+Future<String> createSharingPrismLink(String userID, {String? inviterName, String? inviterPhoto}) =>
+    share.createSharingPrismLink(userID, inviterName: inviterName, inviterPhoto: inviterPhoto, l10n: _l10n);
+
+Future<String?> createDynamicLink(
+  String id,
+  WallpaperSource source,
+  String? url,
+  String thumbUrl, {
+  String? title,
+  WallpaperCore? core,
+}) => share.createDynamicLink(id, source, url, thumbUrl, title: title, core: core, l10n: _l10n);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

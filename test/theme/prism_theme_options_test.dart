@@ -1,3 +1,4 @@
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,10 +18,28 @@ void main() {
     ]);
   });
 
-  test('labels are the ids without the light or dark prefix', () {
-    for (final option in [...prismLightThemes, ...prismDarkThemes]) {
-      expect(option.label, option.id.substring(2));
-    }
+  test('theme display names come from localization and stored ids stay stable', () {
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(
+      <String>[
+        for (final option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes])
+          prismThemeDisplayName(option, l10n),
+      ],
+      <String>[
+        'Frost White',
+        'Coffee',
+        'Rose',
+        'Cotton Blue',
+        'Material Dark',
+        'AMOLED',
+        'Olive',
+        'Deep Ocean',
+        'Jungle',
+        'Pepper',
+        'Sky',
+        'Steel',
+      ],
+    );
   });
 
   test('prismThemeById finds an option or returns null', () {

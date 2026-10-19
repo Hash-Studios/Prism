@@ -6,11 +6,12 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/wait_for_real_io.dart';
@@ -37,6 +38,9 @@ class _PendingOfflineAssetStore extends OfflineAssetStore {
 const String _tinyGif = 'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
 Widget _host(StackRouter router, String? url, {Future<String> Function()? prepareSource}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   home: StackRouterScope(
     controller: router,
     stateHash: 0,

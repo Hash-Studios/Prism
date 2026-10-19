@@ -1,10 +1,14 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(Widget child, {double scale = 1}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: prismLightThemes.first.theme,
   builder: (context, app) => MediaQuery(
     data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),

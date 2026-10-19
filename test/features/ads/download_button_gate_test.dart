@@ -24,6 +24,8 @@ import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -218,6 +220,9 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: DownloadButton(
             link: link,
@@ -638,7 +643,7 @@ void main() {
         find.textContaining('You need ${CoinPolicy.wallpaperDownload - 2} more coins to save this wallpaper.'),
         findsOneWidget,
       );
-      expect(find.text(watchAdOptionLabel()), findsOneWidget);
+      expect(find.text(watchAdOptionLabel(AppLocalizationsEn())), findsOneWidget);
       expect(find.text('Upgrade to Pro'), findsOneWidget);
       expect(enqueued, isEmpty);
     });
@@ -1348,6 +1353,9 @@ void main() {
       backend.onCall = offlineRefunds();
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: Column(
               children: <Widget>[
@@ -1391,7 +1399,13 @@ void main() {
       await pump(tester);
       await tester.tap(find.byType(PrimaryActionPill));
       await settle(tester);
-      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SizedBox(),
+        ),
+      );
       reply.complete();
       await settle(tester);
 

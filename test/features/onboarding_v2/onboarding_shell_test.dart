@@ -15,6 +15,7 @@ import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page
 import 'package:Prism/features/onboarding_v2/src/views/pages/f4_first_wallpaper_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
@@ -54,6 +55,8 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         navigatorKey: navigator,
         theme: prismDarkThemes.first.theme,
         builder: (context, child) => MediaQuery(

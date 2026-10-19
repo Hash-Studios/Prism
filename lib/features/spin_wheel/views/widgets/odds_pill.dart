@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class OddsPill extends StatelessWidget {
@@ -14,7 +15,7 @@ class OddsPill extends StatelessWidget {
     return PressScale(
       child: Semantics(
         button: true,
-        label: 'See the odds',
+        label: context.l10n.economySeeOdds,
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
@@ -36,7 +37,10 @@ class OddsPill extends StatelessWidget {
                     children: <Widget>[
                       Icon(Icons.info_outline_rounded, size: 16, color: cs.onSurface),
                       const SizedBox(width: 6),
-                      Text('See the odds', style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
+                      Text(
+                        context.l10n.economySeeOdds,
+                        style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
+                      ),
                     ],
                   ),
                 ),
