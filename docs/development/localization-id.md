@@ -51,3 +51,9 @@ No simulator/emulator screenshots or full-screen overflow verification are
 claimed. Signed-in production flows additionally need human authentication
 and appropriate Firebase credentials. Hosted native builds are separate
 from real-device verification.
+
+The purchase orchestrator calls `RevenueCatUI.presentPaywall` with a remote
+offering. Repository-owned Premium messages are translated here. The remote
+paywall template and store product metadata cannot be inspected or verified
+without RevenueCat and store access. No remote paywall or store changes are
+included, and no claim is made that their Indonesian copy is configured.

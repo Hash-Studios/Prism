@@ -3095,7 +3095,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugDarkCard => 'Kartu gelap';
 
   @override
-  String get debugDefaultValue => '(default)';
+  String get debugDefaultValue => '(bawaan)';
 
   @override
   String get debugDelete => 'Hapus';
@@ -3378,7 +3378,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugRemoteConfigUnavailable => 'Remote Config tidak tersedia';
 
   @override
-  String get debugRendering => 'Rendering';
+  String get debugRendering => 'Perenderan';
 
   @override
   String get debugRepaintRainbow => 'Warna pelukisan ulang';
@@ -3441,10 +3441,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugSpeed => 'Kecepatan';
 
   @override
-  String get debugStackTrace => 'Stack trace';
+  String get debugStackTrace => 'Jejak tumpukan';
 
   @override
-  String get debugStackTraceCopied => 'Stack trace disalin';
+  String get debugStackTraceCopied => 'Jejak tumpukan disalin';
 
   @override
   String get debugStillPoses => 'Pose diam';
@@ -4226,7 +4226,7 @@ class AppLocalizationsId extends AppLocalizations {
     final intl.NumberFormat minutesNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String minutesString = minutesNumberFormat.format(minutes);
 
-    return '${minutesString}m';
+    return '$minutesString mnt';
   }
 
   @override
@@ -4488,7 +4488,7 @@ class AppLocalizationsId extends AppLocalizations {
     final intl.NumberFormat minutesNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String minutesString = minutesNumberFormat.format(minutes);
 
-    return '${minutesString}m';
+    return '$minutesString mnt';
   }
 
   @override

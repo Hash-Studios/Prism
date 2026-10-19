@@ -2776,7 +2776,7 @@
   "debugCrashApp": "Buat aplikasi crash",
   "debugDangerZone": "Zona berbahaya",
   "debugDarkCard": "Kartu gelap",
-  "debugDefaultValue": "(default)",
+  "debugDefaultValue": "(bawaan)",
   "debugDelete": "Hapus",
   "debugDeleteKey": "Hapus kunci",
   "debugDeleteKeyBody": "Hapus \"{key}\" dari penyimpanan lokal.",
@@ -2887,7 +2887,7 @@
   "debugRefresh": "Muat ulang",
   "debugRemoteConfig": "Remote Config",
   "debugRemoteConfigUnavailable": "Remote Config tidak tersedia",
-  "debugRendering": "Rendering",
+  "debugRendering": "Perenderan",
   "debugRepaintRainbow": "Warna pelukisan ulang",
   "debugRepaintRainbowDescription": "Sorot area yang dilukis ulang dengan warna berganti",
   "debugResetFlags": "Reset semua flag debug",
@@ -2908,8 +2908,8 @@
   "debugSimulateNoInternet": "Simulasikan tanpa internet",
   "debugSimulateNoInternetDescription": "Paksa pemeriksaan konektivitas melaporkan luring",
   "debugSpeed": "Kecepatan",
-  "debugStackTrace": "Stack trace",
-  "debugStackTraceCopied": "Stack trace disalin",
+  "debugStackTrace": "Jejak tumpukan",
+  "debugStackTraceCopied": "Jejak tumpukan disalin",
   "debugStillPoses": "Pose diam",
   "debugStorage": "Penyimpanan",
   "debugStorageCleared": "Semua penyimpanan dihapus",
@@ -3452,7 +3452,7 @@
       }
     }
   },
-  "economyChestResetMinutes": "{minutes}m",
+  "economyChestResetMinutes": "{minutes} mnt",
   "@economyChestResetMinutes": {
     "placeholders": {
       "minutes": {
@@ -3704,7 +3704,7 @@
       }
     }
   },
-  "economyCountdownMinutes": "{minutes}m",
+  "economyCountdownMinutes": "{minutes} mnt",
   "@economyCountdownMinutes": {
     "placeholders": {
       "minutes": {
