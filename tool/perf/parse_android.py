@@ -21,6 +21,8 @@ for i,st in enumerate(starts):
     if br and home:
         cold+=1
         S+= [('cold_launch','pre_main',round((br-st)*1000),True),('cold_launch','tap_to_first_frame',round((ff-st)*1000),True),('cold_launch','tap_to_home',round((home-st)*1000),True)]
+        grid=first('home.grid_first_paint')
+        if grid: S.append(('cold_launch','tap_to_grid',round((grid-st)*1000),True))
 for r in json.load(open(amf)):
     if r.get('am_total') is not None: S.append(('cold_launch','am_start_total',r['am_total'],True))
 json.dump(S,open(outp,'w')); print(len(S),'samples;',len(starts),'starts;',cold,'cold launches')

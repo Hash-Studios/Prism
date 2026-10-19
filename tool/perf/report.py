@@ -31,6 +31,7 @@ for c in A.col:
 cols += named
 G = [
 ("Opening the app",[
+ ("cold_launch","tap_to_grid","Launch → wallpapers on the home grid"),
  ("cold_launch","tap_to_home","Launch → home feed shown"),
  ("cold_launch","tap_to_first_frame","Launch → first Flutter frame"),
  ("cold_launch","pre_main","Launch → Dart main() (engine boot)"),

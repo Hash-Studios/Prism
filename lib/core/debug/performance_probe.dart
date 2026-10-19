@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Latency probe for debug and profile builds; release builds skip it. Every sample is a single `PRISM_PERF {json}` line on stdout
@@ -17,6 +18,14 @@ class PerformanceProbe {
 
   static File? _file;
   static Future<void> _writeTail = Future<void>.value();
+
+  static final Set<String> _marked = <String>{};
+
+  /// Marks [name] once per process, after the frame that is being built paints.
+  static void markOnce(String name) {
+    if (kReleaseMode || !_marked.add(name)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => mark(name));
+  }
 
   static void mark(String name, {Map<String, Object?> extra = const <String, Object?>{}}) {
     emit(kind: 'mark', name: name, durationMs: sinceProcess.elapsedMilliseconds, extra: extra);

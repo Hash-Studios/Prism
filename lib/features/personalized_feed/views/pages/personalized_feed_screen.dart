@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -425,6 +426,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         .toList(growable: false);
     final bool loadingFirstPage =
         state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading);
+    if (visibleItems.isNotEmpty) PerformanceProbe.markOnce('home.grid_first_paint');
     return SliverMainAxisGroup(
       slivers: <Widget>[
         SliverPadding(
