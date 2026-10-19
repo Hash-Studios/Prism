@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,47 @@ class PerformanceProbe {
   static Future<void> _writeTail = Future<void>.value();
 
   static final Set<String> _marked = <String>{};
+
+  static const Map<String, String> _launchMilestones = <String, String>{
+    'startup.binding_ready': 'pre_main',
+    'startup.first_frame': 'tap_to_first_frame',
+    'time_to_home': 'tap_to_home',
+    'home.grid_first_paint': 'tap_to_grid',
+  };
+
+  /// When the kernel started this process, on iOS. Null elsewhere and for prewarmed launches, which start long before
+  /// the tap.
+  static final DateTime? _processStart = _readProcessStart();
+
+  static DateTime? _readProcessStart() {
+    if (kReleaseMode || !Platform.isIOS || Platform.environment['ActivePrewarm'] == '1') return null;
+    const int procPidTbsdInfo = 3;
+    const int bsdInfoSize = 136;
+    try {
+      final DynamicLibrary lib = DynamicLibrary.process();
+      final int Function() getpid = lib.lookupFunction<Int32 Function(), int Function()>('getpid');
+      final Pointer<Void> Function(int) malloc = lib
+          .lookupFunction<Pointer<Void> Function(IntPtr), Pointer<Void> Function(int)>('malloc');
+      final void Function(Pointer<Void>) free = lib
+          .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>('free');
+      final int Function(int, int, int, Pointer<Void>, int) procPidInfo = lib
+          .lookupFunction<
+            Int32 Function(Int32, Int32, Uint64, Pointer<Void>, Int32),
+            int Function(int, int, int, Pointer<Void>, int)
+          >('proc_pidinfo');
+      final Pointer<Void> info = malloc(bsdInfoSize);
+      try {
+        if (procPidInfo(getpid(), procPidTbsdInfo, 0, info, bsdInfoSize) != bsdInfoSize) return null;
+        final int seconds = Pointer<Uint64>.fromAddress(info.address + 120).value;
+        final int micros = Pointer<Uint64>.fromAddress(info.address + 128).value;
+        return DateTime.fromMicrosecondsSinceEpoch(seconds * Duration.microsecondsPerSecond + micros);
+      } finally {
+        free(info);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Marks [name] once per process, after the frame that is being built paints.
   static void markOnce(String name) {
@@ -74,6 +116,11 @@ class PerformanceProbe {
     };
     debugPrint('$logPrefix ${jsonEncode(payload)}');
     unawaited(_append(payload));
+    final String? milestone = _launchMilestones[name];
+    final DateTime? start = _processStart;
+    if (milestone != null && start != null && kind != 'cold_launch') {
+      emit(kind: 'cold_launch', name: milestone, durationMs: DateTime.now().difference(start).inMilliseconds);
+    }
   }
 
   static Future<void> _append(Map<String, Object?> payload) {
