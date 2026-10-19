@@ -3,7 +3,7 @@ import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
-import {db, int, REGION, str} from "../common";
+import {db, int, REGION, str, utcDateString} from "../common";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
@@ -256,7 +256,8 @@ async function claimCandidate(ref: admin.firestore.DocumentReference, nowMs: num
 
 /**
  * Creates the pending wall, its signature doc and the candidate's pending_review state in one transaction. Null when the
- * candidate is no longer held by this attempt.
+ * candidate is no longer held by this attempt. The first `dropReserves` walls of the UTC day are reserved for the next
+ * weekly Drop; `studioDropReserves/{day}` counts them.
  */
 async function publishWall(params: {
   ref: admin.firestore.DocumentReference;
@@ -266,8 +267,11 @@ async function publishWall(params: {
   candidateUpdate: admin.firestore.DocumentData;
   outputAssetKeys: string[];
   rng: Rng;
+  day: string;
+  dropReserves: number;
 }): Promise<string | null | "duplicate"> {
   const {ref, attempts, wall, signature, rng} = params;
+  const reservesRef = db.collection("studioDropReserves").doc(params.day);
   for (let i = 0; i < PUBLISH_TRIES; i++) {
     const wallId = randomWallId(rng);
     const wallRef = db.collection("walls").doc(wallId);
@@ -281,6 +285,7 @@ async function publishWall(params: {
       const known = signatures.docs.map((doc) => ({
         signature: str(doc.data()?.signature), wallId: str(doc.data()?.wallId),
       }));
+      const reserved = int((await tx.get(reservesRef)).data()?.count);
       const check = duplicateCheck(signature, known);
       if (check.reasons.length > 0) {
         const gates = params.candidateUpdate.gates as admin.firestore.DocumentData;
@@ -294,7 +299,9 @@ async function publishWall(params: {
         return "duplicate";
       }
       const now = admin.firestore.FieldValue.serverTimestamp();
-      tx.create(wallRef, {...wall, id: wallId});
+      const reserve = reserved < params.dropReserves;
+      tx.create(wallRef, {...wall, id: wallId, ...(reserve ? {dropReserved: true} : {})});
+      if (reserve) tx.set(reservesRef, {day: params.day, count: reserved + 1, updatedAt: now});
       tx.create(db.collection("studioSignatures").doc(ref.id), {signature, wallId, candidateId: ref.id, createdAt: now});
       tx.update(ref, {...params.candidateUpdate, status: "pending_review", wallId, updatedAt: now,
         cleanupKeys: [str((params.candidateUpdate.worker as admin.firestore.DocumentData | undefined)?.key)].filter(Boolean),
@@ -426,6 +433,8 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       candidateUpdate: {gates: {passed: true, reasons: [], details: gates.details}, worker: image},
       outputAssetKeys,
       rng: deps.rng,
+      day: utcDateString(new Date(deps.nowMs())),
+      dropReserves: config.dailyDropReserves,
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});

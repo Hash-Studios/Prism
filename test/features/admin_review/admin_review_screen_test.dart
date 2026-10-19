@@ -29,6 +29,8 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   int wallStreamCalls = 0;
   int approvals = 0;
   int rejections = 0;
+  final List<String> reserved = <String>[];
+  final List<String> unreserved = <String>[];
   final List<String> reviewedReports = <String>[];
   String? lastRejectReason;
   bool failFirstWallStream = false;
@@ -72,6 +74,12 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
     lastRejectReason = reason;
     await rejectAction?.call();
   }
+
+  @override
+  Future<void> reserveWallForDrop(FirestoreDocument wall) async => reserved.add(wall.id);
+
+  @override
+  Future<void> undoReserveWallForDrop(FirestoreDocument wall) async => unreserved.add(wall.id);
 
   @override
   Future<bool> rejectWallByFirestoreDocumentId(String wallDocId, {required String reason}) async => wallWasRemoved;
@@ -203,6 +211,67 @@ void main() {
     expect(find.bySemanticsLabel('Depth: Menu'), findsOneWidget);
     expect(find.bySemanticsLabel('Depth: Not checked'), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('a community wall has no Reserve button', (WidgetTester tester) async {
+    await pumpReviewScreen(tester, _FakeAdminReviewRepository());
+
+    expect(find.widgetWithText(PrismButton, 'Reserve'), findsNothing);
+  });
+
+  testWidgets('Reserve sets a Studio wall aside for the next Drop', (WidgetTester tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('studio-1', <String, dynamic>{'origin': 'studio', 'review': false}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Reserve'));
+    await tester.pumpAndSettle();
+
+    expect(repository.reserved, <String>['studio-1']);
+    expect(repository.approvals, 0);
+    await tester.pump(const Duration(seconds: 10));
+  });
+
+  testWidgets('a reserved Studio wall says so and Unreserve undoes it', (WidgetTester tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('studio-1', <String, dynamic>{'origin': 'studio', 'review': false, 'dropReserved': true}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.text('Reserved for the next Drop'), findsOneWidget);
+    await tester.tap(find.widgetWithText(PrismButton, 'Unreserve'));
+    await tester.pumpAndSettle();
+
+    expect(repository.unreserved, <String>['studio-1']);
+    await tester.pump(const Duration(seconds: 10));
+  });
+
+  testWidgets('Studio wall actions fit a 320 logical-pixel screen at 2x text', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(640, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('studio-1', <String, dynamic>{'origin': 'studio', 'review': false}),
+      ];
+    await tester.pumpWidget(
+      app(
+        AdminReviewScreen(repository: repository),
+        media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reserve'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('pending wallpaper actions fit a 320 logical-pixel screen at 2x text', (WidgetTester tester) async {
