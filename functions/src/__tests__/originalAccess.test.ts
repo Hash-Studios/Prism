@@ -9,7 +9,7 @@ import {installFakeDb} from "./fakeDb";
 function setup(t: Parameters<typeof installFakeDb>[0], wall = {}, user = {}, privateData = {}) {
   resetEconomyCache();
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
-    premiumCollections: {defaultValue: {value: '["premium"]'}},
+    premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));
   t.mock.method(originalAccessDelivery, "sign", async () => ({url: "https://private.test/signed",
     generation: "v1", expiresAt: Date.now() + 60_000}));
@@ -29,11 +29,90 @@ const request = (data = {}, auth: unknown = {uid: "user", token: {}}) => ({
   rawRequest: {},
 } as Parameters<typeof resolveOriginalAccess.run>[0]);
 
+function setupPair(t: Parameters<typeof installFakeDb>[0], user = {}, privateData = {}) {
+  const store = setup(t, {collections: ["nature"]}, user, privateData);
+  store.set("walls/second", {...store.get("walls/document-not-asset"), id: "second"});
+  store.set("ownedAssets/second", {...store.get("ownedAssets/asset"), canonicalPath: "walls/second"});
+  return store;
+}
+const pairRequest = (data = {}) => request({assetId: undefined, action: undefined,
+  assets: [{assetId: "asset", action: "set"}, {assetId: "second", action: "set"}], ...data});
+
+test("pair quote shares remaining grace and acquire atomically charges once with replay", async (t) => {
+  const store = setupPair(t, {}, {graceDownloadsUsed: DEFAULT_ECONOMY.award.graceDownloads - 1});
+  const before = structuredClone([...store.entries()]);
+  const quote = await resolveOriginalAccess.run(pairRequest({mode: "quote"}));
+  assert.equal(quote.status, "quoted");
+  assert.equal("requiredCoins" in quote && quote.requiredCoins, DEFAULT_ECONOMY.spend.wallpaperDownload);
+  assert.deepEqual([...store.entries()], before);
+  const result = await resolveOriginalAccess.run(pairRequest({maxCoins: DEFAULT_ECONOMY.spend.wallpaperDownload}));
+  assert(result.status === "granted");
+  assert.equal("grants" in result && result.grants.length, 2);
+  assert.equal(result.chargedCoins, DEFAULT_ECONOMY.spend.wallpaperDownload);
+  assert.equal(store.get("usersv2/user/private/economy")?.graceDownloadsUsed, DEFAULT_ECONOMY.award.graceDownloads);
+  const after = structuredClone([...store.entries()]);
+  const continuation = await resolveOriginalAccess.run(pairRequest({mode: "quote"}));
+  assert.equal("requiredCoins" in continuation && continuation.requiredCoins, 0);
+  const replay = await resolveOriginalAccess.run(pairRequest({maxCoins: 0}));
+  assert.equal(replay.status, "granted");
+  assert.deepEqual(structuredClone([...store.entries()]), after);
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest({assets: [
+    {assetId: "second", action: "set"}, {assetId: "asset", action: "set"},
+  ]})), {code: "failed-precondition"});
+});
+
+test("pair insufficient balance, changed price, missing asset and second signer failure never mutate", async (t) => {
+  const store = setupPair(t, {coins: DEFAULT_ECONOMY.spend.wallpaperDownload});
+  const before = structuredClone([...store.entries()]);
+  assert.equal((await resolveOriginalAccess.run(pairRequest())).status, "insufficient_balance");
+  assert.equal((await resolveOriginalAccess.run(pairRequest({maxCoins: 0}))).status, "price_changed");
+  assert.deepEqual([...store.entries()], before);
+  t.mock.method(originalAccessDelivery, "sign", async (id: string) => {
+    if (id === "second") throw new Error("sign failed");
+    return {url: "https://private.test/signed", generation: "v1", expiresAt: Date.now() + 60_000};
+  });
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest()));
+  assert.deepEqual([...store.entries()], before);
+  store.delete("ownedAssets/second");
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest({mode: "quote"})), {code: "failed-precondition"});
+});
+
+test("pair validates shape and actions strictly", async (t) => {
+  setupPair(t);
+  for (const assets of [[], null, [{assetId: "asset", action: "download"}],
+    [{assetId: "asset", action: "set"}, {assetId: "asset", action: "set"}],
+    [{assetId: "asset", action: "set", price: 0}], [{assetId: "bad.id", action: "set"}]]) {
+    await assert.rejects(() => resolveOriginalAccess.run(pairRequest({assets})), {code: "invalid-argument"});
+  }
+});
+
+test("pair replay rechecks second generation, classification, receipt expiry and entitlement", async (t) => {
+  const store = setupPair(t, {premium: true});
+  const result = await resolveOriginalAccess.run(pairRequest());
+  assert(result.status === "granted");
+  const path = `coinTransactions/${result.transactionId}`;
+  const receipt = store.get(path)!;
+  store.set(path, {...receipt, retryUntil: 1});
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest()), {code: "failed-precondition"});
+  store.set(path, receipt);
+  store.set("usersv2/user", {coins: 100, premium: false});
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest()), {code: "failed-precondition"});
+  store.set("usersv2/user", {coins: 100, premium: true});
+  const wall = store.get("walls/second")!;
+  store.set("walls/second", {...wall, collections: ["premium"]});
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest()), {code: "failed-precondition"});
+  store.set("walls/second", {...wall, originalGeneration: "v2"});
+  await assert.rejects(() => resolveOriginalAccess.run(pairRequest()), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/user")?.coins, 100);
+});
+
 test("original access charges server premium price once and binds request to asset/action/generation", async (t) => {
   const store = setup(t);
   const first = await resolveOriginalAccess.run(request());
   assert(first.status === "granted");
   assert.equal(first.chargedCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
+  const continuation = await resolveOriginalAccess.run(request({mode: "quote"}));
+  assert.equal("requiredCoins" in continuation && continuation.requiredCoins, 0);
   const retry = await resolveOriginalAccess.run(request());
   assert(retry.status === "granted");
   assert.equal(retry.transactionId, first.transactionId);
@@ -103,7 +182,9 @@ test("insufficient balance leaves no receipt or charge", async (t) => {
 
 test("signer failure is safe to retry without a second debit", async (t) => {
   const store = setup(t);
-  const signer = t.mock.method(originalAccessDelivery, "sign", async () => { throw new Error("missing signer"); });
+  const signer = t.mock.method(originalAccessDelivery, "sign", async () => {
+    throw new Error("missing signer");
+  });
   await assert.rejects(() => resolveOriginalAccess.run(request()));
   assert.equal(store.get("usersv2/user")?.coins, 100);
   signer.mock.restore();
@@ -138,14 +219,18 @@ test("classification failure and duplicate canonical IDs fail closed", async (t)
   const store = setup(t);
   store.set("walls/duplicate", {...store.get("walls/document-not-asset")});
   await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "failed-precondition"});
-  t.mock.method(admin.remoteConfig(), "getTemplate", async () => { throw new Error("offline"); });
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    throw new Error("offline");
+  });
   await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "unavailable"});
 });
 
 test("quotes expose only current server price and never sign or mutate state", async (t) => {
   const store = setup(t);
   const before = structuredClone([...store.entries()]);
-  const signer = t.mock.method(originalAccessDelivery, "sign", async () => { throw new Error("must not sign"); });
+  const signer = t.mock.method(originalAccessDelivery, "sign", async () => {
+    throw new Error("must not sign");
+  });
   const result = await resolveOriginalAccess.run(request({mode: "quote", price: 0, isPremium: false}));
   assert.deepEqual(result, {status: "quoted", assetId: "asset", action: "download", generation: "v1",
     requiredCoins: DEFAULT_ECONOMY.spend.premiumWallpaperDownload, currentBalance: 100, basis: "coins"});

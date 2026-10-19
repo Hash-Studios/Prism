@@ -71,7 +71,7 @@ export async function refreshCollectionCovers(): Promise<string[]> {
       .get()).docs;
     const wall = newest?.data();
     const createdAt = wall?.createdAt;
-    const thumb = str(wall?.wallpaper_thumb) || str(wall?.wallpaper_url);
+    const thumb = str(wall?.wallpaper_thumb);
     const lastEditTime = doc.data()?.lastEditTime;
     if (!(createdAt instanceof admin.firestore.Timestamp) || !thumb ||
       (lastEditTime instanceof admin.firestore.Timestamp && lastEditTime.toMillis() >= createdAt.toMillis())) {

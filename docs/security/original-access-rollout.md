@@ -1,6 +1,6 @@
 # Original access rollout
 
-This change protects new acquisition by canonical wall identity. It does not revoke public URLs or erase acquired local copies.
+This code introduces protected acquisition by canonical wall identity. It does not revoke public URLs or erase acquired local copies.
 
 ## Code boundary
 
@@ -10,15 +10,26 @@ Reviewed-wall queries include the protected marker and empty original field so F
 The added composite indexes support those queries.
 
 The server resolves current membership, Pro status, premium pass expiry, and coin prices.
+The client obtains a price-only quote before consent and caps acquisition at that price.
+Two protected originals for Android pair Set use one quote and one atomic debit, including the shared free allowance.
 Each original receipt binds the account, canonical `wall.id`, purpose, original generation, and request ID.
 An issued URL is a bearer credential. Anyone with it can replay it until its 120-second expiry.
 The same acquisition request can retry for five minutes without another charge, subject to current classification and entitlement checks.
+The client keeps the owner-bound request through ambiguous replies and failed native operations.
+An eligible receipt retry quotes zero additional coins rather than asking the user to authorize another payment.
 Expired, refunded, revoked, or mismatched receipts do not grant access.
 
 Original receipts cannot receive an automatic client-requested refund after URL issuance.
 A signed URL cannot be recalled when a client reports a failed save.
 Already acquired local files remain available under their existing account-bound acquisition records.
 An arbitrary image cache entry does not establish acquisition.
+This includes saved Prism-source descriptors when the index and native file agree.
+Saved derivatives remain available locally but do not satisfy an original identity lookup.
+Background rotation and Undo cannot buy access without consent. They reuse local copies or fail closed.
+Onboarding has no purchase consent sheet. Its acquisition ceiling is zero coins; paid originals require the detail flow.
+
+Prism share previews use the canonical owned-thumbnail endpoint, not a supplied thumbnail URL.
+Unknown remote sources receive no remote share preview. Known external providers retain their existing preview behavior.
 
 ## Release gates
 
