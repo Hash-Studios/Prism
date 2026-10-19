@@ -52,6 +52,27 @@ Future<void> _pumpAt320(WidgetTester tester, Widget home) async {
 void main() {
   setUpAll(_loadBundledFont);
 
+  testWidgets('device locale resolution respects preference order and falls back to English', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    final List<({List<Locale> locales, String expected})> cases = <({List<Locale> locales, String expected})>[
+      (locales: <Locale>[const Locale('zz', 'ZZ'), const Locale('de', 'DE')], expected: 'Erneut versuchen'),
+      (locales: <Locale>[const Locale('zz', 'ZZ')], expected: 'Try again'),
+      (locales: <Locale>[const Locale('en', 'US'), const Locale('de', 'DE')], expected: 'Try again'),
+      (locales: <Locale>[const Locale('de', 'AT'), const Locale('en', 'US')], expected: 'Erneut versuchen'),
+    ];
+
+    for (final ({List<Locale> locales, String expected}) testCase in cases) {
+      tester.binding.platformDispatcher.localesTestValue = testCase.locales;
+
+      final AppLocalizations localizations = await loadDeviceAppLocalizations();
+
+      expect(localizations.actionRetry, testCase.expected);
+    }
+  });
+
   testWidgets('de-DE and de-AT resolve to German while an unsupported locale falls back to English', (
     WidgetTester tester,
   ) async {

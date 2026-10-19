@@ -3,11 +3,13 @@
 ## Foundation and scope
 
 The German locale reuses the Flutter `gen-l10n` foundation merged in [PR #519](https://github.com/Hash-Studios/Prism/pull/519), commit `bdd3e48c3543c81c007ac13d0ee896f9128c048a`.
-The canonical English catalogue has 2,498 messages after the shared source-copy fixes. English remains the preferred fallback. Device German selects the generated German locale, including regional variants such as `de-DE` and `de-AT`.
+The canonical English catalogue has 2,499 messages after the shared source-copy fixes. English remains the preferred fallback. Device German selects the generated German locale, including regional variants such as `de-DE` and `de-AT`.
 
 The Spanish language thread owns shared source-copy fixes. Its early handoff commit `eea336def` contains documentation only and is not a prerequisite for German. This branch reuses shared commit `785403a67e469065de4d80ec56a2ae6baf0697aa`, cherry-picked as `853206c00`. That commit localizes AI preparation and remix copy, coin-gate shortages, creator ledger labels, shortcuts, tile categories, and the onboarding style chip. The PR targets master and does not depend on the Spanish PR.
 
 The continuation reuses `0b562d29b` as `61e48d276`, `b86755b35` as `a6a06cf00`, and `133170f10` as `d1bcc0ffb`. These commits localize AI prompt pools, the share signature, sign-in feature labels, debug exports, upload number presentation, and collection preview failures. Restored user-authored prompts remain unchanged. The German prompt catalogue covers all seven styles in both main and onboarding pools.
+
+The final shared unit `e6f66cd8d`, reused as `92c3b8a3a`, resolves background messages from the full device language preference list and adds the export-failure label. The German translation and generated output are in `b8297ae6d`. English remains first in the generated supported-locale list.
 
 The locale covers the app catalogue, including admin and debug UI, Android widgets and Quick Settings, native push notifications, iOS App Shortcuts, and photo and camera permission descriptions. User names, authored wallpaper titles, backend identifiers, routes, and external campaign content are not translated.
 
@@ -19,7 +21,7 @@ Baseline checks before integration passed five existing localisation tests and t
 
 `fc-query` character maps confirm German umlauts and ß in the inspected Proxima Nova regular and bold, Satoshi regular, and Fraunces fonts. Runtime layout tests check actual German messages separately.
 
-The 2,498-message catalogue passes `python3 tool/check_german_localization.py`, including exact template metadata and native placeholder parity. The check retains an explicit key-and-value list for 145 identical messages. These are brands, technical units, valid German words, and runtime placeholder compositions, not untranslated prose.
+The 2,499-message catalogue passes `python3 tool/check_german_localization.py`, including exact template metadata and native placeholder parity. The check retains an explicit key-and-value list for 145 identical messages. These are brands, technical units, valid German words, and runtime placeholder compositions, not untranslated prose.
 
 `fvm flutter test test/l10n` passed all 12 tests after the five shared messages were added. The tests cover German regional locale resolution, English fallback, live locale changes, plurals, grouped numbers, dates, categories, and stable wire values. Three real components run at 320px and 2× text scale with bundled fonts. This sample does not prove every screen is free from overflow.
 
