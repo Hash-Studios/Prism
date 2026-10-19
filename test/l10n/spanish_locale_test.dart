@@ -108,6 +108,12 @@ void main() {
     expect(messages.wallpaperAutoRotatePreparing(2), 'Preparando 2 fondos de pantalla');
   });
 
+  test('Spanish content preference identifies suggestive wallpapers', () async {
+    final AppLocalizations messages = await loadAppLocalizations(const Locale('es'));
+
+    expect(messages.accountShowSketchyWallpapers, 'Mostrar fondos de pantalla sugerentes');
+  });
+
   test('Spanish gift messages qualify both premium benefits', () async {
     final AppLocalizations messages = await loadAppLocalizations(const Locale('es'));
 

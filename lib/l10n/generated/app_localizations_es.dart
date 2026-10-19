@@ -1158,7 +1158,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountShowAnimeWallpapers => 'Mostrar fondos de pantalla de anime';
 
   @override
-  String get accountShowSketchyWallpapers => 'Mostrar fondos de pantalla para adultos';
+  String get accountShowSketchyWallpapers => 'Mostrar fondos de pantalla sugerentes';
 
   @override
   String get accountSignIn => 'Iniciar sesión';
