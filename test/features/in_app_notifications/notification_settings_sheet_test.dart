@@ -17,13 +17,24 @@ import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
 
+class _RecordingMessaging extends FakeFirebaseMessaging {
+  final List<String> subscribed = <String>[];
+  final List<String> unsubscribed = <String>[];
+
+  @override
+  Future<void> subscribeToTopic(String topic) async => subscribed.add(topic);
+
+  @override
+  Future<void> unsubscribeFromTopic(String topic) async => unsubscribed.add(topic);
+}
+
 class _FakePermissions extends NotificationPermissionGateway {
   _FakePermissions({required this.granted, this.grantsOnRequest = false});
 
   bool granted;
   final bool grantsOnRequest;
   int requests = 0;
-  final FakeFirebaseMessaging fakeMessaging = FakeFirebaseMessaging();
+  final _RecordingMessaging fakeMessaging = _RecordingMessaging();
 
   @override
   FirebaseMessaging get messaging => fakeMessaging;
@@ -133,6 +144,28 @@ void main() {
     expect(permissions.requests, 1);
     expect(settings.get<bool>('notif.wotd', defaultValue: false), isTrue);
     expect(find.text('Notifications are off for Prism.'), findsNothing);
+  });
+
+  testWidgets('the Weekly Drops switch is on by default and leaves the drops topic when turned off', (tester) async {
+    final permissions = _FakePermissions(granted: true);
+    await pumpSheet(tester, permissions);
+
+    expect(find.text('Weekly Drops'), findsOneWidget);
+    expect(settings.get<bool>('dropsSubscriber', defaultValue: true), isTrue);
+
+    await tester.tap(find.text('Weekly Drops'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(settings.get<bool>('dropsSubscriber', defaultValue: true), isFalse);
+    expect(permissions.fakeMessaging.unsubscribed, <String>['drops']);
+
+    await tester.tap(find.text('Weekly Drops'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(settings.get<bool>('dropsSubscriber', defaultValue: false), isTrue);
+    expect(permissions.fakeMessaging.subscribed, <String>['drops']);
   });
 
   testWidgets('turning a switch off never asks for permission', (tester) async {

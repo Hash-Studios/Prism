@@ -41,6 +41,12 @@ const List<NotificationChannelSpec> notificationChannelSpecs = <NotificationChan
     importance: Importance.high,
   ),
   NotificationChannelSpec(
+    'drops',
+    'Weekly Drops',
+    'When a new Drop is live and before it ends.',
+    importance: Importance.high,
+  ),
+  NotificationChannelSpec(
     'streak_reminder',
     'Streak reminders',
     '8 PM reminder to keep your login streak alive.',

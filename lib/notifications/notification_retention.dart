@@ -11,6 +11,7 @@ const List<String> notificationScoreboardKinds = <String>[
   'campaign',
   'rejection',
   'win_back',
+  'drop',
 ];
 
 const Duration appOpenStampDebounce = Duration(minutes: 15);

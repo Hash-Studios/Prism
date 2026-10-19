@@ -33,6 +33,7 @@ class NotificationRouteMapper {
       'follower' => PushKindValue.follower,
       'wall' => isReport ? PushKindValue.moderation : PushKindValue.post,
       'wall_of_the_day' => PushKindValue.wotd,
+      'drops' => PushKindValue.drop,
       'content_report' => PushKindValue.moderation,
       _ => null,
     };
