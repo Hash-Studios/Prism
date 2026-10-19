@@ -141,7 +141,9 @@ test("only the GitHub raw and prismwalls.com hosts are allowed", () => {
 
 test("owned thumbnail endpoint is allowed without allowing other functions or original URLs", async (t) => {
   const previous = {...process.env};
-  t.after(() => {process.env = previous;});
+  t.after(() => {
+    process.env = previous;
+  });
   delete process.env.OWNED_THUMBNAIL_BASE_URL;
   process.env.GCLOUD_PROJECT = "prism-wallpapers";
   const base = "https://asia-south1-prism-wallpapers.cloudfunctions.net";
@@ -156,7 +158,9 @@ test("owned thumbnail endpoint is allowed without allowing other functions or or
 
 test("configured and staging thumbnail endpoints allow only an exact thumbnail path", async (t) => {
   const previous = {...process.env};
-  t.after(() => {process.env = previous;});
+  t.after(() => {
+    process.env = previous;
+  });
   const ok: ColorFetch = async () => replyOf(new Uint8Array([1]));
   delete process.env.OWNED_THUMBNAIL_BASE_URL;
   process.env.GCLOUD_PROJECT = "prism-staging";

@@ -18,13 +18,19 @@ function fixture(owner: string | null = "u1") {
   const deps: MigrationDeps = {
     prove: async () => owner,
     ready: async () => ready,
-    fetchBytes: async () => { calls.push("fetch"); return bytes; },
+    fetchBytes: async () => {
+      calls.push("fetch"); return bytes;
+    },
     retain: async ({bytes: _bytes, url: _url, ...input}) => {
       calls.push("retain");
       return {...input, bucket: "private", object: "retained/test", generation: "1", sha256: "digest"};
     },
-    attach: async () => { calls.push("attach"); },
-    bind: async () => { calls.push("bind"); ready = true; },
+    attach: async () => {
+      calls.push("attach");
+    },
+    bind: async () => {
+      calls.push("bind"); ready = true;
+    },
     bindLegacy: async (input) => {
       calls.push("legacy");
       assert.equal(input.canonicalPath, "walls/old-auto-id");
@@ -77,7 +83,9 @@ test("partial retention failure stays blocked and can be resumed", async () => {
   const retain = deps.retain;
   let failed = false;
   deps.retain = async (input) => {
-    if (!failed) { failed = true; throw new Error("transient storage failure"); }
+    if (!failed) {
+      failed = true; throw new Error("transient storage failure");
+    }
     return retain(input);
   };
   const [failure] = await migrateOwnedAssets([wall()], {...options, apply: true}, deps);
@@ -102,7 +110,9 @@ test("source allowlist rejects redirects to arbitrary hosts and mismatched ident
   for (const raw of ["http://raw.githubusercontent.com/hash/walls/main/a.jpg",
     "https://evil.example/hash/walls/main/a.jpg", "https://raw.githubusercontent.com/attacker/walls/main/a.jpg",
     "https://raw.githubusercontent.com/hash/walls/main/a.jpg?token=secret",
-    "https://raw.githubusercontent.com/hash/walls/main/%2fetc"]) {
+    "https://raw.githubusercontent.com/hash/walls/main/%2fetc",
+    "https://raw.githubusercontent.com/hash/walls/main/a%00.jpg",
+    "https://raw.githubusercontent.com/hash/walls/main/a%1f.jpg"]) {
     assert.throws(() => parseRawAsset(raw, undefined, undefined, options));
   }
   assert.throws(() => parseRawAsset(wall().data.wallpaper_url, "different.jpg", sha, options));

@@ -621,10 +621,12 @@ export const githubDeleteFile = onCall(
     const deletion = await claimDeleteIntent(callerUid, repo, path, sha, uploadRef, record, isAdmin, Date.now());
     const nowMs = Date.now();
     try {
-      if (record?.sourceKind !== "owned") await githubRequest(githubUrl(repo, path), {
-        method: "DELETE",
-        body: JSON.stringify({message, sha}),
-      });
+      if (record?.sourceKind !== "owned") {
+        await githubRequest(githubUrl(repo, path), {
+          method: "DELETE",
+          body: JSON.stringify({message, sha}),
+        });
+      }
     } catch (error) {
       const status = githubHttpStatus(error);
       if (status !== 404) {
