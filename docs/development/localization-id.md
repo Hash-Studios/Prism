@@ -6,7 +6,7 @@ fallback. The generated delegate registers `id` and resolves `id_ID`.
 
 ## Coverage
 
-The Indonesian ARB covers all 2,406 canonical English messages, with source
+The Indonesian ARB covers all 2,498 canonical English messages, with source
 metadata, placeholder types, number formats and ICU selector values preserved.
 This includes onboarding, browsing, search, categories, wallpaper actions,
 creator accounts, authentication, settings, Premium, coins, streaks, referrals,
@@ -22,6 +22,11 @@ is cherry-picked with provenance. It fixes AI status and remix hints, coin
 warnings, quick actions, tile categories, creator ledger labels and the
 onboarding AI style chip. This PR does not depend on Spanish translations or
 introduce a second extraction system.
+
+Shared follow-up `0b562d29baa5d54ea8bc2d2c3dc39ef2964e755f` is also
+cherry-picked with provenance. It adds translated AI prompt pools, sign-in
+feature labels and sharing copy, and localizes upload-size and slider displays
+without changing persisted values. All 92 additional messages are translated.
 
 ## Reproducible checks
 
@@ -41,7 +46,8 @@ all 52 alphabetic glyphs used by this catalogue.
 
 The locale tests cover delegate loading, English fallback, Indonesian number
 formatting, plurals, nested ICU selects, interpolation and a 320 by 640 sheet
-at 2x text scale. This is an automated layout sample, not full device proof.
+at 2x text scale. They also exercise production AI suggestion and upload-size
+formatting boundaries. This is an automated layout sample, not full device proof.
 
 ## Device proof limits
 

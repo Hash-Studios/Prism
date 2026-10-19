@@ -1,5 +1,10 @@
+import 'dart:math';
+
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +42,24 @@ void main() {
 
     expect(messages.localeName, 'en');
     expect(messages.actionRetry, 'Try again');
+  });
+
+  test('AI suggestions and upload sizes use Indonesian at their production boundaries', () async {
+    final AppLocalizations messages = await loadAppLocalizations(const Locale('id'));
+
+    expect(
+      AiPromptPools.sceneIdea(messages, AiStylePreset.minimal, 0),
+      'bukit pasir minimalis dan satu cakram matahari, wallpaper ponsel vertikal, tanpa teks',
+    );
+    for (final AiStylePreset style in AiStylePreset.values) {
+      expect(AiPromptPools.scenesByStyle(messages, style), hasLength(5));
+      final String prompt = AiPromptPools.randomPrompt(messages, style, Random(0));
+      expect(prompt, contains('pencahayaan '));
+      expect(prompt, contains('suasana '));
+      expect(prompt, endsWith('wallpaper ponsel vertikal, tanpa teks'));
+    }
+    expect(formatFileSize('0.25MB', messages.localeName), '0,25 MB');
+    expect(messages.coreSignInFeatureTitle(messages.coreSignInCreatorSearchFeature), contains('pencarian kreator'));
   });
 
   testWidgets('localized Prism button and sheet fit a narrow screen at large text scale', (WidgetTester tester) async {

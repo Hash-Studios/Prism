@@ -1,5 +1,134 @@
 {
   "@@locale": "id",
+  "coreSignInCreatorSearchFeature": "pencarian kreator",
+  "@coreSignInCreatorSearchFeature": {
+    "description": "Feature name inserted into the sign-in title for creator search."
+  },
+  "debugLogExportSubject": "Log Debug Prism",
+  "@debugLogExportSubject": {
+    "description": "Subject of the shared diagnostic log export."
+  },
+  "economyAiPromptSceneAnime1": "cakrawala kota anime di atas pulau-pulau terapung",
+  "economyAiPromptSceneAnime2": "seorang samurai sendirian di jalanan berhujan yang diterangi neon",
+  "economyAiPromptSceneAnime3": "kuil futuristik dengan bunga sakura dan hologram",
+  "economyAiPromptSceneAnime4": "pasar malam anime yang terasa seperti mimpi dengan cahaya lentera",
+  "economyAiPromptSceneAnime5": "cakrawala kota cyber-anime saat senja biru",
+  "economyAiPromptSceneMinimal1": "bukit pasir minimalis dan satu cakram matahari",
+  "economyAiPromptSceneMinimal2": "lapisan pegunungan geometris yang bersih",
+  "economyAiPromptSceneMinimal3": "cakrawala laut monokrom yang tenang",
+  "economyAiPromptSceneMinimal4": "garis abstrak sederhana dengan jarak yang seimbang",
+  "economyAiPromptSceneMinimal5": "langit bergradasi lembut di atas perbukitan datar",
+  "economyAiPromptSceneCyberpunk1": "jalan kota metropolitan neon dengan pantulan di permukaan basah",
+  "economyAiPromptSceneCyberpunk2": "gang futuristik dengan papan iklan holografis",
+  "economyAiPromptSceneCyberpunk3": "cakrawala kota berteknologi tinggi dengan jalur lalu lintas udara",
+  "economyAiPromptSceneCyberpunk4": "atap bergaya cyberpunk yang menghadap menara-menara bercahaya",
+  "economyAiPromptSceneCyberpunk5": "persimpangan kota tengah malam dengan cahaya teal dan magenta",
+  "economyAiPromptSceneWatercolor1": "lembah hutan cat air saat fajar",
+  "economyAiPromptSceneWatercolor2": "pemandangan danau pegunungan yang dilukis tangan",
+  "economyAiPromptSceneWatercolor3": "awan cat air lembut di atas perbukitan bergelombang",
+  "economyAiPromptSceneWatercolor4": "tepian sungai yang tenteram dengan nuansa pastel",
+  "economyAiPromptSceneWatercolor5": "pesisir bergaya cat air yang artistik saat matahari terbenam",
+  "economyAiPromptSceneMeshGradient1": "aliran gradasi mesh yang halus dengan bentuk-bentuk berlapis",
+  "economyAiPromptSceneMeshGradient2": "gelombang gradasi cair yang semarak dengan kedalaman",
+  "economyAiPromptSceneMeshGradient3": "bentuk mesh beraneka warna yang lembut dengan lengkungan halus",
+  "economyAiPromptSceneMeshGradient4": "pita gradasi mesh dengan kontras tinggi",
+  "economyAiPromptSceneMeshGradient5": "mekaran gradasi mesh pastel dengan tekstur halus",
+  "economyAiPromptSceneAbstract1": "komposisi fraktal abstrak dengan lengkungan dinamis",
+  "economyAiPromptSceneAbstract2": "bentuk-bentuk cair berlapis dengan kedalaman modern",
+  "economyAiPromptSceneAbstract3": "bentuk abstrak tegas dengan tepi lembut",
+  "economyAiPromptSceneAbstract4": "bidang abstrak surealis dengan bentuk-bentuk geometris melayang",
+  "economyAiPromptSceneAbstract5": "gelombang abstrak organik dengan kontras sinematik",
+  "economyAiPromptSceneNature1": "deretan pegunungan berkabut saat matahari terbit",
+  "economyAiPromptSceneNature2": "hutan lebat yang selalu hijau dengan sinar matahari",
+  "economyAiPromptSceneNature3": "tebing pesisir dramatis dengan ombak yang menghantam",
+  "economyAiPromptSceneNature4": "danau alpen yang tenang di bawah langit senja",
+  "economyAiPromptSceneNature5": "ngarai gurun dengan cahaya keemasan yang hangat",
+  "economyAiPromptLightingSoftAmbient": "ambien lembut",
+  "economyAiPromptLightingCinematicRim": "tepi sinematik",
+  "economyAiPromptLightingGoldenHour": "keemasan",
+  "economyAiPromptLightingMoonlit": "sinar bulan",
+  "economyAiPromptLightingVolumetric": "volumetrik",
+  "economyAiPromptMoodCalm": "tenang",
+  "economyAiPromptMoodDreamy": "seperti mimpi",
+  "economyAiPromptMoodEpic": "epik",
+  "economyAiPromptMoodMoody": "sendu",
+  "economyAiPromptMoodUplifting": "membangkitkan semangat",
+  "economyAiPromptQualityHighDetail": "detail tinggi",
+  "economyAiPromptQualityCleanComposition": "komposisi sangat bersih",
+  "economyAiPromptQualityCrispTextures": "tekstur tajam",
+  "economyAiPromptQualityBalancedContrast": "kontras seimbang",
+  "economyAiPromptQualityNaturalColors": "warna cerah tetapi tetap alami",
+  "economyAiPromptSuffix": "wallpaper ponsel vertikal, tanpa teks",
+  "economyAiPromptComposition": "{scene}, pencahayaan {lighting}, suasana {mood}, {quality}, {suffix}",
+  "@economyAiPromptComposition": {
+    "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "lighting": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "economyAiPromptSceneOnly": "{scene}, {suffix}",
+  "@economyAiPromptSceneOnly": {
+    "description": "An AI wallpaper scene prompt with wallpaper instructions.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "economyAiMadeWithPrism": "Dibuat dengan Prism AI",
+  "onboardingAiPromptFallback": "wallpaper yang indah",
+  "onboardingAiPromptNature1": "deretan pegunungan berkabut saat matahari terbit dengan cahaya keemasan yang hangat",
+  "onboardingAiPromptNature2": "hutan lebat yang selalu hijau dengan sinar matahari menembus tajuk pepohonan",
+  "onboardingAiPromptNature3": "tebing pesisir dramatis dengan ombak yang menghantam dan langit sendu",
+  "onboardingAiPromptNature4": "danau alpen yang tenang di bawah langit senja dengan pantulan bintang",
+  "onboardingAiPromptNature5": "ngarai gurun dengan cahaya keemasan yang hangat dan formasi batuan dramatis",
+  "onboardingAiPromptAbstract1": "komposisi fraktal abstrak dengan lengkungan dinamis dan warna cerah",
+  "onboardingAiPromptAbstract2": "bentuk-bentuk cair berlapis dengan kedalaman modern dan kilau metalik",
+  "onboardingAiPromptAbstract3": "bentuk abstrak tegas dengan tepi lembut dan kontras sinematik",
+  "onboardingAiPromptAbstract4": "bidang abstrak surealis dengan bentuk-bentuk geometris melayang yang disinari cahaya neon",
+  "onboardingAiPromptAbstract5": "gelombang abstrak organik dengan tekstur kaya dan kedalaman bidang",
+  "onboardingAiPromptWatercolor1": "lembah hutan cat air saat fajar dengan kabut pastel lembut",
+  "onboardingAiPromptWatercolor2": "pemandangan danau pegunungan yang dilukis tangan dalam nuansa cat air yang terasa seperti mimpi",
+  "onboardingAiPromptWatercolor3": "awan cat air lembut di atas perbukitan bergelombang saat cahaya keemasan menyinari",
+  "onboardingAiPromptWatercolor4": "tepian sungai yang tenteram dengan pantulan cat air pastel",
+  "onboardingAiPromptWatercolor5": "pesisir bergaya cat air yang artistik saat matahari terbenam dengan rona hangat",
+  "onboardingAiPromptMinimal1": "bukit pasir minimalis dan satu cakram matahari di cakrawala",
+  "onboardingAiPromptMinimal2": "lapisan pegunungan geometris yang bersih dalam nuansa lembut dan redup",
+  "onboardingAiPromptMinimal3": "cakrawala laut monokrom yang tenang saat senja",
+  "onboardingAiPromptMinimal4": "garis abstrak sederhana dengan ruang negatif yang tertata seimbang",
+  "onboardingAiPromptMinimal5": "langit bergradasi lembut di atas perbukitan minimalis yang datar",
+  "onboardingAiPromptAnime1": "atap kota bergaya anime dalam cahaya keemasan dengan bunga sakura yang berterbangan",
+  "onboardingAiPromptAnime2": "kereta melintasi pedesaan bergaya anime yang terasa seperti mimpi di bawah langit berawan luas",
+  "onboardingAiPromptAnime3": "desa pegunungan bergaya anime saat senja dengan lentera bercahaya dan kabut lembut",
+  "onboardingAiPromptAnime4": "kota tepi laut bergaya anime yang sunyi di bawah matahari terbenam pastel dan awan menjulang",
+  "onboardingAiPromptAnime5": "malam berbintang bergaya anime di atas danau tenang dengan cahaya-cahaya terapung",
+  "onboardingAiPromptMeshGradient1": "gradasi mesh halus berwarna koral, teal, dan kuning hangat dengan tekstur butiran lembut",
+  "onboardingAiPromptMeshGradient2": "gradasi mesh mengalir dalam warna ungu tua dan biru elektrik dengan cahaya lembut",
+  "onboardingAiPromptMeshGradient3": "gradasi mesh pastel berwarna persik, lilac, dan mint yang saling berpadu",
+  "onboardingAiPromptMeshGradient4": "matahari terbenam dengan gradasi mesh semarak dalam lapisan rona magenta dan oranye",
+  "onboardingAiPromptMeshGradient5": "gradasi mesh tenang dalam warna biru laut dan hijau buih laut dengan mekarnya cahaya halus",
+  "onboardingAiPromptCyberpunk1": "jalan kota metropolitan neon dengan pantulan di permukaan basah dan kendaraan terbang",
+  "onboardingAiPromptCyberpunk2": "gang futuristik dengan papan iklan holografis dan cahaya teal-magenta",
+  "onboardingAiPromptCyberpunk3": "cakrawala kota berteknologi tinggi pada malam hari dengan jalur lalu lintas bercahaya",
+  "onboardingAiPromptCyberpunk4": "atap bergaya cyberpunk yang menghadap kota dengan menara-menara bercahaya",
+  "onboardingAiPromptCyberpunk5": "persimpangan kota tengah malam yang bermandikan neon teal dan magenta",
   "accountAbout": "Tentang",
   "@accountAbout": {
     "description": "About page title."
