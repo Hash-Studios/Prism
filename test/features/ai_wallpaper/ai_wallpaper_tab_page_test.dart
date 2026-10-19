@@ -170,7 +170,7 @@ void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
 
-  testWidgets('locale changes reseed generated prompts but preserve untouched restored prompts', (tester) async {
+  testWidgets('locale changes preserve restored and explicitly generated prompts', (tester) async {
     const String savedPrompt = 'A saved prompt that should stay untouched';
     final GlobalKey<_LocaleTestAppState> appKey = GlobalKey<_LocaleTestAppState>();
     tester.view.physicalSize = const Size(1000, 2200);
@@ -215,7 +215,7 @@ void main() {
 
     appKey.currentState!.setLocale(const Locale('en'));
     await tester.pumpAndSettle();
-    expect(promptText(), isNot(generatedSceneIdea));
+    expect(promptText(), generatedSceneIdea);
 
     const String manualPrompt = 'A prompt entered by the user';
     await tester.enterText(promptField, manualPrompt);

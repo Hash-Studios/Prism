@@ -103,6 +103,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   String _promptLoadingOwner = '';
   bool _promptHydrated = false;
   bool _promptRestored = false;
+  bool _promptHasUserIntent = false;
+  bool _settingPromptProgrammatically = false;
+  String _observedPromptText = '';
   Timer? _promptSaveTimer;
 
   /// The last prompt the app wrote itself. While the field still holds it, a new style may replace it.
@@ -124,6 +127,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   void initState() {
     super.initState();
+    _promptController.addListener(_onPromptChanged);
     _loadHistory();
   }
 
@@ -135,15 +139,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptMessages = messages;
     if (localeChanged &&
         !_promptRestored &&
+        !_promptHasUserIntent &&
         (_promptController.text.trim().isEmpty || _promptController.text.trim() == _seededPrompt.trim())) {
-      _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+      _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
     }
   }
 
   @override
   void dispose() {
     _promptSaveTimer?.cancel();
-    _promptController.removeListener(_onPromptChanged);
     _promptController.dispose();
     _variationController.dispose();
     _promptFocus.dispose();
@@ -158,13 +162,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void _switchPromptOwner(String owner) {
     if (_promptOwner == owner && (_promptHydrated || _promptLoadingOwner == owner)) return;
     _promptSaveTimer?.cancel();
-    _promptController.removeListener(_onPromptChanged);
     _promptOwner = owner;
     _promptLoadingOwner = owner;
     _promptHydrated = false;
     _promptRestored = false;
+    _promptHasUserIntent = false;
     final AppLocalizations? messages = _promptMessages;
-    if (messages != null) _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+    if (messages != null) _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
     unawaited(_hydratePrompt(owner));
   }
 
@@ -172,32 +176,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     try {
       final String? prompt = await _repository.loadPrompt(userId: owner);
       if (!mounted || owner != _localOwnerId || owner != _promptOwner) return;
-      final bool stillGenerated = _promptController.text.trim() == _seededPrompt.trim();
-      if (prompt != null && stillGenerated) {
+      if (prompt != null && !_promptHasUserIntent) {
         _promptRestored = true;
-        _promptController.value = TextEditingValue(
-          text: prompt,
-          selection: TextSelection.collapsed(offset: prompt.length),
-        );
+        _setPrompt(prompt, updateSeed: false);
       }
       _promptLoadingOwner = '';
       _promptHydrated = true;
-      _promptController.addListener(_onPromptChanged);
+      if (_promptHasUserIntent) _schedulePromptSave(owner);
     } catch (error, stackTrace) {
       logger.w('Could not restore AI prompt', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted && owner == _localOwnerId && owner == _promptOwner) {
         _promptLoadingOwner = '';
         _promptHydrated = true;
-        _promptController.addListener(_onPromptChanged);
+        if (_promptHasUserIntent) _schedulePromptSave(owner);
       }
     }
   }
 
   void _onPromptChanged() {
+    if (_settingPromptProgrammatically) return;
+    final String text = _promptController.text;
+    if (text == _observedPromptText) return;
+    _observedPromptText = text;
+    _promptHasUserIntent = true;
     if (!_promptHydrated || _promptOwner != _localOwnerId) return;
+    _schedulePromptSave(_promptOwner);
+  }
+
+  void _schedulePromptSave(String owner) {
     _promptSaveTimer?.cancel();
-    if (!_promptRestored && _promptController.text.trim() == _seededPrompt.trim()) return;
-    final String owner = _promptOwner;
     _promptSaveTimer = Timer(const Duration(milliseconds: 300), () => _savePromptNow(owner));
   }
 
@@ -228,24 +235,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return hash < percent;
   }
 
-  void _setGeneratedPrompt(String prompt) {
-    _promptRestored = false;
-    _seededPrompt = prompt;
-    _promptController.text = prompt;
-    _promptController.selection = TextSelection.fromPosition(TextPosition(offset: prompt.length));
+  void _setPrompt(String prompt, {bool userInitiated = false, bool updateSeed = true}) {
+    if (updateSeed) _seededPrompt = prompt;
+    if (userInitiated) {
+      _promptHasUserIntent = true;
+    }
+    _settingPromptProgrammatically = true;
+    try {
+      _promptController.value = TextEditingValue(
+        text: prompt,
+        selection: TextSelection.collapsed(offset: prompt.length),
+      );
+      _observedPromptText = prompt;
+    } finally {
+      _settingPromptProgrammatically = false;
+    }
+    if (userInitiated && _promptHydrated) _schedulePromptSave(_promptOwner);
   }
 
   void _shufflePrompt() {
     final AppLocalizations? messages = _promptMessages;
     if (messages == null) return;
-    setState(() => _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random)));
+    setState(() => _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random), userInitiated: true));
     analytics.track(AiPromptShuffledEvent(style: _selectedStyle.apiValue));
   }
 
   void _useSceneIdea() {
     final AppLocalizations? messages = _promptMessages;
     if (messages == null) return;
-    setState(() => _setGeneratedPrompt(AiPromptPools.sceneIdea(messages, _selectedStyle, _sceneCursor++)));
+    setState(() => _setPrompt(AiPromptPools.sceneIdea(messages, _selectedStyle, _sceneCursor++), userInitiated: true));
   }
 
   void _selectStyle(AiStylePreset style) {
