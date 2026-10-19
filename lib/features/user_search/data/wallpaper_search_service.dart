@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -57,7 +58,11 @@ class WallpaperSearchService {
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
   /// With [SearchFilters.depthOnly] only Prism walls can match, so the page holds them as [WallpaperSearchPage.results]
   /// and never throws.
-  Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
+  Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) {
+    return PerformanceProbe.measure('search', 'wallpaper.search', () => _search(query, filters: filters));
+  }
+
+  Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
     if (filters.depthOnly) return _depthSearch(query, filters);
     List<FeedItemEntity> cachedResults = const <FeedItemEntity>[];
     try {

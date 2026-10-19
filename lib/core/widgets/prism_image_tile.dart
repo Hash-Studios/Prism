@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
@@ -48,6 +49,8 @@ class PrismImageTile extends StatefulWidget {
 class _PrismImageTileState extends State<PrismImageTile> {
   int _attempt = 0;
   bool _retrying = false;
+  bool _loadReported = false;
+  final Stopwatch _loadWatch = Stopwatch()..start();
   late Future<File?> _localFileFuture;
 
   @override
@@ -62,6 +65,10 @@ class _PrismImageTileState extends State<PrismImageTile> {
     if (oldWidget.url != widget.url || oldWidget.fallbackUrl != widget.fallbackUrl) {
       _attempt = 0;
       _retrying = false;
+      _loadReported = false;
+      _loadWatch
+        ..reset()
+        ..start();
       _localFileFuture = _lookupLocalFile();
     }
   }
@@ -126,6 +133,17 @@ class _PrismImageTileState extends State<PrismImageTile> {
     builder: (context, constraints) => _network(context, url, _decodeHeight(context, constraints), fallback: fallback),
   );
 
+  void _reportImage(String name, {required bool success}) {
+    if (_loadReported) return;
+    _loadReported = true;
+    PerformanceProbe.emit(
+      kind: 'image.thumb',
+      name: name,
+      durationMs: _loadWatch.elapsedMilliseconds,
+      success: success,
+    );
+  }
+
   Widget _network(BuildContext context, String url, int? decodeHeight, {String? fallback}) => CachedNetworkImage(
     key: ValueKey((url, _attempt)),
     imageUrl: url,
@@ -136,9 +154,15 @@ class _PrismImageTileState extends State<PrismImageTile> {
     fadeOutDuration: context.motion(PrismDurations.fast),
     memCacheHeight: decodeHeight,
     memCacheWidth: widget.memCacheWidth,
+    imageBuilder: (BuildContext context, ImageProvider imageProvider) {
+      _reportImage('decoded', success: true);
+      return Image(image: imageProvider, fit: BoxFit.cover);
+    },
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
-    errorWidget: (context, _, _) =>
-        _offlineOrNetworkFallback(context, url: url, decodeHeight: decodeHeight, fallback: fallback),
+    errorWidget: (context, _, _) {
+      _reportImage('error', success: false);
+      return _offlineOrNetworkFallback(context, url: url, decodeHeight: decodeHeight, fallback: fallback);
+    },
   );
 
   Widget _offlineOrNetworkFallback(

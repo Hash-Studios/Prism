@@ -9,12 +9,18 @@ part of '../cloud_functions.dart';
 ///
 /// You can get an instance by calling [FirebaseFunctions.instance.httpsCallable].
 class HttpsCallable {
-  HttpsCallable._(this.delegate);
+  HttpsCallable._(this.delegate, [this.name]);
 
   /// Returns the underlying [HttpsCallablePlatform] delegate for this
   /// [HttpsCallable] instance. This is useful for testing purposes only.
   @visibleForTesting
   final HttpsCallablePlatform delegate;
+
+  /// Callable name or URL used to create this handle.
+  final String? name;
+
+  /// Optional latency hook: callable name, elapsed ms, success.
+  static void Function(String name, int ms, bool ok)? perfSink;
 
   /// Executes this Callable HTTPS trigger asynchronously.
   ///
@@ -46,7 +52,15 @@ class HttpsCallable {
     } else {
       updatedParameters = _updateRawDataToList(parameters);
     }
-    return HttpsCallableResult<T>._(await delegate.call(updatedParameters) as T);
+    final Stopwatch sw = Stopwatch()..start();
+    try {
+      final HttpsCallableResult<T> result = HttpsCallableResult<T>._(await delegate.call(updatedParameters) as T);
+      perfSink?.call(name ?? 'unknown', sw.elapsedMilliseconds, true);
+      return result;
+    } catch (error) {
+      perfSink?.call(name ?? 'unknown', sw.elapsedMilliseconds, false);
+      rethrow;
+    }
   }
 
   /// Streams data to the specified HTTPS endpoint.

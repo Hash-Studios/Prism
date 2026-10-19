@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -84,8 +85,18 @@ class _SplashWidgetState extends State<SplashWidget> {
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;
+        PerformanceProbe.emit(
+          kind: 'startup',
+          name: 'time_to_onboarding',
+          durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
+        );
         context.router.replaceAll([OnboardingV2ShellRoute()]);
       } else {
+        PerformanceProbe.emit(
+          kind: 'startup',
+          name: 'time_to_home',
+          durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
+        );
         context.router.replaceAll([const DashboardRoute()]);
       }
     });

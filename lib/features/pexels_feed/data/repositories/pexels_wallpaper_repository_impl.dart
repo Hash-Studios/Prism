@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -101,9 +102,13 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     final Uri uri = buildUri(page);
 
     try {
-      final http.Response response = await http
-          .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
-          .timeout(_requestTimeout);
+      final http.Response response = await PerformanceProbe.measure(
+        'http',
+        'pexels.search',
+        () => http
+            .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
+            .timeout(_requestTimeout),
+      );
       if (response.statusCode != 200) {
         return await _cachedOrFailure(
           refresh: refresh,
@@ -162,9 +167,13 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   Future<Result<PexelsWallpaper?>> fetchById(String id) async {
     final Uri uri = Uri.https(_host, '$_photosPath/$id');
     try {
-      final http.Response response = await http
-          .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
-          .timeout(_requestTimeout);
+      final http.Response response = await PerformanceProbe.measure(
+        'http',
+        'pexels.by_id',
+        () => http
+            .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
+            .timeout(_requestTimeout),
+      );
       if (response.statusCode != 200) {
         return Result.error(
           ServerFailure(

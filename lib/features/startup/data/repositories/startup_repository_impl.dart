@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -118,7 +119,11 @@ class StartupRepositoryImpl implements StartupRepository {
     try {
       if (remoteConfig != null) {
         try {
-          await prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget);
+          await PerformanceProbe.measure(
+            'startup',
+            'remote_config',
+            () => prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget),
+          );
         } on TimeoutException {
           logger.w('Remote Config preparation timed out; using locally activated values.', tag: 'StartupRepository');
         } catch (error) {

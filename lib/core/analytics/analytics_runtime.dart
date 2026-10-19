@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_route_observer.dart';
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:flutter/widgets.dart';
 
 class AnalyticsRuntime {
@@ -107,7 +108,20 @@ class BufferedAppAnalytics implements AppAnalytics {
   }
 
   @override
-  Future<void> track(AnalyticsEvent event) => _enqueue((AppAnalytics analytics) => analytics.track(event));
+  Future<void> track(AnalyticsEvent event) {
+    final Map<String, Object?> params = event.toWireParameters();
+    final Object? ms = params['load_time_ms'] ?? params['duration_ms'];
+    if (ms is int) {
+      PerformanceProbe.emit(
+        kind: 'analytics',
+        name: event.eventName,
+        durationMs: ms,
+        success: params['result'] != 'failure',
+        extra: params,
+      );
+    }
+    return _enqueue((AppAnalytics analytics) => analytics.track(event));
+  }
 
   @override
   Future<void> setUserId(String? userId) {

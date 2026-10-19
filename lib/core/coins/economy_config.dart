@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -426,16 +427,18 @@ class EconomyConfig {
   /// Reads `economyConfig/current` within [loadBudget]. Any failure keeps the config already loaded.
   static Future<void> load() async {
     try {
-      final Map<String, dynamic>? raw = await firestoreClient
-          .getById<Map<String, dynamic>>(
-            FirebaseCollections.economyConfig,
-            'current',
-            (data, _) => data,
-            sourceTag: 'economy.config.load',
-          )
-          .timeout(loadBudget);
-      current = EconomyConfig.fromMap(raw);
-      _loadedAt = DateTime.now();
+      await PerformanceProbe.measure('startup', 'economy_config.load', () async {
+        final Map<String, dynamic>? raw = await firestoreClient
+            .getById<Map<String, dynamic>>(
+              FirebaseCollections.economyConfig,
+              'current',
+              (data, _) => data,
+              sourceTag: 'economy.config.load',
+            )
+            .timeout(loadBudget);
+        current = EconomyConfig.fromMap(raw);
+        _loadedAt = DateTime.now();
+      });
     } catch (error) {
       logger.w('Economy config load failed; keeping the current values.', tag: 'Economy', error: error);
     }

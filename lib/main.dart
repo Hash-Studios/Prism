@@ -14,6 +14,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
@@ -76,6 +77,7 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -148,6 +150,9 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      PerformanceProbe.mark('startup.binding_ready');
+      HttpsCallable.perfSink = (String name, int ms, bool ok) =>
+          PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
       unawaited(
         app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
           logger.w(
@@ -175,10 +180,11 @@ Future<void> main() async {
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
       if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
-          Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((_) => true).catchError((
-            Object e,
-            StackTrace s,
-          ) {
+          PerformanceProbe.measure(
+            'startup',
+            'firebase_init',
+            () => Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((_) => true),
+          ).catchError((Object e, StackTrace s) {
             logger.w(
               'Firebase initialization failed; continuing without Firebase-backed startup features.',
               error: e,
@@ -208,7 +214,11 @@ Future<void> main() async {
       }
 
       // Only truly-blocking tasks remain on the critical path.
-      await Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]);
+      await PerformanceProbe.measure(
+        'startup',
+        'persistence_and_monitoring',
+        () => Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]),
+      );
 
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
@@ -264,7 +274,9 @@ Future<void> main() async {
         unawaited(QuickTileDefaults.mirrorWallhavenCategories(settings));
       }
 
+      PerformanceProbe.mark('startup.before_di');
       configureDependencies();
+      PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
       final notificationOwner = persistedUser.loggedIn && persistedUser.id.trim().isNotEmpty
@@ -281,6 +293,10 @@ Future<void> main() async {
           (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
 
+      PerformanceProbe.mark('startup.run_app');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PerformanceProbe.mark('startup.first_frame');
+      });
       runApp(
         LogToastOverlay(
           child: BlocProvider<AutoRotateBloc>(

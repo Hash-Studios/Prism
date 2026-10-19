@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_functions.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
@@ -133,9 +134,13 @@ class PurchasesService {
   Future<void> configureEarly() async {
     if (_apiKey().isEmpty) return;
     try {
-      await _serializeSetup<void>(() async {
-        if (!_configured) await _configure('');
-      });
+      await PerformanceProbe.measure(
+        'startup',
+        'revenuecat.configure',
+        () => _serializeSetup<void>(() async {
+          if (!_configured) await _configure('');
+        }),
+      );
     } catch (error, stackTrace) {
       logger.w('RevenueCat early configure failed; will retry on first use.', error: error, stackTrace: stackTrace);
     }

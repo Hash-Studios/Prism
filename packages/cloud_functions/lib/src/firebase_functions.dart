@@ -69,7 +69,7 @@ class FirebaseFunctions extends FirebasePlugin {
   }) {
     assert(name.isNotEmpty);
     options ??= HttpsCallableOptions();
-    return HttpsCallable._(delegate.httpsCallable(_origin, name, options));
+    return HttpsCallable._(delegate.httpsCallable(_origin, name, options), name);
   }
 
   /// A reference to the Callable HTTPS trigger with the given URL.
@@ -82,7 +82,7 @@ class FirebaseFunctions extends FirebasePlugin {
     final uri = Uri.parse(url);
     options ??= HttpsCallableOptions();
     return HttpsCallable._(
-        delegate.httpsCallableWithUri(_origin, uri, options));
+        delegate.httpsCallableWithUri(_origin, uri, options), url);
   }
 
   /// A reference to the Callable HTTPS trigger with the given Uri.
@@ -94,7 +94,7 @@ class FirebaseFunctions extends FirebasePlugin {
   }) {
     options ??= HttpsCallableOptions();
     return HttpsCallable._(
-        delegate.httpsCallableWithUri(_origin, uri, options));
+        delegate.httpsCallableWithUri(_origin, uri, options), uri.toString());
   }
 
   /// Changes this instance to point to a Cloud Functions emulator running locally.
