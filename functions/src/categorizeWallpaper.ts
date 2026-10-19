@@ -3,7 +3,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
-import {db, REGION} from "./common";
+import {db, CALLABLE_REGIONS} from "./common";
 import {wallColorsFor} from "./wallColors";
 import {fileWallInCollection} from "./wallCollections";
 
@@ -19,7 +19,7 @@ export function parseWallId(raw: unknown): string {
 
 export const categorizeWallpaper = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     timeoutSeconds: 120,
   },
   async (request) => {

@@ -347,9 +347,23 @@ test("checkBadges: a newly current 7-day streak uses Auth age for the veteran ba
   store.user.coinState = {};
   const now = 1_700_000_000_000;
   t.mock.method(Date, "now", () => now);
-  t.mock.method(badgeIo, "accountCreatedMs", async () => now - 40 * 86_400_000);
   fakeDb(t, store, {}, () => {
     store.user.coinState = {streakBest: 7};
+  });
+  let transactionCallbackActive = false;
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof runTransaction>[0]) => {
+    transactionCallbackActive = true;
+    try {
+      return await runTransaction(callback);
+    } finally {
+      transactionCallbackActive = false;
+    }
+  });
+  let authLookupInsideTransaction = false;
+  t.mock.method(badgeIo, "accountCreatedMs", async () => {
+    authLookupInsideTransaction ||= transactionCallbackActive;
+    return now - 40 * 86_400_000;
   });
 
   const result = await call();
@@ -359,6 +373,79 @@ test("checkBadges: a newly current 7-day streak uses Auth age for the veteran ba
     {id: "prism_veteran", coins: 75},
   ]);
   assert.equal(store.user.coins, 110);
+  assert.equal(authLookupInsideTransaction, false);
+  assert.deepEqual(Object.keys(store.ledger).sort(), [
+    "coinTransactions/ctx_badgeReward_u1_prism_veteran",
+    "coinTransactions/ctx_badgeReward_u1_week_warrior",
+  ]);
+});
+
+test("checkBadges: failed early Auth lookup skips only veteran and a later check awards it once", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {};
+  const now = 1_700_000_000_000;
+  let currentTime = now;
+  t.mock.method(Date, "now", () => currentTime);
+  let authLookups = 0;
+  t.mock.method(badgeIo, "accountCreatedMs", async () => {
+    authLookups++;
+    if (authLookups === 1) throw new Error("Auth unavailable");
+    return now - 40 * 86_400_000;
+  });
+  fakeDb(t, store, {walls: 1}, () => {
+    store.user.coinState = {streakBest: 7};
+  });
+
+  const first = await call();
+  assert.deepEqual(first.newBadges, [
+    {id: "week_warrior", coins: 25},
+    {id: "creator", coins: 50},
+  ]);
+  assert.equal(first.currentBalance, 85);
+  assert.deepEqual((store.user.badges as {id: string}[]).map((badge) => badge.id), ["week_warrior", "creator"]);
+  assert.equal(authLookups, 1);
+
+  currentTime += 61_000;
+  const second = await call();
+  assert.deepEqual(second.newBadges, [{id: "prism_veteran", coins: 75}]);
+  assert.equal(second.currentBalance, 160);
+  assert.deepEqual((store.user.badges as {id: string}[]).map((badge) => badge.id), [
+    "week_warrior", "creator", "prism_veteran",
+  ]);
+  assert.equal(authLookups, 2);
+  assert.deepEqual(Object.keys(store.ledger).sort(), [
+    "coinTransactions/ctx_badgeReward_u1_creator",
+    "coinTransactions/ctx_badgeReward_u1_prism_veteran",
+    "coinTransactions/ctx_badgeReward_u1_week_warrior",
+  ]);
+
+  currentTime += 61_000;
+  const replay = await call();
+  assert.deepEqual(replay.newBadges, []);
+  assert.equal(replay.currentBalance, 160);
+  assert.equal(store.user.coins, 160);
+  assert.equal(authLookups, 2);
+  assert.deepEqual(Object.keys(store.ledger).sort(), [
+    "coinTransactions/ctx_badgeReward_u1_creator",
+    "coinTransactions/ctx_badgeReward_u1_prism_veteran",
+    "coinTransactions/ctx_badgeReward_u1_week_warrior",
+  ]);
+});
+
+test("checkBadges: failed Auth lookup for an already-current streak still rejects", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => {
+    throw new Error("Auth unavailable");
+  });
+  fakeDb(t, store, {});
+
+  await assert.rejects(() => call(), /Auth unavailable/);
+  assert.deepEqual(store.user.badges, []);
+  assert.equal(store.user.coins, 10);
+  assert.deepEqual(store.ledger, {});
 });
 
 test("checkBadges: a transaction retry does not trust an outdated streak snapshot", async (t) => {

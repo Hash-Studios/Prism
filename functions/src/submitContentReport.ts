@@ -2,7 +2,7 @@ import * as crypto from "node:crypto";
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, readDailyCount, REGION, utcDateString} from "./common";
+import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 
 const CONTENT_REPORTS = "contentReports";
 const RATE_TARGET = "contentReportRateByTarget";
@@ -92,7 +92,7 @@ interface SubmitReportResponse {
 
 export const submitContentReport = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<SubmitReportData>): Promise<SubmitReportResponse> => {

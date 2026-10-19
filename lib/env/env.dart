@@ -12,6 +12,9 @@ class Env {
     return value;
   }
 
+  // Measurement-only flow driver for profile builds; see lib/core/debug/perf_autodrive.dart.
+  static const bool perfAutodrive = bool.fromEnvironment('PRISM_PERF_AUTODRIVE');
+
   // GitHub
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
 

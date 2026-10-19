@@ -270,8 +270,8 @@ void main() {
       expect(coins.questsNotifier.value, isNull);
       expect(coins.currentPasses.autoRotatePassActive(DateTime.utc(2026)), isFalse);
       final EconomySnapshot? saved = await store.read(backend.userId);
-      expect(saved?.data.containsKey('quests'), isFalse);
-      expect(saved?.data.containsKey('passes'), isFalse);
+      expect(saved?.data.containsKey('quests') ?? false, isFalse);
+      expect(saved?.data.containsKey('passes') ?? false, isFalse);
       expect(coins.xpNotifier.value.xp, 480);
       expect(coins.streakNotifier.value.best, 9);
       expect(coins.inventoryNotifier.value.frame, 'frame_ring');
@@ -532,7 +532,7 @@ void main() {
     expect(coins.inventoryNotifier.value.owned, contains('frame_gold'));
   });
 
-  test('offline reconciliation preserves cache and retries on the next balance refresh', () async {
+  test('offline reconciliation preserves cache and retries on the next reconcile', () async {
     await seed();
     firestore.privateEconomyError = FirestoreError(code: 'unavailable', message: 'offline');
     int requests = 0;
@@ -542,10 +542,10 @@ void main() {
       return inventoryReply(7, <String>['frame_ring', 'glow_aurora']);
     };
 
-    await coins.refreshBalance();
+    await coins.reconcileRankRewards();
     expect(coins.inventoryNotifier.value.owned, <String>{'frame_ring'});
     expect((await store.read(backend.userId))?.revision, 6);
-    await coins.refreshBalance();
+    await coins.reconcileRankRewards();
 
     expect(requests, 2);
     expect(coins.inventoryNotifier.value.owned, <String>{'frame_ring', 'glow_aurora'});

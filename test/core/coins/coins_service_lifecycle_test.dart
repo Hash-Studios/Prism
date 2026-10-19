@@ -136,6 +136,46 @@ void main() {
     expect(firestore.getByIdCalls, 0);
   });
 
+  test('a claim is skipped when the streak already shows today at the device offset', () async {
+    final int offset = DateTime.now().timeZoneOffset.inMinutes;
+    final String today = DateTime.now().toUtc().add(Duration(minutes: offset)).toIso8601String().substring(0, 10);
+    service.streakNotifier.value = StreakStatus.empty.copyWith(
+      lastClaimDate: today,
+      timezoneOffsetMinutes: offset,
+      claimedToday: true,
+    );
+    int calls = 0;
+    backend.onCall = (name, _) async {
+      if (name == 'claimDailyStreak') calls++;
+      return CoinsTestBackend.claimPayload;
+    };
+
+    final result = await service.claimDailyLoginAndStreakIfEligible();
+
+    expect(calls, 0);
+    expect(result.success, isTrue);
+    expect(result.changed, isFalse);
+    expect(result.reason, 'daily_already_claimed');
+  });
+
+  test('a claim still calls the server when the last claim is an earlier day', () async {
+    final int offset = DateTime.now().timeZoneOffset.inMinutes;
+    service.streakNotifier.value = StreakStatus.empty.copyWith(
+      lastClaimDate: '2020-01-01',
+      timezoneOffsetMinutes: offset,
+    );
+    int calls = 0;
+    backend.onCall = (name, _) async {
+      if (name == 'claimDailyStreak') calls++;
+      return CoinsTestBackend.claimPayload;
+    };
+
+    final result = await service.claimDailyLoginAndStreakIfEligible();
+
+    expect(calls, 1);
+    expect(result.changed, isTrue);
+  });
+
   test('pending claim getter clears claims for an empty guest id', () async {
     await service.claimDailyLoginAndStreakIfEligible();
     expect(service.pendingClaimForCurrentUser, isNotNull);

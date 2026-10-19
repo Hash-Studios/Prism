@@ -18,6 +18,7 @@ import 'package:Prism/logger/logger.dart';
 const int _defaultNotifLimit = 50;
 
 const Duration _syncCooldown = Duration(seconds: 45);
+const Duration _persistedSyncCooldown = Duration(minutes: 5);
 
 final Map<String, Future<void>> _syncInFlightByKey = <String, Future<void>>{};
 final Map<String, DateTime> _lastSyncEndedAtByKey = <String, DateTime>{};
@@ -264,8 +265,15 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
         (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
       );
     }
+    if (!isCurrentSession()) return false;
+    if (!force &&
+        lastFetchTime != null &&
+        !lastFetchTime.isAfter(nowUtc) &&
+        nowUtc.difference(lastFetchTime) < _persistedSyncCooldown) {
+      return true;
+    }
 
-    if (force || lastFetchTime == null) {
+    if (force || lastFetchTime == null || lastFetchTime.isAfter(nowUtc)) {
       final DateTime fetchFloor = await tombstones.fetchFloor(nowUtc.subtract(const Duration(days: 30)));
       if (!isCurrentSession()) return false;
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(

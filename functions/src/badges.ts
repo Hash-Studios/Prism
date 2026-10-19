@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, REGION} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {grantXp, loadEconomy, xpReceipt} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
@@ -127,7 +128,7 @@ function ownedIds(badges: unknown): Set<string> {
 }
 
 export const checkBadges = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to earn badges.");
@@ -155,13 +156,17 @@ export const checkBadges = onCall(
     if (isCooling) return skip();
 
     const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs, email);
-    const config = await loadEconomy();
+    const lateCreatedMs = facts.streakBest < 7 && !ownedIds(existing.badges).has("prism_veteran") ?
+      badgeIo.accountCreatedMs(uid).catch((error) => {
+        logger.warn("badges: account creation lookup failed", {uid, error});
+        return null;
+      }) : null;
+    const [config, createdMs] = await Promise.all([loadEconomy(), lateCreatedMs]);
 
     let response = skip();
     const privateRef = userRef.collection("private").doc("economy");
     await db.runTransaction(async (tx) => {
-      const userTx = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
+      const [userTx, privateSnap] = await Promise.all([tx.get(userRef), tx.get(privateRef)]);
       if (!userTx.exists) throw new HttpsError("not-found", "User profile was not found.");
       const data = userTx.data() ?? {};
       const badges: Record<string, unknown>[] = Array.isArray(data.badges) ? [...data.badges] : [];
@@ -171,8 +176,8 @@ export const checkBadges = onCall(
       response = {newBadges: [], badges, currentBalance: previous, ...xpReceipt(data, nowMs)};
 
       const owned = ownedIds(badges);
-      const accountAgeDays = facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
-        Math.floor((nowMs - await badgeIo.accountCreatedMs(uid)) / DAY_MS) : facts.accountAgeDays;
+      const accountAgeDays = createdMs !== null && facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
+        Math.floor((nowMs - createdMs) / DAY_MS) : facts.accountAgeDays;
       const earned = evaluateBadges({...facts, streakBest, accountAgeDays});
       const fresh = BADGES.filter((b) => earned.includes(b.id) && !owned.has(b.id));
       if (fresh.length === 0) return;
