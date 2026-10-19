@@ -93,6 +93,7 @@ def delta(key):
     if not a or not b or not a[0]: return ''
     return f"{round((b[0] - a[0]) / a[0] * 100):+d}%"
 HEAD = """<!doctype html><html><head><meta charset=utf-8><style>
+:root{--warning:#d97706;--destructive:#dc2626}
 body{font:13.5px/1.4 var(--font-sans);margin:0;padding:4px 0;color:var(--foreground)}
 h2{font-size:12px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-foreground)}
 p.sub{margin:0;color:var(--muted-foreground);font-size:12.5px}
