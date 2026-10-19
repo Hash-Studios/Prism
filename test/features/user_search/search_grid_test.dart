@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' show SocketException;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -18,6 +20,7 @@ import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -25,6 +28,8 @@ import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
+
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -82,6 +87,60 @@ void main() {
     expect(find.bySemanticsLabel('Wallpaper by Author 23'), findsOneWidget);
     expect(find.byType(SeeMoreButton), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('prefetches the thumbnails below the first screen, up to 24', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final _MockCacheManager cache = _MockCacheManager();
+    PrismImageCache.testOverride = cache;
+    addTearDown(() {
+      PrismImageCache.testOverride = null;
+      PaintingBinding.instance.imageCache.clear();
+    });
+    final List<String> fetched = <String>[];
+    when(
+      () => cache.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: any(named: 'withProgress'),
+      ),
+    ).thenAnswer((invocation) {
+      fetched.add(invocation.positionalArguments.first as String);
+      return Stream<FileResponse>.error(const SocketException('offline'));
+    });
+    FeedItemEntity withThumb(int i) => PexelsFeedItem(
+      id: 'w$i',
+      wallpaper: PexelsWallpaper(
+        core: WallpaperCore(
+          id: 'w$i',
+          source: WallpaperSource.pexels,
+          fullUrl: '',
+          thumbnailUrl: 'https://example.com/w$i-thumb.jpg',
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            provider: SearchProviderValue.pexels,
+            initialResults: List<FeedItemEntity>.generate(40, withThumb),
+          ),
+        ),
+      ),
+    );
+    for (int i = 0; i < 12; i++) {
+      await tester.pump();
+    }
+
+    // 3 columns on a 400 x 800 screen: 9 tiles are on the first screen, so the prefetch ends at tile 9 + 24 - 1.
+    expect(fetched, contains('https://example.com/w32-thumb.jpg'));
+    expect(fetched, isNot(contains('https://example.com/w33-thumb.jpg')));
   });
 
   testWidgets('does not show See more for an empty first page', (tester) async {
