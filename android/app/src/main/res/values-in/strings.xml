@@ -27,10 +27,10 @@
     <string name="notif_push_wall_live_for_followers_body">\"%1$s\" kini tayang di Prism.</string>
     <string name="notif_push_wall_approved_for_admin_title">Wallpaper disetujui ✅</string>
     <string name="notif_push_wall_approved_for_admin_body">\"%1$s\" karya %2$s kini tayang.</string>
-    <string name="notif_push_new_follower_title">Anda mendapat pengikut baru! 🎉</string>
+    <string name="notif_push_new_follower_title">Anda memiliki pengikut baru! 🎉</string>
     <string name="notif_push_new_follower_body">%1$s sekarang mengikuti Anda.</string>
     <string name="notif_push_streak_reminder_title">Rangkaian harian Anda akan terputus!</string>
-    <string name="notif_push_streak_reminder_body">Buka Prism sekarang agar rangkaian masuk harian Anda tetap berlanjut 🔥</string>
+    <string name="notif_push_streak_reminder_body">Buka Prism sekarang agar rangkaian login harian Anda tetap berjalan 🔥</string>
     <string name="notif_push_wotd_for_creator_title">Wallpaper Anda menjadi Wallpaper Hari Ini</string>
     <string name="notif_push_wotd_for_creator_body">Prism memilih wallpaper Anda untuk semua orang hari ini. Terima kasih telah membagikannya.</string>
     <string name="notif_push_wotd_for_audience_title">Wallpaper Hari Ini sudah hadir</string>

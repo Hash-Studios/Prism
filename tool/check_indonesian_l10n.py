@@ -25,7 +25,64 @@ FONT_DIR = ROOT / 'assets/fonts'
 
 ARGUMENT_NAME = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 ICU_TYPES = {'plural', 'selectordinal', 'select', 'number', 'date', 'time'}
-PRINTF_POSITIONAL = re.compile(r'%(\d+)\$([@a-zA-Z])')
+ANDROID_FORMAT = re.compile(r'%(?:(\d+)\$)?([-+#0 ,(<]*)?(\d+)?(?:\.(\d+))?([tT])?([a-zA-Z%])')
+IOS_FORMAT = re.compile(r'%(?:(\d+)\$)?([-+#0 ]*)(\d+)?(?:\.(\d+))?(ll|l|hh|h|z|t|j)?([@a-zA-ZdiuoxXfFeEgGcCsSp])')
+
+
+def printf_contract(value: str, platform: str) -> Counter[tuple[Any, ...]]:
+    """Compare native format arguments by effective argument and conversion type."""
+    implicit_index = 0
+    previous_index: int | None = None
+    tokens: list[tuple[Any, ...]] = []
+    index = 0
+    while index < len(value):
+        if value[index] != '%':
+            index += 1
+            continue
+        if value.startswith('%%', index):
+            index += 2
+            continue
+        match = (ANDROID_FORMAT if platform == 'android' else IOS_FORMAT).match(value, index)
+        if match is None:
+            if platform == 'ios' and re.match(r'%(?:\d+\$)?[-+#0 ]*(?:\*|\.(?:\*|\d*\*))', value[index:]):
+                raise CheckFailure('unsupported dynamic width or precision in iOS format string')
+            index += 1
+            continue
+        if platform == 'android':
+            position, flags, width, precision, date_prefix, conversion = match.groups()
+            if conversion == '%':
+                index = match.end()
+                continue
+            if conversion == 'n':
+                index = match.end()
+                continue
+            if '<' in (flags or ''):
+                if previous_index is None:
+                    raise CheckFailure('Android relative format conversion has no prior argument')
+                argument_index = previous_index
+            else:
+                if position:
+                    argument_index = int(position)
+                else:
+                    implicit_index += 1
+                    argument_index = implicit_index
+                previous_index = argument_index
+            conversion_type = (date_prefix or '') + conversion
+            index = match.end()
+            tokens.append((argument_index, conversion_type))
+            continue
+        position, flags, width, precision, length, conversion = match.groups()
+        if conversion == '%':
+            index = match.end()
+            continue
+        if position is None:
+            implicit_index += 1
+            argument_index = implicit_index
+        else:
+            argument_index = int(position)
+        tokens.append((argument_index, conversion, length or '', flags, width or '', precision or ''))
+        index = match.end()
+    return Counter(tokens)
 
 
 class CheckFailure(Exception):
@@ -265,7 +322,6 @@ def android_strings(path: Path) -> dict[str, str]:
     return result
 
 
-ANDROID_POSITIONAL = re.compile(r'%(\d+)\$([a-zA-Z])')
 
 
 def check_android() -> None:
@@ -275,13 +331,57 @@ def check_android() -> None:
             f'Android string keys differ: missing {sorted(english.keys() - indonesian.keys())}, '
             f'extra {sorted(indonesian.keys() - english.keys())}')
     for key in english:
-        source = Counter(ANDROID_POSITIONAL.findall(english[key]))
-        target = Counter(ANDROID_POSITIONAL.findall(indonesian[key]))
+        source = printf_contract(english[key], 'android')
+        target = printf_contract(indonesian[key], 'android')
         require(source == target,
                 f'Android {key} positional placeholders differ: {sorted(source.elements())} != {sorted(target.elements())}')
 
 
-IOS_ENTRY = re.compile(r'"((?:\\.|[^"\\])*)"\s*=\s*"((?:\\.|[^"\\])*)"\s*;', re.DOTALL)
+IOS_ENTRY = re.compile(r'\s*"((?:\\.|[^"\\])*)"\s*=\s*"((?:\\.|[^"\\])*)"\s*;', re.DOTALL)
+
+
+def parse_ios_strings(content: str) -> dict[str, str]:
+    """Parse quoted key/value entries while removing comments outside strings."""
+    visible: list[str] = []
+    index = 0
+    in_string = False
+    while index < len(content):
+        if in_string:
+            char = content[index]
+            visible.append(char)
+            if char == '\\' and index + 1 < len(content):
+                index += 1
+                visible.append(content[index])
+            elif char == '"':
+                in_string = False
+            index += 1
+            continue
+        if content[index] == '"':
+            in_string = True
+            visible.append(content[index])
+            index += 1
+        elif content.startswith('//', index):
+            end = content.find('\n', index)
+            index = len(content) if end == -1 else end
+        elif content.startswith('/*', index):
+            end = content.find('*/', index + 2)
+            require(end != -1, 'unterminated iOS strings comment')
+            visible.extend('\n' for char in content[index:end + 2] if char == '\n')
+            index = end + 2
+        else:
+            visible.append(content[index])
+            index += 1
+    require(not in_string, 'unterminated quoted value in iOS strings file')
+    residue = ''.join(visible)
+    result: dict[str, str] = {}
+    while residue.strip():
+        match = IOS_ENTRY.match(residue)
+        require(match is not None, 'iOS strings file has malformed entry or trailing junk')
+        key, value = match.groups()
+        require(key not in result, f'duplicate permission key {key!r}')
+        result[key] = value
+        residue = residue[match.end():]
+    return result
 
 
 def ios_strings(path: Path) -> dict[str, str]:
@@ -289,11 +389,10 @@ def ios_strings(path: Path) -> dict[str, str]:
         content = path.read_text(encoding='utf-8')
     except OSError as error:
         raise CheckFailure(f'{path.relative_to(ROOT)}: {error}') from error
-    entries = IOS_ENTRY.findall(content)
-    result = dict(entries)
-    require(len(result) == len(entries), f'{path.relative_to(ROOT)} has duplicate permission keys')
-    require(content.count('=') == len(entries), f'{path.relative_to(ROOT)} has an unparsable key/value entry')
-    return result
+    try:
+        return parse_ios_strings(content)
+    except CheckFailure as error:
+        raise CheckFailure(f'{path.relative_to(ROOT)}: {error}') from error
 
 
 def check_ios() -> tuple[int, int]:
@@ -322,8 +421,8 @@ def check_ios() -> tuple[int, int]:
                 f'iOS string {key!r} lacks a translated English source')
         require(id_unit.get('state') == 'translated' and isinstance(id_unit.get('value'), str),
                 f'iOS string {key!r} lacks a translated Indonesian value')
-        source_arguments = Counter(PRINTF_POSITIONAL.findall(english_unit['value']))
-        translated_arguments = Counter(PRINTF_POSITIONAL.findall(id_unit['value']))
+        source_arguments = printf_contract(english_unit['value'], 'ios')
+        translated_arguments = printf_contract(id_unit['value'], 'ios')
         require(source_arguments == translated_arguments,
                 f'iOS string {key!r} printf placeholders differ: '
                 f'{sorted(source_arguments.elements())} != {sorted(translated_arguments.elements())}')
