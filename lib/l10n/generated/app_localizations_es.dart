@@ -969,6 +969,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountPurchasesRestored => 'Compras restauradas.';
 
   @override
+  String get accountPurchasesRestoredPending => 'Compras restauradas. Pro puede tardar un minuto en activarse.';
+
+  @override
   String get accountQuickTiles => 'Accesos rápidos';
 
   @override
@@ -7294,6 +7297,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Ver planes';
+
+  @override
+  String get premiumPurchasePending => 'Tu compra está guardada. Pro puede tardar un minuto en activarse.';
+
+  @override
+  String get premiumPurchaseUnconfirmed =>
+      'No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.';
 
   @override
   String get wallpaperAccentColor => 'Color de acento';
