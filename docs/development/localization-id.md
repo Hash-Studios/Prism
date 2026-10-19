@@ -6,7 +6,7 @@ fallback. The generated delegate registers `id` and resolves `id_ID`.
 
 ## Coverage
 
-The Indonesian ARB covers all 2,498 canonical English messages, with source
+The Indonesian ARB covers all 2,499 canonical English messages, with source
 metadata, placeholder types, number formats and ICU selector values preserved.
 This includes onboarding, browsing, search, categories, wallpaper actions,
 creator accounts, authentication, settings, Premium, coins, streaks, referrals,
@@ -27,6 +27,11 @@ Shared follow-up `0b562d29baa5d54ea8bc2d2c3dc39ef2964e755f` is also
 cherry-picked with provenance. It adds translated AI prompt pools, sign-in
 feature labels and sharing copy, and localizes upload-size and slider displays
 without changing persisted values. All 92 additional messages are translated.
+Shared fix `133170f1023d5f730c60f3257101c33784c9b7d1` also localizes
+collection-preview spend failures using the existing catalogue.
+Shared fix `e6f66cd8d2a4b95f562eeda30e026564e5162d38` resolves background
+messages from the full preferred-language list, strengthens the indirect-string
+guard and adds the translated filter-export failure label.
 
 ## Reproducible checks
 
@@ -48,6 +53,9 @@ The locale tests cover delegate loading, English fallback, Indonesian number
 formatting, plurals, nested ICU selects, interpolation and a 320 by 640 sheet
 at 2x text scale. They also exercise production AI suggestion and upload-size
 formatting boundaries. This is an automated layout sample, not full device proof.
+All 4,375 scene/lighting/mood/quality combinations are checked against the
+existing 160-character generation limit. The longest Indonesian combination
+is 158 characters. Every onboarding suggestion also fits that limit.
 
 ## Device proof limits
 

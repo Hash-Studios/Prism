@@ -1,5 +1,9 @@
 {
   "@@locale": "id",
+  "economyExportFailedLabel": "Ekspor gagal",
+  "@economyExportFailedLabel": {
+    "description": "Failed filter export action inserted before refund status."
+  },
   "coreSignInCreatorSearchFeature": "pencarian kreator",
   "@coreSignInCreatorSearchFeature": {
     "description": "Feature name inserted into the sign-in title for creator search."
@@ -9,9 +13,9 @@
     "description": "Subject of the shared diagnostic log export."
   },
   "economyAiPromptSceneAnime1": "cakrawala kota anime di atas pulau-pulau terapung",
-  "economyAiPromptSceneAnime2": "seorang samurai sendirian di jalanan berhujan yang diterangi neon",
+  "economyAiPromptSceneAnime2": "samurai sendiri di jalan berhujan berlampu neon",
   "economyAiPromptSceneAnime3": "kuil futuristik dengan bunga sakura dan hologram",
-  "economyAiPromptSceneAnime4": "pasar malam anime yang terasa seperti mimpi dengan cahaya lentera",
+  "economyAiPromptSceneAnime4": "pasar malam anime bak mimpi bercahaya lentera",
   "economyAiPromptSceneAnime5": "cakrawala kota cyber-anime saat senja biru",
   "economyAiPromptSceneMinimal1": "bukit pasir minimalis dan satu cakram matahari",
   "economyAiPromptSceneMinimal2": "lapisan pegunungan geometris yang bersih",
@@ -20,7 +24,7 @@
   "economyAiPromptSceneMinimal5": "langit bergradasi lembut di atas perbukitan datar",
   "economyAiPromptSceneCyberpunk1": "jalan kota metropolitan neon dengan pantulan di permukaan basah",
   "economyAiPromptSceneCyberpunk2": "gang futuristik dengan papan iklan holografis",
-  "economyAiPromptSceneCyberpunk3": "cakrawala kota berteknologi tinggi dengan jalur lalu lintas udara",
+  "economyAiPromptSceneCyberpunk3": "cakrawala kota canggih dengan jalur kendaraan terbang",
   "economyAiPromptSceneCyberpunk4": "atap bergaya cyberpunk yang menghadap menara-menara bercahaya",
   "economyAiPromptSceneCyberpunk5": "persimpangan kota tengah malam dengan cahaya teal dan magenta",
   "economyAiPromptSceneWatercolor1": "lembah hutan cat air saat fajar",
@@ -49,17 +53,17 @@
   "economyAiPromptLightingMoonlit": "sinar bulan",
   "economyAiPromptLightingVolumetric": "volumetrik",
   "economyAiPromptMoodCalm": "tenang",
-  "economyAiPromptMoodDreamy": "seperti mimpi",
+  "economyAiPromptMoodDreamy": "bak mimpi",
   "economyAiPromptMoodEpic": "epik",
-  "economyAiPromptMoodMoody": "sendu",
-  "economyAiPromptMoodUplifting": "membangkitkan semangat",
+  "economyAiPromptMoodMoody": "suram",
+  "economyAiPromptMoodUplifting": "ceria",
   "economyAiPromptQualityHighDetail": "detail tinggi",
-  "economyAiPromptQualityCleanComposition": "komposisi sangat bersih",
+  "economyAiPromptQualityCleanComposition": "komposisi sangat rapi",
   "economyAiPromptQualityCrispTextures": "tekstur tajam",
   "economyAiPromptQualityBalancedContrast": "kontras seimbang",
-  "economyAiPromptQualityNaturalColors": "warna cerah tetapi tetap alami",
-  "economyAiPromptSuffix": "wallpaper ponsel vertikal, tanpa teks",
-  "economyAiPromptComposition": "{scene}, pencahayaan {lighting}, suasana {mood}, {quality}, {suffix}",
+  "economyAiPromptQualityNaturalColors": "warna cerah alami",
+  "economyAiPromptSuffix": "wallpaper ponsel vertikal tanpa teks",
+  "economyAiPromptComposition": "{scene}, cahaya {lighting}, {mood}, {quality}, {suffix}",
   "@economyAiPromptComposition": {
     "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
     "placeholders": {
@@ -96,7 +100,7 @@
   "onboardingAiPromptFallback": "wallpaper yang indah",
   "onboardingAiPromptNature1": "deretan pegunungan berkabut saat matahari terbit dengan cahaya keemasan yang hangat",
   "onboardingAiPromptNature2": "hutan lebat yang selalu hijau dengan sinar matahari menembus tajuk pepohonan",
-  "onboardingAiPromptNature3": "tebing pesisir dramatis dengan ombak yang menghantam dan langit sendu",
+  "onboardingAiPromptNature3": "tebing pesisir dramatis dengan ombak yang menghantam dan langit suram",
   "onboardingAiPromptNature4": "danau alpen yang tenang di bawah langit senja dengan pantulan bintang",
   "onboardingAiPromptNature5": "ngarai gurun dengan cahaya keemasan yang hangat dan formasi batuan dramatis",
   "onboardingAiPromptAbstract1": "komposisi fraktal abstrak dengan lengkungan dinamis dan warna cerah",

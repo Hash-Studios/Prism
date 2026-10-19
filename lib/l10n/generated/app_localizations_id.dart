@@ -11,6 +11,9 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'Ekspor gagal';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'pencarian kreator';
 
   @override
@@ -9293,13 +9296,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyAiPromptSceneAnime1 => 'cakrawala kota anime di atas pulau-pulau terapung';
 
   @override
-  String get economyAiPromptSceneAnime2 => 'seorang samurai sendirian di jalanan berhujan yang diterangi neon';
+  String get economyAiPromptSceneAnime2 => 'samurai sendiri di jalan berhujan berlampu neon';
 
   @override
   String get economyAiPromptSceneAnime3 => 'kuil futuristik dengan bunga sakura dan hologram';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'pasar malam anime yang terasa seperti mimpi dengan cahaya lentera';
+  String get economyAiPromptSceneAnime4 => 'pasar malam anime bak mimpi bercahaya lentera';
 
   @override
   String get economyAiPromptSceneAnime5 => 'cakrawala kota cyber-anime saat senja biru';
@@ -9326,7 +9329,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyAiPromptSceneCyberpunk2 => 'gang futuristik dengan papan iklan holografis';
 
   @override
-  String get economyAiPromptSceneCyberpunk3 => 'cakrawala kota berteknologi tinggi dengan jalur lalu lintas udara';
+  String get economyAiPromptSceneCyberpunk3 => 'cakrawala kota canggih dengan jalur kendaraan terbang';
 
   @override
   String get economyAiPromptSceneCyberpunk4 => 'atap bergaya cyberpunk yang menghadap menara-menara bercahaya';
@@ -9413,22 +9416,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyAiPromptMoodCalm => 'tenang';
 
   @override
-  String get economyAiPromptMoodDreamy => 'seperti mimpi';
+  String get economyAiPromptMoodDreamy => 'bak mimpi';
 
   @override
   String get economyAiPromptMoodEpic => 'epik';
 
   @override
-  String get economyAiPromptMoodMoody => 'sendu';
+  String get economyAiPromptMoodMoody => 'suram';
 
   @override
-  String get economyAiPromptMoodUplifting => 'membangkitkan semangat';
+  String get economyAiPromptMoodUplifting => 'ceria';
 
   @override
   String get economyAiPromptQualityHighDetail => 'detail tinggi';
 
   @override
-  String get economyAiPromptQualityCleanComposition => 'komposisi sangat bersih';
+  String get economyAiPromptQualityCleanComposition => 'komposisi sangat rapi';
 
   @override
   String get economyAiPromptQualityCrispTextures => 'tekstur tajam';
@@ -9437,14 +9440,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyAiPromptQualityBalancedContrast => 'kontras seimbang';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'warna cerah tetapi tetap alami';
+  String get economyAiPromptQualityNaturalColors => 'warna cerah alami';
 
   @override
-  String get economyAiPromptSuffix => 'wallpaper ponsel vertikal, tanpa teks';
+  String get economyAiPromptSuffix => 'wallpaper ponsel vertikal tanpa teks';
 
   @override
   String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
-    return '$scene, pencahayaan $lighting, suasana $mood, $quality, $suffix';
+    return '$scene, cahaya $lighting, $mood, $quality, $suffix';
   }
 
   @override
@@ -9467,7 +9470,7 @@ class AppLocalizationsId extends AppLocalizations {
       'hutan lebat yang selalu hijau dengan sinar matahari menembus tajuk pepohonan';
 
   @override
-  String get onboardingAiPromptNature3 => 'tebing pesisir dramatis dengan ombak yang menghantam dan langit sendu';
+  String get onboardingAiPromptNature3 => 'tebing pesisir dramatis dengan ombak yang menghantam dan langit suram';
 
   @override
   String get onboardingAiPromptNature4 => 'danau alpen yang tenang di bawah langit senja dengan pantulan bintang';
