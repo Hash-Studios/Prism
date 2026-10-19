@@ -30,6 +30,8 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
+import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -51,6 +53,8 @@ import 'home_render_support.dart';
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
+
+class _MockDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDiscoveryState> implements SearchDiscoveryBloc {}
 
 String get _outDir => Platform.environment['QA_OUT'] ?? '/tmp/prism-qa/depth-renders';
 
@@ -218,6 +222,37 @@ class _Depth {
     await shot.settle(frameMs: 50);
   }
 
+  /// The search tab before a search, with "Trending now" loaded.
+  Future<void> pumpSearch() async {
+    final SearchDiscoveryState state = SearchDiscoveryState(
+      status: LoadStatus.success,
+      trendingWalls: <WallhavenWallpaper>[
+        for (int n = 8; n < 14; n++)
+          WallhavenWallpaper(
+            core: WallpaperCore(
+              id: 'wh$n',
+              source: WallpaperSource.wallhaven,
+              fullUrl: photoUrl(portraitPhotos[n % portraitPhotos.length]),
+              thumbnailUrl: photoUrl(portraitPhotos[n % portraitPhotos.length]),
+              authorName: 'Creator $n',
+            ),
+          ),
+      ],
+    );
+    final _MockDiscoveryBloc bloc = _MockDiscoveryBloc();
+    when(() => bloc.state).thenReturn(state);
+    whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+    getIt
+      ..registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()))
+      ..registerFactory<SearchDiscoveryBloc>(() => bloc);
+    await mount(const SearchScreen());
+    await shot.settle(frames: 6, frameMs: 50);
+    expect(
+      tester.getTopLeft(find.text('Depth Effect')).dy,
+      lessThan(tester.getTopLeft(find.text('Browse by colour')).dy),
+    );
+  }
+
   Future<void> openPanel() async {
     await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
     await shot.settle(frames: 6, frameMs: 120);
@@ -313,4 +348,6 @@ void main() {
   scene('07-guide-menu-dark', kDarkTheme, (_Depth d) => d.openGuide(WallDepthTier.menu));
   scene('08-guide-auto-light', kLightTheme, (_Depth d) => d.openGuide(WallDepthTier.auto));
   scene('09-saved-toast-menu-dark', kDarkTheme, (_Depth d) => d.showSavedToast(WallDepthTier.menu));
+  scene('10-search-discovery-dark', kDarkTheme, (_Depth d) => d.pumpSearch());
+  scene('11-search-discovery-light', kLightTheme, (_Depth d) => d.pumpSearch());
 }

@@ -5,6 +5,9 @@ On iOS 16 and later, the Lock Screen can put the subject of a photo in front of 
 ## Where to find it
 
 - On iOS, a wall that works shows a **Depth** tag on its grid tile and a **Depth Effect** row in the detail panel.
+- On iOS, the search tab has a **Depth Effect** row above Browse by colour, and the search filter sheet has a **Depth Effect** switch. Both list the walls with tier `auto` or `menu`.
+- On iOS, the save guide ends with the step that turns the effect on. After the guide has shown once in a session, the save toast carries that step.
+- In swipe review, admins see the tier on each card and can set Auto, Menu or None.
 - The backend writes the value. There is no backend screen.
 
 ## Platforms and plans

@@ -7,6 +7,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
@@ -186,6 +187,12 @@ class _SearchScreenState extends State<SearchScreen> {
     searchController.clear();
     setState(() => _filters = _filters.copyWith(color: color));
     _triggerSearch('', sourceContext: 'search_color');
+  }
+
+  void _searchByDepth() {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(depthOnly: true));
+    _triggerSearch('', sourceContext: 'search_depth');
   }
 
   void _clearColor() {
@@ -403,6 +410,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     recentSearches: _recentSearches,
                     onClearRecents: () => unawaited(_clearRecents()),
                     onColorPressed: _searchByColor,
+                    onDepthPressed: showDepthEffectUi ? _searchByDepth : null,
                     onRecentPressed: (query) {
                       searchController.text = query;
                       _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);

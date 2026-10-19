@@ -98,4 +98,57 @@ void main() {
       expect(find.byType(PaletteSwatch), findsNothing);
     });
   });
+
+  group('Depth Effect row', () {
+    Future<void> pumpDiscovery(WidgetTester tester, {VoidCallback? onDepthPressed}) async {
+      const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
+      final bloc = _MockSearchDiscoveryBloc();
+      when(() => bloc.state).thenReturn(state);
+      whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+      await tester.pumpWidget(
+        BlocProvider<SearchDiscoveryBloc>.value(
+          value: bloc,
+          child: MaterialApp(
+            home: Scaffold(
+              body: SearchDiscoveryWidget(
+                tags: const <String>[],
+                selectedTag: '',
+                onTagPressed: (_) {},
+                onColorPressed: (_) {},
+                onDepthPressed: onDepthPressed,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('shows above Browse by colour and calls the handler on tap', (tester) async {
+      int taps = 0;
+      await pumpDiscovery(tester, onDepthPressed: () => taps++);
+
+      expect(find.text('Depth Effect'), findsOneWidget);
+      expect(find.text('Subject in front of the clock'), findsOneWidget);
+      expect(find.byIcon(Icons.layers_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel('Depth Effect, subject in front of the clock'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Depth Effect')).dy,
+        lessThan(tester.getTopLeft(find.text('Browse by colour')).dy),
+      );
+
+      await tester.tap(find.text('Depth Effect'));
+      await tester.pump();
+
+      expect(taps, 1);
+    });
+
+    testWidgets('is absent without a handler', (tester) async {
+      await pumpDiscovery(tester);
+
+      expect(find.text('Depth Effect'), findsNothing);
+      expect(find.byIcon(Icons.layers_rounded), findsNothing);
+      expect(find.text('Find creators'), findsOneWidget);
+    });
+  });
 }
