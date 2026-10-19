@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cold-launch + flow driver for Prism. Usage: drive_android.py <tag> <launches> [--no-flows] [--shots]
 Env: ANDROID_SERIAL (default emulator-5580), PRISM_PERF_DIR (default /tmp/prism-perf)."""
-import subprocess, sys, time, json, re, os, argparse
+import argparse, json, os, re, subprocess, sys, time
 from pathlib import Path
 S=os.environ.get('ANDROID_SERIAL','emulator-5580'); PKG='com.hash.prism'; ACT=PKG+'/.MainActivity'
 OUT=Path(os.environ.get('PRISM_PERF_DIR','/tmp/prism-perf'))
@@ -41,6 +41,7 @@ for i in range(N):
     out=sh('am','start','-W','-n',ACT)
     tt=re.search(r'TotalTime:\s*(\d+)',out); ws=re.search(r'WaitTime:\s*(\d+)',out)
     r={'i':i,'am_total':int(tt.group(1)) if tt else None,'am_wait':int(ws.group(1)) if ws else None}
+    r['load1']=round(os.getloadavg()[0],1)
     log(f'{tag} launch {i} {r}'); res.append(r)
     time.sleep(9)
     if NAV:
