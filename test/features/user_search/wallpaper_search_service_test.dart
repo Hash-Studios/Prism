@@ -575,6 +575,24 @@ void main() {
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.depth');
     });
 
+    test('a depth browse asks Prism search for 48 walls and a text query keeps 12', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          for (int i = 0; i < spec.limit!; i++) (id: 'd$i', data: _prismDoc('w$i', depthTier: 'auto')),
+        ],
+      );
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      final browse = await service.search('', filters: depthOnly);
+
+      expect(firestore.querySpecs.single.limit, 48);
+      expect(browse.results, hasLength(48));
+
+      final text = await service.search('moss', filters: depthOnly);
+
+      expect(text.results, hasLength(12));
+    });
+
     test('an empty page is a page, not an error, when nothing has a depth tier', () async {
       final service = _service(
         wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),

@@ -32,7 +32,8 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     on<ReviewBatchSwipeApproved>(_onSwipeApproved);
     on<ReviewBatchSwipeRejected>(_onSwipeRejected);
     on<ReviewBatchSwipeReserved>(_onSwipeReserved);
-    on<ReviewBatchDepthChanged>(_onDepthChanged);
+    // One write at a time and in order, so two quick picks cannot reach Firestore the wrong way round.
+    on<ReviewBatchDepthChanged>(_onDepthChanged, transformer: (events, mapper) => events.asyncExpand(mapper));
     on<ReviewBatchSwipeSkipped>(_onSwipeSkipped);
     on<ReviewBatchUndoRequested>(_onUndoRequested);
     on<ReviewBatchNextBatchRequested>(_onNextBatchRequested);
@@ -144,8 +145,9 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
   }
 
   Future<void> _onDepthChanged(ReviewBatchDepthChanged event, Emitter<ReviewBatchState> emit) async {
-    final FirestoreDocument? wall = state.currentWall;
-    if (wall == null) return;
+    final int index = state.walls.indexWhere((candidate) => candidate.id == event.wallId);
+    if (index < 0) return;
+    final FirestoreDocument wall = state.walls[index];
 
     List<FirestoreDocument> replace(FirestoreDocument replacement) => <FirestoreDocument>[
       for (final FirestoreDocument candidate in state.walls)
@@ -155,6 +157,9 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     emit(state.copyWith(walls: replace(withDepthOverride(wall, event.tier))));
     try {
       await _moderation.setDepthTier(wall, event.tier);
+      if (state.status == ReviewBatchStatus.error) {
+        emit(state.copyWith(status: ReviewBatchStatus.loaded, clearErrorMessage: true));
+      }
     } catch (e) {
       emit(
         state.copyWith(

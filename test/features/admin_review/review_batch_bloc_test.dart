@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +36,22 @@ class _RejectingUpdateClient extends _BatchFirestoreClient {
   @override
   Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
       Future<void>.error(StateError('permission-denied'));
+}
+
+/// Lets a test hold a write open (or fail it) by call number, to check the order of depth writes.
+class _ControlledUpdateClient extends _BatchFirestoreClient {
+  _ControlledUpdateClient({super.docs, this.beforeWrite});
+
+  final Future<void> Function(int call)? beforeWrite;
+  final List<String> started = <String>[];
+
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) async {
+    final int call = started.length;
+    started.add(id);
+    await beforeWrite?.call(call);
+    return super.updateDoc(collection, id, data, sourceTag: sourceTag);
+  }
 }
 
 class _DocsBatch implements FirestoreBatch, FirestoreTransaction {
@@ -143,7 +162,7 @@ void main() {
   test('an admin depth pick shows on the card at once and is written to the wall', () async {
     await loaded();
 
-    bloc.add(const ReviewBatchDepthChanged(WallDepthTier.menu));
+    bloc.add(const ReviewBatchDepthChanged('w1', WallDepthTier.menu));
     final state = await bloc.stream.firstWhere((s) => s.currentWall?.payload['depth'] != null);
 
     expect(state.currentWall!.payload['depth'], <String, dynamic>{
@@ -174,11 +193,114 @@ void main() {
     failing.add(const ReviewBatchLoadRequested());
     await failing.stream.firstWhere((s) => s.status == ReviewBatchStatus.loaded);
 
-    failing.add(const ReviewBatchDepthChanged(WallDepthTier.none));
+    failing.add(const ReviewBatchDepthChanged('w1', WallDepthTier.none));
     final state = await failing.stream.firstWhere((s) => s.status == ReviewBatchStatus.error);
 
     expect(state.errorMessage, 'Failed to set Depth Effect: Bad state: permission-denied');
     expect(state.currentWall!.payload.containsKey('depth'), isFalse);
+  });
+
+  group('depth picks', () {
+    Map<String, Map<String, Map<String, dynamic>>> twoWalls() => <String, Map<String, Map<String, dynamic>>>{
+      FirebaseCollections.walls: <String, Map<String, dynamic>>{
+        'w1': Map<String, dynamic>.of(original),
+        'w2': Map<String, dynamic>.of(original),
+      },
+    };
+
+    Future<ReviewBatchBloc> blocFor(_ControlledUpdateClient controlled) async {
+      controlled.onQuery = (spec) => <FakeDocRow>[
+        for (final MapEntry<String, Map<String, dynamic>> e
+            in (controlled.docs[FirebaseCollections.walls] ?? const <String, Map<String, dynamic>>{}).entries)
+          if (e.value['review'] == false) (id: e.key, data: Map<String, dynamic>.of(e.value)),
+      ];
+      final picking = ReviewBatchBloc(ReviewBatchRepository(controlled), AdminModerationRepository(controlled));
+      addTearDown(picking.close);
+      picking.add(const ReviewBatchLoadRequested());
+      await picking.stream.firstWhere((s) => s.status == ReviewBatchStatus.loaded);
+      return picking;
+    }
+
+    test('two quick picks on one wall reach the repository in order and the second one stays', () async {
+      final Completer<void> firstWrite = Completer<void>();
+      final controlled = _ControlledUpdateClient(
+        docs: twoWalls(),
+        beforeWrite: (call) => call == 0 ? firstWrite.future : Future<void>.value(),
+      );
+      final picking = await blocFor(controlled);
+
+      picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.menu));
+      picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.none));
+      await pumpEventQueue();
+      expect(controlled.started, <String>['w1']);
+
+      firstWrite.complete();
+      await pumpEventQueue();
+
+      expect(controlled.started, <String>['w1', 'w1']);
+      expect(controlled.writes.map((w) => w.data), <Map<String, dynamic>>[
+        <String, dynamic>{
+          'depth': <String, dynamic>{'tier': 'menu', 'by': 'admin', 'v': 1, 'kind': null, 'top': null},
+        },
+        <String, dynamic>{'depth.tier': 'none', 'depth.by': 'admin'},
+      ]);
+      expect(wallDepthTier(picking.state.walls.first), WallDepthTier.none);
+    });
+
+    test('a pick queued for wall A still writes wall A after the admin moved to wall B', () async {
+      final Completer<void> firstWrite = Completer<void>();
+      final controlled = _ControlledUpdateClient(
+        docs: twoWalls(),
+        beforeWrite: (call) => call == 0 ? firstWrite.future : Future<void>.value(),
+      );
+      final picking = await blocFor(controlled);
+
+      picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.auto));
+      picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.none));
+      picking.add(const ReviewBatchSwipeSkipped());
+      await pumpEventQueue();
+      expect(picking.state.currentWall!.id, 'w2');
+
+      firstWrite.complete();
+      await pumpEventQueue();
+
+      expect(controlled.started, <String>['w1', 'w1']);
+      expect(wallDepthTier(picking.state.walls[0]), WallDepthTier.none);
+      expect(picking.state.walls[1].payload.containsKey('depth'), isFalse);
+      expect(picking.state.currentIndex, 1);
+    });
+
+    test('a pick for a wall that left the batch writes nothing', () async {
+      final controlled = _ControlledUpdateClient(docs: twoWalls());
+      final picking = await blocFor(controlled);
+
+      picking.add(const ReviewBatchDepthChanged('gone', WallDepthTier.menu));
+      await pumpEventQueue();
+
+      expect(controlled.started, isEmpty);
+    });
+
+    test('a pick that works after a failed one returns the status to loaded and clears the message', () async {
+      final controlled = _ControlledUpdateClient(
+        docs: twoWalls(),
+        beforeWrite: (call) => call == 0 ? Future<void>.error(StateError('offline')) : Future<void>.value(),
+      );
+      final picking = await blocFor(controlled);
+
+      picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.menu));
+      await pumpEventQueue();
+      expect(picking.state.status, ReviewBatchStatus.error);
+      expect(picking.state.errorMessage, 'Failed to set Depth Effect: Bad state: offline');
+      expect(picking.state.walls[1].payload.containsKey('depth'), isFalse);
+
+      picking.add(const ReviewBatchDepthChanged('w2', WallDepthTier.auto));
+      await pumpEventQueue();
+
+      expect(picking.state.status, ReviewBatchStatus.loaded);
+      expect(picking.state.errorMessage, isNull);
+      expect(wallDepthTier(picking.state.walls[0]), isNull);
+      expect(wallDepthTier(picking.state.walls[1]), WallDepthTier.auto);
+    });
   });
 
   test('states that differ only in the error message are not equal', () {

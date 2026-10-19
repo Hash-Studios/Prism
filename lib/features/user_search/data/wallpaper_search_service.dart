@@ -46,6 +46,10 @@ class WallpaperSearchService {
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
   static const Duration _cachedSearchDecisionBudget = Duration(seconds: 3);
+  static const int _prismLimit = 12;
+
+  /// The Depth Effect list has no next page, so a browse asks for a full screen at once.
+  static const int _depthBrowseLimit = 48;
 
   /// First page of [query]. An empty [query] is allowed with a colour filter. Pexels needs a query, so a colour-only
   /// search skips it. When Wallhaven fails the search moves to Pexels so the user still gets results.
@@ -229,6 +233,7 @@ class WallpaperSearchService {
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
     final List<PrismWallpaper> walls = await _prismSearch.search(
       query,
+      limit: filters.depthOnly && query.trim().isEmpty ? _depthBrowseLimit : _prismLimit,
       colorId: filters.color?.id,
       depthOnly: filters.depthOnly,
     );

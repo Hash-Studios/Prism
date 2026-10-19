@@ -227,7 +227,13 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(
-        () => bloc.add(any(that: isA<ReviewBatchDepthChanged>().having((e) => e.tier, 'tier', WallDepthTier.menu))),
+        () => bloc.add(
+          any(
+            that: isA<ReviewBatchDepthChanged>()
+                .having((e) => e.wallId, 'wallId', 'a')
+                .having((e) => e.tier, 'tier', WallDepthTier.menu),
+          ),
+        ),
       ).called(1);
     });
 

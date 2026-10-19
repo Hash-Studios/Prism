@@ -301,7 +301,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                       duration: context.motion(PrismDurations.fast),
                       child: DepthTierPill(
                         tier: wallDepthTier(currentWall),
-                        onChanged: (WallDepthTier picked) => _bloc.add(ReviewBatchDepthChanged(picked)),
+                        onChanged: (WallDepthTier picked) => _bloc.add(ReviewBatchDepthChanged(currentWall.id, picked)),
                       ),
                     ),
                   ),

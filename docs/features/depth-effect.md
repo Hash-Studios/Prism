@@ -87,7 +87,9 @@ Client files: `lib/core/wallpaper/wall_depth.dart`, `lib/core/widgets/depth_tag.
 
 ### New walls
 
-`onWallCategorize` checks each new wall that has no `depth` field. It uses `wallpaper_url`, or `wallpaper_thumb` when there is no `wallpaper_url`. The check runs at the same time as the colour step. The result goes into the same update as `colors` and `category`, on every path.
+`onWallCategorize` checks each new wall that has no `depth` field. It uses `wallpaper_url`, or `wallpaper_thumb` when there is no `wallpaper_url`. The check runs at the same time as the colour step.
+
+`writeDepthIfAbsent` saves `depth` in its own transaction. It writes only when the wall still has no `depth`. So an admin value that was set during the check stays. The update of `colors` and `category` runs after the depth write. If the depth write fails, the function logs a warning. The failure does not block the update of `colors` and `category`.
 
 ### Studio Depth Effect series
 
