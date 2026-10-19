@@ -372,7 +372,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       case HomeFeedChip.following:
         if (_showsSignIn(HomeFeedChip.following)) {
-          return const <Widget>[SliverToBoxAdapter(child: SignInPrompt(feature: 'following'))];
+          return <Widget>[SliverToBoxAdapter(child: SignInPrompt(feature: context.l10n.accountFollowing))];
         }
         return <Widget>[
           PagedChipSliver(

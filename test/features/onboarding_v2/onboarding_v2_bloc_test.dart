@@ -28,6 +28,7 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -109,6 +110,8 @@ AiGenerationRecord _aiRecord() => AiGenerationRecord(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late _MockFetchStarterPackUseCase fetchStarterPackUseCase;
   late _MockSaveInterestsUseCase saveInterestsUseCase;
   late _MockFollowStarterPackUseCase followStarterPackUseCase;
@@ -1123,7 +1126,10 @@ void main() {
       final state = await confirmStarterPackWith(bloc, <String>['Anime', 'Space', 'Tech']);
 
       expect(state.aiData.stylePreset, AiStylePreset.anime);
-      expect(OnboardingV2Config.aiOnboardingPromptPool[AiStylePreset.anime], contains(state.aiData.prompt));
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.anime),
+        contains(state.aiData.prompt),
+      );
     });
 
     test('a very short interest name does not match a keyword by accident', () async {
@@ -1133,12 +1139,19 @@ void main() {
       final state = await confirmStarterPackWith(bloc, <String>['a', 'Cooking', 'Sports']);
 
       expect(OnboardingV2Config.aiOnboardingStyles, contains(state.aiData.stylePreset));
-      expect(OnboardingV2Config.aiOnboardingPromptPool[state.aiData.stylePreset], contains(state.aiData.prompt));
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), state.aiData.stylePreset),
+        contains(state.aiData.prompt),
+      );
     });
 
     test('every style the interest map can return has prompts', () {
       for (final style in OnboardingV2Config.aiInterestStyleMap.values.toSet()) {
-        expect(OnboardingV2Config.aiOnboardingPromptPool[style], isNotEmpty, reason: '$style has no prompts');
+        expect(
+          OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), style),
+          isNotEmpty,
+          reason: '$style has no prompts',
+        );
       }
     });
   });

@@ -35,3 +35,9 @@ Keep storage keys, routes, analytics identifiers, asset names, and external API 
 `fvm dart run tool/l10n_audit.dart` writes an AST-based JSON inventory. `--check` fails on probable UI literals. The report also lists indirect strings for review. A zero probable count alone does not prove that all user-facing copy is localized.
 
 Inspect helper-returned strings, defaults, enum labels, validation messages, and strings arriving from repositories. Test fixtures can retain English expected values. Widget tests must provide `AppLocalizations.localizationsDelegates` and `AppLocalizations.supportedLocales` to their app wrapper.
+
+## Externally managed purchase copy
+
+The app-owned Premium screens and purchase errors belong in the ARB catalog. The purchase sheet uses `RevenueCatUI.presentPaywall` in `lib/core/purchases/paywall_orchestrator.dart`. Its remote template and store product titles, descriptions, and prices are managed outside this repository. Catalog parity cannot verify those translations. Verify each target language against the configured RevenueCat offering and the App Store and Play product metadata with an authorized account before release. Do not infer remote coverage from a localized fallback page.
+
+iOS App Shortcuts use `ios/Runner/Localizable.xcstrings`, which is registered in the Runner resource build phase. Add locale entries there; do not add a second `Localizable.strings` table. Native media bridge diagnostic details remain English when their Dart callers map error codes to localized UI messages.
