@@ -12,7 +12,13 @@ This includes onboarding, browsing, search, categories, wallpaper actions,
 creator accounts, authentication, settings, Premium, coins, streaks, referrals,
 AI, notifications, moderation, errors and accessibility labels.
 
-Android has a matching resource for every English string. iOS has all three
+Android has a matching resource for every English string in
+`android/app/src/main/res/values-in/strings.xml`. Android's native resource
+qualifier uses the legacy Indonesian language code `in`, not the modern code
+`id`. AOSP's [resource configuration](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/java/android/content/res/ResourcesImpl.java#659)
+normalizes `id` to `in`, and the [API 24 `Locale` compatibility helper](https://android.googlesource.com/platform/libcore/+/android-7.0.0_r1/ojluni/src/main/java/java/util/Locale.java#2236)
+does the same. The app's Flutter locale and iOS localization remain `id`; only
+the Android native resource directory uses `values-in`. iOS has all three
 permission messages and all 50 entries in the existing native string catalogue.
 Identifiers, brands, creator content, storage paths and backend values remain
 unchanged. Indonesian uses Anda, kreator, koin, akses and rangkaian harian.
