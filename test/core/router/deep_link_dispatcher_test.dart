@@ -335,6 +335,61 @@ void main() {
     expect(results().single.result, EventResultValue.blocked);
   });
 
+  testWidgets('malformed direct links report failure while displaying not-found', (tester) async {
+    await mount(tester);
+    for (final link in <String>['https://prismwalls.com/user/%FF', 'prism://user/%FF', 'prism://%FF/alice']) {
+      final result = dispatcher.openUri(Uri.parse(link), source: DeepLinkSourceValue.inApp);
+      await tester.pumpAndSettle();
+      expect(await result, DeepLinkDispatchResult.failure);
+      expect(router.topRoute.name, NotFoundRoute.name);
+    }
+    expect(
+      events.whereType<DeepLinkResolvedEvent>().map((event) => event.result),
+      everyElement(EventResultValue.failure),
+    );
+    expect(results().map((event) => event.result), everyElement(EventResultValue.failure));
+    expect(results().map((event) => event.targetType), everyElement(TargetTypeValue.unknown));
+  });
+
+  testWidgets('a malformed push URL still opens its legacy metadata destination', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openPush(<String, dynamic>{'url': 'https://prismwalls.com/user/%FF', 'route': 'rewards'});
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, RewardsTabRoute.name);
+    expect(results().single.source, DeepLinkSourceValue.push);
+    expect(results().single.result, EventResultValue.navigated);
+  });
+
+  testWidgets('the platform transformer preserves malformed failure and explicit not-found success', (tester) async {
+    dispatcher.dispose();
+    dispatcher = create();
+    final config = router.config(
+      deepLinkTransformer: (uri) async => const DeepLinkParser().transform(uri),
+      deepLinkBuilder: (link) {
+        if (link.initial) return DeepLink.defaultPath;
+        unawaited(dispatcher.openUri(link.uri, source: DeepLinkSourceValue.appLinks));
+        return DeepLink.none;
+      },
+    );
+    await tester.pumpWidget(MaterialApp.router(routerConfig: config));
+    await tester.pumpAndSettle();
+    for (final (link, expected) in <(String, EventResultValue)>[
+      ('https://prismwalls.com/user/%FF', EventResultValue.failure),
+      ('prism://l?code=%FF', EventResultValue.failure),
+      ('prism://%FF/alice', EventResultValue.failure),
+      ('https://prismwalls.com/not-found', EventResultValue.navigated),
+    ]) {
+      final state = await config.routeInformationParser!.parseRouteInformation(RouteInformation(uri: Uri.parse(link)));
+      await config.routerDelegate.setNewRoutePath(state);
+      await tester.pumpAndSettle();
+      expect(router.topRoute.name, NotFoundRoute.name, reason: link);
+      expect(results().last.result, expected, reason: link);
+      expect(results().last.source, DeepLinkSourceValue.appLinks);
+    }
+    expect(results(), hasLength(4));
+  });
+
   testWidgets('a short-link retry keeps the source and emits one terminal navigation result', (tester) async {
     await mount(tester);
     dispatcher.dispose();

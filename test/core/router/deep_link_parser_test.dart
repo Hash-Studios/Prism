@@ -116,21 +116,25 @@ void main() {
   });
 
   test('malformed percent encoding returns unknown without throwing', () {
-    expect(parser.parse(Uri.parse('https://prismwalls.com/l?code=%FF')), isA<UnknownIntent>());
-    expect(parser.parse(Uri.parse('https://prismwalls.com/user/%FF')), isA<UnknownIntent>());
+    for (final link in <String>['https://prismwalls.com/l?code=%FF', 'https://prismwalls.com/user/%FF']) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>().having((action) => action.rawUri, 'rawUri', link));
+    }
   });
 
-  test('the router transform sends malformed links to not-found before auto_route decodes them', () {
-    expect(parser.transform(Uri.parse('https://prismwalls.com/user/%FF')), Uri(path: '/not-found'));
-    expect(parser.transform(Uri.parse('https://prismwalls.com/l?code=%FF')), Uri(path: '/not-found'));
-  });
-
-  test('the router transform rejects a malformed custom-scheme host moved into the path', () {
-    final Uri transformed = parser.transform(Uri.parse('prism://%FF/alice'));
-
-    expect(transformed.pathSegments, <String>['not-found']);
-    expect(transformed.queryParameters, isEmpty);
-    expect(transformed, Uri(path: '/not-found'));
+  test('the router transform safely transports malformed links while preserving their invalid outcome', () {
+    for (final link in <String>[
+      'https://prismwalls.com/user/%FF',
+      'https://prismwalls.com/l?code=%FF',
+      'prism://%FF/alice',
+    ]) {
+      final Uri transformed = parser.transform(Uri.parse(link));
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>().having((action) => action.rawUri, 'rawUri', link));
+      expect(transformed.pathSegments, <String>['not-found']);
+      expect(transformed.queryParameters.values, <String>['1']);
+      expect(parser.parse(transformed), isA<UnknownIntent>());
+      expect(parser.transform(transformed), transformed);
+    }
+    expect(parser.parse(Uri.parse('/not-found')), isA<PageLinkIntent>());
   });
 
   group('roots that the Android manifest and the iOS association file claim', () {

@@ -13,7 +13,13 @@ ShortLinkResolver _resolverFor(Future<http.Response> Function(http.Request reque
     ShortLinkResolver(client: MockClient(handler));
 
 void main() {
-  for (final canonical in <Object>['https://prismwalls.com/l/abc', 'https://prismwalls.com/l/other', 7]) {
+  for (final canonical in <Object>[
+    'https://prismwalls.com/l/abc',
+    'https://prismwalls.com/l/other',
+    'https://prismwalls.com/user/%FF',
+    'prism://user/%FF',
+    7,
+  ]) {
     test('rejects nested or malformed canonical URL $canonical after one request', () async {
       var calls = 0;
       final resolver = _resolverFor((_) async {

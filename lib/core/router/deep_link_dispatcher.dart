@@ -46,7 +46,7 @@ class DeepLinkDispatcher {
 
   Future<DeepLinkDispatchResult> openUri(Uri uri, {required DeepLinkSourceValue source}) {
     final DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
-        ? navigation.parser.parse(navigation.parser.transform(uri))
+        ? navigation.parser.parse(uri)
         : UnknownIntent(rawUri: uri.toString());
     return openAction(action, source: source);
   }
@@ -82,7 +82,7 @@ class DeepLinkDispatcher {
     final String rawUrl = (data['url']?.toString() ?? '').trim();
     final Uri? uri = Uri.tryParse(rawUrl);
     if (uri != null && navigation.isPrismDeepLink(uri)) {
-      final action = navigation.parser.parse(navigation.parser.transform(uri));
+      final action = navigation.parser.parse(uri);
       if (action is! UnknownIntent) return openAction(action, source: DeepLinkSourceValue.push);
     }
     return openActionLoader(

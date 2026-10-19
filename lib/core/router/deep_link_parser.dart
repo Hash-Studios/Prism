@@ -5,6 +5,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 class DeepLinkParser {
   const DeepLinkParser();
 
+  static const String _invalidLinkQuery = '_prism_invalid_link';
+
   static const Set<String> _shareRoots = <String>{'share'};
   static const Set<String> _userRoots = <String>{'user', 'fprofile', 'follower-profile', 'profile'};
   static const Set<String> _setupRoots = <String>{'setup', 'share-setup'};
@@ -31,19 +33,23 @@ class DeepLinkParser {
       uri.queryParameters;
       return uri;
     } on FormatException {
-      return Uri(path: '/not-found');
+      // AutoRoute must receive decodable bytes, while the dispatcher must retain the failed parse outcome.
+      return Uri(path: '/not-found', queryParameters: const <String, String>{_invalidLinkQuery: '1'});
     }
   }
 
   DeepLinkActionEntity parse(Uri uri) {
     try {
       if (!_isSupportedOrigin(uri)) return UnknownIntent(rawUri: uri.toString());
-      // Decode once before transforming custom-scheme hosts. Malformed URLs remain unknown to the parser even though
-      // `transform` intentionally sends them to not-found for AutoRoute's platform hook.
+      // Decode before transforming custom-scheme hosts so malformed URLs remain unknown.
       uri.pathSegments;
       uri.queryParameters;
       uri.host;
-      return _parse(transform(uri));
+      final Uri transformed = transform(uri);
+      if (transformed.path == '/not-found' && transformed.queryParameters.containsKey(_invalidLinkQuery)) {
+        return UnknownIntent(rawUri: uri.toString());
+      }
+      return _parse(transformed);
     } on FormatException {
       // Malformed percent encoding (for example %FF) in the path or query.
       return UnknownIntent(rawUri: uri.toString());

@@ -76,7 +76,7 @@ class NotificationRouteMapper {
     final Uri? uri = Uri.tryParse(rawUrl);
     if (uri != null && const DeepLinkNavigation().isPrismDeepLink(uri)) {
       const DeepLinkParser parser = DeepLinkParser();
-      final DeepLinkActionEntity action = parser.parse(parser.transform(uri));
+      final DeepLinkActionEntity action = parser.parse(uri);
       if (action is! UnknownIntent) return Future<DeepLinkActionEntity?>.value(action);
     }
     final String route = data['route']?.toString().trim() ?? '';
@@ -149,9 +149,7 @@ class NotificationRouteMapper {
   }) async {
     if (route.isEmpty) return null;
     final Uri? routeUri = Uri.tryParse(route);
-    final DeepLinkActionEntity? parsedAction = routeUri == null
-        ? null
-        : const DeepLinkParser().parse(const DeepLinkParser().transform(routeUri));
+    final DeepLinkActionEntity? parsedAction = routeUri == null ? null : const DeepLinkParser().parse(routeUri);
     if (parsedAction is SetupLinkIntent) return parsedAction;
 
     switch (route) {

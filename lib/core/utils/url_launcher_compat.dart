@@ -8,7 +8,8 @@ import 'package:url_launcher/url_launcher.dart' as launcher;
 
 const DeepLinkNavigation _deepLinkNavigation = DeepLinkNavigation();
 
-/// True when the app opens [uri] on its own screens. Other Prism links, such as `/privacy` and `/terms`, are web pages.
+/// Whether [uri] targets the app's routing surface. Custom-scheme links always do; opening validates their encoding.
+/// Other Prism links, such as `/privacy` and `/terms`, are web pages.
 bool opensInApp(Uri uri) {
   if (!_deepLinkNavigation.isPrismDeepLink(uri)) {
     return false;
@@ -16,7 +17,7 @@ bool opensInApp(Uri uri) {
   if (uri.scheme.toLowerCase() == 'prism') {
     return true;
   }
-  final DeepLinkActionEntity action = _deepLinkNavigation.parser.parse(_deepLinkNavigation.parser.transform(uri));
+  final DeepLinkActionEntity action = _deepLinkNavigation.parser.parse(uri);
   return action is! UnknownIntent;
 }
 
@@ -27,6 +28,13 @@ Future<bool> openPrismLink(
 }) async {
   final Uri? parsed = Uri.tryParse(url.trim());
   if (parsed == null) {
+    return false;
+  }
+  try {
+    Uri.decodeComponent(parsed.host);
+    parsed.pathSegments;
+    parsed.queryParameters;
+  } on FormatException {
     return false;
   }
 

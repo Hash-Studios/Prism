@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,5 +34,29 @@ void main() {
       expect(opensInApp(Uri.parse('https://example.com/user/x')), isFalse);
       expect(opensInApp(Uri.parse('mailto:hi@prismwalls.com')), isFalse);
     });
+
+    test('malformed web links are not classified as app destinations', () {
+      expect(opensInApp(Uri.parse('https://prismwalls.com/user/%FF')), isFalse);
+    });
+  });
+
+  testWidgets('opening malformed links returns false before invoking navigation or the browser', (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(
+      Builder(
+        builder: (value) {
+          context = value;
+          return const SizedBox();
+        },
+      ),
+    );
+    for (final link in <String>[
+      'https://prismwalls.com/user/%FF',
+      'https://prismwalls.com/l?code=%FF',
+      'prism://user/%FF',
+      'prism://%FF/alice',
+    ]) {
+      expect(await openPrismLink(context, link), isFalse, reason: link);
+    }
   });
 }

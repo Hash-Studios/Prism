@@ -75,6 +75,24 @@ void main() {
     expect(await mapper.routeForPayload(<String, dynamic>{'route': 'drops'}, sourceTag: 'test'), isA<DropsRoute>());
   });
 
+  test('a malformed push URL falls back to legacy route metadata', () async {
+    final route = await mapper.routeForPayload(<String, dynamic>{
+      'url': 'https://prismwalls.com/user/%FF',
+      'route': 'rewards',
+    }, sourceTag: 'test');
+    expect(
+      route,
+      isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<RewardsTabRoute>()),
+    );
+  });
+
+  test('a malformed metadata route remains unresolved rather than resolving to not-found', () async {
+    expect(
+      await mapper.actionFromRoute(route: 'https://prismwalls.com/user/%FF', sourceTag: 'test', fallbackToInbox: false),
+      isNull,
+    );
+  });
+
   test('maps follower to profile route when identifier is present', () async {
     final route = await mapper.routeForMetadata(
       route: 'follower',
