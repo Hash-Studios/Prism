@@ -41,14 +41,20 @@ Shared fix `e6f66cd8d2a4b95f562eeda30e026564e5162d38` resolves background
 messages from the full preferred-language list, strengthens the indirect-string
 guard and adds the translated filter-export failure label.
 
+Shared follow-up `cb46d861373ceac7e442d8d42100f96d708696c0` guards
+asynchronous onboarding prompt loads after Back or a newer attempt. Its
+regression test is reused; its three English expectation updates were already
+present. This source fix is cherry-picked, so there is no runtime dependency on
+unmerged PR #597. Spanish-only gift wording is not included.
+
 ## Reproducible checks
 
 ```sh
 python3 tool/check_l10n.py
 python3 tool/check_indonesian_l10n.py
 fvm flutter gen-l10n
-fvm flutter test test/l10n --concurrency=2
-make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=2
+fvm flutter test test/l10n --concurrency=1
+make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=1
 make native-android-check
 ```
 
