@@ -181,6 +181,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     try {
       int successfulSources = 0;
       int failedSources = 0;
+      // Overlaps the pools. Awaited before ranking, so blocked creators never slip in.
+      final Future<Set<String>> blockedFuture = _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      blockedFuture.ignore();
       // Fresh and gems need nothing from the bootstrap, so they start now.
       final Future<List<RankingCandidate>> freshPool = _pool(
         CandidatePool.fresh,
@@ -275,7 +278,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
 
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await blockedFuture;
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }

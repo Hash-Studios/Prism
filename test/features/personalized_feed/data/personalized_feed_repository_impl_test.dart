@@ -105,6 +105,16 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
   }) async => failUserDoc ? throw StateError('offline') : null;
 }
 
+class _SlowWallsFirestore extends _OneWallFirestore {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag == 'personalized.fresh') {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+    return super.query(spec, map);
+  }
+}
+
 class _PendingFreshFirestore extends Fake implements FirestoreClient {
   final Completer<void> ready = Completer<void>();
   final Completer<void> freshStarted = Completer<void>();
@@ -325,12 +335,18 @@ class _EmptyBlocks extends Fake implements UserBlockRepository {
   bool failNext = false;
   Set<String> cached = <String>{};
   bool hangOnWait = false;
+  Duration loadDelay = Duration.zero;
+  Set<String> loaded = <String>{};
 
   @override
   Set<String> get cachedBlockedCreatorEmails => cached;
 
   @override
   Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
+    if (loadDelay > Duration.zero) {
+      await Future<void>.delayed(loadDelay);
+      return loaded;
+    }
     if (hangOnWait && waitForInitialLoad) {
       return Completer<Set<String>>().future;
     }
@@ -737,6 +753,47 @@ void main() {
 
     expect(_itemIds(fallback.data!.items), <String>['visible-doc']);
     expect((cache.snapshot!.payload! as Map)['items'], hasLength(2));
+  });
+
+  test('the blocked-creators load overlaps the pools instead of adding to them', () async {
+    final _EmptyBlocks blocks = _EmptyBlocks()
+      ..loadDelay = const Duration(milliseconds: 500)
+      ..loaded = <String>{};
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _SlowWallsFirestore(),
+      cache: _MemoryFeedCache(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      favourites: _CountingFavourites(),
+      blocks: blocks,
+    );
+
+    final Stopwatch watch = Stopwatch()..start();
+    final result = await repository.fetch(_firstPage);
+    watch.stop();
+
+    expect(result.data!.items, isNotEmpty);
+    expect(watch.elapsedMilliseconds, lessThan(900));
+  });
+
+  test('creators from a slow blocked load are still filtered and never cached', () async {
+    final _EmptyBlocks blocks = _EmptyBlocks()
+      ..loadDelay = const Duration(milliseconds: 300)
+      ..loaded = <String>{'creator@example.com'};
+    final _MemoryFeedCache cache = _MemoryFeedCache();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OneWallFirestore(),
+      cache: cache,
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      favourites: _CountingFavourites(),
+      blocks: blocks,
+    );
+
+    final result = await repository.fetch(_firstPage);
+
+    expect(_itemIds(result.data!.items), isEmpty);
+    expect((cache.snapshot!.payload! as Map)['items'], isEmpty);
   });
 
   test('hidden cached item stays hidden during offline cache fallback', () async {
