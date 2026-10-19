@@ -2,7 +2,7 @@
 
 ## Catalog and runtime
 
-`lib/l10n/app_en.arb` remains the canonical English catalog. Spanish uses `app_es.arb`, Flutter `gen-l10n`, and device-locale selection. Unsupported languages fall back to English. The catalog contains 2,499 messages, including accessibility text, errors, onboarding, search, downloads, creator tools, Premium, coins, rewards, referrals, and AI prompts.
+`lib/l10n/app_en.arb` remains the canonical English catalog. Spanish uses `app_es.arb`, Flutter `gen-l10n`, and device-locale selection. Unsupported languages fall back to English. The catalog contains 2,502 messages, including accessibility text, errors, onboarding, search, downloads, creator tools, Premium, coins, rewards, referrals, and AI prompts.
 
 `python3 tool/check_l10n.py` checks key parity across both locales. A separate placeholder-use audit found no missing English placeholder names in Spanish messages. Native coverage includes all 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. Existing English resource values and backend identifiers remain unchanged.
 
@@ -22,4 +22,8 @@ The purchase sheet comes from `RevenueCatUI.presentPaywall`. Its remote template
 
 ## Final gates
 
-Final generation, local gates, Android build, and hosted CI results are recorded here after their runs finish. Earlier tests that overlapped source generation are not final-tree proof.
+`make file-gen` passed before the final master merge and produced no tracked changes. After that merge, `fvm flutter gen-l10n` and `python3 tool/check_l10n.py` passed for all 2,502 messages.
+
+The 152-test focused suite passed at `4c041480d`. The full local run then passed the localization audit tests, search guards, environment and secret guards, and analytics checks. It was stopped when master added three purchase-status messages, so that run does not prove the merged tree.
+
+The merged-tree purchase and locale test run stalled in compilation during severe host memory pressure. A snapshot showed load above 85, 21 GiB of 23 GiB RAM used, and nearly all 11 GiB swap occupied. This thread's test process was stopped to reduce contention. Full local CI, the final purchase regression, and the Android build remain pending. Earlier tests that overlapped source generation are not final-tree proof. Hosted CI must pass on the latest PR commit separately.
