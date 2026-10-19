@@ -196,6 +196,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void _onPromptChanged() {
     if (!_promptHydrated || _promptOwner != _localOwnerId) return;
     _promptSaveTimer?.cancel();
+    if (!_promptRestored && _promptController.text.trim() == _seededPrompt.trim()) return;
     final String owner = _promptOwner;
     _promptSaveTimer = Timer(const Duration(milliseconds: 300), () => _savePromptNow(owner));
   }
