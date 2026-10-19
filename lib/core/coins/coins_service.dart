@@ -2547,12 +2547,18 @@ class CoinsService with WidgetsBindingObserver {
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply == null || reply.errorCode != null) return questsNotifier.value;
-    if (event != null && reply.success) {
+    bool stale = reply.stale || _staleEconomyReply(reply.data);
+    if (!stale && event != null && reply.success) {
       final String? dayKey = toJsonMap(reply.data['quests'])['dayKey'] as String?;
-      if (dayKey != null) await _markQuestReported(event, userId, dayKey);
+      if (dayKey != null) {
+        try {
+          await _markQuestReported(event, userId, dayKey);
+        } catch (error, stackTrace) {
+          logCoinError(sourceTag: 'coins.quests.mark', error: error, stackTrace: stackTrace);
+        }
+      }
       if (!_isCurrentOwner(userId, generation)) return null;
     }
-    bool stale = reply.stale || _staleEconomyReply(reply.data);
     if (!stale && reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
     if (!stale) _applyQuestReply(reply.data);
     if (!stale && reply.data.containsKey('quests')) {

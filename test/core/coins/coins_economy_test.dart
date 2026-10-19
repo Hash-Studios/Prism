@@ -11,6 +11,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/in_memory_local_store.dart';
 
 Map<String, Object?> _paid({
   int before = 100,
@@ -49,6 +50,16 @@ Map<String, Object?> _quests({bool chestOpened = false, int progress = 0}) => <S
   'weekKey': '2026-W42',
   'weekly': <String, Object?>{'id': 'weekly_set_5', 'event': 'set_wallpaper', 'target': 5, 'progress': 2},
 };
+
+class _MarkerThrowingSettings extends SettingsLocalDataSource {
+  _MarkerThrowingSettings(super.store);
+
+  @override
+  Future<void> set(String key, Object? value) {
+    if (key.startsWith('questReported.')) throw StateError('disk full');
+    return super.set(key, value);
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -295,6 +306,37 @@ void main() {
       await pumpEventQueue();
 
       expect(calls.where((c) => c.$1 == 'progressQuest'), hasLength(2));
+    });
+
+    test('a stale reply does not write the reported-today marker', () async {
+      reply((_, _) => <String, Object?>{'success': true, 'rev': 5, 'quests': _quests(progress: 1)});
+      await service.progressQuest(null);
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 4,
+          'quests': <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())},
+        },
+      );
+      await service.progressQuest(QuestEvent.viewTrending);
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      expect(settings.get<String>('questReported.view_trending', defaultValue: ''), isEmpty);
+      expect(service.questsNotifier.value?.items.first.progress, 1);
+    });
+
+    test('a failing marker write still applies the quest reply', () async {
+      await getIt.unregister<SettingsLocalDataSource>();
+      getIt.registerSingleton<SettingsLocalDataSource>(_MarkerThrowingSettings(InMemoryLocalStore()));
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 6,
+          'quests': <String, Object?>{..._quests(progress: 1), 'dayKey': economyDayKey(DateTime.now())},
+        },
+      );
+      final QuestState? state = await service.progressQuest(QuestEvent.viewTrending);
+      expect(state?.items.first.progress, 1);
+      expect(service.questsNotifier.value?.items.first.progress, 1);
     });
 
     test('a failed report is retried and the next day calls again', () async {
