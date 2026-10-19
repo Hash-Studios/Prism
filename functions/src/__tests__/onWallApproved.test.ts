@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 
 import {onWallApproved, postsCollapseKey} from "../onWallApproved";
+import {installFakeDb} from "./fakeDb";
 
 test("a signed-out artist keeps the approval in the inbox but gets no push; followers still do", async (t) => {
   const inbox: unknown[] = [];
@@ -97,4 +98,20 @@ test("followers of an artist with no profile doc still get the legacy topic push
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
   assert.deepEqual(topics, ["artist_posts"]);
+});
+
+test("an approved community-only wall is filed into the collection of its category", async (t) => {
+  const wall = {review: true, collections: ["community"], category: "Anime"};
+  const store = installFakeDb(t, {"walls/w1": wall});
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    throw new Error("no remote config in tests");
+  });
+  await onWallApproved.run({
+    params: {wallId: "w1"},
+    data: {
+      before: {data: () => ({...wall, review: false})},
+      after: {ref: db.collection("walls").doc("w1"), data: () => wall},
+    },
+  } as unknown as Parameters<typeof onWallApproved.run>[0]);
+  assert.deepEqual(store.get("walls/w1")?.collections, ["community", "illustrations"]);
 });

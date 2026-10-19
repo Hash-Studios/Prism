@@ -22,7 +22,7 @@ export function parseCollectionList(raw: string): string[] {
   return raw.replace(/["[\]]/g, "").split(",").map((e) => e.trim()).filter((e) => e.length > 0);
 }
 
-async function premiumCollections(): Promise<string[]> {
+export async function premiumCollections(): Promise<string[]> {
   try {
     const template = await admin.remoteConfig().getTemplate();
     const value = (template.parameters?.premiumCollections?.defaultValue as {value?: string} | undefined)?.value;

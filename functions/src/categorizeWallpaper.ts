@@ -5,6 +5,7 @@ import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
 import {wallColorsFor} from "./wallColors";
+import {fileWallInCollection} from "./wallCollections";
 
 /** A wall doc id: a non-empty string without a slash, at most 128 characters. */
 export function parseWallId(raw: unknown): string {
@@ -67,6 +68,7 @@ export const categorizeWallpaper = onCall(
       ...(colors ? {colors} : {}),
     });
 
+    await fileWallInCollection(db.collection("walls").doc(wallId));
     logger.info("categorizeWallpaper: categorized", {wallId, category, labels: labels.slice(0, 5)});
 
     return {success: true, category, labels: labels.slice(0, 5)};
