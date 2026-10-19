@@ -173,7 +173,7 @@ void main() {
     expect(result.data, hasLength(4));
     expect(canonical.calls, <String>['remote']);
     expect(
-      (result.data!.whereType<PrismFavouriteWall>().firstWhere((wall) => wall.id == 'remote')).wallpaper.collections,
+      result.data!.whereType<PrismFavouriteWall>().firstWhere((wall) => wall.id == 'remote').wallpaper.collections,
       <String>['premium'],
     );
     expect(firestore.writes, isEmpty);

@@ -153,7 +153,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
 
   Future<List<FavouriteWallEntity>> _hydratePrismFavourites(List<FavouriteWallEntity> walls) async {
     final hydrated = walls.toList();
-    final expired = Completer<Null>();
+    final expired = Completer<Result<PrismWallpaper?>?>();
     final timer = Timer(_readTimeout, () => expired.complete(null));
     var nextIndex = 0;
 

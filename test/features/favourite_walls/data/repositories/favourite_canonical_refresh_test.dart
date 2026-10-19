@@ -2,14 +2,14 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
-import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_firestore_client.dart';
-import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/fake_user_block_repository.dart';
+import '../../../../support/in_memory_local_store.dart';
 import '../../support/guest_store_fixture.dart';
 
 class _MemoryDurableStore extends DurableJsonStore {

@@ -555,10 +555,10 @@ void main() {
 
     testWidgets('sharing mixed favourites replaces a starter local path with its public landing link', (tester) async {
       const localPath = '/tmp/prism-bundled-wallpapers/starter-sunset.jpg';
-      final starter = PrismFavouriteWall(
+      const starter = PrismFavouriteWall(
         id: 'starter-sunset',
         wallpaper: PrismWallpaper(
-          core: const WallpaperCore(
+          core: WallpaperCore(
             id: 'starter-sunset',
             source: WallpaperSource.prism,
             fullUrl: localPath,
