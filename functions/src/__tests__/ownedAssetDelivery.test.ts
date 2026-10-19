@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
-import {retainUpload, signOriginalDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl, ownedThumbnail,
+import {retainUpload, deleteRetainedUpload, signOriginalDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl, ownedThumbnail,
   bindLegacyOwnedWall, bindOwnedWall, onOwnedWallWritten} from "../ownedAssetDelivery";
 import {db} from "../common";
 import {installFakeDb} from "./fakeDb";
@@ -44,6 +44,24 @@ test("retention verifies Git SHA and retries create-only object with matching pr
   const retained = await retainUpload({repo: "walls", path: "photo.jpg", sha, uid: "owner", bytes});
   assert.equal(retained.generation, "42");
   assert.equal(saves, 1);
+  const store = installFakeDb(t);
+  const selected: string[] = [];
+  t.mock.method(target, "file", (path: string) => {
+    selected.push(path);
+    file.name = path;
+    return file;
+  });
+  const privateInput = {repo: "walls", path: "photo.jpg", sha, uid: "owner", bytes, sourceKind: "owned" as const};
+  const privateAsset = await retainUpload(privateInput);
+  assert.notEqual(privateAsset.object, retained.object);
+  assert.match(privateAsset.object, /^private-originals\/[a-f0-9]{64}$/);
+  store.set("ownedAssets/public", {status: "ready", original: retained});
+  store.set("ownedAssets/private", {status: "ready", original: privateAsset});
+  t.mock.method(file, "delete", async () => undefined);
+  await deleteRetainedUpload(privateInput);
+  assert.deepEqual(selected, [privateAsset.object, privateAsset.object]);
+  assert.equal(store.get("ownedAssets/private")?.status, "deleted");
+  assert.equal(store.get("ownedAssets/public")?.status, "ready");
   await assert.rejects(retainUpload({repo: "walls", path: "photo.jpg", sha: "a".repeat(40), uid: "owner", bytes}), /Git blob SHA/);
   t.mock.method(file, "getMetadata", async () => [{generation: "42", size: String(bytes.length), metadata: {sha256: "bad", uid: "owner"}}]);
   await assert.rejects(retainUpload({repo: "walls", path: "photo.jpg", sha, uid: "owner", bytes}), /mismatch/);
@@ -161,14 +179,46 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
       {repo: "walls", path, blobSha: sha, status: "complete", uid: "legacy-migration",
         response: {content: {path, sha, download_url: url}}});
   }
+  for (const scenario of [
+    {name: "missing generation", metadata: async () => {
+      throw Object.assign(new Error("missing"), {code: 404});
+    }},
+    {name: "generation mismatch", metadata: async () => [{generation: "43", metadata: {sha256: digest}}]},
+    {name: "digest mismatch", metadata: async () => [{generation: "42", metadata: {sha256: "bad"}}]},
+    {name: "public download token", metadata: async () => [{generation: "42", metadata: {sha256: digest,
+      firebaseStorageDownloadTokens: "public-token"}}]},
+    {name: "transient storage outage", metadata: async () => {
+      throw Object.assign(new Error("unavailable"), {code: 503});
+    },
+    retry: true},
+  ]) {
+    await t.test(`binding fails closed for ${scenario.name}`, async () => {
+      const before = {...store.get("walls/modern")};
+      t.mock.method(file, "getMetadata", scenario.metadata);
+      if (scenario.retry) await assert.rejects(bindOwnedWall("modern"), {message: "unavailable", code: 503});
+      else await bindOwnedWall("modern");
+      assert.equal(store.has("ownedAssets/modern"), false);
+      assert.deepEqual(store.get("walls/modern"), before);
+    });
+  }
+  t.mock.method(file, "getMetadata", async () => [{generation: "42", metadata: {sha256: digest}, contentType: "image/png"}]);
+  for (let index = 0; index < 6; index++) {
+    store.set(`githubUploads/history_${index}`, {repo: "walls", path: "photo.png", uid: "legacy-migration"});
+  }
+  store.set("githubUploads/private_twin", {repo: "walls", path: "photo.png", uid: "attacker", sourceKind: "owned"});
   await bindOwnedWall("modern");
   assert.equal(store.get("ownedAssets/modern")?.status, "ready");
   assert.equal((await signOriginalDelivery("modern")).generation, "42");
-  const originalKey = `githubUploads/file_${createHash("sha256").update(`walls\0photo.png\0${sha}`).digest("hex")}`;
-  const intentKey = `githubUploadIntents/path_${createHash("sha256").update("walls\0photo.png").digest("hex")}`;
-  store.set(originalKey, {...store.get(originalKey), sourceKind: "owned"});
-  const intent = store.get(intentKey)!;
-  store.set(intentKey, {...intent, sourceKind: "owned", retainedAsset: asset("photo.png"),
+  for (let index = 0; index < 6; index++) store.delete(`githubUploads/history_${index}`);
+  store.delete("githubUploads/private_twin");
+  const originalKey = `githubUploads/owned_file_${createHash("sha256").update(`walls\0photo.png\0${sha}`).digest("hex")}`;
+  const intentKey = `githubUploadIntents/owned_path_${createHash("sha256").update("walls\0photo.png").digest("hex")}`;
+  const privateAsset = {...asset("photo.png"), sourceKind: "owned",
+    object: asset("photo.png").object.replace("retained/", "private-originals/")};
+  store.set(originalKey, {repo: "walls", path: "photo.png", sha, uid: "legacy-migration",
+    retainedAsset: privateAsset, sourceKind: "owned"});
+  store.set(intentKey, {repo: "walls", path: "photo.png", blobSha: sha, status: "complete", uid: "legacy-migration",
+    sourceKind: "owned", retainedAsset: privateAsset,
     response: {content: {path: "photo.png", sha, download_url: ""}}});
   store.set("walls/private", {...store.get("walls/modern"), id: "private", wallpaper_url: "", wallpaper_thumb: thumbUrl});
   await bindOwnedWall("private");

@@ -12,6 +12,15 @@ Thumbnails remain public, including pending submission thumbnails, as they alrea
 in the GitHub upload flow. This lets creators and moderators load retained previews.
 Original authorization is separate. A thumbnail endpoint never returns an original object.
 
+Private-original upload intents, receipts and retained objects use a separate namespace
+from GitHub assets, even when repository, path and blob SHA match. Client paths do not
+change. A private copy cannot claim or delete the corresponding public GitHub copy.
+If one caller owns both copies, deletion requires an explicit `sourceKind` of `owned`
+or `github`; an ambiguous request fails without deleting either. Private deletion keeps
+a server-only `ownedUploadDeletions` tombstone outside the upload intent. Path reuse remains
+possible, but a deletion retry cannot fall through to public-source deletion. Pre-fix staging
+owned records in the GitHub namespace require explicit reconciliation, not automatic adoption.
+
 ## Operator prerequisites
 
 No bucket creation, IAM change, deploy or live migration is authorized by this document.
@@ -53,7 +62,7 @@ writes and bucket object creation/read. Retention uses create-only generation pr
 and rejects existing bytes or metadata that do not match.
 
 Server Admin SDK access bypasses Firestore rules. Confirm clients cannot read or write
-`ownedAssets` or mutate owned delivery markers. Coordinate these rules with #521:
+`ownedAssets` or `ownedUploadDeletions`, or mutate owned delivery markers. Coordinate these rules with #521:
 do not deploy rules that reject writes from still-supported store clients without the
 approved compatibility/adoption plan. An unrelated permissive rule must not expose the manifest.
 
@@ -126,6 +135,8 @@ There is no automatic live retry loop. A failed row is reported and other rows c
 rerunning safely resumes content-addressed retention and reports already-bound manifests.
 Partial failures can leave private retained objects or enriched receipts, but do not
 publish a half-bound wall. Review these before any cleanup; no automatic deletion occurs.
+Missing retained objects and invalid durability metadata leave the wall unbound.
+Transient storage errors still propagate so the binding trigger can retry.
 
 Downloads accept only HTTPS `raw.githubusercontent.com`, the configured owner/repo,
 one explicit ref segment and safe file segments. Existing path/SHA fields must match.

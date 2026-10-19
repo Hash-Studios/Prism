@@ -135,6 +135,30 @@ export async function migrateOwnedAssets(walls: MigrationWall[], options: Migrat
   return results;
 }
 
+export async function proveMigrationAsset(asset: Asset): Promise<string | null> {
+  if (!asset.sha) return null;
+  const {db} = await import("../common.js");
+  const query = db.collection("githubUploads").where("path", "==", asset.path).orderBy("__name__").limit(8);
+  const matching: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  let rows = await query.get();
+  while (true) {
+    matching.push(...rows.docs.filter((row) => row.data().repo === asset.repo && row.data().sourceKind !== "owned"));
+    if (matching.length >= 8) return null;
+    if (rows.size < 8) break;
+    rows = await query.startAfter(rows.docs[rows.docs.length - 1]).get();
+  }
+  const receipt = matching.find((row) => row.id === `file_${digest(`${asset.repo}\0${asset.path}\0${asset.sha}`)}`)?.data();
+  const intent = (await db.collection("githubUploadIntents")
+    .doc(`path_${digest(`${asset.repo}\0${asset.path}`)}`).get()).data();
+  if (!receipt || typeof receipt.uid !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(receipt.uid) ||
+    receipt.repo !== asset.repo || receipt.path !== asset.path || receipt.sha !== asset.sha ||
+    matching.some((row) => row.data().uid !== receipt.uid) || intent?.sourceKind === "owned" ||
+    intent?.status !== "complete" || intent.uid !== receipt.uid || intent.repo !== asset.repo ||
+    intent.path !== asset.path || intent.blobSha !== asset.sha || intent.response?.content?.sha !== asset.sha ||
+    intent.response?.content?.path !== asset.path || intent.response?.content?.download_url !== asset.url) return null;
+  return receipt.uid;
+}
+
 async function main(): Promise<void> {
   const args = new Set(process.argv.slice(2));
   for (const arg of args) {
@@ -153,25 +177,10 @@ async function main(): Promise<void> {
   const rows = await db.collection("walls").get();
   const walls = rows.docs.map((doc) => ({docPath: doc.ref.path, incarnation: doc.createTime.toMillis(),
     incarnationNanos: doc.createTime.nanoseconds, data: doc.data()}));
-  const proof = async (asset: Asset): Promise<string | null> => {
-    if (!asset.sha) return null;
-    const rows = await db.collection("githubUploads").where("path", "==", asset.path).limit(8).get();
-    if (rows.size >= 8) return null;
-    const matching = rows.docs.filter((row) => row.data().repo === asset.repo);
-    const receipt = matching.find((row) => row.id === `file_${digest(`${asset.repo}\0${asset.path}\0${asset.sha}`)}`)?.data();
-    const intent = (await db.collection("githubUploadIntents")
-      .doc(`path_${digest(`${asset.repo}\0${asset.path}`)}`).get()).data();
-    if (!receipt || typeof receipt.uid !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(receipt.uid) ||
-      receipt.sha !== asset.sha || matching.some((row) => row.data().uid !== receipt.uid) ||
-      intent?.status !== "complete" || intent.uid !== receipt.uid || intent.repo !== asset.repo ||
-      intent.path !== asset.path || intent.blobSha !== asset.sha || intent.response?.content?.sha !== asset.sha ||
-      intent.response?.content?.path !== asset.path || intent.response?.content?.download_url !== asset.url) return null;
-    return receipt.uid;
-  };
   const results = await migrateOwnedAssets(walls, options, {
     prove: async (original, thumb) => {
-      const uid = await proof(original);
-      return uid && uid === await proof(thumb) ? uid : null;
+      const uid = await proveMigrationAsset(original);
+      return uid && uid === await proveMigrationAsset(thumb) ? uid : null;
     },
     fetchBytes: downloadRawAsset,
     retain: delivery.retainUpload,
