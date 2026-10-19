@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -131,15 +132,20 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     );
 
     result.fold(
-      onSuccess: (isNowFavourite) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: isNowFavourite ? _upsertWall(wall.withSyncStatus(FavouriteSyncStatus.pending)) : _removeWall(wall.id),
-          completedOperationId: event.operationId,
-          failure: null,
-        ),
-      ),
+      onSuccess: (isNowFavourite) {
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: isNowFavourite
+                ? _upsertWall(wall.withSyncStatus(FavouriteSyncStatus.pending))
+                : _removeWall(wall.id),
+            completedOperationId: event.operationId,
+            failure: null,
+          ),
+        );
+        if (isNowFavourite) unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.favourite));
+      },
       onFailure: (failure) => emit(
         state.copyWith(actionStatus: ActionStatus.failure, completedOperationId: event.operationId, failure: failure),
       ),
