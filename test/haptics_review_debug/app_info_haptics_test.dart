@@ -122,6 +122,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await tester.scrollUntilVisible(find.text(localeCase.expected), 200);
       expect(find.text(localeCase.expected), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
