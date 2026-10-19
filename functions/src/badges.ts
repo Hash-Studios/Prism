@@ -155,7 +155,9 @@ export const checkBadges = onCall(
     if (isCooling) return skip();
 
     const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs, email);
-    const config = await loadEconomy();
+    const lateCreatedMs = facts.streakBest < 7 && !ownedIds(existing.badges).has("prism_veteran") ?
+      badgeIo.accountCreatedMs(uid).catch(() => null) : null;
+    const [config, createdMs] = await Promise.all([loadEconomy(), lateCreatedMs]);
 
     let response = skip();
     const privateRef = userRef.collection("private").doc("economy");
@@ -170,8 +172,8 @@ export const checkBadges = onCall(
       response = {newBadges: [], badges, currentBalance: previous, ...xpReceipt(data, nowMs)};
 
       const owned = ownedIds(badges);
-      const accountAgeDays = facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
-        Math.floor((nowMs - await badgeIo.accountCreatedMs(uid)) / DAY_MS) : facts.accountAgeDays;
+      const accountAgeDays = createdMs !== null && facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
+        Math.floor((nowMs - createdMs) / DAY_MS) : facts.accountAgeDays;
       const earned = evaluateBadges({...facts, streakBest, accountAgeDays});
       const fresh = BADGES.filter((b) => earned.includes(b.id) && !owned.has(b.id));
       if (fresh.length === 0) return;
