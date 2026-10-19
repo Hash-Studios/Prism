@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The crop shapes the editor offers. [ratio] is width over height.
 enum EditCropRatio {
@@ -129,6 +130,7 @@ class _SliderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final NumberFormat valueFormat = NumberFormat('0.00', context.l10n.localeName);
     return Padding(
       padding: const EdgeInsets.only(top: PrismSpace.sm),
       child: Column(
@@ -137,7 +139,7 @@ class _SliderRow extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(child: Text(label, style: PrismTextStyles.rowTitle(context))),
-              Text(value.toStringAsFixed(2), style: PrismTextStyles.caption(context)),
+              Text(valueFormat.format(value), style: PrismTextStyles.caption(context)),
             ],
           ),
           Semantics(
@@ -155,7 +157,8 @@ class _SliderRow extends StatelessWidget {
               child: SizedBox(
                 height: 32,
                 child: Slider(
-                  label: '$label ${value.toStringAsFixed(2)}',
+                  label: '$label ${valueFormat.format(value)}',
+                  semanticFormatterCallback: (double value) => valueFormat.format(value),
                   onChanged: onChanged,
                   onChangeEnd: (_) => PrismHaptics.selection(),
                   divisions: 50,

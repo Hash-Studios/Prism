@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The picked image in a phone-shaped frame, with its resolution and size next to it.
 class UploadPreviewRow extends StatelessWidget {
@@ -71,7 +72,10 @@ class UploadPreviewRow extends StatelessWidget {
                     _Fact(label: context.l10n.wallpaperUploadResolution, value: formatResolution(resolution!)),
                     if (size != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.md),
-                      _Fact(label: context.l10n.wallpaperUploadFileSize, value: formatFileSize(size!)),
+                      _Fact(
+                        label: context.l10n.wallpaperUploadFileSize,
+                        value: formatFileSize(size!, context.l10n.localeName),
+                      ),
                     ],
                   ],
                 ),
@@ -84,9 +88,17 @@ class UploadPreviewRow extends StatelessWidget {
 /// "1080x2160" becomes "1080 x 2160". Anything else is shown as is.
 String formatResolution(String value) => value.replaceFirstMapped(RegExp(r'^(\d+)x(\d+)$'), (m) => '${m[1]} x ${m[2]}');
 
-/// "0.25MB" becomes "0.25 MB". Anything else is shown as is.
-String formatFileSize(String value) =>
-    value.replaceFirstMapped(RegExp(r'^([\d.]+)\s*([KMG]B)$'), (m) => '${m[1]} ${m[2]}');
+/// Localizes the decimal separator and adds spacing for known units. Anything else is shown as is.
+String formatFileSize(String value, String localeName) {
+  final RegExpMatch? match = RegExp(r'^(\d+(?:\.\d+)?)\s*([KMG]B)$').firstMatch(value);
+  if (match == null) return value;
+
+  final String number = match.group(1)!;
+  final int fractionDigits = number.contains('.') ? number.length - number.indexOf('.') - 1 : 0;
+  final String pattern = fractionDigits == 0 ? '0' : '0.${List<String>.filled(fractionDigits, '0').join()}';
+  final String localizedNumber = NumberFormat(pattern, localeName).format(num.parse(number));
+  return '$localizedNumber ${match.group(2)}';
+}
 
 class _Fact extends StatelessWidget {
   const _Fact({required this.label, required this.value});
