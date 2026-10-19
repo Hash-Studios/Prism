@@ -22,6 +22,7 @@ import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_s
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
@@ -86,6 +87,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
   String? _shortcutLocale;
+  String? _pendingShortcutLocale;
+  int _shortcutRequest = 0;
   StreamSubscription<String>? _fcmTokenSubscription;
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<FavouritesSyncUpdate>? _favouritesSubscription;
@@ -195,11 +198,25 @@ class _HomeTabPageState extends State<HomeTabPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final AppLocalizations l10n = context.l10n;
-    if (_shortcutLocale == l10n.localeName) return;
-    _shortcutLocale = l10n.localeName;
-    const QuickActions().setShortcutItems(
-      prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
-    );
+    final String locale = l10n.localeName;
+    if ((_shortcutLocale == locale && _pendingShortcutLocale == null) || _pendingShortcutLocale == locale) return;
+    _pendingShortcutLocale = locale;
+    final int request = ++_shortcutRequest;
+    unawaited(_setShortcutItems(locale, l10n, request));
+  }
+
+  Future<void> _setShortcutItems(String locale, AppLocalizations l10n, int request) async {
+    try {
+      await const QuickActions().setShortcutItems(
+        prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
+      );
+      if (!mounted || request != _shortcutRequest || context.l10n.localeName != locale) return;
+      _shortcutLocale = locale;
+    } catch (error, stackTrace) {
+      logger.w('Failed to update quick action shortcuts.', error: error, stackTrace: stackTrace);
+    } finally {
+      if (request == _shortcutRequest) _pendingShortcutLocale = null;
+    }
   }
 
   /// Push setup needs a Firebase app. Startup continues without one when initialisation fails.

@@ -21,11 +21,13 @@ import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -75,6 +77,20 @@ class _Sync extends Fake implements FavouritesSyncService {
 const _messaging = MethodChannel('plugins.flutter.io/firebase_messaging');
 const _quickActions = MethodChannel('plugins.flutter.io/quick_actions');
 const _ios = TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS});
+
+class _EnglishLocaleDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _EnglishLocaleDelegate();
+
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'en';
+
+  @override
+  Future<AppLocalizations> load(Locale locale) =>
+      SynchronousFuture<AppLocalizations>(AppLocalizationsEn(locale.toString()));
+
+  @override
+  bool shouldReload(_EnglishLocaleDelegate old) => false;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -168,11 +184,20 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+    Brightness brightness = Brightness.light,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+        locale: locale,
+        theme: ThemeData(brightness: brightness),
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          _EnglishLocaleDelegate(),
+          ...AppLocalizations.localizationsDelegates,
+        ],
+        supportedLocales: const <Locale>[Locale('en'), Locale('en', 'GB')],
 
         home: MultiBlocProvider(
           providers: [
@@ -259,6 +284,54 @@ void main() {
     // On a macOS host Platform.isMacOS is true, so topic calls wait for an APNs token with retry timers.
     await tester.pump(const Duration(seconds: 3));
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.android}));
+
+  testWidgets('failed shortcut registration is retried after a same-locale dependency change', (tester) async {
+    var setShortcutItemsCalls = 0;
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      if (call.method == 'setShortcutItems' && setShortcutItemsCalls++ == 0) {
+        throw PlatformException(code: 'unavailable');
+      }
+      return null;
+    });
+
+    await mount(tester);
+    await tester.pump();
+    await mount(tester, brightness: Brightness.dark);
+    await tester.pump();
+
+    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(2));
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
+  testWidgets('an older shortcut registration completion does not memoize its locale', (tester) async {
+    final completions = <Completer<void>>[];
+    var setShortcutItemsCalls = 0;
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      if (call.method == 'setShortcutItems') {
+        if (setShortcutItemsCalls++ == 0) return null;
+        final Completer<void> completion = Completer<void>();
+        completions.add(completion);
+        await completion.future;
+      }
+      return null;
+    });
+
+    await mount(tester);
+    await tester.pump();
+    await mount(tester, locale: const Locale('en', 'GB'));
+    await tester.pump();
+    await mount(tester, locale: const Locale('en'));
+    await tester.pump();
+
+    expect(completions, hasLength(2));
+    completions[0].complete();
+    await tester.pump();
+    completions[1].complete();
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
 
   test('the For You and Collections shortcuts map to their tabs, others to none', () {
     expect(quickActionTabIndex('Personalized_Feed'), 0);
