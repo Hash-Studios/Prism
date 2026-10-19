@@ -116,7 +116,7 @@ export const ALLOWED_IMAGE_HOSTS: readonly string[] = ["raw.githubusercontent.co
 const MAX_REDIRECTS = 3;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-function checkedImageUrl(value: string): URL {
+export function checkedImageUrl(value: string): URL {
   let url: URL;
   try {
     url = new URL(value);

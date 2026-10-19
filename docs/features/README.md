@@ -7,6 +7,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [live-wallpapers.md](live-wallpapers.md) | Make it live, Living gradients, Video to wallpaper (Android) |
 | [set-wallpaper.md](set-wallpaper.md) | Set sheet, Fit and Fill, Undo, lock and home pair, Match accent, default target, errors, iOS save guide |
 | [position-studio.md](position-studio.md) | Adjust position and preview: pan, zoom, fit modes, dim |
+| [depth-effect.md](depth-effect.md) | iOS Lock Screen Depth Effect: detector, `walls.depth` tiers, Depth tag, backfill |
 | [wallpaper-history.md](wallpaper-history.md) | List of wallpapers you set, with re-apply |
 | [auto-rotate.md](auto-rotate.md) | Timed rotation from favourites, downloads, a category, Wall of the Day or history (Android, Pro) |
 | [ios-shortcuts.md](ios-shortcuts.md) | Change the wallpaper automatically with a Shortcuts automation (iOS) |

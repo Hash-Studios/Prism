@@ -367,3 +367,16 @@ Spec: `docs/features/coin-economy-v2.md`. Each step needs the human owner's yes.
 6. Draw: `npm run economy:config -- --set flags.drawEnabled=true --apply`, only after the official rules text exists and the store review is done (Apple 5.3.2, Google Play contests policy). The draw ships off.
 
 How to test: run `npm run economy:config` and check that the printed JSON has `"version": 2`. Run `make rules-test` before step 2.
+
+## Depth Effect
+
+Spec: `docs/features/depth-effect.md`. Each step needs the human owner's yes. Do the steps in this order.
+
+1. Secret: put the fal key as `FAL_KEY` in Doppler `prd`. Then run `make functions-secrets-sync`. `onWallCategorize` and `processStudioCandidate` list `FAL_KEY`, so a functions deploy fails without it.
+2. Rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. The rules keep `walls.depth` server and admin owned. Wait until the new `walls` index (`review`, `depth.tier`, `createdAt`) shows `READY`.
+3. Functions: `make functions-deploy`. This ships the depth check in `onWallCategorize` and the Studio Depth Effect series.
+4. Calibration sample: `cd functions && npm run build && FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --limit=50`. It is a dry run, but it calls Vision and fal, so it costs money. Read the printed tiers.
+5. Device check: set 3 `auto` walls and 3 `menu` walls from the sample on an iPhone. Make sure that iOS puts the subject in front of the clock by itself for `auto`, and from ••• then **Depth Effect** for `menu`.
+6. Backfill: `FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --apply`. Resume with `--start-after=<wallId>` from the last logged id.
+
+How to test: after step 3, upload a wall with a person under the clock area. Make sure that its doc gets a `depth` field. Run `firebase functions:log --lines 60` and look for `wallDepth:` warnings.
