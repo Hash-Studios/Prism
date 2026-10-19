@@ -179,28 +179,51 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final String cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
     try {
+      int successfulSources = 0;
+      int failedSources = 0;
+      // Fresh and gems need nothing from the bootstrap, so they start now.
+      final Future<List<RankingCandidate>> freshPool = _pool(
+        CandidatePool.fresh,
+        _fetchFreshItems(),
+        onSuccess: () => successfulSources++,
+        onFailure: () => failedSources++,
+      );
+      final Future<List<RankingCandidate>> gemsPool = _pool(
+        CandidatePool.gems,
+        _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
+        onSuccess: () => successfulSources++,
+        onFailure: () => failedSources++,
+      );
+
       if (request.refresh || _bootstrapScope != cacheScope) {
-        Map<String, dynamic> userDoc = const <String, dynamic>{};
-        if (!isGuest) {
+        Future<Map<String, dynamic>> loadUserDoc() async {
+          if (isGuest) {
+            return const <String, dynamic>{};
+          }
           try {
-            userDoc = await _resolveUserDoc(userId: userId);
+            return await _resolveUserDoc(userId: userId);
           } catch (error) {
             logger.w('[PersonalizedFeed] user profile source failed: $error');
+            return const <String, dynamic>{};
           }
         }
+
+        final Future<Map<String, dynamic>> userDocFuture = loadUserDoc();
+        final Future<void> seedFuture = isGuest
+            ? Future<void>.value()
+            : _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
         _catalog = await PersonalizedInterestsCatalog.load(
           remoteConfig: FirebaseRemoteConfig.instance,
           settingsLocal: _settingsLocal,
         );
+        final Map<String, dynamic> userDoc = await userDocFuture;
+        await seedFuture;
         if (!isCurrentSession()) {
           return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
         }
         _interests = _resolveInterests(userDoc, _catalog);
         _following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
         _bootstrapScope = cacheScope;
-        if (!isGuest) {
-          await _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
-        }
       }
 
       if (!isGuest) {
@@ -216,8 +239,6 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       );
       final FeedMix mix = FeedMix.parse(_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
-      int successfulSources = 0;
-      int failedSources = 0;
       final List<String> tasteCategories = _tasteCategories(profile);
       final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
         _pool(
@@ -226,18 +247,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           onSuccess: _following.isEmpty ? null : () => successfulSources++,
           onFailure: () => failedSources++,
         ),
-        _pool(
-          CandidatePool.fresh,
-          _fetchFreshItems(),
-          onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
-        ),
-        _pool(
-          CandidatePool.gems,
-          _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
-          onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
-        ),
+        freshPool,
+        gemsPool,
         _pool(
           CandidatePool.taste,
           _fetchTasteItems(tasteCategories),
