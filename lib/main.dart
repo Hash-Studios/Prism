@@ -887,7 +887,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                     data: theme.copyWith(
                       snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
                   );
                 },
                 routerConfig: _appRouter.config(
