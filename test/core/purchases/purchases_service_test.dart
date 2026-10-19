@@ -316,12 +316,63 @@ void main() {
         getCustomerInfo: () async => _proCustomer,
       );
 
-      await service.checkAndPersistPremium(forceSync: true);
+      expect(await service.checkAndPersistPremium(forceSync: true), isFalse);
       await pumpEventQueue();
       await service.checkAndPersistPremium();
 
-      expect(syncCalls, 2);
+      expect(syncCalls, 4);
       expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: '').split('|').first, 'free');
+    });
+
+    test('a forced sync asks again until the server holds the paid tier', () async {
+      final List<String> replies = <String>['free', 'free', 'pro'];
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        logIn: (_) async {},
+        getCustomerInfo: () async => _proCustomer,
+        syncSubscription: () async {
+          final String tier = replies[syncCalls++];
+          return <String, dynamic>{'premium': tier != 'free', 'subscriptionTier': tier};
+        },
+      );
+
+      expect(await service.checkAndPersistPremium(forceSync: true), isTrue);
+      expect(syncCalls, 3);
+      expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: '').split('|').first, 'pro');
+    });
+
+    test('a forced sync stops after three answers without the paid tier and reports it unconfirmed', () async {
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        logIn: (_) async {},
+        getCustomerInfo: () async => _proCustomer,
+        syncSubscription: () async {
+          syncCalls++;
+          return <String, dynamic>{'premium': false, 'subscriptionTier': 'free'};
+        },
+      );
+
+      expect(await service.checkAndPersistPremium(forceSync: true), isFalse);
+      expect(syncCalls, 3);
+      expect(app_state.prismUser.premium, isTrue);
+    });
+
+    test('a background sync does not ask again when the server answers with another tier', () async {
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        logIn: (_) async {},
+        getCustomerInfo: () async => _proCustomer,
+        syncSubscription: () async {
+          syncCalls++;
+          return <String, dynamic>{'premium': false, 'subscriptionTier': 'free'};
+        },
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+      expect(syncCalls, 1);
     });
 
     test('a server cooldown returning Pro does not cache an unconfirmed revocation', () async {

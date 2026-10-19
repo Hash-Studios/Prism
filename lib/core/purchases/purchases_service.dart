@@ -25,6 +25,7 @@ class PurchasesService {
     : _addCustomerInfoListener = Purchases.addCustomerInfoUpdateListener,
       _syncSubscriptionOverride = null,
       _syncRetryBackoff = const Duration(seconds: 2),
+      _confirmRetryDelay = const Duration(seconds: 6),
       _configurePurchases = Purchases.configure,
       _logIn = Purchases.logIn,
       _getCustomerInfo = Purchases.getCustomerInfo,
@@ -35,6 +36,7 @@ class PurchasesService {
     required void Function(CustomerInfoUpdateListener listener) addCustomerInfoListener,
     Future<Map<String, dynamic>> Function()? syncSubscription,
     Duration syncRetryBackoff = Duration.zero,
+    Duration confirmRetryDelay = Duration.zero,
     Future<void> Function(PurchasesConfiguration configuration)? configurePurchases,
     Future<void> Function(String userId)? logIn,
     Future<CustomerInfo> Function()? getCustomerInfo,
@@ -42,6 +44,7 @@ class PurchasesService {
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
+       _confirmRetryDelay = confirmRetryDelay,
        _configurePurchases = configurePurchases ?? Purchases.configure,
        _logIn = logIn ?? Purchases.logIn,
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
@@ -52,6 +55,11 @@ class PurchasesService {
   final void Function(CustomerInfoUpdateListener listener) _addCustomerInfoListener;
   final Future<Map<String, dynamic>> Function()? _syncSubscriptionOverride;
   final Duration _syncRetryBackoff;
+
+  /// After a purchase or restore, the server may still answer with the old tier: its sync cooldown (5s for a user
+  /// stored as Free) or RevenueCat lag. A forced sync asks again this long apart, at most [_confirmAttempts] times.
+  final Duration _confirmRetryDelay;
+  static const int _confirmAttempts = 3;
   final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
   final Future<dynamic> Function(String userId) _logIn;
   final Future<CustomerInfo> Function() _getCustomerInfo;
@@ -230,27 +238,30 @@ class PurchasesService {
     return !age.isNegative && age < _subscriptionResyncAfter;
   }
 
-  Future<void> _persistSubscriptionStateToFirestore({
+  /// Returns whether the server now holds [tier]. Guests and an unchanged, recently synced tier count as held.
+  Future<bool> _persistSubscriptionStateToFirestore({
     required bool isPremium,
     required SubscriptionTier tier,
     bool force = false,
   }) async {
     final String userId = app_state.prismUser.id.trim();
     if (userId.isEmpty || !app_state.prismUser.loggedIn) {
-      return;
+      return true;
     }
     final DateTime now = DateTime.now();
-    if (!force && _syncedRecently(userId, tier, now)) return;
+    if (!force && _syncedRecently(userId, tier, now)) return true;
     if (!force &&
         _lastPersistedUserId == userId &&
         _lastPersistedPremium == isPremium &&
         _lastPersistedTier == tier.name &&
         _lastPersistSubscriptionTime != null &&
         now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
-      return;
+      return true;
     }
-    for (int attempt = 0; attempt < 2; attempt++) {
-      if (userId != app_state.prismUser.id.trim() || !app_state.prismUser.loggedIn) return;
+    int failures = 0;
+    int mismatches = 0;
+    while (true) {
+      if (userId != app_state.prismUser.id.trim() || !app_state.prismUser.loggedIn) return false;
       try {
         final Map<String, dynamic> confirmed = await _callSyncSubscription();
         final Object? confirmedPremium = confirmed['premium'];
@@ -267,9 +278,11 @@ class PurchasesService {
         } catch (error, stackTrace) {
           logger.w('Unable to remember the synced subscription.', error: error, stackTrace: stackTrace);
         }
-        return;
+        final bool held = confirmedTier == tier.name;
+        if (held || !force || !tier.isPaid || ++mismatches >= _confirmAttempts) return held;
+        await Future<void>.delayed(_confirmRetryDelay);
       } catch (error, stackTrace) {
-        if (attempt == 0) {
+        if (++failures < 2) {
           await Future<void>.delayed(_syncRetryBackoff);
           continue;
         }
@@ -281,6 +294,7 @@ class PurchasesService {
             errorMessage: '$error',
           ),
         );
+        return false;
       }
     }
   }
@@ -302,7 +316,8 @@ class PurchasesService {
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  /// [forceSync] waits for the server sync request even when the tier is unchanged.
+  /// [forceSync] waits for the server sync request even when the tier is unchanged, and returns true only once the
+  /// server confirms the paid tier.
   Future<bool> checkAndPersistPremium({bool forceSync = false}) async {
     try {
       final String requestedUserId = app_state.prismUser.id.trim();
@@ -348,7 +363,11 @@ class PurchasesService {
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
-    await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier, force: forceSync);
+    final bool serverHoldsTier = await _persistSubscriptionStateToFirestore(
+      isPremium: isPremium,
+      tier: tier,
+      force: forceSync,
+    );
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
@@ -361,7 +380,8 @@ class PurchasesService {
     if (kDebugMode) {
       logger.d('Premium status: $isPremium');
     }
-    return isPremium;
+    // A purchase or restore completes only once the server, which gates paid actions, holds the same tier.
+    return forceSync ? isPremium && serverHoldsTier : isPremium;
   }
 
   /// Restores store purchases and applies them to this account. Returns whether premium is now active.

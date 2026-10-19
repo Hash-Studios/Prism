@@ -628,8 +628,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _restoring = true);
     toasts.success('Restoring purchases…', haptic: false);
     try {
-      final bool premium = await PurchasesService.instance.restore();
-      premium ? toasts.success('Purchases restored.') : toasts.error('No purchases to restore for this account.');
+      final bool confirmed = await PurchasesService.instance.restore();
+      if (confirmed) {
+        toasts.success('Purchases restored.');
+      } else if (app_state.prismUser.premium) {
+        toasts.success('Purchases restored. Pro can take a minute to unlock.');
+      } else {
+        toasts.error('No purchases to restore for this account.');
+      }
     } catch (e) {
       toasts.error('Could not restore purchases. Try again.');
     } finally {
