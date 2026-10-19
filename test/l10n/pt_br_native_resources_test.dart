@@ -42,14 +42,8 @@ void main() {
       portuguese['notif_push_wall_approved_for_artist_body'],
       r'\"%1$s\" foi aprovado e agora está visível para todos.',
     );
-    expect(
-      portuguese['notif_push_wall_live_for_followers_body'],
-      r'\"%1$s\" já está no ar no Prism.',
-    );
-    expect(
-      portuguese['notif_push_wall_approved_for_admin_body'],
-      r'\"%1$s\", de %2$s, já está no ar.',
-    );
+    expect(portuguese['notif_push_wall_live_for_followers_body'], r'\"%1$s\" já está no ar no Prism.');
+    expect(portuguese['notif_push_wall_approved_for_admin_body'], r'\"%1$s\", de %2$s, já está no ar.');
   });
 
   test('iOS strings have translated pt-BR values and matching placeholders', () {
