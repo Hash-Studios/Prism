@@ -167,7 +167,6 @@ export function visionCheck(result: VisionResult): {reasons: string[]; details: 
   return {reasons, details: {safeSearch, words: words.slice(0, 20), logos: logos.slice(0, 10)}};
 }
 
-/** A depth series image passes only when iOS can show it with the Depth Effect, by itself or from the menu. */
 export function depthCheck(depth: WallDepth): {reasons: string[]; details: Record<string, unknown>} {
   return {
     reasons: depth.tier === "none" ? ["depth"] : [],

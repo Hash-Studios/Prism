@@ -29,7 +29,6 @@ A dry run writes nothing, but it still calls Vision and fal for every wall it ch
 Use --limit=50 for a cheap calibration sample. FAL_KEY must be set in the environment.
 --force recomputes walls that have depth.v >= ${DEPTH_VERSION}. Walls with depth.by "admin" are never changed.`;
 
-/** True when the backfill should check this wall. An admin value is never replaced, even with --force. */
 export function needsDepth(depth: unknown, force: boolean): boolean {
   const current = typeof depth === "object" && depth !== null ? depth as Partial<WallDepth> : undefined;
   if (current?.by === "admin") return false;

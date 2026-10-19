@@ -21,7 +21,6 @@ export const falKey = defineSecret("FAL_KEY");
 
 /** iPhone 15 Pro lock screen in points. The wall is an aspect-fill centre crop to this shape. */
 const DEPTH_SCREEN = {width: 393, height: 852};
-/** The clock box in screen points. */
 const DEPTH_CLOCK = {left: 27.5, right: 365.5, top: 190, bottom: 260};
 /** iOS limits the mask only over this top share of the clock box. The band below it can be full. */
 const CLOCK_TOP_SHARE = 0.75;
@@ -31,8 +30,7 @@ const CLOCK_HEIGHT = DEPTH_CLOCK.bottom - DEPTH_CLOCK.top;
 export const DEPTH_T_AUTO = 0.2 * CLOCK_HEIGHT / CLOCK_WIDTH;
 /** Highest top coverage at which the user can turn it on in the menu. */
 export const DEPTH_T_MENU = DEPTH_T_AUTO + 0.25 * (1 - DEPTH_T_AUTO);
-/** A mask pixel at 0.6 or higher is subject. */
-const SUBJECT_LEVEL = 153;
+const SUBJECT_LEVEL = Math.round(0.6 * 255);
 const MIN_SUBJECT_SHARE = 0.02;
 const MIN_CLOCK_TOUCH = 0.002;
 

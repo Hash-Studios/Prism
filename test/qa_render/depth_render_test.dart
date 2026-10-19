@@ -81,7 +81,6 @@ PrismWallpaper _wall(int n, WallDepthTier? tier, {bool boosted = false, bool pre
   );
 }
 
-/// One render: the iOS platform, an iPhone 15 sized view, real fonts and real photos.
 class _Depth {
   _Depth(this.tester, this.theme) : shot = HomeShot(tester);
 
@@ -131,8 +130,6 @@ class _Depth {
     await shot.settle(frames: 10);
   }
 
-  /// Six tiles of the home grid: auto, menu, none and unchecked walls, with the Boosted tag, the premium star and the
-  /// favourite heart on some of them.
   Future<void> pumpGrid() async {
     final List<PrismWallpaper> walls = <PrismWallpaper>[
       _wall(1, WallDepthTier.auto, boosted: true),
@@ -180,7 +177,6 @@ class _Depth {
     _expectTagsClear();
   }
 
-  /// With the real fonts, no Depth tag may touch the heart or the premium star of its tile.
   void _expectTagsClear() {
     final List<Rect> marks = <Rect>[
       for (final Element e in find.byIcon(Icons.favorite_rounded).evaluate())
@@ -222,7 +218,6 @@ class _Depth {
     await shot.settle(frameMs: 50);
   }
 
-  /// The search tab before a search, with "Trending now" loaded.
   Future<void> pumpSearch() async {
     final SearchDiscoveryState state = SearchDiscoveryState(
       status: LoadStatus.success,

@@ -130,7 +130,6 @@ class WallpaperSearchService {
     throw WallpaperSearchException('Wallhaven and Pexels both failed: $failure');
   }
 
-  /// Wallhaven and Pexels walls carry no depth data. Saved walls only fill in when Prism has no match.
   Future<WallpaperSearchPage> _depthSearch(String query, SearchFilters filters) async {
     List<FeedItemEntity> results = await _prismResults(query, filters);
     bool isLocal = false;

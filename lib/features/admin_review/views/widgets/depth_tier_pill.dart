@@ -4,8 +4,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:flutter/material.dart';
 
-/// "Depth: Auto" on a review card, in the style of the category pill. A tap opens a menu that overrides the tier
-/// the detector chose. [tier] is null when the wall was not checked.
+/// [tier] is null when the wall was not checked.
 class DepthTierPill extends StatelessWidget {
   const DepthTierPill({super.key, required this.tier, required this.onChanged});
 

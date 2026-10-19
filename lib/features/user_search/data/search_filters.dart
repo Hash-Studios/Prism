@@ -22,7 +22,6 @@ class SearchFilters {
   /// Only Prism walls the iOS Lock Screen Depth Effect works on. Wallhaven and Pexels walls carry no depth data.
   final bool depthOnly;
 
-  /// Whether these filters list walls without a text query.
   bool get listsWithoutQuery => color != null || depthOnly;
 
   /// Wallhaven `sorting` value. `null` keeps the API default, which is relevance for a text query.

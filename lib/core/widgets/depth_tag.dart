@@ -10,13 +10,12 @@ WallDepthTier? depthTierOf(FeedItemEntity item) => switch (item) {
   _ => null,
 };
 
-/// True on iOS for a wall that works with the Lock Screen Depth Effect.
 bool showsDepthEffect(WallDepthTier? tier) => showDepthEffectUi && (tier?.supportsDepth ?? false);
 
 /// The "Depth" tag at the bottom start of a grid tile, or null when [showsDepthEffect] is false.
 Widget? depthTagFor(WallDepthTier? tier) => showsDepthEffect(tier) ? const _PositionedDepthTag() : null;
 
-/// The "Depth" pill, in the same style as the Boosted tag. Place it yourself, or use [depthTagFor] on a tile.
+/// Has no position. Use [depthTagFor] to put it on a grid tile.
 class DepthTag extends StatelessWidget {
   const DepthTag({super.key});
 

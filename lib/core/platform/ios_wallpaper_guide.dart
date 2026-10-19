@@ -102,7 +102,6 @@ class IosWallpaperGuideSheet extends StatelessWidget {
             for (int i = 0; i < steps.length; i++)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                // The number lines up with the first line of a step that wraps.
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,

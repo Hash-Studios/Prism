@@ -17,7 +17,6 @@ const created = (data: Doc) => ({
   data: {data: () => data},
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
-/** Fakes the three checks: Vision gives "Nature", the colour check gives blue, and `depth` is the depth result. */
 function setup(t: TestContext, wall: Doc, depth: (store: Map<string, Doc>) => Promise<unknown>) {
   const store = installFakeDb(t, {"walls/w1": wall});
   t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);

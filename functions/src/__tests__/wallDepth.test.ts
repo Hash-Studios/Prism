@@ -23,7 +23,6 @@ import {
 const W = 393;
 const H = 852;
 
-/** A screen-sized mask: 255 where `subject(x, y)` is true, else 0. */
 function screenMask(subject: (x: number, y: number) => boolean | number): Uint8Array {
   const pixels = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) {

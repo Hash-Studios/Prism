@@ -19,7 +19,6 @@ import {
 
 const SIZE = 48;
 
-// These tests cover colours; wallDepth.test.ts covers the depth check that onWallCategorize also runs.
 test.before(() => {
   mock.method(wallDepth, "wallDepthFor", async () => undefined);
 });

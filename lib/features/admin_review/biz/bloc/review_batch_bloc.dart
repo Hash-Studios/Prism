@@ -143,7 +143,6 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     }
   }
 
-  /// Shows the pick at once and puts the old wall back if the write fails.
   Future<void> _onDepthChanged(ReviewBatchDepthChanged event, Emitter<ReviewBatchState> emit) async {
     final FirestoreDocument? wall = state.currentWall;
     if (wall == null) return;

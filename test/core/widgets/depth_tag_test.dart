@@ -77,7 +77,6 @@ void main() {
           child: Scaffold(
             body: Align(
               alignment: Alignment.topLeft,
-              // One tile of the three-column phone grid.
               child: SizedBox(
                 width: 116,
                 height: 232,

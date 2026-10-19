@@ -28,7 +28,6 @@ class PrismWallSearch {
   static const int _localFilterOverfetch = 4;
   static const String _failedPrecondition = 'failed-precondition';
 
-  /// `walls.depth.tier` is `none` when iOS cannot use the Depth Effect and missing when the wall was not checked.
   static const FirestoreFilter _depthFilter = FirestoreFilter(
     field: 'depth.tier',
     op: FirestoreFilterOp.whereIn,

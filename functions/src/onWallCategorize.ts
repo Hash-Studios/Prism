@@ -74,8 +74,8 @@ export const onWallCategorize = onDocumentCreated(
 type ImageFields = {colors?: string[]};
 
 /**
- * The check runs for up to a minute, and an admin can set `depth` meanwhile. The transaction writes only when the
- * wall still has none. A failure is logged, so it cannot fail the colour or category write.
+ * The check runs for up to a minute, and an admin can set `depth` meanwhile. A failure is logged, so it cannot fail
+ * the colour or category write.
  */
 async function writeDepthIfAbsent(wallId: string, depth: WallDepth | undefined): Promise<void> {
   if (!depth) {
