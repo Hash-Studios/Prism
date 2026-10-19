@@ -607,7 +607,7 @@ void main() {
       final bloc = await pumpShell(tester, short, short);
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text("couldn't load creators. check your connection and tap reload"), findsOneWidget);
+      expect(find.text("Couldn't load creators. Check your connection and tap Reload."), findsOneWidget);
       await tester.tap(find.text('reload'));
       await tester.pump();
 
