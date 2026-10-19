@@ -3,6 +3,32 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+String _dartExecutablePath() {
+  final List<String> roots = <String>[];
+  final String? flutterRoot = Platform.environment['FLUTTER_ROOT'];
+  if (flutterRoot != null) roots.add(flutterRoot);
+  Directory root = File(Platform.resolvedExecutable).parent;
+  while (root.parent.path != root.path) {
+    roots.add(root.path);
+    root = root.parent;
+  }
+
+  final String executable = Platform.isWindows ? 'dart.exe' : 'dart';
+  for (final String candidateRoot in roots) {
+    final File candidate = File('$candidateRoot/bin/cache/dart-sdk/bin/$executable');
+    if (candidate.existsSync()) return candidate.path;
+  }
+  throw StateError('Could not find the Dart SDK next to the Flutter test runtime.');
+}
+
+Future<ProcessResult> _runL10nAudit(Directory project) => Process.run(_dartExecutablePath(), <String>[
+  'run',
+  '${Directory.current.path}/tool/l10n_audit.dart',
+  '--root',
+  project.path,
+  '--check',
+]);
+
 void main() {
   test('fails the guard for malformed source without UI findings', () async {
     final Directory project = await Directory.systemTemp.createTemp('l10n-audit-invalid-');
@@ -10,14 +36,7 @@ void main() {
     await File('${project.path}/pubspec.yaml').writeAsString('name: audit_fixture\n');
     final Directory lib = Directory('${project.path}/lib')..createSync();
     await File('${lib.path}/broken.dart').writeAsString('void broken( {');
-    final ProcessResult result = await Process.run('fvm', <String>[
-      'dart',
-      'run',
-      '${Directory.current.path}/tool/l10n_audit.dart',
-      '--root',
-      project.path,
-      '--check',
-    ]);
+    final ProcessResult result = await _runL10nAudit(project);
     final Map<String, dynamic> report = jsonDecode(result.stdout as String) as Map<String, dynamic>;
     expect(result.exitCode, 1);
     expect(report['probableUiCount'], 0);
@@ -58,14 +77,7 @@ void sample(String name) {
       '${localization.path}/app_localizations.dart',
     ).writeAsString("String get greeting => 'Generated localized copy';\n");
 
-    final ProcessResult result = await Process.run('fvm', <String>[
-      'dart',
-      'run',
-      '${Directory.current.path}/tool/l10n_audit.dart',
-      '--root',
-      project.path,
-      '--check',
-    ]);
+    final ProcessResult result = await _runL10nAudit(project);
 
     expect(result.exitCode, 1);
     final Map<String, dynamic> report = jsonDecode(result.stdout as String) as Map<String, dynamic>;
