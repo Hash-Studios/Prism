@@ -87,7 +87,7 @@ void main() {
     final _PromptRepository repository = _PromptRepository();
     await pumpPage(tester, repository);
 
-    expect((tester.widget<TextField>(find.byType(TextField).first)).controller!.text, isNotEmpty);
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, isNotEmpty);
     await finishPromptSave(tester);
 
     expect(repository.saves, isEmpty);
