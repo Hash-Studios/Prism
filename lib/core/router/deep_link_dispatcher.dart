@@ -11,7 +11,6 @@ import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/widgets.dart';
 
 enum DeepLinkDispatchResult { navigated, failure, blocked, cancelled, deferred }
 
