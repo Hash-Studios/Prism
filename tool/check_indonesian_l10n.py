@@ -44,7 +44,7 @@ def printf_contract(value: str, platform: str) -> Counter[tuple[Any, ...]]:
             continue
         match = (ANDROID_FORMAT if platform == 'android' else IOS_FORMAT).match(value, index)
         if match is None:
-            if platform == 'ios' and re.match(r'%(?:\d+\$)?[-+#0 ]*(?:\*|\.(?:\*|\d*\*))', value[index:]):
+            if platform == 'ios' and re.match(r'%(?:\d+\$)?[-+#0 ]*\d*(?:\*|\.(?:\*|\d*\*))', value[index:]):
                 raise CheckFailure('unsupported dynamic width or precision in iOS format string')
             index += 1
             continue

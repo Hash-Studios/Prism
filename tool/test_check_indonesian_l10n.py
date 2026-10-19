@@ -75,9 +75,12 @@ class PrintfContractTests(unittest.TestCase):
         self.assertEqual(printf_contract('%% https://x/y', 'ios'), printf_contract('', 'ios'))
 
     def test_ios_dynamic_width_is_rejected(self):
-        for value in ('%*s', '%.*s', '%1$*2$s'):
+        for value in ('%*s', '%.*s', '%1$*2$s', '%10.*s', '%1$10.*s', '%010.*s'):
             with self.subTest(value=value), self.assertRaises(CheckFailure):
                 printf_contract(value, 'ios')
+
+    def test_ios_constant_precision_with_width_is_supported(self):
+        self.assertEqual(printf_contract('%10.2f', 'ios'), Counter({(1, 'f', '', '', '10', '2'): 1}))
 
 
 if __name__ == '__main__':
