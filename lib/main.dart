@@ -14,6 +14,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
+import 'package:Prism/core/debug/perf_autodrive.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -718,6 +719,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
     _appRouter = AppRouter();
+    if (Env.perfAutodrive) PerfAutodrive.start(_appRouter);
     _authContinuation = AuthNavigationContinuation.of(_appRouter);
     _startupGate = DeepLinkStartupGate(router: _appRouter);
     _deepLinkDispatcher = DeepLinkDispatcher(
