@@ -21,6 +21,7 @@ class FcmTokenService {
   StreamSubscription<String>? _tokenRefreshSubscription;
   final Set<Future<void>> _pendingWrites = <Future<void>>{};
   int _generation = 0;
+  static const String _syncedTokenKey = 'fcmTokenSynced';
 
   /// Fetches the current FCM token and writes it to Firestore for [userId].
   /// Call once after login.
@@ -142,7 +143,20 @@ class FcmTokenService {
     }
   }
 
+  /// Forgets the last synced token so the next sign-in writes it again.
+  Future<void> clearSyncedToken() async {
+    if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    if (settings.isOpen) await settings.delete(_syncedTokenKey);
+  }
+
   Future<void> _persistToken({required String userId, required String token, FirestoreClient? client}) async {
+    final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
+        ? getIt<SettingsLocalDataSource>()
+        : null;
+    final String marker = '$userId|$token';
+    final bool track = settings != null && settings.isOpen;
+    if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
       '${FirebaseCollections.usersV2}/$userId/private',
       'session',
@@ -154,6 +168,7 @@ class FcmTokenService {
       merge: true,
       sourceTag: 'fcm_token.sync',
     );
+    if (track) await settings.set(_syncedTokenKey, marker);
     logger.d('FcmTokenService: token synced for user $userId');
   }
 }

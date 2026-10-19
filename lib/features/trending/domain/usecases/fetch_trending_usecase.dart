@@ -12,4 +12,6 @@ class FetchTrendingUseCase implements UseCase<List<PrismWallpaper>, NoParams> {
 
   @override
   Future<Result<List<PrismWallpaper>>> call(NoParams params) => _repository.fetch();
+
+  Future<List<PrismWallpaper>> readCached() => _repository.readCached();
 }

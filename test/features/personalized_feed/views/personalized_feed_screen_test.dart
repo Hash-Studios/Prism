@@ -5,6 +5,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
@@ -521,13 +522,17 @@ void main() {
     verify(() => feedRepository.fetchPopular()).called(1);
   });
 
-  testWidgets('every visit to the Trending tab reports the daily trending quest', (tester) async {
+  testWidgets('the Trending tab reports the daily trending quest once a day', (tester) async {
     final CoinsTestBackend backend = CoinsTestBackend();
     final List<String> events = <String>[];
     await tester.runAsync(backend.install);
     backend.onCall = (String name, Map<String, dynamic> params) async {
       if (name == 'progressQuest') events.add(params['event'] as String);
-      return <String, Object?>{'success': true, 'rev': 1};
+      return <String, Object?>{
+        'success': true,
+        'rev': 1,
+        'quests': <String, Object?>{'dayKey': economyDayKey(DateTime.now())},
+      };
     };
     await pumpScreen(tester);
 
@@ -536,7 +541,7 @@ void main() {
       await _settle(tester);
     }
 
-    expect(events, <String>['view_trending', 'view_trending']);
+    expect(events, <String>['view_trending']);
   });
 
   testWidgets('opening the home alone reports no trending quest, the Trending tab does', (tester) async {
@@ -545,7 +550,11 @@ void main() {
     await tester.runAsync(backend.install);
     backend.onCall = (String name, Map<String, dynamic> params) async {
       if (name == 'progressQuest') events.add(params['event'] as String);
-      return <String, Object?>{'success': true, 'rev': 1};
+      return <String, Object?>{
+        'success': true,
+        'rev': 1,
+        'quests': <String, Object?>{'dayKey': economyDayKey(DateTime.now())},
+      };
     };
     await pumpScreen(tester);
 

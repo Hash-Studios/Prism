@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -77,7 +78,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     });
 
     try {
-      final http.Response response = await http.get(uri).timeout(_requestTimeout);
+      final http.Response response = await PerformanceProbe.measure(
+        'http',
+        'wallhaven.search',
+        () => http.get(uri).timeout(_requestTimeout),
+      );
       if (response.statusCode != 200) {
         return await _cachedOrFailure(
           refresh: refresh,
@@ -145,7 +150,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     });
 
     try {
-      final http.Response response = await http.get(uri).timeout(_requestTimeout);
+      final http.Response response = await PerformanceProbe.measure(
+        'http',
+        'wallhaven.toplist',
+        () => http.get(uri).timeout(_requestTimeout),
+      );
       if (response.statusCode != 200) {
         return await _cachedToplistOrFailure(
           page: page,
@@ -209,7 +218,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   Future<Result<WallhavenWallpaper?>> fetchById(String id) async {
     final Uri uri = Uri.https(_host, '/api/v1/w/${id.toLowerCase()}');
     try {
-      final http.Response response = await http.get(uri).timeout(_requestTimeout);
+      final http.Response response = await PerformanceProbe.measure(
+        'http',
+        'wallhaven.by_id',
+        () => http.get(uri).timeout(_requestTimeout),
+      );
       if (response.statusCode == 404) {
         return Result.success(null);
       }

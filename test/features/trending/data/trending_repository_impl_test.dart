@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/features/trending/data/repositories/trending_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +23,16 @@ Map<String, dynamic> _wall(String id, {String email = 'creator@example.com'}) =>
 
 List<String> _idsOf(FirestoreQuerySpec spec) =>
     (spec.filters.singleWhere((filter) => filter.op == FirestoreFilterOp.whereIn).value! as List).cast<String>();
+
+class _DelayedFeedCache extends FakeFeedCacheLocalDataSource {
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    await release.future;
+    return super.read(source: source, scope: scope);
+  }
+}
 
 void main() {
   late FakeFirestoreClient client;
@@ -163,6 +175,52 @@ void main() {
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data!.map((wall) => wall.id), <String>['A']);
+  });
+
+  test('readCached returns the saved walls without a network read and hides blocked creators', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    setList('trending', <Object?>['A', 'B']);
+    await repository.fetch();
+    client.queryError = Exception('offline');
+    blocks.completeInitial(<String>{'later@example.com'});
+
+    final saved = await repository.readCached();
+
+    expect(saved.map((wall) => wall.id), <String>['A']);
+  });
+
+  test('readCached is empty when nothing is saved', () async {
+    expect(await repository.readCached(), isEmpty);
+  });
+
+  test('readCached excludes creators blocked while the disk read was pending', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', email: 'later@example.com')};
+    setList('trending', <Object?>['A']);
+    await repository.fetch();
+    final delayed = _DelayedFeedCache()..snapshots.addAll(cache.snapshots);
+    final pending = TrendingRepositoryImpl(client, delayed, blocks).readCached();
+
+    blocks.completeInitial(<String>{'later@example.com'});
+    delayed.release.complete();
+
+    expect(await pending, isEmpty);
+  });
+
+  test('readCached waits for initial blocks before exposing cached creators', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', email: 'later@example.com')};
+    setList('trending', <Object?>['A']);
+    await repository.fetch();
+    final pendingBlocks = FakeUserBlockRepository.pending();
+    bool returned = false;
+    final pending = TrendingRepositoryImpl(client, cache, pendingBlocks).readCached().then((walls) {
+      returned = true;
+      return walls;
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(returned, isFalse);
+    pendingBlocks.completeInitial(<String>{'later@example.com'});
+
+    expect(await pending, isEmpty);
   });
 
   test('saves the walls unfiltered, so a creator unblocked since gets their walls back offline', () async {
