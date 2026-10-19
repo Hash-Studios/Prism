@@ -298,7 +298,7 @@ void main() {
     await mount(tester);
     await tester.pump();
     await mount(tester, brightness: Brightness.dark);
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(2));
     await tester.pumpWidget(const SizedBox());
@@ -322,7 +322,7 @@ void main() {
     await tester.pump();
     await mount(tester, locale: const Locale('en', 'GB'));
     await tester.pump();
-    await mount(tester, locale: const Locale('en'));
+    await mount(tester);
     await tester.pump();
 
     expect(completions, hasLength(2));
