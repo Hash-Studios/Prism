@@ -424,21 +424,29 @@ class EconomyConfig {
     return Rank(id: rank.id, min: rank.min, next: next, progress: progress);
   }
 
-  /// Reads `economyConfig/current` within [loadBudget]. Any failure keeps the config already loaded.
+  /// Applies the cached `economyConfig/current` at once, then the server copy. Each read has [loadBudget]. Any failure
+  /// keeps the config already loaded. [_loadedAt] only moves on a server read.
   static Future<void> load() async {
     try {
-      await PerformanceProbe.measure('startup', 'economy_config.load', () async {
-        final Map<String, dynamic>? raw = await firestoreClient
-            .getById<Map<String, dynamic>>(
-              FirebaseCollections.economyConfig,
-              'current',
-              (data, _) => data,
-              sourceTag: 'economy.config.load',
-            )
-            .timeout(loadBudget);
-        current = EconomyConfig.fromMap(raw);
-        _loadedAt = DateTime.now();
-      });
+      Future<Map<String, dynamic>?> read({required bool preferCacheFirst}) => firestoreClient
+          .getById<Map<String, dynamic>>(
+            FirebaseCollections.economyConfig,
+            'current',
+            (data, _) => data,
+            sourceTag: 'economy.config.load',
+            preferCacheFirst: preferCacheFirst,
+          )
+          .timeout(loadBudget);
+      final Map<String, dynamic>? cached = await PerformanceProbe.measure(
+        'startup',
+        'economy_config.load',
+        () => read(preferCacheFirst: true),
+      );
+      if (cached != null) current = EconomyConfig.fromMap(cached);
+      current = EconomyConfig.fromMap(
+        await PerformanceProbe.measure('startup', 'economy_config.refresh', () => read(preferCacheFirst: false)),
+      );
+      _loadedAt = DateTime.now();
     } catch (error) {
       logger.w('Economy config load failed; keeping the current values.', tag: 'Economy', error: error);
     }

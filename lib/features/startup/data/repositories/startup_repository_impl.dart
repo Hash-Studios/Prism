@@ -103,12 +103,10 @@ class StartupRepositoryImpl implements StartupRepository {
 
     final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseInit.remoteConfigIfInitialized : null;
 
-    // Runs beside Remote Config. Its own 3 s budget keeps a slow read from holding the splash any longer.
-    final Future<void> economyConfig;
+    // Home never reads economy config, so the splash does not wait for it.
     if (firebaseReady) {
-      economyConfig = EconomyConfig.load();
+      unawaited(EconomyConfig.load());
     } else {
-      economyConfig = Future<void>.value();
       unawaited(
         FirebaseInit.readyFuture.then<void>((bool becameReady) {
           if (becameReady) return EconomyConfig.load();
@@ -171,7 +169,6 @@ class StartupRepositoryImpl implements StartupRepository {
       );
 
       _currentConfig = entity;
-      await economyConfig;
 
       unawaited(syncInAppNotificationsFromRemote());
       if (getIt.isRegistered<InAppNotificationsBloc>()) {
