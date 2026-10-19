@@ -2,154 +2,154 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Get a wallpaper from %1$@" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a wallpaper from %1$@"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a wallpaper from %1$@"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Obter um papel de parede de %1$@"}}}
     },
     "Get a %1$@ wallpaper" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a %1$@ wallpaper"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a %1$@ wallpaper"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Obter um papel de parede de %1$@"}}}
     },
     "Wallpaper source" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpaper source"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpaper source"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Origem do papel de parede"}}}
     },
     "Wall of the Day" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall of the Day"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall of the Day"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Papel de parede do dia"}}}
     },
     "Random favourite" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Random favourite"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Random favourite"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Favorito aleatório"}}}
     },
     "No favourites yet. Open Prism and tap the heart on a wallpaper." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No favourites yet. Open Prism and tap the heart on a wallpaper."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No favourites yet. Open Prism and tap the heart on a wallpaper."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Você ainda não tem favoritos. Abra o Prism e toque no coração de um papel de parede."}}}
     },
     "Could not load the Wall of the Day. Check your connection." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load the Wall of the Day. Check your connection."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load the Wall of the Day. Check your connection."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Não foi possível carregar o papel de parede do dia. Verifique sua conexão."}}}
     },
     "Could not load your favourite wallpaper. Check your connection." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load your favourite wallpaper. Check your connection."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load your favourite wallpaper. Check your connection."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Não foi possível carregar seu papel de parede favorito. Verifique sua conexão."}}}
     },
     "This wallpaper is in a format that Shortcuts cannot use." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "This wallpaper is in a format that Shortcuts cannot use."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "This wallpaper is in a format that Shortcuts cannot use."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Este papel de parede está em um formato que o Atalhos não pode usar."}}}
     },
     "Get Prism Wallpaper" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get Prism Wallpaper"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get Prism Wallpaper"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Obter papel de parede do Prism"}}}
     },
     "Gets a Prism wallpaper. Pass it to the Set Wallpaper action." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Obtém um papel de parede do Prism. Passe-o para a ação Definir Papel de Parede."}}}
     },
     "Source" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Source"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Source"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Origem"}}}
     },
     "notif_push_wall_approved_for_artist_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is live! 🎉"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is live! 🎉"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Seu papel de parede está no ar! 🎉"}}}
     },
     "notif_push_wall_approved_for_artist_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" has been approved and is now visible to everyone."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" has been approved and is now visible to everyone."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"\"%1$@\" foi aprovado e agora está visível para todos."}}}
     },
     "notif_push_wall_approved_for_artist_body_untitled" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper has been approved and is now visible to everyone."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper has been approved and is now visible to everyone."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Seu papel de parede foi aprovado e agora está visível para todos."}}}
     },
     "notif_push_wall_live_for_followers_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New wall by %1$@"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New wall by %1$@"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Novo papel de parede de %1$@"}}}
     },
     "notif_push_wall_live_for_followers_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" is now live on Prism."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" is now live on Prism."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"\"%1$@\" já está no ar no Prism."}}}
     },
     "notif_push_wall_approved_for_admin_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall approved ✅"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall approved ✅"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Papel de parede aprovado ✅"}}}
     },
     "notif_push_wall_approved_for_admin_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" by %2$@ is now live."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" by %2$@ is now live."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"\"%1$@\", de %2$@, já está no ar."}}}
     },
     "notif_push_new_follower_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You have a new follower! 🎉"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You have a new follower! 🎉"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Você tem um novo seguidor! 🎉"}}}
     },
     "notif_push_new_follower_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ is now following you."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ is now following you."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"%1$@ começou a seguir você."}}}
     },
     "notif_push_streak_reminder_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your streak is about to break!"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your streak is about to break!"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Sua sequência está prestes a acabar!"}}}
     },
     "notif_push_streak_reminder_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism now to keep your login streak alive 🔥"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism now to keep your login streak alive 🔥"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Abra o Prism agora para manter sua sequência de acesso 🔥"}}}
     },
     "notif_push_wotd_for_creator_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is the Wall of the Day"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is the Wall of the Day"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Seu papel de parede é o papel de parede do dia"}}}
     },
     "notif_push_wotd_for_creator_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism picked your wallpaper for everyone today. Thank you for sharing it."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism picked your wallpaper for everyone today. Thank you for sharing it."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Hoje, o Prism escolheu seu papel de parede para todos. Obrigado por compartilhá-lo."}}}
     },
     "notif_push_wotd_for_audience_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Today's Wall of the Day is here"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Today's Wall of the Day is here"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"O papel de parede do dia chegou"}}}
     },
     "notif_push_wotd_for_audience_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"%1$@"}}}
     },
     "notif_push_wotd_for_audience_body_untitled" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism to see today's Wall of the Day."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism to see today's Wall of the Day."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Abra o Prism para ver o papel de parede do dia."}}}
     },
     "notif_push_win_back7_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your feed has new walls"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your feed has new walls"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Há novos papéis de parede no seu feed"}}}
     },
     "notif_push_win_back7_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Fresh wallpapers landed while you were away."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Fresh wallpapers landed while you were away."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Novos papéis de parede chegaram enquanto você estava fora."}}}
     },
     "notif_push_win_back14_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New walls are waiting"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New walls are waiting"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Há novos papéis de parede esperando por você"}}}
     },
     "notif_push_win_back14_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Come see what creators added this fortnight."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Come see what creators added this fortnight."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Veja o que os criadores adicionaram nestas últimas semanas."}}}
     },
     "notif_push_win_back30_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New AI styles to try"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New AI styles to try"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Novos estilos de IA para experimentar"}}}
     },
     "notif_push_win_back30_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Make a wallpaper that feels like you."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Make a wallpaper that feels like you."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Crie um papel de parede com a sua cara."}}}
     },
     "notif_push_win_back60_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism misses you"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism misses you"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"O Prism está com saudade"}}}
     },
     "notif_push_win_back60_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your next favourite wall is a tap away."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your next favourite wall is a tap away."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Seu próximo papel de parede favorito está a um toque de distância."}}}
     },
     "notif_push_drop_live_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new Drop is live"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new Drop is live"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Um novo Drop está no ar"}}}
     },
     "notif_push_drop_live_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Papéis de parede no Drop desta semana: %1$@. Veja uma prévia antes que ele termine."}}}
     },
     "notif_push_drop_last_call_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Last call on this week's Drop"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Last call on this week's Drop"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Última chance de aproveitar o Drop desta semana"}}}
     },
     "notif_push_drop_last_call_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"%1$@ termina em %2$@ h. Os papéis de parede ficarão indisponíveis por um mês depois disso."}}}
     },
     "notif_push_draw_winner_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You won the Prism Draw"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You won the Prism Draw"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Você ganhou o Sorteio Prism"}}}
     },
     "notif_push_draw_winner_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "One month of Pro and the Prism frame are yours."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "One month of Pro and the Prism frame are yours."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Um mês de Pro e a moldura Prism são seus."}}}
     },
     "notif_push_gift_received_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ sent you a 24-hour Pro pass"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ sent you a 24-hour Pro pass"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"%1$@ enviou a você um passe Pro de 24 horas"}}}
     },
     "notif_push_gift_received_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Coleções e papéis de parede premium estão disponíveis até amanhã."}}}
     },
     "notif_push_report_needs_review_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Report waiting for review"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Report waiting for review"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Denúncia aguardando análise"}}}
     },
     "notif_push_report_needs_review_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A content report has been waiting for review for over 12 hours."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A content report has been waiting for review for over 12 hours."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Uma denúncia de conteúdo está aguardando análise há mais de 12 horas."}}}
     },
     "notif_push_new_content_report_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New content report"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New content report"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Nova denúncia de conteúdo"}}}
     },
     "notif_push_new_content_report_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new content report is ready for review."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new content report is ready for review."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Uma nova denúncia de conteúdo está pronta para análise."}}}
     },
     "notif_push_wall_submitted_for_review_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New Premium Wall for review! 🎉"}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New Premium Wall for review! 🎉"}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Novo papel de parede Premium para analisar! 🎉"}}}
     },
     "notif_push_wall_submitted_for_review_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New post by %1$@ (%2$@) is up for review."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New post by %1$@ (%2$@) is up for review."}}, "pt-BR" : {"stringUnit":{"state":"translated","value":"Nova publicação de %1$@ (%2$@) aguardando análise."}}}
     }
   },
   "version" : "1.0"

@@ -90,6 +90,7 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0C000032F00000500C0C0C0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		C0C000052F00000500C0C0C0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B2B000012F00000600B2B2B2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaApi.swift; sourceTree = "<group>"; };
 		A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaHostApiImpl.swift; sourceTree = "<group>"; };
 		A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconApi.swift; sourceTree = "<group>"; };
@@ -212,6 +213,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				C0C000052F00000500C0C0C0 /* en */,
+				B2B000012F00000600B2B2B2 /* pt-BR */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -332,6 +334,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				"pt-BR",
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
