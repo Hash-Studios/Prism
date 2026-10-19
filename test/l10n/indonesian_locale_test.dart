@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -21,17 +22,27 @@ void main() {
     expect(country.actionRetry, 'Coba lagi');
   });
 
-  testWidgets('context-free messages resolve Indonesian after an unsupported preferred language', (
-    WidgetTester tester,
-  ) async {
-    tester.binding.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('id', 'ID')];
-    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+  test('unsupported preferred locales fall through to Indonesian', () async {
+    final Locale resolvedLocale = basicLocaleListResolution(
+      const <Locale>[Locale('fr'), Locale('id', 'ID')],
+      AppLocalizations.supportedLocales,
+    );
+    final AppLocalizations messages = await loadAppLocalizations(resolvedLocale);
 
-    final AppLocalizations messages = await loadDeviceAppLocalizations();
-
-    expect(messages.localeName.split('_').first, 'id');
+    expect(messages.localeName, 'id');
     expect(messages.actionRetry, 'Coba lagi');
     expect(messages.economyExportFailedLabel, 'Ekspor gagal');
+  });
+
+  test('context-free messages resolve from the real platform dispatcher locales', () async {
+    final AppLocalizations messages = await loadDeviceAppLocalizations();
+    final Locale expectedLocale = basicLocaleListResolution(
+      PlatformDispatcher.instance.locales,
+      AppLocalizations.supportedLocales,
+    );
+
+    expect(messages.localeName, expectedLocale.toString());
+    expect(messages.actionRetry, (await AppLocalizations.delegate.load(expectedLocale)).actionRetry);
   });
 
   test('Indonesian plurals, number formatting, and interpolation use translated messages', () async {
