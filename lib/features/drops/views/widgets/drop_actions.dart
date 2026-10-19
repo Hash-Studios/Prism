@@ -6,6 +6,7 @@ import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/unlock_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,17 +31,18 @@ void askToUnlock(BuildContext context, DropsState state, DropWall wall) {
   );
 }
 
-void toastUnlockResult(DropUnlockResult result) {
+void toastUnlockResult(BuildContext context, DropUnlockResult result) {
+  final AppLocalizations l10n = context.l10n;
   switch (result.outcome) {
     case DropUnlockOutcome.unlocked:
-      toasts.success(result.unlocked.length == 1 ? 'Wall unlocked' : '${result.unlocked.length} walls unlocked');
+      toasts.success(l10n.economyDropUnlockedCountToast(result.unlocked.length));
     case DropUnlockOutcome.alreadyUnlocked:
-      toasts.info('You already have this one.');
+      toasts.info(l10n.economyDropAlreadyUnlocked);
     case DropUnlockOutcome.notLive:
-      toasts.error('This Drop is over.');
+      toasts.error(l10n.economyDropOver);
     case DropUnlockOutcome.insufficient:
-      toasts.error('Not enough coins.');
+      toasts.error(l10n.economyNotEnoughCoins);
     case DropUnlockOutcome.failed:
-      toasts.error("Couldn't unlock this. Try again.");
+      toasts.error(l10n.economyDropUnlockFailed);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -13,7 +14,8 @@ class CoinGateOption<T> {
 }
 
 /// Label of the watch-ad option, with what the next ad really pays (more for the first ad of the day).
-String watchAdOptionLabel() => 'Watch a video (+${CoinsService.instance.adsRewardNow})';
+String watchAdOptionLabel(AppLocalizations l10n) =>
+    l10n.economyWatchVideoRewardCoins(CoinsService.instance.adsRewardNow);
 
 /// Bottom sheet for a coin-gated action. Pops with the chosen option's value.
 Future<T?> showCoinGateSheet<T>(
@@ -44,7 +46,7 @@ Future<T?> showCoinGateSheet<T>(
             ),
           if (missing > 0)
             PrismButton(
-              label: 'Earn coins',
+              label: sheetContext.l10n.economyGetCoins,
               expand: true,
               variant: PrismButtonVariant.ghost,
               onPressed: () {
@@ -73,22 +75,25 @@ class _CostAndBalance extends StatelessWidget {
       children: <Widget>[
         if (cost > 0)
           Semantics(
-            label: '$cost coins',
+            label: context.l10n.economyCoins(cost),
             excludeSemantics: true,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 const PrismCoinIcon(size: 32),
                 const SizedBox(width: PrismSpace.xs),
-                Text('$cost', style: PrismTextStyles.numeral(context, 36)),
+                Text(formatLocalizedNumber(cost, context.l10n), style: PrismTextStyles.numeral(context, 36)),
               ],
             ),
           ),
         const SizedBox(height: PrismSpace.xs),
         ValueListenableBuilder<int>(
           valueListenable: CoinsService.instance.balanceNotifier,
-          builder: (context, balance, _) =>
-              Text('You have $balance coins', style: PrismTextStyles.caption(context), textAlign: TextAlign.center),
+          builder: (context, balance, _) => Text(
+            context.l10n.economyYouHaveCoins(balance),
+            style: PrismTextStyles.caption(context),
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );

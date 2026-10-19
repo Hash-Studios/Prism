@@ -1,5 +1,6 @@
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,9 @@ void main() {
     addTearDown(service.controller.close);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: OfflineChip(connectivity: service)),
       ),
     );
@@ -45,6 +49,9 @@ void main() {
     addTearDown(service.controller.close);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: Scaffold(
           body: Center(child: OfflineChip(connectivity: service)),

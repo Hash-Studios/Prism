@@ -9,6 +9,7 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:Prism/features/in_app_notifications/domain/usecases/notifications_usecases.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -51,7 +52,13 @@ void main() {
     getIt.registerSingleton<InAppNotificationsBloc>(
       InAppNotificationsBloc(fetch, _MockMark(), delete, _MockDeleteMany(), clear, markAll, restore),
     );
-    await tester.pumpWidget(const MaterialApp(home: NotificationScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: NotificationScreen(),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 

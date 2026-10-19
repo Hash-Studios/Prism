@@ -3,6 +3,7 @@ import 'package:Prism/features/daily_chest/domain/chest_accent.dart';
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
 import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lottie/lottie.dart';
@@ -26,6 +27,9 @@ void main() {
       MediaQuery(
         data: MediaQueryData(disableAnimations: reduceMotion),
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: primary).copyWith(primary: primary),
           ),

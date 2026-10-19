@@ -1,6 +1,7 @@
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_row.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
@@ -44,6 +45,8 @@ void main() {
     when(() => bloc.state).thenReturn(OnboardingV2State.initial().copyWith(isAuthLoading: loading));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: prismLightThemes.first.theme,
         home: Scaffold(
           body: Builder(

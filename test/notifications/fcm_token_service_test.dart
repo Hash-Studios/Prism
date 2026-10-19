@@ -124,7 +124,11 @@ void main() {
     await refreshes.close();
 
     expect(drained, isTrue);
-    expect(client.writes.single.data, <String, dynamic>{'fcmToken': 'refreshed-token'});
+    expect(client.writes.single.data, <String, dynamic>{
+      'fcmToken': 'refreshed-token',
+      'notificationLocalizationVersion': 1,
+      'notificationLocalizationToken': 'refreshed-token',
+    });
   });
 
   test('waits for an already-started token sync write before returning', () async {

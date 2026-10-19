@@ -1,5 +1,6 @@
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// The "Boosted" tag on a trending tile, or null when the wall has no live boost.
@@ -20,7 +21,7 @@ class BoostedTag extends StatelessWidget {
         color: cs.surface.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
-      child: const PrismTag(label: 'Boosted', tone: PrismTone.accent, icon: Icons.bolt_rounded),
+      child: PrismTag(label: context.l10n.wallpaperBoostedTag, tone: PrismTone.accent, icon: Icons.bolt_rounded),
     );
   }
 }

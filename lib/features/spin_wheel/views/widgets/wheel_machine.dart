@@ -5,6 +5,7 @@ import 'package:Prism/features/spin_wheel/views/widgets/wheel_face.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_geometry.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_pointer.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -46,7 +47,7 @@ class WheelMachine extends StatelessWidget {
     final WheelPalette palette = WheelPalette.of(Theme.of(context).colorScheme);
     final Size size = Size.square(geometry.diameter);
     return Semantics(
-      label: 'Prize wheel',
+      label: context.l10n.economyPrizeWheel,
       excludeSemantics: true,
       child: SizedBox.fromSize(
         size: size,

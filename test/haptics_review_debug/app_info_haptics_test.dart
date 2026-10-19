@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,7 +49,13 @@ void main() {
     testWidgets('${platform.name} info row copies with one impact, and still copies silently when disabled', (
       tester,
     ) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AppInfoPage())));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: AppInfoPage()),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(platformHaptics, isEmpty);
       expect(androidHaptics, isEmpty);

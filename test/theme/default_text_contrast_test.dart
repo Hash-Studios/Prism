@@ -4,9 +4,12 @@ import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_copy.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -51,9 +54,14 @@ void main() {
   tearDown(getIt.reset);
 
   for (final PrismThemeOption option in lightThemes) {
-    group(option.label, () {
+    group(prismThemeDisplayName(option, AppLocalizationsEn()), () {
       final Color page = option.theme.colorScheme.surface;
-      Widget app(Widget home) => MaterialApp(theme: option.theme, home: home);
+      Widget app(Widget home) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: option.theme,
+        home: home,
+      );
 
       testWidgets('not found page text reads on the page', (tester) async {
         await tester.pumpWidget(app(const NotFoundPage()));
@@ -79,6 +87,9 @@ void main() {
       testWidgets('obsolete version screen reads on the page and its button fits at 1.5x text', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             theme: option.theme,
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
@@ -113,7 +124,12 @@ void main() {
 
         _expectReadable(tester, find.textContaining('Your profile is 50% complete'), reason: 'body', page: page);
         for (final ProfileCompletenessStep step in status.missingSteps) {
-          _expectReadable(tester, find.text(step.label), reason: 'step ${step.name}', page: page);
+          _expectReadable(
+            tester,
+            find.text(profileCompletenessStepLabel(AppLocalizationsEn(), step)),
+            reason: 'step ${step.name}',
+            page: page,
+          );
         }
         _expectReadable(tester, find.text('Finish your profile'), reason: 'title', page: page);
       });

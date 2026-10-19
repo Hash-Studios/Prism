@@ -14,6 +14,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -125,6 +127,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(body: DownloadButton(link: link)),
         ),
       );
@@ -161,6 +166,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: DownloadButton(link: 'https://example.com/wall.jpg', label: 'Save'),
         ),
@@ -194,6 +202,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: DownloadButton(link: 'https://example.com/wall.jpg', onDownloaded: () => callbackCount++),
         ),
@@ -207,9 +218,58 @@ void main() {
     expect(callbackCount, 1);
   });
 
+  testWidgets('maps native storage failures to localized copy instead of the native message', (tester) async {
+    getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final List<String> toastMessages = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+      channel,
+      (_) async => <Object?>[
+        OperationResult(
+          success: false,
+          errorCode: 'STORAGE_PERMISSION_REQUIRED',
+          message: 'Allow storage access to save wallpapers on this Android version',
+        ),
+      ],
+    );
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      return true;
+    });
+    addTearDown(() async {
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await flushIo(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(toastMessages, <String>['Check your storage access and try again.']);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   testWidgets('primary draws a compact accent button instead of a round one', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
       ),
     );
@@ -222,6 +282,9 @@ void main() {
   testWidgets('labelled puts the name under the round button', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', labelled: true)),
       ),
     );
@@ -240,6 +303,9 @@ void main() {
       addTearDown(() => AdConsent.instance = original);
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
         ),
       );
@@ -288,17 +354,26 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
     await flushIo(tester);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
     downloadFinished.complete();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(toastMessages, contains('Wall downloaded in Pictures/Prism!'));
+    expect(toastMessages, contains(AppLocalizationsEn().coreWallpaperDownloadedPictures));
     await tester.pump(const Duration(seconds: 1));
   });
 
@@ -309,6 +384,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
       ),
     );
@@ -332,6 +410,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
       ),
     );
@@ -360,6 +441,9 @@ void main() {
       BlocProvider<AdsBloc>.value(
         value: bloc,
         child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
         ),
       ),
@@ -386,6 +470,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
       ),
     );
@@ -437,6 +524,9 @@ void main() {
       });
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: DownloadButton(link: 'https://example.com/wall.jpg', depthTier: depthTier),
           ),
@@ -458,21 +548,24 @@ void main() {
       await download(tester, OperationResult(success: true), depthTier: WallDepthTier.menu);
 
       expect(find.text('Open Photos'), findsOneWidget);
-      expect(find.text('Tap ••• then Depth\u00A0Effect.'), findsOneWidget);
-      expect(toastMessages, <String>['Saved to Photos.']);
+      expect(find.text(AppLocalizationsEn().coreDepthEffectMenuShortTip), findsOneWidget);
+      expect(toastMessages, <String>[AppLocalizationsEn().coreWallpaperSavedPhotos]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('once the guide has shown, the saved toast carries the Depth Effect step', (tester) async {
       await download(tester, OperationResult(success: true), depthTier: WallDepthTier.menu, guideShown: true);
 
       expect(find.text('Open Photos'), findsNothing);
-      expect(toastMessages, <String>['Saved to Photos. In the Lock Screen editor, tap ••• then Depth\u00A0Effect.']);
+      final AppLocalizationsEn l10n = AppLocalizationsEn();
+      expect(toastMessages, <String>[
+        l10n.coreWallpaperSavedWithTip(l10n.coreWallpaperSavedPhotos, l10n.coreDepthEffectMenuTip),
+      ]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a wall without the Depth Effect keeps the plain toast after the guide', (tester) async {
       await download(tester, OperationResult(success: true), guideShown: true);
 
-      expect(toastMessages, <String>['Saved to Photos.']);
+      expect(toastMessages, <String>[AppLocalizationsEn().coreWallpaperSavedPhotos]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a denied Photos permission offers Open settings', (tester) async {

@@ -1,8 +1,10 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// Fit choice, dim slider, reset and the set buttons under the preview.
 class PlacementPanel extends StatelessWidget {
@@ -27,16 +29,16 @@ class PlacementPanel extends StatelessWidget {
   final VoidCallback onReset;
   final ValueChanged<WallpaperTarget> onSet;
 
-  static const Map<PlacementFit, String> _fitLabels = <PlacementFit, String>{
-    PlacementFit.fill: 'Fill',
-    PlacementFit.fitBlur: 'Fit with blur',
-    PlacementFit.fitColor: 'Fit with colour',
+  String _fitLabel(AppLocalizations l10n, PlacementFit fit) => switch (fit) {
+    PlacementFit.fill => l10n.wallpaperFitFill,
+    PlacementFit.fitBlur => l10n.wallpaperFitBlur,
+    PlacementFit.fitColor => l10n.wallpaperFitColour,
   };
 
-  static String _targetLabel(WallpaperTarget target) => switch (target) {
-    WallpaperTarget.home => 'Home screen',
-    WallpaperTarget.lock => 'Lock screen',
-    WallpaperTarget.both => 'Both',
+  String _targetLabel(AppLocalizations l10n, WallpaperTarget target) => switch (target) {
+    WallpaperTarget.home => l10n.wallpaperAutoRotateHomeScreen,
+    WallpaperTarget.lock => l10n.wallpaperAutoRotateLockScreen,
+    WallpaperTarget.both => l10n.wallpaperHistoryBothScreens,
   };
 
   @override
@@ -56,35 +58,35 @@ class PlacementPanel extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 children: <Widget>[
-                  for (final MapEntry<PlacementFit, String> entry in _fitLabels.entries)
+                  for (final PlacementFit fit in PlacementFit.values)
                     ChoiceChip(
-                      label: Text(entry.value),
-                      selected: placement.fit == entry.key,
+                      label: Text(_fitLabel(context.l10n, fit)),
+                      selected: placement.fit == fit,
                       onSelected: busy
                           ? null
                           : (_) {
                               PrismHaptics.selection();
-                              onFit(entry.key);
+                              onFit(fit);
                             },
                     ),
                 ],
               ),
               Row(
                 children: <Widget>[
-                  Text('Dim', style: PrismTextStyles.rowTitle(context)),
+                  Text(context.l10n.wallpaperPlacementDim, style: PrismTextStyles.rowTitle(context)),
                   Expanded(
                     child: Slider(
                       value: placement.dim,
                       max: WallpaperPlacement.maxDim,
                       divisions: 12,
-                      label: '${(placement.dim * 100).round()}%',
+                      label: NumberFormat.percentPattern(context.l10n.localeName).format(placement.dim),
                       onChanged: busy ? null : onDim,
                     ),
                   ),
                   SizedBox(
                     width: 40,
                     child: Text(
-                      '${(placement.dim * 100).round()}%',
+                      NumberFormat.percentPattern(context.l10n.localeName).format(placement.dim),
                       textAlign: TextAlign.end,
                       style: PrismTextStyles.body(context),
                     ),
@@ -93,7 +95,7 @@ class PlacementPanel extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(onPressed: busy ? null : onReset, child: const Text('Reset')),
+                child: TextButton(onPressed: busy ? null : onReset, child: Text(context.l10n.wallpaperReset)),
               ),
               if (busy) ...<Widget>[
                 LinearProgressIndicator(color: scheme.error, backgroundColor: scheme.error.withValues(alpha: 0.2)),
@@ -117,7 +119,7 @@ class PlacementPanel extends StatelessWidget {
                                   PrismHaptics.tap();
                                   onSet(target);
                                 },
-                          child: Text(_targetLabel(target)),
+                          child: Text(_targetLabel(context.l10n, target)),
                         ),
                       ),
                     ),

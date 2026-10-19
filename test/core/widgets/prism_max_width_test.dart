@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_max_width.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +10,9 @@ Future<Rect> _boxRect(WidgetTester tester, double width) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     const MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: PrismPage(
         title: 'Settings',
         body: SizedBox.expand(key: Key('body')),
@@ -39,6 +43,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: PrismPage(
           title: 'Favourites',
           maxContentWidth: double.infinity,
@@ -55,6 +62,9 @@ void main() {
     tester.view.physicalSize = const Size(393, 900);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Material(child: PrismMaxWidth(child: TextField())),
       ),
     );
@@ -73,6 +83,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: PrismPage(
           title: 'Resize state',
           headerBottom: const TextField(key: Key('field')),
@@ -108,6 +121,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: PrismPage(
           title: 'Aligned footer',
           body: SizedBox.expand(key: Key('body')),

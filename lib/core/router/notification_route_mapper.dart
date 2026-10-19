@@ -9,7 +9,9 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/widgets.dart';
 
 class NotificationRouteMapper {
   const NotificationRouteMapper();
@@ -136,7 +138,8 @@ class NotificationRouteMapper {
       return mapped;
     }
     if (route.isNotEmpty) {
-      toasts.error('That item is no longer available');
+      final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      toasts.error(l10n.coreContentNotAvailable);
     }
     return const PageLinkIntent(path: '/notifications', rawUri: '/notifications');
   }

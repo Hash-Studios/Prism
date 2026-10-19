@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -35,6 +36,7 @@ class AiHistoryStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final Widget body;
     if (loading && history.isEmpty) {
       body = SizedBox(
@@ -59,19 +61,16 @@ class AiHistoryStrip extends StatelessWidget {
         child: failed
             ? Row(
                 children: <Widget>[
-                  Expanded(child: Text("Couldn't load your recent wallpapers.", style: PrismTextStyles.body(context))),
+                  Expanded(child: Text(l10n.economyAiHistoryFailed, style: PrismTextStyles.body(context))),
                   PrismButton(
-                    label: 'Try again',
+                    label: l10n.economyAiTryAgain,
                     variant: PrismButtonVariant.ghost,
                     size: PrismButtonSize.compact,
                     onPressed: onRetry,
                   ),
                 ],
               )
-            : Text(
-                'Each wallpaper you generate appears here, so you can compare or switch back.',
-                style: PrismTextStyles.body(context),
-              ),
+            : Text(l10n.economyAiHistoryEmpty, style: PrismTextStyles.body(context)),
       );
     } else {
       body = SizedBox(
@@ -94,8 +93,8 @@ class AiHistoryStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'Recent',
+        PrismSectionHeader(
+          title: l10n.economyAiRecent,
           small: true,
           padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
         ),
@@ -115,13 +114,14 @@ class _Thumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final BorderRadius radius = BorderRadius.circular(PrismRadius.xs);
-    final String date = DateFormat('d MMM').format(record.createdAt.toLocal());
+    final String date = DateFormat.MMMd(l10n.localeName).format(record.createdAt.toLocal());
     return Semantics(
       button: true,
       selected: selected,
-      label: 'Generation from $date',
+      label: l10n.economyAiGenerationFrom(date),
       excludeSemantics: true,
       onTap: onTap,
       child: PressScale(

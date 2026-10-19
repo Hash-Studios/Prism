@@ -1,5 +1,6 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -33,6 +34,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Center(
           child: SizedBox(
             width: 100,
@@ -57,6 +60,8 @@ void main() {
   testWidgets('a tile without a cover shows no image', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: SizedBox(
           width: 100,
           height: 100,

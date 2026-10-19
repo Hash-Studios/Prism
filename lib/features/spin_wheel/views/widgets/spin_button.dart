@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -101,7 +102,7 @@ class _SpinButtonState extends State<SpinButton> {
             children: <Widget>[
               Opacity(opacity: flat ? 0.6 : 1, child: const PrismCoinIcon(size: 16)),
               const SizedBox(width: 4),
-              Text('${widget.price}', style: captionStyle.copyWith(fontSize: 14)),
+              Text(formatLocalizedNumber(widget.price!, context.l10n), style: captionStyle.copyWith(fontSize: 14)),
             ],
           )
         : widget.caption == null

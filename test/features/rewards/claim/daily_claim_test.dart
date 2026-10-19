@@ -5,6 +5,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +44,9 @@ StreakClaimResult _r({
 );
 
 Widget _app(ThemeData theme, Widget home) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: theme,
   home: Scaffold(body: home),
 );
@@ -79,6 +84,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
           child: child!,
@@ -97,8 +105,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
-    await tester.scrollUntilVisible(find.text('See rewards'), 100, scrollable: find.byType(Scrollable).last);
-    expect(find.text('Nice'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(AppLocalizationsEn().economySeeRewards),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text(AppLocalizationsEn().economyNice), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -110,6 +122,9 @@ void main() {
     StreakClaimResult current = _r();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
           child: child!,
@@ -138,7 +153,9 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect(tester.takeException(), isNull);
 
-      final Finder primary = find.text(result.streakBroken ? 'OK' : 'Nice');
+      final Finder primary = find.text(
+        result.streakBroken ? AppLocalizationsEn().actionDone : AppLocalizationsEn().economyNice,
+      );
       await tester.ensureVisible(primary);
       expect(primary, findsOneWidget);
       await tester.tap(primary);
@@ -148,7 +165,9 @@ void main() {
       await tester.tap(find.text('go'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
-      final Finder secondary = find.text(result.streakBroken ? 'Get a freeze for next time' : 'See rewards');
+      final Finder secondary = find.text(
+        result.streakBroken ? AppLocalizationsEn().economyGetFreezeNextTime : AppLocalizationsEn().economySeeRewards,
+      );
       await tester.ensureVisible(secondary);
       expect(secondary, findsOneWidget);
       await tester.tap(secondary);
@@ -177,44 +196,54 @@ void main() {
       }
 
       Future<void> close() async {
-        await tester.tap(find.text('Nice').evaluate().isEmpty ? find.text('OK') : find.text('Nice'));
+        await tester.tap(
+          find.text(AppLocalizationsEn().economyNice).evaluate().isEmpty
+              ? find.text(AppLocalizationsEn().actionDone)
+              : find.text(AppLocalizationsEn().economyNice),
+        );
         await tester.pump();
         await tester.pump(const Duration(seconds: 1));
       }
 
       await open(_r());
-      expect(find.text('Day 3'), findsNWidgets(2));
-      expect(find.text('+8'), findsOneWidget);
-      expect(find.text('See rewards'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDayLabel(3)), findsNWidgets(2));
+      expect(find.text('+${formatLocalizedNumber(8, AppLocalizationsEn())}'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economySeeRewards), findsOneWidget);
 
       await close();
       await open(_r(day: 7, count: 14, week: true, daily: 10, bonus: 30));
-      expect(find.text('Day 7 chest'), findsOneWidget);
-      expect(find.text('+10 today · +30 Day 7 chest'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDay7Chest), findsOneWidget);
+      expect(
+        find.text(
+          '${AppLocalizationsEn().economyStreakDailyReward(10)} · '
+          '${AppLocalizationsEn().economyStreakChestReward(30)}',
+        ),
+        findsOneWidget,
+      );
 
       await close();
       await open(_r(day: 7, count: 14, week: true, daily: 10));
-      expect(find.text('Week complete!'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyWeekComplete), findsOneWidget);
 
       await close();
       await open(_r(day: 7, count: 14, week: true, daily: 10, bonus: 30, chest: false));
-      expect(find.text('Week complete!'), findsOneWidget);
-      expect(find.text('Day 7 chest'), findsNothing);
+      expect(find.text(AppLocalizationsEn().economyWeekComplete), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDay7Chest), findsNothing);
 
       await close();
       await open(_r(broken: true, daily: 5));
-      expect(find.text('Your streak reset'), findsOneWidget);
-      expect(find.text('OK'), findsOneWidget);
-      expect(find.text('Get a freeze for next time'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyStreakReset), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().actionDone), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyGetFreezeNextTime), findsOneWidget);
 
       await close();
       await open(_r(freezesUsed: 1, count: 20));
-      expect(find.text('A freeze saved your 20-day streak'), findsOneWidget);
-      expect(find.text('1 freeze left'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyStreakFreezeSaved(20)), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyStreakFreezesLeft(1)), findsOneWidget);
 
       await close();
       await open(_r(milestone: 30));
-      expect(find.text('30-day streak!'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDayStreakMilestone(30)), findsOneWidget);
     });
   }
 
@@ -235,7 +264,7 @@ void main() {
     await tester.tap(find.text('go'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
-    await tester.tap(find.text('See rewards'));
+    await tester.tap(find.text(AppLocalizationsEn().economySeeRewards));
     await tester.pump(const Duration(seconds: 1));
     expect(called, isTrue);
   });
@@ -245,6 +274,9 @@ void main() {
     addTearDown(reduce.dispose);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: ValueListenableBuilder<bool>(
           valueListenable: reduce,
           builder: (context, reduced, _) => MediaQuery(
@@ -272,12 +304,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(CoinsService.instance.lastClaimNotifier.value, isNull);
-    expect(find.text('Nice'), findsOneWidget);
-    await tester.tap(find.text('Nice'));
+    expect(find.text(AppLocalizationsEn().economyNice), findsOneWidget);
+    await tester.tap(find.text(AppLocalizationsEn().economyNice));
     await tester.pump(const Duration(seconds: 1));
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
@@ -290,7 +322,7 @@ void main() {
       _app(ThemeData.light(), DailyClaimSheetHost(onSeeRewards: () {}, child: const Text('home'))),
     );
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     expect(CoinsService.instance.lastClaimNotifier.value, isNull);
 
     await backend.install();
@@ -300,7 +332,7 @@ void main() {
       ..loggedIn = true;
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
@@ -311,6 +343,9 @@ void main() {
     final navigator = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: navigator,
         home: DailyClaimSheetHost(
           onSeeRewards: () {},
@@ -322,12 +357,12 @@ void main() {
     await tester.pumpAndSettle();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     expect(CoinsService.instance.lastClaimNotifier.value, isNotNull);
     navigator.currentState!.pop();
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyNice), findsOneWidget);
     navigator.currentState!.pop();
     await tester.pump(const Duration(seconds: 1));
     backend.onCall = (_, _) async => <String, Object>{
@@ -337,7 +372,7 @@ void main() {
     };
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Nice'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
@@ -362,7 +397,7 @@ void main() {
     );
     await tester.tap(find.text('go'));
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Earn coins'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyGetCoins), findsOneWidget);
     expect(find.text('Upgrade'), findsOneWidget);
   });
 }

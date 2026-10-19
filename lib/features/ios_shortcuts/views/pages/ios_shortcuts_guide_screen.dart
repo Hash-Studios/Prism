@@ -1,20 +1,21 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const List<String> shortcutsGuideSteps = <String>[
-  'Open the Shortcuts app. Tap Automation, then New Automation.',
-  'Pick when it runs: Time of Day, When I open an app, or Charger.',
-  'Add the action "Get Prism Wallpaper". Then add the action "Set Wallpaper".',
-  'Turn off "Ask Before Running". Tap Done.',
+List<String> shortcutsGuideSteps(AppLocalizations l10n) => <String>[
+  l10n.wallpaperShortcutsOpenAutomationSteps,
+  l10n.wallpaperShortcutsChooseTriggerSteps,
+  l10n.wallpaperShortcutsAddActionsSteps,
+  l10n.wallpaperShortcutsDisableConfirmationSteps,
 ];
 
-const List<(String, String)> shortcutsGuideSources = <(String, String)>[
-  ('Wall of the Day', "Today's pick from Prism."),
-  ('Random favourite', 'A random wallpaper you hearted. It avoids the one it gave last. Heart some wallpapers first.'),
+List<(String, String)> shortcutsGuideSources(AppLocalizations l10n) => <(String, String)>[
+  (l10n.wallpaperShortcutsSourceWotd, l10n.wallpaperShortcutsSourceWotdDescription),
+  (l10n.wallpaperShortcutsSourceFavourite, l10n.wallpaperShortcutsSourceFavouriteDescription),
 ];
 
 @RoutePage()
@@ -31,15 +32,15 @@ class IosShortcutsGuideScreen extends StatelessWidget {
       logger.w('Could not open Shortcuts', error: error, stackTrace: stackTrace);
     }
     if (opened) return;
-    messenger.showSnackBar(const SnackBar(content: Text('Could not open Shortcuts. Open the app yourself.')));
+    messenger.showSnackBar(SnackBar(content: Text(context.l10n.wallpaperShortcutsOpenError)));
   }
 
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Change automatically',
+      title: context.l10n.wallpaperShortcutsTitle,
       bottomBar: PrismButton(
-        label: 'Open Shortcuts',
+        label: context.l10n.wallpaperShortcutsOpenAction,
         icon: Icons.open_in_new_rounded,
         expand: true,
         onPressed: () => _openShortcuts(context),
@@ -47,25 +48,22 @@ class IosShortcutsGuideScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
         children: <Widget>[
-          Text('Change your wallpaper automatically', style: PrismTextStyles.sectionTitle(context)),
+          Text(context.l10n.wallpaperShortcutsHeadline, style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: PrismSpace.xs),
-          Text(
-            'iPhone lets Shortcuts change the wallpaper for you. Make one automation. It runs on its own.',
-            style: PrismTextStyles.body(context),
-          ),
-          const PrismSectionHeader(title: 'Steps'),
+          Text(context.l10n.wallpaperShortcutsBody, style: PrismTextStyles.body(context)),
+          PrismSectionHeader(title: context.l10n.wallpaperShortcutsSteps),
           PrismCard(
             child: Column(
               children: <Widget>[
-                for (int index = 0; index < shortcutsGuideSteps.length; index++)
-                  _StepRow(number: index + 1, text: shortcutsGuideSteps[index]),
+                for (final (int index, String step) in shortcutsGuideSteps(context.l10n).indexed)
+                  _StepRow(number: index + 1, text: step),
               ],
             ),
           ),
-          const PrismSectionHeader(title: 'Pick what Prism sends'),
+          PrismSectionHeader(title: context.l10n.wallpaperShortcutsChoosePrismData),
           PrismGroup(
             children: <Widget>[
-              for (final (String name, String detail) in shortcutsGuideSources)
+              for (final (String name, String detail) in shortcutsGuideSources(context.l10n))
                 PrismRow(icon: Icons.photo_outlined, title: name, subtitle: detail),
             ],
           ),

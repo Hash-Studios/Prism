@@ -27,6 +27,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
 import 'package:Prism/features/library/data/favourites_export.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -35,18 +36,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 
-String _sourceLabel(WallpaperSource source) => switch (source) {
+String _sourceLabel(AppLocalizations l10n, WallpaperSource source) => switch (source) {
   WallpaperSource.prism => 'Prism',
   WallpaperSource.wallhaven => 'Wallhaven',
   WallpaperSource.pexels => 'Pexels',
-  WallpaperSource.downloaded => 'Downloads',
-  WallpaperSource.unknown => 'Other',
+  WallpaperSource.downloaded => l10n.wallpaperDownloadsTitle,
+  WallpaperSource.unknown => l10n.wallpaperOtherSource,
 };
 
-String _sortLabel(FavouriteSort sort) => switch (sort) {
-  FavouriteSort.recentlyAdded => 'Recently added',
-  FavouriteSort.oldest => 'Oldest',
-  FavouriteSort.source => 'Source',
+String _sortLabel(AppLocalizations l10n, FavouriteSort sort) => switch (sort) {
+  FavouriteSort.recentlyAdded => l10n.wallpaperFavouriteSortRecentlyAdded,
+  FavouriteSort.oldest => l10n.wallpaperFavouriteSortOldest,
+  FavouriteSort.source => l10n.wallpaperFavouriteSortSource,
 };
 
 const List<WallpaperSource> _filterSources = <WallpaperSource>[
@@ -114,7 +115,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   void _openWall(List<FavouriteWallEntity> walls, int index) {
     final FavouriteWallEntity wall = walls[index];
     if (wall is LegacyFavouriteWall) {
-      toasts.info('This favourite is from an older version and cannot be opened. Press and hold to remove it.');
+      toasts.info(context.l10n.wallpaperFavouriteUnavailableLegacy);
       return;
     }
     unawaited(
@@ -157,9 +158,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         SnackBar(
           content: Text(message),
           action: SnackBarAction(
-            label: 'Undo',
+            label: context.l10n.notifUndo,
             onPressed: () async {
-              if (!await undo()) toasts.error("Couldn't restore favourites.");
+              if (!await undo()) toasts.error(context.l10n.wallpaperFavouriteRestoreError);
             },
           ),
         ),
@@ -172,12 +173,14 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     if (playTapHaptic) PrismHaptics.tap();
     final bool removed = await adapter.removeWalls(walls.map((wall) => wall.id).toList(growable: false));
     if (!removed) {
-      toasts.error("Couldn't remove favourites. Try again.");
+      toasts.error(context.l10n.wallpaperFavouriteRemoveError);
       return;
     }
     _showUndo(
       messenger,
-      walls.length == 1 ? 'Removed from favourites' : 'Removed ${walls.length} favourites',
+      walls.length == 1
+          ? context.l10n.wallpaperFavouriteRemovedOne
+          : context.l10n.wallpaperFavouriteRemovedMany(walls.length),
       () => adapter.restoreWalls(walls),
     );
   }
@@ -187,9 +190,13 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final bool guest = app_state.prismUser.id.isEmpty;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: all.length == 1 ? 'Clear 1 favourite?' : 'Clear ${all.length} favourites?',
-      message: guest ? 'This removes them from this device.' : 'This removes them from your account.',
-      confirmLabel: 'Clear all',
+      title: all.length == 1
+          ? context.l10n.wallpaperFavouriteClearOneTitle
+          : context.l10n.wallpaperFavouriteClearManyTitle(all.length),
+      message: guest
+          ? context.l10n.wallpaperFavouriteClearDeviceMessage
+          : context.l10n.wallpaperFavouriteClearAccountMessage,
+      confirmLabel: context.l10n.wallpaperFavouriteClearAll,
       destructive: true,
     );
     if (!confirmed || !mounted) return;
@@ -199,19 +206,21 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     PrismHaptics.tap();
     _exitSelection();
     if (!await adapter.deleteData()) {
-      toasts.error("Couldn't clear favourites. Try again.");
+      toasts.error(context.l10n.wallpaperFavouriteClearError);
       return;
     }
     _showUndo(
       messenger,
-      before.length == 1 ? 'Cleared 1 favourite' : 'Cleared ${before.length} favourites',
+      before.length == 1
+          ? context.l10n.wallpaperFavouriteClearedOne
+          : context.l10n.wallpaperFavouriteClearedMany(before.length),
       () => adapter.restoreWalls(before),
     );
   }
 
   Future<void> _export(List<FavouriteWallEntity> all) async {
     if (all.isEmpty) {
-      toasts.info('No favourites to export yet.');
+      toasts.info(context.l10n.wallpaperFavouriteExportEmpty);
       return;
     }
     PrismHaptics.tap();
@@ -228,7 +237,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       unawaited(analytics.track(FavouritesExportedEvent(count: all.length)));
     } catch (error, stackTrace) {
       logger.e('Could not export favourites', error: error, stackTrace: stackTrace, tag: favouritesExportSourceTag);
-      toasts.error("Couldn't export favourites. Try again.");
+      toasts.error(context.l10n.wallpaperFavouriteExportError);
     }
   }
 
@@ -250,9 +259,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.xxs, PrismSpace.xxs, PrismSpace.xxs),
           child: Row(
             children: <Widget>[
-              Expanded(child: Text('Sign in to keep them on every device', style: PrismTextStyles.body(context))),
+              Expanded(child: Text(context.l10n.wallpaperFavouriteGuestPrompt, style: PrismTextStyles.body(context))),
               PrismButton(
-                label: 'Sign in',
+                label: context.l10n.wallpaperSignIn,
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,
                 onPressed: () {
@@ -261,7 +270,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               ),
               PrismIconButton(
                 icon: Icons.close_rounded,
-                tooltip: 'Dismiss',
+                tooltip: context.l10n.wallpaperDismiss,
                 onPressed: () => setState(() => _guestBannerDismissed = true),
               ),
             ],
@@ -284,6 +293,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           first.source,
           first.fullUrl,
           first.thumbnailUrl,
+          l10n: context.l10n,
           core: first.toFeedItem().wallpaperCore,
         );
       }
@@ -307,7 +317,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       await ShareService.shareText(text: text, context: context);
     } catch (error, stackTrace) {
       logger.e('Could not share favourites', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't share. Try again.");
+      toasts.error(context.l10n.wallpaperFavouriteShareError);
     }
   }
 
@@ -333,7 +343,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               Expanded(
                 child: PrismTextField(
                   controller: _searchController,
-                  hint: 'Search by creator or category',
+                  hint: context.l10n.wallpaperFavouriteSearchHint,
                   prefixIcon: Icons.search_rounded,
                   textInputAction: TextInputAction.search,
                   onChanged: (value) => bloc.add(FavouriteWallsEvent.queryChanged(query: value)),
@@ -341,7 +351,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       ? null
                       : PrismIconButton(
                           icon: Icons.close_rounded,
-                          tooltip: 'Clear search',
+                          tooltip: context.l10n.wallpaperClearSearch,
                           onPressed: () {
                             _searchController.clear();
                             bloc.add(const FavouriteWallsEvent.queryChanged(query: ''));
@@ -350,30 +360,30 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 ),
               ),
               PopupMenuButton<FavouriteSort>(
-                tooltip: 'Sort',
+                tooltip: context.l10n.wallpaperSort,
                 icon: const Icon(Icons.sort_rounded),
                 initialValue: state.sort,
                 onSelected: (sort) => bloc.add(FavouriteWallsEvent.sortChanged(sort: sort)),
                 itemBuilder: (context) => <PopupMenuEntry<FavouriteSort>>[
                   for (final FavouriteSort sort in FavouriteSort.values)
-                    PopupMenuItem<FavouriteSort>(value: sort, child: Text(_sortLabel(sort))),
+                    PopupMenuItem<FavouriteSort>(value: sort, child: Text(_sortLabel(context.l10n, sort))),
                 ],
               ),
               PopupMenuButton<_FavouritesMenuAction>(
-                tooltip: 'More favourites actions',
+                tooltip: context.l10n.wallpaperFavouriteMoreActions,
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => switch (action) {
                   _FavouritesMenuAction.export => unawaited(_export(state.items)),
                   _FavouritesMenuAction.clearAll => unawaited(_clearAll(state.items)),
                 },
-                itemBuilder: (context) => const <PopupMenuEntry<_FavouritesMenuAction>>[
+                itemBuilder: (context) => <PopupMenuEntry<_FavouritesMenuAction>>[
                   PopupMenuItem<_FavouritesMenuAction>(
                     value: _FavouritesMenuAction.export,
-                    child: Text('Export favourites'),
+                    child: Text(context.l10n.wallpaperFavouriteExport),
                   ),
                   PopupMenuItem<_FavouritesMenuAction>(
                     value: _FavouritesMenuAction.clearAll,
-                    child: Text('Clear all favourites'),
+                    child: Text(context.l10n.wallpaperFavouriteClearAll),
                   ),
                 ],
               ),
@@ -384,11 +394,11 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: <Widget>[
-                _sourceChip(context, label: 'All', selected: state.sourceFilter == null),
+                _sourceChip(context, label: context.l10n.wallpaperAll, selected: state.sourceFilter == null),
                 for (final WallpaperSource source in _filterSources)
                   _sourceChip(
                     context,
-                    label: _sourceLabel(source),
+                    label: _sourceLabel(context.l10n, source),
                     selected: state.sourceFilter == source,
                     source: source,
                   ),
@@ -400,7 +410,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             child: Padding(
               padding: const EdgeInsets.only(left: PrismSpace.xxs),
               child: Text(
-                state.items.length == 1 ? '1 favourite' : '${state.items.length} favourites',
+                context.l10n.wallpaperFavouriteCount(state.items.length),
                 style: PrismTextStyles.caption(context),
               ),
             ),
@@ -434,7 +444,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           button: true,
           image: true,
           selected: isSelected,
-          label: wallpaperSemanticLabel(wall.authorName),
+          label: wallpaperSemanticLabel(wall.authorName, context.l10n),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
@@ -473,7 +483,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
                           child: Text(
-                            wall.syncStatus == FavouriteSyncStatus.pending ? 'Waiting to sync' : 'Not synced',
+                            wall.syncStatus == FavouriteSyncStatus.pending
+                                ? context.l10n.wallpaperFavouriteWaitingSync
+                                : context.l10n.wallpaperFavouriteNotSynced,
                             style: Theme.of(context).textTheme.labelSmall,
                           ),
                         ),
@@ -516,7 +528,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       bottom: PrismSpace.xs,
                       child: Center(
                         child: PrismButton(
-                          label: 'Remove',
+                          label: context.l10n.wallpaperFavouriteRemove,
                           variant: PrismButtonVariant.danger,
                           size: PrismButtonSize.compact,
                           onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall], playTapHaptic: false)),
@@ -545,16 +557,16 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         state.status == LoadStatus.failure
             ? GlintState(
                 kind: GlintStateKind.error,
-                title: "Couldn't load your favourites",
-                body: 'Check your connection and try again.',
-                actionLabel: 'Try again',
+                title: context.l10n.wallpaperFavouriteLoadError,
+                body: context.l10n.wallpaperCheckConnection,
+                actionLabel: context.l10n.wallpaperTryAgain,
                 onAction: () => unawaited(refreshList()),
               )
             : GlintState(
                 kind: GlintStateKind.empty,
-                title: 'No favourites yet',
-                body: 'Tap the heart on a wallpaper to keep it here.',
-                actionLabel: 'Browse wallpapers',
+                title: context.l10n.wallpaperFavouriteEmptyTitle,
+                body: context.l10n.wallpaperFavouriteEmptyBody,
+                actionLabel: context.l10n.wallpaperBrowseWallpapers,
                 onAction: () =>
                     context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
               ),
@@ -564,9 +576,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       return _pullable(
         GlintState(
           kind: GlintStateKind.empty,
-          title: 'No matching favourites',
-          body: 'Try a different search or source.',
-          actionLabel: 'Clear filters',
+          title: context.l10n.wallpaperFavouriteNoMatch,
+          body: context.l10n.wallpaperFavouriteTryDifferent,
+          actionLabel: context.l10n.wallpaperClearFilters,
           onAction: () {
             _searchController.clear();
             context.read<FavouriteWallsBloc>()
@@ -615,7 +627,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     return BlocConsumer<FavouriteWallsBloc, FavouriteWallsState>(
       listenWhen: (previous, current) =>
           previous.status != LoadStatus.failure && current.status == LoadStatus.failure && current.items.isNotEmpty,
-      listener: (context, state) => toasts.info("Couldn't refresh favourites. Showing your saved list."),
+      listener: (context, state) => toasts.info(context.l10n.wallpaperFavouriteRefreshFallback),
       builder: (context, state) {
         final bool loaded =
             state.status != LoadStatus.initial && (state.status != LoadStatus.loading || state.items.isNotEmpty);
@@ -648,7 +660,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               if (selecting)
                 SelectionHeader(
                   count: selectedWalls.length,
-                  hint: selectedWalls.length > 1 && !hideSetWallpaperUi ? 'Set uses the first one you picked' : null,
+                  hint: selectedWalls.length > 1 && !hideSetWallpaperUi
+                      ? context.l10n.wallpaperFavouriteSetUsesFirst
+                      : null,
                   onCancel: _exitSelection,
                 )
               else ...<Widget>[
@@ -672,7 +686,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 SelectionActionBar(
                   actions: <Widget>[
                     CircularMenuButton(
-                      label: 'Remove from favourites',
+                      label: context.l10n.wallpaperFavouriteRemoveAction,
                       isLoading: false,
                       onTap: () => unawaited(_removeSelected(state.items)),
                       child: const Icon(Icons.delete_outline_rounded),
@@ -684,7 +698,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                         onSet: _exitSelection,
                       ),
                     CircularMenuButton(
-                      label: 'Share',
+                      label: context.l10n.wallpaperShare,
                       isLoading: false,
                       onTap: () => unawaited(_shareSelected(state.items)),
                       child: const Icon(Icons.ios_share_rounded),

@@ -11,6 +11,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -135,7 +136,7 @@ class _SecondarySplash extends StatelessWidget {
       color: Theme.of(context).colorScheme.surface,
       child: Center(
         child: Semantics(
-          label: 'Prism',
+          label: context.l10n.wallpaperHomeAppName,
           image: true,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(size * 0.225),
@@ -159,9 +160,9 @@ class _StartupFailure extends StatelessWidget {
       body: SafeArea(
         child: GlintState(
           kind: GlintStateKind.error,
-          title: 'Prism could not start',
-          body: 'Check your connection and try again.',
-          actionLabel: 'Try again',
+          title: context.l10n.wallpaperStartupFailed,
+          body: context.l10n.wallpaperCheckConnection,
+          actionLabel: context.l10n.wallpaperTryAgain,
           onAction: () {
             PrismHaptics.tap();
             onRetry();

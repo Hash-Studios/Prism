@@ -8,8 +8,10 @@ import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 /// Keeps the inviter of a referral link and claims the reward when the user is signed in.
@@ -18,7 +20,8 @@ Future<void> acceptReferralLink(String inviterId) async {
   if (app_state.prismUser.loggedIn) {
     await CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterId);
   } else {
-    toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.', haptic: false);
+    final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+    toasts.success(l10n.coreReferralSaved(CoinPolicy.referral), haptic: false);
   }
 }
 
@@ -90,7 +93,8 @@ class DeepLinkNavigation {
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);
       case SetupLinkIntent():
-        toasts.error('Home screen setups are no longer available.', haptic: false);
+        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        toasts.error(l10n.coreHomeScreenSetupUnavailable, haptic: false);
         return const HomeTabRoute();
       case ReferLinkIntent():
         await onReferral(action.inviterId);

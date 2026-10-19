@@ -1,5 +1,7 @@
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,6 +40,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
           child: child!,
@@ -68,15 +73,18 @@ void main() {
 
   testWidgets('shows dated history and server milestones with no stale week relabeling', (tester) async {
     await pump(tester, CreatorProgressState(progress: creatorFixture(), status: CreatorProgressStatus.loaded));
-    expect(find.text('12–18 Oct 2026 UTC'), findsOneWidget);
+    expect(find.text(creatorWeekDates(DateTime.utc(2026, 10, 18), AppLocalizationsEn(), 'en')), findsOneWidget);
     expect(find.text('Approved wallpapers: 2 / 5'), findsOneWidget);
     expect(find.text('Next milestone: +100 XP'), findsOneWidget);
     expect(find.textContaining('7 new members favourited'), findsOneWidget);
     expect(find.textContaining('99 new qualifying'), findsNothing);
     await tester.tap(find.text('What counts & history'));
     await tester.pumpAndSettle();
-    expect(find.text('Tracking since 2 Oct 2026 UTC'), findsOneWidget);
-    expect(find.text('5–11 Oct 2026 UTC'), findsOneWidget);
+    expect(
+      find.text(AppLocalizationsEn().economyCreatorTrackingSince(creatorDate(DateTime.utc(2026, 10, 2), 'en'))),
+      findsOneWidget,
+    );
+    expect(find.text(creatorWeekDates(DateTime.utc(2026, 10, 11), AppLocalizationsEn(), 'en')), findsOneWidget);
     expect(find.textContaining('Older uploads may be ineligible'), findsOneWidget);
     expect(find.textContaining('at least seven days old'), findsOneWidget);
   });

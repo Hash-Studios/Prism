@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +66,13 @@ void main() {
         AnalyticsRuntime.reset();
       });
 
-      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: CollectionViewGrid()),
+        ),
+      );
 
       expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, thumbnail.value);
     });
@@ -81,12 +88,18 @@ void main() {
       collectionHasMore = originalHasMore;
     });
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
 
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(GridView), findsNothing);
-    expect(find.widgetWithText(GlintState, 'Nothing in this collection yet'), findsOneWidget);
+    expect(find.widgetWithText(GlintState, 'No collections yet'), findsOneWidget);
     expect(find.text('See more'), findsNothing);
   });
 
@@ -104,7 +117,13 @@ void main() {
       AnalyticsRuntime.reset();
     });
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
 
     expect(find.text('See more'), findsOneWidget);
   });
@@ -123,7 +142,13 @@ void main() {
       AnalyticsRuntime.reset();
     });
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 16));
 
     final tile = tester.widget<DecoratedBox>(
@@ -148,7 +173,13 @@ void main() {
       AnalyticsRuntime.reset();
     });
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 16));
 
     expect(tester.widget<GridView>(find.byType(GridView)).childrenDelegate.estimatedChildCount, 25);
@@ -186,7 +217,13 @@ void main() {
       await getIt.reset();
     });
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 16));
 
     final tileFinder = find.byType(PrismWallTile);
@@ -227,6 +264,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -268,7 +308,13 @@ void main() {
     messenger.setMockMethodCallHandler(toastChannel, (_) async => null);
     addTearDown(() => messenger.setMockMethodCallHandler(toastChannel, null));
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
     expect(find.byType(RefreshIndicator), findsOneWidget);
 
     await getCollectionWithName('space').catchError((Object _) {});

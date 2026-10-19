@@ -1,6 +1,8 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +23,7 @@ class InterestCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String displayName = categoryDisplayName(name, context.l10n);
     const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     const selectedTileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
@@ -72,7 +75,7 @@ class InterestCategoryTile extends StatelessWidget {
                   right: 8,
                   bottom: 8,
                   child: Text(
-                    name,
+                    displayName,
                     style: const TextStyle(
                       fontFamily: OnboardingTypography.sans,
                       color: Colors.white,

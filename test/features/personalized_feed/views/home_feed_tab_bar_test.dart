@@ -5,6 +5,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/home_feed_tab_bar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +70,9 @@ int _pixelInk(ByteData pixels, int width, int x, int y) {
 }
 
 void main() {
-  final PrismThemeOption rose = prismLightThemes.firstWhere((PrismThemeOption option) => option.label == 'Rose');
+  final PrismThemeOption rose = prismLightThemes.firstWhere(
+    (PrismThemeOption option) => prismThemeDisplayName(option, AppLocalizationsEn()) == 'Rose',
+  );
   final ThemeData theme = withPrismAccent(rose.theme, rose.defaultAccentValue);
   final ColorScheme cs = theme.colorScheme;
 
@@ -82,6 +86,8 @@ void main() {
     final List<HomeFeedChip> picked = <HomeFeedChip>[];
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: theme,
         home: RepaintBoundary(
           key: boundary,

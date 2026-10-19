@@ -1,4 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/category_feed/views/widgets/premium_tile_badge.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -14,17 +16,20 @@ class CollectionCardData {
   final String thumbUrl;
   final bool isPremium;
 
-  String get title {
+  String title(AppLocalizations l10n) {
     final String trimmed = name.trim();
+    if (kind == CollectionCardKind.category && trimmed.isNotEmpty) return categoryDisplayName(trimmed, l10n);
     if (trimmed.isNotEmpty) return trimmed;
-    return kind == CollectionCardKind.category ? 'Category' : 'Collection';
+    return kind == CollectionCardKind.category ? l10n.wallpaperCategory : l10n.wallpaperCollection;
   }
 
-  String get semanticLabel {
+  String semanticLabel(AppLocalizations l10n) {
     final String trimmed = name.trim();
-    if (kind == CollectionCardKind.category) return trimmed.isEmpty ? 'Category' : 'Category, $trimmed';
-    if (trimmed.isEmpty) return isPremium ? 'Premium collection' : 'Collection';
-    return isPremium ? 'Premium collection, $trimmed' : 'Collection, $trimmed';
+    if (kind == CollectionCardKind.category) {
+      return trimmed.isEmpty ? l10n.wallpaperCategory : l10n.wallpaperCategoryNamed(categoryDisplayName(trimmed, l10n));
+    }
+    if (trimmed.isEmpty) return isPremium ? l10n.wallpaperPremiumCollection : l10n.wallpaperCollection;
+    return isPremium ? l10n.wallpaperPremiumCollectionNamed(trimmed) : l10n.wallpaperCollectionNamed(trimmed);
   }
 }
 
@@ -60,7 +65,7 @@ class CollectionCard extends StatelessWidget {
       scale: 0.98,
       child: Semantics(
         button: true,
-        label: data.semanticLabel,
+        label: data.semanticLabel(context.l10n),
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
@@ -93,7 +98,7 @@ class CollectionCard extends StatelessWidget {
                   right: PrismSpace.md,
                   bottom: PrismSpace.md,
                   child: Text(
-                    data.title,
+                    data.title(context.l10n),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.cardTitle(context).copyWith(color: Colors.white),

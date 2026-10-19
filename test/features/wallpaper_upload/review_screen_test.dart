@@ -8,6 +8,8 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,6 +56,9 @@ class _ReviewFirestoreClient extends FakeFirestoreClient {
 
 /// The thumbnail skeleton pulses forever while an image loads, so screen tests run with motion off.
 Widget _screen() => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   builder: (context, child) =>
       MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
   home: const ReviewScreen(),
@@ -86,6 +91,9 @@ void main() {
             addTearDown(tester.view.resetDevicePixelRatio);
             await tester.pumpWidget(
               MaterialApp(
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+
                 theme: kLightTheme,
                 home: Scaffold(
                   body: SingleChildScrollView(
@@ -147,6 +155,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SingleChildScrollView(
             child: WallTile(FirestoreDocument('wall-1', <String, dynamic>{'rejectionReason': '  '}), rejected: true),
@@ -155,7 +166,7 @@ void main() {
       ),
     );
 
-    expect(find.text(RejectionFeedback.fallbackReason), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().wallpaperUploadRejectionFallback), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -251,7 +262,7 @@ void main() {
 
     expect(find.text('Nothing here yet'), findsOneWidget);
     expect(find.text('Wallpapers you upload show their review status here.'), findsOneWidget);
-    expect(find.text('Upload a wallpaper'), findsOneWidget);
+    expect(find.text('Upload wallpaper'), findsOneWidget);
   });
 
   testWidgets('shows a skeleton while the uploads load', (tester) async {

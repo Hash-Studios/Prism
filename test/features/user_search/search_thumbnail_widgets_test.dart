@@ -10,6 +10,7 @@ import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,9 @@ Future<void> _pumpDiscovery(WidgetTester tester, WallhavenWallpaper wall) async 
     BlocProvider<SearchDiscoveryBloc>.value(
       value: bloc,
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchDiscoveryWidget(tags: const <String>[], selectedTag: '', onTagPressed: (_) {}),
         ),
@@ -77,6 +81,9 @@ void main() {
     testWidgets('search grid keeps the lg crop and ignores cached original thumb $rawOriginal', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: SearchGrid(
               key: ValueKey<String>(rawOriginal),
@@ -99,6 +106,9 @@ void main() {
     const String smallUrl = 'https://th.wallhaven.cc/small/21/21276x.jpg';
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SearchGrid(
             query: 'test',

@@ -12,6 +12,7 @@ import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_reveal_card.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_span.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -83,6 +84,9 @@ void main() {
       final Widget box = ChestBox(phase: phase, size: 200, onBurst: () => bursts++, onOpened: () => opened++);
       return tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Center(
             child: bundle == null ? box : DefaultAssetBundle(bundle: bundle, child: box),
           ),
@@ -184,6 +188,9 @@ void main() {
       final Completer<DailyChestResult> reply = Completer<DailyChestResult>();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: kLightTheme,
           builder: (BuildContext context, Widget? child) => DefaultAssetBundle(bundle: bundle, child: child!),
           home: DailyChestPage(

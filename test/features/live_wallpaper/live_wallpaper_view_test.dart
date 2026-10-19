@@ -3,6 +3,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,9 @@ void main() {
     addTearDown(bloc.close);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<LiveWallpaperBloc>.value(
           value: bloc,
           child: pickVideo == null
@@ -91,7 +95,7 @@ void main() {
   });
 
   testWidgets('a failure shows its message', (tester) async {
-    repository.outcome = const LiveApplyOutcome.failed("Couldn't set the live wallpaper. Try again.");
+    repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
     await pump(tester);
     await tester.tap(find.text('Set live wallpaper'));
     await tester.pump();
@@ -100,7 +104,7 @@ void main() {
   });
 
   testWidgets('a repeated failure shows its message again after the first one is dismissed', (tester) async {
-    repository.outcome = const LiveApplyOutcome.failed("Couldn't set the live wallpaper. Try again.");
+    repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
     await pump(tester);
     await tester.tap(find.text('Set live wallpaper'));
     await tester.pump();
@@ -137,7 +141,7 @@ void main() {
   });
 
   testWidgets('a rejected video shows the reason and keeps the button off', (tester) async {
-    repository.videoProblem = 'That video is larger than 256 MB. Pick a shorter clip.';
+    repository.videoProblem = LiveApplyFailure.videoTooLarge;
     await pump(tester, pickVideo: () async => '/tmp/big.mp4');
     await tester.tap(find.text('Video'));
     await tester.pump();

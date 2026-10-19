@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,7 +37,13 @@ void main() {
     OnboardingV2Shell? builtShell;
     final router = _OnboardingRouteTestRouter((shell) => builtShell = shell);
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await router.navigatePath('/');
     await tester.pumpAndSettle();
     await router.replaceAll(<PageRouteInfo>[OnboardingV2ShellRoute(key: key, signOutForRecovery: signOutForRecovery)]);

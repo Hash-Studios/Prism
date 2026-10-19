@@ -17,6 +17,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
+import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -59,6 +60,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_butto
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -70,7 +72,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 @visibleForTesting
@@ -217,7 +218,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.success('Long press to reset', haptic: false);
+      toasts.success(context.l10n.wallpaperAccentResetHint, haptic: false);
       _accentToastShown = true;
     }
   }
@@ -312,11 +313,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               localFile,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) =>
-                  const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+                  GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
             ),
             SafeArea(
               child: Align(
-                alignment: Alignment.topLeft,
+                alignment: AlignmentDirectional.topStart,
                 child: IconButton(
                   tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   onPressed: () => Navigator.pop(context),
@@ -332,8 +333,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
     if (thumbnailUrl.isEmpty) {
-      return const Scaffold(
-        body: GlintState(kind: GlintStateKind.loading, title: 'Loading wallpaper'),
+      return Scaffold(
+        body: GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper),
       );
     }
     return Scaffold(
@@ -382,13 +383,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 Expanded(
                   child: GlintState(
                     kind: GlintStateKind.error,
-                    title: "Couldn't load this wallpaper",
-                    body: state.message,
-                    actionLabel: 'Try again',
+                    title: context.l10n.wallpaperOpenError,
+                    body: switch (state.failure) {
+                      WallpaperDetailLoadFailure.notFound => context.l10n.wallpaperDetailNotFound,
+                      WallpaperDetailLoadFailure.unavailable => context.l10n.wallpaperCheckConnection,
+                    },
+                    actionLabel: context.l10n.wallpaperTryAgain,
                     onAction: () => _loadWallpaper(context),
                   ),
                 ),
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
+                TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.wallpaperGoBack)),
                 const SizedBox(height: 16),
               ],
             ),
@@ -557,7 +561,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         // Its own node: the faded panel content drops out of semantics, and this label must not merge into the panel.
         container: true,
         button: true,
-        label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
+        label: isCollapsed ? context.l10n.wallpaperExpandDetails : context.l10n.wallpaperCollapseDetails,
         child: GestureDetector(
           onTap: () {
             if (state.panelScrollInProgress) return;
@@ -645,7 +649,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           onTap: () => _handleColorSelected(context, color),
           onLongPress: () {
             PrismHaptics.impact();
-            Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
+            final String copiedMessage = context.l10n.wallpaperDetailColorCodeCopied;
+            Clipboard.setData(
+              ClipboardData(text: '#${color.rgbHex.toUpperCase()}'),
+            ).then((_) => toasts.color(color, message: copiedMessage));
           },
         ),
     ];
@@ -670,9 +677,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required VoidCallback? onLongPress,
   }) {
     final secondary = Theme.of(context).colorScheme.secondary;
-    final label = color == null ? 'Original wallpaper colors' : 'Accent color';
+    final label = color == null ? context.l10n.wallpaperAccentColorsOriginal : context.l10n.wallpaperAccentColor;
     final placeholder = color ?? secondary.withValues(alpha: 0.1);
-    final hint = color == null ? null : 'Long press to copy hex color';
+    final hint = color == null ? null : context.l10n.wallpaperCopyAccentHexHint;
     final BlendMode? blendMode = color == null ? null : BlendMode.hue;
     return Semantics(
       button: onTap != null,
@@ -798,7 +805,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: constraints.maxWidth),
                   child: Text(
-                    wallpaperTitle(state.entity),
+                    wallpaperTitle(context.l10n, state.entity),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
@@ -806,7 +813,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 ),
                 if (state.views != null) ...[
                   divider,
-                  Text("${state.views} views", style: dimmedHeadline),
+                  Text(switch (int.tryParse(state.views!)) {
+                    final int views => context.l10n.wallpaperViewCount(views),
+                    _ => context.l10n.wallpaperViewCountUnavailable,
+                  }, style: dimmedHeadline),
                 ] else if (state.viewsLoading) ...[
                   divider,
                   SizedBox(
@@ -817,7 +827,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 ],
                 if (state.setCount case final int sets when sets >= _minSetCountShown) ...[
                   divider,
-                  Text('Set $sets times', style: dimmedHeadline),
+                  Text(context.l10n.wallpaperSetCount(sets), style: dimmedHeadline),
                 ],
               ],
             ),
@@ -829,13 +839,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ],
         if (category != null) ...[_buildInfoRow(context, JamIcons.unordered_list, category), const SizedBox(height: 4)],
         if (resolution != null) ...[_buildInfoRow(context, JamIcons.set_square, resolution), const SizedBox(height: 4)],
-        if (sizeBytes != null) _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes)),
+        if (sizeBytes != null) _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
       ],
       right: [
         _buildPrismAuthorRow(context, wallpaper),
         if (createdAt != null) ...[
           const SizedBox(height: 4),
-          _buildInfoRow(context, JamIcons.calendar, _formatDate(createdAt), reversed: true),
+          _buildInfoRow(
+            context,
+            JamIcons.calendar,
+            _formatDate(createdAt, context.l10n, Localizations.localeOf(context)),
+            reversed: true,
+          ),
         ],
         const SizedBox(height: 4),
         _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
@@ -860,7 +875,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ],
         if (sizeBytes != null) ...[
           const SizedBox(height: 4),
-          _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes)),
+          _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
         ],
       ],
       right: [
@@ -1006,7 +1021,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         return SizedBox(
           width: maxW,
           child: Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             child: uri == null
                 ? label
                 : InkWell(
@@ -1014,7 +1029,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     onTap: () async {
                       final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                       if (!ok && context.mounted) {
-                        toasts.error('Could not open profile');
+                        toasts.error(context.l10n.wallpaperProfileOpenError);
                       }
                     },
                     child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
@@ -1070,7 +1085,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = entity.fullUrl;
-    final String previewTitle = wallpaperPreviewTitle(entity);
+    final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = widget.localFile;
     final String source = localFile?.path ?? url;
     final Future<String> Function()? localSource = localFile == null ? null : () async => localFile.path;
@@ -1112,14 +1127,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
-            label: 'Save to Photos',
-            child: downloadButton(label: 'Save'),
+            label: context.l10n.wallpaperSaveToPhotos,
+            child: downloadButton(label: context.l10n.wallpaperSave),
           )
         : WallpaperBarAction(
-            label: 'Set as wallpaper',
+            label: context.l10n.wallpaperSetAsWallpaper,
             child: PressScale(
               child: SetWallpaperButton(
-                label: 'Set',
+                label: context.l10n.wallpaperSet,
                 url: source,
                 wallpaperId: entity.id,
                 wallpaperSource: entity.source,
@@ -1128,7 +1143,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 promptNotificationPermissionOnSuccess: true,
                 entryPoint: 'wallpaper_detail',
                 requestId: widget.requestId,
-                notes: wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context)),
+                notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
                 onMatchAccent: _matchAccentAction(context, state),
                 onSet: () => _onWallpaperSet(entity),
               ),
@@ -1137,9 +1152,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return WallpaperActionBar(
       primary: primary,
       actions: [
-        if (!hideSetWallpaperUi) WallpaperBarAction(label: 'Download', child: downloadButton()),
+        if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
         WallpaperBarAction(
-          label: 'Favourite',
+          label: context.l10n.wallpaperFavourite,
           child: PressScale(
             child: FavouriteWallpaperButton(
               wall: FavouriteWallEntity.fromFeedItem(entity),
@@ -1149,19 +1164,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
         WallpaperBarAction(
-          label: 'Share',
+          label: context.l10n.wallpaperShare,
           child: ShareButton(
             id: entity.id,
             source: entity.source,
             url: entity.fullUrl,
             thumbUrl: entity.thumbnailUrl,
             contextLine: _shareContextLine(entity),
-            createLink: (id, source, url, thumbUrl) =>
-                createDynamicLink(id, source, url, thumbUrl, title: previewTitle, core: entity.wallpaperCore),
+            createLink: (id, source, url, thumbUrl) => createDynamicLink(
+              id,
+              source,
+              url,
+              thumbUrl,
+              l10n: context.l10n,
+              title: previewTitle,
+              core: entity.wallpaperCore,
+            ),
           ),
         ),
         WallpaperBarAction(
-          label: 'Edit',
+          label: context.l10n.wallpaperEdit,
           child: EditButton(
             url: entity.fullUrl,
             wallpaperId: entity.id,
@@ -1231,7 +1253,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final entity = state.entity;
     final theme = Theme.of(context);
     final tags = wallpaperTags(entity);
-    final notes = wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context));
+    final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
     final bool canBlock = canBlockWallCreator(entity);
     final WallDepthTier? depthTier = depthTierOf(entity);
     final String? reportWallDocId = BundledWallpapers.isStarter(entity)
@@ -1289,13 +1311,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
                   ),
                   icon: Icon(JamIcons.flag, size: 20, color: theme.colorScheme.secondary),
-                  label: Text('Report', style: TextStyle(color: theme.colorScheme.secondary)),
+                  label: Text(context.l10n.wallpaperReport, style: TextStyle(color: theme.colorScheme.secondary)),
                 ),
                 if (canBlock)
                   TextButton.icon(
                     onPressed: () => unawaited(blockWallCreator(context, entity)),
                     icon: Icon(JamIcons.user_remove, size: 20, color: theme.colorScheme.secondary),
-                    label: Text('Block creator', style: TextStyle(color: theme.colorScheme.secondary)),
+                    label: Text(
+                      context.l10n.wallpaperBlockCreator,
+                      style: TextStyle(color: theme.colorScheme.secondary),
+                    ),
                   ),
               ],
             ),
@@ -1320,8 +1345,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           distance: 48,
           builder: (context, t, _) {
             return Semantics(
-              label: 'Wallpaper',
-              hint: 'Tap to cycle accent color. Long press to reset. Swipe up for details.',
+              label: context.l10n.wallpaperImageSemanticLabel,
+              hint: context.l10n.wallpaperImageSemanticHint,
               child: GestureDetector(
                 onPanUpdate: (details) {
                   if (details.delta.dy < -10) panelController.open();
@@ -1365,7 +1390,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
         Align(
-          alignment: Alignment.topLeft,
+          alignment: AlignmentDirectional.topStart,
           child: Padding(
             padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
             child: IconButton(
@@ -1380,11 +1405,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
         Align(
-          alignment: Alignment.topRight,
+          alignment: AlignmentDirectional.topEnd,
           child: Padding(
             padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
             child: IconButton(
-              tooltip: 'Clock preview',
+              tooltip: context.l10n.wallpaperClockPreview,
               onPressed: () {
                 _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
                 pushClockPreview(
@@ -1406,8 +1431,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ValueListenableBuilder<double>(
             valueListenable: _panelPosition,
             child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
-            builder: (BuildContext context, double position, Widget? chip) => Positioned(
-              left: geometry.left + _sheetHPad,
+            builder: (BuildContext context, double position, Widget? chip) => PositionedDirectional(
+              start: geometry.left + _sheetHPad,
               bottom:
                   geometry.bottom +
                   geometry.heightAt(position) +
@@ -1445,7 +1470,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         fit: BoxFit.cover,
         cacheWidth: cacheWidth,
         errorBuilder: (_, _, _) =>
-            const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+            GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
       );
     } else if (full.startsWith('assets/')) {
       imageLayer = Image.asset(
@@ -1575,11 +1600,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return accent == null ? Colors.white : onColor(accent);
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, AppLocalizations l10n, Locale locale) {
     final local = date.toLocal();
     final now = DateTime.now();
-    if (now.difference(local).inDays < 7) return timeago.format(local);
-    return DateFormat(local.year == now.year ? 'd MMM' : 'd MMM y').format(local);
+    if (now.difference(local).inDays < 7) {
+      return localizedRelativeTime(l10n, local, locale: locale);
+    }
+    return (local.year == now.year ? DateFormat.MMMd(l10n.localeName) : DateFormat.yMMMd(l10n.localeName)).format(
+      local,
+    );
   }
 }
 

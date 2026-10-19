@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/views/widgets/quest_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 const double _lip = 4;
@@ -25,18 +26,19 @@ class QuestTile extends StatelessWidget {
 
   bool get _weekly => quest.scope == QuestScope.weekly;
 
-  String get _semanticsLabel {
-    final QuestReward reward = quest.reward;
-    final List<String> pays = <String>[
-      if (reward.coins > 0) '${reward.coins} ${reward.coins == 1 ? 'coin' : 'coins'}',
-      if (reward.xp > 0) '${reward.xp} XP',
-    ];
-    return <String>[
-      '${quest.info.title}, ${quest.done ? 'done' : '${quest.progress} of ${quest.target}'}',
-      if (pays.isNotEmpty) 'Pays ${pays.join(' and ')}',
-      if (_weekly) 'This week${endsIn == null ? '' : ', ends in $endsIn'}',
-    ].join('. ');
-  }
+  String _semanticsLabel(AppLocalizations l10n) => l10n.economyQuestTileSemantics(
+    quest.info.title,
+    quest.done.toString(),
+    quest.progress,
+    quest.target,
+    quest.reward.coins,
+    quest.reward.xp,
+    (quest.reward.coins > 0).toString(),
+    (quest.reward.xp > 0).toString(),
+    _weekly.toString(),
+    endsIn ?? '',
+    (endsIn != null).toString(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -44,23 +46,34 @@ class QuestTile extends StatelessWidget {
     final PanelColors panel = palette.panelFor(quest);
     return Semantics(
       container: true,
-      label: _semanticsLabel,
+      label: _semanticsLabel(context.l10n),
       excludeSemantics: true,
       child: MediaQuery.withClampedTextScaling(
         maxScaleFactor: 1.5,
         child: Padding(
-          padding: EdgeInsets.only(left: _stickerOverhang + _stickerTiltSpill, top: _weekly ? _ribbonOverhang : 0),
+          padding: EdgeInsetsDirectional.only(
+            start: _stickerOverhang + _stickerTiltSpill,
+            top: _weekly ? _ribbonOverhang : 0,
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             children: <Widget>[
               CustomPaint(
                 painter: _PanelPainter(colors: panel, gloss: palette.gloss),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, PrismSpace.sm, PrismSpace.sm, PrismSpace.sm + _lip),
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 0,
+                    end: PrismSpace.sm,
+                    top: PrismSpace.sm,
+                    bottom: PrismSpace.sm + _lip,
+                  ),
                   child: Row(
                     children: <Widget>[
                       Transform.translate(
-                        offset: const Offset(-_stickerOverhang, 0),
+                        offset: Offset(
+                          Directionality.of(context) == TextDirection.ltr ? -_stickerOverhang : _stickerOverhang,
+                          0,
+                        ),
                         child: _Sticker(icon: quest.info.icon, ink: panel.ink, done: quest.done),
                       ),
                       const SizedBox(width: PrismSpace.sm),
@@ -70,7 +83,7 @@ class QuestTile extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             _OutlinedText(
-                              quest.info.title.toUpperCase(),
+                              quest.info.title,
                               style: PrismTextStyles.rowTitle(context).copyWith(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -101,11 +114,11 @@ class QuestTile extends StatelessWidget {
                 ),
               ),
               if (_weekly)
-                Positioned(
+                PositionedDirectional(
                   top: -_ribbonOverhang,
-                  right: PrismSpace.sm,
+                  end: PrismSpace.sm,
                   child: _Ribbon(
-                    label: endsIn == null ? 'WEEKLY' : 'WEEKLY · $endsIn',
+                    label: endsIn == null ? context.l10n.economyWeekly : context.l10n.economyWeeklyEndsIn(endsIn!),
                     fill: palette.ribbon,
                     ink: panel.ink,
                     textColor: palette.title,
@@ -337,10 +350,22 @@ class _ProgressBar extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(width: PrismSpace.xxs / 2),
-                      _OutlinedText('DONE', style: style, ink: ink, stroke: 3, maxLines: 1),
+                      _OutlinedText(
+                        context.l10n.actionDone.toUpperCase(),
+                        style: style,
+                        ink: ink,
+                        stroke: 3,
+                        maxLines: 1,
+                      ),
                     ],
                   )
-                : _OutlinedText('${quest.progress}/${quest.target}', style: style, ink: ink, stroke: 3, maxLines: 1),
+                : _OutlinedText(
+                    '${formatLocalizedNumber(quest.progress, context.l10n)}/${formatLocalizedNumber(quest.target, context.l10n)}',
+                    style: style,
+                    ink: ink,
+                    stroke: 3,
+                    maxLines: 1,
+                  ),
           ),
         ),
       ),
@@ -431,12 +456,17 @@ class _Badges extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (reward.coins > 0)
-          _Chip(ink: ink, label: '${reward.coins}', style: number, badge: const PrismCoinIcon(size: 16)),
+          _Chip(
+            ink: ink,
+            label: formatLocalizedNumber(reward.coins, context.l10n),
+            style: number,
+            badge: const PrismCoinIcon(size: 16),
+          ),
         if (reward.coins > 0 && reward.xp > 0) const SizedBox(width: PrismSpace.xxs),
         if (reward.xp > 0)
           _Chip(
             ink: ink,
-            label: '${reward.xp}',
+            label: formatLocalizedNumber(reward.xp, context.l10n),
             style: number,
             badge: _XpTag(ink: ink),
           ),
@@ -487,7 +517,7 @@ class _XpTag extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
         child: Text(
-          'XP',
+          context.l10n.economyXpUnit,
           style: PrismTextStyles.rowTitle(
             context,
           ).copyWith(fontSize: 9, fontWeight: FontWeight.w800, height: 1.1, color: ink),

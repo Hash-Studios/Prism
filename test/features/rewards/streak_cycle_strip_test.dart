@@ -1,9 +1,14 @@
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app(ThemeData theme, Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: theme,
   home: Scaffold(
     body: Padding(padding: const EdgeInsets.all(20), child: child),
@@ -28,7 +33,7 @@ void main() {
       );
       expect((firstDay.decoration! as BoxDecoration).color, cs.primary);
       expect(find.text('Day 3'), findsOneWidget);
-      expect(find.text('+8'), findsNWidgets(2));
+      expect(find.text(AppLocalizationsEn().economyCoinsEarned(8)), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     });
   }

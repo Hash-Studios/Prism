@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Shown when the signed-in viewer has blocked this profile’s account.
@@ -34,7 +35,7 @@ class _BlockedUserProfileShellState extends State<BlockedUserProfileShell> {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Profile',
+      title: context.l10n.accountProfile,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(PrismSpace.xl),
@@ -46,19 +47,19 @@ class _BlockedUserProfileShellState extends State<BlockedUserProfileShell> {
                 const Glint(),
                 const SizedBox(height: PrismSpace.md),
                 Text(
-                  'You blocked ${widget.displayName}',
+                  context.l10n.accountYouBlockedUser(widget.displayName),
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.cardTitle(context),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Their wallpapers are hidden from your feeds and notifications. You can unblock them any time.',
+                  context.l10n.accountBlockedProfileBody,
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.body(context),
                 ),
                 const SizedBox(height: PrismSpace.md),
                 PrismButton(
-                  label: 'Unblock',
+                  label: context.l10n.accountUnblock,
                   variant: PrismButtonVariant.tonal,
                   size: PrismButtonSize.compact,
                   loading: _unblocking,

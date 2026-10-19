@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -23,11 +24,7 @@ void main() {
     await expectLater(
       const LiveTexturePreparer().prepare('https://example.com/a.jpg', 0.45),
       throwsA(
-        isA<LiveTextureException>().having(
-          (error) => error.message,
-          'message',
-          "Couldn't download the wallpaper. Check your connection and try again.",
-        ),
+        isA<LiveTextureException>().having((error) => error.failure, 'failure', LiveApplyFailure.textureDownloadFailed),
       ),
     );
     verify(() => fixture.cacheManager.getSingleFile('https://example.com/a.jpg')).called(1);

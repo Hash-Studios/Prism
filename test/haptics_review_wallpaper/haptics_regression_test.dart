@@ -27,17 +27,15 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_tile_parts.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
-// ignore: depend_on_referenced_packages
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
-// ignore: depend_on_referenced_packages
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-// ignore: depend_on_referenced_packages
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../support/fake_app_analytics.dart';
@@ -155,7 +153,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final File image = (await tester.runAsync(_createPng))!;
-    await tester.pumpWidget(MaterialApp(home: EditWallScreen(image: image)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: EditWallScreen(image: image),
+      ),
+    );
 
     final Slider slider = tester.widget<Slider>(find.byType(Slider).first);
     slider.onChanged!(0.4);
@@ -173,6 +177,9 @@ void main() {
     final File image = (await tester.runAsync(_createPng))!;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: DownloadWallpaperScreen(source: WallpaperSource.prism, file: image),
       ),
     );
@@ -216,6 +223,9 @@ void main() {
       whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BlocProvider<WallpaperDetailBloc>.value(
             value: bloc,
             child: const WallpaperDetailScreen(wallId: 'wall-1', source: WallpaperSource.wallhaven),
@@ -272,6 +282,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: const WallpaperDetailScreen(wallId: 'wall-1', source: WallpaperSource.wallhaven),
@@ -305,6 +318,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: const WallpaperDetailScreen(wallId: 'wall-1', source: WallpaperSource.wallhaven),
@@ -349,6 +365,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: const WallpaperDetailScreen(wallId: 'wall-1', source: WallpaperSource.prism),
@@ -378,6 +397,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: ReviewDownloadButton(
             link: 'https://example.test/wall.png',
@@ -404,7 +426,13 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(_FailingDeleteFirestore());
     addTearDown(() => getIt.unregister<FirestoreClient>());
 
-    await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ReviewScreen(),
+      ),
+    );
     await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byTooltip('Delete wallpaper'));
     await tester.pump();
@@ -431,7 +459,13 @@ void main() {
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final File image = (await tester.runAsync(_createPng))!;
-    await tester.pumpWidget(MaterialApp(home: WallpaperFilterScreen(filePath: image.path)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperFilterScreen(filePath: image.path),
+      ),
+    );
     await _waitForFilterReady(tester);
     await tester.tap(find.byTooltip('Download'));
     await tester.pumpAndSettle();
@@ -449,7 +483,13 @@ void main() {
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final File image = (await tester.runAsync(_createPng))!;
-    await tester.pumpWidget(MaterialApp(home: WallpaperFilterScreen(filePath: image.path)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperFilterScreen(filePath: image.path),
+      ),
+    );
     await _waitForFilterReady(tester);
     await tester.tap(find.text('AddictiveBlue'));
     await tester.pump();

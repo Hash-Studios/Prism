@@ -8,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
@@ -28,14 +29,18 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   Map<String, String> _packageInfo = {};
   Map<String, String> _remoteConfig = {};
   bool _loading = true;
+  bool _hasLoadedInfo = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasLoadedInfo) return;
+    _hasLoadedInfo = true;
     _loadInfo();
   }
 
   Future<void> _loadInfo() async {
+    final AppLocalizations l10n = context.l10n;
     setState(() => _loading = true);
     try {
       final devicePlugin = DeviceInfoPlugin();
@@ -44,36 +49,36 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
       if (Platform.isAndroid) {
         final info = await devicePlugin.androidInfo;
         _deviceInfo = {
-          'Platform': 'Android',
-          'Model': info.model,
-          'Manufacturer': info.manufacturer,
-          'Android Version': info.version.release,
-          'SDK Int': info.version.sdkInt.toString(),
-          'Device': info.device,
-          'Brand': info.brand,
-          'Hardware': info.hardware,
-          'Board': info.board,
-          'Fingerprint': info.fingerprint,
+          l10n.debugPlatform: 'Android',
+          l10n.debugModel: info.model,
+          l10n.debugManufacturer: info.manufacturer,
+          l10n.debugAndroidVersion: info.version.release,
+          l10n.debugSdkInt: info.version.sdkInt.toString(),
+          l10n.debugDeviceName: info.device,
+          l10n.debugBrand: info.brand,
+          l10n.debugHardware: info.hardware,
+          l10n.debugBoard: info.board,
+          l10n.debugFingerprint: info.fingerprint,
         };
       } else if (Platform.isIOS) {
         final info = await devicePlugin.iosInfo;
         _deviceInfo = {
-          'Platform': 'iOS',
-          'Model': info.model,
-          'Name': info.name,
-          'System Name': info.systemName,
-          'System Version': info.systemVersion,
-          'Identifier': info.identifierForVendor ?? 'N/A',
-          'Is Physical Device': info.isPhysicalDevice.toString(),
+          l10n.debugPlatform: 'iOS',
+          l10n.debugModel: info.model,
+          l10n.debugName: info.name,
+          l10n.debugSystemName: info.systemName,
+          l10n.debugSystemVersion: info.systemVersion,
+          l10n.debugIdentifier: info.identifierForVendor ?? l10n.debugNotAvailable,
+          l10n.debugPhysicalDevice: info.isPhysicalDevice.toString(),
         };
       }
 
       _packageInfo = {
-        'App Name': pkgInfo.appName,
-        'Package Name': pkgInfo.packageName,
-        'Version': pkgInfo.version,
-        'Build Number': pkgInfo.buildNumber,
-        'Build Signature': pkgInfo.buildSignature.isEmpty ? 'N/A' : pkgInfo.buildSignature,
+        l10n.debugAppName: pkgInfo.appName,
+        l10n.debugPackageName: pkgInfo.packageName,
+        l10n.debugVersion: pkgInfo.version,
+        l10n.debugBuildNumber: pkgInfo.buildNumber,
+        l10n.debugBuildSignature: pkgInfo.buildSignature.isEmpty ? l10n.debugNotAvailable : pkgInfo.buildSignature,
       };
 
       try {
@@ -83,10 +88,10 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
           _remoteConfig[key] = rc.getString(key);
         }
       } catch (_) {
-        _remoteConfig = {'error': 'Remote Config unavailable'};
+        _remoteConfig = {l10n.debugErrorValue: l10n.debugRemoteConfigUnavailable};
       }
     } catch (e) {
-      _deviceInfo = {'error': e.toString()};
+      _deviceInfo = {l10n.debugErrorValue: e.toString()};
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -95,30 +100,32 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   Map<String, String> get _userInfo {
     final u = app_state.prismUser;
     return {
-      'Email': u.email.isEmpty ? 'Not signed in' : u.email,
-      'User ID': u.id.isEmpty ? 'N/A' : u.id,
-      'Username': u.username.isEmpty ? 'N/A' : u.username,
-      'Is Admin': isAdminEmail(u.email).toString(),
-      'Is Premium': u.premium.toString(),
-      'Subscription Tier': u.subscriptionTier,
-      'Coins': u.coins.toString(),
-      'Logged In': u.loggedIn.toString(),
+      context.l10n.debugEmail: u.email.isEmpty ? context.l10n.debugNotSignedIn : u.email,
+      context.l10n.debugUserId: u.id.isEmpty ? context.l10n.debugNotAvailable : u.id,
+      context.l10n.debugUsername: u.username.isEmpty ? context.l10n.debugNotAvailable : u.username,
+      context.l10n.debugIsAdmin: isAdminEmail(u.email).toString(),
+      context.l10n.debugIsPremium: u.premium.toString(),
+      context.l10n.debugSubscriptionTier: u.subscriptionTier,
+      context.l10n.debugCoins: u.coins.toString(),
+      context.l10n.debugLoggedIn: u.loggedIn.toString(),
     };
   }
 
   Map<String, String> get _envInfo {
     return {
-      'App Version': '${app_state.currentAppVersion}+${app_state.currentAppVersionCode}',
-      'Persistence Backend': PersistenceRuntime.isInitialized
+      context.l10n.debugAppVersion: '${app_state.currentAppVersion}+${app_state.currentAppVersionCode}',
+      context.l10n.debugPersistenceBackend: PersistenceRuntime.isInitialized
           ? PersistenceRuntime.store.runtimeType.toString()
           : 'unknown',
-      'Sentry DSN Present': Env.sentryDsn.isNotEmpty.toString(),
-      'Sentry Env': Env.sentryEnvironment.isEmpty ? '(default)' : Env.sentryEnvironment,
-      'Sentry Enabled': Env.sentryEnabled,
-      'Mixpanel Enabled': Env.mixpanelEnabled,
-      'Mixpanel Token Present': Env.mixpanelToken.isNotEmpty.toString(),
-      'RC API Key Present': Env.rcApiKey.isNotEmpty.toString(),
-      'Pexels Key Present': Env.pexelsApiKey.isNotEmpty.toString(),
+      context.l10n.debugSentryDsnPresent: Env.sentryDsn.isNotEmpty.toString(),
+      context.l10n.debugSentryEnv: Env.sentryEnvironment.isEmpty
+          ? context.l10n.debugDefaultValue
+          : Env.sentryEnvironment,
+      context.l10n.debugSentryEnabled: Env.sentryEnabled,
+      context.l10n.debugMixpanelEnabled: Env.mixpanelEnabled,
+      context.l10n.debugMixpanelTokenPresent: Env.mixpanelToken.isNotEmpty.toString(),
+      context.l10n.debugRcApiKeyPresent: Env.rcApiKey.isNotEmpty.toString(),
+      context.l10n.debugPexelsKeyPresent: Env.pexelsApiKey.isNotEmpty.toString(),
     };
   }
 
@@ -127,16 +134,17 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
     final size = view.physicalSize;
     final dpr = view.devicePixelRatio;
     return {
-      'Physical Size': '${size.width.toInt()} × ${size.height.toInt()} px',
-      'Logical Size': '${(size.width / dpr).toStringAsFixed(0)} × ${(size.height / dpr).toStringAsFixed(0)} dp',
-      'Device Pixel Ratio': dpr.toStringAsFixed(2),
+      context.l10n.debugPhysicalSize: '${size.width.toInt()} × ${size.height.toInt()} px',
+      context.l10n.debugLogicalSize:
+          '${(size.width / dpr).toStringAsFixed(0)} × ${(size.height / dpr).toStringAsFixed(0)} dp',
+      context.l10n.debugDevicePixelRatio: dpr.toStringAsFixed(2),
     };
   }
 
   String _buildDiagnosticReport() {
     final buf = StringBuffer();
-    buf.writeln('=== Prism Debug Diagnostic Report ===');
-    buf.writeln('Generated: ${DateTime.now().toIso8601String()}');
+    buf.writeln(context.l10n.debugDiagnosticReportHeading);
+    buf.writeln(context.l10n.debugGeneratedAt(DateTime.now().toIso8601String()));
     buf.writeln();
 
     void section(String title, Map<String, String> data) {
@@ -147,12 +155,12 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
       buf.writeln();
     }
 
-    section('Package', _packageInfo);
-    section('Environment', _envInfo);
-    section('User', _userInfo);
-    section('Device', _deviceInfo);
-    section('Screen', _screenInfo);
-    if (_remoteConfig.isNotEmpty) section('Remote Config', _remoteConfig);
+    section(context.l10n.debugPackage, _packageInfo);
+    section(context.l10n.debugEnvironment, _envInfo);
+    section(context.l10n.debugUser, _userInfo);
+    section(context.l10n.debugDevice, _deviceInfo);
+    section(context.l10n.debugScreen, _screenInfo);
+    if (_remoteConfig.isNotEmpty) section(context.l10n.debugRemoteConfig, _remoteConfig);
 
     return buf.toString();
   }
@@ -170,23 +178,28 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
           children: [
             Expanded(
               child: PrismButton(
-                label: 'Copy diagnostic report',
+                label: context.l10n.debugCopyDiagnosticReport,
                 icon: Icons.copy_all_rounded,
                 variant: PrismButtonVariant.tonal,
                 onPressed: () =>
-                    copyToClipboard(context, _buildDiagnosticReport(), label: 'Diagnostic report copied to clipboard'),
+                    copyToClipboard(context, _buildDiagnosticReport(), label: context.l10n.debugDiagnosticCopied),
               ),
             ),
             const SizedBox(width: PrismSpace.xs),
-            PrismIconButton(icon: Icons.refresh_rounded, tooltip: 'Refresh', filled: true, onPressed: _loadInfo),
+            PrismIconButton(
+              icon: Icons.refresh_rounded,
+              tooltip: context.l10n.debugRefresh,
+              filled: true,
+              onPressed: _loadInfo,
+            ),
           ],
         ),
-        _InfoSection(title: 'Package', data: _packageInfo),
-        _InfoSection(title: 'Environment', data: _envInfo),
-        _InfoSection(title: 'User', data: _userInfo),
-        _InfoSection(title: 'Device', data: _deviceInfo),
-        _InfoSection(title: 'Screen', data: _screenInfo),
-        if (_remoteConfig.isNotEmpty) _InfoSection(title: 'Remote Config', data: _remoteConfig),
+        _InfoSection(title: context.l10n.debugPackage, data: _packageInfo),
+        _InfoSection(title: context.l10n.debugEnvironment, data: _envInfo),
+        _InfoSection(title: context.l10n.debugUser, data: _userInfo),
+        _InfoSection(title: context.l10n.debugDevice, data: _deviceInfo),
+        _InfoSection(title: context.l10n.debugScreen, data: _screenInfo),
+        if (_remoteConfig.isNotEmpty) _InfoSection(title: context.l10n.debugRemoteConfig, data: _remoteConfig),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +10,9 @@ Future<void> _pumpTile(WidgetTester tester, Map<String, dynamic> payload, {bool 
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: Scaffold(
         body: SingleChildScrollView(child: WallTile(FirestoreDocument('S1', payload), rejected: rejected)),
       ),
@@ -27,7 +31,7 @@ void main() {
   testWidgets('pads the minutes of the submission time', (tester) async {
     await _pumpTile(tester, <String, dynamic>{...base, 'createdAt': DateTime(2026, 3, 4, 17, 7)});
 
-    expect(find.text('4 Mar 2026, 5:07 PM'), findsOneWidget);
+    expect(find.text('Mar 4, 2026 5:07 PM'), findsOneWidget);
   });
 
   testWidgets('shows no date when the submission time is missing', (tester) async {

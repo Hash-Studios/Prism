@@ -1,9 +1,11 @@
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../drop_fixtures.dart';
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   group('packPrice', () {
     test('is the pack price when it is cheaper than the walls left', () {
       expect(dropEntity().packPrice(remaining: 4, isPro: false), 100);
@@ -37,16 +39,19 @@ void main() {
     final drop = dropEntity();
 
     test('shows days and hours', () {
-      expect(drop.endsInLabel(drop.endsAt.subtract(const Duration(days: 3, hours: 4, minutes: 30))), 'Ends in 3d 4h');
+      expect(
+        drop.endsInLabel(l10n, drop.endsAt.subtract(const Duration(days: 3, hours: 4, minutes: 30))),
+        'Ends in 3d 4h',
+      );
     });
 
     test('shows hours and minutes in the last day', () {
-      expect(drop.endsInLabel(drop.endsAt.subtract(const Duration(hours: 5, minutes: 20))), 'Ends in 5h 20m');
+      expect(drop.endsInLabel(l10n, drop.endsAt.subtract(const Duration(hours: 5, minutes: 20))), 'Ends in 5h 20m');
     });
 
     test('shows minutes in the last hour and Ended after', () {
-      expect(drop.endsInLabel(drop.endsAt.subtract(const Duration(minutes: 9))), 'Ends in 9m');
-      expect(drop.endsInLabel(drop.endsAt), 'Ended');
+      expect(drop.endsInLabel(l10n, drop.endsAt.subtract(const Duration(minutes: 9))), 'Ends in 9m');
+      expect(drop.endsInLabel(l10n, drop.endsAt), 'Ended');
     });
   });
 

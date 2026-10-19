@@ -275,7 +275,7 @@ void main() {
     user.id = '${backend.userId}-other';
     user.coins = 9;
     final result = await purchase;
-    expect(result.message, 'session_changed');
+    expect(result.errorCode, 'session_changed');
     expect(calls, 0);
     expect(app_state.prismUser.coins, 9);
   });

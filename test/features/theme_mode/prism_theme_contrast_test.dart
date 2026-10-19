@@ -1,5 +1,7 @@
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -16,55 +18,64 @@ void main() {
   });
 
   for (final PrismThemeOption option in themes) {
-    test('${option.label}: every picker accent keeps readable text and stays visible on the theme', () {
-      for (final Color pick in picks) {
-        final ColorScheme scheme = withPrismAccent(option.theme, pick.toARGB32()).colorScheme;
-        final ThemeData theme = withPrismAccent(option.theme, pick.toARGB32());
-        expect(
-          contrastRatio(scheme.onPrimary, scheme.primary),
-          greaterThanOrEqualTo(4.5),
-          reason: 'onPrimary on $pick in ${option.label}',
-        );
-        expect(
-          contrastRatio(scheme.onError, scheme.error),
-          greaterThanOrEqualTo(4.5),
-          reason: 'onError on $pick in ${option.label}',
-        );
-        expect(
-          contrastRatio(scheme.primary, theme.primaryColor),
-          greaterThanOrEqualTo(1.5),
-          reason: '$pick against the ${option.label} background',
-        );
-      }
-    });
+    test(
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: every picker accent keeps readable text and stays visible on the theme',
+      () {
+        for (final Color pick in picks) {
+          final ColorScheme scheme = withPrismAccent(option.theme, pick.toARGB32()).colorScheme;
+          final ThemeData theme = withPrismAccent(option.theme, pick.toARGB32());
+          expect(
+            contrastRatio(scheme.onPrimary, scheme.primary),
+            greaterThanOrEqualTo(4.5),
+            reason: 'onPrimary on $pick in ${prismThemeDisplayName(option, AppLocalizationsEn())}',
+          );
+          expect(
+            contrastRatio(scheme.onError, scheme.error),
+            greaterThanOrEqualTo(4.5),
+            reason: 'onError on $pick in ${prismThemeDisplayName(option, AppLocalizationsEn())}',
+          );
+          expect(
+            contrastRatio(scheme.primary, theme.primaryColor),
+            greaterThanOrEqualTo(1.5),
+            reason: '$pick against the ${prismThemeDisplayName(option, AppLocalizationsEn())} background',
+          );
+        }
+      },
+    );
 
-    test('${option.label}: its own default accent is kept and readable', () {
+    test('${prismThemeDisplayName(option, AppLocalizationsEn())}: its own default accent is kept and readable', () {
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
       expect(theme.colorScheme.primary, Color(option.defaultAccentValue));
       expect(contrastRatio(theme.colorScheme.onPrimary, theme.colorScheme.primary), greaterThanOrEqualTo(4.5));
     });
 
-    testWidgets('${option.label}: caption and eyebrow text pass 4.5 on the theme background', (tester) async {
-      late TextStyle caption;
-      late TextStyle eyebrow;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: option.theme,
-          home: Builder(
-            builder: (context) {
-              caption = PrismTextStyles.caption(context);
-              eyebrow = PrismTextStyles.eyebrow(context);
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-      );
-      final Color background = option.theme.primaryColor;
+    testWidgets(
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: caption and eyebrow text pass 4.5 on the theme background',
+      (tester) async {
+        late TextStyle caption;
+        late TextStyle eyebrow;
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
 
-      expect(contrastRatio(Color.alphaBlend(caption.color!, background), background), greaterThanOrEqualTo(4.5));
-      expect(contrastRatio(Color.alphaBlend(eyebrow.color!, background), background), greaterThanOrEqualTo(4.5));
-    });
+            theme: option.theme,
+            home: Builder(
+              builder: (context) {
+                caption = PrismTextStyles.caption(context);
+                eyebrow = PrismTextStyles.eyebrow(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+        final Color background = option.theme.primaryColor;
+
+        expect(contrastRatio(Color.alphaBlend(caption.color!, background), background), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(Color.alphaBlend(eyebrow.color!, background), background), greaterThanOrEqualTo(4.5));
+      },
+    );
   }
 
   test('black accent on AMOLED falls back to the theme accent instead of vanishing', () {

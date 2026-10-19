@@ -1,6 +1,7 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 
@@ -8,14 +9,18 @@ import 'package:flutter/material.dart';
 Future<void> showRejectReasonSheet(
   BuildContext context, {
   required Future<void> Function(String reason) onSubmit,
-  String title = 'Reject wallpaper',
-  String confirmLabel = 'Reject wallpaper',
+  String? title,
+  String? confirmLabel,
 }) {
   return showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
     enableDrag: false,
-    builder: (_) => _RejectReasonSheet(title: title, confirmLabel: confirmLabel, onSubmit: onSubmit),
+    builder: (_) => _RejectReasonSheet(
+      title: title ?? context.l10n.adminRejectWallpaper,
+      confirmLabel: confirmLabel ?? context.l10n.adminRejectWallpaper,
+      onSubmit: onSubmit,
+    ),
   );
 }
 
@@ -36,6 +41,26 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
   String? _errorMessage;
   RejectReason? _picked;
 
+  String _reasonLabel(RejectReason reason) => switch (reason) {
+    RejectReason.lowResolution => context.l10n.adminReasonLowResolution,
+    RejectReason.watermark => context.l10n.adminReasonWatermark,
+    RejectReason.blurry => context.l10n.adminReasonBlurry,
+    RejectReason.copyright => context.l10n.adminReasonCopyright,
+    RejectReason.duplicate => context.l10n.adminReasonDuplicate,
+    RejectReason.notWallpaper => context.l10n.adminReasonNotWallpaper,
+    RejectReason.other => context.l10n.adminReasonOther,
+  };
+
+  String _reasonText(RejectReason reason) => switch (reason) {
+    RejectReason.lowResolution => context.l10n.adminReasonLowResolutionBody,
+    RejectReason.watermark => context.l10n.adminReasonWatermarkBody,
+    RejectReason.blurry => context.l10n.adminReasonBlurryBody,
+    RejectReason.copyright => context.l10n.adminReasonCopyrightBody,
+    RejectReason.duplicate => context.l10n.adminReasonDuplicateBody,
+    RejectReason.notWallpaper => context.l10n.adminReasonNotWallpaperBody,
+    RejectReason.other => '',
+  };
+
   @override
   void dispose() {
     _controller.dispose();
@@ -47,8 +72,8 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
     PrismHaptics.selection();
     setState(() {
       _picked = reason;
-      _controller.text = reason.text;
-      _controller.selection = TextSelection.collapsed(offset: reason.text.length);
+      _controller.text = _reasonText(reason);
+      _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
       _errorMessage = null;
     });
   }
@@ -57,7 +82,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
     if (_isSaving) return;
     final String reason = _controller.text.trim();
     if (reason.isEmpty) {
-      setState(() => _errorMessage = 'Enter a reason before rejecting this item.');
+      setState(() => _errorMessage = context.l10n.adminRejectReasonRequired);
       return;
     }
     setState(() {
@@ -72,7 +97,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       if (mounted) {
         setState(() {
           _isSaving = false;
-          _errorMessage = 'Could not save this decision. Your reason is still here. Try again.';
+          _errorMessage = context.l10n.adminRejectSaveFailed;
         });
       }
     }
@@ -84,12 +109,12 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       canPop: !_isSaving,
       child: PrismSheetBody(
         title: widget.title,
-        message: 'The creator will see this feedback.',
+        message: context.l10n.adminCreatorWillSeeFeedback,
         scrollable: true,
         actions: <Widget>[
           PrismButton(label: widget.confirmLabel, expand: true, loading: _isSaving, onPressed: _submit),
           PrismButton(
-            label: 'Cancel',
+            label: context.l10n.adminCancel,
             expand: true,
             variant: PrismButtonVariant.ghost,
             onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
@@ -104,7 +129,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
               children: <Widget>[
                 for (final RejectReason reason in rejectReasons)
                   PrismChip(
-                    label: reason.label,
+                    label: _reasonLabel(reason),
                     selected: _picked == reason,
                     onTap: _isSaving ? null : () => _pick(reason),
                   ),
@@ -113,8 +138,8 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
             const SizedBox(height: PrismSpace.md),
             PrismTextField(
               controller: _controller,
-              label: 'Reason',
-              hint: 'Explain what needs to change',
+              label: context.l10n.adminReasonLabel,
+              hint: context.l10n.adminReasonHint,
               error: _errorMessage,
               enabled: !_isSaving,
               minLines: 2,

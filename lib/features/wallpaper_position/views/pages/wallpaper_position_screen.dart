@@ -10,6 +10,7 @@ import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_plac
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
 import 'package:Prism/features/wallpaper_position/views/widgets/placement_panel.dart';
 import 'package:Prism/features/wallpaper_position/views/widgets/placement_preview.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:auto_route/auto_route.dart';
@@ -97,6 +98,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
     reportWallpaperSetResult(
       context,
       result,
+      l10n: context.l10n,
       target: _lastTarget,
       setContext: WallpaperSetContext(
         operationId: _operationId,
@@ -134,18 +136,18 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
           backgroundColor: theme.primaryColor,
           appBar: AppBar(
             backgroundColor: theme.primaryColor,
-            title: Text('Position', style: theme.textTheme.displaySmall),
+            title: Text(context.l10n.wallpaperPositionTitle, style: theme.textTheme.displaySmall),
           ),
           body: switch (state.status) {
-            WallpaperPositionStatus.loading => const GlintState(
+            WallpaperPositionStatus.loading => GlintState(
               kind: GlintStateKind.loading,
-              title: 'Loading wallpaper',
+              title: context.l10n.wallpaperLoadingWallpaper,
             ),
             WallpaperPositionStatus.failed => GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load this wallpaper",
-              body: 'Check your connection and try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.wallpaperOpenError,
+              body: context.l10n.wallpaperCheckConnection,
+              actionLabel: context.l10n.wallpaperTryAgain,
               onAction: () => bloc.add(
                 WallpaperPositionEvent.started(
                   imageUrl: widget.imageUrl,
@@ -180,7 +182,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text('Approximate. Your launcher may differ.', style: PrismTextStyles.caption(context)),
+                  child: Text(context.l10n.wallpaperPositionApproximate, style: PrismTextStyles.caption(context)),
                 ),
                 FutureBuilder<aw.WallpaperCapabilities>(
                   future: _capabilities,
@@ -221,9 +223,15 @@ class _PreviewModeToggle extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: SegmentedButton<PlacementPreviewMode>(
         showSelectedIcon: false,
-        segments: const <ButtonSegment<PlacementPreviewMode>>[
-          ButtonSegment<PlacementPreviewMode>(value: PlacementPreviewMode.lock, label: Text('Lock')),
-          ButtonSegment<PlacementPreviewMode>(value: PlacementPreviewMode.home, label: Text('Home')),
+        segments: <ButtonSegment<PlacementPreviewMode>>[
+          ButtonSegment<PlacementPreviewMode>(
+            value: PlacementPreviewMode.lock,
+            label: Text(context.l10n.wallpaperPreviewLock),
+          ),
+          ButtonSegment<PlacementPreviewMode>(
+            value: PlacementPreviewMode.home,
+            label: Text(context.l10n.wallpaperPreviewHome),
+          ),
         ],
         selected: <PlacementPreviewMode>{mode},
         onSelectionChanged: (selection) => onChanged(selection.single),

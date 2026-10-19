@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -97,22 +98,23 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final Widget body;
     if (_loading) {
       body = const _ActivitySkeleton();
     } else if (_failed) {
       body = PrismInlineState(
         icon: Icons.cloud_off_rounded,
-        title: "Couldn't load activity.",
-        body: 'Check your connection and try again.',
-        actionLabel: 'Try again',
+        title: l10n.economyActivityLoadFailed,
+        body: l10n.errorNetwork,
+        actionLabel: l10n.actionRetry,
         onAction: _load,
       );
     } else if (_items.isEmpty) {
-      body = const PrismInlineState(
+      body = PrismInlineState(
         icon: Icons.receipt_long_rounded,
-        title: 'No coin activity yet.',
-        body: 'Watch a video or keep your streak to earn your first coins.',
+        title: l10n.economyCoinHistoryEmpty,
+        body: l10n.economyActivityEmptyMessage,
       );
     } else {
       final int shown = _items.length.clamp(0, _kActivityCollapsed);
@@ -123,7 +125,7 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
           if (_items.length > _kActivityCollapsed)
             Center(
               child: PrismButton(
-                label: 'Show more',
+                label: l10n.economyShowMore,
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,
                 onPressed: _openHistory,
@@ -136,9 +138,9 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         PrismSectionHeader(
-          title: 'Activity',
+          title: l10n.economyActivity,
           padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
-          actionLabel: !_loading && !_failed && _items.isNotEmpty ? 'See all' : null,
+          actionLabel: !_loading && !_failed && _items.isNotEmpty ? l10n.economySeeAll : null,
           onAction: _seeAll,
         ),
         body,
@@ -154,13 +156,15 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final String amount = entry.delta > 0 ? '+${entry.delta}' : '${entry.delta}';
-    final String label = coinTransactionLabel(entry);
-    final String date = _relativeDate(entry.createdAt);
+    final String formattedDelta = formatLocalizedNumber(entry.delta.abs(), l10n);
+    final String amount = entry.delta > 0 ? '+$formattedDelta' : '-$formattedDelta';
+    final String label = coinTransactionLabel(entry, l10n);
+    final String date = _relativeDate(l10n, entry.createdAt, locale: Localizations.localeOf(context).toLanguageTag());
     return Semantics(
       container: true,
-      label: '$label, $date, $amount coins',
+      label: l10n.economyCoinActivitySemantics(label, date, amount, entry.delta.abs()),
       excludeSemantics: true,
       child: PrismRow(
         icon: entry.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
@@ -177,7 +181,7 @@ class _ActivityRow extends StatelessWidget {
   }
 }
 
-String _relativeDate(DateTime when, {DateTime? now}) {
+String _relativeDate(AppLocalizations l10n, DateTime when, {required String locale, DateTime? now}) {
   final DateTime local = when.toLocal();
   final DateTime today = now ?? DateTime.now();
   final int days = DateTime(
@@ -185,10 +189,10 @@ String _relativeDate(DateTime when, {DateTime? now}) {
     today.month,
     today.day,
   ).difference(DateTime(local.year, local.month, local.day)).inDays;
-  if (days <= 0) return 'Today';
-  if (days == 1) return 'Yesterday';
-  if (days < 7) return '$days days ago';
-  return DateFormat(local.year == today.year ? 'd MMM' : 'd MMM y').format(local);
+  if (days <= 0) return l10n.economyToday;
+  if (days == 1) return l10n.economyYesterday;
+  if (days < 7) return l10n.economyDaysAgo(days);
+  return DateFormat.yMMMd(locale).format(local);
 }
 
 class _ActivitySkeleton extends StatelessWidget {

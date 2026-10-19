@@ -35,17 +35,29 @@ const wall = (n: number, extra: Doc = {}): Doc => ({
 });
 
 const reservedWalls = (count: number, extra: Doc = {}): Record<string, Doc> =>
-  Object.fromEntries(Array.from({length: count}, (_, i) => [`walls/W${i + 1}`, wall(i + 1, extra)]));
+  Object.fromEntries(
+    Array.from({length: count}, (_, i) => [
+      `walls/W${i + 1}`,
+      wall(i + 1, extra),
+    ]),
+  );
 
 async function plan(t: test.TestContext) {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  await planWeeklyDrop.run({jobName: "t", scheduleTime: new Date(MONDAY).toISOString()});
+  await planWeeklyDrop.run({
+    jobName: "t",
+    scheduleTime: new Date(MONDAY).toISOString(),
+  });
 }
 
 test("snapshotWall keeps the thumb and drops the full url", () => {
   const snap = snapshotWall({id: "W1", data: () => wall(1)});
   assert.deepEqual(snap, {
-    id: "W1", title: "Wall 1", thumb: "https://img/t1.jpg", resolution: "1440x3200", by: "Prism Studio",
+    id: "W1",
+    title: "Wall 1",
+    thumb: "https://img/t1.jpg",
+    resolution: "1440x3200",
+    by: "Prism Studio",
     seriesId: "dusk",
   });
 });
@@ -68,14 +80,21 @@ test("isDropLive is true from the start and false from the end", () => {
 });
 
 test("the planner does nothing when the week already has a drop", async (t) => {
-  const store = installFakeDb(t, {[`drops/${KEY}`]: {weekKey: KEY, title: "Old"}, ...reservedWalls(5)});
+  const store = installFakeDb(t, {
+    [`drops/${KEY}`]: {weekKey: KEY, title: "Old"},
+    ...reservedWalls(5),
+  });
   await plan(t);
   assert.equal(store.get(`drops/${KEY}`)?.title, "Old");
   assert.equal(store.get("walls/W1")?.dropReserved, true);
 });
 
 test("the planner skips under four studio walls", async (t) => {
-  const seed = {...reservedWalls(3), "walls/W9": wall(9, {origin: "user"}), "walls/W8": wall(8, {review: true})};
+  const seed = {
+    ...reservedWalls(3),
+    "walls/W9": wall(9, {origin: "user"}),
+    "walls/W8": wall(8, {review: true}),
+  };
   const store = installFakeDb(t, seed);
   await plan(t);
   assert.equal(store.has(`drops/${KEY}`), false);
@@ -99,10 +118,16 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
   assert.equal(drop.pricePack, 150);
   assert.equal(drop.count, 10);
   const walls = drop.walls as Doc[];
-  assert.deepEqual(walls.map((w) => w.id), Array.from({length: 10}, (_, i) => `W${i + 1}`));
+  assert.deepEqual(
+    walls.map((w) => w.id),
+    Array.from({length: 10}, (_, i) => `W${i + 1}`),
+  );
   assert.equal("url" in walls[0], false);
   assert.equal(walls[0].thumb, "https://img/t1.jpg");
-  assert.deepEqual([store.get("walls/W1")?.dropReserved, store.get("walls/W1")?.dropWeek], [false, KEY]);
+  assert.deepEqual(
+    [store.get("walls/W1")?.dropReserved, store.get("walls/W1")?.dropWeek],
+    [false, KEY],
+  );
   assert.equal(store.get("walls/W11")?.dropReserved, true);
   assert.equal(store.get("walls/X1")?.dropWeek, undefined);
 });
@@ -116,9 +141,16 @@ test("the planner falls back to the default title", async (t) => {
 test("old drops release their walls to the feed once", async (t) => {
   const day = 86_400_000;
   const store = installFakeDb(t, {
-    "drops/2026-W30": {endsAt: MONDAY - 31 * day, walls: [{id: "W1"}, {id: "W2"}, {id: "GONE"}]},
+    "drops/2026-W30": {
+      endsAt: MONDAY - 31 * day,
+      walls: [{id: "W1"}, {id: "W2"}, {id: "GONE"}],
+    },
     "drops/2026-W36": {endsAt: MONDAY - 29 * day, walls: [{id: "W3"}]},
-    "drops/2026-W20": {endsAt: MONDAY - 90 * day, released: true, walls: [{id: "W4"}]},
+    "drops/2026-W20": {
+      endsAt: MONDAY - 90 * day,
+      released: true,
+      walls: [{id: "W4"}],
+    },
     "walls/W1": wall(1, {dropReserved: false, dropWeek: "2026-W30"}),
     "walls/W2": wall(2, {dropReserved: false, dropWeek: "2026-W30"}),
     "walls/W3": wall(3, {dropReserved: false, dropWeek: "2026-W36"}),
@@ -136,7 +168,10 @@ test("old drops release their walls to the feed once", async (t) => {
 
 test("the planner releases old drops even when it plans nothing", async (t) => {
   const store = installFakeDb(t, {
-    "drops/2026-W30": {endsAt: MONDAY - 40 * 86_400_000, walls: [{id: "W1"}]},
+    "drops/2026-W30": {
+      endsAt: MONDAY - 40 * 86_400_000,
+      walls: [{id: "W1"}],
+    },
     "walls/W1": wall(1, {dropReserved: false}),
   });
   await plan(t);
@@ -152,47 +187,92 @@ const live = {
   priceWall: 30,
   pricePack: 150,
   count: 6,
-  walls: Array.from({length: 6}, (_, i) => ({id: `W${i + 1}`, title: `Wall ${i + 1}`})),
+  walls: Array.from({length: 6}, (_, i) => ({
+    id: `W${i + 1}`,
+    title: `Wall ${i + 1}`,
+  })),
 };
 
-const seedUnlock = (user: Doc = {}, priv?: Doc, drop: Doc = live): Record<string, Doc> => ({
+const seedUnlock = (
+  user: Doc = {},
+  priv?: Doc,
+  drop: Doc = live,
+): Record<string, Doc> => ({
   "usersv2/u1": {coins: 500, premium: false, ...user},
   [`drops/${KEY}`]: drop,
-  ...Object.fromEntries(Array.from({length: 6}, (_, i) => [`walls/W${i + 1}`, wall(i + 1)])),
+  ...Object.fromEntries(
+    Array.from({length: 6}, (_, i) => [`walls/W${i + 1}`, wall(i + 1)]),
+  ),
   ...(priv ? {"usersv2/u1/private/economy": priv} : {}),
 });
 
 const call = (data: Doc, uid = "u1") =>
-  unlockDrop.run({auth: {uid, token: {}}, data} as Parameters<typeof unlockDrop.run>[0]) as Promise<Doc>;
+  unlockDrop.run({auth: {uid, token: {}}, data} as Parameters<
+    typeof unlockDrop.run
+  >[0]) as Promise<Doc>;
 
 const REQ = "req-00000001";
 
 test("unlockDrop refuses bad input", async (t) => {
   installFakeDb(t, seedUnlock());
   resetEconomyCache();
-  await assert.rejects(call({weekKey: KEY, requestId: "short"}), {code: "invalid-argument"});
-  await assert.rejects(call({weekKey: "nope", requestId: REQ}), {code: "invalid-argument"});
-  await assert.rejects(call({weekKey: KEY, wallId: 5, requestId: REQ}), {code: "invalid-argument"});
+  await assert.rejects(call({weekKey: KEY, requestId: "short"}), {
+    code: "invalid-argument",
+  });
+  await assert.rejects(call({weekKey: "nope", requestId: REQ}), {
+    code: "invalid-argument",
+  });
+  await assert.rejects(call({weekKey: KEY, wallId: 5, requestId: REQ}), {
+    code: "invalid-argument",
+  });
   await assert.rejects(
-    unlockDrop.run({data: {weekKey: KEY, requestId: REQ}} as Parameters<typeof unlockDrop.run>[0]),
+    unlockDrop.run({data: {weekKey: KEY, requestId: REQ}} as Parameters<
+      typeof unlockDrop.run
+    >[0]),
     {code: "unauthenticated"},
   );
 });
 
 test("unlockDrop refuses when drops are off, not live, or the wall is not in the drop", async (t) => {
-  const store = installFakeDb(t, {...seedUnlock(), "economyConfig/current": {flags: {dropsEnabled: false}}});
+  const store = installFakeDb(t, {
+    ...seedUnlock(),
+    "economyConfig/current": {flags: {dropsEnabled: false}},
+  });
   resetEconomyCache();
-  assert.equal((await call({weekKey: KEY, wallId: "W1", requestId: REQ})).reason, "drops_disabled");
+  assert.equal(
+    (await call({weekKey: KEY, wallId: "W1", requestId: REQ})).reason,
+    "drops_disabled",
+  );
 
   store.set("economyConfig/current", {flags: {dropsEnabled: true}});
   resetEconomyCache();
-  assert.equal((await call({weekKey: KEY, wallId: "W99", requestId: REQ})).reason, "drop_wall_unknown");
-  assert.equal((await call({weekKey: "2020-W01", wallId: "W1", requestId: REQ})).reason, "drop_not_live");
+  assert.equal(
+    (await call({weekKey: KEY, wallId: "W99", requestId: REQ})).reason,
+    "drop_wall_unknown",
+  );
+  assert.equal(
+    (await call({weekKey: "2020-W01", wallId: "W1", requestId: REQ})).reason,
+    "drop_not_live",
+  );
 
-  store.set(`drops/${KEY}`, {...live, startsAt: Date.now() + 5000, endsAt: Date.now() + 9000});
-  assert.equal((await call({weekKey: KEY, wallId: "W1", requestId: REQ})).reason, "drop_not_live");
-  store.set(`drops/${KEY}`, {...live, startsAt: Date.now() - 9000, endsAt: Date.now() - 5000});
-  assert.equal((await call({weekKey: KEY, requestId: REQ})).reason, "drop_not_live");
+  store.set(`drops/${KEY}`, {
+    ...live,
+    startsAt: Date.now() + 5000,
+    endsAt: Date.now() + 9000,
+  });
+  assert.equal(
+    (await call({weekKey: KEY, wallId: "W1", requestId: REQ})).reason,
+    "drop_not_live",
+  );
+  store.set(`drops/${KEY}`, {
+    ...live,
+    startsAt: Date.now() - 9000,
+    endsAt: Date.now() - 5000,
+  });
+  assert.equal(
+    (await call({weekKey: KEY, requestId: REQ})).reason,
+    "drop_not_live",
+  );
   assert.equal(store.get("usersv2/u1")?.coins, 500);
 });
 
@@ -208,7 +288,9 @@ test("unlocking one wall debits the wall price and stores the url on the private
   assert.equal(store.get("usersv2/u1")?.coins, 470);
   const priv = store.get("usersv2/u1/private/economy") as Doc;
   assert.equal(priv.rev, 1);
-  assert.deepEqual((priv.drops as Doc).unlocked, {W2: {weekKey: KEY, url: "https://img/f2.jpg"}});
+  assert.deepEqual((priv.drops as Doc).unlocked, {
+    W2: {weekKey: KEY, url: "https://img/f2.jpg"},
+  });
   const tx = store.get(`coinTransactions/ctx_drop_u1_${REQ}`) as Doc;
   assert.equal(tx.action, "dropWall");
   assert.equal(tx.reason, `drop_${KEY}`);
@@ -220,7 +302,11 @@ test("unlocking a wall twice charges once", async (t) => {
   const store = installFakeDb(t, seedUnlock());
   resetEconomyCache();
   await call({weekKey: KEY, wallId: "W2", requestId: REQ});
-  const again = await call({weekKey: KEY, wallId: "W2", requestId: "req-00000002"});
+  const again = await call({
+    weekKey: KEY,
+    wallId: "W2",
+    requestId: "req-00000002",
+  });
   assert.equal(again.success, true);
   assert.equal(again.changed, false);
   assert.equal(again.reason, "drop_wall_already_unlocked");
@@ -234,25 +320,47 @@ test("the pack unlocks every wall left at the pack price", async (t) => {
   assert.equal(res.delta, -150);
   assert.equal((res.unlocked as Doc[]).length, 6);
   assert.equal(store.get("usersv2/u1")?.coins, 350);
-  assert.equal(Object.keys(((store.get("usersv2/u1/private/economy") as Doc).drops as Doc).unlocked as Doc).length, 6);
-  assert.equal((store.get(`coinTransactions/ctx_drop_u1_${REQ}`) as Doc).action, "dropPack");
+  assert.equal(
+    Object.keys(
+      ((store.get("usersv2/u1/private/economy") as Doc).drops as Doc)
+        .unlocked as Doc,
+    ).length,
+    6,
+  );
+  assert.equal(
+    (store.get(`coinTransactions/ctx_drop_u1_${REQ}`) as Doc).action,
+    "dropPack",
+  );
 });
 
 test("the pack costs only the walls left when you own some", async (t) => {
-  const owned = Object.fromEntries(["W1", "W2"].map((id) => [id, {weekKey: KEY, url: `u-${id}`}]));
-  const store = installFakeDb(t, seedUnlock({}, {rev: 4, drops: {unlocked: owned}}));
+  const owned = Object.fromEntries(
+    ["W1", "W2"].map((id) => [id, {weekKey: KEY, url: `u-${id}`}]),
+  );
+  const store = installFakeDb(
+    t,
+    seedUnlock({}, {rev: 4, drops: {unlocked: owned}}),
+  );
   resetEconomyCache();
   const res = await call({weekKey: KEY, requestId: REQ});
   assert.equal(res.delta, -120);
-  assert.deepEqual((res.unlocked as Doc[]).map((w) => w.id), ["W3", "W4", "W5", "W6"]);
+  assert.deepEqual(
+    (res.unlocked as Doc[]).map((w) => w.id),
+    ["W3", "W4", "W5", "W6"],
+  );
   const priv = store.get("usersv2/u1/private/economy") as Doc;
   assert.equal(priv.rev, 5);
   assert.equal(Object.keys((priv.drops as Doc).unlocked as Doc).length, 6);
 });
 
 test("the pack is refused when nothing is left", async (t) => {
-  const owned = Object.fromEntries(live.walls.map((w) => [w.id, {weekKey: KEY, url: `u-${w.id}`}]));
-  const store = installFakeDb(t, seedUnlock({}, {rev: 1, drops: {unlocked: owned}}));
+  const owned = Object.fromEntries(
+    live.walls.map((w) => [w.id, {weekKey: KEY, url: `u-${w.id}`}]),
+  );
+  const store = installFakeDb(
+    t,
+    seedUnlock({}, {rev: 1, drops: {unlocked: owned}}),
+  );
   resetEconomyCache();
   const res = await call({weekKey: KEY, requestId: REQ});
   assert.equal(res.success, true);
@@ -264,7 +372,10 @@ test("the pack is refused when nothing is left", async (t) => {
 test("Pro pays half for a wall and for the pack", async (t) => {
   const store = installFakeDb(t, seedUnlock({premium: true}));
   resetEconomyCache();
-  assert.equal((await call({weekKey: KEY, wallId: "W1", requestId: REQ})).delta, -15);
+  assert.equal(
+    (await call({weekKey: KEY, wallId: "W1", requestId: REQ})).delta,
+    -15,
+  );
   const pack = await call({weekKey: KEY, requestId: "req-00000002"});
   assert.equal(pack.delta, -75);
   assert.equal(store.get("usersv2/u1")?.coins, 500 - 15 - 75);
@@ -282,7 +393,10 @@ test("an unlock is refused when the balance is too low", async (t) => {
 });
 
 test("a wall with no url is not sold", async (t) => {
-  const store = installFakeDb(t, {...seedUnlock(), "walls/W1": wall(1, {wallpaper_url: ""})});
+  const store = installFakeDb(t, {
+    ...seedUnlock(),
+    "walls/W1": wall(1, {wallpaper_url: ""}),
+  });
   resetEconomyCache();
   const res = await call({weekKey: KEY, wallId: "W1", requestId: REQ});
   assert.equal(res.reason, "drop_wall_unavailable");
@@ -306,7 +420,8 @@ test("a replayed request returns the stored unlock and charges nothing", async (
   assert.equal(store.get("usersv2/u1")?.coins, 900);
 });
 
-const collectors = (store: Map<string, Doc>) => store.get(`drops/${KEY}`)?.collectors;
+const collectors = (store: Map<string, Doc>) =>
+  store.get(`drops/${KEY}`)?.collectors;
 
 test("collectors counts a user once per drop, on the first charged unlock", async (t) => {
   const store = installFakeDb(t, seedUnlock());
@@ -328,7 +443,13 @@ test("collectors counts a pack bought as the first purchase", async (t) => {
 
 test("collectors counts a second user and ignores walls owned from another drop", async (t) => {
   const store = installFakeDb(t, {
-    ...seedUnlock({}, {rev: 1, drops: {unlocked: {OLD: {weekKey: "2020-W01", url: "u"}}}}),
+    ...seedUnlock(
+      {},
+      {
+        rev: 1,
+        drops: {unlocked: {OLD: {weekKey: "2020-W01", url: "u"}}},
+      },
+    ),
     "usersv2/u2": {coins: 500, premium: false},
   });
   resetEconomyCache();
@@ -353,8 +474,15 @@ test("collectors ignores replays, repeats, and a balance that is too low", async
 
 const H = 3_600_000;
 const drop = (extra: Partial<DropDoc> = {}): DropDoc => ({
-  weekKey: KEY, title: "Neon nights", startsAt: 1_000_000, endsAt: 1_000_000 + 168 * H, priceWall: 30,
-  pricePack: 150, count: 6, walls: [], ...extra,
+  weekKey: KEY,
+  title: "Neon nights",
+  startsAt: 1_000_000,
+  endsAt: 1_000_000 + 168 * H,
+  priceWall: 30,
+  pricePack: 150,
+  count: 6,
+  walls: [],
+  ...extra,
 });
 
 test("duePushKinds follows the live and last call windows", () => {
@@ -370,7 +498,9 @@ test("duePushKinds follows the live and last call windows", () => {
 test("duePushKinds skips a kind that was sent", () => {
   const sentLive = drop({pushes: {live: 5}});
   assert.deepEqual(duePushKinds(sentLive, sentLive.startsAt + 5 * H), []);
-  assert.deepEqual(duePushKinds(sentLive, sentLive.endsAt - 12 * H), ["lastCall"]);
+  assert.deepEqual(duePushKinds(sentLive, sentLive.endsAt - 12 * H), [
+    "lastCall",
+  ]);
   const sentBoth = drop({pushes: {live: 5, lastCall: 6}});
   assert.deepEqual(duePushKinds(sentBoth, sentBoth.endsAt - H), []);
 });
@@ -382,14 +512,39 @@ test("a late run sends only the last call", () => {
 
 const pushDrop = (extra: Partial<DropDoc> = {}): Doc => {
   const now = Date.now();
-  return {...drop({startsAt: now - 5 * H, endsAt: now + 100 * H, walls: [
-    {id: "W1", title: "Wall 1", thumb: "https://img/t1.jpg", resolution: "", by: "", seriesId: ""},
-  ], ...extra})};
+  return {
+    ...drop({
+      startsAt: now - 5 * H,
+      endsAt: now + 100 * H,
+      walls: [
+        {
+          id: "W1",
+          title: "Wall 1",
+          thumb: "https://img/t1.jpg",
+          resolution: "",
+          by: "",
+          seriesId: "",
+        },
+      ],
+      ...extra,
+    }),
+  };
 };
 
 const runPushes = (t: test.TestContext) => {
-  const send = t.mock.method(notificationHelper, "sendNotification", async () => true);
-  return {send, run: () => sendDropPushes.run({jobName: "t", scheduleTime: new Date().toISOString()})};
+  const send = t.mock.method(
+    notificationHelper,
+    "sendNotification",
+    async () => true,
+  );
+  return {
+    send,
+    run: () =>
+      sendDropPushes.run({
+        jobName: "t",
+        scheduleTime: new Date().toISOString(),
+      }),
+  };
 };
 
 test("sendDropPushes sends the live push once with the full payload", async (t) => {
@@ -403,6 +558,12 @@ test("sendDropPushes sends the live push once with the full payload", async (t) 
   assert.deepEqual(send.mock.calls[0].arguments[0], {
     title: "A new Drop is live",
     body: "6 walls, this week only. Preview them before they are gone.",
+    message: {
+      kind: "dropLive",
+      args: {wallCount: 6},
+      title: "A new Drop is live",
+      body: "6 walls, this week only. Preview them before they are gone.",
+    },
     data: {route: "drops", week_key: KEY},
     imageUrl: "https://img/t1.jpg",
     modifier: "all",
@@ -417,28 +578,44 @@ test("sendDropPushes sends the live push once with the full payload", async (t) 
 
 test("sendDropPushes sends the last call text near the end", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({endsAt: MONDAY + 12 * H, pushes: {live: 1}})});
+  installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({
+      endsAt: MONDAY + 12 * H,
+      pushes: {live: 1},
+    }),
+  });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
   assert.equal(send.mock.callCount(), 1);
-  const payload = send.mock.calls[0].arguments[0] as {title: string; body: string; docId: string};
+  const payload = send.mock.calls[0].arguments[0] as {
+    title: string;
+    body: string;
+    docId: string;
+  };
   assert.equal(payload.title, "Last call on this week's Drop");
-  assert.equal(payload.body, "Neon nights ends in 12 hours. Then these walls are gone for a month.");
+  assert.equal(
+    payload.body,
+    "Neon nights ends in 12 hours. Then these walls are gone for a month.",
+  );
   assert.equal(payload.docId, `drop_lastCall_${KEY}`);
 });
 
 test("sendDropPushes does nothing when drops are off or the drop is not live", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
   const store = installFakeDb(t, {
-    [`drops/${KEY}`]: pushDrop(), "economyConfig/current": {flags: {dropsEnabled: false}},
+    [`drops/${KEY}`]: pushDrop(),
+    "economyConfig/current": {flags: {dropsEnabled: false}},
   });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
   store.set("economyConfig/current", {flags: {dropsEnabled: true}});
   resetEconomyCache();
-  store.set(`drops/${KEY}`, pushDrop({startsAt: MONDAY + H, endsAt: MONDAY + 100 * H}));
+  store.set(
+    `drops/${KEY}`,
+    pushDrop({startsAt: MONDAY + H, endsAt: MONDAY + 100 * H}),
+  );
   await run();
   assert.equal(send.mock.callCount(), 0);
 });
@@ -447,11 +624,25 @@ test("a failed send frees the claim and throws so the scheduler retries", async 
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
   const store = installFakeDb(t, {[`drops/${KEY}`]: pushDrop()});
   resetEconomyCache();
-  const send = t.mock.method(notificationHelper, "sendNotification", async () => false);
-  const run = async () => sendDropPushes.run({jobName: "t", scheduleTime: new Date().toISOString()});
+  const send = t.mock.method(
+    notificationHelper,
+    "sendNotification",
+    async () => false,
+  );
+  const run = async () =>
+    sendDropPushes.run({
+      jobName: "t",
+      scheduleTime: new Date().toISOString(),
+    });
   await assert.rejects(run(), /push failed/);
-  assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc | undefined)?.live, undefined);
-  assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live, undefined);
+  assert.equal(
+    (store.get(`drops/${KEY}`)?.pushes as Doc | undefined)?.live,
+    undefined,
+  );
+  assert.equal(
+    (store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live,
+    undefined,
+  );
   send.mock.mockImplementation(async () => true);
   await run();
   assert.equal(send.mock.callCount(), 2);
@@ -460,35 +651,57 @@ test("a failed send frees the claim and throws so the scheduler retries", async 
 
 const lastCallBody = async (t: test.TestContext, leftMs: number) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({endsAt: MONDAY + leftMs, pushes: {live: 1}})});
+  installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({
+      endsAt: MONDAY + leftMs,
+      pushes: {live: 1},
+    }),
+  });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
-  return (send.mock.calls[0].arguments[0] as {body: string}).body;
+  return (send.mock.calls[0].arguments[0] as { body: string }).body;
 };
 
 test("the last call body states the real hours left", async (t) => {
-  assert.equal(await lastCallBody(t, 5 * H + 30 * 60 * 1000), "Neon nights ends in 5 hours. Then these walls are gone for a month.");
+  assert.equal(
+    await lastCallBody(t, 5 * H + 30 * 60 * 1000),
+    "Neon nights ends in 5 hours. Then these walls are gone for a month.",
+  );
 });
 
 test("the last call body says 1 hour in the singular", async (t) => {
-  assert.equal(await lastCallBody(t, 30 * 60 * 1000), "Neon nights ends in 1 hour. Then these walls are gone for a month.");
+  assert.equal(
+    await lastCallBody(t, 30 * 60 * 1000),
+    "Neon nights ends in 1 hour. Then these walls are gone for a month.",
+  );
 });
 
 test("a stale in-flight claim is retried and sent", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  const store = installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushClaims: {live: MONDAY - 16 * 60 * 1000}})});
+  const store = installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({
+      pushClaims: {live: MONDAY - 16 * 60 * 1000},
+    }),
+  });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
   assert.equal(send.mock.callCount(), 1);
   assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc).live, MONDAY);
-  assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live, undefined);
+  assert.equal(
+    (store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live,
+    undefined,
+  );
 });
 
 test("a fresh in-flight claim blocks the send", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushClaims: {live: MONDAY - 5 * 60 * 1000}})});
+  installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({
+      pushClaims: {live: MONDAY - 5 * 60 * 1000},
+    }),
+  });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
@@ -497,7 +710,12 @@ test("a fresh in-flight claim blocks the send", async (t) => {
 
 test("a sent marker blocks even with a stale claim", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushes: {live: 1}, pushClaims: {live: MONDAY - H}})});
+  installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({
+      pushes: {live: 1},
+      pushClaims: {live: MONDAY - H},
+    }),
+  });
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
@@ -508,12 +726,20 @@ test("a failed send frees only its own claim", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
   const store = installFakeDb(t, {[`drops/${KEY}`]: pushDrop()});
   resetEconomyCache();
-  const send = t.mock.method(notificationHelper, "sendNotification", async () => {
-    const doc = store.get(`drops/${KEY}`) as Doc;
-    (doc.pushClaims as Doc).live = MONDAY + 1;
-    return false;
-  });
-  const run = async () => sendDropPushes.run({jobName: "t", scheduleTime: new Date().toISOString()});
+  const send = t.mock.method(
+    notificationHelper,
+    "sendNotification",
+    async () => {
+      const doc = store.get(`drops/${KEY}`) as Doc;
+      (doc.pushClaims as Doc).live = MONDAY + 1;
+      return false;
+    },
+  );
+  const run = async () =>
+    sendDropPushes.run({
+      jobName: "t",
+      scheduleTime: new Date().toISOString(),
+    });
   await assert.rejects(run(), /push failed/);
   assert.equal(send.mock.callCount(), 1);
   assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc).live, MONDAY + 1);

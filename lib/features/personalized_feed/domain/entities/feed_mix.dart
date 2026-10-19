@@ -1,12 +1,10 @@
 /// How far the home feed reaches outside the user's taste.
 enum FeedMix {
-  familiar('Familiar', exploreEvery: 8),
-  balanced('Balanced', exploreEvery: 5),
-  adventurous('Adventurous', exploreEvery: 3);
+  familiar(exploreEvery: 8),
+  balanced(exploreEvery: 5),
+  adventurous(exploreEvery: 3);
 
-  const FeedMix(this.label, {required this.exploreEvery});
-
-  final String label;
+  const FeedMix({required this.exploreEvery});
 
   /// Every n-th feed slot goes to a wallpaper outside the user's taste.
   final int exploreEvery;

@@ -2,6 +2,8 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +24,9 @@ void main() {
   });
 
   Widget host({bool reduceMotion = false}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     home: MediaQuery(
       data: MediaQueryData(disableAnimations: reduceMotion),
       child: const Scaffold(body: CoinBalanceChip(sourceTag: 'test', showStreak: false)),
@@ -29,17 +34,18 @@ void main() {
   );
 
   testWidgets('the label reads the balance, and adds the change while one is showing', (tester) async {
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(host());
-    expect(find.bySemanticsLabel('120 Prism coins'), findsOneWidget);
+    expect(find.bySemanticsLabel(l10n.coreCoinBalance(120)), findsOneWidget);
 
     coins.deltaNotifier.value = 5;
     await tester.pump();
-    expect(find.bySemanticsLabel('120 Prism coins, up 5'), findsOneWidget);
+    expect(find.bySemanticsLabel(l10n.coreCoinBalanceChange('120', l10n.coreUp(5))), findsOneWidget);
 
     coins.deltaNotifier.value = -3;
     await tester.pump();
-    expect(find.bySemanticsLabel('120 Prism coins, down 3'), findsOneWidget);
+    expect(find.bySemanticsLabel(l10n.coreCoinBalanceChange('120', l10n.coreDown(3))), findsOneWidget);
     handle.dispose();
   });
 

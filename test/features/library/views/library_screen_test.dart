@@ -12,6 +12,8 @@ import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_u
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
@@ -97,7 +99,14 @@ void main() {
       child: LibraryScreen(initialTab: initialTab),
     );
     if (wrap != null) home = wrap(home);
-    await tester.pumpWidget(MaterialApp(theme: theme, home: home));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: theme,
+        home: home,
+      ),
+    );
     await settle(tester);
   }
 
@@ -157,7 +166,7 @@ void main() {
       final PrismThemeOption option = <PrismThemeOption>[
         ...prismLightThemes,
         ...prismDarkThemes,
-      ].firstWhere((PrismThemeOption o) => o.label == entry.key);
+      ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == entry.key);
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
       await pumpLibrary(tester, theme: theme);
 

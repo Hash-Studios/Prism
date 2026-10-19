@@ -140,6 +140,10 @@ function messageTopic(message: admin.messaging.Message): string | undefined {
   return "topic" in message ? message.topic : undefined;
 }
 
+function expectedLocalizedTopicTargets(legacyTopics: string[]): string[] {
+  return legacyTopics.flatMap((topic) => [topic, `${topic}_loc_v1`]).sort();
+}
+
 async function runJob(users: User[], options: {
   failSend?: boolean;
   wall?: boolean;
@@ -282,19 +286,22 @@ test("job includes every exact inactivity boundary and excludes its N+2 boundary
     makeUser(`boundary-${step}`, step + 2),
   ]);
   const {sent} = await runJob(users);
-  assert.equal(sent.length, WIN_BACK_STEPS.length * 2);
+  assert.equal(sent.length, WIN_BACK_STEPS.length * 4);
   const topics = new Set(sent.map(messageTopic));
   for (const step of WIN_BACK_STEPS) {
     assert.ok(topics.has(`u_exact-${step}`));
+    assert.ok(topics.has(`u_exact-${step}_loc_v1`));
     assert.ok(topics.has(`u_missed-${step}`));
+    assert.ok(topics.has(`u_missed-${step}_loc_v1`));
     assert.ok(!topics.has(`u_boundary-${step}`));
   }
 });
 
 test("job sends the feed push on the recommendations channel", async () => {
   const {sent} = await runJob([makeUser("authoritative", 7.5, {uid: "wrong-uid"})]);
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
   assert.equal(messageTopic(sent[0]), "u_authoritative");
+  assert.equal(messageTopic(sent[1]), "u_authoritative_loc_v1");
   assert.equal(sent[0].data?.route, "home");
   assert.equal(sent[0].data?.push_kind, "win_back");
   assert.equal(sent[0].data?.step, "7");
@@ -330,12 +337,13 @@ test("a user outside this slot's evening offset is not queried", async () => {
     makeUser("here", 7.5),
     makeUser("elsewhere", 7.5, {appOpenTimezoneOffsetMinutes: EVENING === 0 ? 15 : 0}),
   ]);
-  assert.deepEqual(sent.map(messageTopic), ["u_here"]);
+  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_here"]));
 });
 
 test("a late run still uses its scheduled slot", async () => {
   const {sent} = await runJob([makeUser("late", 7.5)], {clock: NOW + 30 * MIN});
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
+  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_late"]));
 });
 
 test("activity that changes after the query is rechecked before sending", async () => {
@@ -364,10 +372,12 @@ test("a timezone offset that changes after the query is rechecked before sending
 
 test("job also pushes to the stored token with the same collapse key", async () => {
   const {sent} = await runJob([makeUser("tokened", 7.5)], {token: "tok-1"});
-  assert.equal(sent.length, 2);
+  assert.equal(sent.length, 3);
   assert.equal(messageTopic(sent[0]), "u_tokened");
-  assert.equal("token" in sent[1] ? sent[1].token : undefined, "tok-1");
-  assert.equal(sent[1].android?.notification?.tag, "win_back_7");
+  assert.equal(messageTopic(sent[1]), "u_tokened_loc_v1");
+  assert.equal("token" in sent[2] ? sent[2].token : undefined, "tok-1");
+  assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
+  assert.equal(sent[1].android?.notification?.tag, sent[2].android?.notification?.tag);
 });
 
 test("fresh activity, day 3, deleted users and logged-out users are skipped", async () => {
@@ -382,19 +392,19 @@ test("fresh activity, day 3, deleted users and logged-out users are skipped", as
 
 test("completed sends dedupe reruns", async () => {
   const first = await runJob([makeUser("same", 7.5)]);
-  assert.equal(first.sent.length, 1);
+  assert.equal(first.sent.length, 2);
   const again = await runJob([...first.users.values()]);
   assert.equal(again.sent.length, 0);
 });
 
 test("failed FCM does not leave a completed stamp", async () => {
   const failed = await runJob([makeUser("retry", 7.5)], {failSend: true});
-  assert.equal(failed.sent.length, 1);
+  assert.equal(failed.sent.length, 2);
   const user = failed.users.get("retry");
   assert.ok(user);
   assert.equal(user.winBack?.step, undefined);
   const retry = await runJob([...failed.users.values()]);
-  assert.equal(retry.sent.length, 1);
+  assert.equal(retry.sent.length, 2);
 });
 
 test("varied timestamp pages with ties do not skip users after the 300-document boundary", async () => {
@@ -403,8 +413,8 @@ test("varied timestamp pages with ties do not skip users after the 300-document 
     7.2 + (i % 6) * 0.1,
   ));
   const {sent} = await runJob(users);
-  assert.equal(sent.length, 307);
-  assert.equal(new Set(sent.map((message) => JSON.stringify(message))).size, 307);
+  assert.equal(sent.length, 614);
+  assert.equal(new Set(sent.map((message) => JSON.stringify(message))).size, 614);
 });
 
 test("freshly missing or malformed last opens are skipped", async () => {
@@ -419,7 +429,7 @@ test("malformed completed dedupe timestamps do not crash or suppress an eligible
   const {sent} = await runJob([makeUser("bad-dedupe", 7.5, {
     winBack: {step: 60, openAt: {toMillis: "not-a-function"}},
   })]);
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
 });
 
 test("an old streak-claim stamp does not block a last-open sequence", async () => {
@@ -428,7 +438,7 @@ test("an old streak-claim stamp does not block a last-open sequence", async () =
     lastAppOpenAt: openAt,
     winBack: {step: 60, claimAt: openAt},
   })]);
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 2);
 });
 
 test("the shared email-prefix topic is never used", async () => {
@@ -436,7 +446,7 @@ test("the shared email-prefix topic is never used", async () => {
     makeUser("uid-only", 7.5, {email: "###@example.com"}),
     makeUser("doc-uid", 7.5, {uid: "wrong", email: "Alice@example.com"}),
   ]);
-  assert.deepEqual(sent.map(messageTopic).sort(), ["u_doc-uid", "u_uid-only"]);
+  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_doc-uid", "u_uid-only"]));
 });
 
 test("day 60 carries the current wall and a shorter step writes no inbox doc", async () => {
@@ -473,7 +483,10 @@ test("a user who turned marketing pushes off gets no win-back push and no stamp"
     makeUser("on", 7.5),
     makeUser("unset", 7.5),
   ], {token: "tok-1", sessions: {muted: {marketingPushes: false}, on: {marketingPushes: true}}});
-  assert.deepEqual(sent.map(messageTopic).filter(Boolean).sort(), ["u_on", "u_unset"]);
-  assert.equal(sent.length, 4);
+  assert.deepEqual(
+    sent.map(messageTopic).filter(Boolean).sort(),
+    expectedLocalizedTopicTargets(["u_on", "u_unset"]),
+  );
+  assert.equal(sent.length, 6);
   assert.equal(users.get("muted")?.winBack, undefined);
 });

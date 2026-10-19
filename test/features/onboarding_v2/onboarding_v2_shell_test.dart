@@ -11,6 +11,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -100,7 +101,13 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     whenListen(bloc, states.stream, initialState: initial);
-    await tester.pumpWidget(const MaterialApp(home: OnboardingV2Shell()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: OnboardingV2Shell(),
+      ),
+    );
     await tester.pump(const Duration(seconds: 1));
   }
 

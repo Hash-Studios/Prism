@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,10 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:intl/intl.dart';
 
-String appliedTargetLabel(String target) => switch (target) {
-  'home' => 'Home screen',
-  'lock' => 'Lock screen',
-  'both' => 'Both screens',
+String appliedTargetLabel(AppLocalizations l10n, String target) => switch (target) {
+  'home' => l10n.wallpaperAutoRotateHomeScreen,
+  'lock' => l10n.wallpaperAutoRotateLockScreen,
+  'both' => l10n.wallpaperHistoryBothScreens,
   _ => target,
 };
 
@@ -37,8 +38,11 @@ class AppliedWallpaperTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final String target = appliedTargetLabel(item.target);
-    final String date = DateFormat.MMMd().add_jm().format(item.appliedAt.toLocal());
+    final String target = appliedTargetLabel(context.l10n, item.target);
+    final DateTime localAppliedAt = item.appliedAt.toLocal();
+    final String date =
+        '${DateFormat.MMMd(context.l10n.localeName).format(localAppliedAt)} '
+        '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(localAppliedAt), alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat)}';
     final Widget placeholder = ColoredBox(color: scheme.surfaceContainerHighest);
     final String thumbnail = item.thumbnailUrl.isEmpty ? item.fullUrl : item.thumbnailUrl;
     final Widget image = thumbnail.startsWith('http')
@@ -52,10 +56,16 @@ class AppliedWallpaperTile extends StatelessWidget {
         : Image.file(File(thumbnail), fit: BoxFit.cover, cacheWidth: 400, errorBuilder: (_, _, _) => placeholder);
     return Semantics(
       button: true,
-      label: '${isCurrent ? 'Current. ' : ''}Set again. $target, $date',
+      label: context.l10n.wallpaperHistoryTileSemantic(
+        isCurrent ? context.l10n.wallpaperHistoryCurrentPrefix : '',
+        target,
+        date,
+      ),
       customSemanticsActions: onRemove == null
           ? null
-          : <CustomSemanticsAction, VoidCallback>{const CustomSemanticsAction(label: 'Remove from history'): onRemove!},
+          : <CustomSemanticsAction, VoidCallback>{
+              CustomSemanticsAction(label: context.l10n.wallpaperHistoryRemoveAction): onRemove!,
+            },
       child: InkWell(
         onTap: onTap,
         onLongPress: onRemove,
@@ -79,7 +89,7 @@ class AppliedWallpaperTile extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             child: Text(
-                              'Current',
+                              context.l10n.wallpaperHistoryCurrent,
                               style: TextStyle(
                                 fontFamily: PrismFonts.proximaNova,
                                 fontSize: 12,

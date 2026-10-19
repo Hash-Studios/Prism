@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
   });
 
   test('a missing video is reported', () async {
-    expect(await repository.validateVideo('${directory.path}/missing.mp4'), contains('Pick it again'));
+    expect(await repository.validateVideo('${directory.path}/missing.mp4'), LiveApplyFailure.videoReadFailed);
   });
 
   test('a small video is accepted', () async {
@@ -30,6 +31,6 @@ void main() {
       ..setPositionSync(LiveWallpaperRepositoryImpl.maxVideoBytes)
       ..writeByteSync(0);
     handle.closeSync();
-    expect(await repository.validateVideo(file.path), 'That video is larger than 256 MB. Pick a shorter clip.');
+    expect(await repository.validateVideo(file.path), LiveApplyFailure.videoTooLarge);
   });
 }

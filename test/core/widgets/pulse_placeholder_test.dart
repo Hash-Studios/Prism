@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,6 +17,9 @@ void main() {
     int builds = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: PulsePlaceholder(
           builder: (context, _) {
             builds++;
@@ -34,7 +38,11 @@ void main() {
     await tester.pumpWidget(
       const MediaQuery(
         data: MediaQueryData(disableAnimations: true),
-        child: MaterialApp(home: PulsePlaceholder(builder: _fill)),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: PulsePlaceholder(builder: _fill),
+        ),
       ),
     );
     final Color c0 = fillColor(tester);
@@ -44,6 +52,9 @@ void main() {
 
   testWidgets('stops scheduling frames while hidden and after disposal', (tester) async {
     Widget host(bool enabled) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: TickerMode(
         enabled: enabled,
         child: const PulsePlaceholder(builder: _fill),

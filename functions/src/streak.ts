@@ -1,12 +1,30 @@
 import {randomUUID} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
-import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
+import {
+  onCall,
+  HttpsError,
+  type CallableRequest,
+} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
+import {
+  isLoggedOut,
+  pickFcmToken,
+  sendNotification,
+  userPushTokens,
+} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
-import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpReceipt, type XpReceipt} from "./economy";
+import {
+  DEFAULT_ECONOMY,
+  type EconomyConfig,
+  grantXp,
+  loadEconomy,
+  randomInt,
+  xpReceipt,
+  type XpReceipt,
+} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
+import {notificationCopyPayload} from "./notificationCatalog";
 
 const USERS_COLLECTION = "usersv2";
 const COIN_TX_COLLECTION = "coinTransactions";
@@ -78,21 +96,34 @@ export const claimDailyStreak = onCall(
   ): Promise<ClaimDailyStreakResponse> => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) {
-      throw new HttpsError("unauthenticated", "You must be signed in to claim streak rewards.");
+      throw new HttpsError(
+        "unauthenticated",
+        "You must be signed in to claim streak rewards.",
+      );
     }
 
     const now = new Date();
     const nowTs = admin.firestore.Timestamp.fromDate(now);
 
     const requestedOffset = request.data?.timezoneOffsetMinutes;
-    if (requestedOffset !== undefined &&
-        (typeof requestedOffset !== "number" || !Number.isInteger(requestedOffset) ||
-        requestedOffset < -720 || requestedOffset > 840)) {
-      throw new HttpsError("invalid-argument", "timezoneOffsetMinutes must be an integer between -720 and 840.");
+    if (
+      requestedOffset !== undefined &&
+      (typeof requestedOffset !== "number" ||
+        !Number.isInteger(requestedOffset) ||
+        requestedOffset < -720 ||
+        requestedOffset > 840)
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "timezoneOffsetMinutes must be an integer between -720 and 840.",
+      );
     }
     const reminderEnabled = request.data?.reminderEnabled;
     if (reminderEnabled !== undefined && typeof reminderEnabled !== "boolean") {
-      throw new HttpsError("invalid-argument", "reminderEnabled must be a boolean.");
+      throw new HttpsError(
+        "invalid-argument",
+        "reminderEnabled must be a boolean.",
+      );
     }
     const requestOffset = requestedOffset ?? DEFAULT_TZ_OFFSET_MINUTES;
     const reminderEnabledRequest = reminderEnabled ?? true;
@@ -138,7 +169,10 @@ export const claimDailyStreak = onCall(
       const rawCoinState = userData.coinState;
       const coinState = normalizeCoinState(rawCoinState);
 
-      const lockedOffset = storedTimezoneOffset(rawCoinState, "streakClaimTimezoneOffsetMinutes");
+      const lockedOffset = storedTimezoneOffset(
+        rawCoinState,
+        "streakClaimTimezoneOffsetMinutes",
+      );
       const storedOffset = lockedOffset ?? storedTimezoneOffset(rawCoinState);
       const relock = shouldRelockTimezone({
         locked: lockedOffset,
@@ -146,7 +180,9 @@ export const claimDailyStreak = onCall(
         lastClaimAtMs: coinState.streakLastClaimServerAt?.toMillis(),
         nowMs: now.getTime(),
       });
-      const effectiveOffset = relock ? clampTimezoneOffset(requestOffset) : resolveTimezoneOffset(storedOffset, requestOffset);
+      const effectiveOffset = relock ?
+        clampTimezoneOffset(requestOffset) :
+        resolveTimezoneOffset(storedOffset, requestOffset);
       effectiveTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakClaimTimezoneOffsetMinutes = effectiveOffset;
@@ -155,8 +191,14 @@ export const claimDailyStreak = onCall(
       todayLocalKey = localDateKeyFromUtc(now, effectiveOffset);
       let lastClaimDate = coinState.lastDailyClaimDate.trim();
       // The legacy offset is client-writable. Rebase from the server timestamp when first locking it or moving the lock.
-      if ((lockedOffset == null || relock) && coinState.streakLastClaimServerAt instanceof admin.firestore.Timestamp) {
-        lastClaimDate = localDateKeyFromUtc(coinState.streakLastClaimServerAt.toDate(), effectiveOffset);
+      if (
+        (lockedOffset == null || relock) &&
+        coinState.streakLastClaimServerAt instanceof admin.firestore.Timestamp
+      ) {
+        lastClaimDate = localDateKeyFromUtc(
+          coinState.streakLastClaimServerAt.toDate(),
+          effectiveOffset,
+        );
         coinState.lastDailyClaimDate = lastClaimDate;
       }
       const plan = planStreakClaim(
@@ -182,7 +224,10 @@ export const claimDailyStreak = onCall(
       coinState.streakBest = plan.best;
       coinState.streakFreezes = plan.freezesLeft;
       if (plan.streakBroken && plan.previousCount >= STREAK_RESCUE_MIN_COUNT) {
-        coinState.rescue = {count: plan.previousCount, expiresAtMs: now.getTime() + STREAK_RESCUE_WINDOW_MS};
+        coinState.rescue = {
+          count: plan.previousCount,
+          expiresAtMs: now.getTime() + STREAK_RESCUE_WINDOW_MS,
+        };
       }
 
       if (!alreadyClaimedToday) {
@@ -231,17 +276,20 @@ export const claimDailyStreak = onCall(
         for (const part of parts) {
           if (part.delta <= 0) continue;
           const id = `${part.idPrefix}_${baseTxId}`;
-          tx.set(db.collection(COIN_TX_COLLECTION).doc(id), coinTransactionDoc({
-            id,
-            userId: uid,
-            at: nowTs,
-            delta: part.delta,
-            balanceBefore,
-            action: part.action,
-            description: part.description,
-            sourceTag: "coins.claim_daily_streak.callable",
-            reason: part.reason,
-          }));
+          tx.set(
+            db.collection(COIN_TX_COLLECTION).doc(id),
+            coinTransactionDoc({
+              id,
+              userId: uid,
+              at: nowTs,
+              delta: part.delta,
+              balanceBefore,
+              action: part.action,
+              description: part.description,
+              sourceTag: "coins.claim_daily_streak.callable",
+              reason: part.reason,
+            }),
+          );
           balanceBefore += part.delta;
         }
       } else {
@@ -250,22 +298,41 @@ export const claimDailyStreak = onCall(
       }
 
       if (coinState.streakReminderEnabled) {
-        const reminderTs = nextReminderAfterTodayClaim(todayLocalKey, coinState.streakTimezoneOffsetMinutes);
+        const reminderTs = nextReminderAfterTodayClaim(
+          todayLocalKey,
+          coinState.streakTimezoneOffsetMinutes,
+        );
         coinState.streakReminderNextAtUtc = reminderTs;
         nextReminderAtUtcMillis = reminderTs.toDate().getTime();
       } else {
         delete coinState.streakReminderNextAtUtc;
       }
 
-      const xpAwarded = claimed ? config.xp.activities.dailyStreak +
-        (streakDay === 7 ? config.xp.activities.streakWeek : 0) : 0;
-      const nextXp = claimed ? grantXp(userData, xpAwarded, now.getTime()) : null;
+      const xpAwarded = claimed ?
+        config.xp.activities.dailyStreak +
+          (streakDay === 7 ? config.xp.activities.streakWeek : 0) :
+        0;
+      const nextXp = claimed ?
+        grantXp(userData, xpAwarded, now.getTime()) :
+        null;
       receipt = xpReceipt(nextXp ?? userData, now.getTime(), xpAwarded);
       if (nextXp) {
         const privateData = privateSnap.data() ?? {};
-        const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, now.getTime());
+        const rewards = rankRewardsFor(
+          nextXp.xp,
+          inventoryOwned(privateData),
+          config,
+          now.getTime(),
+        );
         if (rewards.added.length > 0) {
-          tx.set(privateRef, {rev: int(privateData.rev, 0) + 1, inventory: {owned: rewards.owned}}, {merge: true});
+          tx.set(
+            privateRef,
+            {
+              rev: int(privateData.rev, 0) + 1,
+              inventory: {owned: rewards.owned},
+            },
+            {merge: true},
+          );
         }
       }
       tx.update(userRef, {
@@ -346,7 +413,9 @@ export const sendStreakReminders = onSchedule(
           processed += 1;
           if (result.status === "rejected") {
             failed += 1;
-            logger.error("sendStreakReminders: user failed.", {err: result.reason});
+            logger.error("sendStreakReminders: user failed.", {
+              err: result.reason,
+            });
           } else if (result.value === "sent") {
             sent += 1;
           } else if (result.value === "skipped") {
@@ -387,17 +456,22 @@ async function remindUser(
   const coinState = normalizeCoinState(userData.coinState);
 
   const offset = resolveTimezoneOffset(
-    storedTimezoneOffset(userData.coinState, "streakClaimTimezoneOffsetMinutes"),
+    storedTimezoneOffset(
+      userData.coinState,
+      "streakClaimTimezoneOffsetMinutes",
+    ),
     coinState.streakTimezoneOffsetMinutes,
   );
   const todayLocalKey = localDateKeyFromUtc(now, offset);
   const lastClaimDate = coinState.lastDailyClaimDate;
   const lastSentDate = coinState.streakReminderLastSentDate;
   const streakDay = clampStreakDay(int(coinState.streakDay, 0));
-  const streakCount = coinState.streakCount > 0 ? coinState.streakCount : streakDay;
+  const streakCount =
+    coinState.streakCount > 0 ? coinState.streakCount : streakDay;
 
   const activeStreak =
-    streakCount > 0 && isStreakAlive(lastClaimDate, todayLocalKey, coinState.streakFreezes);
+    streakCount > 0 &&
+    isStreakAlive(lastClaimDate, todayLocalKey, coinState.streakFreezes);
   const claimedToday = lastClaimDate === todayLocalKey;
   const alreadySentToday = lastSentDate === todayLocalKey;
 
@@ -409,15 +483,23 @@ async function remindUser(
   }
 
   const nextReminderTs = nextReminderAfterTodayClaim(todayLocalKey, offset);
-  const retryAt = admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + REMINDER_RETRY_MS);
+  const retryAt = admin.firestore.Timestamp.fromMillis(
+    nowTs.toMillis() + REMINDER_RETRY_MS,
+  );
   const loggedOut = isLoggedOut(userData);
-  const retryAfterLogin = loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
-  const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
-  const [fcmToken] = noReminder ? [] : await userPushTokens(userDoc.ref.id, userData.fcmToken);
+  const retryAfterLogin =
+    loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
+  const noReminder =
+    claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
+  const [pushToken] = noReminder ?
+    [] :
+    await userPushTokens(userDoc.ref.id, userData.fcmToken);
 
-  if (noReminder || !fcmToken) {
+  if (noReminder || !pushToken) {
     await userDoc.ref.update({
-      "coinState.streakReminderNextAtUtc": retryAfterLogin ? retryAt : nextReminderTs,
+      "coinState.streakReminderNextAtUtc": retryAfterLogin ?
+        retryAt :
+        nextReminderTs,
     });
     return "skipped";
   }
@@ -425,12 +507,19 @@ async function remindUser(
   // The claim goes first, in a transaction, so an overlapping run cannot send the same reminder twice.
   const claimId = randomUUID();
   const claim = await db.runTransaction(async (tx) => {
-    const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+    const current = (await tx.get(userDoc.ref)).data()?.coinState as
+      Record<string, unknown> | undefined;
     const state = normalizeCoinState(current);
     const nextAt = current?.streakReminderNextAtUtc;
-    const due = nextAt instanceof admin.firestore.Timestamp && nextAt.toMillis() <= nowTs.toMillis();
-    if (!due || !state.streakReminderEnabled || state.streakReminderLastSentDate === todayLocalKey ||
-      state.lastDailyClaimDate === todayLocalKey) {
+    const due =
+      nextAt instanceof admin.firestore.Timestamp &&
+      nextAt.toMillis() <= nowTs.toMillis();
+    if (
+      !due ||
+      !state.streakReminderEnabled ||
+      state.streakReminderLastSentDate === todayLocalKey ||
+      state.lastDailyClaimDate === todayLocalKey
+    ) {
       return null;
     }
     tx.update(userDoc.ref, {
@@ -442,8 +531,7 @@ async function remindUser(
   });
   if (!claim) return "skipped";
   const delivered = await sendNotification({
-    title: "Your streak is about to break!",
-    body: "Open Prism now to keep your login streak alive 🔥",
+    ...notificationCopyPayload({kind: "streakReminder"}),
     data: {
       route: "streak_reminder",
       streak_day: streakDay.toString(),
@@ -452,12 +540,14 @@ async function remindUser(
     modifier: userEmail,
     channelId: REMINDER_CHANNEL_ID,
     scoreKind: "streak_reminder",
-    fcmTarget: {token: fcmToken},
+    fcmTarget: {token: pushToken.token},
+    nativeLocalization: pushToken.nativeLocalization,
     docId: `streak_${userDoc.ref.id}_${todayLocalKey}`,
   });
   if (!delivered) {
     await db.runTransaction(async (tx) => {
-      const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+      const current = (await tx.get(userDoc.ref)).data()?.coinState as
+        Record<string, unknown> | undefined;
       if (current?.streakReminderClaimId !== claimId) return;
       tx.update(userDoc.ref, {
         "coinState.streakReminderLastSentDate": claim.previousSentDate,
@@ -486,7 +576,10 @@ export function shouldRelockTimezone(params: {
   if (locked == null || requested === undefined || lastClaimAtMs == null) {
     return false;
   }
-  return clampTimezoneOffset(requested) !== clampTimezoneOffset(locked) && nowMs - lastClaimAtMs >= DAY_MS;
+  return (
+    clampTimezoneOffset(requested) !== clampTimezoneOffset(locked) &&
+    nowMs - lastClaimAtMs >= DAY_MS
+  );
 }
 
 function asBool(value: unknown, fallback: boolean): boolean {
@@ -515,18 +608,32 @@ function clampTimezoneOffset(offsetMinutes: number): number {
   return Math.max(-12 * 60, Math.min(14 * 60, Math.trunc(offsetMinutes)));
 }
 
-export function resolveTimezoneOffset(stored: number | undefined, requested: number): number {
+export function resolveTimezoneOffset(
+  stored: number | undefined,
+  requested: number,
+): number {
   const requestedOffset = clampTimezoneOffset(requested);
-  return stored == null || !Number.isFinite(stored) ? requestedOffset : clampTimezoneOffset(stored);
+  return stored == null || !Number.isFinite(stored) ?
+    requestedOffset :
+    clampTimezoneOffset(stored);
 }
 
-function storedTimezoneOffset(raw: unknown, field = "streakTimezoneOffsetMinutes"): number | undefined {
+function storedTimezoneOffset(
+  raw: unknown,
+  field = "streakTimezoneOffsetMinutes",
+): number | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return undefined;
   }
   const value = (raw as Record<string, unknown>)[field];
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  if (
+    typeof value === "string" &&
+    value.trim() &&
+    Number.isFinite(Number(value))
+  ) {
+    return Number(value);
+  }
   return undefined;
 }
 
@@ -549,7 +656,10 @@ function normalizeCoinState(raw: unknown): CoinState {
     streakDay: clampStreakDay(int(state.streakDay, 0)),
     streakCount: Math.max(0, int(state.streakCount, 0)),
     streakBest: Math.max(0, int(state.streakBest, 0)),
-    streakFreezes: Math.max(0, Math.min(MAX_STREAK_FREEZES, int(state.streakFreezes, 0))),
+    streakFreezes: Math.max(
+      0,
+      Math.min(MAX_STREAK_FREEZES, int(state.streakFreezes, 0)),
+    ),
     streakReminderEnabled: asBool(state.streakReminderEnabled, true),
     streakTimezoneOffsetMinutes: clampTimezoneOffset(
       int(state.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES),
@@ -580,12 +690,18 @@ export function dayGap(a: string, b: string): number {
   if (!pa || !pb) {
     return Number.NaN;
   }
-  const ms = Date.UTC(pb.year, pb.month - 1, pb.day) - Date.UTC(pa.year, pa.month - 1, pa.day);
+  const ms =
+    Date.UTC(pb.year, pb.month - 1, pb.day) -
+    Date.UTC(pa.year, pa.month - 1, pa.day);
   return Math.round(ms / 86_400_000);
 }
 
 /** A streak survives while the missed days fit inside the held freezes. */
-export function isStreakAlive(lastKey: string, todayKey: string, freezes: number): boolean {
+export function isStreakAlive(
+  lastKey: string,
+  todayKey: string,
+  freezes: number,
+): boolean {
   if (!lastKey) {
     return false;
   }
@@ -626,7 +742,10 @@ export function planStreakClaim(
   award: EconomyConfig["award"] = DEFAULT_ECONOMY.award,
   random: () => number = Math.random,
 ): StreakClaimPlan {
-  const freezes = Math.max(0, Math.min(MAX_STREAK_FREEZES, Math.trunc(state.freezes || 0)));
+  const freezes = Math.max(
+    0,
+    Math.min(MAX_STREAK_FREEZES, Math.trunc(state.freezes || 0)),
+  );
   const storedCount = Math.max(0, Math.trunc(state.streakCount || 0));
   const prev = storedCount > 0 ? storedCount : clampStreakDay(state.streakDay);
   const best = Math.max(Math.max(0, Math.trunc(state.streakBest || 0)), prev);
@@ -659,7 +778,10 @@ export function planStreakClaim(
   const streakBroken = lastKey.length > 0 && count === 1 && prev > 0;
   const cycleDay = streakCycleDay(count);
   const dailyReward = award.streakDaily[cycleDay - 1] ?? 0;
-  const chest = cycleDay === 7 ? randomInt(award.streakChestMin, award.streakChestMax, random) : 0;
+  const chest =
+    cycleDay === 7 ?
+      randomInt(award.streakChestMin, award.streakChestMax, random) :
+      0;
   const earned = dailyReward + chest;
   return {
     ...base,
@@ -672,11 +794,16 @@ export function planStreakClaim(
     cycleDay,
     dailyReward,
     streakBonusReward: chest,
-    proBonusReward: isPro ? Math.ceil(earned * award.proStreakMultiplier) - earned : 0,
+    proBonusReward: isPro ?
+      Math.ceil(earned * award.proStreakMultiplier) - earned :
+      0,
   };
 }
 
-export function localDateKeyFromUtc(utcDate: Date, offsetMinutes: number): string {
+export function localDateKeyFromUtc(
+  utcDate: Date,
+  offsetMinutes: number,
+): string {
   const shifted = new Date(utcDate.getTime() + offsetMinutes * 60 * 1000);
   const year = shifted.getUTCFullYear();
   const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
@@ -684,7 +811,9 @@ export function localDateKeyFromUtc(utcDate: Date, offsetMinutes: number): strin
   return `${year}-${month}-${day}`;
 }
 
-function parseDayKey(dayKey: string): { year: number; month: number; day: number } | null {
+function parseDayKey(
+  dayKey: string,
+): { year: number; month: number; day: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey.trim());
   if (!match) {
     return null;
@@ -693,7 +822,11 @@ function parseDayKey(dayKey: string): { year: number; month: number; day: number
   const month = Number.parseInt(match[2], 10);
   const day = Number.parseInt(match[3], 10);
   const date = new Date(Date.UTC(year, month - 1, day));
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
     return null;
   }
   return {year, month, day};

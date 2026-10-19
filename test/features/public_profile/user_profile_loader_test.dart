@@ -2,6 +2,8 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +22,9 @@ void main() {
     ).thenReturn(PublicProfileState.initial().copyWith(email: 'a@x.com', status: LoadStatus.failure));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,
@@ -30,9 +35,9 @@ void main() {
     );
 
     expect(find.byType(GlintState), findsOneWidget);
-    expect(find.text("Couldn't load wallpapers"), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().accountCouldNotLoadWallpapers), findsOneWidget);
 
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text(AppLocalizationsEn().accountTryAgain));
 
     verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
   });

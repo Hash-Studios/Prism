@@ -6,6 +6,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -14,6 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
 Widget _host(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
 
@@ -62,13 +67,22 @@ void main() {
     await tester.pumpWidget(_host(const RewardsCollectionSection()));
     await tester.pump();
 
-    final SemanticsNode button = tester.getSemantics(find.bySemanticsLabel('Wallpaper, locked, Unlocks at 30 days'));
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    final SemanticsNode button = tester.getSemantics(
+      find.bySemanticsLabel(
+        l10n.economyCollectionItemSemantics(
+          l10n.wallpaperImageSemanticLabel,
+          'false',
+          l10n.economyCollectionUnlocksAtDays(30),
+        ),
+      ),
+    );
     expect(button.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
     tester.binding.performSemanticsAction(
       SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: button.id),
     );
     await tester.pump();
-    expect(find.text('Keep your streak for 30 days to unlock this. Or have 500 coins.'), findsOneWidget);
+    expect(find.text(l10n.economyCollectionKeepStreakMessage(30, 500, 'true')), findsOneWidget);
     handle.dispose();
   });
 }

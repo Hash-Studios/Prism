@@ -4,16 +4,12 @@ import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Shortest side, in pixels, offered by the "Min resolution" choices. `null` is "Any".
-const List<({String label, int? shortSide})> searchResolutionChoices = <({String label, int? shortSide})>[
-  (label: 'Any', shortSide: null),
-  (label: '1080p', shortSide: 1080),
-  (label: '1440p', shortSide: 1440),
-  (label: '4K', shortSide: 2160),
-];
+const List<int?> searchResolutionChoices = <int?>[null, 1080, 1440, 2160];
 
 /// `<width>x<height>` for a minimum shortest side. Portrait asks for a 9:16 wallpaper, so 1080 becomes `1080x1920`.
 /// Without the portrait filter only the shortest side is bounded, so landscape wallpapers still match.
@@ -53,10 +49,17 @@ SearchFilters buildSearchFilters({
   );
 }
 
-String _sortLabel(SearchSort sort) => switch (sort) {
-  SearchSort.relevance => 'Relevance',
-  SearchSort.latest => 'Latest',
-  SearchSort.toplist => 'Top',
+String _sortLabel(AppLocalizations l10n, SearchSort sort) => switch (sort) {
+  SearchSort.relevance => l10n.accountRelevance,
+  SearchSort.latest => l10n.accountLatest,
+  SearchSort.toplist => l10n.accountTop,
+};
+
+String _resolutionLabel(AppLocalizations l10n, int? shortSide) => switch (shortSide) {
+  null => l10n.accountAnyResolution,
+  1080 => l10n.accountResolution1080,
+  1440 => l10n.accountResolution1440,
+  _ => l10n.accountResolution4k,
 };
 
 /// Opens the filter sheet. Returns the chosen filters, or `null` when the sheet is dismissed.
@@ -106,11 +109,11 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Filters', style: heading.copyWith(fontSize: 20)),
+            Text(context.l10n.accountSearchFilters, style: heading.copyWith(fontSize: 20)),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                'Portrait only',
+                context.l10n.accountPortraitOnly,
                 style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
               ),
               value: _portraitOnly,
@@ -120,11 +123,11 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  'Depth Effect',
+                  context.l10n.accountDepthEffect,
                   style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
                 ),
                 subtitle: Text(
-                  'Subject can sit in front of the clock',
+                  context.l10n.accountSubjectCanSitInFrontOfClock,
                   style: TextStyle(
                     color: scheme.secondary.withValues(alpha: 0.7),
                     fontFamily: PrismFonts.proximaNova,
@@ -135,35 +138,35 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 onChanged: (value) => setState(() => _depthOnly = value),
               ),
             const SizedBox(height: 8),
-            Text('Min resolution', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(context.l10n.accountMinResolution, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: <Widget>[
-                for (final choice in searchResolutionChoices)
+                for (final int? shortSide in searchResolutionChoices)
                   chip(
-                    label: choice.label,
-                    selected: _shortSide == choice.shortSide,
-                    onSelected: () => setState(() => _shortSide = choice.shortSide),
+                    label: _resolutionLabel(context.l10n, shortSide),
+                    selected: _shortSide == shortSide,
+                    onSelected: () => setState(() => _shortSide = shortSide),
                   ),
               ],
             ),
             const SizedBox(height: 16),
-            Text('Sort', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(context.l10n.accountSort, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: <Widget>[
                 for (final sort in SearchSort.values)
                   chip(
-                    label: _sortLabel(sort),
+                    label: _sortLabel(context.l10n, sort),
                     selected: _sort == sort,
                     onSelected: () => setState(() => _sort = sort),
                   ),
               ],
             ),
             const SizedBox(height: 16),
-            Text('Colour', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(context.l10n.accountColour, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             Wrap(
               children: <Widget>[
@@ -177,9 +180,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
             ),
             const SizedBox(height: 4),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: PrismChip(
-                label: 'My accent',
+                label: context.l10n.accountMyAccent,
                 selected: _color == accentMatch,
                 leading: DecoratedBox(
                   decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
@@ -193,7 +196,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               children: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(const SearchFilters()),
-                  child: const Text('Reset'),
+                  child: Text(context.l10n.accountReset),
                 ),
                 const Spacer(),
                 FilledButton(
@@ -206,7 +209,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                       depthOnly: _depthOnly,
                     ),
                   ),
-                  child: const Text('Apply'),
+                  child: Text(context.l10n.accountApply),
                 ),
               ],
             ),

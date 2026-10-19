@@ -14,6 +14,8 @@ import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +46,9 @@ PrismWallpaper _wall(String id, {int? days, int? cost}) => PrismWallpaper(
 );
 
 Widget _host(Widget child, Brightness brightness) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: ThemeData(brightness: brightness, useMaterial3: true),
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
@@ -170,18 +175,24 @@ void main() {
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
     expect(
       find.text(
-        'First one of the day +${CoinPolicy.rewardedAdFirstOfDay}, then +${CoinPolicy.rewardedAd}. '
-        'Up to ${EconomyConfig.current.award.rewardedAdMaxPerDay} a day.',
+        AppLocalizationsEn().economyAdRewardDetails(
+          CoinPolicy.rewardedAdFirstOfDay,
+          CoinPolicy.rewardedAd,
+          EconomyConfig.current.award.rewardedAdMaxPerDay,
+        ),
       ),
       findsOneWidget,
     );
-    expect(find.text('+${CoinsService.instance.adsRewardNow}'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyCoinsEarned(CoinsService.instance.adsRewardNow)), findsOneWidget);
   });
 
   testWidgets('PrismTextStyles titles are not the legacy dark grey on a dark theme', (tester) async {
     late TextStyle style;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
         home: Builder(
           builder: (context) {
@@ -216,6 +227,9 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(firestore);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: const Scaffold(body: RewardsActivitySection()),
       ),
@@ -292,7 +306,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump();
-    expect(find.text('Retry success'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().coreCoinCoins), findsOneWidget);
   });
 
   testWidgets('collection section shows a retry when it fails to load', (tester) async {
@@ -305,7 +319,7 @@ void main() {
     getIt.registerFactory<StreakShopBloc>(() => bloc);
     await tester.pumpWidget(_host(const RewardsCollectionSection(), Brightness.dark));
     await tester.pump();
-    expect(find.text("Couldn't load the collection"), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyCollectionLoadFailed), findsOneWidget);
     await tester.tap(find.text('Try again'));
     verify(() => bloc.add(const StreakShopLoaded())).called(greaterThanOrEqualTo(1));
   });
@@ -341,12 +355,10 @@ void main() {
         expect(find.bySemanticsLabel('Boost, ${CoinPolicy.boostWall} coins'), findsOneWidget);
         expect(find.bySemanticsLabel('Gift a pass, ${CoinPolicy.giftPremiumPass} coins'), findsOneWidget);
         expect(
-          find.bySemanticsLabel(
-            'Downloads, ${CoinPolicy.wallpaperDownload} coins, first ${CoinPolicy.graceDownloads} free',
-          ),
+          find.bySemanticsLabel(RegExp('^${RegExp.escape(AppLocalizationsEn().economyDownloads)}')),
           findsOneWidget,
         );
-        expect(find.text('first ${CoinPolicy.graceDownloads} free'), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().economyFirstDownloadsFree(CoinPolicy.graceDownloads)), findsOneWidget);
 
         await tester.tap(find.text('Streak freeze'));
         expect(freezeTaps, 1);
@@ -426,12 +438,12 @@ void main() {
         await tester.pump();
 
         expect(find.text('Streak collection'), findsOneWidget);
-        expect(find.text('Unlocked at 7 days'), findsOneWidget);
-        expect(find.text('Unlocks at 30 days'), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)), findsOneWidget);
 
-        await tester.tap(find.text('Unlocks at 30 days'));
+        await tester.tap(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)));
         await tester.pump();
-        expect(find.text('Keep your streak for 30 days to unlock this. Or have 500 coins.'), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().economyCollectionKeepStreakMessage(30, 500, 'true')), findsOneWidget);
       });
 
       testWidgets('collection section hides itself when empty', (tester) async {

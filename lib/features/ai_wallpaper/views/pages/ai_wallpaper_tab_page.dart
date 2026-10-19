@@ -32,6 +32,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_generate_bar.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
@@ -39,6 +40,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -291,7 +293,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (!online) {
         if (mounted) {
           setState(() => _historyFailed = local.isEmpty);
-          if (userInitiated) toasts.error("You're offline. Saved history is still available.");
+          if (userInitiated) toasts.error(context.l10n.economyAiOfflineSavedHistory);
         }
         return;
       }
@@ -307,7 +309,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted) {
         setState(() => _historyFailed = true);
-        toasts.error(aiHistoryFailureMessage(error), haptic: userInitiated);
+        toasts.error(aiHistoryFailureMessage(context.l10n, error), haptic: userInitiated);
       }
     } finally {
       if (mounted) {
@@ -329,7 +331,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return false;
     }
     if (!_isRolloutEligible) {
-      toasts.error('AI generation is currently rolling out. Please try again soon.');
+      toasts.error(context.l10n.economyAiGenerationRollingOut);
       return false;
     }
     return true;
@@ -338,7 +340,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<bool> _isOnlineForGeneration() async {
     final bool online = await _hasNetworkOrUnknown();
     if (!online && mounted) {
-      toasts.error('No connection. Connect to the internet, then try again.');
+      toasts.error(context.l10n.economyAiConnectToGenerate);
     }
     return online;
   }
@@ -352,7 +354,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     if (prompt.length > _maxPromptChars) {
-      toasts.error('Description is too long (max $_maxPromptChars characters).');
+      toasts.error(context.l10n.economyAiPromptTooLong(_maxPromptChars));
       return;
     }
     final AiStylePreset style = _selectedStyle;
@@ -377,7 +379,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (AiGenerationRecord generated) {
         if (isAiAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
-          toasts.info('Crop may differ slightly on your device.');
+          toasts.info(context.l10n.economyAiCropMayDiffer);
         }
       },
     );
@@ -388,16 +390,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     final String prompt = _variationController.text.trim();
     if (prompt.isEmpty) {
-      toasts.error('Say what you want different, such as colors, mood or details.');
+      toasts.error(context.l10n.economyAiDescribeChanges);
       return;
     }
     if (prompt.length > _maxVariationChars) {
-      toasts.error('That description is too long (max $_maxVariationChars characters).');
+      toasts.error(context.l10n.economyAiVariationTooLong(_maxVariationChars));
       return;
     }
     final AiGenerationRecord? latest = _latest;
     if (latest == null || !app_state.aiVariationsEnabled) {
-      toasts.error('Try another is not available right now.');
+      toasts.error(context.l10n.economyAiVariationUnavailable);
       return;
     }
     final AiStylePreset style = _selectedStyle;
@@ -474,7 +476,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           refundResult: 'pending',
         ),
       );
-      toasts.error("Couldn't confirm the charge. Any coins taken will be refunded.");
+      toasts.error(context.l10n.economyAiChargeUnconfirmed);
       setState(() => _loadingGeneration = false);
       return;
     }
@@ -494,7 +496,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         sourceTag: 'coins.ai_generation.low_balance',
         requiredCoins: qualityTier.costFor(isPro: app_state.prismUser.premium),
       );
-      toasts.error('Need ${qualityTier.costFor(isPro: app_state.prismUser.premium)} coins to generate.');
+      toasts.error(context.l10n.economyAiNeedCoinsToGenerate(qualityTier.costFor(isPro: app_state.prismUser.premium)));
       setState(() => _loadingGeneration = false);
       return;
     }
@@ -593,15 +595,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         ),
       );
       if (mounted) {
-        final String message = aiGenerateFailureMessage(error);
-        final String refundNote = reservation.coinsSpent <= 0 || message.contains('coins')
-            ? ''
-            : refundOutcome == 'refunded' || refundOutcome == 'already_refunded'
-            ? ' Coins refunded.'
-            : refundOutcome == 'pending'
-            ? ' Refund pending.'
-            : ' Refund could not be completed.';
-        toasts.error('$message$refundNote');
+        final String message = aiGenerateFailureMessage(context.l10n, error);
+        final String localizedRefundState = switch (refundOutcome) {
+          'refunded' || 'already_refunded' => 'refunded',
+          'pending' => 'pending',
+          _ => 'failed',
+        };
+        final String fullMessage = reservation.coinsSpent <= 0 || aiGenerationErrorMentionsRefund(error)
+            ? message
+            : context.l10n.economyAiFailureWithRefund(message, localizedRefundState);
+        toasts.error(fullMessage);
       }
     } finally {
       if (mounted) {
@@ -611,18 +614,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _setWallpaper(AiGenerationRecord record) async {
+    final AppLocalizations l10n = context.l10n;
     try {
       final File file = await aiDownloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
       context.router.push(DownloadWallpaperRoute(source: WallpaperSource.prism, file: file));
     } catch (error, stackTrace) {
       logger.w('AI set-wallpaper prep failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(aiDownloadFailureMessage(error));
+      toasts.error(aiDownloadFailureMessage(l10n, error));
     }
   }
 
   Future<void> _save(AiGenerationRecord record) async {
     if (_saving) return;
+    final AppLocalizations l10n = context.l10n;
     _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
@@ -641,17 +646,17 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             logger.w('AI gallery original retention failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
           }
         }());
-        toasts.success(wallpaperSavedMessage);
+        toasts.success(wallpaperSavedMessage(l10n));
         if (mounted) await showIosSetWallpaperGuide(context);
         unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.aiWallpaperSaved));
       } else if (isPhotosPermissionDenied(result.errorCode)) {
         if (mounted) showPhotosPermissionDenied(context);
       } else {
-        toasts.error(result.message ?? "Couldn't download! Please retry.");
+        toasts.error(l10n.economyAiDownloadFailed);
       }
     } catch (error, stackTrace) {
       logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(aiDownloadFailureMessage(error));
+      toasts.error(aiDownloadFailureMessage(l10n, error));
     } finally {
       _saving = false;
     }
@@ -688,7 +693,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           sourceContext: 'ai_wallpaper',
         ),
       );
-      if (mounted) toasts.error('Could not share. Please try again.');
+      if (mounted) toasts.error(context.l10n.economyAiShareFailed);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -716,11 +721,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     if (!app_state.aiSubmitEnabled) {
-      toasts.error('AI submit is currently disabled.');
+      toasts.error(context.l10n.economyAiSubmitDisabled);
       return;
     }
     if (_unconfirmedSubmissionIds.contains(record.id)) {
-      toasts.error('Submission status is unconfirmed. Check Review Status before trying again.');
+      toasts.error(context.l10n.economyAiSubmitStatusUnconfirmed);
       return;
     }
     if (_submitting) return;
@@ -802,7 +807,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
       if (mounted && app_state.prismUser.id == record.userId) {
         showGlintToast(context);
-        toasts.success('Submitted for review.');
+        toasts.success(context.l10n.economyAiSubmittedForReview);
       }
     } catch (error, stackTrace) {
       if (submissionConfirmed) {
@@ -823,12 +828,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           stackTrace: stackTrace,
         );
         if (mounted && app_state.prismUser.id == record.userId) {
-          toasts.error('Could not confirm the submission. Check Review Status before trying again.');
+          toasts.error(context.l10n.economyAiCouldNotConfirmSubmission);
         }
       } else {
         logger.w('AI community submit failed before saving', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
         if (mounted && app_state.prismUser.id == record.userId) {
-          toasts.error(isAiOfflineOrNetworkError(error) ? 'No connection. Try again.' : 'Submit failed. Please retry.');
+          toasts.error(
+            isAiOfflineOrNetworkError(error)
+                ? context.l10n.economyAiNoConnectionRetry
+                : context.l10n.economyAiSubmitFailed,
+          );
         }
       }
     } finally {
@@ -862,18 +871,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Widget _blockedState() {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     if (!app_state.aiEnabled) {
-      return const GlintState(
+      return GlintState(
         kind: GlintStateKind.empty,
-        title: 'AI wallpaper is off for now',
-        body: 'We turned it off for a short while. Check back soon.',
+        title: l10n.economyAiUnavailableTitle,
+        body: l10n.economyAiUnavailableBody,
       );
     }
     if (!_isRolloutEligible) {
       return GlintState(
         kind: GlintStateKind.empty,
-        title: 'AI wallpaper is opening gradually',
-        body: 'It is on for ${app_state.aiRolloutPercent}% of accounts so far. Try again soon.',
+        title: l10n.economyAiRolloutTitle,
+        body: l10n.economyAiRolloutBody(app_state.aiRolloutPercent),
       );
     }
     return const SignInPrompt(feature: 'AI wallpaper');
@@ -936,14 +946,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 onSceneIdea: _useSceneIdea,
               ),
             ),
-            const PrismSectionHeader(
-              title: 'Style',
+            PrismSectionHeader(
+              title: AppLocalizations.of(context).economyAiStyle,
               small: true,
               padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
             ),
             AiStylePicker(selected: _selectedStyle, enabled: !busy, onSelected: _selectStyle),
-            const PrismSectionHeader(
-              title: 'Quality',
+            PrismSectionHeader(
+              title: AppLocalizations.of(context).economyAiQuality,
               small: true,
               padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
             ),
@@ -959,7 +969,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               Padding(
                 padding: page.copyWith(top: PrismSpace.sm),
                 child: Text(
-                  'Free images carry a Prism watermark. Pro removes it.',
+                  AppLocalizations.of(context).economyAiWatermarkNote,
                   style: PrismTextStyles.caption(context),
                 ),
               ),
@@ -1002,7 +1012,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final AiGenerationRecord? current = _latest;
     final bool available = _isRolloutEligible && _isLoggedIn;
     return PrismPage(
-      title: 'AI wallpaper',
+      title: AppLocalizations.of(context).economyAiWallpaper,
       showBack: Navigator.of(context).canPop(),
       actions: const <Widget>[CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false)],
       bottomBar: available ? _generateBar(current) : null,

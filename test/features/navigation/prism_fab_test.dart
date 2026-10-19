@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,6 +13,9 @@ import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
 Widget _host({bool reduceMotion = false, bool tickerEnabled = true}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   builder: (context, app) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
     child: app!,

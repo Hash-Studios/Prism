@@ -5,7 +5,9 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -20,23 +22,24 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
   required String prompt,
   required AiStylePreset style,
 }) {
+  final AppLocalizations l10n = AppLocalizations.of(context);
   final String quoted = (metadata.title.isNotEmpty ? metadata.title : prompt).split(',').first.trim();
   return showPrismSheet<AiSubmissionMetadata>(
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) => PrismSheetBody(
-      title: 'Share with the community?',
-      message: 'Moderators review submissions before they appear in Prism. Only share work you have rights to.',
+      title: l10n.economyAiShareWithCommunity,
+      message: l10n.economyAiShareReviewNotice,
       scrollable: true,
       actions: <Widget>[
         PrismButton(
-          label: 'Submit for review',
+          label: l10n.economyAiSubmitForReview,
           icon: Icons.upload_rounded,
           expand: true,
           onPressed: () => Navigator.of(sheetContext).pop(_submissionFrom(metadata, prompt, style)),
         ),
         PrismButton(
-          label: 'Cancel',
+          label: l10n.economyCancel,
           variant: PrismButtonVariant.ghost,
           expand: true,
           onPressed: () => Navigator.of(sheetContext).pop(),
@@ -79,7 +82,7 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
                         style: PrismTextStyles.rowTitle(sheetContext),
                       ),
                       const SizedBox(height: PrismSpace.xxs),
-                      Text(style.label, style: PrismTextStyles.caption(sheetContext)),
+                      Text(aiStyleLabel(l10n, style), style: PrismTextStyles.caption(sheetContext)),
                     ],
                   ),
                 ),
@@ -115,26 +118,26 @@ Future<void> showAiRefineSheet(
   required bool enabled,
   required VoidCallback onSubmit,
 }) {
+  final AppLocalizations l10n = AppLocalizations.of(context);
   return showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) => PrismSheetBody(
-      title: 'Try another version',
-      message:
-          'Say what should change. This makes a new wallpaper from the same prompt with a new seed, so it can look quite different.',
+      title: l10n.economyAiTryAnotherVersion,
+      message: l10n.economyAiRefineExplanation,
       scrollable: true,
       actions: <Widget>[
         ListenableBuilder(
           listenable: controller,
           builder: (context, _) => PrismButton(
-            label: 'Generate another',
+            label: l10n.economyAiGenerateAnother,
             expand: true,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const PrismCoinIcon(size: 18),
                 const SizedBox(width: PrismSpace.xxs),
-                Text('$cost'),
+                Text(formatLocalizedNumber(cost, l10n)),
               ],
             ),
             onPressed: !enabled || controller.text.trim().isEmpty

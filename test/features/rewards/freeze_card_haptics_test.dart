@@ -5,6 +5,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +57,9 @@ void main() {
   testWidgets('Get one and Buy each emit one tap and purchase a freeze', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: FreezeCard(onEarnCoins: _ignore)),
       ),
     );
@@ -85,6 +89,9 @@ void main() {
   testWidgets('Rewards spend freeze entry keeps one tap while opening the purchase sheet', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (BuildContext context) => Scaffold(
             body: RewardsSpendSection(onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: _ignore)),

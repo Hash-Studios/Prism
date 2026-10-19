@@ -1,15 +1,16 @@
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 /// Runs a button's `prepareSource`, or the `prepare` of a [DownloadVariant]. Returns the path it made, or null after
 /// telling the user it failed.
-Future<String?> runPrepareSource(Future<String> Function() prepare) async {
+Future<String?> runPrepareSource(Future<String> Function() prepare, {required AppLocalizations l10n}) async {
   try {
     return await prepare();
   } catch (error, stackTrace) {
     logger.w('Could not prepare the wallpaper source', error: error, stackTrace: stackTrace);
-    toasts.error("Couldn't apply the colour. Try again.");
+    toasts.error(l10n.coreWallpaperEditApplyColorFailed);
     return null;
   }
 }

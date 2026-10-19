@@ -2,15 +2,21 @@ import 'dart:async';
 
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   Future<BuildContext> pumpHost(WidgetTester tester) async {
     late BuildContext captured;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) {
             captured = context;
@@ -47,9 +53,8 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Open Photos'), findsOneWidget);
   });
 
-  const String autoStep =
-      'Depth Effect turns on by itself. On iOS\u00A018 or older, keep widgets off the space under the clock.';
-  const String menuStep = 'Tap ••• then Depth\u00A0Effect.';
+  final String autoStep = l10n.coreDepthEffectAutoLongTip;
+  final String menuStep = l10n.coreDepthEffectMenuShortTip;
 
   for (final (WallDepthTier tier, String step) in <(WallDepthTier, String)>[
     (WallDepthTier.auto, autoStep),
@@ -82,23 +87,26 @@ void main() {
   }
 
   platformTest('after the guide, the saved toast carries the Depth Effect step', TargetPlatform.iOS, (_) async {
-    expect(savedWallpaperMessage(depthTier: WallDepthTier.menu), 'Saved to Photos.');
+    expect(savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.menu), l10n.coreWallpaperSavedPhotos);
 
     IosWallpaperGuideSession.shown = true;
 
     expect(
-      savedWallpaperMessage(depthTier: WallDepthTier.menu),
-      'Saved to Photos. In the Lock Screen editor, tap ••• then Depth\u00A0Effect.',
+      savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.menu),
+      l10n.coreWallpaperSavedWithTip(l10n.coreWallpaperSavedPhotos, l10n.coreDepthEffectMenuTip),
     );
-    expect(savedWallpaperMessage(depthTier: WallDepthTier.auto), 'Saved to Photos. Depth Effect turns on by itself.');
-    expect(savedWallpaperMessage(depthTier: WallDepthTier.none), 'Saved to Photos.');
-    expect(savedWallpaperMessage(), 'Saved to Photos.');
+    expect(
+      savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.auto),
+      l10n.coreWallpaperSavedWithTip(l10n.coreWallpaperSavedPhotos, l10n.coreDepthEffectAutoTip),
+    );
+    expect(savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.none), l10n.coreWallpaperSavedPhotos);
+    expect(savedWallpaperMessage(l10n: l10n), l10n.coreWallpaperSavedPhotos);
   });
 
   platformTest('the saved message has no Depth Effect step on Android', TargetPlatform.android, (_) async {
     IosWallpaperGuideSession.shown = true;
 
-    expect(savedWallpaperMessage(depthTier: WallDepthTier.menu), 'Wall downloaded in Pictures/Prism!');
+    expect(savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.menu), l10n.coreWallpaperDownloadedPictures);
   });
 
   platformTest('shows once per session', TargetPlatform.iOS, (tester) async {

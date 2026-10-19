@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -41,8 +42,11 @@ class _WallpaperHistoryView extends StatelessWidget {
       ?..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Removed from history'),
-          action: SnackBarAction(label: 'Undo', onPressed: () => bloc.add(WallpaperHistoryEvent.restored(item))),
+          content: Text(context.l10n.wallpaperRemovedFromHistory),
+          action: SnackBarAction(
+            label: context.l10n.coreUndo,
+            onPressed: () => bloc.add(WallpaperHistoryEvent.restored(item)),
+          ),
         ),
       );
   }
@@ -51,11 +55,11 @@ class _WallpaperHistoryView extends StatelessWidget {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear history?'),
-        content: const Text('This removes the list of wallpapers you set. Your wallpapers stay as they are.'),
+        title: Text(context.l10n.wallpaperClearHistoryTitle),
+        content: Text(context.l10n.wallpaperClearHistoryBody),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Clear')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.actionCancel)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(context.l10n.wallpaperClear)),
         ],
       ),
     );
@@ -73,22 +77,22 @@ class _WallpaperHistoryView extends StatelessWidget {
     };
     return Scaffold(
       appBar: AppBar(
-        title: Text('Wallpaper history', style: theme.textTheme.displaySmall),
+        title: Text(context.l10n.wallpaperHistoryTitle, style: theme.textTheme.displaySmall),
         backgroundColor: theme.primaryColor,
         actions: <Widget>[
           if (items.isNotEmpty)
             TextButton(
               onPressed: () => _confirmClear(context),
-              child: Text('Clear history', style: TextStyle(color: theme.colorScheme.error)),
+              child: Text(context.l10n.wallpaperClearHistoryAction, style: TextStyle(color: theme.colorScheme.error)),
             ),
         ],
       ),
       backgroundColor: theme.primaryColor,
       body: items.isEmpty
-          ? const GlintState(
+          ? GlintState(
               kind: GlintStateKind.empty,
-              title: 'No wallpapers yet',
-              body: 'Wallpapers you set will show up here, so you can set them again.',
+              title: context.l10n.wallpaperHistoryEmptyTitle,
+              body: context.l10n.wallpaperHistoryEmptyBody,
             )
           : GridView.builder(
               padding: const EdgeInsets.all(16),
@@ -103,8 +107,8 @@ class _WallpaperHistoryView extends StatelessWidget {
                 final AppliedWallpaper item = items[index];
                 return Dismissible(
                   key: ValueKey(item.id),
-                  background: const _RemoveBackground(alignment: Alignment.centerLeft),
-                  secondaryBackground: const _RemoveBackground(alignment: Alignment.centerRight),
+                  background: const _RemoveBackground(alignment: AlignmentDirectional.centerStart),
+                  secondaryBackground: const _RemoveBackground(alignment: AlignmentDirectional.centerEnd),
                   onDismissed: (_) => _remove(context, item),
                   child: AppliedWallpaperTile(
                     item: item,
@@ -122,7 +126,7 @@ class _WallpaperHistoryView extends StatelessWidget {
 class _RemoveBackground extends StatelessWidget {
   const _RemoveBackground({required this.alignment});
 
-  final Alignment alignment;
+  final AlignmentGeometry alignment;
 
   @override
   Widget build(BuildContext context) {

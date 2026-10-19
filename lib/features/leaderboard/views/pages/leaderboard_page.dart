@@ -9,6 +9,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/leaderboard/biz/bloc/leaderboard_bloc.j.dart';
 import 'package:Prism/features/leaderboard/domain/entities/leaderboard_entry.dart';
 import 'package:Prism/features/leaderboard/domain/week_key.dart';
+import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,11 +49,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Leaderboard',
+      title: context.l10n.economyLeaderboardTitle,
       actions: <Widget>[
         PrismIconButton(
           icon: Icons.info_outline_rounded,
-          tooltip: 'How leaderboard scoring works',
+          tooltip: context.l10n.economyLeaderboardHowScoringWorks,
           onPressed: () => showPrismSheet<void>(
             context: context,
             useSafeArea: true,
@@ -69,7 +71,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               child: PrismSegmented<LeaderboardTab>(
                 values: LeaderboardTab.values,
                 selected: state.tab,
-                labelOf: (tab) => tab == LeaderboardTab.friends ? 'Following' : 'Global',
+                labelOf: (tab) => tab == LeaderboardTab.friends
+                    ? context.l10n.economyLeaderboardFollowing
+                    : context.l10n.economyLeaderboardGlobal,
                 onChanged: (tab) {
                   _trackViewed(tab);
                   context.read<LeaderboardBloc>().add(LeaderboardEvent.tabChanged(tab));
@@ -86,9 +90,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 }
 
-String resetCaption(DateTime now) {
+String resetCaption(AppLocalizations l10n, DateTime now) {
   final int hours = nextWeekStart(now).difference(now.toUtc()).inHours;
-  return 'Resets Monday 00:00 UTC · ${hours ~/ 24}d ${hours % 24}h left';
+  return l10n.economyLeaderboardReset(hours ~/ 24, hours % 24);
 }
 
 class _ScoreCaption extends StatelessWidget {
@@ -102,14 +106,14 @@ class _ScoreCaption extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('Ranked by XP earned this week', style: PrismTextStyles.body(context)),
+        Text(context.l10n.economyLeaderboardRankedByXp, style: PrismTextStyles.body(context)),
         const SizedBox(height: PrismSpace.xxs),
-        Text(resetCaption(DateTime.now()), style: PrismTextStyles.caption(context)),
+        Text(resetCaption(context.l10n, DateTime.now()), style: PrismTextStyles.caption(context)),
         const SizedBox(height: PrismSpace.xs),
         Text(
           tab == LeaderboardTab.friends
-              ? 'You and people you follow · pull to refresh'
-              : 'Top 50 · updated about every 3 hours',
+              ? context.l10n.economyLeaderboardFriendsCaption
+              : context.l10n.economyLeaderboardGlobalCaption,
           style: PrismTextStyles.caption(context),
         ),
       ],
@@ -131,40 +135,31 @@ class _ScoringSheet extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(child: Text('How scoring works', style: PrismTextStyles.sectionTitle(context))),
+              Expanded(
+                child: Text(
+                  context.l10n.economyLeaderboardHowScoringWorks,
+                  style: PrismTextStyles.sectionTitle(context),
+                ),
+              ),
               PrismIconButton(
                 icon: Icons.close_rounded,
-                tooltip: 'Close scoring explanation',
+                tooltip: context.l10n.economyLeaderboardCloseScoring,
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
           const SizedBox(height: PrismSpace.md),
-          Text(
-            'Positions use XP earned this week. Rank labels, such as Silver, use lifetime XP. '
-            'Weekly XP resets Monday at 00:00 UTC; lifetime XP and rank stay.',
-            style: PrismTextStyles.body(context),
-          ),
+          Text(context.l10n.economyLeaderboardScoringIntro, style: PrismTextStyles.body(context)),
           const SizedBox(height: PrismSpace.lg),
-          Text('Following', style: PrismTextStyles.rowTitle(context)),
+          Text(context.l10n.economyLeaderboardFollowing, style: PrismTextStyles.rowTitle(context)),
           const SizedBox(height: PrismSpace.xs),
-          Text(
-            'Includes your score and up to the first 90 accounts you follow. Deleted accounts are left out; '
-            'there is no minimum account age. Scores load when you first open this tab. Pull to refresh. '
-            'Your score reflects your latest synced XP.',
-            style: PrismTextStyles.body(context),
-          ),
+          Text(context.l10n.economyLeaderboardFriendsDetails, style: PrismTextStyles.body(context)),
           const SizedBox(height: PrismSpace.lg),
-          Text('Global', style: PrismTextStyles.rowTitle(context)),
+          Text(context.l10n.economyLeaderboardGlobal, style: PrismTextStyles.rowTitle(context)),
           const SizedBox(height: PrismSpace.xs),
-          Text(
-            'Shows up to 50 accounts by weekly XP. Accounts must be at least 7 days old; deleted accounts '
-            'are left out. The snapshot updates about every 3 hours, so new XP may take time to appear. '
-            'Pulling to refresh loads the latest snapshot.',
-            style: PrismTextStyles.body(context),
-          ),
+          Text(context.l10n.economyLeaderboardGlobalDetails, style: PrismTextStyles.body(context)),
           const SizedBox(height: PrismSpace.lg),
-          Text('If you are offline, saved scores may be shown.', style: PrismTextStyles.caption(context)),
+          Text(context.l10n.economyLeaderboardOffline, style: PrismTextStyles.caption(context)),
         ],
       ),
     ),
@@ -210,12 +205,12 @@ class _Content extends StatelessWidget {
         GlintState(
           kind: failed ? GlintStateKind.error : GlintStateKind.empty,
           title: failed
-              ? "Couldn't load the leaderboard"
+              ? context.l10n.economyLeaderboardLoadFailed
               : friends
-              ? 'Follow creators to see them here.'
-              : 'No rankings yet',
-          body: failed ? 'Check your connection and try again.' : null,
-          actionLabel: failed ? 'Try again' : null,
+              ? context.l10n.economyLeaderboardFollowToSee
+              : context.l10n.economyLeaderboardNoRankings,
+          body: failed ? context.l10n.errorNetwork : null,
+          actionLabel: failed ? context.l10n.actionRetry : null,
           onAction: failed ? () => unawaited(onRefresh()) : null,
         ),
       );
@@ -235,10 +230,7 @@ class _Content extends StatelessWidget {
           if (entryIndex == entries.length) {
             return Padding(
               padding: const EdgeInsets.all(PrismSpace.page),
-              child: Text(
-                'Your score is included. Follow creators to compare weekly XP.',
-                style: PrismTextStyles.body(context),
-              ),
+              child: Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.body(context)),
             );
           }
           return _EntryRow(entry: entries[entryIndex], position: entryIndex + 1);
@@ -258,7 +250,7 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String name = entry.name.trim().isEmpty ? entry.username : entry.name.trim();
-    final String rank = entry.rank.isEmpty ? '' : '${entry.rank[0].toUpperCase()}${entry.rank.substring(1)}';
+    final String rank = entry.rank.isEmpty ? '' : shopRankName(entry.rank, context.l10n);
     final bool tappable = entry.username.isNotEmpty;
     final bool largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
     final Widget nameLabel = Text(
@@ -271,9 +263,14 @@ class _EntryRow extends StatelessWidget {
     return Semantics(
       container: true,
       button: tappable,
-      label:
-          '$position, $name${entry.isMe ? ', you' : ''}, ${entry.xp} XP this week'
-          '${rank.isEmpty ? '' : ', $rank lifetime rank'}',
+      label: context.l10n.economyLeaderboardEntrySemantics(
+        position,
+        name,
+        entry.isMe ? 'true' : 'false',
+        entry.xp,
+        rank.isEmpty ? 'false' : 'true',
+        rank,
+      ),
       child: ExcludeSemantics(
         child: Material(
           color: entry.isMe ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
@@ -287,7 +284,11 @@ class _EntryRow extends StatelessWidget {
                 children: <Widget>[
                   SizedBox(
                     width: 32,
-                    child: Text('$position', style: PrismTextStyles.numeral(context, 18), textAlign: TextAlign.center),
+                    child: Text(
+                      formatLocalizedNumber(position, context.l10n),
+                      style: PrismTextStyles.numeral(context, 18),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   const SizedBox(width: PrismSpace.sm),
                   PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
@@ -305,7 +306,7 @@ class _EntryRow extends StatelessWidget {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: <Widget>[
                                   if (rank.isNotEmpty) rankLabel,
-                                  Text('${entry.xp} XP', style: PrismTextStyles.rowTitle(context)),
+                                  Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
                                 ],
                               ),
                             ],
@@ -319,7 +320,7 @@ class _EntryRow extends StatelessWidget {
                   ),
                   if (!largeText) ...<Widget>[
                     const SizedBox(width: PrismSpace.sm),
-                    Text('${entry.xp} XP', style: PrismTextStyles.rowTitle(context)),
+                    Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
                   ],
                 ],
               ),

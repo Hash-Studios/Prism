@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,9 @@ void main() {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,
@@ -75,6 +79,9 @@ void main() {
     whenListen(bloc, states.stream, initialState: loading);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,

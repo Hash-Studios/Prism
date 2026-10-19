@@ -5,6 +5,8 @@ import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -52,12 +54,13 @@ class _StyleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final BorderRadius radius = BorderRadius.circular(PrismRadius.md);
     return Semantics(
       button: true,
       selected: selected,
-      label: 'Style: ${style.label}',
+      label: l10n.economyAiStyleSemantics(aiStyleLabel(l10n, style)),
       excludeSemantics: true,
       onTap: onTap,
       child: PressScale(
@@ -104,7 +107,7 @@ class _StyleTile extends StatelessWidget {
                     right: PrismSpace.sm,
                     bottom: PrismSpace.sm,
                     child: Text(
-                      style.label,
+                      aiStyleLabel(l10n, style),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 13, color: Colors.white),
@@ -181,11 +184,15 @@ class _QualityOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
       selected: selected,
-      label: '${tier.label}, ${tier.costFor(isPro: app_state.prismUser.premium)} coins',
+      label: l10n.economyAiQualitySemantics(
+        aiQualityLabel(l10n, tier),
+        tier.costFor(isPro: app_state.prismUser.premium),
+      ),
       excludeSemantics: true,
       onTap: onTap,
       child: PressScale(
@@ -205,7 +212,7 @@ class _QualityOption extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(tier.label, style: PrismTextStyles.rowTitle(context)),
+                Text(aiQualityLabel(l10n, tier), style: PrismTextStyles.rowTitle(context)),
                 const SizedBox(height: PrismSpace.xxs),
                 Row(
                   mainAxisSize: MainAxisSize.min,

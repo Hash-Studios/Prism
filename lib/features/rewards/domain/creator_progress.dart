@@ -1,5 +1,7 @@
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:intl/intl.dart';
 
 enum CreatorProgressStatus { unknown, loading, cached, loaded, unavailable }
 
@@ -133,29 +135,11 @@ class CreatorProgress {
   };
 }
 
-String creatorDate(DateTime date) {
-  const List<String> months = <String>[
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${date.day} ${months[date.month - 1]} ${date.year}';
-}
+String creatorDate(DateTime date, String locale) => DateFormat.yMMMd(locale).format(date.toUtc());
 
-String creatorWeekDates(DateTime date) {
+String creatorWeekDates(DateTime date, AppLocalizations l10n, String locale) {
   final DateTime utc = date.toUtc();
   final DateTime start = DateTime.utc(utc.year, utc.month, utc.day).subtract(Duration(days: utc.weekday - 1));
   final DateTime end = start.add(const Duration(days: 6));
-  if (start.year != end.year) return '${creatorDate(start)} – ${creatorDate(end)} UTC';
-  if (start.month == end.month) return '${start.day}–${creatorDate(end)} UTC';
-  return '${creatorDate(start).replaceFirst(' ${start.year}', '')} – ${creatorDate(end)} UTC';
+  return l10n.economyCreatorWeekRange(creatorDate(start, locale), creatorDate(end, locale));
 }

@@ -20,8 +20,8 @@ abstract class LiveWallpaperRepository {
     required bool batterySaver,
   });
 
-  /// Returns a user-facing problem with the video, or null when it can be used.
-  Future<String?> validateVideo(String path);
+  /// Returns a typed validation failure, or null when the video can be used.
+  Future<LiveApplyFailure?> validateVideo(String path);
 
   Future<LiveApplyOutcome> applyVideo(String path);
 }

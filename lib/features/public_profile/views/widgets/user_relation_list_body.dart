@@ -8,6 +8,7 @@ import 'package:Prism/features/public_profile/domain/entities/user_relation_kind
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,15 +48,16 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   PublicProfileEvent _fetchPageEvent(int page) =>
       PublicProfileEvent.relationPageRequested(kind: widget.kind, allEmails: widget.emails, page: page);
 
-  String get _title => _isFollowers ? 'Followers' : 'Following';
+  String _title(AppLocalizations l10n) => _isFollowers ? l10n.accountFollowers : l10n.accountFollowing;
 
-  String get _emptyTitle => _isFollowers ? 'No followers yet' : 'Not following anyone yet';
+  String _emptyTitle(AppLocalizations l10n) =>
+      _isFollowers ? l10n.accountNoFollowersYet : l10n.accountNotFollowingAnyoneYet;
 
-  String get _emptyBody => _isFollowers
-      ? 'People who follow this account will show up here.'
-      : 'Accounts followed from here will show up here.';
+  String _emptyBody(AppLocalizations l10n) =>
+      _isFollowers ? l10n.accountFollowersEmptyMessage : l10n.accountFollowingEmptyMessage;
 
-  String get _loadFailedTitle => _isFollowers ? 'Could not load followers' : 'Could not load following';
+  String _loadFailedTitle(AppLocalizations l10n) =>
+      _isFollowers ? l10n.accountCouldNotLoadFollowers : l10n.accountCouldNotLoadFollowing;
 
   void _maybeAutoLoadMore(PublicProfileState state) {
     final RelationList list = _list(state);
@@ -134,9 +136,9 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
       value: _bloc,
       child: BlocListener<PublicProfileBloc, PublicProfileState>(
         listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-        listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
         child: PrismPage(
-          title: _title,
+          title: _title(context.l10n),
           headerBottom: _SearchField(controller: _searchController),
           body: BlocBuilder<PublicProfileBloc, PublicProfileState>(
             buildWhen: (prev, curr) => _list(prev) != _list(curr),
@@ -151,8 +153,8 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                 if (results.isEmpty) {
                   return GlintState(
                     kind: GlintStateKind.empty,
-                    title: 'No results',
-                    body: 'Nobody matches "${_searchController.text.trim()}". Try a different username.',
+                    title: context.l10n.accountNoResults,
+                    body: context.l10n.accountNobodyMatchesUsername(_searchController.text.trim()),
                   );
                 }
                 return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
@@ -165,13 +167,17 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
               }
               if (summaries.isEmpty) {
                 if (widget.emails.isEmpty) {
-                  return GlintState(kind: GlintStateKind.empty, title: _emptyTitle, body: _emptyBody);
+                  return GlintState(
+                    kind: GlintStateKind.empty,
+                    title: _emptyTitle(context.l10n),
+                    body: _emptyBody(context.l10n),
+                  );
                 }
                 return GlintState(
                   kind: GlintStateKind.error,
-                  title: _loadFailedTitle,
-                  body: 'Check your connection and try again.',
-                  actionLabel: 'Try again',
+                  title: _loadFailedTitle(context.l10n),
+                  body: context.l10n.accountConnectionTryAgain,
+                  actionLabel: context.l10n.accountTryAgain,
                   onAction: () => _bloc.add(_fetchPageEvent(0)),
                 );
               }
@@ -260,7 +266,7 @@ class _SearchField extends StatelessWidget {
           style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
           cursorColor: cs.primary,
           decoration: InputDecoration(
-            hintText: 'Search by username',
+            hintText: context.l10n.accountSearchByUsername,
             prefixIcon: const Icon(Icons.search_rounded, size: 22),
             suffixIcon: ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
@@ -268,7 +274,7 @@ class _SearchField extends StatelessWidget {
                   ? const SizedBox.shrink()
                   : PrismIconButton(
                       icon: Icons.close_rounded,
-                      tooltip: 'Clear search',
+                      tooltip: context.l10n.accountClearSearch,
                       iconSize: 20,
                       onPressed: controller.clear,
                     ),

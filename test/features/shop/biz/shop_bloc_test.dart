@@ -124,7 +124,7 @@ void main() {
     expect(calls.single.$2['itemId'], 'frame_ring');
     expect(state.owned, contains('frame_ring'));
     expect(state.notice!.success, isTrue);
-    expect(state.notice!.message, 'Ring is yours');
+    expect(state.notice!.kind, ShopNoticeKind.purchased);
     expect(state.loadingItemId, isNull);
     expect(analytics.events.whereType<ShopItemPurchasedEvent>(), hasLength(1));
   });
@@ -146,7 +146,7 @@ void main() {
     final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
 
     expect(state.owned, contains('frame_gold'));
-    expect(state.notice!.message, 'Gold rank reward synced');
+    expect(state.notice!.kind, ShopNoticeKind.rankRewardSynced);
     expect(state.notice!.success, isTrue);
     expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
   });
@@ -156,7 +156,7 @@ void main() {
 
     final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
 
-    expect(state.notice!.message, 'Could not sync this reward. Try again.');
+    expect(state.notice!.kind, ShopNoticeKind.purchaseFailed);
     expect(state.notice!.success, isFalse);
     expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
   });
@@ -164,7 +164,7 @@ void main() {
   test('a successful rank reward reply does not record a paid purchase', () async {
     final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
 
-    expect(state.notice!.message, 'Gold rank reward synced');
+    expect(state.notice!.kind, ShopNoticeKind.rankRewardSynced);
     expect(state.notice!.success, isTrue);
     expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
   });
@@ -180,18 +180,18 @@ void main() {
   });
 
   test('every refusal becomes a message', () async {
-    final Map<String, String> cases = <String, String>{
-      'shop_item_owned': 'Gold rank reward synced',
-      'shop_item_pro_only': 'This item is for Pro members',
-      'shop_item_rank_locked': 'Reach Gold rank to unlock this',
-      'shop_item_expired': 'This limited item is sold out',
+    final Map<String, ShopNoticeKind> cases = <String, ShopNoticeKind>{
+      'shop_item_owned': ShopNoticeKind.rankRewardSynced,
+      'shop_item_pro_only': ShopNoticeKind.proOnly,
+      'shop_item_rank_locked': ShopNoticeKind.rankLocked,
+      'shop_item_expired': ShopNoticeKind.soldOut,
     };
     bloc.add(const ShopEvent.started());
     await bloc.stream.first;
-    for (final MapEntry<String, String> c in cases.entries) {
+    for (final MapEntry<String, ShopNoticeKind> c in cases.entries) {
       backend.onCall = (_, _) async => _reply(success: false, reason: c.key, after: 300);
       final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
-      expect(state.notice!.message, c.value, reason: c.key);
+      expect(state.notice!.kind, c.value, reason: c.key);
     }
   });
 
@@ -204,7 +204,7 @@ void main() {
     final ShopState state = await settled(const ShopEvent.purchaseRequested('theme_rose'));
 
     expect(state.notice!.success, isFalse);
-    expect(state.notice!.message, 'You need more coins for this');
+    expect(state.notice!.kind, ShopNoticeKind.insufficient);
     expect(state.owned, isEmpty);
   });
 
@@ -231,12 +231,12 @@ void main() {
     expect(calls.last.$2['slot'], 'frame');
     expect(calls.last.$2['itemId'], 'frame_ring');
     expect(equipped.equippedFrame, 'frame_ring');
-    expect(equipped.notice!.message, 'Ring equipped');
+    expect(equipped.notice!.kind, ShopNoticeKind.equipped);
 
     final ShopState removed = await settled(const ShopEvent.equipRequested(itemId: 'frame_ring', equip: false));
     expect(calls.last.$2['itemId'], isNull);
     expect(removed.equippedFrame, isNull);
-    expect(removed.notice!.message, 'Ring removed');
+    expect(removed.notice!.kind, ShopNoticeKind.unequipped);
   });
 
   test('a refused equip tells the user and changes nothing', () async {

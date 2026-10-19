@@ -2,6 +2,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -13,7 +14,7 @@ class FavouriteWallpaperScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PrismPage(
       maxContentWidth: double.infinity,
-      title: 'Favourites',
+      title: context.l10n.wallpaperFavouritesTitle,
       body: app_state.prismUser.loggedIn ? const FavouriteGrid() : const SignInPrompt(feature: 'favourites'),
     );
   }

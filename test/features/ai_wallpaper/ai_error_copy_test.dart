@@ -1,8 +1,10 @@
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String _copy(String code) => aiGenerationErrorCopy(
+  AppLocalizationsEn(),
   AiGenerationApiException(message: 'Quota coordinator unavailable', code: code, statusCode: 500),
 );
 

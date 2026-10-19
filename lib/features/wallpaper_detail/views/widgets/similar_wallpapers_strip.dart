@@ -1,6 +1,7 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -50,7 +51,7 @@ class _SimilarWallpapersStripState extends State<SimilarWallpapersStrip> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('More like this', style: PrismTextStyles.cardTitle(context)),
+            Text(context.l10n.wallpaperMoreLikeThis, style: PrismTextStyles.cardTitle(context)),
             const SizedBox(height: PrismSpace.xs),
             SizedBox(
               height: _tileHeight,
@@ -62,7 +63,7 @@ class _SimilarWallpapersStripState extends State<SimilarWallpapersStrip> {
                   final FeedItemEntity item = items[index];
                   return Semantics(
                     button: true,
-                    label: item.semanticLabel,
+                    label: item.semanticLabel(context.l10n),
                     child: SizedBox(
                       key: ValueKey<String>(item.id),
                       width: _tileWidth,

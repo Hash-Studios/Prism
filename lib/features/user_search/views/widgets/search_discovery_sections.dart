@@ -10,6 +10,7 @@ import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,12 +57,12 @@ class TrendingSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const PrismSectionHeader(title: 'Trending now', padding: _sectionHeaderPadding),
+            PrismSectionHeader(title: context.l10n.accountTrendingNow, padding: _sectionHeaderPadding),
             if (state.status == LoadStatus.failure)
               GlintState(
                 kind: GlintStateKind.error,
-                title: "Couldn't load trending",
-                actionLabel: 'Try again',
+                title: context.l10n.accountCouldNotLoadTrending,
+                actionLabel: context.l10n.accountTryAgain,
                 onAction: () => context.read<SearchDiscoveryBloc>().add(const SearchDiscoveryEvent.refreshRequested()),
                 glintSize: 64,
                 padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
@@ -103,7 +104,7 @@ class _TrendingList extends StatelessWidget {
             url: wall.thumbnailUrl,
             fallbackUrl: wall.core.fullUrl,
             memCacheHeight: _decodeHeight(context, _trendingWidth),
-            semanticLabel: wallpaperSemanticLabel(wall.core.authorName),
+            semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),
             onTap: () {
               PrismHaptics.tap();
               context.router.push(
@@ -129,7 +130,7 @@ class CategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(title: 'Browse by category', padding: _sectionHeaderPadding),
+        PrismSectionHeader(title: context.l10n.accountBrowseByCategory, padding: _sectionHeaderPadding),
         _hRow(
           height: _categoryHeight,
           count: categoryDefinitions.length,
@@ -167,7 +168,7 @@ class _CategoryCard extends StatelessWidget {
       scale: 0.97,
       child: Semantics(
         button: true,
-        label: 'Category, $name',
+        label: context.l10n.accountCategorySemanticLabel(name),
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
@@ -231,7 +232,7 @@ class ColourSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(title: 'Browse by colour', padding: _sectionHeaderPadding),
+        PrismSectionHeader(title: context.l10n.accountBrowseByColour, padding: _sectionHeaderPadding),
         _hRow(
           height: 48,
           count: prismPalette.length,

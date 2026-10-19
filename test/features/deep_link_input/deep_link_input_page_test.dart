@@ -6,6 +6,8 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,7 +81,13 @@ void main() {
   Future<void> showChooser(WidgetTester tester, DeepLinkInputWorkflow workflow) async {
     final router = _InputRouter(workflow, opened);
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -91,7 +99,7 @@ void main() {
       expect(picker.calls, 0);
       expect(opened, isEmpty);
 
-      await tester.tap(find.text('Choose image'));
+      await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
       await tester.pumpAndSettle();
 
       expect(picker.calls, 1);
@@ -139,15 +147,15 @@ void main() {
   testWidgets('cancel stays on the chooser and allows another selection', (tester) async {
     picker.choose = () async => null;
     await showChooser(tester, DeepLinkInputWorkflow.wallpaperFilter);
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
     await tester.pumpAndSettle();
 
     expect(opened, isEmpty);
-    expect(find.text('Choose image'), findsOneWidget);
-    expect(find.text('Could not open your gallery. Please try again.'), findsNothing);
+    expect(find.text(AppLocalizationsEn().deepLinkInputChooseImage), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsNothing);
 
     picker.choose = () async => XFile('/picked/second.png');
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
     await tester.pumpAndSettle();
     expect(opened.single.argsAs<WallpaperFilterRouteArgs>().filePath, '/picked/second.png');
   });
@@ -155,14 +163,14 @@ void main() {
   testWidgets('picker failure shows a recoverable error without opening a tool', (tester) async {
     picker.choose = () async => throw PlatformException(code: 'photo_access_denied');
     await showChooser(tester, DeepLinkInputWorkflow.editWall);
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
     await tester.pumpAndSettle();
 
     expect(opened, isEmpty);
-    expect(find.text('Could not open your gallery. Please try again.'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
 
     picker.choose = () async => XFile('/picked/retry.png');
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
     await tester.pumpAndSettle();
     expect(opened.single.argsAs<EditWallRouteArgs>().image.path, '/picked/retry.png');
     expect(tester.takeException(), isNull);
@@ -171,11 +179,11 @@ void main() {
   testWidgets('an empty picker path never opens a tool', (tester) async {
     picker.choose = () async => XFile('');
     await showChooser(tester, DeepLinkInputWorkflow.uploadWall);
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
     await tester.pumpAndSettle();
 
     expect(opened, isEmpty);
-    expect(find.text('Could not open your gallery. Please try again.'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
   });
 
   testWidgets('an in-flight picker cannot open twice and ignores a result after the page closes', (tester) async {

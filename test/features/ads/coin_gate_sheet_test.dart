@@ -1,5 +1,8 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -20,6 +23,9 @@ void main() {
     String? answer;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -59,6 +65,9 @@ void main() {
       String? answer;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           themeAnimationDuration: Duration.zero,
           builder: (context, child) => MediaQuery(
@@ -111,6 +120,9 @@ void main() {
     for (final ThemeData theme in <ThemeData>[kLightTheme3, kDarkTheme8]) {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: Builder(
@@ -144,8 +156,12 @@ void main() {
     }
   });
   testWidgets('the first option is the accent button and the others are tonal', (tester) async {
+    CoinsService.instance.balanceNotifier.value = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme3,
         home: Builder(
           builder: (context) => Scaffold(
@@ -174,7 +190,7 @@ void main() {
         tester.widget<PrismButton>(find.widgetWithText(PrismButton, label)).variant;
     expect(variantOf('Watch an ad'), PrismButtonVariant.primary);
     expect(variantOf('Upgrade to Pro'), PrismButtonVariant.tonal);
-    expect(variantOf('Earn coins'), PrismButtonVariant.ghost);
+    expect(variantOf(AppLocalizationsEn().economyGetCoins), PrismButtonVariant.ghost);
     expect(find.text('20'), findsOneWidget, reason: 'the cost is shown as a number');
     expect(find.byType(Glint), findsOneWidget);
   });

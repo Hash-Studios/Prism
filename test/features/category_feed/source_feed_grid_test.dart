@@ -17,6 +17,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -61,6 +62,9 @@ void main() {
   }
 
   Widget host(_MockCategoryFeedBloc bloc) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     home: BlocProvider<CategoryFeedBloc>.value(
       value: bloc,
       child: const SourceFeedGrid<FeedItemEntity>(
@@ -76,6 +80,9 @@ void main() {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
           child: SourceFeedGrid<PrismFeedItem>(
@@ -112,6 +119,9 @@ void main() {
     WallpaperImpressionSession? current;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
           child: SourceFeedGrid<PrismFeedItem>(
@@ -166,6 +176,9 @@ void main() {
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MultiBlocProvider(
           providers: <BlocProvider<dynamic>>[
             BlocProvider<CategoryFeedBloc>.value(value: bloc),
@@ -248,6 +261,9 @@ void main() {
       when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: MultiBlocProvider(
             providers: <BlocProvider<dynamic>>[
               BlocProvider<CategoryFeedBloc>.value(value: bloc),

@@ -30,8 +30,9 @@ test("a signed-out artist keeps the approval in the inbox but gets no push; foll
       after: {data: () => ({review: true, email: "artist@example.com", by: "Artist", title: "Dunes"})},
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
-  assert.deepEqual(topics, ["artist_posts", "posts_artist1"]);
+  assert.deepEqual(topics.sort(), ["artist_posts", "artist_posts_loc_v1", "posts_artist1", "posts_artist1_loc_v1"]);
   assert.equal(tags[0], tags[1]);
+  assert.equal(tags[2], tags[3]);
   assert.equal(tags[0], postsCollapseKey("Artist@Example.com"));
   assert.match(tags[0] ?? "", /^posts_[0-9a-f]{16}$/);
   assert.equal(inbox.length, 1);
@@ -97,7 +98,7 @@ test("followers of an artist with no profile doc still get the legacy topic push
       after: {data: () => ({review: true, email: "artist@example.com", by: "Artist", title: "Dunes"})},
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
-  assert.deepEqual(topics, ["artist_posts"]);
+  assert.deepEqual(topics.sort(), ["artist_posts", "artist_posts_loc_v1"]);
 });
 
 test("an approved community-only wall is filed into the collection of its category", async (t) => {

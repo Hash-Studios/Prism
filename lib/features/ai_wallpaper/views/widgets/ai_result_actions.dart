@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -32,24 +33,31 @@ class AiResultActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: PrismSpace.xs,
       runSpacing: PrismSpace.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: <Widget>[
-        PrismButton(label: 'Save', onPressed: onSave),
-        if (showRefine) PrismButton(label: 'Try another', variant: PrismButtonVariant.tonal, onPressed: onRefine),
+        PrismButton(label: l10n.economyAiSave, onPressed: onSave),
+        if (showRefine)
+          PrismButton(label: l10n.economyAiTryAnother, variant: PrismButtonVariant.tonal, onPressed: onRefine),
         if (showSet)
-          PrismIconButton(icon: Icons.wallpaper_rounded, tooltip: 'Set as wallpaper', onPressed: onSet, filled: true),
+          PrismIconButton(
+            icon: Icons.wallpaper_rounded,
+            tooltip: l10n.economyAiSetAsWallpaper,
+            onPressed: onSet,
+            filled: true,
+          ),
         Semantics(
           liveRegion: sharing,
-          label: sharing ? 'Preparing share' : null,
+          label: sharing ? l10n.economyAiPreparingShare : null,
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
               PrismIconButton(
                 icon: Icons.ios_share_rounded,
-                tooltip: 'Share',
+                tooltip: l10n.economyAiShare,
                 onPressed: sharing ? null : onShare,
                 filled: true,
               ),
@@ -66,12 +74,12 @@ class AiResultActions extends StatelessWidget {
         if (canSubmit)
           Semantics(
             button: true,
-            label: 'Submit wallpaper for community review',
+            label: l10n.economyAiSubmitForReview,
             excludeSemantics: true,
             onTap: onSubmit,
             child: PrismIconButton(
               icon: Icons.upload_rounded,
-              tooltip: 'Submit for community review',
+              tooltip: l10n.economyAiSubmitForReview,
               onPressed: onSubmit,
               filled: true,
             ),
@@ -89,20 +97,16 @@ class AiUnconfirmedNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return PrismCard(
       padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.xs, PrismSpace.xs, PrismSpace.xs),
       child: Row(
         children: <Widget>[
           const Icon(Icons.info_rounded, size: 20, color: PrismColors.warning),
           const SizedBox(width: PrismSpace.sm),
-          Expanded(
-            child: Text(
-              'Submission status is unconfirmed. Check before retrying.',
-              style: PrismTextStyles.body(context),
-            ),
-          ),
+          Expanded(child: Text(l10n.economyAiSubmissionUnconfirmed, style: PrismTextStyles.body(context))),
           PrismButton(
-            label: 'Check status',
+            label: l10n.economyAiCheckStatus,
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: onCheck,

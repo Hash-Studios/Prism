@@ -1,5 +1,6 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/widgets.dart';
 
 /// True when an onboarding save failed and the user must act on it.
@@ -33,6 +34,7 @@ class OnboardingRecovery {
 /// The recovery for [state], or null when the step runs normally.
 OnboardingRecovery? onboardingRecoveryFor(
   OnboardingV2State state, {
+  required AppLocalizations l10n,
   required void Function(OnboardingV2Event event) add,
   required VoidCallback signInAgain,
   required bool signingOut,
@@ -40,26 +42,24 @@ OnboardingRecovery? onboardingRecoveryFor(
   if (onboardingSaveFailed(state)) {
     if (state.sessionInvalid) {
       return OnboardingRecovery(
-        label: 'Sign in again',
-        helper: 'Your session has expired. Sign in again to continue.',
+        label: l10n.onboardingRecoverySignIn,
+        helper: l10n.onboardingRecoverySessionExpiredHelper,
         onPressed: signInAgain,
         loading: signingOut,
       );
     }
     if (state.completionFailed) {
       return OnboardingRecovery(
-        label: 'Try again',
-        helper: "Couldn't finish setup. Check your connection and try again.",
+        label: l10n.onboardingRecoveryRetry,
+        helper: l10n.onboardingRecoverySetupFailedHelper,
         onPressed: () => add(const OnboardingV2Event.completionRetried()),
         loading: signingOut,
       );
     }
     final bool interests = state.step == OnboardingV2Step.interests;
     return OnboardingRecovery(
-      label: 'Try again',
-      helper: interests
-          ? "Couldn't save your picks. Check your connection and try again."
-          : "Couldn't follow these creators. Check your connection and try again.",
+      label: l10n.onboardingRecoveryRetry,
+      helper: interests ? l10n.onboardingRecoverySaveInterestsFailedHelper : l10n.onboardingRecoveryFollowFailedHelper,
       onPressed: () => add(
         interests ? const OnboardingV2Event.interestsConfirmed() : const OnboardingV2Event.starterPackConfirmed(),
       ),
@@ -68,8 +68,8 @@ OnboardingRecovery? onboardingRecoveryFor(
   }
   if (onboardingStarterPackShort(state)) {
     return OnboardingRecovery(
-      label: 'Reload',
-      helper: "Couldn't load creators. Check your connection and tap Reload.",
+      label: l10n.onboardingRecoveryReload,
+      helper: l10n.onboardingRecoveryCreatorsFailed,
       onPressed: () => add(const OnboardingV2Event.starterPackReloadRequested()),
       loading: signingOut,
     );

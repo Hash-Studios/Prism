@@ -1,6 +1,7 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,7 @@ class _ThrowingGoogleSignIn extends Fake implements GoogleSignIn {
 }
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   setUp(() => AnalyticsRuntime.instance = FakeAppAnalytics());
   tearDown(AnalyticsRuntime.reset);
 
@@ -49,6 +51,7 @@ void main() {
     test('unknownError says sign-in failed instead of cancelled', () {
       final String message = googleSignInErrorMessage(
         const GoogleSignInException(code: GoogleSignInExceptionCode.unknownError),
+        l10n,
       );
 
       expect(message, 'Google sign-in failed. Check your connection and try again.');
@@ -61,14 +64,14 @@ void main() {
       );
 
       expect(
-        googleSignInErrorMessage(error, platform: TargetPlatform.android),
+        googleSignInErrorMessage(error, l10n, platform: TargetPlatform.android),
         'Google Play services on this device cannot sign in.',
       );
-      expect(googleSignInErrorMessage(error, platform: TargetPlatform.iOS), genericSignInErrorMessage);
+      expect(googleSignInErrorMessage(error, l10n, platform: TargetPlatform.iOS), genericSignInErrorMessage(l10n));
     });
 
     test('anything else gets the generic message', () {
-      expect(googleSignInErrorMessage(StateError('x')), genericSignInErrorMessage);
+      expect(googleSignInErrorMessage(StateError('x'), l10n), genericSignInErrorMessage(l10n));
     });
   });
 }

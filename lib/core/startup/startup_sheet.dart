@@ -25,7 +25,7 @@ Future<bool> showStartupChoiceSheet(
   BuildContext context, {
   required String message,
   required String confirmLabel,
-  String dismissLabel = 'Not now',
+  required String dismissLabel,
 }) async {
   final bool? confirmed = await showPrismSheet<bool>(
     context: context,

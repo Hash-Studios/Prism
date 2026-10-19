@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -49,6 +50,7 @@ class AiPreviewStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final AiGenerationRecord? current = record;
     final Widget child = generating
         ? const _GeneratingStage(key: ValueKey<String>('generating'))
@@ -57,7 +59,7 @@ class AiPreviewStage extends StatelessWidget {
         : Semantics(
             key: ValueKey<String>(current.id),
             image: true,
-            label: 'Generated wallpaper',
+            label: l10n.economyAiGeneratedWallpaper,
             child: AiPreviewFrame(
               child: LayoutBuilder(
                 builder: (context, box) => AiDecodedImage(
@@ -83,6 +85,7 @@ class _GeneratingStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -100,7 +103,7 @@ class _GeneratingStage extends StatelessWidget {
         const SizedBox(height: PrismSpace.md),
         const _StatusLine(),
         const SizedBox(height: PrismSpace.xxs),
-        Text('This takes about 20 seconds', style: PrismTextStyles.caption(context)),
+        Text(l10n.economyAiGenerationTime, style: PrismTextStyles.caption(context)),
       ],
     );
   }

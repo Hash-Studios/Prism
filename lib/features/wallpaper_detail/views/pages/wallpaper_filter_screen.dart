@@ -20,6 +20,7 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/filter_editor_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -179,6 +180,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<WallpaperSetResult> _setWallpaper(String path, SetWallpaperChoice choice) async {
+    final AppLocalizations l10n = context.l10n;
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
       path,
       choice.target,
@@ -188,7 +190,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     );
     if (mounted) {
       try {
-        reportWallpaperSetResult(context, result, target: choice.target);
+        reportWallpaperSetResult(context, result, l10n: l10n, target: choice.target);
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
       }
@@ -205,7 +207,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
 
     if (!app_state.prismUser.loggedIn) {
-      toasts.error('Sign in to use premium filters with coins.', haptic: false);
+      toasts.error(context.l10n.wallpaperSignInForPremiumFilters, haptic: false);
       googleSignInPopUp(context, () {
         unawaited(_startActionWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
@@ -245,7 +247,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               filter: filter,
             ),
           );
-          toasts.success('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
+          toasts.success(context.l10n.wallpaperFilterUnlocked(CoinPolicy.premiumFilter));
         },
         retrySpec: () => spec('$retryTag.retry'),
       );
@@ -273,22 +275,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<CoinGateChoice> _choosePremiumFilterAction(CoinGatePrompt prompt) async {
     final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
       context,
-      title: 'Need coins for premium filter',
+      title: context.l10n.wallpaperFilterNeedCoins,
       cost: CoinPolicy.premiumFilter,
-      message: (missing) =>
-          'Applying this filter costs ${CoinPolicy.premiumFilter} coins. You need $missing more coins.',
+      message: (missing) => context.l10n.wallpaperFilterApplyCost(CoinPolicy.premiumFilter, missing),
       options: [
-        CoinGateOption(label: watchAdOptionLabel(), value: CoinGateChoice.watchAd),
-        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+        CoinGateOption(label: watchAdOptionLabel(context.l10n), value: CoinGateChoice.watchAd),
+        CoinGateOption(label: context.l10n.wallpaperSeePrismPro, value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;
   }
 
   Future<bool> _handleDownloadAction() async {
+    final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper", haptic: false);
+      toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
       if (!mounted) {
         return false;
@@ -298,7 +300,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       if (result.success) {
         try {
           analytics.track(DownloadWallpaperEvent(link: imageFile.path));
-          toasts.success(wallpaperSavedMessage);
+          toasts.success(wallpaperSavedMessage(l10n));
           if (mounted) unawaited(showIosSetWallpaperGuide(context));
         } catch (error) {
           logger.w('Wallpaper saved but follow-up failed', error: error);
@@ -308,7 +310,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       if (isPhotosPermissionDenied(result.errorCode) && mounted) {
         showPhotosPermissionDenied(context);
       } else {
-        toasts.error("Couldn't save wallpaper. Please retry!");
+        toasts.error(l10n.wallpaperFilterSaveError);
       }
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
@@ -316,10 +318,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       } else {
         logger.e('saveMedia failed', error: e);
       }
-      toasts.error("Couldn't save wallpaper. Please retry!");
+      toasts.error(l10n.wallpaperFilterSaveError);
     } catch (e) {
       logger.e('Unexpected saveMedia failure', error: e);
-      toasts.error("Something went wrong!");
+      toasts.error(l10n.wallpaperGenericError);
     } finally {
       if (imageFile != null) await _deleteEditedFile(imageFile);
     }
@@ -328,13 +330,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   /// Returns false only when the render or the wallpaper set failed. Closing the target sheet is not a failure.
   Future<bool> _handleSetAction() async {
+    final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper", haptic: false);
+      toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
     } catch (e) {
       logger.e('Unexpected filter render failure', error: e);
-      toasts.error("Something went wrong!");
+      toasts.error(l10n.wallpaperGenericError);
       return false;
     }
     if (!mounted) {
@@ -360,14 +363,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return PopScope(
       canPop: !_busy,
       child: PrismPage(
-        title: 'Edit wallpaper',
+        title: context.l10n.wallpaperEditTitle,
         onBack: () {
           if (!_busy) Navigator.pop(context);
         },
         actions: <Widget>[
           PrismIconButton(
             icon: Icons.refresh_rounded,
-            tooltip: 'Reset',
+            tooltip: context.l10n.wallpaperReset,
             onPressed: _isEdited && !_busy ? _reset : null,
           ),
           AnimatedSwitcher(
@@ -386,7 +389,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 : PrismIconButton(
                     key: const ValueKey('download'),
                     icon: Icons.download_rounded,
-                    tooltip: 'Download',
+                    tooltip: context.l10n.wallpaperDownload,
                     onPressed: !_editorReady
                         ? null
                         : () {
@@ -403,7 +406,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           if (!hideSetWallpaperUi)
             PrismIconButton(
               icon: Icons.check_rounded,
-              tooltip: 'Set as wallpaper',
+              tooltip: context.l10n.wallpaperSetAsWallpaper,
               onPressed: !_editorReady || _busy
                   ? null
                   : () {
@@ -415,9 +418,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         body: _loadFailed
             ? GlintState(
                 kind: GlintStateKind.error,
-                title: "Couldn't open this wallpaper",
-                body: 'The file may have been moved or deleted.',
-                actionLabel: 'Try again',
+                title: context.l10n.wallpaperOpenFileError,
+                body: context.l10n.wallpaperFileMovedOrDeleted,
+                actionLabel: context.l10n.wallpaperTryAgain,
                 onAction: _retryLoad,
               )
             : Column(
@@ -445,7 +448,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Widget _buildPreview(ColorScheme cs) {
     final Size? size = _imageSize;
     if (size == null) {
-      return const GlintState(kind: GlintStateKind.loading, title: 'Loading image');
+      return GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingImage);
     }
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     return Column(
@@ -510,8 +513,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                             children: [
                               image,
                               if (_comparing)
-                                Positioned(
-                                  left: PrismSpace.sm,
+                                PositionedDirectional(
+                                  start: PrismSpace.sm,
                                   top: PrismSpace.sm,
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
@@ -524,7 +527,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                         vertical: PrismSpace.xxs,
                                       ),
                                       child: Text(
-                                        'Original',
+                                        context.l10n.wallpaperFilterOriginal,
                                         style: PrismTextStyles.caption(
                                           context,
                                         ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
@@ -548,7 +551,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           opacity: _isEdited && !_comparing ? 1 : 0,
           child: Padding(
             padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-            child: Text('Hold to compare', style: PrismTextStyles.caption(context)),
+            child: Text(context.l10n.wallpaperFilterHoldToCompare, style: PrismTextStyles.caption(context)),
           ),
         ),
       ],

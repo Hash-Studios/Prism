@@ -7,6 +7,7 @@ import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_header.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,10 +35,10 @@ class _DropDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     return PrismPage(
       maxContentWidth: double.infinity,
-      title: 'Drop',
+      title: context.l10n.economyDropTitle,
       body: BlocConsumer<DropsBloc, DropsState>(
         listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
-        listener: (context, state) => toastUnlockResult(state.lastResult!),
+        listener: (context, state) => toastUnlockResult(context, state.lastResult!),
         builder: (context, state) {
           if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
             return const LoadingCards();
@@ -46,14 +47,14 @@ class _DropDetailView extends StatelessWidget {
           if (state.status == LoadStatus.failure) {
             return GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load this Drop",
-              body: 'Check your connection and try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.economyDropLoadFailed,
+              body: context.l10n.errorNetwork,
+              actionLabel: context.l10n.actionRetry,
               onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
             );
           }
           if (drop == null) {
-            return const GlintState(kind: GlintStateKind.empty, title: 'This Drop is gone');
+            return GlintState(kind: GlintStateKind.empty, title: context.l10n.economyDropGone);
           }
           return CustomScrollView(
             slivers: <Widget>[

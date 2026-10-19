@@ -20,6 +20,7 @@ import 'package:Prism/core/widgets/menu_button/set_options_panel.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -126,6 +127,7 @@ class SetWallpaperFlow {
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
   }) async {
+    final AppLocalizations l10n = context.l10n;
     final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
     SetWallpaperChoice? choice;
     final WallpaperTarget? saved = forceSheet ? null : defaultTarget();
@@ -165,6 +167,7 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
+          l10n: l10n,
           wallpaperId: wallpaperId,
           wallpaperSource: wallpaperSource,
         );
@@ -212,10 +215,12 @@ class SetWallpaperFlow {
     String? requestId,
     bool usedDefault = false,
     ScaffoldMessengerState? messenger,
+    AppLocalizations? localizations,
     VoidCallback? onMatchAccent,
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
+    final AppLocalizations l10n = localizations ?? context.l10n;
     final ScaffoldMessengerState? host = messenger ?? (context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
     final String operationId = AnalyticsCorrelation.newId();
     onBusy?.call(true);
@@ -237,6 +242,7 @@ class SetWallpaperFlow {
     reportWallpaperSetResult(
       context.mounted ? context : null,
       result,
+      l10n: l10n,
       target: choice.target,
       messenger: host,
       setContext: WallpaperSetContext(
@@ -262,6 +268,7 @@ class SetWallpaperFlow {
           usedDefault: usedDefault,
           requestId: requestId,
           messenger: host,
+          localizations: l10n,
           onMatchAccent: onMatchAccent,
           wallpaperId: wallpaperId,
           wallpaperSource: wallpaperSource,
@@ -281,6 +288,7 @@ class SetWallpaperFlow {
     required String? entryPoint,
     required ScaffoldMessengerState? messenger,
     required VoidCallback? onMatchAccent,
+    required AppLocalizations l10n,
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
@@ -297,6 +305,7 @@ class SetWallpaperFlow {
       entryPoint: entryPoint,
       messenger: messenger,
       onMatchAccent: onMatchAccent,
+      l10n: l10n,
       wallpaperId: wallpaperId,
       wallpaperSource: wallpaperSource,
     );
@@ -315,6 +324,7 @@ class SetWallpaperFlow {
     required String? entryPoint,
     required ScaffoldMessengerState? messenger,
     required VoidCallback? onMatchAccent,
+    required AppLocalizations l10n,
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
     WallpaperSetResult? homeDone,
@@ -348,11 +358,12 @@ class SetWallpaperFlow {
     } finally {
       onBusy?.call(false);
     }
-    final WallpaperSetResult combined = _combinePair(home, lock);
+    final WallpaperSetResult combined = _combinePair(home, lock, l10n: l10n);
     _trackPair(entryPoint, pick, combined);
     reportWallpaperSetResult(
       context != null && context.mounted ? context : null,
       combined,
+      l10n: l10n,
       target: lock == null ? WallpaperTarget.home : WallpaperTarget.both,
       messenger: messenger,
       track: false,
@@ -369,6 +380,7 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
+          l10n: l10n,
           wallpaperId: wallpaperId,
           wallpaperSource: wallpaperSource,
           homeDone: retryTarget == WallpaperTarget.lock ? home : null,
@@ -378,7 +390,11 @@ class SetWallpaperFlow {
     return combined;
   }
 
-  static WallpaperSetResult _combinePair(WallpaperSetResult home, WallpaperSetResult? lock) {
+  static WallpaperSetResult _combinePair(
+    WallpaperSetResult home,
+    WallpaperSetResult? lock, {
+    required AppLocalizations l10n,
+  }) {
     if (lock == null) return home;
     if (lock.isSuccess) {
       return WallpaperSetResult(
@@ -391,7 +407,7 @@ class SetWallpaperFlow {
     if (lock.isInfo) return lock;
     return WallpaperSetResult(
       lock.status == WallpaperSetStatus.foregroundRequired ? lock.status : WallpaperSetStatus.failed,
-      'Home screen set. Lock screen failed.',
+      l10n.coreWallpaperHomeSetLockFailed,
       errorCode: lock.errorCode,
       appliedTarget: WallpaperTarget.home,
       failedTarget: WallpaperTarget.lock,
@@ -494,12 +510,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> _start({bool forceSheet = false, bool playTapHaptic = true}) async {
     final String? url = widget.url;
     if (isLoading || url == null) return;
+    final AppLocalizations l10n = context.l10n;
     if (playTapHaptic) PrismHaptics.tap();
     String source = url;
     final Future<String> Function()? prepare = widget.prepareSource;
     if (prepare != null) {
       setState(() => isLoading = true);
-      final String? prepared = await runPrepareSource(prepare);
+      final String? prepared = await runPrepareSource(prepare, l10n: l10n);
       if (mounted) setState(() => isLoading = false);
       if (prepared == null || !mounted) return;
       source = prepared;
@@ -523,7 +540,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       );
     } catch (e, st) {
       logger.e('Set wallpaper failed', error: e, stackTrace: st);
-      toasts.error("Couldn't set the wallpaper. Try again.");
+      toasts.error(l10n.coreWallpaperSaveFailed);
       unawaited(RatePromptService.instance.recordFailure());
     }
     if (result?.isFailure ?? false) {
@@ -542,7 +559,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final WallpaperTarget? saved = SetWallpaperFlow.defaultTarget();
-    final String semanticLabel = saved == null ? 'Set as wallpaper' : 'Set as wallpaper on ${_targetLabel(saved)}';
+    final String semanticLabel = saved == null
+        ? context.l10n.coreSetWallpaper
+        : context.l10n.coreSetWallpaperOn(_targetLabel(saved, context.l10n));
     final String? label = widget.label;
     final Widget button = widget.primary
         ? Semantics(
@@ -551,7 +570,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             excludeSemantics: true,
             onTap: _start,
             child: PrismButton(
-              label: label ?? 'Set wallpaper',
+              label: label ?? context.l10n.coreSetWallpaper,
               size: PrismButtonSize.compact,
               loading: isLoading,
               onPressed: () => _start(playTapHaptic: false),
@@ -560,7 +579,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         : label == null
         ? CircularMenuButton(
             label: semanticLabel,
-            caption: widget.labelled ? 'Set' : null,
+            caption: widget.labelled ? context.l10n.coreSet : null,
             isLoading: isLoading,
             child: const Icon(JamIcons.picture),
           )
@@ -578,7 +597,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         setTarget,
         Semantics(
           button: true,
-          label: 'Change where wallpaper is set',
+          label: context.l10n.coreChangeWallpaperTarget,
           excludeSemantics: true,
           child: GestureDetector(
             key: const ValueKey<String>('set-tune-badge'),
@@ -602,8 +621,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 }
 
-String _targetLabel(WallpaperTarget target) => switch (target) {
-  WallpaperTarget.home => 'home screen',
-  WallpaperTarget.lock => 'lock screen',
-  WallpaperTarget.both => 'both screens',
+String _targetLabel(WallpaperTarget target, AppLocalizations l10n) => switch (target) {
+  WallpaperTarget.home => l10n.coreHomeScreen,
+  WallpaperTarget.lock => l10n.coreLockScreen,
+  WallpaperTarget.both => l10n.coreBothScreens,
 };

@@ -15,6 +15,7 @@ import 'package:Prism/data/upload/wallpaper/wall_files.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_tile_parts.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -50,13 +51,17 @@ class WallTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     PrismTag(
-                      label: rejected ? 'Rejected' : 'In review',
+                      label: rejected ? context.l10n.wallpaperUploadRejected : context.l10n.wallpaperUploadInReview,
                       tone: rejected ? PrismTone.danger : PrismTone.warning,
                       icon: rejected ? Icons.close_rounded : Icons.schedule_rounded,
                     ),
                     if (createdAt != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.xs),
-                      Text(_formatCreatedAt(createdAt), style: PrismTextStyles.caption(context)),
+                      Text(
+                        '${DateFormat.yMMMd(context.l10n.localeName).format(createdAt.toLocal())} '
+                        '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(createdAt.toLocal()), alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat)}',
+                        style: PrismTextStyles.caption(context),
+                      ),
                     ],
                     if (facts.isNotEmpty) ...<Widget>[
                       const SizedBox(height: PrismSpace.xxs),
@@ -72,22 +77,23 @@ class WallTile extends StatelessWidget {
                             link: wallpaper.wallpaperUrl,
                             kind: SaveMediaKind.wallpaper,
                             event: DownloadOwnWallEvent(link: wallpaper.wallpaperUrl),
-                            successMessage: 'Wallpaper saved to Pictures/Prism',
+                            successMessage: context.l10n.wallpaperUploadSavedToPictures,
                             failLogSuffix: rejected ? 'rejected wall download' : 'review wall download',
                             showNotification: true,
                           ),
                           PrismIconButton(
                             icon: Icons.delete_outline_rounded,
-                            tooltip: 'Delete wallpaper',
+                            tooltip: context.l10n.wallpaperUploadDeleteWallpaper,
                             color: cs.error,
                             onPressed: () => showDeleteConfirm(
                               context,
-                              title: 'Delete this wallpaper?',
+                              title: context.l10n.wallpaperUploadDeleteConfirmTitle,
                               onConfirm: () => _deleteDoc(
                                 collection: rejected ? FirebaseCollections.rejectedWalls : FirebaseCollections.walls,
                                 id: wallpaper.id,
                                 sourceTag: rejected ? 'review.rejectedWall.delete' : 'review.wall.delete',
-                                successToast: 'Wallpaper deleted.',
+                                successToast: context.l10n.wallpaperUploadDeleted,
+                                l10n: context.l10n,
                                 pendingWallData: rejected ? null : wallpaper.data(),
                               ),
                             ),
@@ -125,7 +131,7 @@ class _Thumbnail extends StatelessWidget {
     );
     return Semantics(
       button: true,
-      label: 'View wallpaper',
+      label: context.l10n.wallpaperUploadViewWallpaper,
       excludeSemantics: true,
       onTap: () => _open(context),
       child: PressScale(
@@ -164,10 +170,6 @@ class _Thumbnail extends StatelessWidget {
       showReviewPhotoPreview(context, url: wallpaper.wallpaperUrl, thumbUrl: wallpaper.wallpaperThumb);
 }
 
-final DateFormat _createdAtFormat = DateFormat('d MMM y, h:mm a');
-
-String _formatCreatedAt(DateTime value) => _createdAtFormat.format(value.toLocal());
-
 /// "1440x3200" and "2MB" become "1440 x 3200 · 2 MB". A part that is empty is left out.
 String _formatFacts(String resolution, String size) {
   final String res = resolution.replaceFirstMapped(RegExp(r'^(\d+)x(\d+)$'), (m) => '${m[1]} x ${m[2]}');
@@ -180,6 +182,7 @@ Future<void> _deleteDoc({
   required String id,
   required String sourceTag,
   required String successToast,
+  required AppLocalizations l10n,
   Map<String, dynamic>? pendingWallData,
 }) async {
   try {
@@ -190,9 +193,7 @@ Future<void> _deleteDoc({
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
     toasts.error(
-      e.code == 'permission-denied'
-          ? "Couldn't delete. Sign in with the account you used to upload, then try again."
-          : "Couldn't delete. Try again.",
+      e.code == 'permission-denied' ? l10n.wallpaperUploadDeletePermissionError : l10n.wallpaperUploadDeleteError,
     );
   }
 }

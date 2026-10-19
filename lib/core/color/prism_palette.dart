@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' show Color;
 
+import 'package:Prism/l10n/l10n.dart';
+
 /// One of the twelve colours Prism uses to find wallpapers by colour.
 ///
 /// [id] is the value stored in `walls.colors`. [hex] is six digits without `#`, and is the Wallhaven `colors` value.
@@ -39,6 +41,23 @@ const List<PrismPaletteColor> prismPalette = <PrismPaletteColor>[
   PrismPaletteColor(id: 'grey', name: 'Grey', hex: '999999', pexelsName: 'gray'),
   PrismPaletteColor(id: 'white', name: 'White', hex: 'ffffff', pexelsName: 'white'),
 ];
+
+/// Localized display label for a palette entry. The [PrismPaletteColor.id] remains the stable search key.
+String prismPaletteColorDisplayName(PrismPaletteColor color, AppLocalizations l10n) => switch (color.id) {
+  'red' => l10n.coreColorRed,
+  'orange' => l10n.coreColorOrange,
+  'yellow' => l10n.coreColorYellow,
+  'green' => l10n.coreColorGreen,
+  'teal' => l10n.coreColorTeal,
+  'blue' => l10n.coreColorBlue,
+  'purple' => l10n.coreColorPurple,
+  'pink' => l10n.coreColorPink,
+  'brown' => l10n.coreColorBrown,
+  'black' => l10n.coreColorBlack,
+  'grey' => l10n.coreColorGrey,
+  'white' => l10n.coreColorWhite,
+  _ => color.name,
+};
 
 /// The palette colour with [id], or `null` when there is none.
 PrismPaletteColor? paletteColorById(String? id) {

@@ -1,12 +1,12 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/count_up.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// What a landed spin paid, as the plinth shows it: the prize, a line under it and the next move.
@@ -44,31 +44,33 @@ class SpinResultPanel extends StatelessWidget {
     return id == null ? null : shopItem(id);
   }
 
-  String get _headlineLabel {
+  String _headlineLabel(AppLocalizations l10n) {
     final String? id = win.itemId;
     if (prize is CosmeticPrize && id != null) {
       final ShopItem? item = _item;
-      return item == null ? 'You won ${cosmeticName(id)}' : 'You won a new ${_kind(item.kind)}: ${item.name}';
+      return item == null
+          ? l10n.economyWonUnknownCosmetic
+          : l10n.economyWonCosmetic(_kind(l10n, item.kind), shopItemName(item, l10n));
     }
-    if (prize is XpPrize) return 'You won ${win.xp} XP';
-    return 'You won ${win.coins} ${win.coins == 1 ? 'coin' : 'coins'}';
+    if (prize is XpPrize) return l10n.economyWonXp(win.xp);
+    return l10n.economyWonCoins(win.coins);
   }
 
-  String get _caption {
+  String _caption(AppLocalizations l10n) {
     if (prize is CosmeticPrize) {
-      return win.itemId == null ? 'You own every cosmetic, so it pays coins' : 'Added to your collection';
+      return win.itemId == null ? l10n.economyChestOwnCosmeticCoins : l10n.economyAddedToCollection;
     }
-    if (prize is XpPrize) return 'Added to your XP';
-    return jackpot ? 'Jackpot. Added to your balance' : 'Added to your balance';
+    if (prize is XpPrize) return l10n.economyAddedToXp;
+    return jackpot ? l10n.economyJackpotAddedToBalance : l10n.economyAddedToBalance;
   }
 
   @override
   Widget build(BuildContext context) {
     final TextStyle caption = PrismTextStyles.caption(context).copyWith(color: ink.withValues(alpha: 0.78));
     final (String label, int? price, String? sub) = switch (action) {
-      SpinAction.spin => ('Spin again', status.freeSpinAvailable ? null : status.nextCost, null),
-      SpinAction.getCoins => ('Get coins', null, null),
-      SpinAction.capped => ('Back tomorrow', null, null),
+      SpinAction.spin => (context.l10n.economySpinAgain, status.freeSpinAvailable ? null : status.nextCost, null),
+      SpinAction.getCoins => (context.l10n.economyGetCoins, null, null),
+      SpinAction.capped => (context.l10n.economyBackTomorrow, null, null),
     };
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -76,12 +78,18 @@ class SpinResultPanel extends StatelessWidget {
       children: <Widget>[
         Semantics(
           liveRegion: true,
-          label: _headlineLabel,
+          label: _headlineLabel(context.l10n),
           excludeSemantics: true,
           child: _Headline(panel: this),
         ),
         const SizedBox(height: 2),
-        Text(_caption, style: caption, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+        Text(
+          _caption(context.l10n),
+          style: caption,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: PrismSpace.xs),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -90,19 +98,22 @@ class SpinResultPanel extends StatelessWidget {
               child: SpinButton(
                 compact: true,
                 label: label,
-                caption: sub ?? (action == SpinAction.spin && status.freeSpinAvailable ? 'Free' : null),
+                caption:
+                    sub ??
+                    (action == SpinAction.spin && status.freeSpinAvailable ? context.l10n.economyFreeSpin : null),
                 price: price,
                 semanticLabel: switch (action) {
-                  SpinAction.spin => price == null ? 'Spin again, free spin' : 'Spin again, $price coins',
-                  SpinAction.getCoins => 'Get coins',
-                  SpinAction.capped => 'Back tomorrow',
+                  SpinAction.spin =>
+                    price == null ? context.l10n.economySpinAgainFree : context.l10n.economySpinAgainPrice(price),
+                  SpinAction.getCoins => context.l10n.economyGetCoins,
+                  SpinAction.capped => context.l10n.economyBackTomorrow,
                 },
                 onPressed: action == SpinAction.capped ? null : onSpinAgain,
               ),
             ),
             const SizedBox(width: PrismSpace.xs),
             PrismButton(
-              label: 'Done',
+              label: context.l10n.actionDone,
               variant: PrismButtonVariant.ghost,
               size: PrismButtonSize.compact,
               onPressed: onDone,
@@ -114,11 +125,11 @@ class SpinResultPanel extends StatelessWidget {
   }
 }
 
-String _kind(ShopItemKind kind) => switch (kind) {
-  ShopItemKind.theme => 'theme',
-  ShopItemKind.appIcon => 'app icon',
-  ShopItemKind.frame => 'frame',
-  ShopItemKind.nameGlow => 'name glow',
+String _kind(AppLocalizations l10n, ShopItemKind kind) => switch (kind) {
+  ShopItemKind.theme => l10n.economyCosmeticTheme,
+  ShopItemKind.appIcon => l10n.economyCosmeticAppIcon,
+  ShopItemKind.frame => l10n.economyCosmeticFrame,
+  ShopItemKind.nameGlow => l10n.economyCosmeticNameGlow,
 };
 
 class _Headline extends StatelessWidget {
@@ -134,8 +145,8 @@ class _Headline extends StatelessWidget {
     if (prize is CosmeticPrize && panel.win.itemId != null) {
       final ShopItem? item = panel._item;
       final String text = item == null
-          ? 'New cosmetic: ${cosmeticName(panel.win.itemId!)}'
-          : 'New ${_kind(item.kind)}: ${item.name}';
+          ? context.l10n.economyNewUnknownCosmetic
+          : context.l10n.economyNewCosmetic(_kind(context.l10n, item.kind), shopItemName(item, context.l10n));
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -159,7 +170,7 @@ class _Headline extends StatelessWidget {
         children: <Widget>[
           CountUp(value: panel.win.xp, style: numeral),
           const SizedBox(width: PrismSpace.xs),
-          Text('XP', style: PrismTextStyles.sectionTitle(context).copyWith(color: ink)),
+          Text(context.l10n.economyXpUnit, style: PrismTextStyles.sectionTitle(context).copyWith(color: ink)),
         ],
       );
     }

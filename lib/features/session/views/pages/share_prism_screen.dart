@@ -7,6 +7,7 @@ import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -26,17 +27,21 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   String link = "";
   bool _loading = false;
   bool _failed = false;
+  bool _startedInitialLinkLoad = false;
 
   bool get _signedIn => app_state.prismUser.id.isNotEmpty;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_startedInitialLinkLoad) return;
+    _startedInitialLinkLoad = true;
     unawaited(_loadLink());
   }
 
   Future<void> _loadLink() async {
     if (!_signedIn) return;
+    final AppLocalizations l10n = context.l10n;
     setState(() {
       _loading = true;
       _failed = false;
@@ -48,6 +53,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 app_state.prismUser.id,
                 inviterName: app_state.prismUser.name,
                 inviterPhoto: app_state.prismUser.profilePhoto,
+                l10n: l10n,
               ));
       if (mounted) setState(() => link = value);
     } catch (_) {
@@ -58,6 +64,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> _share() async {
+    final AppLocalizations l10n = context.l10n;
     unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
     if (link.isEmpty) {
       if (_signedIn) {
@@ -74,7 +81,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
           ),
         ),
       );
-      toasts.error("Sign in to get your invite link.");
+      toasts.error(context.l10n.accountSignInForInviteLink);
       return;
     }
     try {
@@ -99,20 +106,26 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
           ),
         ),
       );
-      toasts.error("Unable to share invite right now.");
+      toasts.error(l10n.accountInviteShareFailed);
     }
   }
 
   Future<void> _copy() async {
+    final AppLocalizations l10n = context.l10n;
     await Clipboard.setData(ClipboardData(text: link));
-    toasts.success('Link copied');
+    toasts.success(l10n.accountLinkCopied);
   }
 
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Invite friends',
-      bottomBar: PrismButton(label: 'Share invite', expand: true, loading: _loading, onPressed: _share),
+      title: context.l10n.accountInviteFriends,
+      bottomBar: PrismButton(
+        label: context.l10n.accountShareInvite,
+        expand: true,
+        loading: _loading,
+        onPressed: _share,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xl),
@@ -124,13 +137,13 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 const Glint(mood: GlintMood.happy, size: 120),
                 const SizedBox(height: PrismSpace.lg),
                 Text(
-                  'Give ${CoinPolicy.referral}, get ${CoinPolicy.referral}',
+                  context.l10n.accountInviteRewardHeadline(CoinPolicy.referral),
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.display(context),
                 ),
                 const SizedBox(height: PrismSpace.xs),
                 Text(
-                  'Your friend gets ${CoinPolicy.referral} coins when they join. You get ${CoinPolicy.referral} too.',
+                  context.l10n.accountInviteRewardMessage(CoinPolicy.referral),
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.body(context).copyWith(height: 1.4),
                 ),
@@ -184,14 +197,19 @@ class _LinkCard extends StatelessWidget {
               style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
             ),
           ),
-          PrismIconButton(icon: Icons.copy_rounded, tooltip: 'Copy link', iconSize: 20, onPressed: onCopy),
+          PrismIconButton(
+            icon: Icons.copy_rounded,
+            tooltip: context.l10n.accountCopyLink,
+            iconSize: 20,
+            onPressed: onCopy,
+          ),
         ],
       );
     } else if (loading) {
       content = const PrismSkeleton(
         child: SizedBox(
           height: 44,
-          child: Align(alignment: Alignment.centerLeft, child: PrismBone(width: 220, height: 16)),
+          child: Align(alignment: AlignmentDirectional.centerStart, child: PrismBone(width: 220, height: 16)),
         ),
       );
     } else {
@@ -199,12 +217,19 @@ class _LinkCard extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              signedIn && failed ? 'Could not create your invite link.' : 'Sign in to get your invite link.',
+              signedIn && failed
+                  ? context.l10n.accountInviteLinkCouldNotCreate
+                  : context.l10n.accountSignInForInviteLink,
               style: PrismTextStyles.body(context),
             ),
           ),
           if (signedIn)
-            PrismIconButton(icon: Icons.refresh_rounded, tooltip: 'Try again', iconSize: 20, onPressed: onRetry),
+            PrismIconButton(
+              icon: Icons.refresh_rounded,
+              tooltip: context.l10n.accountTryAgain,
+              iconSize: 20,
+              onPressed: onRetry,
+            ),
         ],
       );
     }

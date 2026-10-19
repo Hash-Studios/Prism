@@ -11,6 +11,8 @@ import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +58,9 @@ void main() {
     whenListen(bloc, const Stream<DropsState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(controller: router, stateHash: 0, child: page),
       ),
     );
@@ -149,20 +154,11 @@ void main() {
     testWidgets('in the last 24 hours the countdown says Last call', (tester) async {
       await pump(tester, at(dropWithin(const Duration(hours: 5, minutes: 20))), const DropsPage());
 
-      expect(find.text('Last call'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDropLastCallLabel), findsOneWidget);
       expect(find.text('Ends in'), findsNothing);
       expect(countdownText(tester), '05h 20m');
-      final TextSpan root =
-          tester
-                  .widget<RichText>(
-                    find
-                        .descendant(of: find.byKey(const ValueKey('drop.countdown')), matching: find.byType(RichText))
-                        .first,
-                  )
-                  .text
-              as TextSpan;
-      final TextSpan digits = (root.children!.first as TextSpan).children!.first as TextSpan;
-      expect(digits.style!.color, DropPalette.urgent);
+      final Text countdown = tester.widget<Text>(find.byKey(const ValueKey('drop.countdown')));
+      expect(countdown.style!.color, DropPalette.urgent);
     });
 
     testWidgets('the pack shows how many coins it saves', (tester) async {
@@ -284,6 +280,9 @@ void main() {
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: CustomScrollView(
               slivers: <Widget>[
@@ -303,6 +302,9 @@ void main() {
       tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       Widget tile({required bool unlocked}) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SizedBox(
             width: 150,
@@ -425,7 +427,7 @@ void main() {
       expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
       expect(find.text('THE DROP · W42'), findsOneWidget);
       expect(find.text('Ends in'), findsOneWidget);
-      expect(find.text('1/4 collected'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDropCollected(1, 4)), findsOneWidget);
 
       await tester.tap(find.text('Preview'));
       await tester.pump();

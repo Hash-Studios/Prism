@@ -49,18 +49,3 @@ class ProfileCompletenessEvaluator {
     return links.values.any((value) => value.trim().isNotEmpty);
   }
 }
-
-extension ProfileCompletenessStepX on ProfileCompletenessStep {
-  String get label {
-    switch (this) {
-      case ProfileCompletenessStep.photo:
-        return 'Add profile photo';
-      case ProfileCompletenessStep.username:
-        return 'Set username';
-      case ProfileCompletenessStep.bio:
-        return 'Write bio';
-      case ProfileCompletenessStep.socialLink:
-        return 'Add one social link';
-    }
-  }
-}

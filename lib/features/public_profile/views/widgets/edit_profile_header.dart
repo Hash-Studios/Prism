@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
@@ -58,7 +59,7 @@ class EditProfileHeader extends StatelessWidget {
                   children: <Widget>[
                     Semantics(
                       button: true,
-                      label: 'Change cover photo',
+                      label: context.l10n.accountChangeCoverPhoto,
                       excludeSemantics: true,
                       onTap: onChangeCover,
                       child: GestureDetector(
@@ -75,7 +76,7 @@ class EditProfileHeader extends StatelessWidget {
                         right: PrismSpace.xxs,
                         child: PrismIconButton(
                           icon: Icons.delete_outline_rounded,
-                          tooltip: 'Remove cover photo',
+                          tooltip: context.l10n.accountRemoveCoverPhoto,
                           onImage: true,
                           onPressed: onRemoveCover,
                         ),
@@ -92,7 +93,7 @@ class EditProfileHeader extends StatelessWidget {
           child: PressScale(
             child: Semantics(
               button: true,
-              label: 'Change photo',
+              label: context.l10n.accountChangePhoto,
               excludeSemantics: true,
               onTap: onChangePhoto,
               child: GestureDetector(
@@ -167,7 +168,7 @@ class _EditCoverHint extends StatelessWidget {
               Icon(JamIcons.camera, color: Colors.white.withValues(alpha: 0.85), size: 15),
               const SizedBox(width: 6),
               Text(
-                'Edit cover',
+                context.l10n.accountEditCover,
                 style: PrismTextStyles.caption(
                   context,
                 ).copyWith(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600),

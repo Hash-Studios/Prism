@@ -1,5 +1,7 @@
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:intl/intl.dart';
 
 /// A catalog reward stays pending until the server confirms it in inventory.
 class RankRewardProgress {
@@ -10,12 +12,12 @@ class RankRewardProgress {
   final bool earned;
   final bool owned;
 
-  String get name =>
-      '${item.name} ${switch (item.kind) {
-        ShopItemKind.theme => 'theme',
-        ShopItemKind.appIcon => 'app icon',
-        ShopItemKind.frame => 'frame',
-        ShopItemKind.nameGlow => 'name glow',
+  String name(AppLocalizations l10n) =>
+      '${shopItemName(item, l10n)} ${switch (item.kind) {
+        ShopItemKind.theme => l10n.economyCosmeticTheme,
+        ShopItemKind.appIcon => l10n.economyCosmeticAppIcon,
+        ShopItemKind.frame => l10n.economyCosmeticFrame,
+        ShopItemKind.nameGlow => l10n.economyCosmeticNameGlow,
       }}';
 }
 
@@ -47,7 +49,6 @@ class RankProgress {
   }
 }
 
-String rankTitle(String id) =>
-    id.split('_').map((String word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
+String rankTitle(String id, AppLocalizations l10n) => shopRankName(id, l10n);
 
-String groupedXp(int value) => value.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '\u00A0');
+String groupedXp(int value, AppLocalizations l10n) => NumberFormat.decimalPattern(l10n.localeName).format(value);

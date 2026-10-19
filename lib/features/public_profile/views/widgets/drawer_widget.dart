@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -15,6 +14,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -47,6 +47,7 @@ class ProfileDrawer extends StatelessWidget {
   }
 
   Future<void> _shareProfile(BuildContext context) async {
+    final AppLocalizations l10n = context.l10n;
     // The drawer sits on the user's own profile, so its loaded walls feed the link preview card.
     final PublicProfileState profile = context.read<PublicProfileBloc>().state;
     final bool ownWalls =
@@ -64,25 +65,27 @@ class ProfileDrawer extends StatelessWidget {
         gallery: ownWalls
             ? profile.walls.map((wall) => wall.wallpaperThumb ?? wall.wallpaperUrl).toList()
             : const <String>[],
+        l10n: l10n,
       );
     } catch (_) {
-      toasts.error("Couldn't create the link. Try again.");
+      toasts.error(l10n.accountCouldNotCreateLink);
     }
   }
 
   Future<void> _logOut(BuildContext context) async {
+    final AppLocalizations l10n = context.l10n;
     _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Log out of Prism?',
-      message: logoutConfirmMessage,
-      confirmLabel: 'Log out',
+      title: l10n.accountLogOutOfPrismQuestion,
+      message: l10n.accountLogoutConfirmation,
+      confirmLabel: l10n.accountLogOut,
     );
     if (!confirmed || !context.mounted) return;
     // Finish signing out before the restart, or the restarted app still sees the old
     // session and stays on the splash screen. The restart closes this drawer.
     if (!await globalGoogleAuth.signOutGoogle()) {
-      toasts.error(logoutFailedMessage);
+      toasts.error(l10n.accountLogoutFailed);
       return;
     }
     await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
@@ -99,7 +102,7 @@ class ProfileDrawer extends StatelessWidget {
       backgroundColor: cs.surface,
       width: math.min(340, MediaQuery.sizeOf(context).width * 0.84),
       child: ListView(
-        padding: EdgeInsets.fromLTRB(
+        padding: EdgeInsetsDirectional.fromSTEB(
           PrismSpace.page,
           MediaQuery.paddingOf(context).top + PrismSpace.md,
           PrismSpace.page,
@@ -114,25 +117,23 @@ class ProfileDrawer extends StatelessWidget {
                   children: <Widget>[
                     Icon(Icons.workspace_premium_rounded, size: 22, color: cs.primary),
                     const SizedBox(width: PrismSpace.xs),
-                    Text('Prism Pro', style: PrismTextStyles.cardTitle(context)),
+                    Text(context.l10n.accountPrismPro, style: PrismTextStyles.cardTitle(context)),
                   ],
                 ),
                 const SizedBox(height: PrismSpace.xxs),
                 Text(
-                  premium
-                      ? 'You have every premium wallpaper, free downloads and free filters.'
-                      : 'Unlock premium wallpapers, free downloads and free filters.',
+                  premium ? context.l10n.accountPremiumBenefitsActive : context.l10n.accountPremiumBenefitsInactive,
                   style: PrismTextStyles.body(context),
                 ),
               ],
             ),
           ),
-          const PrismSectionHeader(title: 'Your content', small: true),
+          PrismSectionHeader(title: context.l10n.accountYourContent, small: true),
           PrismGroup(
             children: <Widget>[
               PrismRow(
                 icon: Icons.photo_library_outlined,
-                title: 'Library',
+                title: context.l10n.accountLibrary,
                 onTap: () {
                   _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
                   _go(context, LibraryRoute());
@@ -140,12 +141,12 @@ class ProfileDrawer extends StatelessWidget {
               ),
             ],
           ),
-          const PrismSectionHeader(title: 'Account', small: true),
+          PrismSectionHeader(title: context.l10n.accountAccount, small: true),
           PrismGroup(
             children: <Widget>[
               PrismRow(
                 icon: Icons.ios_share_rounded,
-                title: 'Share profile',
+                title: context.l10n.accountShareProfile,
                 onTap: () {
                   PrismHaptics.tap();
                   _trackDrawerAction(
@@ -157,7 +158,7 @@ class ProfileDrawer extends StatelessWidget {
               ),
               PrismRow(
                 icon: Icons.settings_outlined,
-                title: 'Settings',
+                title: context.l10n.accountSettings,
                 onTap: () {
                   _trackDrawerAction(
                     AnalyticsActionValue.notificationSettingsOpened,
@@ -168,7 +169,7 @@ class ProfileDrawer extends StatelessWidget {
               ),
               PrismRow(
                 icon: Icons.info_outline_rounded,
-                title: 'About',
+                title: context.l10n.accountAbout,
                 onTap: () {
                   _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
                   _go(context, AboutRoute());
@@ -181,7 +182,7 @@ class ProfileDrawer extends StatelessWidget {
             children: <Widget>[
               PrismRow(
                 icon: Icons.logout_rounded,
-                title: 'Log out',
+                title: context.l10n.accountLogOut,
                 showChevron: false,
                 onTap: () => unawaited(_logOut(context)),
               ),

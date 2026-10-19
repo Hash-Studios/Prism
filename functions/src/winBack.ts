@@ -1,9 +1,16 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {fcmMessage, userIdToTopic, userPushTokens} from "./notificationHelper";
-import {recordPushOutcome} from "./notificationScoreboard";
+import {
+  sendNotification,
+  userIdToTopic,
+  userPushTokens,
+} from "./notificationHelper";
 import {db, REGION, str} from "./common";
+import {
+  notificationCopyPayload,
+  type NotificationCopy,
+} from "./notificationCatalog";
 
 export const WIN_BACK_STEPS = [7, 14, 30, 60];
 
@@ -17,12 +24,20 @@ const OFFSET_FIELD = "appOpenTimezoneOffsetMinutes";
 const EVENING_MINUTE = 18 * 60;
 const OFFSET_STEP = 15;
 
-const COPY: Record<number, {title: string; body: string}> = {
-  7: {title: "Your feed has new walls", body: "Fresh wallpapers landed while you were away."},
-  14: {title: "New walls are waiting", body: "Come see what creators added this fortnight."},
-  30: {title: "New AI styles to try", body: "Make a wallpaper that feels like you."},
-  60: {title: "Prism misses you", body: "Your next favourite wall is a tap away."},
-};
+function winBackCopy(step: number): NotificationCopy {
+  switch (step) {
+  case 7:
+    return {kind: "winBack7"};
+  case 14:
+    return {kind: "winBack14"};
+  case 30:
+    return {kind: "winBack30"};
+  case 60:
+    return {kind: "winBack60"};
+  default:
+    throw new Error(`Unsupported win-back step: ${step}`);
+  }
+}
 
 interface WinBackState {
   step?: number;
@@ -51,9 +66,12 @@ export function winBackStepFor(
 
 /** UTC offsets (minutes, in 15 minute steps, -12:00 to +14:00) where it is 18:00 local at `nowMs`. */
 export function offsetsAtEveningLocal(nowMs: number): number[] {
-  const utcMinutes = Math.round((nowMs / 60_000 % 1440) / OFFSET_STEP) * OFFSET_STEP;
+  const utcMinutes =
+    Math.round(((nowMs / 60_000) % 1440) / OFFSET_STEP) * OFFSET_STEP;
   const base = (((EVENING_MINUTE - utcMinutes) % 1440) + 1440) % 1440;
-  return [base, base - 1440].filter((offset) => offset >= -720 && offset <= 840);
+  return [base, base - 1440].filter(
+    (offset) => offset >= -720 && offset <= 840,
+  );
 }
 
 function destination(step: number): string {
@@ -73,21 +91,34 @@ function completedState(data: admin.firestore.DocumentData): WinBackState {
   const openAt = winBack?.openAt;
   return {
     step: Number.isFinite(winBack?.step) ? winBack.step : undefined,
-    openAtMs: openAt instanceof admin.firestore.Timestamp ? openAt.toMillis() : undefined,
+    openAtMs:
+      openAt instanceof admin.firestore.Timestamp ?
+        openAt.toMillis() :
+        undefined,
   };
 }
 
 /** True only when the user turned marketing pushes off; an unreadable pref does not block the push. */
 async function marketingPushesOff(uid: string): Promise<boolean> {
   try {
-    return (await db.doc(`usersv2/${uid}/private/session`).get()).data()?.marketingPushes === false;
+    return (
+      (await db.doc(`usersv2/${uid}/private/session`).get()).data()
+        ?.marketingPushes === false
+    );
   } catch (err) {
-    logger.warn("winBack: could not read the marketing push pref.", {uid, err});
+    logger.warn("winBack: could not read the marketing push pref.", {
+      uid,
+      err,
+    });
     return false;
   }
 }
 
-async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?: string}> {
+async function todaysWall(): Promise<{
+  title: string;
+  wallId?: string;
+  imageUrl?: string;
+}> {
   const fallback = {title: "A fresh pick"};
   try {
     const cur = await db.collection("wall_of_the_day").doc("current").get();
@@ -95,7 +126,11 @@ async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?:
     if (!wallId) return fallback;
     const wall = (await db.collection("walls").doc(wallId).get()).data();
     if (!wall) return fallback;
-    return {title: str(wall.title).trim() || fallback.title, wallId, imageUrl: str(wall.wallpaper_thumb) || undefined};
+    return {
+      title: str(wall.title).trim() || fallback.title,
+      wallId,
+      imageUrl: str(wall.wallpaper_thumb) || undefined,
+    };
   } catch (err) {
     logger.warn("winBack: could not read wall of the day.", {err});
     return fallback;
@@ -121,14 +156,24 @@ export const sendWinBackPushes = onSchedule(
 
     for (const offset of offsets) {
       for (const n of WIN_BACK_STEPS) {
-        const copy = COPY[n];
+        const copy = notificationCopyPayload(winBackCopy(n));
         let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
         while (true) {
           let q = db
             .collection("usersv2")
             .where(OFFSET_FIELD, "==", offset)
-            .where(OPEN_FIELD, ">", admin.firestore.Timestamp.fromMillis(nowMs - (n + WINDOW_DAYS) * DAY_MS))
-            .where(OPEN_FIELD, "<=", admin.firestore.Timestamp.fromMillis(nowMs - n * DAY_MS))
+            .where(
+              OPEN_FIELD,
+              ">",
+              admin.firestore.Timestamp.fromMillis(
+                nowMs - (n + WINDOW_DAYS) * DAY_MS,
+              ),
+            )
+            .where(
+              OPEN_FIELD,
+              "<=",
+              admin.firestore.Timestamp.fromMillis(nowMs - n * DAY_MS),
+            )
             .orderBy(OPEN_FIELD)
             .limit(PAGE_SIZE);
           if (cursor) q = q.startAfter(cursor);
@@ -141,56 +186,82 @@ export const sendWinBackPushes = onSchedule(
                 const data = doc.data();
                 const uid = doc.id;
                 const lastOpen = data.lastAppOpenAt;
-                if (data.deleted === true || data.loggedIn === false ||
-                    !(lastOpen instanceof admin.firestore.Timestamp)) return false;
-                const step = winBackStepFor(nowMs, lastOpen.toMillis(), completedState(data));
+                if (
+                  data.deleted === true ||
+                  data.loggedIn === false ||
+                  !(lastOpen instanceof admin.firestore.Timestamp)
+                ) {
+                  return false;
+                }
+                const step = winBackStepFor(
+                  nowMs,
+                  lastOpen.toMillis(),
+                  completedState(data),
+                );
                 if (step !== n) return false;
                 if (await marketingPushesOff(uid)) return false;
 
                 const wall = n === 60 ? await wallForDay60() : undefined;
                 const targets = [
-                  {topic: userIdToTopic(uid)},
-                  ...(await userPushTokens(uid, data.fcmToken)).map((token) => ({token})),
+                  {
+                    fcmTarget: {topic: userIdToTopic(uid)},
+                    nativeLocalization: false,
+                  },
+                  ...(await userPushTokens(uid, data.fcmToken)).map(
+                    ({token, nativeLocalization}) => ({
+                      fcmTarget: {token},
+                      nativeLocalization,
+                    }),
+                  ),
                 ];
                 // The query snapshot can age while preferences and tokens are read. Recheck
                 // activity and dedupe state immediately before sending.
                 const current = (await doc.ref.get()).data();
-                if (!current || current.deleted === true || current.loggedIn === false ||
-                    current.appOpenTimezoneOffsetMinutes !== offset ||
-                    !(current.lastAppOpenAt instanceof admin.firestore.Timestamp) ||
-                    current.lastAppOpenAt.toMillis() !== lastOpen.toMillis() ||
-                    winBackStepFor(nowMs, lastOpen.toMillis(), completedState(current)) !== n) return false;
+                if (
+                  !current ||
+                  current.deleted === true ||
+                  current.loggedIn === false ||
+                  current.appOpenTimezoneOffsetMinutes !== offset ||
+                  !(
+                    current.lastAppOpenAt instanceof admin.firestore.Timestamp
+                  ) ||
+                  current.lastAppOpenAt.toMillis() !== lastOpen.toMillis() ||
+                  winBackStepFor(
+                    nowMs,
+                    lastOpen.toMillis(),
+                    completedState(current),
+                  ) !== n
+                ) {
+                  return false;
+                }
                 let accepted = 0;
-                for (const fcmTarget of targets) {
-                  await recordPushOutcome("win_back", "sends", new Date(nowMs));
-                  try {
-                    await admin.messaging().send(fcmMessage({
-                      title: copy.title,
-                      body: copy.body,
-                      data: {
-                        route: destination(n),
-                        push_kind: "win_back",
-                        step: String(n),
-                        ...(wall?.wallId ? {wall_id: wall.wallId} : {}),
-                      },
-                      imageUrl: wall?.imageUrl,
-                      modifier: uid,
-                      channelId: "recommendations",
-                      scoreKind: "win_back",
-                      pushOnly: true,
-                      collapseKey: `win_back_${n}`,
-                      fcmTarget,
-                    }));
-                    accepted += 1;
-                    await recordPushOutcome("win_back", "accepts", new Date(nowMs));
-                  } catch (err) {
-                    await recordPushOutcome("win_back", "fails", new Date(nowMs));
-                    logger.warn("winBack: one target failed.", {uid, err});
-                  }
+                for (const {fcmTarget, nativeLocalization} of targets) {
+                  const sent = await sendNotification({
+                    ...copy,
+                    data: {
+                      route: destination(n),
+                      push_kind: "win_back",
+                      step: String(n),
+                      ...(wall?.wallId ? {wall_id: wall.wallId} : {}),
+                    },
+                    imageUrl: wall?.imageUrl,
+                    modifier: uid,
+                    channelId: "recommendations",
+                    scoreKind: "win_back",
+                    pushOnly: true,
+                    collapseKey: `win_back_${n}`,
+                    fcmTarget,
+                    nativeLocalization,
+                  });
+                  if (sent) accepted += 1;
                 }
                 if (accepted === 0) throw new Error("win-back push failed");
                 await doc.ref.update({
-                  winBack: {step: n, openAt: lastOpen, sentAt: admin.firestore.FieldValue.serverTimestamp()},
+                  winBack: {
+                    step: n,
+                    openAt: lastOpen,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  },
                 });
                 return true;
               }),

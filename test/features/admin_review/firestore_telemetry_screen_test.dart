@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +34,8 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) =>
               MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
           home: const FirestoreTelemetryScreen(),

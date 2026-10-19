@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
 import 'package:Prism/features/draw/domain/entities/draw_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -32,25 +33,25 @@ class DrawPage extends StatelessWidget implements AutoRouteWrapper {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Prism Draw',
+      title: context.l10n.economyDrawTitle,
       body: ValueListenableBuilder<EconomyConfig>(
         valueListenable: EconomyConfig.notifier,
         builder: (context, config, _) {
           if (!config.flags.drawEnabled) {
-            return const GlintState(kind: GlintStateKind.nothingNew, title: 'The Draw is not open yet.');
+            return GlintState(kind: GlintStateKind.nothingNew, title: context.l10n.economyDrawNotOpen);
           }
           return BlocConsumer<DrawBloc, DrawState>(
             listenWhen: (previous, current) => current.purchase != null && previous.purchase != current.purchase,
-            listener: (context, state) => _toast(state.purchase!),
+            listener: (context, state) => _toast(context, state.purchase!),
             builder: (context, state) {
               final DrawEntity? draw = state.draw;
               if (draw == null) {
                 if (state.status == LoadStatus.failure) {
                   return RefreshableGlintState(
                     kind: GlintStateKind.error,
-                    title: "Couldn't load the Draw",
-                    body: 'Check your connection and try again.',
-                    actionLabel: 'Try again',
+                    title: context.l10n.economyDrawLoadFailed,
+                    body: context.l10n.errorNetwork,
+                    actionLabel: context.l10n.actionRetry,
                     onAction: () => context.read<DrawBloc>().add(const DrawEvent.refreshed()),
                     onRefresh: () => _refresh(context),
                   );
@@ -75,32 +76,33 @@ class DrawPage extends StatelessWidget implements AutoRouteWrapper {
     return settled;
   }
 
-  void _toast(DrawTicketResult result) {
+  void _toast(BuildContext context, DrawTicketResult result) {
+    final AppLocalizations l10n = context.l10n;
     switch (result.outcome) {
       case DrawTicketOutcome.bought:
-        toasts.success('Ticket bought. You hold ${result.tickets} of $maxDrawTickets.');
+        toasts.success(l10n.economyDrawTicketBought(result.tickets, maxDrawTickets));
       case DrawTicketOutcome.limit:
-        toasts.error('You already hold all $maxDrawTickets tickets this week.');
+        toasts.error(l10n.economyDrawAllTicketsHeld(maxDrawTickets));
       case DrawTicketOutcome.disabled:
-        toasts.error('The Draw is not open yet.');
+        toasts.error(l10n.economyDrawNotOpen);
       case DrawTicketOutcome.closed:
-        toasts.error('This draw is closed. The next one opens Monday.');
+        toasts.error(l10n.economyDrawClosed);
       case DrawTicketOutcome.proNotEligible:
-        toasts.error('Pro members are not eligible.');
+        toasts.error(l10n.economyDrawProNotEligible);
       case DrawTicketOutcome.insufficient:
-        toasts.error('Not enough coins for a ticket.');
+        toasts.error(l10n.economyDrawNotEnoughCoins);
       case DrawTicketOutcome.failed:
-        toasts.error("Couldn't buy a ticket. Try again.");
+        toasts.error(l10n.economyDrawPurchaseFailed);
     }
   }
 }
 
 /// "3d 4h" while a day or more is left, else "4h 20m".
-String drawTimeLeft(DateTime closesAt, DateTime now) {
+String drawTimeLeft(AppLocalizations l10n, DateTime closesAt, DateTime now) {
   final Duration left = closesAt.difference(now);
-  if (left <= Duration.zero) return '0m';
-  if (left.inHours >= 24) return '${left.inDays}d ${left.inHours % 24}h';
-  return '${left.inHours}h ${left.inMinutes % 60}m';
+  if (left <= Duration.zero) return l10n.economyCountdownMinutes(0);
+  if (left.inHours >= 24) return l10n.economyCountdownDaysHours(left.inDays, left.inHours % 24);
+  return l10n.economyCountdownHoursMinutes(left.inHours, left.inMinutes % 60);
 }
 
 class _DrawBody extends StatelessWidget {
@@ -131,16 +133,19 @@ class _DrawBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text("THIS WEEK'S PRIZE", style: PrismTextStyles.eyebrow(context)),
+              Text(context.l10n.economyDrawThisWeeksPrize, style: PrismTextStyles.eyebrow(context)),
               const SizedBox(height: PrismSpace.xs),
-              Text(
-                '$months month${months == 1 ? '' : 's'} of Pro + the Prism frame',
-                style: PrismTextStyles.sheetHeadline(context),
-              ),
+              Text(context.l10n.economyDrawPrizeDescription(months), style: PrismTextStyles.sheetHeadline(context)),
               const SizedBox(height: PrismSpace.sm),
-              Text('$pot tickets from ${draw.participants} people', style: PrismTextStyles.body(context)),
+              Text(
+                context.l10n.economyDrawTicketsAndPeople(pot, draw.participants),
+                style: PrismTextStyles.body(context),
+              ),
               const SizedBox(height: PrismSpace.xxs),
-              Text('Closes in ${drawTimeLeft(draw.closesAt, DateTime.now())}', style: PrismTextStyles.caption(context)),
+              Text(
+                context.l10n.economyDrawClosesIn(drawTimeLeft(context.l10n, draw.closesAt, DateTime.now())),
+                style: PrismTextStyles.caption(context),
+              ),
             ],
           ),
         ),
@@ -150,12 +155,15 @@ class _DrawBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('Your tickets: $mine of $maxDrawTickets', style: PrismTextStyles.cardTitle(context)),
+              Text(
+                context.l10n.economyDrawYourTickets(mine, maxDrawTickets),
+                style: PrismTextStyles.cardTitle(context),
+              ),
               const SizedBox(height: PrismSpace.xxs),
-              Text('Your chance: $mine/$pot', style: PrismTextStyles.body(context)),
+              Text(context.l10n.economyDrawYourChance(mine, pot), style: PrismTextStyles.body(context)),
               const SizedBox(height: PrismSpace.md),
               PrismButton(
-                label: 'Buy a ticket · ${CoinPolicy.drawTicket}',
+                label: context.l10n.economyDrawBuyTicket(CoinPolicy.drawTicket),
                 trailing: const PrismCoinIcon(size: 18),
                 expand: true,
                 loading: state.busy,
@@ -163,10 +171,10 @@ class _DrawBody extends StatelessWidget {
               ),
               if (premium) ...<Widget>[
                 const SizedBox(height: PrismSpace.xs),
-                Text('Pro members are not eligible', style: PrismTextStyles.caption(context)),
+                Text(context.l10n.economyDrawProNotEligible, style: PrismTextStyles.caption(context)),
               ] else if (mine >= maxDrawTickets) ...<Widget>[
                 const SizedBox(height: PrismSpace.xs),
-                Text('You hold all $maxDrawTickets tickets this week.', style: PrismTextStyles.caption(context)),
+                Text(context.l10n.economyDrawAllTicketsHeld(maxDrawTickets), style: PrismTextStyles.caption(context)),
               ],
             ],
           ),
@@ -178,12 +186,12 @@ class _DrawBody extends StatelessWidget {
               PrismRow(
                 icon: Icons.emoji_events_rounded,
                 title: lastWinner,
-                subtitle: 'Last winner',
+                subtitle: context.l10n.economyDrawLastWinner,
                 showChevron: false,
               ),
             PrismRow(
               icon: Icons.gavel_rounded,
-              title: 'Official rules',
+              title: context.l10n.economyDrawOfficialRules,
               onTap: () => unawaited(openPrismLink(context, drawRulesUrl)),
             ),
           ],

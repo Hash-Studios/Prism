@@ -1,5 +1,6 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class DepthEffectRow extends StatelessWidget {
@@ -7,9 +8,9 @@ class DepthEffectRow extends StatelessWidget {
 
   final WallDepthTier tier;
 
-  static String _subtitleFor(WallDepthTier tier) => switch (tier) {
-    WallDepthTier.auto => 'Your subject sits in front of the clock.',
-    WallDepthTier.menu => 'In the Lock Screen editor, tap ••• then Depth\u00A0Effect.',
+  String _subtitleFor(WallDepthTier tier, BuildContext context) => switch (tier) {
+    WallDepthTier.auto => context.l10n.wallpaperDepthSubjectSubtitle,
+    WallDepthTier.menu => context.l10n.wallpaperDepthEditorSubtitle,
     WallDepthTier.none => '',
   };
 
@@ -17,8 +18,8 @@ class DepthEffectRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return PrismRow(
       icon: Icons.layers_rounded,
-      title: 'Depth Effect',
-      subtitle: _subtitleFor(tier),
+      title: context.l10n.wallpaperDepthEffect,
+      subtitle: _subtitleFor(tier, context),
       padding: EdgeInsets.zero,
     );
   }

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/data/texture_geometry.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:injectable/injectable.dart';
@@ -10,12 +11,12 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 class LiveTextureException implements Exception {
-  const LiveTextureException(this.message);
+  const LiveTextureException(this.failure);
 
-  final String message;
+  final LiveApplyFailure failure;
 
   @override
-  String toString() => message;
+  String toString() => failure.name;
 }
 
 /// Downloads a wallpaper and writes a screen-shaped JPEG that fits the renderer texture limits.
@@ -28,7 +29,7 @@ class LiveTexturePreparer {
     try {
       source = await WallpaperService.resolveToLocalFile(imageUrl).timeout(const Duration(seconds: 30));
     } catch (_) {
-      throw const LiveTextureException("Couldn't download the wallpaper. Check your connection and try again.");
+      throw const LiveTextureException(LiveApplyFailure.textureDownloadFailed);
     }
     ui.ImmutableBuffer? buffer;
     ui.ImageDescriptor? descriptor;
@@ -67,7 +68,7 @@ class LiveTexturePreparer {
       picture = recorder.endRecording();
       cropped = await picture.toImage(geometry.outputWidth, geometry.outputHeight);
       final ByteData? png = await cropped.toByteData(format: ui.ImageByteFormat.png);
-      if (png == null) throw const LiveTextureException("Couldn't prepare the wallpaper.");
+      if (png == null) throw const LiveTextureException(LiveApplyFailure.texturePreparationFailed);
       cropped.dispose();
       cropped = null;
       picture.dispose();
@@ -85,7 +86,7 @@ class LiveTexturePreparer {
         quality: 90,
       );
       if (jpeg.isEmpty || jpeg.length > TextureGeometry.maxEncodedBytes) {
-        throw const LiveTextureException('That wallpaper is too detailed to animate.');
+        throw const LiveTextureException(LiveApplyFailure.textureTooDetailed);
       }
       final Directory directory = await getTemporaryDirectory();
       final File target = File(p.join(directory.path, 'live_wallpaper_texture.jpg'));
@@ -94,7 +95,7 @@ class LiveTexturePreparer {
     } on LiveTextureException {
       rethrow;
     } catch (_) {
-      throw const LiveTextureException("Couldn't prepare the wallpaper.");
+      throw const LiveTextureException(LiveApplyFailure.texturePreparationFailed);
     } finally {
       if (recorder?.isRecording ?? false) recorder!.endRecording().dispose();
       cropped?.dispose();

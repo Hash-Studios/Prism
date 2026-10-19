@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
@@ -65,6 +66,31 @@ class WallpaperSetResult {
       status == WallpaperSetStatus.foregroundRequired ||
       status == WallpaperSetStatus.unsupported;
 
+  /// Resolves the typed result to user-facing copy at the presentation boundary.
+  String localizedMessage(AppLocalizations l10n, {bool live = false}) {
+    if (isPartial) {
+      return l10n.coreWallpaperPartialSet(
+        _localizedScreenName(appliedTarget!, l10n),
+        _localizedScreenName(failedTarget!, l10n),
+      );
+    }
+    return switch (status) {
+      WallpaperSetStatus.applied => l10n.coreWallpaperApplied,
+      WallpaperSetStatus.cancelled => '',
+      WallpaperSetStatus.pending => l10n.coreConfirmWallpaperPreview,
+      WallpaperSetStatus.unsupported =>
+        errorCode == 'wallpaper-not-allowed'
+            ? wallpaperErrorMessage(errorCode, l10n, live: live)
+            : l10n.coreDeviceCannotSetScreen,
+      WallpaperSetStatus.foregroundRequired => l10n.coreKeepPrismOpen,
+      WallpaperSetStatus.failed => switch (errorCode) {
+        'offline_unavailable' => l10n.coreWallpaperOfflineUnavailable,
+        'load_failed' || 'exception' => l10n.coreWallpaperErrorGeneric,
+        _ => wallpaperErrorMessage(errorCode, l10n, live: live),
+      },
+    };
+  }
+
   WallpaperSetResult withHistory({required List<WallpaperRestore> restore, required List<String> historyIds}) =>
       WallpaperSetResult(
         status,
@@ -75,18 +101,23 @@ class WallpaperSetResult {
         restore: restore,
         historyIds: historyIds,
       );
+
+  static String _localizedScreenName(WallpaperTarget target, AppLocalizations l10n) => switch (target) {
+    WallpaperTarget.home => l10n.coreWallpaperHomeScreen,
+    WallpaperTarget.lock => l10n.coreWallpaperLockScreen,
+    WallpaperTarget.both => l10n.coreWallpaperBothScreens,
+  };
 }
 
 // ignore: avoid_classes_with_only_static_members
 class WallpaperService {
-  static const String appliedMessage = 'Wallpaper set successfully!';
-  static const String pendingMessage = 'Confirm the wallpaper in the system preview.';
-  static const String unsupportedMessage = "This device can't set that screen.";
-  static const String foregroundMessage = 'Keep Prism open and try again.';
-  static const String failedMessage = "Couldn't set the wallpaper.";
-  static const String timeoutMessage = 'Timed out. Check your connection and try again.';
-  static const String offlineUnavailableMessage =
-      'This wallpaper is not saved on this device. Connect to the internet and try again.';
+  static const String appliedMessage = 'applied';
+  static const String pendingMessage = 'pending';
+  static const String unsupportedMessage = 'unsupported';
+  static const String foregroundMessage = 'foreground_required';
+  static const String failedMessage = 'failed';
+  static const String timeoutMessage = 'timeout';
+  static const String offlineUnavailableMessage = 'offline_unavailable';
 
   /// Turns a local file into a content URI. The Android system cropper cannot read a file path.
   static const MethodChannel _cropChannel = MethodChannel('prism/wallpaper_crop');
@@ -188,7 +219,7 @@ class WallpaperService {
         const WallpaperSetResult(WallpaperSetStatus.pending, pendingMessage),
       aw.WallpaperOperationStatus.unsupported => WallpaperSetResult(
         WallpaperSetStatus.unsupported,
-        result.errorCode == 'wallpaper-not-allowed' ? wallpaperErrorMessage(result.errorCode) : unsupportedMessage,
+        result.errorCode ?? unsupportedMessage,
         errorCode: result.errorCode,
       ),
       aw.WallpaperOperationStatus.foregroundRequired => WallpaperSetResult(
@@ -206,7 +237,7 @@ class WallpaperService {
       final WallpaperTarget failed = applied == WallpaperTarget.home ? WallpaperTarget.lock : WallpaperTarget.home;
       return WallpaperSetResult(
         WallpaperSetStatus.failed,
-        '${_screenName(applied)} set. ${_screenName(failed)} failed.',
+        'partial-apply',
         errorCode: result.errorCode,
         appliedTarget: applied,
         failedTarget: failed,
@@ -214,7 +245,7 @@ class WallpaperService {
     }
     return WallpaperSetResult(
       WallpaperSetStatus.failed,
-      wallpaperErrorMessage(result.errorCode),
+      result.errorCode ?? failedMessage,
       errorCode: result.errorCode,
     );
   }
@@ -226,12 +257,6 @@ class WallpaperService {
     if (home == lock) return null;
     return home ? WallpaperTarget.home : WallpaperTarget.lock;
   }
-
-  static String _screenName(WallpaperTarget target) => switch (target) {
-    WallpaperTarget.home => 'Home screen',
-    WallpaperTarget.lock => 'Lock screen',
-    WallpaperTarget.both => 'Both screens',
-  };
 
   static Future<aw.WallpaperOperationResult> _apply(
     aw.WallpaperSource source,

@@ -11,8 +11,9 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
-// ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,8 @@ import 'package:mocktail/mocktail.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/offline_asset_fixture.dart';
+
+final AppLocalizationsEn l10n = AppLocalizationsEn();
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -126,6 +129,9 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Center(
             child: SetWallpaperButton(
@@ -150,12 +156,12 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
     expect(find.byType(SetOptionsPanel), findsOneWidget);
     expect(client.requests, isEmpty);
 
-    await tester.tap(find.text('Lock Screen'));
+    await tester.tap(find.text(l10n.coreLockScreen));
     await tester.pumpAndSettle();
     expect(client.requests.single.target, aw.WallpaperTarget.lock);
     expect(client.requests.single.scaleMode, aw.WallpaperScaleMode.centerCrop);
@@ -170,7 +176,7 @@ void main() {
     int onSetCalls = 0;
     await pumpButton(tester, onSet: () => onSetCalls++, label: 'Set');
 
-    await tester.tap(find.text('Set'));
+    await tester.tap(find.text(l10n.coreSet));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(client.requests.single.target, aw.WallpaperTarget.home);
@@ -184,7 +190,7 @@ void main() {
     int onSetCalls = 0;
     await pumpButton(tester, onSet: () => onSetCalls++);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(find.byType(SetOptionsPanel), findsNothing);
@@ -198,7 +204,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.longPress(find.bySemanticsLabel('Set as wallpaper on both screens'));
+    await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreBothScreens)));
     await tester.pumpAndSettle();
 
     expect(find.byType(SetOptionsPanel), findsOneWidget);
@@ -215,7 +221,7 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
 
     await pumpButton(tester, primary: true);
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
     expect(played, <Object?>['tap'], reason: 'the PrismButton owns the pointer tap haptic');
     expect(find.byType(SetOptionsPanel), findsOneWidget, reason: 'pointer activation still opens the set flow');
@@ -224,7 +230,7 @@ void main() {
     await pumpButton(tester, primary: true);
     played.clear();
     final SemanticsHandle semantics = tester.ensureSemantics();
-    final SemanticsNode button = tester.getSemantics(find.bySemanticsLabel('Set as wallpaper'));
+    final SemanticsNode button = tester.getSemantics(find.bySemanticsLabel(l10n.coreSetWallpaper));
     tester.binding.performSemanticsAction(
       SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: button.id),
     );
@@ -246,7 +252,7 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
 
     await pumpButton(tester, primary: true);
-    await tester.longPress(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
 
     expect(played, <Object?>['tap']);
@@ -263,7 +269,7 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
 
     await pumpButton(tester);
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
 
     expect(played, <Object?>['tap']);
@@ -278,7 +284,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on lock screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
     await tester.pumpAndSettle();
 
     expect(find.byType(SetOptionsPanel), findsOneWidget);
@@ -291,12 +297,12 @@ void main() {
     );
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
 
-    expect(find.text('Home Screen'), findsOneWidget);
-    expect(find.text('Lock Screen'), findsNothing);
-    expect(find.text('Both'), findsNothing);
+    expect(find.text(l10n.coreHomeScreen), findsOneWidget);
+    expect(find.text(l10n.coreLockScreen), findsNothing);
+    expect(find.text(l10n.coreBoth), findsNothing);
   });
 
   testWidgets('Fit whole image changes the request, and Crop and position opens the system cropper', (tester) async {
@@ -304,15 +310,15 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fit whole image'));
+    await tester.tap(find.text(l10n.coreFitWholeImage));
     await tester.pump();
-    await tester.tap(find.text('Home Screen'));
+    await tester.tap(find.text(l10n.coreHomeScreen));
     await tester.pumpAndSettle();
     expect(client.requests.last.scaleMode, aw.WallpaperScaleMode.fitCenter);
     expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.direct);
-    expect(find.text('Confirm the wallpaper in the system preview.'), findsOneWidget);
+    expect(find.text(l10n.coreConfirmWallpaperPreview), findsOneWidget);
 
     // The system cropper reads a content URI, which MainActivity makes through this channel.
     const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
@@ -324,11 +330,11 @@ void main() {
       () =>
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null),
     );
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Crop and position...'));
+    await tester.tap(find.text(l10n.coreCropAndPosition));
     await tester.pump();
-    await tester.tap(find.text('Both'));
+    await tester.tap(find.text(l10n.coreBoth));
     await tester.pumpAndSettle();
     expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.systemCropper);
     expect(client.requests.last.target, aw.WallpaperTarget.both);
@@ -341,14 +347,14 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle();
 
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text(l10n.coreTryAgain), findsOneWidget);
     expect(analytics.events.whereType<SetWallEvent>().single.result, BinaryResultValue.failure);
     final int before = client.requests.length;
     client.status = aw.WallpaperOperationStatus.applied;
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.text(l10n.coreTryAgain));
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(client.requests.length, greaterThan(before));
   });
@@ -358,7 +364,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(_Client(status: aw.WallpaperOperationStatus.cancelled));
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsNothing);
@@ -373,7 +379,7 @@ void main() {
       notes: const <String>['Low resolution for your screen', 'Landscape wallpaper: the sides will be cropped'],
     );
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
 
     expect(find.text('Low resolution for your screen'), findsOneWidget);
@@ -385,12 +391,12 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Always use this'));
-    await tester.tap(find.text('Always use this'));
+    await tester.ensureVisible(find.text(l10n.coreAlwaysUseThis));
+    await tester.tap(find.text(l10n.coreAlwaysUseThis));
     await tester.pump();
-    await tester.tap(find.text('Lock Screen'));
+    await tester.tap(find.text(l10n.coreLockScreen));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(SetWallpaperFlow.defaultTarget(), WallpaperTarget.lock);
@@ -400,9 +406,9 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Lock Screen'));
+    await tester.tap(find.text(l10n.coreLockScreen));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(SetWallpaperFlow.defaultTarget(), isNull);
@@ -411,9 +417,9 @@ void main() {
   testWidgets('the Both line shows only when Both is offered', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(tester);
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    expect(find.text('Both sets it on your home screen and lock screen.'), findsOneWidget);
+    expect(find.text(l10n.coreBothSetsScreens), findsOneWidget);
   });
 
   testWidgets('the Both line is hidden when the device cannot set both screens', (tester) async {
@@ -421,11 +427,11 @@ void main() {
       _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true)),
     );
     await pumpButton(tester);
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
 
-    expect(find.text('Both'), findsNothing);
-    expect(find.text('Both sets it on your home screen and lock screen.'), findsNothing);
+    expect(find.text(l10n.coreBoth), findsNothing);
+    expect(find.text(l10n.coreBothSetsScreens), findsNothing);
   });
 
   testWidgets('the set_wall event records the fit, the entry point and that the default was used', (tester) async {
@@ -433,7 +439,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(tester, entryPoint: 'wallpaper_detail');
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     final Map<String, Object?> wire = analytics.events.whereType<SetWallEvent>().single.toWireParameters();
@@ -448,7 +454,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsNothing);
@@ -482,6 +488,9 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -500,18 +509,18 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle();
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text(l10n.coreTryAgain), findsOneWidget);
 
     Navigator.of(tester.element(find.byType(SetWallpaperButton))).pop();
     await tester.pumpAndSettle();
     expect(find.byType(SetWallpaperButton), findsNothing);
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text(l10n.coreTryAgain), findsOneWidget);
 
     final int before = client.requests.length;
     client.status = aw.WallpaperOperationStatus.applied;
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.text(l10n.coreTryAgain));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(client.requests.length, greaterThan(before));
@@ -525,8 +534,14 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SizedBox()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(analytics.events.whereType<SetWallEvent>().single.result, BinaryResultValue.failure);
@@ -560,7 +575,7 @@ void main() {
       aw.AsyncWallpaper.debugSetClient(client);
       await pumpButton(tester, label: 'Set');
 
-      await tester.tap(find.text('Set'));
+      await tester.tap(find.text(l10n.coreSet));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(find.byType(SetOptionsPanel), findsNothing);
@@ -586,9 +601,9 @@ void main() {
           };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath);
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Adjust position and preview'));
+      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -611,9 +626,9 @@ void main() {
           };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath, entryPoint: 'wallpaper_detail');
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Adjust position and preview'));
+      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
       await tester.pumpAndSettle();
 
       expect(opened, [('/tmp/wall.png', thumbnailFilePath, 'wallpaper_detail')]);
@@ -635,6 +650,9 @@ void main() {
       addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: StackRouterScope(
             controller: router,
             stateHash: 0,
@@ -649,9 +667,9 @@ void main() {
         ),
       );
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Adjust position and preview'));
+      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
       await tester.pumpAndSettle();
 
       expect(pushed?.routeName, WallpaperPositionRoute.name);
@@ -670,10 +688,10 @@ void main() {
     );
 
     Future<void> openPair(WidgetTester tester) async {
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Different wallpaper for lock screen'));
-      await tester.tap(find.text('Different wallpaper for lock screen'));
+      await tester.ensureVisible(find.text(l10n.coreDifferentLockWallpaper));
+      await tester.tap(find.text(l10n.coreDifferentLockWallpaper));
       await tester.pumpAndSettle(const Duration(seconds: 2));
     }
 
@@ -711,10 +729,10 @@ void main() {
       );
       await pumpButton(tester);
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
 
-      expect(find.text('Different wallpaper for lock screen'), findsNothing);
+      expect(find.text(l10n.coreDifferentLockWallpaper), findsNothing);
     });
 
     testWidgets('closing the picker sets nothing', (tester) async {
@@ -764,7 +782,7 @@ void main() {
       expect(client.requests.where((r) => r.target == aw.WallpaperTarget.lock), isEmpty);
       expect(analytics.events.whereType<SetWallPairEvent>().single.result, 'failure');
       client.statusFor.clear();
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text(l10n.coreTryAgain));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(client.requests.last.target, aw.WallpaperTarget.lock);
@@ -777,7 +795,7 @@ void main() {
     int matched = 0;
     await pumpButton(tester, onMatchAccent: () => matched++);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     await tester.tap(find.text('Match accent'));
@@ -793,7 +811,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(client.requests.single.target, aw.WallpaperTarget.home);
@@ -813,9 +831,9 @@ void main() {
       return true;
     });
 
-    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Adjust position and preview'));
+    await tester.tap(find.text(l10n.coreAdjustPositionPreview));
     await tester.pumpAndSettle();
 
     expect(
@@ -857,7 +875,7 @@ void main() {
         return preparedPath;
       });
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(prepared, 1);
@@ -879,11 +897,11 @@ void main() {
         return preparedPath;
       });
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
       expect(prepared, 1);
       expect(find.byType(SetOptionsPanel), findsOneWidget);
-      await tester.tap(find.text('Adjust position and preview'));
+      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
       await tester.pumpAndSettle();
 
       expect(studioUrl, preparedPath);
@@ -901,10 +919,10 @@ void main() {
         return ready.future;
       });
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pump();
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isTrue);
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pump();
       expect(prepared, 1);
 
@@ -924,7 +942,7 @@ void main() {
         return Future<String>.error(StateError('render failed'));
       });
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pumpAndSettle();
 
       expect(toasted("Couldn't apply the colour. Try again."), isTrue);
@@ -932,7 +950,7 @@ void main() {
       expect(find.byType(SetOptionsPanel), findsNothing);
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
 
-      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pumpAndSettle();
       expect(prepared, 2);
       await tester.pump(const Duration(seconds: 5));

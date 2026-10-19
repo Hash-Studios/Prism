@@ -8,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -64,6 +65,9 @@ void main() {
       BlocProvider<DropsBloc>.value(
         value: bloc,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           builder: (context, child) => StackRouterScope(controller: router, stateHash: 0, child: child!),
           home: Builder(
             builder: (context) => TextButton(
@@ -86,6 +90,8 @@ void main() {
       whenListen(bloc, const Stream<DropsState>.empty(), initialState: state);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: StackRouterScope(
             controller: router,
             stateHash: 0,
@@ -131,7 +137,7 @@ void main() {
     testWidgets('load failures expose a retry that only reloads the week', (tester) async {
       await pumpRoute(tester, DropsState.initial().copyWith(status: LoadStatus.failure));
 
-      expect(find.text("Couldn't load this Drop"), findsOneWidget);
+      expect(find.text("Couldn't load the Drop"), findsOneWidget);
       await tester.tap(find.text('Try again'));
       verify(() => bloc.add(const DropsEvent.refreshed())).called(1);
       verifyNever(() => bloc.add(const DropsEvent.unlockRequested()));

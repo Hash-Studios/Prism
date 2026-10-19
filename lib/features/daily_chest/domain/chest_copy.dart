@@ -1,33 +1,32 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/coins/daily_chest.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// Time to the next chest, which is the next UTC midnight: "5h 12m", "2h" or "40m".
-String chestResetIn(DateTime now) {
+String chestResetIn(AppLocalizations l10n, DateTime now) {
   final DateTime utc = now.toUtc();
   final DateTime midnight = DateTime.utc(utc.year, utc.month, utc.day + 1);
   final int minutes = math.max(1, (midnight.difference(utc).inSeconds / 60).ceil());
   final int hours = minutes ~/ 60;
   final int rest = minutes % 60;
-  if (hours == 0) return '${rest}m';
-  return rest == 0 ? '${hours}h' : '${hours}h ${rest}m';
+  if (hours == 0) return l10n.economyChestResetMinutes(rest);
+  return rest == 0 ? l10n.economyChestResetHours(hours) : l10n.economyChestResetHoursMinutes(hours, rest);
 }
-
-String _moreQuests(int count) => count == 1 ? '1 more quest' : '$count more quests';
 
 /// The line under the box: what the chest costs now.
-String chestCostLine(DailyChestStatus status, {required DateTime now}) {
-  if (status.opened) return 'Opened. A new chest in ${chestResetIn(now)}.';
-  if (status.free) return 'Your quests made it free today.';
-  return 'Open it for ${status.price} coins, or finish ${_moreQuests(status.questsLeft)} to open it free.';
+String chestCostLine(AppLocalizations l10n, DailyChestStatus status, {required DateTime now}) {
+  if (status.opened) return l10n.economyChestOpenedReset(chestResetIn(l10n, now));
+  if (status.free) return l10n.economyChestQuestsFree;
+  return l10n.economyChestOpenFor(status.price, status.questsLeft);
 }
 
-String chestBonusLine({required bool bonusDone}) =>
-    bonusDone ? 'Bonus quest done: your coins are doubled.' : "Do today's bonus quest first to double your coins.";
+String chestBonusLine(AppLocalizations l10n, {required bool bonusDone}) =>
+    bonusDone ? l10n.economyChestBonusDone : l10n.economyChestBonusToDouble;
 
 /// The subtitle of the chest row on the Today card. [doubled] is for a chest the bonus quest doubled.
-String chestRowSubtitle(DailyChestStatus status, {bool doubled = false}) {
-  if (status.opened) return doubled ? 'Opened and doubled. A new one tomorrow.' : 'Opened. A new one tomorrow.';
-  if (status.free) return 'Free today';
-  return '${status.price} coins, or free after ${_moreQuests(status.questsLeft)}';
+String chestRowSubtitle(AppLocalizations l10n, DailyChestStatus status, {bool doubled = false}) {
+  if (status.opened) return doubled ? l10n.economyChestOpenedDoubledTomorrow : l10n.economyChestOpenedTomorrow;
+  if (status.free) return l10n.economyChestFreeToday;
+  return l10n.economyChestPriceFreeAfter(status.price, status.questsLeft);
 }

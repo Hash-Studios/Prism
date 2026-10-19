@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
@@ -10,11 +11,11 @@ import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_sender_tab.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/report_cards.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class AdminReviewScreen extends StatefulWidget {
@@ -72,16 +73,16 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             : countSnapshot.data;
         String withCount(String name, int? n) => n == null ? name : '$name ($n)';
         final List<String> labels = <String>[
-          withCount('Walls', counts?.$1),
-          withCount('Reports', counts?.$2),
-          'Notifications',
+          withCount(context.l10n.adminWalls, counts?.$1),
+          withCount(context.l10n.adminReports, counts?.$2),
+          context.l10n.adminNotifications,
         ];
         return PrismPage(
-          title: 'Admin moderation',
+          title: context.l10n.adminTitle,
           actions: <Widget>[
             PrismIconButton(
               icon: Icons.swipe_rounded,
-              tooltip: 'Swipe review',
+              tooltip: context.l10n.adminSwipeReview,
               onPressed: () => context.router.push(const SwipeReviewRoute()),
             ),
           ],
@@ -107,11 +108,12 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     return _buildPendingTab(
       stream: _pendingWallsStream,
       keyPrefix: 'wall',
-      emptyLabel: 'Nothing to review',
-      emptyBody: 'New wallpapers show up here when someone uploads one.',
-      errorLabel: 'Could not load pending wallpapers.',
+      emptyLabel: context.l10n.adminNothingToReview,
+      emptyBody: context.l10n.adminNewWallpapersPending,
+      errorLabel: context.l10n.adminPendingWallsLoadError,
       loadingHeight: 240,
       itemBuilder: (BuildContext context, FirestoreDocument wall) {
+        final AppLocalizations l10n = context.l10n;
         final String previewUrl = wall.wallpaperThumb;
         final DateTime? createdAt = wall.createdAt;
         final bool reserved = wall.payload['dropReserved'] == true;
@@ -119,34 +121,39 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           previewUrl: previewUrl,
           fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
           facts: <(String, String)>[
-            ('ID', wall.id),
-            ('By', wall.by.isNotEmpty ? wall.by : 'Unknown'),
-            ('Email', wall.email.isNotEmpty ? wall.email : 'Unknown'),
-            ('Uploaded', createdAt != null ? timeago.format(createdAt.toLocal()) : 'Unknown'),
-            ('Depth', depthTierLabel(wallDepthTier(wall))),
-            if (reserved) ('Drop', 'Reserved for the next Drop'),
+            (context.l10n.adminWallId, wall.id),
+            (context.l10n.adminBy, wall.by.isNotEmpty ? wall.by : context.l10n.adminUnknown),
+            (context.l10n.adminEmail, wall.email.isNotEmpty ? wall.email : context.l10n.adminUnknown),
+            (
+              context.l10n.adminUploaded,
+              createdAt != null
+                  ? localizedRelativeTime(context.l10n, createdAt, locale: Localizations.localeOf(context))
+                  : context.l10n.adminUnknown,
+            ),
+            (context.l10n.adminDepth, depthTierLabel(context.l10n, wallDepthTier(wall))),
+            if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
           ],
           reserved: reserved,
           onToggleReserve: canReserveForDrop(wall)
               ? () async {
                   if (reserved) {
                     await _repository.undoReserveWallForDrop(wall);
-                    toasts.success('Removed from the next Drop');
+                    toasts.success(l10n.adminRemovedFromNextDrop);
                   } else {
                     await _repository.reserveWallForDrop(wall);
-                    toasts.success('Reserved for the next Drop');
+                    toasts.success(l10n.adminReservedForNextDrop);
                   }
                 }
               : null,
           onApprove: () async {
             await _repository.approveWall(wall);
-            toasts.success('Wallpaper approved');
+            toasts.success(l10n.adminWallpaperApproved);
           },
           onReject: () => _confirmReject(
             context,
             onSubmit: (String reason) async {
               await _repository.rejectWall(wall, reason: reason);
-              toasts.success('Wallpaper rejected');
+              toasts.success(l10n.adminWallpaperRejected);
             },
           ),
         );
@@ -158,9 +165,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     return _buildPendingTab(
       stream: _openReportsStream,
       keyPrefix: 'report',
-      emptyLabel: 'No open reports',
-      emptyBody: 'Reports from users show up here.',
-      errorLabel: 'Could not load open reports.',
+      emptyLabel: context.l10n.adminNoOpenReports,
+      emptyBody: context.l10n.adminUserReportsShowHere,
+      errorLabel: context.l10n.adminOpenReportsLoadError,
       loadingHeight: 200,
       itemBuilder: (BuildContext context, FirestoreDocument r) {
         final Map<String, dynamic> m = r.data();
@@ -169,7 +176,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         final String reason = m['reason']?.toString() ?? '';
         final String uid = m['reporterUid']?.toString() ?? '';
         final DateTime? created = r.createdAt;
-        final String timeStr = created != null ? timeago.format(created) : '';
+        final String timeStr = created == null
+            ? ''
+            : localizedRelativeTime(context.l10n, created, locale: Localizations.localeOf(context));
         if (ct == 'wall' && tid.isNotEmpty) {
           return WallContentReportCard(
             report: r,
@@ -180,8 +189,8 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             repository: _repository,
             onConfirmRemoveWithReason: ({required Future<void> Function(String reason) onSubmit}) => _confirmReject(
               context,
-              dialogTitle: 'Remove wallpaper',
-              confirmButtonLabel: 'Remove wallpaper',
+              dialogTitle: context.l10n.adminRemoveWallpaper,
+              confirmButtonLabel: context.l10n.adminRemoveWallpaper,
               onSubmit: onSubmit,
             ),
           );
@@ -215,8 +224,8 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           return GlintState(
             kind: GlintStateKind.error,
             title: errorLabel,
-            body: 'Check your connection, then try again.',
-            actionLabel: 'Try again',
+            body: context.l10n.adminCheckConnectionRetry,
+            actionLabel: context.l10n.adminTryAgain,
             onAction: _retryStreams,
           );
         }
@@ -249,8 +258,8 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   Future<void> _confirmReject(
     BuildContext context, {
     required Future<void> Function(String reason) onSubmit,
-    String dialogTitle = 'Reject wallpaper',
-    String confirmButtonLabel = 'Reject wallpaper',
+    String? dialogTitle,
+    String? confirmButtonLabel,
   }) {
     return showRejectReasonSheet(context, title: dialogTitle, confirmLabel: confirmButtonLabel, onSubmit: onSubmit);
   }

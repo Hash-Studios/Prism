@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -83,10 +84,10 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
                     child: Image.file(
                       widget.file,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const GlintState(
+                      errorBuilder: (_, _, _) => GlintState(
                         kind: GlintStateKind.error,
-                        title: "Couldn't open this wallpaper",
-                        body: 'The file may have been moved or deleted.',
+                        title: context.l10n.wallpaperOpenFileError,
+                        body: context.l10n.wallpaperFileMovedOrDeleted,
                       ),
                     ),
                   ),
@@ -99,12 +100,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
               alignment: Alignment.bottomCenter,
               child: _ActionPanel(file: widget.file),
             ),
-          Positioned(
+          PositionedDirectional(
             top: topPad,
-            left: PrismSpace.md,
+            start: PrismSpace.md,
             child: PrismIconButton(
               icon: Icons.arrow_back_rounded,
-              tooltip: 'Back',
+              tooltip: context.l10n.wallpaperBack,
               onImage: true,
               onPressed: () {
                 _trackAction(AnalyticsActionValue.backTapped);
@@ -112,12 +113,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
               },
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             top: topPad,
-            right: PrismSpace.md,
+            end: PrismSpace.md,
             child: PrismIconButton(
               icon: Icons.schedule_rounded,
-              tooltip: 'Clock preview',
+              tooltip: context.l10n.wallpaperClockPreview,
               onImage: true,
               onPressed: () {
                 _trackAction(AnalyticsActionValue.clockOverlayOpened);
@@ -160,12 +161,14 @@ class _ActionPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      file.uri.pathSegments.isEmpty ? 'Downloaded wallpaper' : file.uri.pathSegments.last,
+                      file.uri.pathSegments.isEmpty
+                          ? context.l10n.wallpaperDownloadedWallpaper
+                          : file.uri.pathSegments.last,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: PrismTextStyles.cardTitle(context),
                     ),
-                    Text('Saved on this device', style: PrismTextStyles.caption(context)),
+                    Text(context.l10n.wallpaperSavedOnDevice, style: PrismTextStyles.caption(context)),
                   ],
                 ),
               ),

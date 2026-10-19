@@ -40,6 +40,7 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_scroll
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_background.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -51,20 +52,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-String _saveErrorHelper(OnboardingV2State state) {
-  if (state.sessionInvalid) return 'your session has expired. sign in again to continue';
-  if (state.completionFailed) return "couldn't finish setup. check your connection and try again";
+String _saveErrorHelper(OnboardingV2State state, AppLocalizations l10n) {
+  if (state.sessionInvalid) return l10n.onboardingRecoverySessionExpiredHelper;
+  if (state.completionFailed) return l10n.onboardingRecoverySetupFailedHelper;
   return state.step == OnboardingV2Step.interests
-      ? "couldn't save your picks. check your connection and try again"
-      : "couldn't follow these creators. check your connection and try again";
+      ? l10n.onboardingRecoverySaveInterestsFailedHelper
+      : l10n.onboardingRecoveryFollowFailedHelper;
 }
 
-String _saveErrorToast(OnboardingV2State state) {
-  if (state.sessionInvalid) return 'Your session has expired. Please sign in again.';
-  if (state.completionFailed) return "Couldn't finish setup. Try again.";
+String _saveErrorToast(OnboardingV2State state, AppLocalizations l10n) {
+  if (state.sessionInvalid) return l10n.onboardingRecoverySessionExpired;
+  if (state.completionFailed) return l10n.onboardingRecoverySetupFailed;
   return state.step == OnboardingV2Step.interests
-      ? "Couldn't save your picks. Try again."
-      : "Couldn't follow these creators. Try again.";
+      ? l10n.onboardingRecoverySaveInterestsFailed
+      : l10n.onboardingRecoveryFollowFailed;
 }
 
 @RoutePage(name: 'OnboardingV2ShellRoute')
@@ -163,20 +164,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   Future<void> _onFirstWallpaperSaved(BuildContext context, OnboardingWallpaperData wallpaperData) async {
-    toasts.success(_firstWallpaperSuccessMessage(wallpaperData.target));
+    toasts.success(_firstWallpaperSuccessMessage(wallpaperData.target, context.l10n));
     // iOS cannot set the wallpaper from the app, so show how to finish in Photos. The guide skips itself elsewhere.
     await showIosSetWallpaperGuide(context);
     if (!context.mounted) return;
     await _continueAfterFirstWallpaper(context);
   }
 
-  static String _firstWallpaperSuccessMessage(WallpaperTarget? target) {
-    if (defaultTargetPlatform != TargetPlatform.android) return 'Saved to Photos!';
+  static String _firstWallpaperSuccessMessage(WallpaperTarget? target, AppLocalizations l10n) {
+    if (defaultTargetPlatform != TargetPlatform.android) return l10n.onboardingFirstWallpaperSavedPhotos;
     return switch (target) {
-      WallpaperTarget.both => 'Wallpaper set on your home and lock screens.',
-      WallpaperTarget.home => 'Wallpaper set on your home screen.',
-      WallpaperTarget.lock => 'Wallpaper set on your lock screen.',
-      null => 'Wallpaper set!',
+      WallpaperTarget.both => l10n.onboardingFirstWallpaperSetHomeLock,
+      WallpaperTarget.home => l10n.onboardingFirstWallpaperSetHome,
+      WallpaperTarget.lock => l10n.onboardingFirstWallpaperSetLock,
+      null => l10n.onboardingFirstWallpaperSet,
     };
   }
 
@@ -194,11 +195,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         SnackBar(
           content: Text(
             defaultTargetPlatform == TargetPlatform.android
-                ? "Couldn't set your wallpaper. Try again or skip."
-                : "Couldn't save your wallpaper. Try again or skip.",
+                ? context.l10n.onboardingFirstWallpaperSetFailed
+                : context.l10n.onboardingFirstWallpaperSaveFailed,
           ),
           action: SnackBarAction(
-            label: 'Try again',
+            label: context.l10n.onboardingRecoveryRetry,
             onPressed: () => _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested()),
           ),
         ),
@@ -218,9 +219,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
   }
 
-  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, googleSignInErrorMessage);
+  Future<void> _handleGoogleSignIn() =>
+      _runSignIn(globalGoogleAuth.signInWithGoogle, (Object error) => googleSignInErrorMessage(error, context.l10n));
 
-  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => genericSignInErrorMessage);
+  Future<void> _handleAppleSignIn() =>
+      _runSignIn(globalAppleAuth.signInWithApple, (_) => genericSignInErrorMessage(context.l10n));
 
   Future<void> _runSignIn(Future<SignInOutcome> Function() signIn, String Function(Object error) errorMessage) async {
     _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
@@ -254,7 +257,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     if (!signedOut) {
       if (mounted) {
         setState(() => _signingOut = false);
-        toasts.error('Could not log out. Please try again.');
+        toasts.error(context.l10n.onboardingCouldNotLogOut);
       }
       return;
     }
@@ -265,7 +268,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       logger.w('Could not reset onboarding state after sign out.', error: error, stackTrace: stackTrace);
       if (mounted) {
         setState(() => _signingOut = false);
-        toasts.error('Could not log out. Please try again.');
+        toasts.error(context.l10n.onboardingCouldNotLogOut);
       }
     }
   }
@@ -370,7 +373,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         listeners: <BlocListener<OnboardingV2Bloc, OnboardingV2State>>[
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
             listenWhen: (prev, curr) => !onboardingSaveFailed(prev) && onboardingSaveFailed(curr),
-            listener: (context, state) => toasts.error(_saveErrorToast(state)),
+            listener: (context, state) => toasts.error(_saveErrorToast(state, context.l10n)),
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
             listenWhen: (prev, curr) =>
@@ -518,7 +521,13 @@ class _RecoveryHost extends StatelessWidget {
           prev.loadStatus != curr.loadStatus ||
           prev.starterPackData.creators.isEmpty != curr.starterPackData.creators.isEmpty,
       builder: (context, state) => OnboardingRecoveryScope(
-        recovery: onboardingRecoveryFor(state, add: bloc.add, signInAgain: signInAgain, signingOut: signingOut),
+        recovery: onboardingRecoveryFor(
+          state,
+          l10n: context.l10n,
+          add: bloc.add,
+          signInAgain: signInAgain,
+          signingOut: signingOut,
+        ),
         child: child,
       ),
     );
@@ -629,7 +638,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
               errorText: onboardingSaveFailed(widget.state)
-                  ? _saveErrorHelper(widget.state)
+                  ? _saveErrorHelper(widget.state, context.l10n)
                   : onboardingStarterPackShort(widget.state)
                   ? "couldn't load creators. check your connection and tap reload"
                   : null,
@@ -697,17 +706,17 @@ class _Headline extends StatelessWidget {
     OnboardingV2Step.firstWallpaper => OnboardingLayout.aiTitleX,
   };
 
-  static String _headlineText(OnboardingV2Step step) => switch (step) {
+  static String _headlineText(OnboardingV2Step step, AppLocalizations l10n) => switch (step) {
     OnboardingV2Step.auth => '',
-    OnboardingV2Step.interests => 'Pick your vibe',
-    OnboardingV2Step.starterPack => 'Find your people',
-    OnboardingV2Step.aiGenerate => 'Create your\nfirst wallpaper',
-    OnboardingV2Step.firstWallpaper => 'Make it yours',
+    OnboardingV2Step.interests => l10n.onboardingHeadlineInterests,
+    OnboardingV2Step.starterPack => l10n.onboardingHeadlineCreators,
+    OnboardingV2Step.aiGenerate => l10n.onboardingHeadlineGenerate,
+    OnboardingV2Step.firstWallpaper => l10n.onboardingHeadlineCustomize,
   };
 
   @override
   Widget build(BuildContext context) {
-    final text = _headlineText(step);
+    final text = _headlineText(step, context.l10n);
     final style = step == OnboardingV2Step.firstWallpaper
         ? OnboardingTypography.headline.copyWith(color: wallpaperColor)
         : OnboardingTypography.headline;
@@ -782,16 +791,21 @@ class _CtaButton extends StatelessWidget {
     };
 
     final label = switch (step) {
-      _ when onboardingSaveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
-      _ when onboardingStarterPackShort(state) => 'reload',
+      _ when onboardingSaveFailed(state) =>
+        state.sessionInvalid ? context.l10n.onboardingSignInAgainLower : context.l10n.onboardingTryAgainLower,
+      _ when onboardingStarterPackShort(state) => context.l10n.onboardingReloadLower,
       OnboardingV2Step.auth || OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
-        return selected < state.interestsData.requiredCount ? 'continue ($selected selected)' : 'continue';
+        return selected < state.interestsData.requiredCount
+            ? context.l10n.onboardingContinueSelected(selected)
+            : context.l10n.onboardingContinue;
       }(),
-      OnboardingV2Step.starterPack => 'continue',
-      OnboardingV2Step.aiGenerate => 'generate my wallpaper',
+      OnboardingV2Step.starterPack => context.l10n.onboardingContinue,
+      OnboardingV2Step.aiGenerate => context.l10n.onboardingGenerateWallpaper,
       OnboardingV2Step.firstWallpaper =>
-        defaultTargetPlatform == TargetPlatform.android ? 'set as wallpaper' : 'save to photos',
+        defaultTargetPlatform == TargetPlatform.android
+            ? context.l10n.onboardingSetWallpaper
+            : context.l10n.onboardingSavePhotos,
     };
 
     return Positioned(
@@ -828,29 +842,29 @@ class _BottomText extends StatelessWidget {
   /// Replaces the helper text while a save error needs the user's attention.
   final String? errorText;
 
-  String _helperText() => switch (step) {
+  String _helperText(AppLocalizations l10n) => switch (step) {
     OnboardingV2Step.auth || OnboardingV2Step.interests =>
       interestsRequired == 0
-          ? 'we could not load categories, you can skip this step'
-          : 'select at least $interestsRequired categories to personalize your feed',
+          ? l10n.onboardingCategoriesUnavailable
+          : l10n.onboardingSelectInterestMinimum(interestsRequired),
     OnboardingV2Step.starterPack =>
       creatorCount == 0
-          ? 'we could not load creators, you can skip this step'
-          : 'we are suggesting you follow these ${math.min(OnboardingV2Config.minFollows, creatorCount)} creators',
+          ? l10n.onboardingCreatorsUnavailable
+          : l10n.onboardingFollowCreatorMinimum(math.min(OnboardingV2Config.minFollows, creatorCount)),
     OnboardingV2Step.aiGenerate => switch (aiGenerateStatus) {
-      AiGenerateStatus.success => 'looking good! opening your wallpaper',
-      AiGenerateStatus.failure => 'something went wrong — tap generate to try again',
-      _ => 'your first wallpaper, generated by AI',
+      AiGenerateStatus.success => l10n.onboardingGenerateSuccess,
+      AiGenerateStatus.failure => l10n.onboardingGenerateFailure,
+      _ => l10n.onboardingFirstAiWallpaper,
     },
     _ =>
       (wallpaperCategory != null && wallpaperCategory!.isNotEmpty)
-          ? 'we picked this wallpaper based on your interest in $wallpaperCategory'
-          : 'we picked this wallpaper just for you',
+          ? l10n.onboardingWallpaperForInterest(wallpaperCategory!)
+          : l10n.onboardingWallpaperJustForYou,
   };
 
   @override
   Widget build(BuildContext context) {
-    final text = errorText ?? _helperText();
+    final text = errorText ?? _helperText(context.l10n);
     return AnimatedPositioned(
       duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
@@ -905,12 +919,12 @@ class _ProBadge extends StatelessWidget {
                       color: color,
                       fontWeight: FontWeight.w700,
                     ),
-                    children: const [
+                    children: [
                       TextSpan(
-                        text: 'PRO',
+                        text: context.l10n.onboardingPro,
                         style: TextStyle(decoration: TextDecoration.lineThrough, decorationThickness: 2.5),
                       ),
-                      TextSpan(text: '  →  free for you'),
+                      TextSpan(text: context.l10n.onboardingProFree),
                     ],
                   ),
                 ),

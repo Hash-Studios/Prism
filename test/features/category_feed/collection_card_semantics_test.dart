@@ -1,4 +1,5 @@
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,8 @@ void main() {
     try {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: CollectionCard(
               data: const CollectionCardData(

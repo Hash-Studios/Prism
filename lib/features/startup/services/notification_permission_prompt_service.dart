@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/notification_signals.dart';
@@ -130,16 +131,16 @@ class NotificationPermissionPromptService {
       builder: (sheetContext) => PrismSheetBody(
         mood: GlintMood.surprised,
         centered: true,
-        title: 'Get the Wall of the Day',
-        message: 'One hand-picked wallpaper each morning, plus streak reminders. No spam.',
+        title: context.l10n.wallpaperNotificationPromptTitle,
+        message: context.l10n.wallpaperNotificationPromptBody,
         actions: <Widget>[
           PrismButton(
-            label: 'Turn on notifications',
+            label: context.l10n.wallpaperTurnOnNotifications,
             expand: true,
             onPressed: () => Navigator.of(sheetContext).pop(true),
           ),
           PrismButton(
-            label: 'Not now',
+            label: context.l10n.wallpaperNotNow,
             variant: PrismButtonVariant.ghost,
             expand: true,
             onPressed: () => Navigator.of(sheetContext).pop(false),

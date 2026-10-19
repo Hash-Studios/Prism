@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -7,6 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget host(Widget child, {Size? size, ThemeData? theme}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     theme: theme,
     home: Scaffold(
       body: size == null

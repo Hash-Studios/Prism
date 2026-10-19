@@ -18,6 +18,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
@@ -492,7 +493,7 @@ void main() {
                 cost: CoinPolicy.wallpaperDownload,
                 message: (int missing) => 'You need $missing more coins to save this wallpaper.',
                 options: <CoinGateOption<String>>[
-                  CoinGateOption(label: watchAdOptionLabel(), value: 'watch'),
+                  CoinGateOption(label: watchAdOptionLabel(context.l10n), value: 'watch'),
                   const CoinGateOption(label: 'Upgrade to Pro', value: 'upgrade', outlined: true),
                 ],
               ),

@@ -1,26 +1,22 @@
 enum MotionStyle {
-  drift('Drift', 'Slow pan and zoom. Follows your home screen swipes.', isFree: true),
-  breathe('Breathe', 'A gentle pulse, in and out.', isFree: false),
-  ripple('Ripple', 'Water rings that spread from your touch.', isFree: false),
-  shimmer('Shimmer', 'A soft sweep of light.', isFree: false);
+  drift,
+  breathe,
+  ripple,
+  shimmer;
 
-  const MotionStyle(this.label, this.description, {required this.isFree});
+  const MotionStyle();
 
-  final String label;
-  final String description;
-  final bool isFree;
+  bool get isFree => this == MotionStyle.drift;
 }
 
 enum GradientStyle {
-  aurora('Aurora', 'Soft ribbons of colour.', isFree: true),
-  mesh('Mesh', 'Blended colour that slowly shifts.', isFree: true),
-  waves('Waves', 'Layered waves that roll.', isFree: false),
-  plasma('Plasma', 'Smooth, flowing colour.', isFree: false),
-  starfield('Starfield', 'Twinkling stars on pure black.', isFree: false);
+  aurora,
+  mesh,
+  waves,
+  plasma,
+  starfield;
 
-  const GradientStyle(this.label, this.description, {required this.isFree});
+  const GradientStyle();
 
-  final String label;
-  final String description;
-  final bool isFree;
+  bool get isFree => this == GradientStyle.aurora || this == GradientStyle.mesh;
 }

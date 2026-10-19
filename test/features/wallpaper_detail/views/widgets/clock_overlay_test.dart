@@ -11,9 +11,10 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// ignore: depend_on_referenced_packages
 import 'package:file/file.dart' as pkg_file;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -41,6 +42,9 @@ Future<void> _openPreview(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       builder: (context, child) => _withMedia(context, child, safeArea, reduceMotion, textScale),
       home: Builder(
         builder: (context) => TextButton(
@@ -149,22 +153,6 @@ Future<Color> _pixelAt(WidgetTester tester, RenderRepaintBoundary boundary, Offs
 }
 
 void main() {
-  test('ordinal suffix uses th for 11 to 13', () {
-    expect(<int>[1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ordinalSuffix).toList(), <String>[
-      'ˢᵗ',
-      'ⁿᵈ',
-      'ʳᵈ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ᵗʰ',
-      'ˢᵗ',
-      'ⁿᵈ',
-      'ʳᵈ',
-      'ˢᵗ',
-    ]);
-  });
-
   testWidgets('iOS previews a lock screen without the Android dock', (WidgetTester tester) async {
     await _openPreview(tester);
 
@@ -187,8 +175,22 @@ void main() {
     expect(find.byType(ClockOverlay), findsNothing);
   });
 
+  testWidgets('the preview mode toggle uses localized lock and home labels', (WidgetTester tester) async {
+    await _openPreview(tester);
+
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.wallpaperPreviewLock), findsOneWidget);
+    expect(find.text(l10n.wallpaperPreviewHome), findsOneWidget);
+  });
+
   testWidgets('without a tint the image is shown as it is', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: ClockOverlay(link: File('assets/images/prism.webp').path, file: true)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ClockOverlay(link: File('assets/images/prism.webp').path, file: true),
+      ),
+    );
 
     final image = tester.widget<Image>(find.byType(Image).first);
     expect(image.color, isNull);
@@ -237,6 +239,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: ClockOverlay(link: url, file: false, wallpaperId: 'clock-wall', wallpaperSource: WallpaperSource.prism),
       ),
     );
@@ -280,6 +285,9 @@ void main() {
     const Color tint = Color(0xFF3366CC);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: ClockOverlay(link: File('assets/images/prism.webp').path, file: true, tint: tint),
       ),
     );
@@ -291,16 +299,12 @@ void main() {
     expect(find.descendant(of: find.byType(ColorFiltered), matching: find.byType(Image)), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  test('the time follows the 12 or 24 hour setting', () {
-    final afternoon = DateTime(2026, 1, 5, 15, 7);
-
-    expect(formatClockTime(afternoon, use24Hour: false), '3:07');
-    expect(formatClockTime(afternoon, use24Hour: true), '15:07');
-  });
-
   testWidgets('the Android lock view shows the device time style and no dock', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: const MediaQueryData(alwaysUse24HourFormat: true),
           child: ClockOverlay(link: File('assets/images/prism.webp').path, file: true),
@@ -372,6 +376,9 @@ void main() {
     testWidgets('the full image uses the full-size cache and a screen-width decode', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: ClockOverlay(link: 'https://img.test/full.jpg', file: false, thumbnailUrl: 'https://img.test/t.jpg'),
         ),
       );
@@ -387,7 +394,13 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('a failed load shows a message icon instead of an empty screen', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: ClockOverlay(link: 'https://img.test/full.jpg', file: false)));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: 'https://img.test/full.jpg', file: false),
+        ),
+      );
       await _waitForCompleter(tester, cacheRequestStarted);
       await _waitForCompleter(tester, cacheRequestFailed);
       await tester.pump();
@@ -397,7 +410,13 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('a missing local file shows the same fallback', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: ClockOverlay(link: '/nonexistent/wall.png', file: true)));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: '/nonexistent/wall.png', file: true),
+        ),
+      );
       await _settleImages(tester);
 
       expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
@@ -415,6 +434,9 @@ void main() {
       final GlobalKey boundary = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: RepaintBoundary(
             key: boundary,
             child: ClockOverlay(link: file.path, file: true, tint: tint),
@@ -491,6 +513,9 @@ void main() {
       serve(thumbnailCache, thumbnailLoads ? bytes : null);
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: ClockOverlay(
             link: 'https://img.test/full.jpg',
             file: false,
@@ -760,6 +785,9 @@ void main() {
       final GlobalKey boundary = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: RepaintBoundary(
             key: boundary,
             child: ClockOverlay(link: file.path, file: true),
@@ -791,6 +819,9 @@ void main() {
       final GlobalKey boundary = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: RepaintBoundary(
             key: boundary,
             child: ClockOverlay(link: file.path, file: true),
@@ -826,6 +857,9 @@ void main() {
       final File file = (await tester.runAsync(() => _solidPng(directory, wall)))!;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: ClockOverlay(link: file.path, file: true, tint: tint),
         ),
       );

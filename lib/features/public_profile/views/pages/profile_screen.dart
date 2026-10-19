@@ -12,7 +12,6 @@ import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
-import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
@@ -33,6 +32,7 @@ import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
@@ -44,6 +44,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
@@ -97,18 +98,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // must sign in first, for both their own profile and other users' profiles.
     if (!app_state.prismUser.loggedIn) {
       return PrismPage(
-        title: 'Profile',
+        title: context.l10n.accountProfile,
         actions: <Widget>[
           PrismIconButton(
             icon: Icons.settings_rounded,
-            tooltip: 'Settings',
+            tooltip: context.l10n.accountSettings,
             onPressed: () {
               PrismHaptics.tap();
               context.router.push(const SettingsRoute());
             },
           ),
         ],
-        body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
+        body: SignInPrompt(feature: _isOwnProfile ? context.l10n.accountYourProfile : context.l10n.accountProfiles),
       );
     }
     if (_isOwnProfile) {
@@ -159,12 +160,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   );
                   return PrismPage(
-                    title: 'Profile',
+                    title: context.l10n.accountProfile,
                     body: GlintState(
                       kind: GlintStateKind.error,
-                      title: 'Could not load this profile',
-                      body: 'Check your connection and try again.',
-                      actionLabel: 'Try again',
+                      title: context.l10n.accountCouldNotLoadThisProfile,
+                      body: context.l10n.accountConnectionTryAgain,
+                      actionLabel: context.l10n.accountTryAgain,
                       onAction: () => setState(() => _profileStream = _watchProfile()),
                     ),
                   );
@@ -188,12 +189,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 );
                 if (profile == null) {
-                  return const PrismPage(
-                    title: 'Profile',
+                  return PrismPage(
+                    title: context.l10n.accountProfile,
                     body: GlintState(
                       kind: GlintStateKind.empty,
-                      title: 'Profile not available',
-                      body: 'This user is inactive on the latest version of Prism, so their profile cannot be shown.',
+                      title: context.l10n.accountProfileNotAvailable,
+                      body: context.l10n.accountProfileNotAvailableBody,
                     ),
                   );
                 }
@@ -201,7 +202,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
                   builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
                     if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
-                      final String display = creatorLabel(name: profile.name, username: profile.username);
+                      final String display = creatorLabel(
+                        name: profile.name,
+                        username: profile.username,
+                        fallback: context.l10n.accountCreatorFallback,
+                      );
                       return BlockedUserProfileShell(
                         targetUserId: profile.id,
                         targetEmail: profile.email,
@@ -284,13 +289,14 @@ class _ProfileChildState extends State<_ProfileChild> {
 
   /// Opens a profile link. A link with an unsafe scheme or no host is refused with a calm toast.
   Future<bool> _openProfileLink(String link) async {
+    final AppLocalizations l10n = context.l10n;
     final Uri? uri = safeProfileLinkUri(link);
     try {
       if (uri != null && await launchUrl(uri)) return true;
     } catch (error, stackTrace) {
       logger.w('Could not open a profile link.', error: error, stackTrace: stackTrace);
     }
-    toasts.info("Couldn't open this link.");
+    toasts.info(l10n.accountCouldNotOpenThisLink);
     return false;
   }
 
@@ -334,7 +340,11 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
-        targetName: creatorLabel(name: _profile.name, username: _profile.username),
+        targetName: creatorLabel(
+          name: _profile.name,
+          username: _profile.username,
+          fallback: context.l10n.accountCreatorFallback,
+        ),
       ),
     );
   }
@@ -361,7 +371,11 @@ class _ProfileChildState extends State<_ProfileChild> {
       context: context,
       builder: (BuildContext sheetContext) => GiftPassSheet(
         recipientUid: _profile.id,
-        recipientName: creatorLabel(name: _profile.name, username: _profile.username),
+        recipientName: creatorLabel(
+          name: _profile.name,
+          username: _profile.username,
+          fallback: context.l10n.accountCreatorFallback,
+        ),
       ),
     );
   }
@@ -383,7 +397,11 @@ class _ProfileChildState extends State<_ProfileChild> {
           context: context,
           targetUserId: uid,
           targetEmail: email,
-          displayName: creatorLabel(name: _profile.name, username: _profile.username),
+          displayName: creatorLabel(
+            name: _profile.name,
+            username: _profile.username,
+            fallback: context.l10n.accountCreatorFallback,
+          ),
         );
     }
   }
@@ -400,7 +418,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     showPrismSheet<void>(
       context: context,
       builder: (BuildContext sheetContext) => PrismSheetBody(
-        title: 'More links',
+        title: context.l10n.accountMoreLinks,
         child: Wrap(
           spacing: PrismSpace.xs,
           runSpacing: PrismSpace.xs,
@@ -452,7 +470,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final Widget editButton = Padding(
       padding: const EdgeInsets.all(8.0),
       child: _HeaderButton(
-        tooltip: 'Edit profile',
+        tooltip: context.l10n.accountEditProfile,
         icon: JamIcons.pencil,
         onPressed: () {
           PrismHaptics.tap();
@@ -513,34 +531,38 @@ class _ProfileChildState extends State<_ProfileChild> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        _HeaderButton(tooltip: 'Gift a 24 h pass', icon: JamIcons.gift, onPressed: _openGiftSheet),
+                        _HeaderButton(
+                          tooltip: context.l10n.accountGiftPassTooltip,
+                          icon: JamIcons.gift,
+                          onPressed: _openGiftSheet,
+                        ),
                         BlocConsumer<PublicProfileBloc, PublicProfileState>(
                           listenWhen: (prev, curr) =>
                               curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-                          listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+                          listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
                           buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
                           builder: (context, state) {
                             final bool following = _isFollowing(state);
                             return _HeaderButton(
-                              tooltip: following ? 'Unfollow' : 'Follow',
+                              tooltip: following ? context.l10n.accountUnfollow : context.l10n.accountFollow,
                               icon: following ? JamIcons.user_remove : JamIcons.user_plus,
-                              alignment: Alignment.centerRight,
+                              alignment: AlignmentDirectional.centerEnd,
                               onPressed: () => _toggleFollow(following: following),
                             );
                           },
                         ),
                         PopupMenuButton<_ProfileMenuAction>(
-                          tooltip: 'More options',
+                          tooltip: context.l10n.accountMoreOptions,
                           icon: const _CircleIcon(icon: JamIcons.more_vertical),
                           onSelected: _onMenuSelected,
-                          itemBuilder: (BuildContext context) => const <PopupMenuEntry<_ProfileMenuAction>>[
+                          itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
                             PopupMenuItem<_ProfileMenuAction>(
                               value: _ProfileMenuAction.report,
-                              child: Text('Report user'),
+                              child: Text(context.l10n.accountReportUser),
                             ),
                             PopupMenuItem<_ProfileMenuAction>(
                               value: _ProfileMenuAction.block,
-                              child: Text('Block user'),
+                              child: Text(context.l10n.accountBlockUser),
                             ),
                           ],
                         ),
@@ -552,9 +574,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: _HeaderButton(
-                      tooltip: 'Menu',
+                      tooltip: context.l10n.accountMenu,
                       icon: JamIcons.menu,
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerEnd,
                       onPressed: () {
                         _trackAction(
                           AnalyticsActionValue.openDrawerTapped,
@@ -629,7 +651,11 @@ class _ProfileChildState extends State<_ProfileChild> {
                       SizedBox(
                         width: headerWidth * 0.7,
                         child: GlowText(
-                          creatorLabel(name: _profile.name, username: _profile.username),
+                          creatorLabel(
+                            name: _profile.name,
+                            username: _profile.username,
+                            fallback: context.l10n.accountCreatorFallback,
+                          ),
                           glowId: cosmetics.glow,
                           textAlign: TextAlign.center,
                           maxLines: 1,
@@ -691,13 +717,18 @@ class _ProfileChildState extends State<_ProfileChild> {
                             Flexible(
                               child: Semantics(
                                 excludeSemantics: true,
-                                label: '${formatCompactCount(_profile.following.length)} Following',
+                                label: context.l10n.accountFollowingCountLabel(
+                                  _compactCount(context, _profile.following.length),
+                                ),
                                 button: ownProfile,
                                 onTap: ownProfile ? _openFollowingList : null,
                                 child: GestureDetector(
                                   excludeFromSemantics: true,
                                   onTap: ownProfile ? _openFollowingList : null,
-                                  child: _StatPill(count: _profile.following.length, label: 'Following'),
+                                  child: _StatPill(
+                                    count: _profile.following.length,
+                                    label: context.l10n.accountFollowing,
+                                  ),
                                 ),
                               ),
                             ),
@@ -710,13 +741,18 @@ class _ProfileChildState extends State<_ProfileChild> {
                             Flexible(
                               child: Semantics(
                                 excludeSemantics: true,
-                                label: '${formatCompactCount(_profile.followers.length)} Followers',
+                                label: context.l10n.accountFollowersCountLabel(
+                                  _compactCount(context, _profile.followers.length),
+                                ),
                                 button: true,
                                 onTap: _openFollowersList,
                                 child: GestureDetector(
                                   excludeFromSemantics: true,
                                   onTap: _openFollowersList,
-                                  child: _StatPill(count: _profile.followers.length, label: 'Followers'),
+                                  child: _StatPill(
+                                    count: _profile.followers.length,
+                                    label: context.l10n.accountFollowers,
+                                  ),
                                 ),
                               ),
                             ),
@@ -748,7 +784,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 ),
                               if (linkKeys.length > 3)
                                 _LinkButton(
-                                  tooltip: 'More links',
+                                  tooltip: context.l10n.accountMoreLinks,
                                   icon: JamIcons.more_horizontal,
                                   onPressed: _showMoreLinks,
                                 ),
@@ -874,7 +910,7 @@ class _StatPill extends StatelessWidget {
       textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         // Bold count — larger optical weight draws the eye first.
-        text: formatCompactCount(count),
+        text: _compactCount(context, count),
         style: TextStyle(fontFamily: PrismFonts.proximaNova, color: ink, fontSize: 16, fontWeight: FontWeight.w700),
         children: <TextSpan>[
           TextSpan(
@@ -891,3 +927,6 @@ class _StatPill extends StatelessWidget {
     );
   }
 }
+
+String _compactCount(BuildContext context, int count) =>
+    NumberFormat.compact(locale: Localizations.localeOf(context).toString()).format(count);

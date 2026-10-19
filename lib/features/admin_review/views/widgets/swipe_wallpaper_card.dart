@@ -1,8 +1,9 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 /// One wallpaper in the swipe stack. The wallpaper fills the card; the title, category and creator sit on a scrim.
 class SwipeWallpaperCard extends StatelessWidget {
@@ -11,7 +12,7 @@ class SwipeWallpaperCard extends StatelessWidget {
   final String category;
   final String authorName;
   final String authorPhoto;
-  final String? uploadedAgo;
+  final DateTime? uploadedAt;
   final bool isTopCard;
 
   /// Space around the card. The stamp overlay uses the same margin so the two line up.
@@ -24,7 +25,7 @@ class SwipeWallpaperCard extends StatelessWidget {
     required this.category,
     required this.authorName,
     required this.authorPhoto,
-    this.uploadedAgo,
+    this.uploadedAt,
     this.isTopCard = true,
   });
 
@@ -33,10 +34,10 @@ class SwipeWallpaperCard extends StatelessWidget {
     return SwipeWallpaperCard(
       imageUrl: wall.wallpaperThumb.isNotEmpty ? wall.wallpaperThumb : wall.wallpaperUrl,
       title: wall.data()['title']?.toString() ?? '',
-      category: wall.data()['category']?.toString() ?? 'General',
+      category: wall.data()['category']?.toString() ?? '',
       authorName: wall.by,
       authorPhoto: wall.userPhoto,
-      uploadedAgo: uploadedAt == null ? null : timeago.format(uploadedAt.toLocal()),
+      uploadedAt: uploadedAt,
       isTopCard: isTopCard,
     );
   }
@@ -82,18 +83,20 @@ class SwipeWallpaperCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (category.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(PrismRadius.pill),
-                        ),
-                        child: Text(category, style: onImage.copyWith(fontWeight: FontWeight.w700)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(PrismRadius.pill),
                       ),
+                      child: Text(
+                        category.isNotEmpty ? category : context.l10n.adminGeneral,
+                        style: onImage.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     const SizedBox(height: PrismSpace.xs),
                     Text(
-                      title.isNotEmpty ? title : 'Untitled',
+                      title.isNotEmpty ? title : context.l10n.adminUntitled,
                       style: PrismTextStyles.sheetHeadline(context).copyWith(color: Colors.white),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -105,16 +108,19 @@ class SwipeWallpaperCard extends StatelessWidget {
                         const SizedBox(width: PrismSpace.xs),
                         Expanded(
                           child: Text(
-                            authorName.isNotEmpty ? authorName : 'Anonymous',
+                            authorName.isNotEmpty ? authorName : context.l10n.adminAnonymous,
                             style: PrismTextStyles.rowTitle(context).copyWith(color: Colors.white),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    if (uploadedAgo != null && uploadedAgo!.isNotEmpty) ...<Widget>[
+                    if (uploadedAt != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.xxs),
-                      Text(uploadedAgo!, style: onImage.copyWith(color: Colors.white.withValues(alpha: 0.8))),
+                      Text(
+                        localizedRelativeTime(context.l10n, uploadedAt!, locale: Localizations.localeOf(context)),
+                        style: onImage.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                      ),
                     ],
                   ],
                 ),

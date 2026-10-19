@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,9 +34,9 @@ class UserProfileGrid extends StatelessWidget {
         final bool failed = state.status == LoadStatus.failure;
         final Widget retryState = GlintState(
           kind: GlintStateKind.error,
-          title: 'Could not load wallpapers',
-          body: 'Check your connection and try again.',
-          actionLabel: 'Try again',
+          title: context.l10n.accountCouldNotLoadWallpapers,
+          body: context.l10n.accountConnectionTryAgain,
+          actionLabel: context.l10n.accountTryAgain,
           onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
         );
         if (walls.isEmpty) {
@@ -46,8 +47,8 @@ class UserProfileGrid extends StatelessWidget {
                   ? retryState
                   : GlintState(
                       kind: GlintStateKind.empty,
-                      title: 'No wallpapers yet',
-                      body: ownProfile ? 'Upload your first wallpaper to start your gallery.' : null,
+                      title: context.l10n.accountNoWallpapersYet,
+                      body: ownProfile ? context.l10n.accountUploadFirstWallpaper : null,
                     ),
             ),
           );
@@ -91,7 +92,7 @@ class UserProfileGrid extends StatelessWidget {
                     memCacheHeight: decodeHeight,
                     url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
                     heroTag: heroTag,
-                    semanticLabel: wallpaperSemanticLabel(wall.by),
+                    semanticLabel: wallpaperSemanticLabel(wall.by, context.l10n),
                     overlay: !viewerPremium && premiumWall
                         ? Stack(fit: StackFit.expand, children: <Widget>[const _PremiumMark(), ?depthTag])
                         : depthTag,
@@ -128,9 +129,14 @@ class _PremiumMark extends StatelessWidget {
         padding: const EdgeInsets.all(PrismSpace.xs),
         child: DecoratedBox(
           decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.38), shape: BoxShape.circle),
-          child: const Padding(
-            padding: EdgeInsets.all(5),
-            child: Icon(Icons.star_rounded, size: 16, color: Colors.white, semanticLabel: 'Pro wallpaper'),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: Icon(
+              Icons.star_rounded,
+              size: 16,
+              color: Colors.white,
+              semanticLabel: context.l10n.accountProWallpaperSemantics,
+            ),
           ),
         ),
       ),

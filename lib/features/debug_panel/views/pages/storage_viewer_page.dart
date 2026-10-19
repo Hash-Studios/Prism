@@ -3,6 +3,7 @@ import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 
@@ -78,9 +79,9 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   Future<void> _deleteKey(String key) async {
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Delete key?',
-      message: 'Delete "$key" from local storage.',
-      confirmLabel: 'Delete key',
+      title: context.l10n.debugDeleteKeyTitle,
+      message: context.l10n.debugDeleteKeyBody(key),
+      confirmLabel: context.l10n.debugDeleteKey,
       destructive: true,
     );
     if (!ok) return;
@@ -91,15 +92,15 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   Future<void> _clearAll() async {
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Clear all storage?',
-      message: 'This permanently deletes all locally stored data. The app may behave unexpectedly until restarted.',
-      confirmLabel: 'Clear all',
+      title: context.l10n.debugClearAllStorageTitle,
+      message: context.l10n.debugClearAllStorageBody,
+      confirmLabel: context.l10n.debugClearAll,
       destructive: true,
     );
     if (!ok) return;
     await _store?.clearAll();
     await _loadKeys();
-    if (mounted) showDebugSnackBar(context, 'All storage cleared');
+    if (mounted) showDebugSnackBar(context, context.l10n.debugStorageCleared);
   }
 
   Future<void> _showEditSheet(String key) async {
@@ -124,17 +125,17 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
     if (_failed) {
       return GlintState(
         kind: GlintStateKind.error,
-        title: 'Could not read storage',
-        body: 'Check the logs, then try again.',
-        actionLabel: 'Try again',
+        title: context.l10n.debugStorageReadError,
+        body: context.l10n.debugCheckLogsRetry,
+        actionLabel: context.l10n.adminTryAgain,
         onAction: _loadKeys,
       );
     }
     if (store == null) {
-      return const GlintState(kind: GlintStateKind.empty, title: 'Storage not initialized');
+      return GlintState(kind: GlintStateKind.empty, title: context.l10n.debugStorageNotInitialized);
     }
     if (filtered.isEmpty) {
-      return const GlintState(kind: GlintStateKind.empty, title: 'No keys found');
+      return GlintState(kind: GlintStateKind.empty, title: context.l10n.debugNoKeysFound);
     }
     final Color hairline = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06);
     return ListView.separated(
@@ -170,12 +171,12 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
           child: Row(
             children: [
               Expanded(
-                child: DebugSearchField(controller: _searchCtrl, hintText: 'Filter keys'),
+                child: DebugSearchField(controller: _searchCtrl, hintText: context.l10n.debugFilterKeys),
               ),
               const SizedBox(width: PrismSpace.xxs),
-              PrismIconButton(tooltip: 'Refresh', icon: Icons.refresh_rounded, onPressed: _loadKeys),
+              PrismIconButton(tooltip: context.l10n.debugRefresh, icon: Icons.refresh_rounded, onPressed: _loadKeys),
               PrismIconButton(
-                tooltip: 'Clear all',
+                tooltip: context.l10n.debugClearAll,
                 icon: Icons.delete_forever_outlined,
                 color: cs.error,
                 onPressed: store == null ? null : _clearAll,
@@ -188,7 +189,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '${filtered.length} keys · Backend: ${PersistenceRuntime.isInitialized ? PersistenceRuntime.store.runtimeType : 'unknown'}',
+              '${context.l10n.debugStorageKeyCount(filtered.length)} · ${context.l10n.debugBackendName(PersistenceRuntime.isInitialized ? PersistenceRuntime.store.runtimeType.toString() : 'unknown')}',
               style: PrismTextStyles.caption(context),
             ),
           ),
@@ -253,9 +254,14 @@ class _KeyRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                PrismIconButton(tooltip: 'Copy value', icon: Icons.copy_rounded, iconSize: 20, onPressed: onCopy),
                 PrismIconButton(
-                  tooltip: 'Delete',
+                  tooltip: context.l10n.debugCopyValue,
+                  icon: Icons.copy_rounded,
+                  iconSize: 20,
+                  onPressed: onCopy,
+                ),
+                PrismIconButton(
+                  tooltip: context.l10n.debugDelete,
                   icon: Icons.delete_outline_rounded,
                   iconSize: 20,
                   color: cs.error,
@@ -301,25 +307,25 @@ class _EditValueSheetState extends State<_EditValueSheet> {
       logger.w('Failed to save storage value', tag: 'DebugPanel', error: e, stackTrace: st);
       if (!mounted) return;
       setState(() => _saving = false);
-      showDebugSnackBar(context, 'Could not save the value', isError: true);
+      showDebugSnackBar(context, context.l10n.debugCouldNotSaveValue, isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return PrismSheetBody(
-      title: 'Edit value',
+      title: context.l10n.debugEditValue,
       scrollable: true,
       actions: [
-        PrismButton(label: 'Save', expand: true, loading: _saving, onPressed: _save),
+        PrismButton(label: context.l10n.debugSave, expand: true, loading: _saving, onPressed: _save),
         PrismButton(
-          label: 'Copy',
+          label: context.l10n.debugCopy,
           expand: true,
           variant: PrismButtonVariant.tonal,
           onPressed: () => copyToClipboard(context, '${widget.storageKey}\n${widget.initial}'),
         ),
         PrismButton(
-          label: 'Cancel',
+          label: context.l10n.debugCancel,
           expand: true,
           variant: PrismButtonVariant.ghost,
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
@@ -330,12 +336,12 @@ class _EditValueSheetState extends State<_EditValueSheet> {
         children: [
           SelectableText(widget.storageKey, style: debugMono(context, size: 13)),
           const SizedBox(height: 2),
-          Text('Type: ${widget.type}', style: PrismTextStyles.caption(context)),
+          Text(context.l10n.debugTypeName(widget.type), style: PrismTextStyles.caption(context)),
           const SizedBox(height: PrismSpace.md),
           PrismTextField(
             controller: _ctrl,
-            label: 'Value',
-            helper: 'Saving writes the value as text.',
+            label: context.l10n.debugValue,
+            helper: context.l10n.debugSaveValueAsText,
             minLines: 3,
             maxLines: 6,
             autocorrect: false,

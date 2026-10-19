@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,7 @@ class PrismSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Loading',
+      label: context.l10n.coreLoading,
       child: ExcludeSemantics(child: PulsePlaceholder(builder: (context, _) => child)),
     );
   }

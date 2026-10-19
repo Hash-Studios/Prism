@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/in_memory_local_store.dart';
 
+String _nativeTopic(String topic) => '${topic}_loc_v1';
+
 class _FakeMessaging implements FirebaseMessaging {
   final List<String> subscribed = <String>[];
   final List<String> unsubscribed = <String>[];
@@ -63,9 +65,32 @@ void main() {
 
     expect(
       messaging.subscribed,
-      unorderedEquals(<String>['recommendations', 'drops', wotdBucketTopic(), 'free', 'u_uid1', 'ana', 'lee_posts']),
+      unorderedEquals(<String>[
+        'recommendations_loc_v1',
+        'drops_loc_v1',
+        '${wotdBucketTopic()}_loc_v1',
+        'free_loc_v1',
+        'u_uid1_loc_v1',
+        'ana_loc_v1',
+        'lee_posts_loc_v1',
+      ]),
     );
-    expect(messaging.unsubscribed, unorderedEquals(<String>['premium', 'wall_of_the_day']));
+    expect(
+      messaging.unsubscribed,
+      unorderedEquals(<String>[
+        'recommendations',
+        'drops',
+        wotdBucketTopic(),
+        'free',
+        'premium',
+        'premium_loc_v1',
+        'u_uid1',
+        'ana',
+        'lee_posts',
+        'wall_of_the_day',
+        'wall_of_the_day_loc_v1',
+      ]),
+    );
   });
 
   test('runs once per token, user and tier', () async {
@@ -76,8 +101,9 @@ void main() {
     expect(messaging.subscribed, isEmpty);
 
     await sync(premium: true);
-    expect(messaging.subscribed, contains('premium'));
+    expect(messaging.subscribed, contains('premium_loc_v1'));
     expect(messaging.unsubscribed, contains('free'));
+    expect(messaging.unsubscribed, contains('free_loc_v1'));
 
     messaging
       ..subscribed.clear()
@@ -94,7 +120,7 @@ void main() {
 
     await sync(userId: '');
 
-    expect(messaging.subscribed, <String>['free']);
+    expect(messaging.subscribed, <String>['free_loc_v1']);
   });
 
   test('retries on the next launch when there is no token or a subscribe fails', () async {
@@ -109,7 +135,7 @@ void main() {
 
     messaging.failSubscribe = false;
     await sync();
-    expect(messaging.subscribed, contains('u_uid1'));
+    expect(messaging.subscribed, contains('u_uid1_loc_v1'));
   });
 
   group('wall of the day buckets', () {
@@ -133,15 +159,28 @@ void main() {
 
     test('joining the bucket leaves the global topic and the old bucket', () async {
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
-      expect(messaging.subscribed, <String>['wall_of_the_day_utc_p0530']);
-      expect(messaging.unsubscribed, <String>['wall_of_the_day']);
+      expect(messaging.subscribed, <String>[_nativeTopic('wall_of_the_day_utc_p0530')]);
+      expect(messaging.unsubscribed, <String>[
+        'wall_of_the_day_utc_p0530',
+        'wall_of_the_day',
+        _nativeTopic('wall_of_the_day'),
+      ]);
 
       messaging
         ..subscribed.clear()
         ..unsubscribed.clear();
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: Duration.zero);
-      expect(messaging.subscribed, <String>['wall_of_the_day_utc_p0000']);
-      expect(messaging.unsubscribed, <String>['wall_of_the_day', 'wall_of_the_day_utc_p0530']);
+      expect(messaging.subscribed, <String>[_nativeTopic('wall_of_the_day_utc_p0000')]);
+      expect(
+        messaging.unsubscribed,
+        unorderedEquals(<String>[
+          'wall_of_the_day',
+          _nativeTopic('wall_of_the_day'),
+          'wall_of_the_day_utc_p0000',
+          'wall_of_the_day_utc_p0530',
+          _nativeTopic('wall_of_the_day_utc_p0530'),
+        ]),
+      );
     });
 
     test('turning it off leaves both the global topic and the bucket', () async {
@@ -149,7 +188,15 @@ void main() {
       messaging.unsubscribed.clear();
 
       await setWotdTopics(messaging, settings, subscribed: false, sourceTag: 't', offset: Duration.zero);
-      expect(messaging.unsubscribed, unorderedEquals(<String>['wall_of_the_day', 'wall_of_the_day_utc_p0530']));
+      expect(
+        messaging.unsubscribed,
+        unorderedEquals(<String>[
+          'wall_of_the_day',
+          _nativeTopic('wall_of_the_day'),
+          'wall_of_the_day_utc_p0530',
+          _nativeTopic('wall_of_the_day_utc_p0530'),
+        ]),
+      );
     });
 
     test('a failed join is retried and does not leave the global topic', () async {
@@ -159,12 +206,13 @@ void main() {
 
       messaging.failSubscribe = false;
       await refreshWotdTopics(messaging, settings, offset: ist);
-      expect(messaging.subscribed, <String>['wall_of_the_day_utc_p0530']);
+      expect(messaging.subscribed, <String>[_nativeTopic('wall_of_the_day_utc_p0530')]);
     });
 
     test('a failed leave of the old bucket is retried by refresh even when the offset did not change', () async {
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
       messaging.failUnsubscribeFor.add('wall_of_the_day_utc_p0530');
+      messaging.unsubscribed.clear();
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: Duration.zero);
       expect(messaging.unsubscribed, isNot(contains('wall_of_the_day_utc_p0530')));
 
@@ -172,7 +220,7 @@ void main() {
         ..unsubscribed.clear()
         ..failUnsubscribeFor.clear();
       await refreshWotdTopics(messaging, settings, offset: Duration.zero);
-      expect(messaging.unsubscribed, <String>['wall_of_the_day_utc_p0530']);
+      expect(messaging.unsubscribed, <String>['wall_of_the_day_utc_p0530', _nativeTopic('wall_of_the_day_utc_p0530')]);
 
       messaging.unsubscribed.clear();
       await refreshWotdTopics(messaging, settings, offset: Duration.zero);
@@ -183,9 +231,15 @@ void main() {
       messaging.failUnsubscribeFor.add('wall_of_the_day');
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
 
-      messaging.failUnsubscribeFor.clear();
+      messaging
+        ..unsubscribed.clear()
+        ..failUnsubscribeFor.clear();
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
-      expect(messaging.unsubscribed, <String>['wall_of_the_day']);
+      expect(messaging.unsubscribed, <String>[
+        'wall_of_the_day_utc_p0530',
+        'wall_of_the_day',
+        _nativeTopic('wall_of_the_day'),
+      ]);
     });
 
     test('turning it off retries earlier failed leaves and never leaves the bucket it just joined', () async {
@@ -199,7 +253,14 @@ void main() {
       await setWotdTopics(messaging, settings, subscribed: false, sourceTag: 't', offset: Duration.zero);
       expect(
         messaging.unsubscribed,
-        unorderedEquals(<String>['wall_of_the_day_utc_p0530', 'wall_of_the_day', 'wall_of_the_day_utc_p0000']),
+        unorderedEquals(<String>[
+          'wall_of_the_day_utc_p0530',
+          _nativeTopic('wall_of_the_day_utc_p0530'),
+          'wall_of_the_day',
+          _nativeTopic('wall_of_the_day'),
+          'wall_of_the_day_utc_p0000',
+          _nativeTopic('wall_of_the_day_utc_p0000'),
+        ]),
       );
     });
 
@@ -211,7 +272,7 @@ void main() {
       messaging.unsubscribed.clear();
 
       await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
-      expect(messaging.unsubscribed, isNot(contains('wall_of_the_day_utc_p0530')));
+      expect(messaging.unsubscribed, isNot(contains(_nativeTopic('wall_of_the_day_utc_p0530'))));
     });
 
     test('refresh moves the device only when the offset changed and the push is on', () async {
@@ -224,7 +285,7 @@ void main() {
       expect(messaging.subscribed, isEmpty);
 
       await refreshWotdTopics(messaging, settings, offset: const Duration(hours: 1));
-      expect(messaging.subscribed, <String>['wall_of_the_day_utc_p0100']);
+      expect(messaging.subscribed, <String>[_nativeTopic('wall_of_the_day_utc_p0100')]);
       expect(messaging.unsubscribed, contains('wall_of_the_day_utc_p0530'));
 
       await settings.set(PersistenceKeys.notifWotd, false);

@@ -5,6 +5,7 @@ import {getAdminEmails} from "./adminConfig";
 import {emailHash, sendToUserByEmail} from "./notificationHelper";
 import {findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/process";
+import {notificationCopyPayload} from "./notificationCatalog";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 
@@ -36,7 +37,10 @@ export const onWallSubmitted = onDocumentCreated(
 
     const wallId = event.params.wallId;
     if (await isStudioWall(wallId, data)) {
-      logger.info("onWallSubmitted: Prism Studio wall, no owner sync or admin push.", {wallId});
+      logger.info(
+        "onWallSubmitted: Prism Studio wall, no owner sync or admin push.",
+        {wallId},
+      );
       return;
     }
     const artistEmail = str(data.email);
@@ -46,7 +50,10 @@ export const onWallSubmitted = onDocumentCreated(
     if (data.isAiGenerated !== true) {
       for (const field of ["wallpaper_url", "wallpaper_thumb"]) {
         if (str(data[field]) !== "" && !isGithubRawUrl(data[field])) {
-          logger.warn("onWallSubmitted: image link is not on the GitHub raw host.", {wallId, field});
+          logger.warn(
+            "onWallSubmitted: image link is not on the GitHub raw host.",
+            {wallId, field},
+          );
         }
       }
     }
@@ -58,34 +65,47 @@ export const onWallSubmitted = onDocumentCreated(
         const user = await findUserByEmail(artistEmail);
         if (user) {
           isPremium = user.data().premium === true;
-          artistName = await syncOwnerFields(event.data?.ref, data, user.data()) || artistName;
+          artistName =
+            (await syncOwnerFields(event.data?.ref, data, user.data())) ||
+            artistName;
         }
       } catch (err) {
-        logger.warn("onWallSubmitted: owner lookup failed; notifying for review.", {
-          wallId,
-          artistHash: emailHash(artistEmail),
-          err,
-        });
+        logger.warn(
+          "onWallSubmitted: owner lookup failed; notifying for review.",
+          {
+            wallId,
+            artistHash: emailHash(artistEmail),
+            err,
+          },
+        );
       }
     }
     if (!isPremium) return;
 
     const adminEmails = await getAdminEmails();
     if (adminEmails.length === 0) {
-      logger.warn("onWallSubmitted: no admin emails configured in config/adminNotifications.");
+      logger.warn(
+        "onWallSubmitted: no admin emails configured in config/adminNotifications.",
+      );
       return;
     }
 
     for (const adminEmail of adminEmails) {
-      await sendToUserByEmail({
-        title: "New Premium Wall for review! 🎉",
-        body: `New post by ${artistName} (${artistEmail}) is up for review.`,
-        data: {route: "wall", wall_id: wallId},
-        imageUrl: wallThumb || undefined,
-        modifier: adminEmail,
-        channelId: "posts",
-        scoreKind: "moderation",
-      }, adminEmail);
+      await sendToUserByEmail(
+        {
+          ...notificationCopyPayload({
+            kind: "wallSubmittedForReview",
+            artistName,
+            artistEmail,
+          }),
+          data: {route: "wall", wall_id: wallId},
+          imageUrl: wallThumb || undefined,
+          modifier: adminEmail,
+          channelId: "posts",
+          scoreKind: "moderation",
+        },
+        adminEmail,
+      );
     }
 
     logger.info("onWallSubmitted: admin notifications sent.", {

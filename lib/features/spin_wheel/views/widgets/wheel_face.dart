@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_geometry.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -229,7 +230,7 @@ class _SliceLabelStrip extends StatelessWidget {
                   child: WheelPrizeLabel(
                     prize: segment.prize,
                     ink: ink,
-                    size: geometry.faceRadius * (_digits(segment.prize) > 2 ? 0.19 : 0.22),
+                    size: geometry.faceRadius * (_digits(segment.prize, context.l10n) > 2 ? 0.19 : 0.22),
                   ),
                 ),
               ),
@@ -241,9 +242,9 @@ class _SliceLabelStrip extends StatelessWidget {
   }
 }
 
-int _digits(WheelPrize prize) => switch (prize) {
-  CoinsPrize(:final int coins) => '$coins'.length,
-  XpPrize(:final int xp) => '$xp'.length,
+int _digits(WheelPrize prize, AppLocalizations l10n) => switch (prize) {
+  CoinsPrize(:final int coins) => formatLocalizedNumber(coins, l10n).length,
+  XpPrize(:final int xp) => formatLocalizedNumber(xp, l10n).length,
   CosmeticPrize() => 0,
 };
 
@@ -268,13 +269,17 @@ class WheelPrizeLabel extends StatelessWidget {
       CoinsPrize(:final int coins) => <Widget>[
         PrismCoinIcon(size: size * 0.92),
         SizedBox(width: gap),
-        Text('$coins', style: numeral),
+        Text(formatLocalizedNumber(coins, context.l10n), style: numeral),
       ],
-      XpPrize(:final int xp) => <Widget>[Text('$xp', style: numeral), SizedBox(width: gap), Text('XP', style: word)],
+      XpPrize(:final int xp) => <Widget>[
+        Text(formatLocalizedNumber(xp, context.l10n), style: numeral),
+        SizedBox(width: gap),
+        Text(context.l10n.economyXpUnit, style: word),
+      ],
       CosmeticPrize() => <Widget>[
         Icon(Icons.auto_awesome_rounded, size: size * 0.78, color: ink),
         SizedBox(width: gap),
-        Text('Mystery', style: word.copyWith(fontSize: size * 0.66)),
+        Text(context.l10n.economyMystery, style: word.copyWith(fontSize: size * 0.66)),
       ],
     };
     return Row(mainAxisSize: MainAxisSize.min, children: parts);

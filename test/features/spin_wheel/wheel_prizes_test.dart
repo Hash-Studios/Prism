@@ -1,8 +1,10 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   const SpinWheelStatus free = SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 5, price: 10);
   const SpinWheelStatus paid = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 3, price: 10);
   const SpinWheelStatus capped = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 0, price: 10);
@@ -32,7 +34,7 @@ void main() {
     test('the default wheel is 100 weights, so the percents are the weights', () {
       final List<WheelOdds> odds = wheelOdds(defaultWheel);
       expect(odds.map((WheelOdds o) => o.percent).toList(), <double>[18, 22, 30, 1, 8, 12, 3, 6]);
-      expect(odds.map((WheelOdds o) => oddsLabel(o.percent)).toList(), <String>[
+      expect(odds.map((WheelOdds o) => oddsLabel(o.percent, l10n)).toList(), <String>[
         '18%',
         '22%',
         '30%',
@@ -45,9 +47,9 @@ void main() {
     });
 
     test('a rare slice keeps a decimal, a zero weight shows 0%', () {
-      expect(oddsLabel(0.5), '0.5%');
-      expect(oddsLabel(0), '0%');
-      expect(oddsLabel(33.333), '33%');
+      expect(oddsLabel(0.5, l10n), '0.5%');
+      expect(oddsLabel(0, l10n), '0%');
+      expect(oddsLabel(33.333, l10n), '33.3%');
     });
 
     test('a wheel with a zero total has no odds', () {
@@ -58,16 +60,16 @@ void main() {
 
   group('spinsLeftCaption', () {
     test('says what is left today', () {
-      expect(spinsLeftCaption(free), 'Free spin ready. 5 paid spins left today.');
-      expect(spinsLeftCaption(paid), '3 spins left today.');
+      expect(spinsLeftCaption(l10n, free), l10n.economyFreeSpinReady(5));
+      expect(spinsLeftCaption(l10n, paid), l10n.economySpinsLeftToday(3));
       expect(
-        spinsLeftCaption(const SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 1, price: 10)),
-        '1 spin left today.',
+        spinsLeftCaption(l10n, const SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 1, price: 10)),
+        l10n.economySpinsLeftToday(1),
       );
-      expect(spinsLeftCaption(capped), 'No spins left today.');
+      expect(spinsLeftCaption(l10n, capped), 'No spins left today.');
       expect(
-        spinsLeftCaption(const SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 0, price: 10)),
-        'Free spin ready.',
+        spinsLeftCaption(l10n, const SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 0, price: 10)),
+        l10n.economyFreeSpinReady(0),
       );
     });
   });

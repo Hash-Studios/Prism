@@ -5,6 +5,8 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/spin_wheel/views/pages/spin_wheel_page.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -99,6 +101,9 @@ void main() {
       MediaQuery(
         data: MediaQueryData(size: const Size(390, 844), disableAnimations: reduceMotion),
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: kLightTheme,
           home: SpinWheelPage(spin: spin, status: status, balance: balance),
         ),
@@ -133,7 +138,7 @@ void main() {
       expect(find.text('SPIN'), findsOneWidget);
       expect(find.text('Free spin'), findsOneWidget);
       expect(find.bySemanticsLabel('Spin, free spin'), findsOneWidget);
-      expect(find.text('Free spin ready. 5 paid spins left today.'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyFreeSpinReady(5)), findsOneWidget);
       expect(find.text('Pro members get a free spin every day'), findsNothing);
     });
 
@@ -238,7 +243,14 @@ void main() {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(theme: kLightTheme, home: const SizedBox()));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: kLightTheme,
+          home: const SizedBox(),
+        ),
+      );
       final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
       unawaited(
         navigator.push<void>(
@@ -466,7 +478,7 @@ void main() {
       replies.single.complete(const SpinFailed('unavailable'));
       await pumpFor(tester, const Duration(milliseconds: 1500));
 
-      expect(toasts, <String>["Couldn't reach Prism. Try again."]);
+      expect(toasts, <String>[AppLocalizationsEn().errorNetwork]);
       expect(find.text('340'), findsOneWidget);
       expect(find.text('SPIN'), findsOneWidget);
       expect(haptics, contains('error'));
@@ -484,6 +496,9 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: kLightTheme,
           home: SpinWheelPage(
             spin: ({required int maxCost}) async => throw StateError('boom'),
@@ -496,7 +511,7 @@ void main() {
 
       await tapSpin(tester);
       await pumpFor(tester, const Duration(milliseconds: 1500));
-      expect(toasts, <String>["Couldn't reach Prism. Try again."]);
+      expect(toasts, <String>[AppLocalizationsEn().errorNetwork]);
       await pumpFor(tester, const Duration(seconds: 2));
     });
   });
@@ -569,6 +584,9 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: kLightTheme,
           home: Builder(
             builder: (BuildContext context) =>

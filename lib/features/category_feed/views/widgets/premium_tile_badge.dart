@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// A small "Pro" lock for a wallpaper or collection tile. It sits on a surface-coloured pill so it stays readable on
@@ -13,7 +14,7 @@ class PremiumTileBadge extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
-      child: const PrismTag(label: 'Pro', tone: PrismTone.warning, icon: Icons.lock_rounded),
+      child: PrismTag(label: context.l10n.economyPro, tone: PrismTone.warning, icon: Icons.lock_rounded),
     );
   }
 }

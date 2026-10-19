@@ -4,6 +4,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -27,10 +28,13 @@ class StreakPill extends StatelessWidget {
         final bool active = status.active;
         final int nextDay = active ? (streakDay >= 7 ? 1 : streakDay + 1) : 1;
         final int nextReward = CoinPolicy.streakClaimRewardForDay(nextDay, isPro: app_state.prismUser.premium);
-        final String nextLabel = compact ? '+$nextReward' : 'Next +$nextReward';
+        final AppLocalizations l10n = context.l10n;
+        final String nextLabel = compact
+            ? '+${formatLocalizedNumber(nextReward, l10n)}'
+            : l10n.coreStreakNext(nextReward);
         return StatPill(
           compact: compact,
-          semanticLabel: '${status.count} day streak, next reward $nextReward coins',
+          semanticLabel: l10n.coreStreakSemantics(status.count, nextReward),
           onTap: () {
             PrismHaptics.tap();
             context.router.push(RewardsRoute());
@@ -46,7 +50,7 @@ class StreakPill extends StatelessWidget {
                 color: active ? PrismColors.warning : cs.onSurfaceVariant,
               ),
               SizedBox(width: compact ? PrismSpace.xxs : 6),
-              Text('${status.count}', style: PrismTextStyles.rowTitle(context)),
+              Text(formatLocalizedNumber(status.count, l10n), style: PrismTextStyles.rowTitle(context)),
               SizedBox(width: compact ? PrismSpace.xxs : PrismSpace.xs),
               Text(nextLabel, style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w600)),
             ],

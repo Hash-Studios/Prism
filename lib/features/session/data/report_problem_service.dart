@@ -140,15 +140,15 @@ Future<String> _platformAppVersion() async {
   }
 }
 
-Future<void> _shareReportFile(String text) async {
+Future<void> _shareReportFile(String text, {required String subject, required String shareText}) async {
   final Directory dir = await getTemporaryDirectory();
   final File file = File('${dir.path}/prism-problem-report.txt');
   await file.writeAsString(text, flush: true);
   await SharePlus.instance.share(
     ShareParams(
       files: <XFile>[XFile(file.path, mimeType: 'text/plain')],
-      subject: 'Prism problem report',
-      text: 'Please describe what went wrong. The report file has the details.',
+      subject: subject,
+      text: shareText,
     ),
   );
 }
@@ -164,7 +164,7 @@ class ReportProblemService {
   }) : _readRecords = readRecords ?? (() => InMemoryLogSink.instance.records),
        _readDevice = readDevice ?? _platformDeviceLabel,
        _readAppVersion = readAppVersion ?? _platformAppVersion,
-       _shareFile = shareFile ?? _shareReportFile,
+       _shareFile = shareFile,
        _clock = clock ?? DateTime.now;
 
   static final ReportProblemService instance = ReportProblemService();
@@ -172,7 +172,7 @@ class ReportProblemService {
   final List<AppLogRecord> Function() _readRecords;
   final DeviceLabelReader _readDevice;
   final AppVersionReader _readAppVersion;
-  final ReportFileSharer _shareFile;
+  final ReportFileSharer? _shareFile;
   final DateTime Function() _clock;
 
   /// The report text, with [theme] set to what the user sees, such as `dark`.
@@ -191,5 +191,6 @@ class ReportProblemService {
     );
   }
 
-  Future<void> share(String report) => _shareFile(report);
+  Future<void> share(String report, {required String subject, required String shareText}) =>
+      _shareFile?.call(report) ?? _shareReportFile(report, subject: subject, shareText: shareText);
 }

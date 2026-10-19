@@ -1,5 +1,6 @@
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,9 @@ void main() {
   Future<void> pump(WidgetTester tester, {required ValueChanged<String> onSelected}) {
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: Scaffold(
           body: LiveStylePicker<String>(

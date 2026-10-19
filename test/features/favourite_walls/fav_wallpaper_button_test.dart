@@ -14,6 +14,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,6 +91,9 @@ void main() {
   Future<void> pumpButton(WidgetTester tester, FavouriteWallsBloc bloc, {VoidCallback? onFavourited}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
           child: Scaffold(
@@ -225,6 +229,9 @@ void main() {
   Future<void> pumpOnTop(WidgetTester tester, FavouriteWallsBloc bloc, {required bool trash}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
           child: Builder(
