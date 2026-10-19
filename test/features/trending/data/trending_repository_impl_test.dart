@@ -57,6 +57,23 @@ void main() {
     expect(result.data!.map((wall) => wall.id), <String>['C', 'A', 'B']);
   });
 
+  test('protected thumbnail previews remain visible online and from cache without an original', () async {
+    const thumb = 'https://staging.example.test/ownedThumbnail/A';
+    walls = <String, Map<String, dynamic>>{
+      'A': <String, dynamic>{..._wall('A'), 'wallpaper_url': '', 'wallpaper_thumb': thumb, 'originalProtected': true},
+    };
+    setList('trending', <Object?>['A']);
+    final online = (await repository.fetch()).data!.single;
+    expect(online.id, 'A');
+    expect(online.firestoreDocumentId, 'doc-A');
+    expect(online.fullUrl, isEmpty);
+    expect(online.thumbnailUrl, thumb);
+    client.queryError = StateError('offline');
+    final offline = (await repository.fetch()).data!.single;
+    expect(offline.fullUrl, isEmpty);
+    expect(offline.thumbnailUrl, thumb);
+  });
+
   test('loads the walls in batches of at most 30 ids and keeps the order across batches', () async {
     final List<String> ids = List<String>.generate(65, (i) => 'W${i.toString().padLeft(2, '0')}');
     walls = <String, Map<String, dynamic>>{for (final String id in ids) id: _wall(id)};
@@ -92,7 +109,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{
       'A': _wall('A'),
       'B': _wall('B', email: 'blocked@example.com'),
-      'D': <String, dynamic>{..._wall('D'), 'wallpaper_url': ''},
+      'D': <String, dynamic>{..._wall('D'), 'wallpaper_url': '', 'wallpaper_thumb': ''},
       'E': _wall('E'),
     };
     blocks.completeInitial(<String>{'blocked@example.com'});

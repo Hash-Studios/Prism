@@ -124,7 +124,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         (data, _) {
           final thumb = data['wallpaper_thumb']?.toString() ?? '';
           final url = data['wallpaper_url']?.toString() ?? '';
-          return thumb.isNotEmpty ? thumb : url;
+          return thumb.isNotEmpty || data['originalProtected'] == true ? thumb : url;
         },
       );
       return rows.where((url) => url.isNotEmpty).toList(growable: false);

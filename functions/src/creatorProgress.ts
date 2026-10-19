@@ -247,8 +247,11 @@ export const onCreatorWallWritten = onDocumentWritten(
   async (event) => {
     const after = event.data?.after;
     const data = after?.data();
+    const before = event.data?.before.data();
+    const becameProtected = data?.originalProtected === true && before?.originalProtected !== true;
     if (!after?.exists || !data || !validId(data.id) || data.review !== true ||
-      event.data?.before.data()?.review === true || after.ref.id !== event.params.wallId) return;
+      (before?.review === true && !becameProtected) ||
+      after.ref.id !== event.params.wallId) return;
     await recordCreator({logicalId: data.id, snapshot: after});
   },
 );

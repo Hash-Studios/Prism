@@ -8,6 +8,9 @@ wall and its creation time. Public wall records expose an owned thumbnail URL,
 `originalProtected: true`, `originalGeneration: <string>`, and `wallpaper_url: ''`.
 Original delivery goes through server entitlement checks in #521 and a 120-second signed URL.
 An owned marker alone is not proof: delivery also checks the private manifest and wall incarnation.
+Thumbnails remain public, including pending submission thumbnails, as they already are
+in the GitHub upload flow. This lets creators and moderators load retained previews.
+Original authorization is separate. A thumbnail endpoint never returns an original object.
 
 ## Operator prerequisites
 

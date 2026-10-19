@@ -160,6 +160,34 @@ test("private-only original receipts earn creator credit without inventing a raw
   assert.equal(store.get("usersv2/creator")?.xp, 60);
 });
 
+test("binding after approval credits a private original once and retries do not duplicate rewards", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  data.wallpaper_url = "";
+  const unbound = {...data};
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 10);
+  assert.equal(store.has(receiptPath()), false);
+  protectWall(store, data);
+  const manifest = row(store, "ownedAssets/logical");
+  manifest.provenance = {kind: "owned", uid};
+  (manifest.original as Doc).repo = "walls";
+  const upload = row(store, `githubUploads/${uploadId("logical.jpg", "a".repeat(40))}`);
+  upload.sourceKind = "owned";
+  upload.retainedAsset = {generation: "123"};
+  const intent = row(store, `githubUploadIntents/path_${createHash("sha256").update("walls\0logical.jpg").digest("hex")}`);
+  intent.sourceKind = "owned";
+  intent.retainedAsset = {generation: "123"};
+  intent.response = {content: {path: "logical.jpg", sha: "a".repeat(40), download_url: ""}};
+  await approve(data, "wall_logical", unbound);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+  assert.equal((store.get(privatePath)?.creator as Doc).approvedWalls, 1);
+  await approve(data, "wall_logical", unbound);
+  await approve(data, "wall_logical", {...data});
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+  assert.equal(store.get(privatePath)?.rev, 1);
+});
+
 for (const failure of ["legacy", "generation", "incarnation", "path", "deleted", "missing-receipts"]) {
   test(`owned provenance rejects ${failure} without granting creator credit`, async (t) => {
     const {store, seedWall} = setup(t);

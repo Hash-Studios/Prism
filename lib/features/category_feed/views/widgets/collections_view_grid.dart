@@ -181,8 +181,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             final String wallId = _wallString(wall, 'id');
             final String wallpaperThumb = normalizeWallpaperThumbnailUrl(_wallString(wall, 'wallpaper_thumb'));
             final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
+            final bool protectedPreview = wall['originalProtected'] == true && wallpaperUrl.isEmpty;
             final bool validPayload =
-                wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
+                wallId.trim().isNotEmpty &&
+                isValidNetworkUrl(wallpaperThumb) &&
+                (protectedPreview || isValidNetworkUrl(wallpaperUrl));
             if (!validPayload) {
               logger.w(
                 'Skipping malformed collection tile payload.',

@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import {logger} from "firebase-functions/v2";
+import {REGION} from "./common";
 
 export type PaletteColor = {id: string; hex: string};
 
@@ -116,6 +117,22 @@ export const ALLOWED_IMAGE_HOSTS: readonly string[] = ["raw.githubusercontent.co
 const MAX_REDIRECTS = 3;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
+function isOwnedThumbnailUrl(url: URL): boolean {
+  const project = process.env.GCLOUD_PROJECT;
+  const base = process.env.OWNED_THUMBNAIL_BASE_URL ??
+    (project ? `https://${REGION}-${project}.cloudfunctions.net/ownedThumbnail` : undefined);
+  if (!base) return false;
+  try {
+    const endpoint = new URL(base);
+    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
+      endpoint.search || endpoint.hash) return false;
+    const id = url.pathname.split("/").pop() ?? "";
+    return /^[A-Za-z0-9_-]{1,200}$/.test(id) && url.href === `${endpoint.href.replace(/\/$/, "")}/${id}`;
+  } catch {
+    return false;
+  }
+}
+
 export function checkedImageUrl(value: string): URL {
   let url: URL;
   try {
@@ -129,9 +146,7 @@ export function checkedImageUrl(value: string): URL {
   if (url.username || url.password || url.port) {
     throw new Error("image url must not have credentials or a port");
   }
-  const ownedThumbnail = url.hostname === "asia-south1-prism-wallpapers.cloudfunctions.net" &&
-    /^\/ownedThumbnail\/[A-Za-z0-9_-]{1,200}$/.test(url.pathname) && !url.search && !url.hash;
-  if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname) && !ownedThumbnail) {
+  if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname) && !isOwnedThumbnailUrl(url)) {
     throw new Error("image host is not allowed");
   }
   return url;
