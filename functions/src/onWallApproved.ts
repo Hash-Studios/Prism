@@ -5,6 +5,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/process";
+import {fileWallInCollection} from "./wallCollections";
 import {
   emailHash,
   emailToTopic,
@@ -16,8 +17,8 @@ import {
 } from "./notificationHelper";
 
 /**
- * When a wall goes from review=false to review=true (approved), notifies the
- * artist, the artist's followers and the admins.
+ * When a wall goes from review=false to review=true (approved), files it into the collection of its category and
+ * notifies the artist, the artist's followers and the admins.
  */
 export const onWallApproved = onDocumentUpdated(
   {
@@ -39,6 +40,8 @@ export const onWallApproved = onDocumentUpdated(
     }
 
     const wallId = event.params.wallId;
+    // Approval sets collections to community, so the category collection is added after it.
+    await fileWallInCollection(event.data?.after.ref);
     if (await isStudioWall(wallId, after)) {
       logger.info("onWallApproved: Prism Studio wall, no pushes.", {wallId});
       return;

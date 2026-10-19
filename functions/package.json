@@ -12,6 +12,7 @@
     "logs": "firebase functions:log",
     "migrate:username-lower": "npm run build && node lib/scripts/backfillUsernameLower.js",
     "migrate:view-stats": "npm run build && node lib/scripts/migrateGithubViewStats.js",
+    "migrate:wall-collections": "npm run build && node lib/scripts/backfillWallCollections.js",
     "economy:config": "node lib/scripts/economyConfig.js",
     "drops:reserve": "npm run build && node lib/scripts/reserveDrop.js",
     "studio:account": "npm run build && node lib/scripts/setupStudioAccount.js",
