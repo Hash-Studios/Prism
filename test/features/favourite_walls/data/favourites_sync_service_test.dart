@@ -11,17 +11,17 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_merger.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/in_memory_local_store.dart';
+import '../support/canonical_fixture.dart';
 import '../support/guest_store_fixture.dart';
 import '../support/merge_firestore.dart';
-import '../support/canonical_fixture.dart';
 
 class _CanonicalRepository extends EmptyCanonicalWallpaperRepository {
   Future<Result<PrismWallpaper?>> Function(String)? lookup;

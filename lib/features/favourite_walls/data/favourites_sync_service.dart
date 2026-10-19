@@ -148,7 +148,7 @@ class FavouritesSyncService {
       if (!_isCurrent(uid, session)) return null;
       return _favoritesLocal.mergeServerWallSnapshot(uid, prepare(snapshot));
     });
-    _preparation = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _preparation = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
 
