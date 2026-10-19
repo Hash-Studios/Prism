@@ -6,6 +6,8 @@ GitHub source and gain an independently retained copy. The private
 `ownedAssets/{wall.id}` manifest binds exact object generations to a unique canonical
 wall and its creation time. Public wall records expose an owned thumbnail URL,
 `originalProtected: true`, `originalGeneration: <string>`, and `wallpaper_url: ''`.
+Binding also clears `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha`.
+Delivery requires those fields to stay empty. Exact paths and SHAs remain server-only.
 Original delivery goes through server entitlement checks in #521 and a 120-second signed URL.
 An owned marker alone is not proof: delivery also checks the private manifest and wall incarnation.
 Thumbnails remain public, including pending submission thumbnails, as they already are
