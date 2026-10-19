@@ -6,8 +6,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-/// A favourite grid preview. Original-image fallback is opt-in for non-Prism previews.
-/// When the preview fails it shows "Unavailable" and calls [onUnavailable].
 class FavouriteTileImage extends StatelessWidget {
   const FavouriteTileImage({
     super.key,

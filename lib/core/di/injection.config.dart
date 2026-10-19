@@ -487,13 +487,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
     ),
   );
-  gh.lazySingleton<_i99.FavouritesSyncService>(
-    () => _i99.FavouritesSyncService(
-      gh<_i349.FirestoreClient>(),
-      gh<_i640.FavoritesLocalDataSource>(),
-      gh<_i649.GuestFavouritesMerger>(),
-    ),
-  );
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -654,6 +647,14 @@ _i174.GetIt initGetIt(
       gh<_i727.PrismWallpaperRepository>(),
       gh<_i112.UserBlockRepository>(),
       feedCacheLocal: gh<_i954.FeedCacheLocalDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i99.FavouritesSyncService>(
+    () => _i99.FavouritesSyncService(
+      gh<_i349.FirestoreClient>(),
+      gh<_i640.FavoritesLocalDataSource>(),
+      gh<_i649.GuestFavouritesMerger>(),
+      gh<_i727.PrismWallpaperRepository>(),
     ),
   );
   gh.lazySingleton<_i406.FetchFavouriteWallsUseCase>(

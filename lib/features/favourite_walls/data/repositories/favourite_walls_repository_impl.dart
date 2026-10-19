@@ -8,10 +8,10 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
+import 'package:Prism/features/favourite_walls/data/hydrate_prism_favourites.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
@@ -139,55 +139,15 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         ...items,
         ...retainedLocal,
       ]);
-      return Result.success(await _hydratePrismFavourites(merged));
+      return Result.success(await hydratePrismFavourites(merged, _prismWallpapers));
     } catch (error) {
       try {
         final cached = await _favoritesLocal.readWallSnapshot(userId);
-        if (cached.isNotEmpty) return Result.success(await _hydratePrismFavourites(cached));
+        if (cached.isNotEmpty) return Result.success(await hydratePrismFavourites(cached, _prismWallpapers));
       } catch (cacheError) {
         return Result.error(ServerFailure('Unable to fetch favourite walls: $error; local read failed: $cacheError'));
       }
       return Result.error(ServerFailure('Unable to fetch favourite walls: $error'));
-    }
-  }
-
-  Future<List<FavouriteWallEntity>> _hydratePrismFavourites(List<FavouriteWallEntity> walls) async {
-    final hydrated = walls.toList();
-    final expired = Completer<Result<PrismWallpaper?>?>();
-    final timer = Timer(_readTimeout, () => expired.complete(null));
-    var nextIndex = 0;
-
-    Future<void> hydrateNext() async {
-      while (nextIndex < walls.length && !expired.isCompleted) {
-        final index = nextIndex++;
-        final wall = walls[index];
-        if (wall is! PrismFavouriteWall || _isBundledStarter(wall)) continue;
-        try {
-          final result = await Future.any<Result<PrismWallpaper?>?>([
-            _prismWallpapers.fetchCanonicalById(wall.id),
-            expired.future,
-          ]);
-          final canonical = result?.data;
-          if (result != null && result.isSuccess && canonical != null && canonical.id == wall.id) {
-            hydrated[index] = PrismFavouriteWall(
-              id: wall.id,
-              wallpaper: canonical,
-              favouritedAt: wall.favouritedAt,
-              syncStatus: wall.syncStatus,
-            );
-          }
-        } catch (_) {
-          // Keep the saved reference when a wall is missing or cannot be checked offline.
-        }
-      }
-    }
-
-    try {
-      // Bound concurrent reads and total wait, including large offline libraries.
-      await Future.wait(List.generate(math.min(4, walls.length), (_) => hydrateNext()));
-      return hydrated;
-    } finally {
-      timer.cancel();
     }
   }
 

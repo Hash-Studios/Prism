@@ -20,7 +20,6 @@ Future<Widget> _buildPreview(WidgetTester tester, FavouriteTileImage image, {boo
             final networkImage = preview as CachedNetworkImage;
             preview = networkImage.errorWidget!(context, networkImage.imageUrl, Exception('Thumbnail failed'));
           }
-          // Inspect image configuration without mounting a network loader.
           return preview is CachedNetworkImage ? const SizedBox() : preview;
         },
       ),

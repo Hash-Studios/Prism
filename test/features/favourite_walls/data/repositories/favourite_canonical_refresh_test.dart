@@ -51,7 +51,10 @@ class _FavouriteAndCanonicalFirestore extends FakeFirestoreClient {
               id: 'wall-1',
               data: <String, dynamic>{
                 'id': 'wall-1',
-                'wallpaper_url': 'https://example.com/current.jpg',
+                'wallpaper_url': '',
+                'originalProtected': true,
+                'wallpaper_path': '',
+                'wallpaper_sha': '',
                 'wallpaper_thumb': 'https://example.com/current-thumb.jpg',
                 'review': true,
                 'collections': <String>['premium'],
@@ -91,5 +94,15 @@ void main() {
     final wall = result.data!.single as PrismFavouriteWall;
     expect(wall.id, 'wall-1');
     expect(wall.wallpaper.collections, <String>['premium']);
+    expect(wall.fullUrl, isEmpty);
+    expect(wall.thumbnailUrl, 'https://example.com/current-thumb.jpg');
+    final canonicalQuery = firestore.querySpecs.singleWhere((spec) => spec.collection == 'walls');
+    expect(canonicalQuery.cachePolicy, FirestoreCachePolicy.serverOnly);
+    expect(
+      canonicalQuery.filters.any(
+        (filter) => filter.field == 'id' && filter.op == FirestoreFilterOp.isEqualTo && filter.value == 'wall-1',
+      ),
+      isTrue,
+    );
   });
 }
