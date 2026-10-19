@@ -3073,10 +3073,36 @@
   "economyAiGenerationTime": "This takes about 20 seconds",
   "economyAiHistoryEmpty": "Each wallpaper you generate appears here, so you can compare or switch back.",
   "economyAiHistoryFailed": "Couldn't load history. Pull to refresh.",
+  "economyAiMatchingScreenSize": "Matching your screen size…",
+  "@economyAiMatchingScreenSize": {
+    "description": "AI wallpaper generation status shown while matching the output to the device screen."
+  },
+  "economyAiApplyingStyle": "Applying your style…",
+  "@economyAiApplyingStyle": {
+    "description": "AI wallpaper generation status shown while applying the selected style."
+  },
+  "economyAiFinalizingWallpaper": "Finalizing your wallpaper…",
+  "@economyAiFinalizingWallpaper": {
+    "description": "AI wallpaper generation status shown while completing the wallpaper."
+  },
+  "economyAiRemixHint": "Darker sky, warmer palette, softer edges…",
+  "@economyAiRemixHint": {
+    "description": "Example hint in the AI wallpaper remix text field."
+  },
   "economyAiNeedCoinsToGenerate": "Need {cost} coins to generate.",
   "@economyAiNeedCoinsToGenerate": {
     "placeholders": {
       "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyNeedMoreCoins": "{count, plural, one{Need {count} more coin.} other{Need {count} more coins.}}",
+  "@economyNeedMoreCoins": {
+    "description": "Toast shown when an action needs more coins than the user has.",
+    "placeholders": {
+      "count": {
         "type": "int",
         "format": "decimalPattern"
       }
