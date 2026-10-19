@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -352,8 +353,10 @@ void main() {
       wallpaperTags: <String>['sand', ' ', 'desert'],
       wallpaperPath: 'u_1_a.png',
       wallpaperSha: 'sha-a',
+      wallpaperSourceKind: UploadSourceKind.owned,
       thumbPath: 'thumb_u_1_a.png',
       thumbSha: 'sha-t',
+      thumbSourceKind: UploadSourceKind.github,
       now: () => testNow,
     );
 
@@ -364,6 +367,8 @@ void main() {
     expect(record['wallpaper_sha'], 'sha-a');
     expect(record['thumb_path'], 'thumb_u_1_a.png');
     expect(record['thumb_sha'], 'sha-t');
+    expect(record['wallpaper_source_kind'], 'owned');
+    expect(record['thumb_source_kind'], 'github');
   });
 
   test('a record without a title or file details has none of those keys', () async {

@@ -23,6 +23,18 @@ a server-only `ownedUploadDeletions` tombstone outside the upload intent. Path r
 possible, but a deletion retry cannot fall through to public-source deletion. Pre-fix staging
 owned records in the GitHub namespace require explicit reconciliation, not automatic adoption.
 
+Upload responses include a server-selected `sourceKind` of `owned` or `github`.
+Clients keep each file's selector for staged cleanup. Legacy responses without a
+selector remain unspecified, so ambiguous deletions still fail closed.
+
+For a bound pending wall, cleanup sends `wallId`, `originalGeneration` and
+`assetRole` (`wallpaper` or `thumb`) to `githubDeleteFile`, not private paths.
+The server resolves the manifest and checks receipt ownership, the retained generation
+and the canonical wall incarnation before deletion. A deleted manifest remains usable
+for partial-cleanup retries. The client keeps the pending wall record until file
+cleanup succeeds, so a transient failure leaves a retry available. Existing per-file
+delete leases and thumbnail quota accounting remain authoritative.
+
 ## Operator prerequisites
 
 No bucket creation, IAM change, deploy or live migration is authorized by this document.
