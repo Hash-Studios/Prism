@@ -542,7 +542,7 @@ void main() {
       final Uri link = Uri.parse((shareCalls.single.arguments as Map)['text'] as String);
       expect(link.host, 'prismwalls.com');
       expect(link.queryParameters['id'], 'unknown-remote');
-      expect(link.queryParameters['thumb'], 'https://example.com/thumb.jpg');
+      expect(link.queryParameters['thumb'], isEmpty);
       expect(link.queryParameters, isNot(contains('url')));
     });
 
