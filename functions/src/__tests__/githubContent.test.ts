@@ -23,7 +23,9 @@ test("private original upload, completed retry and deletion never contact GitHub
   testGithubEnvironment(t);
   const docs = uploadStore(t, {});
   t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
-  t.mock.method(globalThis, "fetch", async () => {throw new Error("GitHub must not be contacted");});
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
   const bytes = Buffer.from("/9j/", "base64");
   const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   let retained = 0;
@@ -32,7 +34,9 @@ test("private original upload, completed retry and deletion never contact GitHub
     return {bucket: "owned", object: "retained", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: "private.jpg", sha};
   });
   let deleted = 0;
-  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => {deleted++;});
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => {
+    deleted++;
+  });
   const request = {auth: {uid: "u"}, data: {repo: "walls", path: "private.jpg", message: "upload", contentBase64: "/9j/"}};
   const expected = {content: {path: "private.jpg", sha, download_url: ""}};
   assert.deepEqual(await run(githubPutFile, request), expected);
@@ -54,7 +58,9 @@ test("private rollout blocks legacy pending originals before any public GitHub w
   }});
   t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
   let fetches = 0;
-  t.mock.method(globalThis, "fetch", async () => {fetches++; throw new Error("No origin request allowed");});
+  t.mock.method(globalThis, "fetch", async () => {
+    fetches++; throw new Error("No origin request allowed");
+  });
   await assert.rejects(run(githubPutFile, {auth: {uid: "u"}, data: {
     repo: "walls", path: "pending.jpg", message: "retry", contentBase64: "/9j/",
   }}), /reconciliation/);
@@ -70,7 +76,9 @@ test("retention failure retries without a second GitHub write and preserves exac
   let writes = 0;
   let remote = false;
   t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
-    if (init.method === "PUT") { writes++; remote = true; return {ok: true, json: async () => ({content})}; }
+    if (init.method === "PUT") {
+      writes++; remote = true; return {ok: true, json: async () => ({content})};
+    }
     return {ok: remote, status: remote ? 200 : 404, json: async () => remote ? content : {}};
   });
   t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
@@ -93,7 +101,9 @@ test("retention failure retries without a second GitHub write and preserves exac
   for (const [key, value] of docs) {
     if (key.startsWith("githubUploads/") || key.startsWith("githubUploadIntents/")) delete value.retainedAsset;
   }
-  t.mock.method(globalThis, "fetch", async () => { throw new Error("GitHub origin unavailable"); });
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub origin unavailable");
+  });
   assert.deepEqual(await upload(), {content});
   assert.equal(retains, 3);
   assert.ok([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].retainedAsset);

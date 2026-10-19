@@ -83,7 +83,7 @@ Client files: `lib/core/wallpaper/wall_depth.dart`, `lib/core/widgets/depth_tag.
 4. If no kind matches, it returns `{tier: "none", kind: null, top: null}` and does not call fal. Most walls stop here, so this step keeps the cost low.
 5. It gets a subject mask from fal BiRefNet (`fal-ai/birefnet`, model "General Use (Light)", 1024x1024, `sync_mode`). The mask comes back as a base64 data URI. Any other answer is an error. The timeout is 60 seconds. For JPEG bytes (Studio), the image goes to fal as a data URI.
 6. It crops the mask to the screen shape (aspect-fill, centre), scales it to 393 x 852, and applies rules 2 to 4.
-7. If any step fails (Vision, fal, an empty `FAL_KEY`, bad data), it logs a warning with the wall id and returns undefined. The wall keeps no `depth` field, so a backfill can try again.
+7. If any step fails (Vision, fal, an empty `FAL_API_KEY`, bad data), it logs a warning with the wall id and returns undefined. The wall keeps no `depth` field, so a backfill can try again.
 
 ### New walls
 
@@ -97,16 +97,16 @@ Client files: `lib/core/wallpaper/wall_depth.dart`, `lib/core/widgets/depth_tag.
 - Its prompts use `STUDIO_DEPTH_COMPOSITION`: the top of the subject sits 24% to 30% down the frame, the subject fills the frame below, and the area above is calm open sky.
 - `processStudioCandidate` runs `wallDepthFor` on the 1600 px JPEG that the Vision gate uses.
 - The gate rejects tier `none` with the reason `depth`. The values go into `gates.details.depth`.
-- A check that cannot run (Vision, fal or an empty `FAL_KEY`) throws. The candidate goes back to the queue and tries again, up to 3 attempts, like a Vision error.
+- A check that cannot run (Vision, fal or an empty `FAL_API_KEY`) throws. The candidate goes back to the queue and tries again, up to 3 attempts, like a Vision error.
 - A wall that passes gets `depth` when the pipeline creates it, so `onWallCategorize` does not check it again.
 
 ### Backfill
 
 ```sh
 cd functions && npm run build
-FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --limit=50        # dry run of 50 walls
-FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --apply           # writes depth
-FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --apply --start-after=<wallId>   # resume
+FAL_API_KEY=<key> node lib/scripts/backfillWallDepth.js --limit=50        # dry run of 50 walls
+FAL_API_KEY=<key> node lib/scripts/backfillWallDepth.js --apply           # writes depth
+FAL_API_KEY=<key> node lib/scripts/backfillWallDepth.js --apply --start-after=<wallId>   # resume
 ```
 
 - The script reads reviewed walls in document id order, 4 at a time. It prints one line for each wall (id, tier, kind, top), the last id of each batch, and the tier and kind counts at the end.

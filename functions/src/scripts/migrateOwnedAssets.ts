@@ -29,7 +29,9 @@ export function parseRawAsset(raw: unknown, path: unknown, sha: unknown, options
   if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.port || url.username ||
     url.password || url.search || url.hash || parts[0]?.toLowerCase() !== options.owner.toLowerCase() ||
     parts[1] !== options.repo || parts.length < 4 || parts.some((part) => !part || part === "." || part === ".." ||
-      /[\\/\x00-\x1f]/.test(part))) throw new Error("Untrusted raw asset URL");
+      /[\\/]/.test(part) || Array.from(part).some((character) => character.charCodeAt(0) < 32))) {
+    throw new Error("Untrusted raw asset URL");
+  }
   const sourcePath = parts.slice(3).join("/");
   if (path !== undefined && path !== "" && path !== sourcePath) throw new Error("Raw URL path mismatch");
   if (sha !== undefined && sha !== "" && (typeof sha !== "string" || !/^[a-f0-9]{40}$/.test(sha))) {
@@ -135,8 +137,10 @@ export async function migrateOwnedAssets(walls: MigrationWall[], options: Migrat
 
 async function main(): Promise<void> {
   const args = new Set(process.argv.slice(2));
-  for (const arg of args) if (!["--apply", "--allow-reviewed-legacy", "--confirm-approved-migration"].includes(arg)) {
-    throw new Error(`Unknown option: ${arg}`);
+  for (const arg of args) {
+    if (!["--apply", "--allow-reviewed-legacy", "--confirm-approved-migration"].includes(arg)) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
   }
   const apply = args.has("--apply");
   if (apply && !args.has("--confirm-approved-migration")) {
@@ -204,7 +208,9 @@ async function main(): Promise<void> {
   if (results.some((row) => row.status === "blocked")) process.exitCode = 2;
 }
 
-if (require.main === module) main().catch((error: unknown) => {
-  process.stderr.write(`${error instanceof Error ? error.message : "Migration failed"}\n`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error: unknown) => {
+    process.stderr.write(`${error instanceof Error ? error.message : "Migration failed"}\n`);
+    process.exitCode = 1;
+  });
+}

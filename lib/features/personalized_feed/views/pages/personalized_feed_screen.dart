@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -29,7 +30,6 @@ import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.da
 import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sliver.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
-import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -67,9 +67,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
 
   @override
   bool get wantKeepAlive => true;
-
-  /// Replaced by the Data saver setting once it exists.
-  bool get _lowData => LowDataMode.enabled.value;
 
   @override
   void initState() {
@@ -214,14 +211,17 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       );
   }
 
-  /// Starts loading the first images of a new page, so they are ready when the user scrolls to them.
+  /// Starts loading the images of a new page below the first screen, so they are ready when the user scrolls to them.
   void _prefetchNewTiles(BuildContext context, PersonalizedFeedState state, int tileMemCacheHeight) {
     final bool firstBatch = _knownItemIds.isEmpty;
     final List<FeedItemEntity> added = state.items.where((item) => _knownItemIds.add(item.id)).toList();
-    if (firstBatch || _lowData) {
-      return;
-    }
-    prefetchTileImages(context, added, memCacheHeight: tileMemCacheHeight);
+    // The first page is on screen already up to the first screen of tiles. Later pages append below it.
+    prefetchTileImages(
+      context,
+      added,
+      memCacheHeight: tileMemCacheHeight,
+      skip: firstBatch ? visibleTileCount(context, wallpaperGridColumns(MediaQuery.sizeOf(context).width)) : 0,
+    );
   }
 
   @override
@@ -426,6 +426,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         .toList(growable: false);
     final bool loadingFirstPage =
         state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading);
+    if (visibleItems.isNotEmpty) PerformanceProbe.markOnce('home.grid_first_paint');
     return SliverMainAxisGroup(
       slivers: <Widget>[
         SliverPadding(

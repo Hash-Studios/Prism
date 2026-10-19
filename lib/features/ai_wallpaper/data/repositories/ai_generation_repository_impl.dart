@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -396,17 +397,21 @@ class AiGenerationRepositoryImpl {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
     }
 
-    Future<http.Response> send() => _client
-        .post(
-          Uri.parse('$_apiBase$path'),
-          headers: <String, String>{
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode(body),
-        )
-        .timeout(_requestTimeout);
+    Future<http.Response> send() => PerformanceProbe.measure(
+      'http',
+      'ai.generate$path',
+      () => _client
+          .post(
+            Uri.parse('$_apiBase$path'),
+            headers: <String, String>{
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(_requestTimeout),
+    );
 
     http.Response response;
     try {

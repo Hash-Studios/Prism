@@ -142,12 +142,38 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   Future<void> recordShown(Iterable<String> keys) =>
       _impressions.recordShown(keys, DateTime.now().toUtc(), expectedRevision: _impressions.revision);
 
+  String get _cacheScope {
+    final String userId = app_state.prismUser.id.trim();
+    return userId.isEmpty ? 'guest' : userId.toLowerCase();
+  }
+
+  ({String scope, Future<FeedSnapshot?> snapshot})? _warm;
+
+  @override
+  void warmCache() {
+    final String scope = _cacheScope;
+    if (_warm?.scope == scope) return;
+    final snapshot = _feedCacheLocal.read(source: 'personalized', scope: scope);
+    snapshot.ignore();
+    _warm = (scope: scope, snapshot: snapshot);
+  }
+
   @override
   Future<PersonalizedFeedPage?> readCached() async {
-    final String userId = app_state.prismUser.id.trim();
+    final String scope = _cacheScope;
+    final int impressionRevision = _impressions.revision;
+    final warm = _warm;
+    _warm = null;
+    final page = await _readCachedPage(scope, snapshot: warm?.scope == scope ? warm!.snapshot : null);
+    if (scope != _cacheScope || impressionRevision != _impressions.revision) return null;
+    return page;
+  }
+
+  Future<PersonalizedFeedPage?> _readCachedPage(String scope, {Future<FeedSnapshot?>? snapshot}) async {
     final _CachedFeed? cached = await _readCached(
-      scope: userId.isEmpty ? 'guest' : userId.toLowerCase(),
-      blocked: () async => _userBlockRepository.cachedBlockedCreatorEmails,
+      scope: scope,
+      blocked: () => _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true),
+      snapshot: snapshot,
     );
     if (cached == null || cached.items.isEmpty) {
       final List<FeedItemEntity> starters = await BundledWallpapers.load();
@@ -179,28 +205,54 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final String cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
     try {
+      int successfulSources = 0;
+      int failedSources = 0;
+      // Overlaps the pools. Awaited before ranking, so blocked creators never slip in.
+      final Future<Set<String>> blockedFuture = _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      blockedFuture.ignore();
+      // Fresh and gems need nothing from the bootstrap, so they start now.
+      final Future<List<RankingCandidate>> freshPool = _pool(
+        CandidatePool.fresh,
+        _fetchFreshItems(),
+        onSuccess: () => successfulSources++,
+        onFailure: () => failedSources++,
+      );
+      final Future<List<RankingCandidate>> gemsPool = _pool(
+        CandidatePool.gems,
+        _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
+        onSuccess: () => successfulSources++,
+        onFailure: () => failedSources++,
+      );
+
       if (request.refresh || _bootstrapScope != cacheScope) {
-        Map<String, dynamic> userDoc = const <String, dynamic>{};
-        if (!isGuest) {
+        Future<Map<String, dynamic>> loadUserDoc() async {
+          if (isGuest) {
+            return const <String, dynamic>{};
+          }
           try {
-            userDoc = await _resolveUserDoc(userId: userId);
+            return await _resolveUserDoc(userId: userId);
           } catch (error) {
             logger.w('[PersonalizedFeed] user profile source failed: $error');
+            return const <String, dynamic>{};
           }
         }
+
+        final Future<Map<String, dynamic>> userDocFuture = loadUserDoc();
+        final Future<void> seedFuture = isGuest
+            ? Future<void>.value()
+            : _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
         _catalog = await PersonalizedInterestsCatalog.load(
           remoteConfig: FirebaseRemoteConfig.instance,
           settingsLocal: _settingsLocal,
         );
+        final Map<String, dynamic> userDoc = await userDocFuture;
+        await seedFuture;
         if (!isCurrentSession()) {
           return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
         }
         _interests = _resolveInterests(userDoc, _catalog);
         _following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
         _bootstrapScope = cacheScope;
-        if (!isGuest) {
-          await _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
-        }
       }
 
       if (!isGuest) {
@@ -216,8 +268,6 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       );
       final FeedMix mix = FeedMix.parse(_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
-      int successfulSources = 0;
-      int failedSources = 0;
       final List<String> tasteCategories = _tasteCategories(profile);
       final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
         _pool(
@@ -226,18 +276,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           onSuccess: _following.isEmpty ? null : () => successfulSources++,
           onFailure: () => failedSources++,
         ),
-        _pool(
-          CandidatePool.fresh,
-          _fetchFreshItems(),
-          onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
-        ),
-        _pool(
-          CandidatePool.gems,
-          _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
-          onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
-        ),
+        freshPool,
+        gemsPool,
         _pool(
           CandidatePool.taste,
           _fetchTasteItems(tasteCategories),
@@ -264,7 +304,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
 
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await blockedFuture;
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
@@ -672,11 +712,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     );
 
     final List<FeedItemEntity> first = await _queryWalls(spec(_randomDocId(), limit));
-    if (first.length >= limit) {
+    if (first.isNotEmpty) {
       return first;
     }
     // Past the last id: wrap around to the start of the key space.
-    return <FeedItemEntity>[...first, ...await _queryWalls(spec(null, limit - first.length))];
+    return _queryWalls(spec(null, limit));
   }
 
   String _randomDocId() {
@@ -807,16 +847,21 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       ))?.items ??
       const <FeedItemEntity>[];
 
-  Future<_CachedFeed?> _readCached({required String scope, required Future<Set<String>> Function() blocked}) async {
-    final snapshot = await _feedCacheLocal.read(source: 'personalized', scope: scope);
-    if (snapshot == null || snapshot.payload is! Map) {
+  Future<_CachedFeed?> _readCached({
+    required String scope,
+    required Future<Set<String>> Function() blocked,
+    Future<FeedSnapshot?>? snapshot,
+  }) async {
+    final saved = await (snapshot ?? _feedCacheLocal.read(source: 'personalized', scope: scope));
+    if (saved == null || saved.payload is! Map) {
       return null;
     }
-    final Map<String, dynamic> payload = toJsonMap(snapshot.payload);
+    final Map<String, dynamic> payload = toJsonMap(saved.payload);
     final Object? rawItems = payload['items'];
     if (rawItems is! List) {
       return null;
     }
+    final Set<String> blockedEmails = await blocked();
     // A cache written under other content filters may hold Wallhaven items the user now excludes.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
     final List<FeedItemEntity> items = rawItems
@@ -825,10 +870,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .whereType<FeedItemEntity>()
         .where((item) => sameFilters || item is! WallhavenFeedItem)
         .toList(growable: false);
-    final Set<String> blockedEmails = await blocked();
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
     return (
-      cachedAt: snapshot.cachedAtUtc,
+      cachedAt: saved.cachedAtUtc,
       items: BlockedCreatorsFilter.filterFeedItems(items, blockedEmails)
           .where(
             (item) =>

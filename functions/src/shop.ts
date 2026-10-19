@@ -1,14 +1,14 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isValidRequestId} from "./coinsCallables";
-import {coinTransactionDoc, db, REGION} from "./common";
+import {coinTransactionDoc, db, CALLABLE_REGIONS} from "./common";
 import {type EconomyConfig, loadEconomy} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 import {type CosmeticSlot, shopItem, type ShopItem, shopPrice, slotFor} from "./shopCatalog";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 
 export type ShopRefusal = "shop_item_owned" | "shop_item_pro_only" | "shop_item_rank_locked" | "shop_item_expired";
 

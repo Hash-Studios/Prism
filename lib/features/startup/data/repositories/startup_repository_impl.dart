@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/notifications/notifications.dart';
@@ -73,6 +76,13 @@ Future<void> prepareRemoteConfig(
   }
 }
 
+/// The activated remote value when it has text, else the cached version, else the hardcoded minimum.
+String resolveObsoleteVersion(String? remote, String cached) {
+  final String trimmedRemote = remote?.trim() ?? '';
+  if (trimmedRemote.isNotEmpty) return trimmedRemote;
+  return cached.isEmpty ? defaultObsoleteAppVersion : cached;
+}
+
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
   // FirebaseRemoteConfig is intentionally NOT injected via the constructor.
@@ -103,12 +113,10 @@ class StartupRepositoryImpl implements StartupRepository {
 
     final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseInit.remoteConfigIfInitialized : null;
 
-    // Runs beside Remote Config. Its own 3 s budget keeps a slow read from holding the splash any longer.
-    final Future<void> economyConfig;
+    // Home never reads economy config, so the splash does not wait for it.
     if (firebaseReady) {
-      economyConfig = EconomyConfig.load();
+      unawaited(EconomyConfig.load());
     } else {
-      economyConfig = Future<void>.value();
       unawaited(
         FirebaseInit.readyFuture.then<void>((bool becameReady) {
           if (becameReady) return EconomyConfig.load();
@@ -119,7 +127,11 @@ class StartupRepositoryImpl implements StartupRepository {
     try {
       if (remoteConfig != null) {
         try {
-          await prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget);
+          await PerformanceProbe.measure(
+            'startup',
+            'remote_config',
+            () => prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget),
+          );
         } on TimeoutException {
           logger.w('Remote Config preparation timed out; using locally activated values.', tag: 'StartupRepository');
         } catch (error) {
@@ -136,7 +148,12 @@ class StartupRepositoryImpl implements StartupRepository {
         fallback: defaultBannerTextOn,
       );
       final bannerUrl = remoteConfig?.getString('bannerURL') ?? defaultBannerUrl;
-      final obsoleteVersion = remoteConfig?.getString('obsoleteVersion') ?? defaultObsoleteAppVersion;
+      final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
+          ? getIt<SettingsLocalDataSource>()
+          : null;
+      final String cachedObsolete =
+          settings?.get<String>(PersistenceKeys.obsoleteAppVersion, defaultValue: '').trim() ?? '';
+      final obsoleteVersion = resolveObsoleteVersion(remoteConfig?.getString('obsoleteVersion'), cachedObsolete);
       final verifiedUsers = _parseStringList(
         remoteConfig?.getString('verifiedUsers') ?? defaultVerifiedUsers.toString(),
       );
@@ -167,7 +184,9 @@ class StartupRepositoryImpl implements StartupRepository {
       );
 
       _currentConfig = entity;
-      await economyConfig;
+      if (remoteConfig != null && settings != null) {
+        unawaited(settings.set(PersistenceKeys.obsoleteAppVersion, obsoleteVersion));
+      }
 
       unawaited(syncInAppNotificationsFromRemote());
       if (getIt.isRegistered<InAppNotificationsBloc>()) {

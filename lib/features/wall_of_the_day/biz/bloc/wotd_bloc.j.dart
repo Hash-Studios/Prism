@@ -21,13 +21,31 @@ class WotdBloc extends Bloc<WotdEvent, WotdState> {
 
   Future<void> _onStarted(_Started event, Emitter<WotdState> emit) async {
     final requestId = ++_latestRequestId;
-    emit(state.copyWith(status: LoadStatus.loading));
+    WallOfTheDayEntity? cached;
+    if (state.entity == null) {
+      try {
+        cached = await _fetchWallOfTheDayUseCase.readCachedToday();
+      } catch (_) {}
+      if (emit.isDone || requestId != _latestRequestId) return;
+    }
+    final bool paintedCached = cached != null && state.entity == null;
+    if (paintedCached) {
+      emit(state.copyWith(status: LoadStatus.success, entity: cached));
+    } else {
+      emit(state.copyWith(status: LoadStatus.loading));
+    }
     final result = await _fetchWallOfTheDayUseCase(const NoParams());
     if (requestId != _latestRequestId) return;
 
     result.fold(
       onSuccess: (entity) => emit(state.copyWith(status: LoadStatus.success, entity: entity)),
-      onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure)),
+      onFailure: (failure) {
+        if (const <String>{'permission-denied', 'unauthenticated', 'not-found'}.contains(failure.code)) {
+          emit(state.copyWith(status: LoadStatus.failure, entity: null));
+        } else if (!paintedCached) {
+          emit(state.copyWith(status: LoadStatus.failure));
+        }
+      },
     );
   }
 }

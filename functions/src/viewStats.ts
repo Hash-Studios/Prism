@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, utcDateString} from "./common";
 import {progressQuestForUser} from "./quests";
 import {dayKey} from "./economy";
 
@@ -117,17 +117,19 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
   if (!(await claimRateDoc(rateRef, rateSnap, claim))) return views;
   await bumpViews(statsRef, rawViews);
   if (collection === WALLPAPER_STATS) {
-    await bumpDaily(docId, "views", now).catch((err: unknown) => {
-      logger.warn("Could not record the daily view.", {err});
-    });
-    await progressQuestForUser(uid, "view_wallpaper", `${uid}_${docId}_${dayKey(now)}`, now);
+    await Promise.all([
+      bumpDaily(docId, "views", now).catch((err: unknown) => {
+        logger.warn("Could not record the daily view.", {err});
+      }),
+      progressQuestForUser(uid, "view_wallpaper", `${uid}_${docId}_${dayKey(now)}`, now),
+    ]);
   }
   return views + 1;
 }
 
 export const recordWallpaperView = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{wallId?: string}>): Promise<RecordViewResponse> => {
@@ -141,7 +143,7 @@ export const recordWallpaperView = onCall(
 
 export const recordSetupView = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{setupId?: string}>): Promise<RecordViewResponse> => {

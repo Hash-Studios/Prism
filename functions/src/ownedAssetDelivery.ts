@@ -95,19 +95,25 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   const path = data[`${prefix}_path`];
   const sha = data[`${prefix}_sha`];
   if (!repo || !owner || typeof path !== "string" || typeof sha !== "string") return null;
-  try { objectName({repo, path, sha}); } catch { return null; }
+  try {
+    objectName({repo, path, sha});
+  } catch {
+    return null;
+  }
   const raw = data[prefix === "thumb" ? "wallpaper_thumb" : "wallpaper_url"];
   if (typeof raw !== "string") return null;
   try {
     if (raw !== "" || prefix !== "wallpaper") {
-    const url = new URL(raw);
-    const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
-    if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.search || url.hash ||
+      const url = new URL(raw);
+      const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
+      if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.search || url.hash ||
       url.username || url.password || url.port || parts[0].toLowerCase() !== owner.toLowerCase() ||
       parts[1] !== repo || parts.length <= path.split("/").length + 2 ||
       parts.slice(-path.split("/").length).join("/") !== path) return null;
     }
-  } catch { return null; }
+  } catch {
+    return null;
+  }
   const rows = await tx.get(db.collection("githubUploads").where("path", "==", path).limit(8));
   if (rows.size >= 8) return null;
   const records = rows.docs.filter((doc) => doc.data().repo === repo);

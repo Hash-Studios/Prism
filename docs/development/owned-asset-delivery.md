@@ -26,6 +26,17 @@ Configure these server environment names through the existing Doppler/deploy pro
 - `GH_USERNAME` and `GH_REPO_WALLS`: exact trusted GitHub owner and wallpaper repository.
 - Existing GitHub callable credentials remain server-only. Raw migration downloads do not send them.
 
+The default `make functions-env` exports only the existing GitHub keys. After approval
+and after the new values exist in the selected Doppler config, include them explicitly:
+
+```sh
+make functions-env FUNCTIONS_ENV_KEYS='GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS OWNED_ASSET_BUCKET OWNED_THUMBNAIL_BASE_URL'
+```
+
+This writes local deployment configuration. It does not create the bucket or deploy
+functions. Do not run it during code-only verification. A later export with the default
+key list omits owned storage, so use the same explicit list for subsequent approved deploys.
+
 Create the bucket in the approved project and region with uniform bucket-level access
 and public-access prevention enforced. Do not grant `allUsers` or `allAuthenticatedUsers`
 any bucket role. Do not configure Firebase download tokens or public object ACLs.

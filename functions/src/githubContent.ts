@@ -3,7 +3,7 @@ import {createHash, randomUUID} from "node:crypto";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
-import {db, readDailyCount, REGION, utcDateString} from "./common";
+import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {deleteRetainedUpload, ownedAssetStorageEnabled, retainUpload, type StoredUpload} from "./ownedAssetDelivery";
 
 const UPLOADS = "githubUploads";
@@ -18,7 +18,7 @@ const GITHUB_REQUEST_TIMEOUT_MS = 30_000;
 const FREE_WALLS_PER_WEEK = 3;
 // Wall submission previews use "thumb_" in the walls repo.
 const WALL_THUMB_PREFIX = "thumb_";
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 const githubToken = defineSecret("GH_TOKEN");
 
 type GithubContentData = {
@@ -621,10 +621,12 @@ export const githubDeleteFile = onCall(
     const deletion = await claimDeleteIntent(callerUid, repo, path, sha, uploadRef, record, isAdmin, Date.now());
     const nowMs = Date.now();
     try {
-      if (record?.sourceKind !== "owned") await githubRequest(githubUrl(repo, path), {
-        method: "DELETE",
-        body: JSON.stringify({message, sha}),
-      });
+      if (record?.sourceKind !== "owned") {
+        await githubRequest(githubUrl(repo, path), {
+          method: "DELETE",
+          body: JSON.stringify({message, sha}),
+        });
+      }
     } catch (error) {
       const status = githubHttpStatus(error);
       if (status !== 404) {

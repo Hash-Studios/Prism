@@ -9,7 +9,9 @@ import {installFakeDb} from "./fakeDb";
 
 test("owned storage is explicit and thumb URL never uses origin", (t) => {
   const previous = {...process.env};
-  t.after(() => {process.env = previous;});
+  t.after(() => {
+    process.env = previous;
+  });
   delete process.env.OWNED_ASSET_BUCKET;
   assert.equal(ownedAssetStorageEnabled(), false);
   process.env.OWNED_THUMBNAIL_BASE_URL = "https://example.com/ownedThumbnail";
@@ -20,7 +22,9 @@ test("owned storage is explicit and thumb URL never uses origin", (t) => {
 
 test("retention verifies Git SHA and retries create-only object with matching private metadata", async (t) => {
   const previous = {...process.env};
-  t.after(() => {process.env = previous;});
+  t.after(() => {
+    process.env = previous;
+  });
   process.env.OWNED_ASSET_BUCKET = "private-test";
   process.env.GH_REPO_WALLS = "walls";
   const bytes = Buffer.from("jpeg-bytes");
@@ -47,7 +51,9 @@ test("retention verifies Git SHA and retries create-only object with matching pr
 
 test("signer denies missing, malformed, duplicate and tombstoned identities without origin fetch", async (t) => {
   const store = installFakeDb(t);
-  t.mock.method(globalThis, "fetch", async () => {throw new Error("Origin must not be fetched");});
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("Origin must not be fetched");
+  });
   await assert.rejects(signOriginalDelivery("../wall"), /Invalid wall/);
   await assert.rejects(signOriginalDelivery("wall"), /unavailable/);
   store.set("walls/a", {id: "wall"});
@@ -60,13 +66,17 @@ test("signer denies missing, malformed, duplicate and tombstoned identities with
 
 test("reviewed legacy binding serves retained PNG and signs pinned original during origin outage, then deletion tombstones", async (t) => {
   const previous = {...process.env};
-  t.after(() => {process.env = previous;});
+  t.after(() => {
+    process.env = previous;
+  });
   process.env.OWNED_ASSET_BUCKET = "private-test";
   process.env.OWNED_THUMBNAIL_BASE_URL = "https://example.com/ownedThumbnail";
   process.env.GH_USERNAME = "hash";
   process.env.GH_REPO_WALLS = "walls";
   let fetches = 0;
-  t.mock.method(globalThis, "fetch", async () => {fetches++; throw new Error("GitHub is down");});
+  t.mock.method(globalThis, "fetch", async () => {
+    fetches++; throw new Error("GitHub is down");
+  });
   const originalUrl = "https://raw.githubusercontent.com/hash/walls/main/photo.png";
   const thumbUrl = "https://raw.githubusercontent.com/hash/walls/main/thumb_photo.png";
   const sha = "a".repeat(40);
@@ -77,11 +87,13 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   const wrap = <T extends object>(target: T): T => new Proxy(target, {get(current, property) {
     const value: unknown = Reflect.get(current, property);
     if (typeof value !== "function") return value;
-    if (property === "get") return async () => {
-      const result = await Reflect.apply(value, current, []) as Record<string, unknown>;
-      return Array.isArray(result.docs) ? {...result, docs: result.docs.map((doc) => ({...doc, createTime: time}))} :
-        {...result, createTime: time};
-    };
+    if (property === "get") {
+      return async () => {
+        const result = await Reflect.apply(value, current, []) as Record<string, unknown>;
+        return Array.isArray(result.docs) ? {...result, docs: result.docs.map((doc) => ({...doc, createTime: time}))} :
+          {...result, createTime: time};
+      };
+    }
     if (["doc", "collection", "where", "limit"].includes(String(property))) {
       return (...args: unknown[]) => wrap(Reflect.apply(value, current, args) as object);
     }
@@ -116,8 +128,14 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   assert.ok(signed.expiresAt > Date.now() && signed.expiresAt <= Date.now() + 120000);
   let status = 200;
   let body: unknown;
-  const response = {set: () => response, type: (type: string) => {assert.equal(type, "image/png"); return response;},
-    send: (value: unknown) => {body = value; return response;}, status: (value: number) => {status = value; return response;}};
+  const response = {set: () => response, type: (type: string) => {
+    assert.equal(type, "image/png"); return response;
+  },
+  send: (value: unknown) => {
+    body = value; return response;
+  }, status: (value: number) => {
+    status = value; return response;
+  }};
   await ownedThumbnail({path: "/wall"} as never, response as never);
   assert.equal(status, 200);
   assert.deepEqual(body, png);
@@ -162,6 +180,8 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   store.set("walls/forged", {...store.get("walls/private"), id: "forged", wallpaper_thumb: thumbUrl});
   await bindOwnedWall("forged");
   assert.equal(store.has("ownedAssets/forged"), false);
-  t.mock.method(file, "getMetadata", async () => {throw new Error("Retained original is missing");});
+  t.mock.method(file, "getMetadata", async () => {
+    throw new Error("Retained original is missing");
+  });
   await assert.rejects(signOriginalDelivery("private"), /missing/);
 });
