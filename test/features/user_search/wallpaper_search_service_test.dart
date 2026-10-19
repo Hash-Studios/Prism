@@ -7,6 +7,7 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -146,6 +147,7 @@ Map<String, dynamic> _prismDoc(
   String resolution = '1080x2400',
   String email = 'a@example.com',
   List<String> colors = const <String>[],
+  String? depthTier,
 }) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://prism/$id.jpg',
@@ -155,6 +157,7 @@ Map<String, dynamic> _prismDoc(
   'email': email,
   'review': true,
   'colors': colors,
+  'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
 };
 
 void main() {
@@ -503,6 +506,145 @@ void main() {
 
       expect(page.prismResults.map((wall) => wall.id), <String>['blue1']);
       expect(firestore.querySpecs.every((spec) => spec.filters.every((f) => f.field != 'colors')), isTrue);
+    });
+  });
+
+  group('depth', () {
+    const SearchFilters depthOnly = SearchFilters(depthOnly: true);
+
+    PrismFeedItem savedPrism(String id, WallDepthTier? tier) => PrismFeedItem(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://prism/$id.jpg',
+          thumbnailUrl: 'https://prism/$id-thumb.jpg',
+        ),
+        title: 'Moss forest $id',
+        depthTier: tier,
+      ),
+    );
+
+    Future<WallpaperSearchService> serviceWithSaved(
+      List<FeedItemEntity> saved, {
+      required FakeFirestoreClient firestore,
+      required _FakeWallhavenRepository wallhaven,
+      required _FakePexelsRepository pexels,
+    }) async {
+      final Directory directory = await Directory.systemTemp.createTemp('depth-search-catalog-');
+      addTearDown(() => directory.delete(recursive: true));
+      final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+        store: DurableJsonStore('catalog', directory: directory),
+      );
+      await catalog.remember(saved);
+      return WallpaperSearchService(
+        wallhaven,
+        pexels,
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        catalog,
+      );
+    }
+
+    test('lists only Prism auto and menu walls and never asks Wallhaven or Pexels', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (id: 'd1', data: _prismDoc('auto1', depthTier: 'auto')),
+          (id: 'd2', data: _prismDoc('none1', depthTier: 'none')),
+          (id: 'd3', data: _prismDoc('menu1', depthTier: 'menu')),
+          (id: 'd4', data: _prismDoc('unchecked')),
+        ],
+      );
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('', filters: depthOnly);
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['auto1', 'menu1']);
+      expect(page.prismResults, isEmpty);
+      expect(page.isLocal, isFalse);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.depth');
+    });
+
+    test('an empty page is a page, not an error, when nothing has a depth tier', () async {
+      final service = _service(
+        wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+        pexels: Result.error<List<PexelsWallpaper>>(const ServerFailure('500')),
+      );
+
+      final page = await service.search('', filters: depthOnly);
+
+      expect(page.results, isEmpty);
+      expect(page.prismResults, isEmpty);
+    });
+
+    test('saved walls fill in when Prism has no match, and only auto and menu Prism walls stay', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[]));
+      final service = await serviceWithSaved(
+        <FeedItemEntity>[
+          savedPrism('saved-auto', WallDepthTier.auto),
+          savedPrism('saved-menu', WallDepthTier.menu),
+          savedPrism('saved-none', WallDepthTier.none),
+          savedPrism('saved-unchecked', null),
+          const WallhavenFeedItem(
+            id: 'moss-wallhaven',
+            wallpaper: WallhavenWallpaper(
+              core: WallpaperCore(
+                id: 'moss-wallhaven',
+                source: WallpaperSource.wallhaven,
+                fullUrl: 'https://w/moss.jpg',
+                thumbnailUrl: 't',
+              ),
+              tags: <String>['moss'],
+            ),
+          ),
+        ],
+        firestore: FakeFirestoreClient()..queryError = StateError('offline'),
+        wallhaven: wallhaven,
+        pexels: pexels,
+      );
+
+      final page = await service.search('moss', filters: depthOnly);
+
+      expect(page.results.map((wall) => wall.id).toSet(), <String>{'saved-auto', 'saved-menu'});
+      expect(page.isLocal, isTrue);
+      expect(wallhaven.calls, 0);
+    });
+
+    test('Prism matches win over saved walls', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('live', depthTier: 'menu'))],
+      );
+      final service = await serviceWithSaved(
+        <FeedItemEntity>[savedPrism('saved-auto', WallDepthTier.auto)],
+        firestore: firestore,
+        wallhaven: _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+        pexels: _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+      );
+
+      final page = await service.search('moss', filters: depthOnly);
+
+      expect(page.results.map((wall) => wall.id), <String>['live']);
+      expect(page.isLocal, isFalse);
+    });
+
+    test('without the filter a depth tier changes nothing', () async {
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+
+      final page = await service.search('mountain');
+
+      expect(page.provider, SearchProviderValue.wallhaven);
+      expect(page.results.map((wall) => wall.id), <String>['a']);
     });
   });
 

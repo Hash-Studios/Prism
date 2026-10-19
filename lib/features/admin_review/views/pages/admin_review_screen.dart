@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_sender_tab.dart';
@@ -120,6 +121,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             ('By', wall.by.isNotEmpty ? wall.by : 'Unknown'),
             ('Email', wall.email.isNotEmpty ? wall.email : 'Unknown'),
             ('Uploaded', createdAt != null ? timeago.format(createdAt.toLocal()) : 'Unknown'),
+            ('Depth', depthTierLabel(wallDepthTier(wall))),
           ],
           onApprove: () async {
             await _repository.approveWall(wall);

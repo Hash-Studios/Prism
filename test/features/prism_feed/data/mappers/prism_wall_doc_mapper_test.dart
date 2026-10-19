@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +72,40 @@ void main() {
       expect(wall.isBoostedAt(DateTime.utc(2029)), isTrue);
       expect(wall.isBoostedAt(DateTime.utc(2031)), isFalse);
       expect(dto().toDomain(docId: 'a').isBoostedAt(DateTime.utc(2029)), isFalse);
+    });
+  });
+
+  group('depth', () {
+    PrismWallDocDto parsed(Object? depth) =>
+        PrismWallDocDto.fromJson(<String, dynamic>{'wallpaper_url': 'https://x/y.jpg', 'depth': ?depth});
+
+    test('maps the tier of each checked wall', () {
+      expect(parsed(<String, Object?>{'tier': 'auto'}).toDomain(docId: 'a').depthTier, WallDepthTier.auto);
+      expect(
+        parsed(<String, Object?>{
+          'tier': 'menu',
+          'kind': 'person',
+          'top': 0.31,
+          'v': 1,
+          'by': 'detector',
+        }).toDomain(docId: 'a').depthTier,
+        WallDepthTier.menu,
+      );
+      expect(parsed(<String, Object?>{'tier': 'none'}).toDomain(docId: 'a').depthTier, WallDepthTier.none);
+    });
+
+    test('is null when the wall was not checked or the tier is unknown', () {
+      expect(parsed(null).toDomain(docId: 'a').depthTier, isNull);
+      expect(parsed(<String, Object?>{}).toDomain(docId: 'a').depthTier, isNull);
+      expect(parsed(<String, Object?>{'tier': 'sideways'}).toDomain(docId: 'a').depthTier, isNull);
+      expect(parsed(<String, Object?>{'by': 'detector'}).toDomain(docId: 'a').depthTier, isNull);
+      expect(dto().toDomain(docId: 'a').depthTier, isNull);
+    });
+
+    test('survives the JSON round trip', () {
+      final PrismWallDocDto original = parsed(<String, Object?>{'tier': 'menu'});
+
+      expect(PrismWallDocDto.fromJson(original.toJson()).toDomain(docId: 'a').depthTier, WallDepthTier.menu);
     });
   });
 }

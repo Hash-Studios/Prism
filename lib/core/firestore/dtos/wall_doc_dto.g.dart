@@ -25,6 +25,7 @@ _WallDocDto _$WallDocDtoFromJson(Map<String, dynamic> json) => _WallDocDto(
       : const FirestoreStringListConverter().fromJson(json['collections']),
   createdAt: const FirestoreDateTimeConverter().fromJson(json['createdAt']),
   review: json['review'] as bool? ?? false,
+  depth: json['depth'] == null ? const <String, Object?>{} : const FirestoreJsonMapConverter().fromJson(json['depth']),
 );
 
 Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynamic>{
@@ -40,6 +41,7 @@ Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynami
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'createdAt': const FirestoreDateTimeConverter().toJson(instance.createdAt),
   'review': instance.review,
+  'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
 };
 
 _FavouriteWallDocDto _$FavouriteWallDocDtoFromJson(Map<String, dynamic> json) => _FavouriteWallDocDto(

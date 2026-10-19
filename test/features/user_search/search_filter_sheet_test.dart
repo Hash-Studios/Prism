@@ -223,4 +223,71 @@ void main() {
       expect(filters.color!.id, 'black');
     });
   });
+
+  group('depth', () {
+    Future<void> openSheet(WidgetTester tester, SearchFilters initial, void Function(SearchFilters?) onResult) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => onResult(await showSearchFilterSheet(context, initial)),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    final Finder depthSwitch = find.widgetWithText(SwitchListTile, 'Depth Effect');
+
+    test('the sheet choices carry the depth filter, and it is off unless asked for', () {
+      expect(buildSearchFilters(portraitOnly: true, shortSide: null, sort: SearchSort.relevance).depthOnly, isFalse);
+      expect(
+        buildSearchFilters(portraitOnly: true, shortSide: null, sort: SearchSort.relevance, depthOnly: true),
+        const SearchFilters(depthOnly: true),
+      );
+    });
+
+    testWidgets('iOS shows the Depth Effect switch with its subtitle, and Apply returns the choice', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (picked) => result = picked);
+
+      expect(depthSwitch, findsOneWidget);
+      expect(find.text('Subject can sit in front of the clock'), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(depthSwitch).value, isFalse);
+
+      await tester.tap(depthSwitch);
+      await tester.pump();
+      expect(tester.widget<SwitchListTile>(depthSwitch).value, isTrue);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters(depthOnly: true));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('iOS opens with the switch on when the filter is on, and Reset clears it', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(depthOnly: true), (picked) => result = picked);
+
+      expect(tester.widget<SwitchListTile>(depthSwitch).value, isTrue);
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Android does not show the Depth Effect switch', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (picked) => result = picked);
+
+      expect(find.text('Depth Effect'), findsNothing);
+      expect(find.text('Subject can sit in front of the clock'), findsNothing);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.depthOnly, isFalse);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
 }

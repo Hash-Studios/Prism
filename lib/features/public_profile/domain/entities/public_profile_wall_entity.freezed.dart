@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PublicProfileWallEntity {
 
- String get id; String? get by; String? get desc; String? get size; String? get resolution; String? get email; WallpaperSource? get source; String? get wallpaperThumb; String get wallpaperUrl; List<String>? get collections; DateTime? get createdAt; bool get review;
+ String get id; String? get by; String? get desc; String? get size; String? get resolution; String? get email; WallpaperSource? get source; String? get wallpaperThumb; String get wallpaperUrl; List<String>? get collections; DateTime? get createdAt; bool get review; WallDepthTier? get depthTier;
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $PublicProfileWallEntityCopyWith<PublicProfileWallEntity> get copyWith => _$Publ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,by,desc,size,resolution,email,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review);
+int get hashCode => Object.hash(runtimeType,id,by,desc,size,resolution,email,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review,depthTier);
 
 @override
 String toString() {
-  return 'PublicProfileWallEntity(id: $id, by: $by, desc: $desc, size: $size, resolution: $resolution, email: $email, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review)';
+  return 'PublicProfileWallEntity(id: $id, by: $by, desc: $desc, size: $size, resolution: $resolution, email: $email, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depthTier: $depthTier)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $PublicProfileWallEntityCopyWith<$Res>  {
   factory $PublicProfileWallEntityCopyWith(PublicProfileWallEntity value, $Res Function(PublicProfileWallEntity) _then) = _$PublicProfileWallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String? by, String? desc, String? size, String? resolution, String? email, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review
+ String id, String? by, String? desc, String? size, String? resolution, String? email, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, WallDepthTier? depthTier
 });
 
 
@@ -62,7 +62,7 @@ class _$PublicProfileWallEntityCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = freezed,Object? desc = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = freezed,Object? desc = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? depthTier = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -76,7 +76,8 @@ as String?,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUr
 as String,collections: freezed == collections ? _self.collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
+as WallDepthTier?,
   ));
 }
 
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity() when $default != null:
-return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review);case _:
+return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.e
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier)  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity():
-return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review);case _:
+return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.e
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? by,  String? desc,  String? size,  String? resolution,  String? email,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier)?  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity() when $default != null:
-return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review);case _:
+return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.email,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.e
 
 
 class _PublicProfileWallEntity extends PublicProfileWallEntity {
-  const _PublicProfileWallEntity({required this.id, this.by, this.desc, this.size, this.resolution, this.email, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false}): _collections = collections,super._();
+  const _PublicProfileWallEntity({required this.id, this.by, this.desc, this.size, this.resolution, this.email, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false, this.depthTier}): _collections = collections,super._();
   
 
 @override final  String id;
@@ -240,6 +241,7 @@ class _PublicProfileWallEntity extends PublicProfileWallEntity {
 
 @override final  DateTime? createdAt;
 @override@JsonKey() final  bool review;
+@override final  WallDepthTier? depthTier;
 
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -251,16 +253,16 @@ _$PublicProfileWallEntityCopyWith<_PublicProfileWallEntity> get copyWith => __$P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,by,desc,size,resolution,email,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review);
+int get hashCode => Object.hash(runtimeType,id,by,desc,size,resolution,email,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review,depthTier);
 
 @override
 String toString() {
-  return 'PublicProfileWallEntity(id: $id, by: $by, desc: $desc, size: $size, resolution: $resolution, email: $email, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review)';
+  return 'PublicProfileWallEntity(id: $id, by: $by, desc: $desc, size: $size, resolution: $resolution, email: $email, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depthTier: $depthTier)';
 }
 
 
@@ -271,7 +273,7 @@ abstract mixin class _$PublicProfileWallEntityCopyWith<$Res> implements $PublicP
   factory _$PublicProfileWallEntityCopyWith(_PublicProfileWallEntity value, $Res Function(_PublicProfileWallEntity) _then) = __$PublicProfileWallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? by, String? desc, String? size, String? resolution, String? email, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review
+ String id, String? by, String? desc, String? size, String? resolution, String? email, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, WallDepthTier? depthTier
 });
 
 
@@ -288,7 +290,7 @@ class __$PublicProfileWallEntityCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = freezed,Object? desc = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = freezed,Object? desc = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? depthTier = freezed,}) {
   return _then(_PublicProfileWallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -302,7 +304,8 @@ as String?,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUr
 as String,collections: freezed == collections ? _self._collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
+as WallDepthTier?,
   ));
 }
 

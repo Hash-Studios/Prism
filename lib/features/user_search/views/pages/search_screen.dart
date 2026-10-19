@@ -72,7 +72,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
-    if (trimmed.isEmpty && _filters.color == null) return;
+    if (trimmed.isEmpty && !_filters.listsWithoutQuery) return;
     if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
     final String searchId = AnalyticsCorrelation.newId();
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
@@ -165,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
       isSubmitted = false;
       _searchId = null;
       _search = null;
-      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true);
+      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true, depthOnly: false);
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
@@ -175,7 +175,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
     final String query = (isSubmitted ? _submittedQuery : searchController.text).trim();
-    if (query.isEmpty && picked.color == null) {
+    if (query.isEmpty && !picked.listsWithoutQuery) {
       if (isSubmitted) _backToDiscover();
     } else if (isSubmitted || query.isEmpty) {
       _triggerSearch(query);
@@ -190,7 +190,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _clearColor() {
     setState(() => _filters = _filters.copyWith(clearColor: true));
-    if (_submittedQuery.isEmpty) {
+    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
+  }
+
+  void _clearDepth() {
+    setState(() => _filters = _filters.copyWith(depthOnly: false));
+    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
       _backToDiscover();
     } else {
       _triggerSearch(_submittedQuery);
@@ -305,10 +314,14 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           final bool filtered = _filters != const SearchFilters();
+          final String listed = <String>[
+            if (_filters.color != null) _filters.color!.name.toLowerCase(),
+            if (_filters.depthOnly) 'Depth Effect',
+          ].join(' ');
           return GlintState(
             kind: GlintStateKind.empty,
             title: _submittedQuery.isEmpty
-                ? 'No ${_filters.color?.name.toLowerCase()} wallpapers found'
+                ? 'No $listed wallpapers found'
                 : 'No wallpapers found for "$_submittedQuery"',
             body: filtered ? 'Try fewer filters.' : 'Try a shorter or a different word.',
             actionLabel: filtered ? 'Reset filters' : null,
@@ -370,6 +383,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                   leading: _ColourDot(_filters.color!.color),
                                   onTap: _clearColor,
                                 ),
+                              ),
+                            if (_filters.color != null && _filters.depthOnly) const SizedBox(width: PrismSpace.xs),
+                            if (_filters.depthOnly)
+                              Tooltip(
+                                message: 'Clear Depth Effect',
+                                child: PrismChip(label: 'Depth Effect', selected: true, onTap: _clearDepth),
                               ),
                           ],
                         ),

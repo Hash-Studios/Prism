@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -21,6 +22,7 @@ abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
     List<String>? collections,
     DateTime? createdAt,
     @Default(false) bool review,
+    WallDepthTier? depthTier,
   }) = _PublicProfileWallEntity;
 
   const PublicProfileWallEntity._();
@@ -41,6 +43,7 @@ abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
       ),
       collections: collections,
       review: review,
+      depthTier: depthTier,
     );
     return PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
   }

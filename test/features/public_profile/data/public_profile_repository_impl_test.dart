@@ -6,6 +6,8 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
@@ -458,6 +460,33 @@ void main() {
       expect(restored.isSuccess, isTrue);
       expect(restored.data!.items.single.id, 'offline-wall');
       expect(restored.data!.items.single.wallpaperUrl, 'https://example.test/wall.jpg');
+    });
+
+    test('a wall keeps its Depth Effect tier on the feed item, also after a restart while offline', () async {
+      const String owner = 'walls-depth-owner';
+      app_state.prismUser = profileUser(id: owner);
+      client.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'checked',
+          data: <String, dynamic>{
+            'wallpaper_url': 'https://example.test/a.jpg',
+            'email': 'creator@prism.test',
+            'depth': <String, dynamic>{'tier': 'menu', 'by': 'detector'},
+          },
+        ),
+        (id: 'unchecked', data: <String, dynamic>{'wallpaper_url': 'https://example.test/b.jpg'}),
+      ];
+      final first = await repo.fetchWalls(email: 'creator@prism.test', refresh: true);
+      expect(first.data!.items.map((wall) => wall.depthTier), <WallDepthTier?>[WallDepthTier.menu, null]);
+
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restored = await PublicProfileRepositoryImpl(
+        offlineClient,
+        blocks,
+      ).fetchWalls(email: 'creator@prism.test', refresh: true);
+
+      expect(restored.data!.items.map((wall) => wall.depthTier), <WallDepthTier?>[WallDepthTier.menu, null]);
+      expect((restored.data!.items.first.toFeedItem() as PrismFeedItem).wallpaper.depthTier, WallDepthTier.menu);
     });
   });
 }

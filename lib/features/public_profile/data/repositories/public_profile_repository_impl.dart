@@ -14,6 +14,7 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -495,6 +496,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       collections: dto.collections,
       createdAt: dto.createdAt,
       review: dto.review,
+      depthTier: WallDepthTier.parse(dto.depth['tier']),
     );
   }
 }

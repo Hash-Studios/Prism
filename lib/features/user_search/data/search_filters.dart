@@ -4,7 +4,13 @@ enum SearchSort { relevance, latest, toplist }
 
 /// What the user narrowed a wallpaper search to. [minResolution] is `<width>x<height>`, for example `1080x1920`.
 class SearchFilters {
-  const SearchFilters({this.portraitOnly = true, this.minResolution, this.sort = SearchSort.relevance, this.color});
+  const SearchFilters({
+    this.portraitOnly = true,
+    this.minResolution,
+    this.sort = SearchSort.relevance,
+    this.color,
+    this.depthOnly = false,
+  });
 
   final bool portraitOnly;
   final String? minResolution;
@@ -12,6 +18,12 @@ class SearchFilters {
 
   /// One palette colour, or `null` for any colour.
   final PrismPaletteColor? color;
+
+  /// Only Prism walls the iOS Lock Screen Depth Effect works on. Wallhaven and Pexels walls carry no depth data.
+  final bool depthOnly;
+
+  /// Whether these filters list walls without a text query.
+  bool get listsWithoutQuery => color != null || depthOnly;
 
   /// Wallhaven `sorting` value. `null` keeps the API default, which is relevance for a text query.
   String? get wallhavenSorting => switch (sort) {
@@ -40,12 +52,14 @@ class SearchFilters {
     SearchSort? sort,
     PrismPaletteColor? color,
     bool clearColor = false,
+    bool? depthOnly,
   }) {
     return SearchFilters(
       portraitOnly: portraitOnly ?? this.portraitOnly,
       minResolution: clearMinResolution ? null : minResolution ?? this.minResolution,
       sort: sort ?? this.sort,
       color: clearColor ? null : color ?? this.color,
+      depthOnly: depthOnly ?? this.depthOnly,
     );
   }
 
@@ -55,10 +69,11 @@ class SearchFilters {
       other.portraitOnly == portraitOnly &&
       other.minResolution == minResolution &&
       other.sort == sort &&
-      other.color == color;
+      other.color == color &&
+      other.depthOnly == depthOnly;
 
   @override
-  int get hashCode => Object.hash(portraitOnly, minResolution, sort, color);
+  int get hashCode => Object.hash(portraitOnly, minResolution, sort, color, depthOnly);
 
   static ({int width, int height})? _parse(String? value) {
     final Match? match = RegExp(r'^\s*(\d+)\s*[xX]\s*(\d+)\s*$').firstMatch(value ?? '');

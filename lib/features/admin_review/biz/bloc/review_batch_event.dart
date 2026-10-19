@@ -21,6 +21,11 @@ class ReviewBatchSwipeReserved extends ReviewBatchEvent {
   const ReviewBatchSwipeReserved();
 }
 
+class ReviewBatchDepthChanged extends ReviewBatchEvent {
+  final WallDepthTier tier;
+  const ReviewBatchDepthChanged(this.tier);
+}
+
 class ReviewBatchSwipeSkipped extends ReviewBatchEvent {
   const ReviewBatchSwipeSkipped();
 }

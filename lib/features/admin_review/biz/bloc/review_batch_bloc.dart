@@ -1,4 +1,6 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
@@ -30,6 +32,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     on<ReviewBatchSwipeApproved>(_onSwipeApproved);
     on<ReviewBatchSwipeRejected>(_onSwipeRejected);
     on<ReviewBatchSwipeReserved>(_onSwipeReserved);
+    on<ReviewBatchDepthChanged>(_onDepthChanged);
     on<ReviewBatchSwipeSkipped>(_onSwipeSkipped);
     on<ReviewBatchUndoRequested>(_onUndoRequested);
     on<ReviewBatchNextBatchRequested>(_onNextBatchRequested);
@@ -137,6 +140,30 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
       );
     } catch (e) {
       emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: 'Failed to reserve: $e'));
+    }
+  }
+
+  /// Shows the pick at once and puts the old wall back if the write fails.
+  Future<void> _onDepthChanged(ReviewBatchDepthChanged event, Emitter<ReviewBatchState> emit) async {
+    final FirestoreDocument? wall = state.currentWall;
+    if (wall == null) return;
+
+    List<FirestoreDocument> replace(FirestoreDocument replacement) => <FirestoreDocument>[
+      for (final FirestoreDocument candidate in state.walls)
+        if (candidate.id == wall.id) replacement else candidate,
+    ];
+
+    emit(state.copyWith(walls: replace(withDepthOverride(wall, event.tier))));
+    try {
+      await _moderation.setDepthTier(wall, event.tier);
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: ReviewBatchStatus.error,
+          walls: replace(wall),
+          errorMessage: 'Failed to set Depth Effect: $e',
+        ),
+      );
     }
   }
 

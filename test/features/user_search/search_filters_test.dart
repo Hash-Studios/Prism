@@ -51,4 +51,23 @@ void main() {
     expect(withBlue.copyWith(clearColor: true), const SearchFilters());
     expect(withBlue.copyWith(color: paletteColorById('red')).color!.id, 'red');
   });
+
+  test('the depth filter is off by default, can be set and cleared, and takes part in equality', () {
+    final withDepth = const SearchFilters().copyWith(depthOnly: true);
+
+    expect(const SearchFilters().depthOnly, isFalse);
+    expect(withDepth.depthOnly, isTrue);
+    expect(withDepth, isNot(const SearchFilters()));
+    expect(withDepth, const SearchFilters(depthOnly: true));
+    expect(withDepth.hashCode, const SearchFilters(depthOnly: true).hashCode);
+    expect(withDepth.copyWith(sort: SearchSort.latest).depthOnly, isTrue);
+    expect(withDepth.copyWith(depthOnly: false), const SearchFilters());
+  });
+
+  test('a colour or the depth filter lists walls without a text query', () {
+    expect(const SearchFilters().listsWithoutQuery, isFalse);
+    expect(const SearchFilters(sort: SearchSort.latest, minResolution: '1080x1920').listsWithoutQuery, isFalse);
+    expect(const SearchFilters(depthOnly: true).listsWithoutQuery, isTrue);
+    expect(SearchFilters(color: paletteColorById('blue')).listsWithoutQuery, isTrue);
+  });
 }

@@ -3,6 +3,8 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
@@ -145,6 +147,16 @@ class AdminModerationRepository {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'dropReserved': false,
     }, sourceTag: 'admin_review.undo_reserve_wall_for_drop');
+  }
+
+  /// Overrides the Depth Effect tier the detector chose. Only admins and the server write `walls.depth`.
+  Future<void> setDepthTier(FirestoreDocument wall, WallDepthTier tier) {
+    return _client.updateDoc(
+      FirebaseCollections.walls,
+      wall.id,
+      depthOverrideUpdate(wall, tier),
+      sourceTag: 'admin_review.set_depth_tier',
+    );
   }
 
   /// Sends an approved wall back to review with the values it had before approval.

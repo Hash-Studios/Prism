@@ -1,5 +1,6 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
@@ -24,6 +25,14 @@ class _BatchFirestoreClient extends FakeFirestoreClient {
   }) {
     return action(_DocsBatch(this));
   }
+}
+
+class _RejectingUpdateClient extends _BatchFirestoreClient {
+  _RejectingUpdateClient({super.docs});
+
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
+      Future<void>.error(StateError('permission-denied'));
 }
 
 class _DocsBatch implements FirestoreBatch, FirestoreTransaction {
@@ -129,6 +138,47 @@ void main() {
     expect(client.docs[FirebaseCollections.walls]!['w1']!['createdAt'], createdAt);
     expect(client.docs[FirebaseCollections.rejectedWalls] ?? const <String, Object?>{}, isEmpty);
     expect(client.docs[FirebaseCollections.notifications]?.length ?? 0, notificationsAfterApprove);
+  });
+
+  test('an admin depth pick shows on the card at once and is written to the wall', () async {
+    await loaded();
+
+    bloc.add(const ReviewBatchDepthChanged(WallDepthTier.menu));
+    final state = await bloc.stream.firstWhere((s) => s.currentWall?.payload['depth'] != null);
+
+    expect(state.currentWall!.payload['depth'], <String, dynamic>{
+      'tier': 'menu',
+      'by': 'admin',
+      'v': 1,
+      'kind': null,
+      'top': null,
+    });
+    expect(state.currentIndex, 0);
+    await pumpEventQueue();
+    final write = client.writes.singleWhere((w) => w.op == 'update');
+    expect((write.collection, write.id), (FirebaseCollections.walls, 'w1'));
+    expect(write.data, <String, dynamic>{
+      'depth': <String, dynamic>{'tier': 'menu', 'by': 'admin', 'v': 1, 'kind': null, 'top': null},
+    });
+  });
+
+  test('a failed depth write puts the card back and reports the error', () async {
+    final rejecting = _RejectingUpdateClient(
+      docs: <String, Map<String, Map<String, dynamic>>>{
+        FirebaseCollections.walls: <String, Map<String, dynamic>>{'w1': Map<String, dynamic>.of(original)},
+      },
+    );
+    rejecting.onQuery = client.onQuery;
+    final failing = ReviewBatchBloc(ReviewBatchRepository(rejecting), AdminModerationRepository(rejecting));
+    addTearDown(failing.close);
+    failing.add(const ReviewBatchLoadRequested());
+    await failing.stream.firstWhere((s) => s.status == ReviewBatchStatus.loaded);
+
+    failing.add(const ReviewBatchDepthChanged(WallDepthTier.none));
+    final state = await failing.stream.firstWhere((s) => s.status == ReviewBatchStatus.error);
+
+    expect(state.errorMessage, 'Failed to set Depth Effect: Bad state: permission-denied');
+    expect(state.currentWall!.payload.containsKey('depth'), isFalse);
   });
 
   test('states that differ only in the error message are not equal', () {

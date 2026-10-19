@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -16,6 +17,7 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       'tags': wall.tags,
       'aiMetadata': wall.aiMetadata,
       if (wall.firestoreDocumentId != null) 'firestoreDocumentId': wall.firestoreDocumentId,
+      if (wall.depthTier != null) 'depthTier': wall.depthTier!.name,
     },
   },
   wallhaven: (id, wall) => <String, Object?>{
@@ -82,6 +84,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
           tags: strings(wallpaper['tags']),
           aiMetadata: aiMetadata.isEmpty ? null : aiMetadata.cast<String, Object?>(),
           firestoreDocumentId: (firestoreId != null && firestoreId.isNotEmpty) ? firestoreId : null,
+          depthTier: WallDepthTier.parse(wallpaper['depthTier']),
         ),
       );
     case 'wallhaven':

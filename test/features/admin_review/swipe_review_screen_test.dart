@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
@@ -15,13 +16,15 @@ class _MockReviewBatchBloc extends MockBloc<ReviewBatchEvent, ReviewBatchState> 
 
 class _FakeEvent extends Fake implements ReviewBatchEvent {}
 
-FirestoreDocument _wall(String id, String title, {String? origin}) => FirestoreDocument(id, <String, dynamic>{
-  'origin': ?origin,
-  'title': title,
-  'category': 'Nature',
-  'by': 'Ann',
-  'wallpaper_thumb': 'https://example.com/$id.jpg',
-});
+FirestoreDocument _wall(String id, String title, {String? origin, Map<String, dynamic>? depth}) =>
+    FirestoreDocument(id, <String, dynamic>{
+      'origin': ?origin,
+      'depth': ?depth,
+      'title': title,
+      'category': 'Nature',
+      'by': 'Ann',
+      'wallpaper_thumb': 'https://example.com/$id.jpg',
+    });
 
 void main() {
   late _MockReviewBatchBloc bloc;
@@ -182,6 +185,72 @@ void main() {
     expect(find.text('Reject'), findsOneWidget);
     await gesture.up();
     await tester.pumpAndSettle();
+  });
+
+  group('depth', () {
+    for (final (Map<String, dynamic>? depth, String label) in <(Map<String, dynamic>?, String)>[
+      (<String, dynamic>{'tier': 'auto'}, 'Depth: Auto'),
+      (<String, dynamic>{'tier': 'menu'}, 'Depth: Menu'),
+      (<String, dynamic>{'tier': 'none'}, 'Depth: None'),
+      (null, 'Depth: Not checked'),
+    ]) {
+      testWidgets('the card shows "$label" for what the detector decided', (tester) async {
+        await pump(
+          tester,
+          ReviewBatchState(
+            status: ReviewBatchStatus.loaded,
+            walls: <FirestoreDocument>[_wall('a', 'Sunset', depth: depth)],
+          ),
+        );
+
+        expect(find.text(label), findsOneWidget);
+      });
+    }
+
+    testWidgets('a tap opens Auto, Menu and None, and the pick goes to the bloc', (tester) async {
+      await pump(
+        tester,
+        ReviewBatchState(
+          status: ReviewBatchStatus.loaded,
+          walls: <FirestoreDocument>[
+            _wall('a', 'Sunset', depth: <String, dynamic>{'tier': 'none'}),
+          ],
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Change Depth Effect'));
+      await tester.pumpAndSettle();
+      for (final String option in <String>['Auto', 'Menu', 'None']) {
+        expect(find.widgetWithText(PopupMenuItem<WallDepthTier>, option), findsOneWidget, reason: option);
+      }
+      await tester.tap(find.widgetWithText(PopupMenuItem<WallDepthTier>, 'Menu'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => bloc.add(any(that: isA<ReviewBatchDepthChanged>().having((e) => e.tier, 'tier', WallDepthTier.menu))),
+      ).called(1);
+    });
+
+    testWidgets('the pill hides while the card is dragged', (tester) async {
+      await pump(
+        tester,
+        ReviewBatchState(status: ReviewBatchStatus.loaded, walls: <FirestoreDocument>[_wall('a', 'Sunset')]),
+      );
+      double opacity() => tester
+          .widget<AnimatedOpacity>(
+            find.ancestor(of: find.text('Depth: Not checked'), matching: find.byType(AnimatedOpacity)),
+          )
+          .opacity;
+      expect(opacity(), 1);
+
+      final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('Sunset')));
+      await gesture.moveBy(const Offset(40, 0));
+      await tester.pump();
+      expect(opacity(), 0);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
   });
 
   testWidgets('a finished batch offers the next one', (tester) async {

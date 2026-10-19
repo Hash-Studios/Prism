@@ -24,35 +24,50 @@ class PrismWallSearch {
   static const int _maxTokens = 10;
   static const int _maxFilterValues = 30;
 
-  /// A colour is checked after the query, so the query asks for more walls to keep enough matches.
-  static const int _colorOverfetch = 4;
+  /// A colour or a depth tier is checked after the query, so the query asks for more walls to keep enough matches.
+  static const int _localFilterOverfetch = 4;
   static const String _failedPrecondition = 'failed-precondition';
+
+  /// `walls.depth.tier` is `none` when iOS cannot use the Depth Effect and missing when the wall was not checked.
+  static const FirestoreFilter _depthFilter = FirestoreFilter(
+    field: 'depth.tier',
+    op: FirestoreFilterOp.whereIn,
+    value: <String>['auto', 'menu'],
+  );
 
   /// Never throws. A failed query, such as a missing index, counts as no match.
   ///
-  /// [colorId] limits the walls to one palette colour. An empty [query] with a [colorId] lists that colour's walls.
-  /// Firestore cannot combine two array filters, so with a query the colour is checked on the matches.
-  Future<List<PrismWallpaper>> search(String query, {int limit = 12, String? colorId}) async {
+  /// [colorId] limits the walls to one palette colour. [depthOnly] keeps walls whose Depth Effect tier is `auto` or
+  /// `menu`. An empty [query] with either one lists those walls. Firestore cannot combine the array filters, and the
+  /// depth query has its own index, so the colour is always checked on the matches. With a text [query] the depth
+  /// tier is checked on the matches too.
+  Future<List<PrismWallpaper>> search(String query, {int limit = 12, String? colorId, bool depthOnly = false}) async {
     final String trimmed = query.trim();
-    final bool colorOnly = colorId != null && trimmed.isEmpty;
-    if (trimmed.length < _minQueryLength && !colorOnly) {
+    final bool browseOnly = trimmed.isEmpty && (colorId != null || depthOnly);
+    if (trimmed.length < _minQueryLength && !browseOnly) {
       return const <PrismWallpaper>[];
     }
+    // The query itself is exact for a lone colour or a lone depth tier. Anything left is checked on the matches.
+    final bool checksMatches = browseOnly ? depthOnly && colorId != null : colorId != null || depthOnly;
+    final int fetchLimit = checksMatches ? limit * _localFilterOverfetch : limit;
     try {
-      final List<List<PrismWallpaper>> matches = colorOnly
-          ? <List<PrismWallpaper>>[
-              await _run(
-                'color',
-                limit,
-                FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
-              ),
-            ]
-          : await _textMatches(trimmed, colorId == null ? limit : limit * _colorOverfetch);
+      final List<List<PrismWallpaper>> matches = switch ((browseOnly, depthOnly)) {
+        (true, true) => <List<PrismWallpaper>>[await _run('depth', fetchLimit, _depthFilter)],
+        (true, false) => <List<PrismWallpaper>>[
+          await _run(
+            'color',
+            fetchLimit,
+            FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
+          ),
+        ],
+        _ => await _textMatches(trimmed, fetchLimit),
+      };
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
       for (final PrismWallpaper wall in matches.expand((List<PrismWallpaper> walls) => walls)) {
         final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);
-        if (hasColor && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
+        final bool hasDepth = !depthOnly || (wall.depthTier?.supportsDepth ?? false);
+        if (hasColor && hasDepth && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
           unique.putIfAbsent(wall.id, () => wall);
         }
       }
