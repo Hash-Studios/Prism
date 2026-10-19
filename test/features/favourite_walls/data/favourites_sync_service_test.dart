@@ -361,14 +361,20 @@ void main() {
   });
 
   test('rejection racing server preparation preserves remote additions and deletions', () async {
-    await service.start('u');
-    firestore.emit(<String, Map<String, dynamic>>{
-      'c': <String, dynamic>{'id': 'c', 'provider': 'pexels'},
-    });
-    await waitForUpdateCount(1);
-    updates.clear();
+    await local.mergeServerWallSnapshot('u', const <FavouriteWallEntity>[
+      PexelsFavouriteWall(
+        id: 'c',
+        wallpaper: PexelsWallpaper(
+          core: WallpaperCore(id: 'c', source: WallpaperSource.pexels, fullUrl: '', thumbnailUrl: ''),
+        ),
+      ),
+    ]);
+    final writeStarted = Completer<void>();
     final writeGate = Completer<void>();
-    firestore.beforeWrite = () => writeGate.future;
+    firestore.beforeWrite = () {
+      writeStarted.complete();
+      return writeGate.future;
+    };
     firestore.writeError = FirestoreError(code: 'permission-denied', message: 'denied');
     await local.createFavouriteOperation(
       'u',
@@ -377,6 +383,7 @@ void main() {
       wall: <String, Object?>{'id': 'a', 'provider': 'pexels'},
     );
     await service.start('u');
+    await writeStarted.future;
     final readStarted = Completer<void>();
     final readGate = Completer<void>();
     local.afterNextSnapshotRead = () {
