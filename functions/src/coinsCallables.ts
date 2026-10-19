@@ -764,10 +764,8 @@ export const spinWheel = onCall(
     const today = utcDateString(new Date(nowMs));
 
     return db.runTransaction<SpinWheelReply>(async (tx) => {
-      const snap = await tx.get(userRef);
+      const [snap, txSnap, privateSnap] = await Promise.all([tx.get(userRef), tx.get(txRef), tx.get(privateRef)]);
       if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-      const txSnap = await tx.get(txRef);
-      const privateSnap = await tx.get(privateRef);
       const data = snap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const balance = int(data.coins, 0);
@@ -911,10 +909,12 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
 
   await db.runTransaction(async (tx) => {
     response = {...initialResponse};
-    const snap = await tx.get(userRef);
+    const [snap, spendTxSnap, privateSnap] = await Promise.all([
+      tx.get(userRef),
+      spendTxRef ? tx.get(spendTxRef) : null,
+      tx.get(privateRef),
+    ]);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const spendTxSnap = spendTxRef ? await tx.get(spendTxRef) : null;
-    const privateSnap = await tx.get(privateRef);
     const data = snap.data() ?? {};
     const privateData = privateSnap.data() ?? {};
     const passes = coinState(privateData.passes);

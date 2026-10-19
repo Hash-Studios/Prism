@@ -160,8 +160,7 @@ export const checkBadges = onCall(
     let response = skip();
     const privateRef = userRef.collection("private").doc("economy");
     await db.runTransaction(async (tx) => {
-      const userTx = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
+      const [userTx, privateSnap] = await Promise.all([tx.get(userRef), tx.get(privateRef)]);
       if (!userTx.exists) throw new HttpsError("not-found", "User profile was not found.");
       const data = userTx.data() ?? {};
       const badges: Record<string, unknown>[] = Array.isArray(data.badges) ? [...data.badges] : [];

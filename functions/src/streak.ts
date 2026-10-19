@@ -127,8 +127,7 @@ export const claimDailyStreak = onCall(
       proBonusReward = 0;
       totalReward = 0;
       nextReminderAtUtcMillis = undefined;
-      const userSnap = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
+      const [userSnap, privateSnap] = await Promise.all([tx.get(userRef), tx.get(privateRef)]);
       if (!userSnap.exists) {
         throw new HttpsError("not-found", "User profile was not found.");
       }

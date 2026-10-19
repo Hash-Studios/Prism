@@ -49,8 +49,7 @@ export const reconcileRankRewards = onCall(
     const userRef = db.collection("usersv2").doc(uid);
     const privateRef = userRef.collection("private").doc("economy");
     return db.runTransaction(async (tx) => {
-      const userSnap = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
+      const [userSnap, privateSnap] = await Promise.all([tx.get(userRef), tx.get(privateRef)]);
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
       const userData = userSnap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
