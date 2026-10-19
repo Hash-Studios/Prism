@@ -72,6 +72,20 @@ void main() {
     expect(bloc.state.walls.map((wall) => wall.id), <String>['new']);
   });
 
+  test('started begins the network fetch before the saved walls are read', () async {
+    final Completer<List<PrismWallpaper>> cache = Completer<List<PrismWallpaper>>();
+    when(() => fetch.readCached()).thenAnswer((_) => cache.future);
+    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('new')]));
+
+    bloc.add(const TrendingEvent.started());
+    await settle();
+
+    verify(() => fetch(any())).called(1);
+    cache.complete(<PrismWallpaper>[]);
+    await settle();
+    expect(bloc.state.walls.map((wall) => wall.id), <String>['new']);
+  });
+
   test('a network failure after the saved walls painted keeps them on screen', () async {
     when(() => fetch.readCached()).thenAnswer((_) async => <PrismWallpaper>[_wall('old')]);
     when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
