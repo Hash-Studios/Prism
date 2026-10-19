@@ -293,7 +293,10 @@ Future<void> main() async {
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
           applyAllowedOrientations(),
-        ]),
+        ]).catchError((Object e, StackTrace s) {
+          logger.w('Unable to apply system UI mode or orientations.', error: e, stackTrace: s);
+          return <void>[];
+        }),
       );
       final bool lightChrome =
           themeMode == 'Light' ||
