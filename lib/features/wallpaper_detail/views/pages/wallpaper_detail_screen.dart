@@ -52,6 +52,7 @@ import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
@@ -1089,6 +1090,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = widget.localFile;
+    final DownloadedWallRef? localIdentity = localFile != null && getIt.isRegistered<DownloadedWallIndex>()
+        ? getIt<DownloadedWallIndex>().resolve(localFile.path)
+        : null;
+    final WallpaperSource indexSource =
+        localFile == null || (localIdentity?.id == entity.id && localIdentity?.source == entity.source)
+        ? entity.source
+        : WallpaperSource.downloaded;
     final String source = localFile?.path ?? url;
     final Future<String> Function()? localSource = localFile == null ? null : () async => localFile.path;
     final Color? tint = state.tint;
@@ -1119,6 +1127,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
         wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+        indexSource: indexSource,
+        savedIdentity: localFile != null && tint == null && getIt.isRegistered<DownloadedWallIndex>()
+            ? getIt<DownloadedWallIndex>().acquiredIdentityForLocalFile(
+                filePath: localFile.path,
+                id: entity.id,
+                source: indexSource,
+              )
+            : null,
         depthTier: depthTierOf(entity),
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
@@ -1359,6 +1375,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               label: context.l10n.wallpaperImageSemanticLabel,
               hint: context.l10n.wallpaperImageSemanticHint,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onPanUpdate: (details) {
                   if (details.delta.dy < -10) panelController.open();
                 },

@@ -45,6 +45,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/coins_test_backend.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wait_for_real_io.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
   _DetailTestAssetStore({required super.directory, required this.sourceFile});
@@ -64,7 +65,7 @@ class _DetailTestAssetStore extends OfflineAssetStore {
 
   @override
   Future<File> resolve(String source, {bool allowNetwork = true}) async {
-    if (source == 'https://img.test/full.jpg') return sourceFile;
+    if (source == 'https://img.test/full.jpg' || source == 'https://signed.test/prism-1') return sourceFile;
     throw OfflineAssetUnavailableException(source);
   }
 }
@@ -473,6 +474,7 @@ void main() {
     late Completer<void> saveFeedback;
     late Completer<void> failureToast;
     late bool nativeSaveSucceeds;
+    late String failureMessage;
 
     setUp(() async {
       await backend.install();
@@ -485,8 +487,20 @@ void main() {
       saveFeedback = Completer<void>();
       failureToast = Completer<void>();
       nativeSaveSucceeds = true;
+      failureMessage = AppLocalizationsEn().economyAiDownloadFailed;
       CoinsService.instance.balanceNotifier.value = 100;
       backend.onCall = (String name, Map<String, dynamic> parameters) async {
+        if (name == 'resolveOriginalAccess') {
+          backend.originalCalls.add(parameters);
+          if (parameters['mode'] == 'quote') {
+            return <String, Object>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+          }
+          return <String, Object>{
+            'status': 'granted',
+            'url': 'https://signed.test/prism-1',
+            'expiresAt': DateTime.now().add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+          };
+        }
         if (name == 'spendCoins') spendCalls.add(parameters);
         return <String, Object>{
           'success': true,
@@ -509,7 +523,7 @@ void main() {
         );
         final String expectedMessage = nativeSaveSucceeds
             ? wallpaperSavedMessage(AppLocalizationsEn())
-            : AppLocalizationsEn().economyAiDownloadFailed;
+            : failureMessage;
         if (call.method == 'showToast' && arguments['msg'] == expectedMessage) {
           if (!saveFeedback.isCompleted) saveFeedback.complete();
           if (!nativeSaveSucceeds && !failureToast.isCompleted) failureToast.complete();
@@ -549,13 +563,18 @@ void main() {
     Future<void> tapAndWait(WidgetTester tester, String identity, {required bool expectAcquired}) async {
       await tester.tap(find.byType(DownloadButton));
       await tester.pump();
-      for (int i = 0; i < 40 && !nativeRequestStarted.isCompleted; i++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-        await tester.pump();
-      }
+      await waitForRealIo(
+        tester,
+        () => nativeRequestStarted.isCompleted,
+        reason: 'the granted original to render its requested variation and enqueue native save',
+        pumpDuration: const Duration(milliseconds: 16),
+      );
       expect(nativeRequestStarted.isCompleted, isTrue, reason: 'the native download request starts');
       expect(requests, hasLength(1));
       final DownloadRequest request = requests.single;
+      expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), hasLength(1));
+      expect(backend.originalCalls.last['assetId'], 'prism-1');
+      expect(backend.originalCalls.last['action'], 'download');
       if (nativeSaveSucceeds) {
         final List<int> bytes = (await tester.runAsync(
           () => request.isLocalFile ? File(request.link).readAsBytes() : sourceFile.readAsBytes(),
@@ -565,10 +584,12 @@ void main() {
         );
       }
       releaseNativeResponse.complete();
-      for (int i = 0; i < 100 && !saveFeedback.isCompleted; i++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-        await tester.pump(const Duration(milliseconds: 16));
-      }
+      await waitForRealIo(
+        tester,
+        () => saveFeedback.isCompleted,
+        reason: 'native save to finish retaining and indexing the original before its localized feedback',
+        pumpDuration: const Duration(milliseconds: 16),
+      );
       expect(saveFeedback.isCompleted, isTrue, reason: 'the download flow reaches its success or failure feedback');
       if (!expectAcquired) expect(failureToast.isCompleted, isTrue);
       expect(downloaded.hasAcquired(link: identity, id: 'prism-1', source: WallpaperSource.prism), expectAcquired);
@@ -598,8 +619,7 @@ void main() {
       final List<double> hues = (await tester.runAsync(() => _hues(Uint8List.fromList(savedBytes))))!;
       expect(hues, hasLength(2));
       expect(hues, everyElement(closeTo(120, 10)));
-      expect(spendCalls, hasLength(1));
-      expect(spendCalls.single['action'], 'wallpaperDownload');
+      expect(spendCalls, isEmpty, reason: 'Prism originals use the server original-access grant, not spendCoins');
       expect(
         downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
         isTrue,
@@ -622,34 +642,35 @@ void main() {
         ..loggedIn = true;
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-    testWidgets('an original download saves the source URL and remembers that URL after native success', (
-      tester,
-    ) async {
-      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-      await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: true);
+    testWidgets(
+      'an original download saves only the granted URL and remembers the stable identity after native success',
+      (tester) async {
+        await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+        await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: true);
 
-      expect(requests, hasLength(1));
-      expect(requests.single.link, 'https://img.test/full.jpg');
-      expect(requests.single.isLocalFile, isFalse);
-      expect(spendCalls, hasLength(1));
-      expect(spendCalls.single['action'], 'wallpaperDownload');
-      expect(
-        downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
-        isTrue,
-      );
-      expect(
-        downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
-        isFalse,
-      );
-      final File? retained = await tester.runAsync<File?>(
-        () async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg'),
-      );
-      expect(retained, isNotNull);
-      final List<List<int>> retainedAndSourceBytes = (await tester.runAsync(() async {
-        return <List<int>>[await retained!.readAsBytes(), await sourceFile.readAsBytes()];
-      }))!;
-      expect(retainedAndSourceBytes.first, retainedAndSourceBytes.last);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+        expect(requests, hasLength(1));
+        expect(requests.single.link, 'https://signed.test/prism-1');
+        expect(requests.single.isLocalFile, isFalse);
+        expect(spendCalls, isEmpty, reason: 'the original-access grant owns charging');
+        expect(
+          downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
+          isTrue,
+        );
+        expect(
+          downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
+          isFalse,
+        );
+        final File? retained = await tester.runAsync<File?>(
+          () async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg'),
+        );
+        expect(retained, isNotNull);
+        final List<List<int>> retainedAndSourceBytes = (await tester.runAsync(() async {
+          return <List<int>>[await retained!.readAsBytes(), await sourceFile.readAsBytes()];
+        }))!;
+        expect(retainedAndSourceBytes.first, retainedAndSourceBytes.last);
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+    );
 
     testWidgets('a failed native save never records an acquisition', (tester) async {
       nativeSaveSucceeds = false;
@@ -657,7 +678,7 @@ void main() {
       await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: false);
 
       expect(requests, hasLength(1));
-      expect(spendCalls, hasLength(1));
+      expect(spendCalls, isEmpty, reason: 'the original-access grant owns charging');
       expect(
         downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
         isFalse,
@@ -666,6 +687,32 @@ void main() {
         await tester.runAsync<File?>(() async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg')),
         isNull,
       );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a missing original grant never enqueues the preview URL or records an acquisition', (tester) async {
+      nativeSaveSucceeds = false;
+      failureMessage = AppLocalizationsEn().economyCoinSpendFailed;
+      backend.onCall = (name, parameters) async {
+        backend.originalCalls.add(parameters);
+        if (parameters['mode'] == 'quote') {
+          return <String, Object>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+        }
+        return <String, Object>{'status': 'unavailable'};
+      };
+      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await tester.tap(find.byType(DownloadButton));
+      for (int i = 0; i < 100 && !failureToast.isCompleted; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(failureToast.isCompleted, isTrue);
+      expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), hasLength(1));
+      expect(requests, isEmpty);
+      expect(
+        downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
+        isFalse,
+      );
+      await tester.pump(const Duration(seconds: 2));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 

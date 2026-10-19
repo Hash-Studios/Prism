@@ -50,15 +50,17 @@ class DownloadedWallIndex {
     final String requestedOwner = (ownerId ?? _ownerId()).trim();
     final String owner = requestedOwner.isEmpty ? 'guest' : requestedOwner;
     if (link.trim().isEmpty || id.trim().isEmpty || source == WallpaperSource.unknown) return;
-    final Map<String, Object?> index = _read()
-      ..[_acquisitionKey(owner: owner, link: link, id: id, source: source)] = <String, Object?>{
-        'owner': owner,
-        'link': link,
-        'id': id,
-        'source': source.wireValue,
-        'acquired': true,
-        'original': original,
-      };
+    final Map<String, Object?> index = _read();
+    final String key = _acquisitionKey(owner: owner, link: link, id: id, source: source);
+    final bool alreadyOriginal = _decode(key, index[key])?.original ?? false;
+    index[key] = <String, Object?>{
+      'owner': owner,
+      'link': link,
+      'id': id,
+      'source': source.wireValue,
+      'acquired': true,
+      'original': original || alreadyOriginal,
+    };
     try {
       await _settingsLocal.set(_key, json.encode(index));
     } catch (error, stackTrace) {
@@ -217,6 +219,27 @@ class DownloadedWallIndex {
     final String? pexelsId = _pexelsName.firstMatch(withoutCopySuffix)?.group(1);
     if (pexelsId != null) return (id: pexelsId, source: WallpaperSource.pexels);
     return null;
+  }
+
+  /// Recovers the stable acquisition key of a reopened local copy, without promoting it to an original.
+  String? acquiredIdentityForLocalFile({
+    required String filePath,
+    required String id,
+    required WallpaperSource source,
+  }) {
+    final name = _withoutCopySuffix(p.basenameWithoutExtension(filePath));
+    if (!File(filePath).existsSync() || _hasAmbiguousBasename(name)) return null;
+    final links = _records()
+        .where(
+          (record) =>
+              record.owner == _currentOwner &&
+              record.id == id &&
+              record.source == source &&
+              _withoutCopySuffix(downloadBaseName(record.link)) == name,
+        )
+        .map((record) => record.link)
+        .toSet();
+    return links.length == 1 ? links.single : null;
   }
 
   Future<File?> localFileFor({required String link, required String id, required WallpaperSource source}) async {

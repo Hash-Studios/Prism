@@ -47,6 +47,8 @@ class DownloadButton extends StatefulWidget {
     this.isPremiumContent = false,
     this.contentId,
     this.wallpaperSource,
+    this.indexSource,
+    this.savedIdentity,
     this.depthTier,
     this.sourceContext,
     this.requestId,
@@ -65,6 +67,12 @@ class DownloadButton extends StatefulWidget {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+
+  /// Canonical identity of a reopened local file. Never used to authorize remote originals.
+  final WallpaperSource? indexSource;
+
+  /// Stable indexed identity when reopening an existing local copy, including its saved variation.
+  final String? savedIdentity;
 
   /// Adds the Depth Effect step to what iOS users see after the save.
   final WallDepthTier? depthTier;
@@ -114,6 +122,7 @@ class _DownloadTap {
     required this.isPremiumContent,
     required this.contentId,
     required this.wallpaperSource,
+    required this.indexSource,
     required this.depthTier,
     required this.sourceContext,
     required this.wallpaperTitle,
@@ -130,6 +139,7 @@ class _DownloadTap {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+  final WallpaperSource? indexSource;
   final WallDepthTier? depthTier;
   final String? sourceContext;
   final String? wallpaperTitle;
@@ -176,6 +186,8 @@ class _DownloadButtonState extends State<DownloadButton> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.link != widget.link ||
         oldWidget.variant?.key != widget.variant?.key ||
+        oldWidget.savedIdentity != widget.savedIdentity ||
+        oldWidget.indexSource != widget.indexSource ||
         _savedOwner != app_state.prismUser.id) {
       _savedOwner = app_state.prismUser.id;
       _saved = _isSaved(_currentIdentity);
@@ -186,7 +198,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty && (widget.contentId?.trim().isEmpty ?? true)) return null;
     final original = _originalIdentity(link, widget.contentId);
-    return widget.variant?.identityOf(original) ?? original;
+    return widget.savedIdentity ?? widget.variant?.identityOf(original) ?? original;
   }
 
   String _originalIdentity(String link, String? id) => link.isEmpty ? '$id.jpg' : link;
@@ -196,7 +208,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (trimmed.isEmpty) return false;
     try {
       final String? id = widget.contentId?.trim();
-      final WallpaperSource? source = widget.wallpaperSource;
+      final WallpaperSource? source = widget.indexSource ?? widget.wallpaperSource;
       if (source != null && (id == null || id.isEmpty)) return false;
       if (id != null && id.isNotEmpty && source != null && getIt.isRegistered<DownloadedWallIndex>()) {
         return getIt<DownloadedWallIndex>().hasAcquired(link: trimmed, id: id, source: source);
@@ -297,11 +309,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         requestId: widget.requestId,
         operationId: AnalyticsCorrelation.newId(),
         link: link,
-        identity:
-            variant?.identityOf(_originalIdentity(link, widget.contentId)) ?? _originalIdentity(link, widget.contentId),
+        identity: _currentIdentity ?? _originalIdentity(link, widget.contentId),
         isPremiumContent: widget.isPremiumContent,
         contentId: widget.contentId,
         wallpaperSource: widget.wallpaperSource,
+        indexSource: widget.indexSource ?? widget.wallpaperSource,
         depthTier: widget.depthTier,
         sourceContext: widget.sourceContext,
         wallpaperTitle: widget.wallpaperTitle,
@@ -562,7 +574,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final DownloadedWallIndex? index = getIt.isRegistered<DownloadedWallIndex>() ? getIt<DownloadedWallIndex>() : null;
     if (index != null) {
       final String? id = _tap.contentId?.trim();
-      final WallpaperSource? source = _tap.wallpaperSource;
+      final WallpaperSource? source = _tap.indexSource;
       final File? exactFile = id != null && id.isNotEmpty && source != null
           ? await index.localFileFor(link: identity, id: id, source: source)
           : await index.localFileForLink(identity);
@@ -885,7 +897,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
 
     final String? contentId = tap.contentId?.trim();
-    final WallpaperSource? wallpaperSource = tap.wallpaperSource;
+    final WallpaperSource? wallpaperSource = tap.indexSource;
     final bool isBundledStarter =
         contentId != null &&
         contentId.isNotEmpty &&
@@ -901,7 +913,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         id: contentId,
         source: wallpaperSource,
         ownerId: tap.ownerId,
-        original: !prepared,
+        original: !prepared && tap.indexSource == tap.wallpaperSource,
       );
     }
 
