@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -12,6 +13,8 @@ import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
@@ -63,6 +66,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   final Set<String> _knownItemIds = <String>{};
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
+  DropEntity? _liveDrop;
 
   @override
   bool get wantKeepAlive => true;
@@ -78,6 +82,16 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
+    unawaited(_loadLiveDrop());
+  }
+
+  /// Fetched apart from the feed, so the carousel paints first and gains the Drop page when it arrives.
+  Future<void> _loadLiveDrop() async {
+    if (!EconomyConfig.notifier.value.flags.dropsEnabled || !getIt.isRegistered<DropsRepository>()) return;
+    try {
+      final drop = (await getIt<DropsRepository>().fetchLive(DateTime.now())).data;
+      if (mounted && drop != null) setState(() => _liveDrop = drop);
+    } catch (_) {}
   }
 
   void _onFeedSettingsChanged() {
@@ -433,6 +447,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                 ? const _CarouselSkeleton()
                 : FeedCarousel(
                     boostedWalls: boostedWalls,
+                    liveDrop: _liveDrop,
                     previewWalls: previewWalls,
                     onWallShown: (wall) => _bloc.add(
                       PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
