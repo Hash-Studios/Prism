@@ -30,5 +30,5 @@ Future<AppLocalizations> loadDeviceAppLocalizations() {
     PlatformDispatcher.instance.locales,
     AppLocalizations.supportedLocales,
   );
-  return AppLocalizations.delegate.load(resolvedLocale);
+  return loadAppLocalizations(resolvedLocale);
 }
