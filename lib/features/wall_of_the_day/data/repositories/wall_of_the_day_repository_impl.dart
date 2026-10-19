@@ -118,6 +118,10 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   }
 
   @override
+  Future<WallOfTheDayEntity?> readCachedToday() =>
+      _readCachedToday(DateTime.now().toUtc(), _userBlockRepository.cachedBlockedCreatorEmails);
+
+  @override
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
     bool blockSnapshotReady = false;
     try {
@@ -180,7 +184,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
 
   bool _isTransientFailure(Failure failure) =>
       failure is NetworkFailure ||
-      const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed'}.contains(failure.code);
+      const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed', 'no-app'}.contains(failure.code);
 
   List<WotdPastPick> _visiblePicks(List<WotdPastPick> picks) {
     final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
@@ -254,6 +258,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         'unavailable',
         'deadline-exceeded',
         'network-request-failed',
+        'no-app',
       }.contains(mapFirestoreError(error).code);
 
   Future<void> _rememberToday(DateTime featuredUtc, String documentId, PrismWallpaper wallpaper) async {

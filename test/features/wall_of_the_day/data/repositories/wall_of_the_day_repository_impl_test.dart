@@ -56,6 +56,17 @@ class _OfflinePointerFirestoreClient extends FakeFirestoreClient {
   }) => Future<T?>.error(FirestoreError(code: 'unavailable', message: 'offline'));
 }
 
+class _NoAppPointerFirestoreClient extends FakeFirestoreClient {
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) => Future<T?>.error(FirestoreError(code: 'no-app', message: 'no app'));
+}
+
 class _DeniedPointerFirestoreClient extends FakeFirestoreClient {
   @override
   Future<T?> getById<T>(
@@ -492,6 +503,48 @@ void main() {
 
     expect(result.isFailure, isTrue);
     expect(result.failure, isA<ServerFailure>());
+  });
+
+  test('a no-app startup error keeps the saved pick and readCachedToday still returns it', () async {
+    final DateTime today = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': today.toIso8601String(),
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-1')));
+    final FeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    await WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blockRepo, feedCacheLocal: cache).fetchToday();
+
+    final early = WallOfTheDayRepositoryImpl(
+      _NoAppPointerFirestoreClient(),
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: cache,
+    );
+    expect((await early.fetchToday()).data?.wallId, 'wall-1');
+
+    final restarted = WallOfTheDayRepositoryImpl(
+      _OfflinePointerFirestoreClient(),
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: cache,
+    );
+    expect((await restarted.readCachedToday())?.wallId, 'wall-1');
+  });
+
+  test('readCachedToday is null when nothing is saved, without waiting for the block load', () async {
+    final blockRepo = FakeUserBlockRepository.pending();
+    final repo = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: FakeFeedCacheLocalDataSource(),
+    );
+
+    expect(await repo.readCachedToday(), isNull);
   });
 
   test('a permission-denied pointer tombstones the saved today snapshot across restart', () async {

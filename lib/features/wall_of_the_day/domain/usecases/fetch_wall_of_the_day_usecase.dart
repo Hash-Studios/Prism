@@ -12,4 +12,6 @@ class FetchWallOfTheDayUseCase implements UseCase<WallOfTheDayEntity?, NoParams>
 
   @override
   Future<Result<WallOfTheDayEntity?>> call(NoParams params) => _repository.fetchToday();
+
+  Future<WallOfTheDayEntity?> readCachedToday() => _repository.readCachedToday();
 }
