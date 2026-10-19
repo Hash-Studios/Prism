@@ -11,7 +11,7 @@ import {
   db,
   int,
   readDailyCount,
-  REGION,
+  CALLABLE_REGIONS,
   str,
   utcDateString,
 } from "./common";
@@ -52,7 +52,7 @@ interface GiftResponse {
 
 /** Pays coins to give another user a 24 hour Premium pass. */
 export const giftPremiumPass = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (
     request: CallableRequest<{ recipientUid?: unknown; requestId?: unknown }>,
   ): Promise<GiftResponse> => {

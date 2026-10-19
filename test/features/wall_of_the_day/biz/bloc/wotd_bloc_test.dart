@@ -16,6 +16,58 @@ const _oldWall = WallOfTheDayEntity(wallId: 'old', url: '', thumbnailUrl: '', ph
 const _newWall = WallOfTheDayEntity(wallId: 'new', url: '', thumbnailUrl: '', photographer: 'New');
 
 void main() {
+  test('started paints the saved pick before the network answers, then replaces it', () async {
+    final pending = Completer<Result<WallOfTheDayEntity?>>();
+    final fetchUseCase = _MockFetchWallOfTheDayUseCase();
+    when(fetchUseCase.readCachedToday).thenAnswer((_) async => _oldWall);
+    when(() => fetchUseCase(const NoParams())).thenAnswer((_) => pending.future);
+    final bloc = WotdBloc(fetchUseCase);
+    addTearDown(bloc.close);
+
+    bloc.add(const WotdEvent.started());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.status, LoadStatus.success);
+    expect(bloc.state.entity?.wallId, 'old');
+
+    pending.complete(Result.success(_newWall));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.entity?.wallId, 'new');
+  });
+
+  test('a failed fetch after the saved pick painted keeps the saved pick', () async {
+    final fetchUseCase = _MockFetchWallOfTheDayUseCase();
+    when(fetchUseCase.readCachedToday).thenAnswer((_) async => _oldWall);
+    when(() => fetchUseCase(const NoParams())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+    final bloc = WotdBloc(fetchUseCase);
+    addTearDown(bloc.close);
+
+    bloc.add(const WotdEvent.started());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.status, LoadStatus.success);
+    expect(bloc.state.entity?.wallId, 'old');
+  });
+
+  for (final code in <String>['permission-denied', 'not-found', 'unauthenticated']) {
+    test('$code removes the saved pick after it painted', () async {
+      final fetchUseCase = _MockFetchWallOfTheDayUseCase();
+      when(fetchUseCase.readCachedToday).thenAnswer((_) async => _oldWall);
+      when(
+        () => fetchUseCase(const NoParams()),
+      ).thenAnswer((_) async => Result.error(ServerFailure('pick unavailable', code: code)));
+      final bloc = WotdBloc(fetchUseCase);
+      addTearDown(bloc.close);
+
+      bloc.add(const WotdEvent.started());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.entity, isNull);
+      expect(bloc.state.status, LoadStatus.failure);
+    });
+  }
+
   test('a late earlier refresh cannot replace the latest wall', () async {
     final first = Completer<Result<WallOfTheDayEntity?>>();
     final second = Completer<Result<WallOfTheDayEntity?>>();

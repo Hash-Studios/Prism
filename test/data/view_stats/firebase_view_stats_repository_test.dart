@@ -1,6 +1,7 @@
 // Firebase platform-interface packages are transitive, but these fakes need them.
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/data/view_stats/firebase_view_stats_repository.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
@@ -11,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_firestore_client.dart';
 
 class _FakeFunctions extends FirebaseFunctionsPlatform {
-  _FakeFunctions(this.onCall) : super(null, 'asia-south1');
+  _FakeFunctions(this.onCall) : super(null, 'us-central1');
 
   final Future<dynamic> Function(String name, dynamic parameters) onCall;
 
@@ -50,6 +51,7 @@ void main() {
   late FirebaseFunctionsPlatform previous;
   final List<(String, dynamic)> calls = <(String, dynamic)>[];
   Object? failure;
+  Map<String, Object?> response = <String, Object?>{'ok': true};
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -60,17 +62,76 @@ void main() {
   setUp(() {
     calls.clear();
     failure = null;
+    response = <String, Object?>{'ok': true};
     FirebaseFunctionsPlatform.instance = _FakeFunctions((name, parameters) async {
       calls.add((name, parameters));
       final Object? error = failure;
       if (error != null) throw error;
-      return <String, Object?>{'ok': true};
+      return response;
     });
     firestore = FakeFirestoreClient();
     repository = FirebaseViewStatsRepository(firestore);
   });
 
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previous);
+
+  group('recordWallpaperView', () {
+    test('a different signed-in account records the same wall again', () async {
+      final String previousId = app_state.prismUser.id;
+      final bool previousLoggedIn = app_state.prismUser.loggedIn;
+      addTearDown(() {
+        app_state.prismUser
+          ..id = previousId
+          ..loggedIn = previousLoggedIn;
+      });
+      app_state.prismUser
+        ..loggedIn = true
+        ..id = 'user-a';
+      response = <String, Object?>{'views': 42};
+      await repository.recordWallpaperView('abc');
+      app_state.prismUser.id = 'user-b';
+      response = <String, Object?>{'views': 43};
+
+      final result = await repository.recordWallpaperView('abc');
+
+      expect(result.data, '43');
+      expect(calls, hasLength(2));
+    });
+
+    test('counts a wall once per session and returns the known count for repeats', () async {
+      response = <String, Object?>{'views': 42};
+
+      final first = await repository.recordWallpaperView(' abc12 ');
+      final repeat = await repository.recordWallpaperView('ABC12');
+      final other = await repository.recordWallpaperView('xyz');
+
+      expect(first.data, '42');
+      expect(repeat.data, '42');
+      expect(other.data, '42');
+      expect(calls.map((c) => (c.$2 as Map)['wallId']), ['ABC12', 'XYZ']);
+    });
+
+    test('overlapping calls for one wall send one request and share the count', () async {
+      response = <String, Object?>{'views': 5};
+
+      final results = await Future.wait([repository.recordWallpaperView('abc'), repository.recordWallpaperView('abc')]);
+
+      expect(results.map((r) => r.data), ['5', '5']);
+      expect(calls, hasLength(1));
+    });
+
+    test('a failed record is retried on the next open', () async {
+      failure = StateError('offline');
+      final failed = await repository.recordWallpaperView('abc');
+      failure = null;
+      response = <String, Object?>{'views': 7};
+      final retried = await repository.recordWallpaperView('abc');
+
+      expect(failed.isFailure, isTrue);
+      expect(retried.data, '7');
+      expect(calls, hasLength(2));
+    });
+  });
 
   group('recordWallpaperAction', () {
     test('calls the callable with the upper-case wall id and the action', () async {

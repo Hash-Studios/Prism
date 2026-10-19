@@ -1,4 +1,4 @@
-import {ImageAnnotatorClient} from "@google-cloud/vision";
+import type {ImageAnnotatorClient} from "@google-cloud/vision";
 
 export const DEFAULT_CATEGORY = "General";
 export const DEFAULT_COLLECTION = "community";
@@ -53,6 +53,7 @@ export function mapLabelsToCategory(labels: string[]): string {
 let visionClient: ImageAnnotatorClient | undefined;
 
 export async function detectLabels(imageUrl: string): Promise<string[]> {
+  const {ImageAnnotatorClient} = await import("@google-cloud/vision");
   visionClient ??= new ImageAnnotatorClient();
 
   const [result] = await visionClient.annotateImage({

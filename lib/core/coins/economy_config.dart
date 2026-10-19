@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -423,18 +425,42 @@ class EconomyConfig {
     return Rank(id: rank.id, min: rank.min, next: next, progress: progress);
   }
 
-  /// Reads `economyConfig/current` within [loadBudget]. Any failure keeps the config already loaded.
+  /// Applies the cached `economyConfig/current` at once, then the server copy. Each read has [loadBudget]. Any failure
+  /// keeps the config already loaded. [_loadedAt] only moves on a server read.
   static Future<void> load() async {
     try {
-      final Map<String, dynamic>? raw = await firestoreClient
-          .getById<Map<String, dynamic>>(
-            FirebaseCollections.economyConfig,
-            'current',
-            (data, _) => data,
-            sourceTag: 'economy.config.load',
-          )
-          .timeout(loadBudget);
-      current = EconomyConfig.fromMap(raw);
+      final Map<String, dynamic>? cached = await PerformanceProbe.measure(
+        'startup',
+        'economy_config.load',
+        () => firestoreClient
+            .getById<Map<String, dynamic>>(
+              FirebaseCollections.economyConfig,
+              'current',
+              (data, _) => data,
+              sourceTag: 'economy.config.load',
+              preferCacheFirst: true,
+            )
+            .timeout(loadBudget),
+      );
+      if (cached != null) current = EconomyConfig.fromMap(cached);
+    } catch (error) {
+      logger.w('Economy config cache load failed; trying the server.', tag: 'Economy', error: error);
+    }
+    try {
+      final Map<String, dynamic>? confirmed = await PerformanceProbe.measure(
+        'startup',
+        'economy_config.refresh',
+        () => firestoreClient
+            .getFromServer<Map<String, dynamic>>(
+              FirebaseCollections.economyConfig,
+              'current',
+              (data, _) => data,
+              sourceTag: 'economy.config.refresh',
+            )
+            .timeout(loadBudget),
+      );
+      if (confirmed == null) return;
+      current = EconomyConfig.fromMap(confirmed);
       _loadedAt = DateTime.now();
     } catch (error) {
       logger.w('Economy config load failed; keeping the current values.', tag: 'Economy', error: error);

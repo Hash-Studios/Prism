@@ -3,7 +3,7 @@ import {defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "../common";
-import {isStudioWall} from "./process";
+import {isStudioWall} from "./isStudioWall";
 import {STUDIO_SERIES} from "./series";
 
 // The bot posts the first Studio wall approved each day to the Telegram channel: the image and a caption.
