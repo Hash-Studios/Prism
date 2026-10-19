@@ -1,5 +1,9 @@
 {
   "@@locale": "de",
+  "economyExportFailedLabel": "Export fehlgeschlagen",
+  "@economyExportFailedLabel": {
+    "description": "Failed filter export action inserted before refund status."
+  },
   "accountAbout": "Über",
   "@accountAbout": {
     "description": "About page title."

@@ -11,6 +11,9 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'Export fehlgeschlagen';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'Suche nach Kreativen';
 
   @override
