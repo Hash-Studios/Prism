@@ -14,18 +14,19 @@ A Drop is a small set of Studio walls that the user can buy with coins for one w
 |---|---|---|
 | `walls[]`, prices, `startsAt`, `endsAt` | `planWeeklyDrop` | As before. |
 | `collectors` | `unlockDrop` | Users who own at least one wall of this Drop. Plus one on a user's first unlock of the Drop only. |
-| `pushes.{kind}` | `sendDropPushes` | Time a push kind was sent. The claim makes each push send once. |
+| `pushes.{kind}` | `sendDropPushes` | Time a push kind was sent. A sent kind is never sent again. |
+| `pushClaims.{kind}` | `sendDropPushes` | Time a run took the send. A claim older than 15 minutes with no sent time is taken again, so a run that died is retried. |
 
 Client phase (`DropPhase`): `live`, then `lastCall` in the final 24 hours, then `ended`.
 
 ## Pushes
 
-`sendDropPushes` runs every hour. A table holds each push kind and the time it is due:
+`sendDropPushes` runs every hour at minute 30 UTC. A table holds each push kind and the time it is due:
 
 | Kind | Due | Copy intent |
 |---|---|---|
-| `live` | `startsAt` + 4 h (10:00 IST on Monday) | A new Drop is live, how many walls, ends Sunday. |
-| `lastCall` | `endsAt` - 12 h | Last call, the Drop ends tonight. |
+| `live` | `startsAt` + 4 h (04:30 UTC, 10:00 IST on Monday) | A new Drop is live, how many walls, ends Sunday. |
+| `lastCall` | `endsAt` - 12 h | Last call, the Drop ends in the real hours left (at least 1). |
 
 Each push goes to the FCM topic `drops`, with an inbox doc (`modifier: all`, fixed doc id) and the route `drops`. The client subscribes to `drops` by default and has a "Weekly Drops" switch in notification settings. Android channel: `drops`.
 

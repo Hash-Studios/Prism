@@ -35,6 +35,7 @@ export interface DropDoc {
   count: number;
   walls: DropWall[];
   pushes?: Partial<Record<DropPushKind, number>>;
+  pushClaims?: Partial<Record<DropPushKind, number>>;
 }
 
 export interface UnlockedWall {
@@ -295,7 +296,7 @@ interface DropPushSpec {
   isDue: (drop: DropDoc, nowMs: number) => boolean;
   supersededBy?: DropPushKind;
   title: string;
-  body: (drop: DropDoc) => string;
+  body: (drop: DropDoc, nowMs: number) => string;
 }
 
 export const DROP_PUSHES: readonly DropPushSpec[] = [
@@ -310,7 +311,10 @@ export const DROP_PUSHES: readonly DropPushSpec[] = [
     kind: "lastCall",
     isDue: (drop, nowMs) => drop.endsAt - nowMs <= 12 * HOUR_MS,
     title: "Last call on this week's Drop",
-    body: (drop) => `${drop.title} ends in 12 hours. Then these walls are gone for a month.`,
+    body: (drop, nowMs) => {
+      const hours = Math.max(1, Math.floor((drop.endsAt - nowMs) / HOUR_MS));
+      return `${drop.title} ends in ${hours} ${hours === 1 ? "hour" : "hours"}. Then these walls are gone for a month.`;
+    },
   },
 ];
 
@@ -323,24 +327,39 @@ export function duePushKinds(drop: DropDoc, nowMs: number): DropPushKind[] {
     .filter((kind) => drop.pushes?.[kind] === undefined);
 }
 
+const CLAIM_TTL_MS = 15 * 60 * 1000;
+
 async function claimPush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
   return db.runTransaction(async (tx) => {
-    const pushes = (await tx.get(dropRef)).data()?.pushes as Record<string, unknown> | undefined;
-    if (pushes?.[kind] !== undefined) return false;
-    tx.update(dropRef, {[`pushes.${kind}`]: nowMs});
+    const data = (await tx.get(dropRef)).data();
+    if (data?.pushes?.[kind] !== undefined) return false;
+    const claimedAt = data?.pushClaims?.[kind];
+    if (typeof claimedAt === "number" && nowMs - claimedAt < CLAIM_TTL_MS) return false;
+    tx.update(dropRef, {[`pushClaims.${kind}`]: nowMs});
     return true;
+  });
+}
+
+async function markPushSent(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
+  await dropRef.update({
+    [`pushes.${kind}`]: nowMs,
+    [`pushClaims.${kind}`]: admin.firestore.FieldValue.delete(),
   });
 }
 
 async function releasePush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, claimedAt: number) {
   await db.runTransaction(async (tx) => {
-    const pushes = (await tx.get(dropRef)).data()?.pushes as Record<string, unknown> | undefined;
-    if (pushes?.[kind] !== claimedAt) return;
-    tx.update(dropRef, {[`pushes.${kind}`]: admin.firestore.FieldValue.delete()});
+    const claims = (await tx.get(dropRef)).data()?.pushClaims as Record<string, unknown> | undefined;
+    if (claims?.[kind] !== claimedAt) return;
+    tx.update(dropRef, {[`pushClaims.${kind}`]: admin.firestore.FieldValue.delete()});
   });
 }
 
-/** Sends each due push of the live drop once. A failed send frees its claim and throws, so the scheduler retries. */
+/**
+ * Sends each due push of the live drop. A failed send frees its claim and throws, so the scheduler retries.
+ * A run that dies mid-send leaves a stale claim that expires, so a later run resends. The fixed docId and
+ * collapseKey make that resend collapse on the device and overwrite one inbox doc.
+ */
 export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
   const config = await loadEconomy(nowMs);
   if (!config.flags.dropsEnabled) return [];
@@ -358,7 +377,7 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
     try {
       delivered = await sendNotification({
         title: spec.title,
-        body: spec.body(drop),
+        body: spec.body(drop, nowMs),
         data: {route: "drops", week_key: weekKeyOfDrop},
         imageUrl: drop.walls?.[0]?.thumb || undefined,
         modifier: "all",
@@ -372,6 +391,7 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
       if (!delivered) await releasePush(dropSnap.ref, kind, nowMs);
     }
     if (!delivered) throw new Error(`Drop ${kind} push failed for ${weekKeyOfDrop}.`);
+    await markPushSent(dropSnap.ref, kind, nowMs);
     sent.push(kind);
     logger.info("drops: push sent", {weekKey: weekKeyOfDrop, kind});
   }
@@ -379,7 +399,7 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
 }
 
 export const sendDropPushes = onSchedule(
-  {schedule: "15 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
+  {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
   async () => {
     await sendDuePushes(Date.now());
   },

@@ -417,7 +417,7 @@ test("sendDropPushes sends the live push once with the full payload", async (t) 
 
 test("sendDropPushes sends the last call text near the end", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: MONDAY});
-  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({endsAt: MONDAY + 6 * H, pushes: {live: 1}})});
+  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({endsAt: MONDAY + 12 * H, pushes: {live: 1}})});
   resetEconomyCache();
   const {send, run} = runPushes(t);
   await run();
@@ -451,8 +451,70 @@ test("a failed send frees the claim and throws so the scheduler retries", async 
   const run = async () => sendDropPushes.run({jobName: "t", scheduleTime: new Date().toISOString()});
   await assert.rejects(run(), /push failed/);
   assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc | undefined)?.live, undefined);
+  assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live, undefined);
   send.mock.mockImplementation(async () => true);
   await run();
   assert.equal(send.mock.callCount(), 2);
   assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc).live, MONDAY);
+});
+
+const lastCallBody = async (t: test.TestContext, leftMs: number) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({endsAt: MONDAY + leftMs, pushes: {live: 1}})});
+  resetEconomyCache();
+  const {send, run} = runPushes(t);
+  await run();
+  return (send.mock.calls[0].arguments[0] as {body: string}).body;
+};
+
+test("the last call body states the real hours left", async (t) => {
+  assert.equal(await lastCallBody(t, 5 * H + 30 * 60 * 1000), "Neon nights ends in 5 hours. Then these walls are gone for a month.");
+});
+
+test("the last call body says 1 hour in the singular", async (t) => {
+  assert.equal(await lastCallBody(t, 30 * 60 * 1000), "Neon nights ends in 1 hour. Then these walls are gone for a month.");
+});
+
+test("a stale in-flight claim is retried and sent", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  const store = installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushClaims: {live: MONDAY - 16 * 60 * 1000}})});
+  resetEconomyCache();
+  const {send, run} = runPushes(t);
+  await run();
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc).live, MONDAY);
+  assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc | undefined)?.live, undefined);
+});
+
+test("a fresh in-flight claim blocks the send", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushClaims: {live: MONDAY - 5 * 60 * 1000}})});
+  resetEconomyCache();
+  const {send, run} = runPushes(t);
+  await run();
+  assert.equal(send.mock.callCount(), 0);
+});
+
+test("a sent marker blocks even with a stale claim", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  installFakeDb(t, {[`drops/${KEY}`]: pushDrop({pushes: {live: 1}, pushClaims: {live: MONDAY - H}})});
+  resetEconomyCache();
+  const {send, run} = runPushes(t);
+  await run();
+  assert.equal(send.mock.callCount(), 0);
+});
+
+test("a failed send frees only its own claim", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  const store = installFakeDb(t, {[`drops/${KEY}`]: pushDrop()});
+  resetEconomyCache();
+  const send = t.mock.method(notificationHelper, "sendNotification", async () => {
+    const doc = store.get(`drops/${KEY}`) as Doc;
+    (doc.pushClaims as Doc).live = MONDAY + 1;
+    return false;
+  });
+  const run = async () => sendDropPushes.run({jobName: "t", scheduleTime: new Date().toISOString()});
+  await assert.rejects(run(), /push failed/);
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc).live, MONDAY + 1);
 });
