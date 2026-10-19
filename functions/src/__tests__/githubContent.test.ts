@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
 import test, {type TestContext} from "node:test";
 import {db} from "../common";
+import * as ownedAssets from "../ownedAssetDelivery";
 
 import {
   canDeleteUpload,
@@ -18,10 +19,119 @@ const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const run = (fn: {run: (request: any) => Promise<any>}, request: Record<string, unknown>) => fn.run(request);
 
+test("private original upload, completed retry and deletion never contact GitHub", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {throw new Error("GitHub must not be contacted");});
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let retained = 0;
+  t.mock.method(ownedAssets, "retainUpload", async () => {
+    retained++;
+    return {bucket: "owned", object: "retained", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: "private.jpg", sha};
+  });
+  let deleted = 0;
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => {deleted++;});
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path: "private.jpg", message: "upload", contentBase64: "/9j/"}};
+  const expected = {content: {path: "private.jpg", sha, download_url: ""}};
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.equal(retained, 1);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].sourceKind, "owned");
+  await run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path: "private.jpg", message: "delete", sha}});
+  assert.equal(deleted, 1);
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+});
+
+test("private rollout blocks legacy pending originals before any public GitHub write", async (t) => {
+  testGithubEnvironment(t);
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const key = `path_${createHash("sha256").update("walls\0pending.jpg").digest("hex")}`;
+  uploadStore(t, {[`githubUploadIntents/${key}`]: {
+    uid: "u", repo: "walls", path: "pending.jpg", blobSha: sha, status: "pending", attemptExpiresAt: 0,
+  }});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let fetches = 0;
+  t.mock.method(globalThis, "fetch", async () => {fetches++; throw new Error("No origin request allowed");});
+  await assert.rejects(run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "pending.jpg", message: "retry", contentBase64: "/9j/",
+  }}), /reconciliation/);
+  assert.equal(fetches, 0);
+});
+
+test("retention failure retries without a second GitHub write and preserves exact upload bytes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01, 0xfe]);
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const content = {path: "thumb_retained.jpg", sha, download_url: "https://raw.githubusercontent.com/owner/walls/main/thumb_retained.jpg"};
+  let writes = 0;
+  let remote = false;
+  t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
+    if (init.method === "PUT") { writes++; remote = true; return {ok: true, json: async () => ({content})}; }
+    return {ok: remote, status: remote ? 200 : 404, json: async () => remote ? content : {}};
+  });
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let retains = 0;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {bytes: Buffer}) => {
+    assert.deepEqual(input.bytes, bytes);
+    if (++retains === 1) throw new Error("storage unavailable");
+    return {bucket: "owned", object: "retained", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: content.path, sha};
+  });
+  const upload = () => run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: content.path, message: "upload", contentBase64: bytes.toString("base64"),
+  }});
+  await assert.rejects(upload, /storage unavailable/);
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.deepEqual(await upload(), {content});
+  assert.equal(writes, 1);
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
+  assert.ok([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].retainedAsset);
+  // A deployment upgrade can repair older completed receipts without contacting GitHub.
+  for (const [key, value] of docs) {
+    if (key.startsWith("githubUploads/") || key.startsWith("githubUploadIntents/")) delete value.retainedAsset;
+  }
+  t.mock.method(globalThis, "fetch", async () => { throw new Error("GitHub origin unavailable"); });
+  assert.deepEqual(await upload(), {content});
+  assert.equal(retains, 3);
+  assert.ok([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].retainedAsset);
+});
+
 test("allows configured repositories only", () => {
   assert.equal(isAllowedRepo("walls", env), true);
   assert.equal(isAllowedRepo("other", env), false);
   assert.equal(isAllowedRepo("owner/walls", env), false);
+});
+
+test("retained deletion failure preserves evidence and retries after GitHub is gone", async (t) => {
+  testGithubEnvironment(t);
+  const week = weekStartUtc(Date.now());
+  const docs = uploadStore(t, {
+    "githubUploads/sha": {uid: "u", repo: "walls", path: "thumb_a.jpg", sha: "sha",
+      retainedAsset: {bucket: "owned"}, weeklyQuotaCharged: true, uploadWeek: week},
+    "githubUploadStats/u": {week, weekCount: 1},
+  });
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async () => ({ok: ++requests === 1, status: requests === 1 ? 200 : 404,
+    json: async () => ({})}));
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let deletes = 0;
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async (identity: unknown) => {
+    assert.deepEqual(identity, {repo: "walls", path: "thumb_a.jpg", sha: "sha"});
+    if (++deletes === 1) throw new Error("storage delete unavailable");
+  });
+  const remove = () => run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "thumb_a.jpg", message: "delete", sha: "sha",
+  }});
+  await assert.rejects(remove, /storage delete unavailable/);
+  assert.equal(docs.has("githubUploads/sha"), true);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploadIntents/"))?.[1].status, "deleting");
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
+  assert.deepEqual(await remove(), {ok: true});
+  assert.equal(docs.has("githubUploads/sha"), false);
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
 });
 
 test("isValidBase64 accepts canonical data and rejects malformed encodings", () => {

@@ -139,6 +139,17 @@ test("only the GitHub raw and prismwalls.com hosts are allowed", () => {
   assert.deepEqual([...ALLOWED_IMAGE_HOSTS], ["raw.githubusercontent.com", "prismwalls.com"]);
 });
 
+test("owned thumbnail endpoint is allowed without allowing other functions or original URLs", async () => {
+  const base = "https://asia-south1-prism-wallpapers.cloudfunctions.net";
+  const ok: ColorFetch = async () => replyOf(new Uint8Array([1, 2, 3]));
+  assert.deepEqual([...await fetchImageBuffer(`${base}/ownedThumbnail/wall-1`, ok)], [1, 2, 3]);
+  for (const url of [
+    `${base}/original/wall-1`, `${base}/ownedThumbnail/wall-1?url=secret`,
+    `${base}/ownedThumbnail/wall-1#secret`, `${base}/ownedThumbnail/a/b`,
+    "https://evil.cloudfunctions.net/ownedThumbnail/wall-1",
+  ]) await assert.rejects(fetchImageBuffer(url, ok), /not allowed/);
+});
+
 test("fetchImageBuffer refuses a bad url before any request", async () => {
   let calls = 0;
   const spy: ColorFetch = async () => {
