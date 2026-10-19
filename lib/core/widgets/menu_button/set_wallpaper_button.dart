@@ -541,13 +541,17 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e, st) {
       logger.e('Set wallpaper failed', error: e, stackTrace: st);
       toasts.error(l10n.coreWallpaperSaveFailed);
+      unawaited(RatePromptService.instance.recordFailure());
+    }
+    if (result?.isFailure ?? false) {
+      unawaited(RatePromptService.instance.recordFailure());
     }
     if (result?.isSuccess ?? false) {
       if (!mounted) return;
       widget.onSet?.call();
       await _maybePromptNotificationPermission();
       if (!mounted) return;
-      unawaited(RatePromptService.instance.maybePrompt(context, RatePromptTrigger.wallpaperSet));
+      unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.wallpaperSet));
     }
   }
 

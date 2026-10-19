@@ -13,6 +13,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -647,6 +648,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         }());
         toasts.success(wallpaperSavedMessage(l10n));
         if (mounted) await showIosSetWallpaperGuide(context);
+        unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.aiWallpaperSaved));
       } else if (isPhotosPermissionDenied(result.errorCode)) {
         if (mounted) showPhotosPermissionDenied(context);
       } else {

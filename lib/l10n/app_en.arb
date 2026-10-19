@@ -2408,9 +2408,6 @@
   "corePreviousWallpaperRestored": "Previous wallpaper restored",
   "coreProfileSaveFailed": "Could not save your profile. Please try again.",
   "coreProfileUpdated": "Profile updated",
-  "coreRatePromptNo": "Not really",
-  "coreRatePromptQuestion": "Enjoying Prism?",
-  "coreRatePromptYes": "Yes",
   "coreReferralSaved": "Referral saved. Sign in to claim +{coins} coins.",
   "@coreReferralSaved": {
     "placeholders": {

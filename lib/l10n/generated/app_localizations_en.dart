@@ -2501,15 +2501,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreProfileUpdated => 'Profile updated';
 
   @override
-  String get coreRatePromptNo => 'Not really';
-
-  @override
-  String get coreRatePromptQuestion => 'Enjoying Prism?';
-
-  @override
-  String get coreRatePromptYes => 'Yes';
-
-  @override
   String coreReferralSaved(int coins) {
     final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String coinsString = coinsNumberFormat.format(coins);

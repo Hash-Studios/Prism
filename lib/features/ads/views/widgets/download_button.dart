@@ -355,12 +355,14 @@ class _DownloadButtonState extends State<DownloadButton> {
         } catch (error, stackTrace) {
           logger.w('Could not resolve bundled starter wallpaper', error: error, stackTrace: stackTrace);
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_failed', stage: 'prepare'));
-          toasts.error(context.l10n.economyAiDownloadFailed);
+          toasts.error(l10n.economyAiDownloadFailed);
+          unawaited(RatePromptService.instance.recordFailure());
           return;
         }
         if (starter == null) {
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_unavailable', stage: 'prepare'));
-          toasts.error(context.l10n.economyAiDownloadFailed);
+          toasts.error(l10n.economyAiDownloadFailed);
+          unawaited(RatePromptService.instance.recordFailure());
           return;
         }
         if (!_ownerStillMatches(tap)) {
@@ -731,6 +733,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                 ? l10n.wallpaperDownloadsLoadHelp
                 : l10n.economyAiDownloadFailed,
           );
+          unawaited(RatePromptService.instance.recordFailure());
         }
         return false;
       }
@@ -742,12 +745,14 @@ class _DownloadButtonState extends State<DownloadButton> {
       } else {
         logger.e('Download failed', error: e);
       }
-      toasts.error(context.l10n.economyAiDownloadFailed);
+      toasts.error(l10n.economyAiDownloadFailed);
+      unawaited(RatePromptService.instance.recordFailure());
       return false;
     } catch (e, stackTrace) {
       _failureReason = 'unexpected';
       logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
-      toasts.error(context.l10n.errorGeneric);
+      toasts.error(l10n.errorGeneric);
+      unawaited(RatePromptService.instance.recordFailure());
       return false;
     }
 
@@ -827,7 +832,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
     if (mounted) {
       try {
-        unawaited(RatePromptService.instance.maybePrompt(context, RatePromptTrigger.download));
+        unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.download));
       } catch (e, stackTrace) {
         logger.w('Rate prompt after download failed', error: e, stackTrace: stackTrace);
       }

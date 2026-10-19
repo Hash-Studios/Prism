@@ -91,21 +91,21 @@ The Wallpaper history row shows on Android only. iOS cannot set a wallpaper from
 
 ### Rate prompt
 
-Code: `lib/core/rating/rate_prompt_service.dart`, `lib/core/rating/rate_prompt_sheet.dart`.
+Code: `lib/core/rating/rate_prompt_service.dart`.
 
-- Call `RatePromptService.instance.maybePrompt(context, RatePromptTrigger.wallpaperSet)` after a good set, or `RatePromptTrigger.download` after a good download. Each call counts one action.
+- Prism asks for a review with the native Play and App Store card only (`in_app_review`). It asks no question first. Google and Apple policy forbid review gating and custom review prompts.
+- Call `RatePromptService.instance.maybePrompt(RatePromptTrigger.wallpaperSet)` after a good moment. Triggers: `wallpaperSet`, `download`, `favourite`, `aiWallpaperSaved`. Each call counts one action. The call needs no `BuildContext`.
+- Call `RatePromptService.instance.recordFailure()` when a wallpaper set or download fails.
 - Prism asks only when all of these are true:
-  - the user did at least 3 sets or downloads;
+  - the user did at least 3 actions;
   - at least 5 days passed since the first launch (`AppSessionTracker.firstLaunchAt`);
-  - at least 14 days passed since the last ask;
-  - fewer than 3 asks were made in this app version;
-  - the user did not answer "Yes" before;
+  - no failure was recorded in the last 3 days (`rate_prompt.last_failure_at`);
+  - at least 90 days passed since the last ask, because Apple allows 3 asks per 365 days and Play has its own quota;
+  - Prism did not ask in this app version yet (`rate_prompt.ask_version`);
+  - `rate_prompt.done` is not `true`. Users who tapped "Yes" in the old flow have this flag. Prism still reads it and no longer writes it;
   - no other startup sheet used `StartupModalSlot` in this session.
-- The sheet asks "Enjoying Prism?" with "Not really" and "Yes".
-- "Yes" opens the store review page. iOS: `https://apps.apple.com/app/id1405860595?action=write-review`. Android: `market://details?id=com.hash.prism`, and the Play Store web page when no store app opens. After "Yes" Prism never asks again.
-- "Not really" opens the Report a problem sheet.
-- Closing the sheet counts as an ask and nothing else.
-- Analytics: `rate_prompt_shown{trigger}`, `rate_prompt_result{result}` where result is `yes`, `not_really` or `dismissed`.
+- After the gates pass, Prism waits 2 seconds so the success toast shows first. Then it calls `requestReview()` when `InAppReview.isAvailable()` is true. The store decides if the card shows.
+- Analytics: `rate_prompt_shown{trigger}`, `rate_prompt_result{result}` where result is `requested` or `unavailable`.
 
 ### Profile nudge
 

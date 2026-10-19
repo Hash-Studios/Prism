@@ -4454,24 +4454,6 @@ abstract class AppLocalizations {
   /// **'Profile updated'**
   String get coreProfileUpdated;
 
-  /// No description provided for @coreRatePromptNo.
-  ///
-  /// In en, this message translates to:
-  /// **'Not really'**
-  String get coreRatePromptNo;
-
-  /// No description provided for @coreRatePromptQuestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Enjoying Prism?'**
-  String get coreRatePromptQuestion;
-
-  /// No description provided for @coreRatePromptYes.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes'**
-  String get coreRatePromptYes;
-
   /// Toast after a referral is recorded for a signed-out user.
   ///
   /// In en, this message translates to:
