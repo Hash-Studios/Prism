@@ -6,20 +6,22 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-/// A favourite grid image. It tries the thumbnail, then the full image. When both fail it shows "Unavailable"
-/// and calls [onUnavailable], so the grid can offer a one-tap remove.
+/// A favourite grid preview. Original-image fallback is opt-in for non-Prism previews.
+/// When the preview fails it shows "Unavailable" and calls [onUnavailable].
 class FavouriteTileImage extends StatelessWidget {
   const FavouriteTileImage({
     super.key,
     required this.thumbnailUrl,
     required this.fullUrl,
     required this.onUnavailable,
+    this.allowFullUrlFallback = false,
     this.heroTag,
   });
 
   final String thumbnailUrl;
   final String fullUrl;
   final VoidCallback onUnavailable;
+  final bool allowFullUrlFallback;
   final String? heroTag;
 
   Widget _image(BuildContext context, String url, {String? fallback}) => CachedNetworkImage(
@@ -56,9 +58,10 @@ class FavouriteTileImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String primary = thumbnailUrl.trim().isNotEmpty ? thumbnailUrl : fullUrl;
+    final String? fallback = allowFullUrlFallback ? fullUrl : null;
+    final String primary = thumbnailUrl.trim().isNotEmpty ? thumbnailUrl : fallback ?? '';
     Widget tile = SizedBox.expand(
-      child: primary.trim().isEmpty ? _unavailable(context) : _image(context, primary, fallback: fullUrl),
+      child: primary.trim().isEmpty ? _unavailable(context) : _image(context, primary, fallback: fallback),
     );
     if (heroTag != null && !context.reduceMotion) tile = Hero(tag: heroTag!, child: tile);
     return tile;
