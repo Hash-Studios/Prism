@@ -12,7 +12,7 @@ void main() {
     final AppLocalizations messages = await loadDeviceAppLocalizations();
 
     expect(messages.localeName, 'pt_BR');
-    expect(messages.actionRetry, 'Tente novamente');
+    expect(messages.actionRetry, 'Tentar novamente');
   });
 
   testWidgets('device loader resolves to English when every preferred locale is unsupported', (
