@@ -66,6 +66,22 @@ void main() {
     when(() => collection.doc('a')).thenReturn(doc);
   });
 
+  test('serverOnly uses Source.server and never reuses an earlier result', () async {
+    final snapshot = _MockQuerySnapshot();
+    when(() => snapshot.docs).thenReturn([]);
+    when(() => collection.get(const GetOptions(source: Source.server))).thenAnswer((_) async => snapshot);
+    const spec = FirestoreQuerySpec(
+      collection: 'walls',
+      sourceTag: 'test.canonical',
+      cachePolicy: FirestoreCachePolicy.serverOnly,
+      dedupeWindowMs: 10000,
+    );
+    expect(await client.query<String>(spec, (_, id) => id), isEmpty);
+    expect(await client.query<String>(spec, (_, id) => id), isEmpty);
+    verify(() => collection.get(const GetOptions(source: Source.server))).called(2);
+    verifyNever(() => collection.get());
+  });
+
   test('deferred Firestore access does not happen while constructing the client', () async {
     var factoryCalls = 0;
     final deferredClient = FirestoreTrackedClient.deferred(() {
