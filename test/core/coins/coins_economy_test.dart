@@ -151,14 +151,16 @@ void main() {
 
     test("a credited ad ticks today's watch_ad bonus quest without reconciling rank rewards", () async {
       final Map<String, Object?> today = <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())};
-      reply((_, _) => <String, Object?>{
-        'success': true,
-        'rev': 1,
-        'quests': today,
-        'xpPolicyVersion': 1,
-        'xp': 0,
-        'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 0},
-      });
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': today,
+          'xpPolicyVersion': 1,
+          'xp': 0,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 0},
+        },
+      );
       await service.progressQuest(null);
       calls.clear();
       reply(
@@ -258,12 +260,14 @@ void main() {
     });
 
     test('a second viewTrending on the same day makes no call', () async {
-      reply((_, _) => <String, Object?>{
-        'success': true,
-        'rev': 1,
-        'quests': <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())},
-        'reason': 'quest_progressed',
-      });
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())},
+          'reason': 'quest_progressed',
+        },
+      );
       service.reportQuestEvent(QuestEvent.viewTrending);
       await pumpEventQueue();
       service.reportQuestEvent(QuestEvent.viewTrending);
@@ -276,12 +280,14 @@ void main() {
 
     test('a reply from the previous UTC day does not suppress the current day event', () async {
       final String yesterday = economyDayKey(DateTime.now().subtract(const Duration(days: 1)));
-      reply((_, _) => <String, Object?>{
-        'success': true,
-        'rev': 1,
-        'quests': <String, Object?>{..._quests(), 'dayKey': yesterday},
-        'reason': 'quest_progressed',
-      });
+      reply(
+        (_, _) => <String, Object?>{
+          'success': true,
+          'rev': 1,
+          'quests': <String, Object?>{..._quests(), 'dayKey': yesterday},
+          'reason': 'quest_progressed',
+        },
+      );
 
       service.reportQuestEvent(QuestEvent.viewTrending);
       await pumpEventQueue();

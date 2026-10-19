@@ -53,10 +53,7 @@ void main() {
     final List<String> calls = <String>[];
     backend.onCall = (name, _) async {
       calls.add(name);
-      return <String, Object?>{
-        'success': true,
-        ...snapshot(coins.xpNotifier.value.xp, coins.xpNotifier.value.weekXp),
-      };
+      return <String, Object?>{'success': true, ...snapshot(coins.xpNotifier.value.xp, coins.xpNotifier.value.weekXp)};
     };
     apply(snapshot(10, 10));
     apply(snapshot(20, 20));

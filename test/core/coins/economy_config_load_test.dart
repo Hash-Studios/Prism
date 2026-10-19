@@ -30,7 +30,12 @@ class _ConfigFirestore extends Fake implements FirestoreClient {
   ) async* {
     serverReads++;
     if (serverFails) throw StateError('offline');
-    yield (items: <T>[map(<String, dynamic>{'version': 4}, 'current')], isFromCache: false);
+    yield (
+      items: <T>[
+        map(<String, dynamic>{'version': 4}, 'current'),
+      ],
+      isFromCache: false,
+    );
   }
 }
 

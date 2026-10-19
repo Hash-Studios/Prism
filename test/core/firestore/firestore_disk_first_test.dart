@@ -131,9 +131,9 @@ void main() {
     final secondDisk = Completer<QuerySnapshot<Map<String, dynamic>>>();
     final server = Completer<QuerySnapshot<Map<String, dynamic>>>();
     var diskReads = 0;
-    when(() => collection.get(any(that: predicate<GetOptions?>(_isCache)))).thenAnswer(
-      (_) => diskReads++ == 0 ? firstDisk.future : secondDisk.future,
-    );
+    when(
+      () => collection.get(any(that: predicate<GetOptions?>(_isCache))),
+    ).thenAnswer((_) => diskReads++ == 0 ? firstDisk.future : secondDisk.future);
     when(() => collection.get()).thenAnswer((_) => server.future);
 
     final first = client.query<String>(spec, (data, id) => id);

@@ -346,11 +346,7 @@ class PurchasesService {
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
-    await _persistSubscriptionStateToFirestore(
-      isPremium: isPremium,
-      tier: tier,
-      force: forceSync,
-    );
+    await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier, force: forceSync);
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
     analytics.track(
       SubscriptionEntitlementRefreshEvent(

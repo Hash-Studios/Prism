@@ -286,7 +286,9 @@ void main() {
         ),
         (_) async {
           syncCalls++;
-          return <Object?>[<String, Object?>{'premium': false, 'subscriptionTier': 'free'}];
+          return <Object?>[
+            <String, Object?>{'premium': false, 'subscriptionTier': 'free'},
+          ];
         },
       );
       final PurchasesService service = PurchasesService.forTesting(
@@ -314,7 +316,9 @@ void main() {
         ),
         (_) async {
           syncCalls++;
-          return <Object?>[<String, Object?>{'premium': true, 'subscriptionTier': 'pro'}];
+          return <Object?>[
+            <String, Object?>{'premium': true, 'subscriptionTier': 'pro'},
+          ];
         },
       );
       final PurchasesService service = PurchasesService.forTesting(
