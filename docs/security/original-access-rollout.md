@@ -10,7 +10,9 @@ Public reads also require explicit empty `wallpaper_path`, `wallpaper_sha`, `thu
 Thumbnail paths can reveal the corresponding original path, so clearing only the original URL is insufficient.
 Reviewed-wall queries include the protected marker and all five empty fields so Firestore can authorize the query.
 The added composite indexes support those queries.
-Pending owner/admin metadata keeps cleanup references until approval. Approval must redact those fields before public reads succeed.
+Binding also redacts pending metadata. Owner/admin cleanup sends the canonical wall ID, original generation, and asset role.
+The server resolves private file references and checks ownership and the current binding before cleanup.
+Pending thumbnails remain public previews under the existing preview policy. Pending originals do not receive acquisition grants.
 The delivery binder, signer, creator validation, and migration must use the private manifest after redaction.
 
 The server resolves current membership, Pro status, premium pass expiry, and coin prices.

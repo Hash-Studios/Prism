@@ -661,7 +661,7 @@ void main() {
           isFalse,
         );
         final File? retained = await tester.runAsync<File?>(
-          () async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg'),
+          () => OfflineAssetStore.instance.lookup('https://img.test/full.jpg'),
         );
         expect(retained, isNotNull);
         final List<List<int>> retainedAndSourceBytes = (await tester.runAsync(() async {
@@ -684,7 +684,7 @@ void main() {
         isFalse,
       );
       expect(
-        await tester.runAsync<File?>(() async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg')),
+        await tester.runAsync<File?>(() => OfflineAssetStore.instance.lookup('https://img.test/full.jpg')),
         isNull,
       );
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));

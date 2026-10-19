@@ -151,8 +151,9 @@ class OriginalAccessService {
     if (owner != _owner() ||
         reply['status'] != 'quoted' ||
         reply['requiredCoins'] is! num ||
-        reply['currentBalance'] is! num)
+        reply['currentBalance'] is! num) {
       throw StateError('Original access unavailable');
+    }
     return OriginalAccessQuote((reply['requiredCoins'] as num).toInt(), (reply['currentBalance'] as num).toInt());
   }
 
@@ -171,7 +172,7 @@ class OriginalAccessService {
     }
     assetIds = remoteIds;
     if (assetIds.isEmpty) return local;
-    if (assetIds.length == 1)
+    if (assetIds.length == 1) {
       return {
         ...local,
         assetIds.single: await resolve(
@@ -182,6 +183,7 @@ class OriginalAccessService {
           maxCoins: maxCoins,
         ),
       };
+    }
     final requestId = await _requestId(owner, _pairId(assetIds), OriginalAccessAction.set, null);
     if (owner != _owner()) throw StateError('Original access unavailable');
     final reply = await _callForOperation(

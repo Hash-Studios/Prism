@@ -19,8 +19,8 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../support/wait_for_real_io.dart';
 import '../../../support/coins_test_backend.dart';
+import '../../../support/wait_for_real_io.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
