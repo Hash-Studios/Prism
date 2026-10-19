@@ -129,16 +129,17 @@ class _DelayedBlockRepository extends FakeUserBlockRepository {
       : super.getBlockedCreatorEmails();
 }
 
-PrismWallpaper _wall(String id, {String? url, String? documentId, bool? review = true}) => PrismWallpaper(
-  core: WallpaperCore(
-    id: id,
-    source: WallpaperSource.prism,
-    fullUrl: url ?? 'https://example.com/$id.jpg',
-    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-  ),
-  review: review,
-  firestoreDocumentId: documentId,
-);
+PrismWallpaper _wall(String id, {String? url, String? thumbnailUrl, String? documentId, bool? review = true}) =>
+    PrismWallpaper(
+      core: WallpaperCore(
+        id: id,
+        source: WallpaperSource.prism,
+        fullUrl: url ?? 'https://example.com/$id.jpg',
+        thumbnailUrl: thumbnailUrl ?? 'https://example.com/$id-thumb.jpg',
+      ),
+      review: review,
+      firestoreDocumentId: documentId,
+    );
 
 void main() {
   late FakeFirestoreClient firestoreClient;
@@ -183,6 +184,44 @@ void main() {
 
     expect(secondFetch.data, isNull, reason: 'the cached pick must disappear once its creator is blocked');
     verify(() => prismRepository.fetchByDocumentId('wall-doc-1')).called(1);
+  });
+
+  test('protected today and archive previews retain empty originals online and offline', () async {
+    firestoreClient = _WotdMetadataFirestoreClient()..docs.addAll(firestoreClient.docs);
+    final today = DateTime.now().toUtc();
+    const thumb = 'https://staging.example.test/ownedThumbnail/wall-1';
+    const protected = PrismWallpaper(
+      core: WallpaperCore(id: 'wall-1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: thumb),
+      firestoreDocumentId: 'wall-doc-1',
+      review: true,
+    );
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': today.toIso8601String(),
+    };
+    firestoreClient.onQuery = (_) => <FakeDocRow>[
+      (id: 'today', data: <String, dynamic>{'wallId': 'wall-doc-1', 'date': today.toIso8601String()}),
+    ];
+    when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer((_) async => Result.success(protected));
+    final cache = FakeFeedCacheLocalDataSource();
+    final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks, feedCacheLocal: cache);
+    final pick = (await repo.fetchToday()).data!;
+    expect(pick.wallId, 'wall-1');
+    expect(pick.url, isEmpty);
+    expect(pick.thumbnailUrl, thumb);
+    final archive = (await repo.fetchRecent()).data!.single;
+    expect(archive.wallpaper.fullUrl, isEmpty);
+    expect(archive.wallpaper.thumbnailUrl, thumb);
+    final offline = WallOfTheDayRepositoryImpl(
+      _OfflinePointerFirestoreClient(),
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    );
+    final cached = (await offline.fetchToday()).data!;
+    expect(cached.url, isEmpty);
+    expect(cached.thumbnailUrl, thumb);
   });
 
   test('reads the pointer without cache-first so a new daily pick shows', () async {
@@ -422,7 +461,10 @@ void main() {
   for (final ({String name, Result<PrismWallpaper?> invalidWall}) invalidCase
       in <({String name, Result<PrismWallpaper?> invalidWall})>[
         (name: 'missing wall', invalidWall: Result.success<PrismWallpaper?>(null)),
-        (name: 'empty URL', invalidWall: Result.success<PrismWallpaper?>(_wall('wall-empty', url: ''))),
+        (
+          name: 'no image',
+          invalidWall: Result.success<PrismWallpaper?>(_wall('wall-empty', url: '', thumbnailUrl: '')),
+        ),
         (
           name: 'unreviewed wall',
           invalidWall: Result.success<PrismWallpaper?>(

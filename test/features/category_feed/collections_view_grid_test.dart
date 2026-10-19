@@ -43,6 +43,38 @@ class _FailingHttpClient implements HttpClient {
 }
 
 void main() {
+  testWidgets('protected collection preview keeps the original empty', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    const thumb = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1';
+    anyCollectionWalls = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'wall-1',
+        'originalProtected': true,
+        'originalGeneration': 'g1',
+        'wallpaper_thumb': thumb,
+        'wallpaper_url': '',
+      },
+    ];
+    collectionHasMore = false;
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+    });
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    final tile = tester.widget<PrismWallTile>(find.byType(PrismWallTile));
+    expect(tile.url, thumb);
+    expect(tile.fallbackUrl, anyOf(isNull, isEmpty));
+  });
+
   for (final thumbnail in <String, String>{
     'https://th.wallhaven.cc/small/21/collection.jpg': 'https://th.wallhaven.cc/lg/21/collection.jpg',
     'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':

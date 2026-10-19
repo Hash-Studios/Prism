@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -85,7 +86,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) => walls
       .where(
-        (wall) => wall.fullUrl.isNotEmpty && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked),
+        (wall) => hasPrismPreview(wall) && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked),
       )
       .toList(growable: false);
 

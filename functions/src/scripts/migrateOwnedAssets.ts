@@ -183,6 +183,11 @@ async function main(): Promise<void> {
     bind: delivery.bindOwnedWall,
     bindLegacy: delivery.bindLegacyOwnedWall,
     ready: async (wall) => {
+      try {
+        await delivery.getOwnedWallDelivery(String(wall.data.id));
+      } catch {
+        return false;
+      }
       const manifest = (await db.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
       const current = await db.doc(wall.docPath).get();
       const data = current.data();

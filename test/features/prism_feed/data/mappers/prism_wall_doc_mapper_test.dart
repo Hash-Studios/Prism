@@ -1,9 +1,38 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Firestore Prism walls cannot spoof an external provider', () {
+    for (final provider in <String>['wallhaven', 'pexels', 'unknown', '']) {
+      final wall = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_provider': provider,
+        'wallpaper_url': '',
+        'wallpaper_thumb': 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/w1',
+      }).toDomain(docId: 'w1');
+      expect(wall.source, WallpaperSource.prism);
+      expect(wall.fullUrl, isEmpty);
+    }
+  });
+
+  test('protected feed and profile previews never substitute the thumbnail for the original', () {
+    const thumb = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/w1';
+    final wall = PrismWallDocDto.fromJson(<String, dynamic>{
+      'originalProtected': true,
+      'originalGeneration': 'g1',
+      'wallpaper_url': '',
+      'wallpaper_thumb': thumb,
+    }).toDomain(docId: 'w1');
+    expect(wall.core.fullUrl, isEmpty);
+    expect(wall.core.thumbnailUrl, thumb);
+    final profile = const PublicProfileWallEntity(id: 'w1', wallpaperUrl: '', wallpaperThumb: thumb).toFeedItem();
+    expect(profile.fullUrl, isEmpty);
+    expect(profile.thumbnailUrl, thumb);
+  });
+
   PrismWallDocDto dto({String category = '', List<String> tags = const <String>[]}) =>
       PrismWallDocDto(wallpaperUrl: 'https://x/y.jpg', category: category, tags: tags);
 
