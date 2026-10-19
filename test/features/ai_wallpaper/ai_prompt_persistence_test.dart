@@ -169,12 +169,13 @@ void main() {
     await tester.pump();
     final String selectedPrompt = tester.widget<TextField>(find.byType(TextField).first).controller!.text;
 
-    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('hi')];
+    final Locale selectedLocale = AppLocalizations.supportedLocales.firstWhere((locale) => locale.languageCode != 'en');
+    tester.platformDispatcher.localesTestValue = <Locale>[selectedLocale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('इस दृश्य को अपने विवरण में इस्तेमाल करें (बदल सकते हैं)'), findsOneWidget);
+    expect(Localizations.localeOf(tester.element(find.byType(AiWallpaperTabPage))), selectedLocale);
     expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, selectedPrompt);
   });
 
