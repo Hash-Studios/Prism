@@ -25,7 +25,8 @@ const arrayBody = (source, name) => {
 
 const catalogExamples = [...catalog.matchAll(/DeepLinkRouteExample\(\s*'([^']+)'/g)].map((match) => match[1]);
 if (catalogExamples.length === 0) fail('DeepLinkRouteCatalog.examples is empty or changed shape');
-const examplePaths = catalogExamples.map((value) => new URL(value, 'https://prismwalls.com').pathname);
+const exampleUrls = catalogExamples.map((value) => new URL(value, 'https://prismwalls.com'));
+const examplePaths = exampleUrls.map((url) => url.pathname);
 const workerPaths = new Set(quotedValues(arrayBody(worker, 'APP_PAGE_PATHS')));
 const workerRoots = new Set([
   ...quotedValues(arrayBody(worker, 'APP_LINK_PATHS')),
@@ -76,8 +77,37 @@ for (const alias of aliases) {
 
 for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
   if (!entitlements.includes(`applinks:${host}`)) fail(`iOS associated domains omit ${host}`);
-  for (const path of examplePaths.filter((value) => value !== '/')) {
-    if (!workerRouteMatches(host, path, wrangler)) fail(`Cloudflare route for ${host}${path} is missing`);
+  const queryExamples = exampleUrls.flatMap((url) => url.pathname === '/' ? [] : [
+    `${url.pathname}${url.search}`,
+    `${url.pathname}?utm_source=contract`,
+    `${url.pathname}?utm_medium=contract`,
+    `${url.pathname}?utm_campaign=contract`,
+    `${url.pathname}?utm_source=contract&utm_medium=contract&utm_campaign=contract`,
+  ]);
+  const queryOnlyAliases = [
+    '/share?id=x',
+    '/user?identifier=x',
+    '/fprofile?username=x',
+    '/follower-profile?username=x',
+    '/profile?user=x',
+    '/setup?name=x',
+    '/share-setup?setupName=x',
+    '/refer?userID=x',
+    '/referral?id=x',
+    '/l?code=x',
+  ];
+  queryExamples.push(...queryOnlyAliases);
+  for (const alias of queryOnlyAliases) {
+    const separator = alias.includes('?') ? '&' : '?';
+    queryExamples.push(
+      `${alias}${separator}utm_source=contract`,
+      `${alias}${separator}utm_medium=contract`,
+      `${alias}${separator}utm_campaign=contract`,
+      `${alias}${separator}utm_source=contract&utm_medium=contract&utm_campaign=contract`,
+    );
+  }
+  for (const url of new Set(queryExamples)) {
+    if (!workerRouteMatches(host, url, wrangler)) fail(`Cloudflare route for ${host}${url} is missing`);
   }
 }
 
@@ -113,13 +143,22 @@ function aasaMatches(path, patterns) {
   return false;
 }
 
-function workerRouteMatches(host, path, source) {
+function workerRouteMatches(host, pathAndQuery, source) {
+  const requestUrl = `${host}${pathAndQuery}`;
   const patterns = [...source.matchAll(/pattern = "([^"]+)"/g)].map((match) => match[1]);
   return patterns.some((pattern) => {
     if (!pattern.startsWith(`${host}/`)) return false;
-    const routePath = pattern.slice(host.length);
-    return routePath.endsWith('/*')
-      ? path.startsWith(routePath.slice(0, -1))
-      : routePath === path;
+    return pattern.endsWith('*')
+      ? requestUrl.startsWith(pattern.slice(0, -1))
+      : requestUrl === pattern;
   });
+}
+
+const exactLibraryRoute = '[[routes]]\npattern = "prismwalls.com/library"\n';
+const wildcardLibraryRoute = '[[routes]]\npattern = "prismwalls.com/library*"\n';
+if (workerRouteMatches('prismwalls.com', '/library?tab=downloads', exactLibraryRoute)) {
+  fail('route matcher incorrectly lets an exact /library pattern match a query string');
+}
+if (!workerRouteMatches('prismwalls.com', '/library?tab=downloads', wildcardLibraryRoute)) {
+  fail('route matcher does not let a trailing wildcard match a query string');
 }

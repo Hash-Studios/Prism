@@ -90,13 +90,15 @@ A network failure during short-code resolution can defer the request until conne
 | `/profile/alice`, `/fprofile/alice`, `/follower-profile/alice` | Public profile. Existing profile query aliases remain in `DeepLinkParser`. |
 | `/setup`, `/share-setup` | Reports that home screen setups are unavailable and opens Home. |
 | `/refer/INVITER_ID`, `/referral/INVITER_ID` | Saves the referral and opens Rewards. A signed-out user can sign in later to claim an eligible reward. |
-| `/l/SHORT_CODE` | Resolves the short code, then validates its canonical URL through the same parser. |
+| `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Resolves the short code, then validates its canonical URL through the same parser. |
 
 Short links with `type: "page"` accept only catalogued app paths and preserve validated query parameters. Canonical paths with invalid queries cannot fall through to permissive legacy aliases.
 
 ## Website and release checks
 
 The website keeps `/`, `/privacy`, and `/terms` under Next.js. Cloudflare receives app paths, short links, association files, and API paths. App page landings show an **Open in Prism** link on mobile and the matching store links. They do not redirect visitors automatically.
+
+Cloudflare matches the query string as part of the request URL. App path patterns therefore end in `*`; unrelated prefix matches such as `/shopper` pass through to the website origin. Worker-owned API paths and unsupported app-link methods retain their 404 response.
 
 Run the contract and worker checks from the repository root:
 

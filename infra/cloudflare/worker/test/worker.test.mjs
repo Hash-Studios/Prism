@@ -255,9 +255,56 @@ test('allowlisted app pages have safe generic landings on both web hosts', async
     assert.match(body, /Get it on Google Play/);
     assert.match(body, /intent:\/\/prismwalls\.com\/dashboard\/search\?utm_campaign=a%2Fb#Intent;scheme=https/);
   }
+});
 
-  const unsupported = await worker.fetch(new Request('https://prismwalls.com/shopper'), workerEnv(), { waitUntil() {} });
-  assert.equal(unsupported.status, 404);
+test('broader Cloudflare route prefixes pass unrelated website paths to the origin', async () => {
+  const originalFetch = globalThis.fetch;
+  const originRequests = [];
+  globalThis.fetch = async (request) => {
+    originRequests.push(new Request(request));
+    return new Response('Next.js origin', { status: 200 });
+  };
+  try {
+    for (const url of [
+      'https://prismwalls.com/shopper',
+      'https://prismwalls.com/shareholder?campaign=summer',
+      'https://www.prismwalls.com/library-tools',
+    ]) {
+      const response = await worker.fetch(new Request(url), workerEnv(), { waitUntil() {} });
+      assert.equal(response.status, 200, url);
+      assert.equal(await response.text(), 'Next.js origin', url);
+    }
+    const postResponse = await worker.fetch(
+      new Request('https://prismwalls.com/shopper', { method: 'POST', body: 'submitted' }),
+      workerEnv(),
+      { waitUntil() {} },
+    );
+    assert.equal(postResponse.status, 200);
+    assert.equal(await postResponse.text(), 'Next.js origin');
+
+    for (const url of [
+      'https://prismwalls.com/api/not-a-worker-route',
+      'https://prismwalls.com/.well-known/not-a-file',
+    ]) {
+      const ownedMiss = await worker.fetch(new Request(url), workerEnv(), { waitUntil() {} });
+      assert.equal(ownedMiss.status, 404, url);
+    }
+    const unsupportedMethod = await worker.fetch(
+      new Request('https://prismwalls.com/shop', { method: 'POST', body: 'submitted' }),
+      workerEnv(),
+      { waitUntil() {} },
+    );
+    assert.equal(unsupportedMethod.status, 404);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.deepEqual(originRequests.map((request) => [request.url, request.method]), [
+    ['https://prismwalls.com/shopper', 'GET'],
+    ['https://prismwalls.com/shareholder?campaign=summer', 'GET'],
+    ['https://www.prismwalls.com/library-tools', 'GET'],
+    ['https://prismwalls.com/shopper', 'POST'],
+  ]);
+  assert.equal(await originRequests.at(-1).text(), 'submitted');
 });
 
 test('every Dart deep-link catalog example resolves to a Worker landing', async () => {
@@ -383,6 +430,17 @@ test('short link page for a stored share record renders the same landing', async
   assert.match(body, /by @maya/);
   assert.match(body, /images\.pexels\.com\/a\.jpg/);
   assert.doesNotMatch(body, /http-equiv="refresh"/);
+
+  const queryAlias = await getShare(ANDROID_UA, '/l?code=AbCdEfGh&utm_source=campaign', env);
+  assert.equal(queryAlias.status, 200);
+  assert.match(await queryAlias.text(), /Sunset - Prism/);
+  for (const invalid of [
+    '/l?code=short',
+    '/l?code=AbCdEfGh&code=Another1',
+    '/l?code=AbCdEfGh&redirect=https%3A%2F%2Fevil.example',
+  ]) {
+    assert.equal((await getShare(ANDROID_UA, invalid, env)).status, 400, invalid);
+  }
 });
 
 function aiEnv(kv, coordinator, overrides = {}) {

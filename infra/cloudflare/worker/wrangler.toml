@@ -7,7 +7,7 @@ pattern = "prismwalls.com/api/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/l/*"
+pattern = "prismwalls.com/l*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -19,336 +19,276 @@ pattern = "prismwalls.com/.well-known/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/apple-app-site-association"
+pattern = "prismwalls.com/apple-app-site-association*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share"
+pattern = "prismwalls.com/share*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share/*"
+pattern = "prismwalls.com/user*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/user"
+pattern = "prismwalls.com/fprofile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/user/*"
+pattern = "prismwalls.com/follower-profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/fprofile"
+pattern = "prismwalls.com/profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/fprofile/*"
+pattern = "prismwalls.com/setup*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/follower-profile"
+pattern = "prismwalls.com/share-setup*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/follower-profile/*"
+pattern = "prismwalls.com/refer*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/profile"
+pattern = "prismwalls.com/referral*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/profile/*"
+pattern = "prismwalls.com/collection*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/setup"
+pattern = "prismwalls.com/category*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/setup/*"
+pattern = "prismwalls.com/wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share-setup"
+pattern = "prismwalls.com/onboarding/v2*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share-setup/*"
+pattern = "prismwalls.com/dashboard*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/refer"
+pattern = "prismwalls.com/dashboard/home*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/refer/*"
+pattern = "prismwalls.com/dashboard/search*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/referral"
+pattern = "prismwalls.com/dashboard/search/users*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/referral/*"
+pattern = "prismwalls.com/dashboard/rewards*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/collection"
+pattern = "prismwalls.com/dashboard/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/collection/*"
+pattern = "prismwalls.com/dashboard/collection*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/category"
+pattern = "prismwalls.com/ai*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/category/*"
+pattern = "prismwalls.com/wallpaper-detail*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/wallpaper"
+pattern = "prismwalls.com/wotd-archive*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/wallpaper/*"
+pattern = "prismwalls.com/download-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/l"
+pattern = "prismwalls.com/wallpaper-filter*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/onboarding/v2"
+pattern = "prismwalls.com/choose-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/dashboard"
+pattern = "prismwalls.com/premium*"
 zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/*"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/home"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/search"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/search/users"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/rewards"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/streak"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/dashboard/collection"
-zone_name = "prismwalls.com"
-
 [[routes]]
-pattern = "prismwalls.com/ai"
+pattern = "prismwalls.com/paywall*"
 zone_name = "prismwalls.com"
 
-[[routes]]
-pattern = "prismwalls.com/wallpaper-detail"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/wotd-archive"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/download-wallpaper"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/wallpaper-filter"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/choose-wallpaper"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "prismwalls.com/premium"
-zone_name = "prismwalls.com"
-[[routes]]
-pattern = "prismwalls.com/paywall"
-zone_name = "prismwalls.com"
-
-
-[[routes]]
-pattern = "prismwalls.com/edit-profile"
-zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/share-prism"
+pattern = "prismwalls.com/edit-profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/settings"
+pattern = "prismwalls.com/share-prism*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/blocked-accounts"
+pattern = "prismwalls.com/settings*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/about"
+pattern = "prismwalls.com/blocked-accounts*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/fav-walls"
+pattern = "prismwalls.com/about*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/downloads"
+pattern = "prismwalls.com/fav-walls*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/library"
+pattern = "prismwalls.com/downloads*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/upload-wall"
+pattern = "prismwalls.com/library*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/edit-wall"
+pattern = "prismwalls.com/upload-wall*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/review"
+pattern = "prismwalls.com/edit-wall*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/coin-transactions"
+pattern = "prismwalls.com/review*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/theme"
+pattern = "prismwalls.com/coin-transactions*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/notifications"
+pattern = "prismwalls.com/theme*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/collection-view"
+pattern = "prismwalls.com/notifications*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/followers"
+pattern = "prismwalls.com/collection-view*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/following"
+pattern = "prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/admin-review"
+pattern = "prismwalls.com/following*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/admin-review/swipe"
+pattern = "prismwalls.com/admin-review*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/admin-firestore-telemetry"
+pattern = "prismwalls.com/admin-review/swipe*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/debug-panel"
+pattern = "prismwalls.com/admin-firestore-telemetry*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/quick-tile-settings"
+pattern = "prismwalls.com/debug-panel*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/auto-rotate"
+pattern = "prismwalls.com/quick-tile-settings*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/ios-shortcuts"
+pattern = "prismwalls.com/auto-rotate*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/wallpaper-history"
+pattern = "prismwalls.com/ios-shortcuts*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/wallpaper-position"
+pattern = "prismwalls.com/wallpaper-history*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/live-wallpaper"
+pattern = "prismwalls.com/wallpaper-position*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/rewards"
+pattern = "prismwalls.com/live-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/coin-history"
+pattern = "prismwalls.com/rewards*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/shop"
+pattern = "prismwalls.com/coin-history*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/drops"
+pattern = "prismwalls.com/shop*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/drops/*"
+pattern = "prismwalls.com/drops*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/leaderboard"
+pattern = "prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/draw"
+pattern = "prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/daily-chest"
+pattern = "prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "prismwalls.com/spin-wheel"
+pattern = "prismwalls.com/spin-wheel*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "prismwalls.com/photo-preview"
+pattern = "prismwalls.com/photo-preview*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "prismwalls.com/clock-preview"
+pattern = "prismwalls.com/clock-preview*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "prismwalls.com/admin-review/image"
+pattern = "prismwalls.com/admin-review/image*"
 zone_name = "prismwalls.com"
 
 
 [[routes]]
-pattern = "prismwalls.com/streak"
+pattern = "prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/not-found"
+pattern = "prismwalls.com/not-found*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -356,7 +296,7 @@ pattern = "www.prismwalls.com/api/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/l/*"
+pattern = "www.prismwalls.com/l*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -368,336 +308,276 @@ pattern = "www.prismwalls.com/.well-known/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/apple-app-site-association"
+pattern = "www.prismwalls.com/apple-app-site-association*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/share"
+pattern = "www.prismwalls.com/share*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/share/*"
+pattern = "www.prismwalls.com/user*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/user"
+pattern = "www.prismwalls.com/fprofile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/user/*"
+pattern = "www.prismwalls.com/follower-profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/fprofile"
+pattern = "www.prismwalls.com/profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/fprofile/*"
+pattern = "www.prismwalls.com/setup*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/follower-profile"
+pattern = "www.prismwalls.com/share-setup*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/follower-profile/*"
+pattern = "www.prismwalls.com/refer*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/profile"
+pattern = "www.prismwalls.com/referral*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/profile/*"
+pattern = "www.prismwalls.com/collection*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/setup"
+pattern = "www.prismwalls.com/category*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/setup/*"
+pattern = "www.prismwalls.com/wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/share-setup"
+pattern = "www.prismwalls.com/onboarding/v2*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/share-setup/*"
+pattern = "www.prismwalls.com/dashboard*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/refer"
+pattern = "www.prismwalls.com/dashboard/home*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/refer/*"
+pattern = "www.prismwalls.com/dashboard/search*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/referral"
+pattern = "www.prismwalls.com/dashboard/search/users*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/referral/*"
+pattern = "www.prismwalls.com/dashboard/rewards*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/collection"
+pattern = "www.prismwalls.com/dashboard/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/collection/*"
+pattern = "www.prismwalls.com/dashboard/collection*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/category"
+pattern = "www.prismwalls.com/ai*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/category/*"
+pattern = "www.prismwalls.com/wallpaper-detail*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/wallpaper"
+pattern = "www.prismwalls.com/wotd-archive*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/wallpaper/*"
+pattern = "www.prismwalls.com/download-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/l"
+pattern = "www.prismwalls.com/wallpaper-filter*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/onboarding/v2"
+pattern = "www.prismwalls.com/choose-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/dashboard"
+pattern = "www.prismwalls.com/premium*"
 zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/*"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/home"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/search"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/search/users"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/rewards"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/streak"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/dashboard/collection"
-zone_name = "prismwalls.com"
-
 [[routes]]
-pattern = "www.prismwalls.com/ai"
+pattern = "www.prismwalls.com/paywall*"
 zone_name = "prismwalls.com"
 
-[[routes]]
-pattern = "www.prismwalls.com/wallpaper-detail"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/wotd-archive"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/download-wallpaper"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/wallpaper-filter"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/choose-wallpaper"
-zone_name = "prismwalls.com"
-
-[[routes]]
-pattern = "www.prismwalls.com/premium"
-zone_name = "prismwalls.com"
-[[routes]]
-pattern = "www.prismwalls.com/paywall"
-zone_name = "prismwalls.com"
-
-
-[[routes]]
-pattern = "www.prismwalls.com/edit-profile"
-zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/share-prism"
+pattern = "www.prismwalls.com/edit-profile*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/settings"
+pattern = "www.prismwalls.com/share-prism*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/blocked-accounts"
+pattern = "www.prismwalls.com/settings*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/about"
+pattern = "www.prismwalls.com/blocked-accounts*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/fav-walls"
+pattern = "www.prismwalls.com/about*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/downloads"
+pattern = "www.prismwalls.com/fav-walls*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/library"
+pattern = "www.prismwalls.com/downloads*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/upload-wall"
+pattern = "www.prismwalls.com/library*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/edit-wall"
+pattern = "www.prismwalls.com/upload-wall*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/review"
+pattern = "www.prismwalls.com/edit-wall*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/coin-transactions"
+pattern = "www.prismwalls.com/review*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/theme"
+pattern = "www.prismwalls.com/coin-transactions*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/notifications"
+pattern = "www.prismwalls.com/theme*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/collection-view"
+pattern = "www.prismwalls.com/notifications*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/followers"
+pattern = "www.prismwalls.com/collection-view*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/following"
+pattern = "www.prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/admin-review"
+pattern = "www.prismwalls.com/following*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/admin-review/swipe"
+pattern = "www.prismwalls.com/admin-review*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/admin-firestore-telemetry"
+pattern = "www.prismwalls.com/admin-review/swipe*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/debug-panel"
+pattern = "www.prismwalls.com/admin-firestore-telemetry*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/quick-tile-settings"
+pattern = "www.prismwalls.com/debug-panel*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/auto-rotate"
+pattern = "www.prismwalls.com/quick-tile-settings*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/ios-shortcuts"
+pattern = "www.prismwalls.com/auto-rotate*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/wallpaper-history"
+pattern = "www.prismwalls.com/ios-shortcuts*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/wallpaper-position"
+pattern = "www.prismwalls.com/wallpaper-history*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/live-wallpaper"
+pattern = "www.prismwalls.com/wallpaper-position*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/rewards"
+pattern = "www.prismwalls.com/live-wallpaper*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/coin-history"
+pattern = "www.prismwalls.com/rewards*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/shop"
+pattern = "www.prismwalls.com/coin-history*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/drops"
+pattern = "www.prismwalls.com/shop*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/drops/*"
+pattern = "www.prismwalls.com/drops*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/leaderboard"
+pattern = "www.prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/draw"
+pattern = "www.prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/daily-chest"
+pattern = "www.prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "www.prismwalls.com/spin-wheel"
+pattern = "www.prismwalls.com/spin-wheel*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "www.prismwalls.com/photo-preview"
+pattern = "www.prismwalls.com/photo-preview*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "www.prismwalls.com/clock-preview"
+pattern = "www.prismwalls.com/clock-preview*"
 zone_name = "prismwalls.com"
 [[routes]]
-pattern = "www.prismwalls.com/admin-review/image"
+pattern = "www.prismwalls.com/admin-review/image*"
 zone_name = "prismwalls.com"
 
 
 [[routes]]
-pattern = "www.prismwalls.com/streak"
+pattern = "www.prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/not-found"
+pattern = "www.prismwalls.com/not-found*"
 zone_name = "prismwalls.com"
 
 [vars]

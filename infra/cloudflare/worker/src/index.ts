@@ -194,15 +194,27 @@ export default {
       return getOgImage(url.pathname, request.method, env);
     }
 
+    if (request.method === 'GET' && url.pathname === '/l') {
+      const code = shortCodeFromQuery(url);
+      if (code == null) return html(renderUnavailableHtml(request, env), 400);
+      return resolveShortLink(`/l/${code}`, request, env);
+    }
+
     if (request.method === 'GET' && url.pathname.startsWith('/l/')) {
       return resolveShortLink(url.pathname, request, env);
     }
 
-    if (request.method === 'GET' && APP_LINK_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`))) {
+    const isAppLinkPath = APP_LINK_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+    if (request.method === 'GET' && isAppLinkPath) {
       return renderDirectLanding(url, request, env);
     }
 
-    return new Response('Not found', { status: 404 });
+    const workerOwnedPath = ['/api', '/og', '/l', '/.well-known'].some(
+      (path) => url.pathname === path || url.pathname.startsWith(`${path}/`),
+    ) || url.pathname === '/apple-app-site-association';
+    if (isAppLinkPath || workerOwnedPath) return new Response('Not found', { status: 404 });
+
+    return fetch(request);
   },
 };
 
@@ -816,6 +828,20 @@ function isSafePathSegment(segment: string): boolean {
   } catch {
     return false;
   }
+}
+
+function shortCodeFromQuery(url: URL): string | null {
+  let code: string | null = null;
+  for (const key of url.searchParams.keys()) {
+    const values = url.searchParams.getAll(key);
+    if (values.length !== 1) return null;
+    if (key === 'code') {
+      code = values[0];
+    } else if (!PAGE_UTM_KEYS.has(key)) {
+      return null;
+    }
+  }
+  return code;
 }
 
 function appendPayloadQueryParams(
