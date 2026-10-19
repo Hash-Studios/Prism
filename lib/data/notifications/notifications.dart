@@ -18,6 +18,7 @@ import 'package:Prism/logger/logger.dart';
 const int _defaultNotifLimit = 50;
 
 const Duration _syncCooldown = Duration(seconds: 45);
+const Duration _persistedSyncCooldown = Duration(minutes: 5);
 
 final Map<String, Future<void>> _syncInFlightByKey = <String, Future<void>>{};
 final Map<String, DateTime> _lastSyncEndedAtByKey = <String, DateTime>{};
@@ -244,6 +245,9 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
 
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = await notificationsLocal.lastFetchAtUtc();
+    if (!force && lastFetchTime != null && nowUtc.difference(lastFetchTime) < _persistedSyncCooldown) {
+      return true;
+    }
     final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
     if (!isCurrentSession()) return false;
 

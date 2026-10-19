@@ -217,4 +217,29 @@ void main() {
 
     expect(local.items.singleWhere((item) => item.title == 'first').read, isTrue);
   });
+
+  test('a startup sync skips the fetch when the last fetch was under 5 minutes ago', () async {
+    local.lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 2));
+
+    await syncInAppNotificationsFromRemote();
+
+    expect(client.querySpecs, isEmpty);
+  });
+
+  test('a startup sync fetches only newer notifications when the last fetch was over 5 minutes ago', () async {
+    final DateTime lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 10));
+    local.lastFetch = lastFetch;
+
+    await syncInAppNotificationsFromRemote();
+
+    expect(client.querySpecs.single.sourceTag, 'notifications.latest');
+  });
+
+  test('a forced sync fetches even when the last fetch was under 5 minutes ago', () async {
+    local.lastFetch = DateTime.now().toUtc().subtract(const Duration(minutes: 2));
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(client.querySpecs, hasLength(1));
+  });
 }
