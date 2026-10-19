@@ -9,29 +9,63 @@ class WallFileFields {
 
   static const String wallpaperPath = 'wallpaper_path';
   static const String wallpaperSha = 'wallpaper_sha';
+  static const String wallpaperSourceKind = 'wallpaper_source_kind';
   static const String thumbPath = 'thumb_path';
   static const String thumbSha = 'thumb_sha';
+  static const String thumbSourceKind = 'thumb_source_kind';
 }
 
 /// Deletes the repo files of a pending wall. A file the doc has no path and sha for (older walls) is skipped, and a
 /// failed delete is logged and does not stop the next one. Returns how many files were deleted.
-Future<int> deleteWallFiles(Map<String, dynamic> wallData, {GitHubContentApi? github, String? repo}) async {
+Future<int> deleteWallFiles(
+  Map<String, dynamic> wallData, {
+  GitHubContentApi? github,
+  String? repo,
+  bool throwOnFailure = false,
+}) async {
   final GitHubContentApi api = github ?? GitHubContentApi();
   final String targetRepo = repo ?? Env.normalize(Env.ghRepoWalls);
   int deleted = 0;
-  for (final (String pathField, String shaField) in <(String, String)>[
-    (WallFileFields.wallpaperPath, WallFileFields.wallpaperSha),
-    (WallFileFields.thumbPath, WallFileFields.thumbSha),
+  bool failed = false;
+  if (wallData['originalProtected'] == true) {
+    final Object? wallId = wallData['id'];
+    final Object? generation = wallData['originalGeneration'];
+    if (wallId is! String || wallId.isEmpty || generation is! String || generation.isEmpty) {
+      throw StateError('Protected wall cleanup requires its original identity.');
+    }
+    for (final role in <String>['wallpaper', 'thumb']) {
+      try {
+        await api.deleteWallAsset(wallId: wallId, originalGeneration: generation, assetRole: role);
+        deleted++;
+      } catch (error, stackTrace) {
+        failed = true;
+        logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
+      }
+    }
+    if (failed && throwOnFailure) throw StateError('Some wallpaper files could not be deleted.');
+    return deleted;
+  }
+  for (final (String pathField, String shaField, String kindField) in <(String, String, String)>[
+    (WallFileFields.wallpaperPath, WallFileFields.wallpaperSha, WallFileFields.wallpaperSourceKind),
+    (WallFileFields.thumbPath, WallFileFields.thumbSha, WallFileFields.thumbSourceKind),
   ]) {
     final Object? path = wallData[pathField];
     final Object? sha = wallData[shaField];
     if (path is! String || path.isEmpty || sha is! String || sha.isEmpty) continue;
     try {
-      await api.deleteFile(repo: targetRepo, path: path, sha: sha, message: path);
+      await api.deleteFile(
+        repo: targetRepo,
+        path: path,
+        sha: sha,
+        message: path,
+        sourceKind: UploadSourceKind.fromData(wallData[kindField]),
+      );
       deleted++;
     } catch (error, stackTrace) {
+      failed = true;
       logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
     }
   }
+  if (failed && throwOnFailure) throw StateError('Some wallpaper files could not be deleted.');
   return deleted;
 }

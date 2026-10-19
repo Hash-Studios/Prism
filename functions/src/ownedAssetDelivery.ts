@@ -69,7 +69,7 @@ export async function deleteRetainedUpload(input: UploadIdentity): Promise<void>
     if (!error || typeof error !== "object" || !("code" in error) || Number(error.code) !== 404) throw error;
   }
 }
-function stored(value: unknown): value is StoredUpload {
+export function stored(value: unknown): value is StoredUpload {
   if (!value || typeof value !== "object") return false;
   return "bucket" in value && value.bucket === process.env.OWNED_ASSET_BUCKET &&
     "object" in value && typeof value.object === "string" &&
@@ -180,6 +180,7 @@ export async function bindOwnedWall(wallId: string): Promise<void> {
       thumb: thumb.upload, originalUrl: original.url, thumbUrl: thumb.url,
       provenance: {kind: original.kind, uid: original.upload.uid}});
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: thumbUrl, originalProtected: true,
+      wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
       originalGeneration: original.upload.generation});
   });
 }
@@ -193,8 +194,8 @@ async function delivery(wallId: string) {
     manifest.incarnationNanos !== wall.createTime.nanoseconds ||
     !stored(manifest.original) || !stored(manifest.thumb) || wall.data().originalProtected !== true ||
     wall.data().originalGeneration !== manifest.original.generation || wall.data().wallpaper_url !== "" ||
-    wall.data().wallpaper_path !== manifest.original.path || wall.data().wallpaper_sha !== manifest.original.sha ||
-    wall.data().thumb_path !== manifest.thumb.path || wall.data().thumb_sha !== manifest.thumb.sha ||
+    wall.data().wallpaper_path !== "" || wall.data().wallpaper_sha !== "" ||
+    wall.data().thumb_path !== "" || wall.data().thumb_sha !== "" ||
     wall.data().wallpaper_thumb !== ownedThumbnailUrl(wallId)) throw new Error("Owned wall unavailable");
   return {original: manifest.original, thumb: manifest.thumb, originalUrl: manifest.originalUrl,
     thumbUrl: manifest.thumbUrl, provenance: manifest.provenance};
@@ -228,8 +229,7 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
     }
     tx.create(ref, {...input, incarnationNanos: wall.createTime.nanoseconds, status: "ready", provenance: {kind: "legacy"}});
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: ownedThumbnailUrl(input.wallId),
-      wallpaper_path: input.original.path, wallpaper_sha: input.original.sha,
-      thumb_path: input.thumb.path, thumb_sha: input.thumb.sha,
+      wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
       originalProtected: true, originalGeneration: input.original.generation});
   });
 }
