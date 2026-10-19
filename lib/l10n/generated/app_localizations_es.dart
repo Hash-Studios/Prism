@@ -11,6 +11,9 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'No se pudo exportar';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'la búsqueda de creadores';
 
   @override
@@ -9381,7 +9384,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptSceneAnime4 => 'un mercado nocturno de anime de ensueño iluminado por faroles';
 
   @override
-  String get economyAiPromptSceneAnime5 => 'un horizonte urbano ciberanime al atardecer';
+  String get economyAiPromptSceneAnime5 => 'un horizonte urbano de anime futurista al atardecer';
 
   @override
   String get economyAiPromptSceneMinimal1 => 'dunas minimalistas y un único disco solar';
@@ -9520,7 +9523,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptQualityNaturalColors => 'colores vivos pero naturales';
 
   @override
-  String get economyAiPromptSuffix => 'fondo de pantalla vertical para móvil, sin texto';
+  String get economyAiPromptSuffix => 'fondo de pantalla vertical para teléfono, sin texto';
 
   @override
   String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {

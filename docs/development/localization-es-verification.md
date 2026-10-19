@@ -2,9 +2,9 @@
 
 ## Catalog and runtime
 
-`lib/l10n/app_en.arb` remains the canonical English catalog. Spanish uses `app_es.arb`, Flutter `gen-l10n`, and device-locale selection. Unsupported languages fall back to English. The catalog contains 2,498 messages, including accessibility text, errors, onboarding, search, downloads, creator tools, Premium, coins, rewards, referrals, and AI prompts.
+`lib/l10n/app_en.arb` remains the canonical English catalog. Spanish uses `app_es.arb`, Flutter `gen-l10n`, and device-locale selection. Unsupported languages fall back to English. The catalog contains 2,499 messages, including accessibility text, errors, onboarding, search, downloads, creator tools, Premium, coins, rewards, referrals, and AI prompts.
 
-`python3 tool/check_l10n.py` passed with 2,498 messages and two locales. A separate placeholder-use audit found no missing English placeholder names in Spanish messages. Native coverage includes all 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. Existing English resource values and backend identifiers remain unchanged.
+`python3 tool/check_l10n.py` checks key parity across both locales. A separate placeholder-use audit found no missing English placeholder names in Spanish messages. Native coverage includes all 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. Existing English resource values and backend identifiers remain unchanged.
 
 The generated messages are exercised by `test/l10n/spanish_locale_test.dart`. It checks device selection, es-MX and es-ES resolution, English fallback, live locale changes, plurals, number grouping, and a 320-pixel confirmation sheet at double text scale. Shared tests cover AI prompt composition, user prompt preservation, localized progress, coin shortfall errors, and upload size formatting.
 

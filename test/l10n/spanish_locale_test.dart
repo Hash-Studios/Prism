@@ -26,6 +26,31 @@ void main() {
     expect(title, 'Intentar de nuevo');
   });
 
+  testWidgets('context-free device localization matches MaterialApp preferred locale resolution', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('es', 'MX')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    final AppLocalizations deviceMessages = await loadDeviceAppLocalizations();
+    late String appLocaleName;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (BuildContext context) {
+            appLocaleName = AppLocalizations.of(context).localeName;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    expect(deviceMessages.localeName, 'es');
+    expect(appLocaleName, deviceMessages.localeName);
+  });
+
   test('uses the Spanish translation for regional Spanish locales', () async {
     for (final Locale locale in <Locale>[const Locale('es', 'MX'), const Locale('es', 'ES')]) {
       final AppLocalizations messages = await loadAppLocalizations(locale);
