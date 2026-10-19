@@ -105,7 +105,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Sign in to use rewards'), findsOneWidget);
+    expect(find.text('Sign in to use Rewards'), findsOneWidget);
     expect(find.byTooltip('Back'), findsOneWidget);
     await tester.tap(find.byTooltip('Back'));
     await tester.pump();
