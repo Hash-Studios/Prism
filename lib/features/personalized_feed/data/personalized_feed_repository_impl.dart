@@ -687,11 +687,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     );
 
     final List<FeedItemEntity> first = await _queryWalls(spec(_randomDocId(), limit));
-    if (first.length >= limit) {
+    if (first.isNotEmpty) {
       return first;
     }
     // Past the last id: wrap around to the start of the key space.
-    return <FeedItemEntity>[...first, ...await _queryWalls(spec(null, limit - first.length))];
+    return _queryWalls(spec(null, limit));
   }
 
   String _randomDocId() {

@@ -105,6 +105,16 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
   }) async => failUserDoc ? throw StateError('offline') : null;
 }
 
+class _CountingWallsFirestore extends _OneWallFirestore {
+  final List<String> sourceTags = <String>[];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    sourceTags.add(spec.sourceTag);
+    return super.query(spec, map);
+  }
+}
+
 class _SlowWallsFirestore extends _OneWallFirestore {
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
@@ -753,6 +763,36 @@ void main() {
 
     expect(_itemIds(fallback.data!.items), <String>['visible-doc']);
     expect((cache.snapshot!.payload! as Map)['items'], hasLength(2));
+  });
+
+  test('a random slice that returns walls is not queried a second time', () async {
+    final _CountingWallsFirestore firestore = _CountingWallsFirestore();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: firestore,
+      cache: _MemoryFeedCache(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      favourites: _CountingFavourites(),
+    );
+
+    await repository.fetch(_firstPage);
+
+    expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(1));
+  });
+
+  test('a random slice that returns nothing wraps around once', () async {
+    final _RecordingFirestore firestore = _RecordingFirestore();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: firestore,
+      cache: _MemoryFeedCache(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      favourites: _CountingFavourites(),
+    );
+
+    await repository.fetch(_firstPage);
+
+    expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(2));
   });
 
   test('the blocked-creators load overlaps the pools instead of adding to them', () async {
