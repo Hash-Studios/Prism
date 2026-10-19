@@ -11,7 +11,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/widgets.dart';
 
 class NotificationRouteMapper {
   const NotificationRouteMapper();
