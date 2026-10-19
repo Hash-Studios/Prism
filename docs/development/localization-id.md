@@ -47,6 +47,13 @@ regression test is reused; its three English expectation updates were already
 present. This source fix is cherry-picked, so there is no runtime dependency on
 unmerged PR #597. Spanish-only gift wording is not included.
 
+Shared prompt persistence fixes `8d0498874`, `1085c5ab5` and `fef381070`
+are cherry-picked with provenance. Explicit Shuffle, Scene idea and style
+choices now persist through draft hydration and locale changes, like manual
+edits. Untouched automatic examples remain unsaved and can follow the locale.
+The portable regression selects a supported non-English locale. This adds no
+catalogue messages and does not require Spanish resources or an unmerged PR.
+
 ## Reproducible checks
 
 ```sh
