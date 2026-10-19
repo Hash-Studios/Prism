@@ -327,7 +327,9 @@ void main() {
       await shot.save('drops_live');
     });
 
-    qaScreen('drop_preview_from_grid', setUpExtra: () => getIt.registerFactory<DropsBloc>(dropsBloc), (QaShot shot) async {
+    qaScreen('drop_preview_from_grid', setUpExtra: () => getIt.registerFactory<DropsBloc>(dropsBloc), (
+      QaShot shot,
+    ) async {
       await shot.pump(const DropsPage());
       await shot.tester.tap(find.byType(PrismWallTile).at(1));
       await shot.settle(frames: 8);
