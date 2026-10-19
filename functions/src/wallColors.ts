@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import {logger} from "firebase-functions/v2";
 
 export type PaletteColor = {id: string; hex: string};
@@ -82,6 +81,7 @@ export function nearestPaletteIndex(r: number, g: number, b: number): number {
  * Always holds the top colour. Throws when sharp cannot decode the buffer.
  */
 export async function dominantPaletteColors(imageBuffer: Buffer): Promise<string[]> {
+  const sharp = (await import("sharp")).default;
   const {data, info} = await sharp(imageBuffer)
     .resize(SAMPLE_SIZE, SAMPLE_SIZE, {fit: "inside"})
     .flatten({background: "#ffffff"})

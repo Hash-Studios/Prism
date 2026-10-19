@@ -2,7 +2,6 @@ import * as admin from "firebase-admin";
 import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import sharp from "sharp";
 import {db, int, REGION, str, utcDateString} from "../common";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
@@ -210,6 +209,7 @@ async function updateOwnedCandidate(
 
 /** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
 export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
+  const sharp = (await import("sharp")).default;
   const {data: wall, info} = await sharp(bytes).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
     .toBuffer({resolveWithObject: true});
   const size = thumbSize(info.width, info.height);
