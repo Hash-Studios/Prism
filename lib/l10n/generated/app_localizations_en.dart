@@ -1434,6 +1434,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get adminDepthTierAuto => 'Auto';
+
+  @override
+  String get adminDepthTierMenu => 'Menu';
+
+  @override
+  String get adminDepthTierNone => 'None';
+
+  @override
+  String get adminDepthTierNotChecked => 'Not checked';
+
+  @override
   String get adminDrop => 'Drop';
 
   @override
@@ -2142,6 +2154,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreCoinWeekBonus => 'Week bonus';
 
   @override
+  String get coreColorBlack => 'Black';
+
+  @override
+  String get coreColorBlue => 'Blue';
+
+  @override
+  String get coreColorBrown => 'Brown';
+
+  @override
+  String get coreColorGreen => 'Green';
+
+  @override
+  String get coreColorGrey => 'Grey';
+
+  @override
+  String get coreColorOrange => 'Orange';
+
+  @override
+  String get coreColorPink => 'Pink';
+
+  @override
+  String get coreColorPurple => 'Purple';
+
+  @override
+  String get coreColorRed => 'Red';
+
+  @override
+  String get coreColorTeal => 'Teal';
+
+  @override
+  String get coreColorWhite => 'White';
+
+  @override
+  String get coreColorYellow => 'Yellow';
+
+  @override
   String get coreConfirmWallpaperPreview => 'Confirm the wallpaper in the system preview.';
 
   @override
@@ -2195,6 +2243,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreCropAndPosition => 'Crop and position...';
+
+  @override
+  String get coreDefaultBanner => 'Join our Telegram';
 
   @override
   String get coreDepthEffectAutoLongTip =>
@@ -6389,6 +6440,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorNetwork => 'Check your connection and try again.';
 
   @override
+  String get navigationBackOnline => 'Back online';
+
+  @override
+  String get navigationNoInternetConnection => 'No internet connection';
+
+  @override
+  String get navigationScrollToTop => 'Scroll to top';
+
+  @override
   String get notifActivateToCollapse => 'Activate to collapse.';
 
   @override
@@ -7626,6 +7686,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperDepthSubjectSubtitle => 'Your subject sits in front of the clock.';
 
   @override
+  String get wallpaperDetailColorCodeCopied => 'Color code copied to clipboard';
+
+  @override
   String get wallpaperDetailNotFound => 'Wallpaper not found';
 
   @override
@@ -7858,6 +7921,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperFavouriteSortSource => 'Source';
 
   @override
+  String get wallpaperFavouriteStatus => 'In your favourites';
+
+  @override
   String get wallpaperFavouriteTryDifferent => 'Try a different search or source.';
 
   @override
@@ -7890,6 +7956,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperFeedEmptyTitle => 'Shape this feed';
+
+  @override
+  String get wallpaperFeedFollowingEmptyTitle => 'Follow creators to see their new wallpapers here';
+
+  @override
+  String get wallpaperFeedFollowingLoadError => 'Couldn\'t load your following feed';
+
+  @override
+  String get wallpaperFeedLatestLoadError => 'Couldn\'t load the latest wallpapers';
 
   @override
   String get wallpaperFeedLearnedFromYou => 'Learned from you';
@@ -7939,6 +8014,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
     return '$countString picked';
   }
+
+  @override
+  String get wallpaperFeedPopularEmptyTitle => 'No popular wallpapers yet';
+
+  @override
+  String get wallpaperFeedPopularLoadError => 'Couldn\'t load popular wallpapers';
+
+  @override
+  String get wallpaperFeedPullToRefresh => 'Pull down to refresh.';
 
   @override
   String get wallpaperFeedRefreshError => 'Couldn\'t refresh your feed.';

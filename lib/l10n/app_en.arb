@@ -1831,6 +1831,22 @@
       }
     }
   },
+  "adminDepthTierAuto": "Auto",
+  "@adminDepthTierAuto": {
+    "description": "Admin label for a wallpaper whose Depth Effect tier is automatic."
+  },
+  "adminDepthTierMenu": "Menu",
+  "@adminDepthTierMenu": {
+    "description": "Admin label for a wallpaper whose Depth Effect tier is set from the device menu."
+  },
+  "adminDepthTierNone": "None",
+  "@adminDepthTierNone": {
+    "description": "Admin label for a wallpaper with no Depth Effect."
+  },
+  "adminDepthTierNotChecked": "Not checked",
+  "@adminDepthTierNotChecked": {
+    "description": "Admin label for a wallpaper whose Depth Effect tier has not been checked."
+  },
   "adminDrop": "Drop",
   "adminEmail": "Email",
   "adminEmailExample": "user@example.com",
@@ -2142,6 +2158,54 @@
   "coreCoinWallpaperDownload": "Wallpaper download",
   "coreCoinWatchedVideo": "Watched a video",
   "coreCoinWeekBonus": "Week bonus",
+  "coreColorBlack": "Black",
+  "@coreColorBlack": {
+    "description": "Localized name for the black search palette colour."
+  },
+  "coreColorBlue": "Blue",
+  "@coreColorBlue": {
+    "description": "Localized name for the blue search palette colour."
+  },
+  "coreColorBrown": "Brown",
+  "@coreColorBrown": {
+    "description": "Localized name for the brown search palette colour."
+  },
+  "coreColorGreen": "Green",
+  "@coreColorGreen": {
+    "description": "Localized name for the green search palette colour."
+  },
+  "coreColorGrey": "Grey",
+  "@coreColorGrey": {
+    "description": "Localized name for the grey search palette colour."
+  },
+  "coreColorOrange": "Orange",
+  "@coreColorOrange": {
+    "description": "Localized name for the orange search palette colour."
+  },
+  "coreColorPink": "Pink",
+  "@coreColorPink": {
+    "description": "Localized name for the pink search palette colour."
+  },
+  "coreColorPurple": "Purple",
+  "@coreColorPurple": {
+    "description": "Localized name for the purple search palette colour."
+  },
+  "coreColorRed": "Red",
+  "@coreColorRed": {
+    "description": "Localized name for the red search palette colour."
+  },
+  "coreColorTeal": "Teal",
+  "@coreColorTeal": {
+    "description": "Localized name for the teal search palette colour."
+  },
+  "coreColorWhite": "White",
+  "@coreColorWhite": {
+    "description": "Localized name for the white search palette colour."
+  },
+  "coreColorYellow": "Yellow",
+  "@coreColorYellow": {
+    "description": "Localized name for the yellow search palette colour."
+  },
   "coreConfirmWallpaperPreview": "Confirm the wallpaper in the system preview.",
   "coreContentNotAvailable": "That item is no longer available",
   "coreContentReportUser": "user",
@@ -2178,6 +2242,10 @@
   "coreCouldNotUpdateFavourites": "Couldn't update favourites. Try again.",
   "coreCreatorPreviewDescription": "Check out this creator profile on Prism.",
   "coreCropAndPosition": "Crop and position...",
+  "coreDefaultBanner": "Join our Telegram",
+  "@coreDefaultBanner": {
+    "description": "Default title for the home feed banner when Remote Config has no campaign copy."
+  },
   "coreDepthEffectAutoLongTip": "Depth Effect turns on by itself. On iOS 18 or older, keep widgets off the space under the clock.",
   "coreDepthEffectAutoTip": "Depth Effect turns on by itself.",
   "coreDepthEffectBadge": "Depth",
@@ -5426,6 +5494,18 @@
   "economyYourXp": "YOUR XP",
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNetwork": "Check your connection and try again.",
+  "navigationBackOnline": "Back online",
+  "@navigationBackOnline": {
+    "description": "Live status announcement when the app regains network connectivity."
+  },
+  "navigationNoInternetConnection": "No internet connection",
+  "@navigationNoInternetConnection": {
+    "description": "Live status announcement while the app has no network connection."
+  },
+  "navigationScrollToTop": "Scroll to top",
+  "@navigationScrollToTop": {
+    "description": "Tooltip for the floating bottom bar control that scrolls content to the top."
+  },
   "notifActivateToCollapse": "Activate to collapse.",
   "notifActivateToExpand": "Activate to expand.",
   "notifChannelDownloads": "Downloads",
@@ -6581,6 +6661,10 @@
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
   },
+  "wallpaperDetailColorCodeCopied": "Color code copied to clipboard",
+  "@wallpaperDetailColorCodeCopied": {
+    "description": "Toast shown after copying a wallpaper color's hex code."
+  },
   "wallpaperDetailNotFound": "Wallpaper not found",
   "@wallpaperDetailNotFound": {
     "description": "Wallpaper interface text: wallpaperDetailNotFound."
@@ -6845,6 +6929,10 @@
   "@wallpaperFavouriteSortSource": {
     "description": "Sort favourites by source."
   },
+  "wallpaperFavouriteStatus": "In your favourites",
+  "@wallpaperFavouriteStatus": {
+    "description": "Accessibility label and tooltip for the heart on a wallpaper already in the user's favourites."
+  },
   "wallpaperFavouriteTryDifferent": "Try a different search or source.",
   "@wallpaperFavouriteTryDifferent": {
     "description": "Help text when no favourites match current filters."
@@ -6888,6 +6976,18 @@
   "wallpaperFeedEmptyTitle": "Shape this feed",
   "@wallpaperFeedEmptyTitle": {
     "description": "Wallpaper and feed interface text: wallpaperFeedEmptyTitle."
+  },
+  "wallpaperFeedFollowingEmptyTitle": "Follow creators to see their new wallpapers here",
+  "@wallpaperFeedFollowingEmptyTitle": {
+    "description": "Empty-state title when a signed-in user follows no creators."
+  },
+  "wallpaperFeedFollowingLoadError": "Couldn't load your following feed",
+  "@wallpaperFeedFollowingLoadError": {
+    "description": "Error title when the Following feed cannot load."
+  },
+  "wallpaperFeedLatestLoadError": "Couldn't load the latest wallpapers",
+  "@wallpaperFeedLatestLoadError": {
+    "description": "Error title when the Latest feed cannot load."
   },
   "wallpaperFeedLearnedFromYou": "Learned from you",
   "@wallpaperFeedLearnedFromYou": {
@@ -6952,6 +7052,18 @@
         "format": "decimalPattern"
       }
     }
+  },
+  "wallpaperFeedPopularEmptyTitle": "No popular wallpapers yet",
+  "@wallpaperFeedPopularEmptyTitle": {
+    "description": "Empty-state title when the Popular feed has no wallpapers."
+  },
+  "wallpaperFeedPopularLoadError": "Couldn't load popular wallpapers",
+  "@wallpaperFeedPopularLoadError": {
+    "description": "Error title when the Popular feed cannot load."
+  },
+  "wallpaperFeedPullToRefresh": "Pull down to refresh.",
+  "@wallpaperFeedPullToRefresh": {
+    "description": "Empty-state hint to refresh the Latest or Popular wallpaper feed."
   },
   "wallpaperFeedRefreshError": "Couldn't refresh your feed.",
   "@wallpaperFeedRefreshError": {

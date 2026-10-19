@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -122,7 +123,7 @@ class _OfflinePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final String message = online ? 'Back online' : 'No internet connection';
+    final String message = online ? context.l10n.navigationBackOnline : context.l10n.navigationNoInternetConnection;
     final Color background = online ? cs.inverseSurface : cs.surfaceContainerHigh;
     final Color foreground = online ? cs.onInverseSurface : cs.onSurface;
     return Semantics(

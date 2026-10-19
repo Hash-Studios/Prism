@@ -38,6 +38,7 @@ Future<void> prepareRemoteConfig(
   );
   await remoteConfig.setDefaults(<String, dynamic>{
     'topImageLink': defaultTopImageLink,
+    // Empty marks missing Remote Config copy; the feed supplies its localized default.
     'bannerText': defaultBannerText,
     'bannerTextOn': defaultBannerTextOn.toString(),
     'bannerURL': defaultBannerUrl,

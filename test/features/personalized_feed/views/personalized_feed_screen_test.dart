@@ -47,6 +47,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -564,8 +565,9 @@ void main() {
     await tapTab(tester, 'Following');
     await _settle(tester);
 
-    expect(find.text('Follow creators to see their new wallpapers here'), findsOneWidget);
-    expect(find.widgetWithText(PrismButton, 'Find creators'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.wallpaperFeedFollowingEmptyTitle), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, l10n.accountFindCreators), findsOneWidget);
     expect(find.byType(WallpaperTile), findsNothing);
   });
 
@@ -601,7 +603,7 @@ void main() {
     await tapTab(tester, 'Latest');
     await _settle(tester);
 
-    expect(find.text("Couldn't load the latest wallpapers"), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().wallpaperFeedLatestLoadError), findsOneWidget);
     expect(find.widgetWithText(PrismButton, 'Try again'), findsOneWidget);
   });
 

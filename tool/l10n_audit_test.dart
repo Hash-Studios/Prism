@@ -41,6 +41,9 @@ void sample(String name) {
   Text(data['recordKey']);
   Text(name == 'protocolValue' ? name : name);
   AndroidNotificationDetails('downloads', 'Download status');
+  showPrismConfirm(context, message: 'This cannot be undone');
+  PagedChipSliver(failureTitle: 'Could not load', emptyTitle: 'No posts', emptyBody: 'Come back later');
+  BottomBar(iconTooltip: 'Scroll to top');
   Text('123');
   Text('…');
   showDialog(builder: (context) => AlertDialog(
@@ -80,6 +83,11 @@ void sample(String name) {
     expect(classifications['recordKey'], isNot('probable_ui'));
     expect(classifications['protocolValue'], isNot('probable_ui'));
     expect(classifications['Download status'], 'probable_ui');
+    expect(classifications['This cannot be undone'], 'probable_ui');
+    expect(classifications['Could not load'], 'probable_ui');
+    expect(classifications['No posts'], 'probable_ui');
+    expect(classifications['Come back later'], 'probable_ui');
+    expect(classifications['Scroll to top'], 'probable_ui');
     expect(classifications['downloads'], isNot('probable_ui'));
     expect(classifications['123'], 'review');
     expect(classifications['…'], 'review');

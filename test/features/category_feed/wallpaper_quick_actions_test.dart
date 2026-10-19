@@ -13,6 +13,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -202,19 +203,20 @@ void main() {
     final SemanticsHandle semantics = tester.ensureSemantics();
     await pumpTile(tester);
 
-    expect(find.byTooltip('In your favourites'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('In your favourites')), findsOneWidget);
+    final String label = AppLocalizationsEn().wallpaperFavouriteStatus;
+    expect(find.byTooltip(label), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(label)), findsOneWidget);
     expect(find.ancestor(of: find.byIcon(Icons.favorite_rounded), matching: find.byType(IgnorePointer)), findsWidgets);
     semantics.dispose();
   });
 
   testWidgets('no heart badge for a wallpaper that is not a favourite, or on a tile without the flag', (tester) async {
     await pumpTile(tester);
-    expect(find.byTooltip('In your favourites'), findsNothing);
+    expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
 
     await favourites.setWallFavourite('u', 'wall-1', true);
     await pumpTile(tester, quickActions: false);
-    expect(find.byTooltip('In your favourites'), findsNothing);
+    expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
   });
 
   testWidgets('showWallpaperQuickActions can be opened straight from a grid', (tester) async {

@@ -1,6 +1,8 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -11,6 +13,8 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
+import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
+import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -28,6 +32,24 @@ import '../../drops/drop_fixtures.dart';
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockStartupRepository extends Mock implements StartupRepository {}
+
+StartupConfigEntity _startupConfig({required String bannerText}) => StartupConfigEntity(
+  topImageLink: app_constants.defaultTopImageLink,
+  bannerText: bannerText,
+  bannerTextOn: true,
+  bannerUrl: '',
+  obsoleteAppVersion: '',
+  verifiedUsers: const <String>[],
+  premiumCollections: const <String>[],
+  aiEnabled: true,
+  aiRolloutPercent: 100,
+  aiSubmitEnabled: true,
+  aiVariationsEnabled: true,
+  useRcPaywalls: true,
+  onboardingV2Enabled: true,
+);
 
 PrismFeedItem _wall(String id, {List<String>? collections}) =>
     FeedItemEntity.prism(
@@ -66,7 +88,10 @@ void main() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
   });
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() async {
+    if (getIt.isRegistered<StartupRepository>()) await getIt.unregister<StartupRepository>();
+    AnalyticsRuntime.reset();
+  });
 
   /// The first page is the promo banner, then one page per wall. Reduce motion keeps autoplay off.
   Future<void> pumpCarousel(
@@ -138,10 +163,24 @@ void main() {
     expect(clip.borderRadius, BorderRadius.circular(20));
   });
 
-  testWidgets('the banner page keeps its remote title', (tester) async {
+  testWidgets('the banner page uses localized default copy when Remote Config has no title', (tester) async {
+    final _MockStartupRepository repository = _MockStartupRepository();
+    when(() => repository.currentConfig).thenReturn(_startupConfig(bannerText: ''));
+    getIt.registerSingleton<StartupRepository>(repository);
+
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
 
     expect(find.text('Join our Telegram'), findsOneWidget);
+  });
+
+  testWidgets('the banner page preserves admin-authored Remote Config copy', (tester) async {
+    final _MockStartupRepository repository = _MockStartupRepository();
+    when(() => repository.currentConfig).thenReturn(_startupConfig(bannerText: 'Summer wallpaper event'));
+    getIt.registerSingleton<StartupRepository>(repository);
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
+
+    expect(find.text('Summer wallpaper event'), findsOneWidget);
   });
 
   testWidgets('a wallpaper page shows no category and no author', (tester) async {

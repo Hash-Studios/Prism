@@ -195,7 +195,7 @@ void main() {
         reduceMotion: true,
       ),
     );
-    final Finder toTop = find.bySemanticsLabel('Scroll to top');
+    final Finder toTop = find.bySemanticsLabel(AppLocalizationsEn().navigationScrollToTop);
     expect(toTop, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -600));

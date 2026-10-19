@@ -147,8 +147,6 @@ class _FavouriteBadge extends StatelessWidget {
 
   final String itemId;
 
-  static const String _label = 'In your favourites';
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<FavouriteWallsBloc, FavouriteWallsState>(
@@ -160,15 +158,16 @@ class _FavouriteBadge extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final ColorScheme scheme = Theme.of(context).colorScheme;
+        final String label = context.l10n.wallpaperFavouriteStatus;
         return Positioned.directional(
           textDirection: Directionality.of(context),
           end: 6,
           bottom: 6,
           child: IgnorePointer(
             child: Semantics(
-              label: _label,
+              label: label,
               child: Tooltip(
-                message: _label,
+                message: label,
                 child: DecoratedBox(
                   decoration: BoxDecoration(color: scheme.surface.withValues(alpha: 0.85), shape: BoxShape.circle),
                   child: SizedBox.square(

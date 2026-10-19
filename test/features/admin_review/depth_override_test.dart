@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -19,8 +20,13 @@ void main() {
   });
 
   test('labels each tier and the unchecked state', () {
-    expect(WallDepthTier.values.map(depthTierLabel), <String>['Auto', 'Menu', 'None']);
-    expect(depthTierLabel(null), 'Not checked');
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(WallDepthTier.values.map((WallDepthTier tier) => depthTierLabel(l10n, tier)), <String>[
+      l10n.adminDepthTierAuto,
+      l10n.adminDepthTierMenu,
+      l10n.adminDepthTierNone,
+    ]);
+    expect(depthTierLabel(l10n, null), l10n.adminDepthTierNotChecked);
   });
 
   test('the local copy keeps the detector keys and takes the admin pick', () {

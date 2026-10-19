@@ -26,7 +26,7 @@ class DepthTierPill extends StatelessWidget {
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<WallDepthTier>>[
         for (final WallDepthTier option in WallDepthTier.values)
-          PopupMenuItem<WallDepthTier>(value: option, child: Text(depthTierLabel(option))),
+          PopupMenuItem<WallDepthTier>(value: option, child: Text(depthTierLabel(context.l10n, option))),
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
@@ -40,7 +40,7 @@ class DepthTierPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(context.l10n.adminDepthTier(depthTierLabel(tier)), style: onImage),
+                Text(context.l10n.adminDepthTier(depthTierLabel(context.l10n, tier)), style: onImage),
                 const Icon(Icons.arrow_drop_down_rounded, color: Colors.white, size: 18),
               ],
             ),

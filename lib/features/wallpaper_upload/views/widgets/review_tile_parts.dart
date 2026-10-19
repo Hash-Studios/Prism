@@ -18,7 +18,7 @@ void showDeleteConfirm(BuildContext context, {required String title, required Fu
     showPrismConfirm(
       context,
       title: title,
-      message: "This is permanent. You can't undo it.",
+      message: context.l10n.corePopupCannotUndo,
       confirmLabel: context.l10n.wallpaperUploadDeleteWallpaper,
       destructive: true,
     ).then((bool confirmed) async {

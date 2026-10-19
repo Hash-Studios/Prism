@@ -30,6 +30,7 @@ const Set<String> _uiCallNames = <String>{
   'showSnackBar',
   'showAdaptiveDialog',
   'showCupertinoModalPopup',
+  'showPrismConfirm',
 };
 
 const Set<String> _logCallNames = <String>{'debugPrint', 'log', 'print', 'warning'};
@@ -44,6 +45,10 @@ const Set<String> _uiParameterNames = <String>{
   'confirmText',
   'content',
   'errorText',
+  'failureTitle',
+  'emptyTitle',
+  'emptyBody',
+  'emptyActionLabel',
   'emptyText',
   'helperText',
   'hintText',
@@ -56,6 +61,7 @@ const Set<String> _uiParameterNames = <String>{
   'title',
   'text',
   'tooltip',
+  'iconTooltip',
 };
 
 class _LiteralFinding {

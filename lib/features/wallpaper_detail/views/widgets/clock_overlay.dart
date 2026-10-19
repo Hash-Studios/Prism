@@ -20,14 +20,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-enum ClockPreviewMode {
-  lock('Lock'),
-  home('Home');
-
-  const ClockPreviewMode(this.label);
-
-  final String label;
-}
+enum ClockPreviewMode { lock, home }
 
 /// Width of the decode used to pick the clock text colour.
 const int _sampleWidth = 32;
@@ -319,7 +312,10 @@ class _ModeToggle extends StatelessWidget {
                     for (final ClockPreviewMode value in ClockPreviewMode.values)
                       Expanded(
                         child: _Segment(
-                          label: value.label,
+                          label: switch (value) {
+                            ClockPreviewMode.lock => context.l10n.wallpaperPreviewLock,
+                            ClockPreviewMode.home => context.l10n.wallpaperPreviewHome,
+                          },
                           selected: value == mode,
                           duration: duration,
                           curve: _slide,

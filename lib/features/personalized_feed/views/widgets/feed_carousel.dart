@@ -162,7 +162,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
   Widget build(BuildContext context) {
     final bool hasWotd = context.select((WotdBloc bloc) => bloc.state.entity != null);
     final String bannerImage = app_state.topImageLink;
-    final String bannerTitle = app_state.bannerTextOn ? app_state.bannerText : '';
+    final String remoteBannerTitle = app_state.bannerText;
+    final String bannerTitle = app_state.bannerTextOn
+        ? (remoteBannerTitle.trim().isEmpty ? context.l10n.coreDefaultBanner : remoteBannerTitle)
+        : '';
     final double height = feedCarouselCardHeight(context);
     final double width = MediaQuery.sizeOf(context).width;
     final int columns = feedCarouselColumns(width);

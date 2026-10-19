@@ -130,7 +130,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
                   ? localizedRelativeTime(context.l10n, createdAt, locale: Localizations.localeOf(context))
                   : context.l10n.adminUnknown,
             ),
-            (context.l10n.adminDepth, depthTierLabel(wallDepthTier(wall))),
+            (context.l10n.adminDepth, depthTierLabel(context.l10n, wallDepthTier(wall))),
             if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
           ],
           reserved: reserved,

@@ -363,9 +363,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.latest)!,
-            failureTitle: "Couldn't load the latest wallpapers",
-            emptyTitle: 'No wallpapers yet',
-            emptyBody: 'Pull down to refresh.',
+            failureTitle: context.l10n.wallpaperFeedLatestLoadError,
+            emptyTitle: context.l10n.accountNoWallpapersYet,
+            emptyBody: context.l10n.wallpaperFeedPullToRefresh,
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
           ),
@@ -377,9 +377,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.following)!,
-            failureTitle: "Couldn't load your following feed",
-            emptyTitle: 'Follow creators to see their new wallpapers here',
-            emptyActionLabel: 'Find creators',
+            failureTitle: context.l10n.wallpaperFeedFollowingLoadError,
+            emptyTitle: context.l10n.wallpaperFeedFollowingEmptyTitle,
+            emptyActionLabel: context.l10n.accountFindCreators,
             onEmptyAction: () => unawaited(context.router.push(const UserSearchRoute())),
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
@@ -393,9 +393,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.popular)!,
-            failureTitle: "Couldn't load popular wallpapers",
-            emptyTitle: 'No popular wallpapers yet',
-            emptyBody: 'Pull down to refresh.',
+            failureTitle: context.l10n.wallpaperFeedPopularLoadError,
+            emptyTitle: context.l10n.wallpaperFeedPopularEmptyTitle,
+            emptyBody: context.l10n.wallpaperFeedPullToRefresh,
             crossAxisCount: crossAxisCount,
             tileMemCacheHeight: tileMemCacheHeight,
           ),

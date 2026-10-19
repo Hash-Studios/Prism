@@ -395,7 +395,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               Tooltip(
                                 message: context.l10n.accountClearColour,
                                 child: PrismChip(
-                                  label: _filters.color!.name,
+                                  label: prismPaletteColorDisplayName(_filters.color!, context.l10n),
                                   selected: true,
                                   leading: _ColourDot(_filters.color!.color),
                                   onTap: _clearColor,

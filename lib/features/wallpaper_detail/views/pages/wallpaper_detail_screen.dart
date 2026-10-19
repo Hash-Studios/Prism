@@ -649,7 +649,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           onTap: () => _handleColorSelected(context, color),
           onLongPress: () {
             PrismHaptics.impact();
-            Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
+            final String copiedMessage = context.l10n.wallpaperDetailColorCodeCopied;
+            Clipboard.setData(
+              ClipboardData(text: '#${color.rgbHex.toUpperCase()}'),
+            ).then((_) => toasts.color(color, message: copiedMessage));
           },
         ),
     ];

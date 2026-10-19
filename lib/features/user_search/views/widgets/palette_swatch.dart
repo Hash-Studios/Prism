@@ -1,6 +1,7 @@
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// A round swatch for one [PrismPaletteColor]. A selected swatch gets a ring in the accent colour.
@@ -18,7 +19,7 @@ class PaletteSwatch extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: color.name,
+      label: prismPaletteColorDisplayName(color, context.l10n),
       excludeSemantics: true,
       onTap: onTap,
       child: GestureDetector(

@@ -11,6 +11,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -172,6 +173,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ClockOverlay), findsNothing);
+  });
+
+  testWidgets('the preview mode toggle uses localized lock and home labels', (WidgetTester tester) async {
+    await _openPreview(tester);
+
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.wallpaperPreviewLock), findsOneWidget);
+    expect(find.text(l10n.wallpaperPreviewHome), findsOneWidget);
   });
 
   testWidgets('without a tint the image is shown as it is', (tester) async {

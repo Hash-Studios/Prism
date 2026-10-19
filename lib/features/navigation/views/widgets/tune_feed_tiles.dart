@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -66,13 +67,14 @@ class InterestTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final String displayName = categoryDisplayName(interest.name, context.l10n);
     const BorderRadius radius = BorderRadius.all(Radius.circular(PrismRadius.sm));
     final Duration fast = context.motion(PrismDurations.fast);
     return Semantics(
       button: true,
       selected: selected,
       label: context.l10n.wallpaperInterestSelectedLabel(
-        interest.name,
+        displayName,
         selected ? context.l10n.wallpaperSelected : context.l10n.wallpaperNotSelected,
       ),
       onTap: onTap,
@@ -116,7 +118,7 @@ class InterestTile extends StatelessWidget {
                   right: PrismBottomSheet.interestTileLabelInset,
                   bottom: PrismBottomSheet.interestTileLabelInset,
                   child: Text(
-                    interest.name,
+                    displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14, color: Colors.white),

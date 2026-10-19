@@ -2516,6 +2516,30 @@ abstract class AppLocalizations {
   /// **'Depth: {tier}'**
   String adminDepthTier(String tier);
 
+  /// Admin label for a wallpaper whose Depth Effect tier is automatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get adminDepthTierAuto;
+
+  /// Admin label for a wallpaper whose Depth Effect tier is set from the device menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get adminDepthTierMenu;
+
+  /// Admin label for a wallpaper with no Depth Effect.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get adminDepthTierNone;
+
+  /// Admin label for a wallpaper whose Depth Effect tier has not been checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked'**
+  String get adminDepthTierNotChecked;
+
   /// No description provided for @adminDrop.
   ///
   /// In en, this message translates to:
@@ -3800,6 +3824,78 @@ abstract class AppLocalizations {
   /// **'Week bonus'**
   String get coreCoinWeekBonus;
 
+  /// Localized name for the black search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get coreColorBlack;
+
+  /// Localized name for the blue search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get coreColorBlue;
+
+  /// Localized name for the brown search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get coreColorBrown;
+
+  /// Localized name for the green search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get coreColorGreen;
+
+  /// Localized name for the grey search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Grey'**
+  String get coreColorGrey;
+
+  /// Localized name for the orange search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get coreColorOrange;
+
+  /// Localized name for the pink search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get coreColorPink;
+
+  /// Localized name for the purple search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get coreColorPurple;
+
+  /// Localized name for the red search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get coreColorRed;
+
+  /// Localized name for the teal search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get coreColorTeal;
+
+  /// Localized name for the white search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get coreColorWhite;
+
+  /// Localized name for the yellow search palette colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get coreColorYellow;
+
   /// No description provided for @coreConfirmWallpaperPreview.
   ///
   /// In en, this message translates to:
@@ -3901,6 +3997,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crop and position...'**
   String get coreCropAndPosition;
+
+  /// Default title for the home feed banner when Remote Config has no campaign copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Join our Telegram'**
+  String get coreDefaultBanner;
 
   /// No description provided for @coreDepthEffectAutoLongTip.
   ///
@@ -9870,6 +9972,24 @@ abstract class AppLocalizations {
   /// **'Check your connection and try again.'**
   String get errorNetwork;
 
+  /// Live status announcement when the app regains network connectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Back online'**
+  String get navigationBackOnline;
+
+  /// Live status announcement while the app has no network connection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get navigationNoInternetConnection;
+
+  /// Tooltip for the floating bottom bar control that scrolls content to the top.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to top'**
+  String get navigationScrollToTop;
+
   /// No description provided for @notifActivateToCollapse.
   ///
   /// In en, this message translates to:
@@ -11778,6 +11898,12 @@ abstract class AppLocalizations {
   /// **'Your subject sits in front of the clock.'**
   String get wallpaperDepthSubjectSubtitle;
 
+  /// Toast shown after copying a wallpaper color's hex code.
+  ///
+  /// In en, this message translates to:
+  /// **'Color code copied to clipboard'**
+  String get wallpaperDetailColorCodeCopied;
+
   /// Wallpaper interface text: wallpaperDetailNotFound.
   ///
   /// In en, this message translates to:
@@ -12120,6 +12246,12 @@ abstract class AppLocalizations {
   /// **'Source'**
   String get wallpaperFavouriteSortSource;
 
+  /// Accessibility label and tooltip for the heart on a wallpaper already in the user's favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'In your favourites'**
+  String get wallpaperFavouriteStatus;
+
   /// Help text when no favourites match current filters.
   ///
   /// In en, this message translates to:
@@ -12185,6 +12317,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shape this feed'**
   String get wallpaperFeedEmptyTitle;
+
+  /// Empty-state title when a signed-in user follows no creators.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow creators to see their new wallpapers here'**
+  String get wallpaperFeedFollowingEmptyTitle;
+
+  /// Error title when the Following feed cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your following feed'**
+  String get wallpaperFeedFollowingLoadError;
+
+  /// Error title when the Latest feed cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the latest wallpapers'**
+  String get wallpaperFeedLatestLoadError;
 
   /// Wallpaper and feed interface text: wallpaperFeedLearnedFromYou.
   ///
@@ -12263,6 +12413,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} picked'**
   String wallpaperFeedPickedCount(int count);
+
+  /// Empty-state title when the Popular feed has no wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'No popular wallpapers yet'**
+  String get wallpaperFeedPopularEmptyTitle;
+
+  /// Error title when the Popular feed cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load popular wallpapers'**
+  String get wallpaperFeedPopularLoadError;
+
+  /// Empty-state hint to refresh the Latest or Popular wallpaper feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to refresh.'**
+  String get wallpaperFeedPullToRefresh;
 
   /// Error shown when refreshing the personalized feed fails.
   ///
