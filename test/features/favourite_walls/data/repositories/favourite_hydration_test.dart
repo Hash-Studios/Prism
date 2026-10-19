@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
@@ -15,7 +13,6 @@ import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
-import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_firestore_client.dart';
@@ -210,20 +207,17 @@ void main() {
     expect(canonical.calls, isEmpty);
   });
 
-  test('offline hydration bounds concurrency and total wait for a large library', () {
-    fakeAsync((async) {
-      firestore.walls = List.generate(40, (index) => prismFav('wall-$index'));
-      canonical.lookup = (_) => Completer<Result<PrismWallpaper?>>().future;
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore(), canonical);
-      List<FavouriteWallEntity>? result;
-      repository.fetchFavourites(userId: 'user').then((value) => result = value.data);
-      async.flushMicrotasks();
-      expect(canonical.calls, hasLength(4));
-      expect(result, isNull);
-      async.elapse(const Duration(seconds: 8));
-      async.flushMicrotasks();
-      expect(result, hasLength(40));
-      expect(canonical.calls, hasLength(4));
-    });
+  testWidgets('offline hydration bounds concurrency and total wait for a large library', (tester) async {
+    firestore.walls = List.generate(40, (index) => prismFav('wall-$index'));
+    canonical.lookup = (_) => Completer<Result<PrismWallpaper?>>().future;
+    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore(), canonical);
+    List<FavouriteWallEntity>? result;
+    repository.fetchFavourites(userId: 'user').then((value) => result = value.data);
+    await tester.pump();
+    expect(canonical.calls, hasLength(4));
+    expect(result, isNull);
+    await tester.pump(const Duration(seconds: 8));
+    expect(result, hasLength(40));
+    expect(canonical.calls, hasLength(4));
   });
 }
