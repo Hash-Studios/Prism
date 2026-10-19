@@ -27,6 +27,7 @@ DropEntity? dropFromMap(Map<String, dynamic> data, String weekKey) {
     pricePack: parseIntOr(data['pricePack']),
     count: parseIntOr(data['count'], fallback: walls.length),
     walls: walls,
+    collectors: parseIntOr(data['collectors']),
   );
 }
 
