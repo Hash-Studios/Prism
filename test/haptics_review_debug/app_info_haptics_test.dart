@@ -101,7 +101,7 @@ void main() {
     }, variant: TargetPlatformVariant.only(platform));
   }
 
-  for (final localeCase in <({Locale locale, String expected})>[
+  for (final localeCase in const <({Locale locale, String expected})>[
     (locale: Locale('en'), expected: '2.75'),
     (locale: Locale('id'), expected: '2,75'),
   ]) {

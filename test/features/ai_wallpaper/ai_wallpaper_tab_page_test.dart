@@ -177,7 +177,11 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    app_state.prismUser = app_constants.createGuestPrismUser();
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     await tester.pumpWidget(
       _LocaleTestApp(
@@ -186,6 +190,7 @@ void main() {
           repository: _FakeAiGenerationRepository(
             _record(),
             Completer<AiSubmissionMetadata>(),
+            history: () async => const <AiGenerationRecord>[],
             savedPrompt: savedPrompt,
           ),
         ),
