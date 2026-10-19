@@ -25,8 +25,8 @@ List<String> trimSeenKeys(List<String> seen) =>
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 
-  /// The first page from the disk cache, or null when there is none. Reads at once: it does not wait for the block
-  /// list, so the home feed can paint before any network call.
+  /// The first page from the disk cache, or null when there is none. It waits for the initial blocked-creator list,
+  /// so blocked creators never show, but it makes no network call for the feed.
   Future<PersonalizedFeedPage?> readCached();
 
   /// Starts the [readCached] disk read now. The next [readCached] call for the same user takes its result.
