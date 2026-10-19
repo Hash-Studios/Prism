@@ -5,6 +5,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -84,13 +85,16 @@ class UserProfileGrid extends StatelessWidget {
                     app_state.premiumCollections,
                     wall.collections ?? const <String>[],
                   );
+                  final Widget? depthTag = depthTagFor(wall.depthTier);
                   return PrismWallTile(
                     key: ValueKey<String>(wall.id),
                     memCacheHeight: decodeHeight,
                     url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
                     heroTag: heroTag,
                     semanticLabel: wallpaperSemanticLabel(wall.by),
-                    overlay: !viewerPremium && premiumWall ? const _PremiumMark() : null,
+                    overlay: !viewerPremium && premiumWall
+                        ? Stack(fit: StackFit.expand, children: <Widget>[const _PremiumMark(), ?depthTag])
+                        : depthTag,
                     onTap: () {
                       PrismHaptics.tap();
                       context.router.push(

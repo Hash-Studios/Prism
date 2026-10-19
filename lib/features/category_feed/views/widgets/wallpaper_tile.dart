@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
@@ -71,10 +72,13 @@ class WallpaperTile extends StatelessWidget {
       };
 
   Widget? _overlay() {
-    final Widget? heart = quickActions ? _FavouriteBadge(itemId: item.id) : null;
-    final Widget? extra = overlay;
-    if (heart == null || extra == null) return heart ?? extra;
-    return Stack(fit: StackFit.expand, children: <Widget>[extra, heart]);
+    final List<Widget> layers = <Widget>[
+      ?overlay,
+      ?depthTagFor(depthTierOf(item)),
+      if (quickActions) _FavouriteBadge(itemId: item.id),
+    ];
+    if (layers.length < 2) return layers.firstOrNull;
+    return Stack(fit: StackFit.expand, children: layers);
   }
 
   @override

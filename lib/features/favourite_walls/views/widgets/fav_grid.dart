@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -458,6 +459,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   ),
                   if (wall is LegacyFavouriteWall)
                     IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4))),
+                  if (wall is PrismFavouriteWall && !_unavailable.contains(wall.id))
+                    ?depthTagFor(wall.wallpaper.depthTier),
                   if (wall.syncStatus != FavouriteSyncStatus.synced)
                     Positioned(
                       left: PrismSpace.xs,

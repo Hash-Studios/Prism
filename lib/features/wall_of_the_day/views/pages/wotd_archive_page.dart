@@ -7,6 +7,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -121,6 +122,7 @@ class _PickTile extends StatelessWidget {
             memCacheHeight: decodeHeight,
             heroTag: heroTag,
             semanticLabel: '${wallpaperSemanticLabel(pick.wallpaper.core.authorName)}, picked $dateLabel',
+            overlay: depthTagFor(pick.wallpaper.depthTier),
             onTap: () => _open(context, heroTag),
           ),
         ),
