@@ -57,6 +57,7 @@ UNCHANGED_ENGLISH = {
     'coreFileSizeMegabytes': '{size} MB',
     'coreThemeAmoled': 'AMOLED',
     'coreWallpaperSavedWithTip': '{saved} {tip}',
+    'economyAiPromptSceneOnly': '{scene}, {suffix}',
     'economyCreatorMilestoneProgress': '{label}: {current} / {target}',
     'economyCreatorWeekRange': '{start} – {end} UTC',
     'economyDownloadCost': '{label} · {cost}',

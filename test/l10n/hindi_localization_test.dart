@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
+import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,6 +56,39 @@ void main() {
     expect(hindi.economyNeedMoreCoins(1234567), 'अभी 12,34,567 कॉइन और चाहिए।');
     expect(DateFormat.yMMMMd(hindi.localeName).format(DateTime(2025, 1, 5)), '5 जनवरी 2025');
     expect(formatLocalizedNumber(1234567, hindi), '12,34,567');
+  });
+
+  test('Hindi AI prompt and report copy preserve reviewed wording', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    expect(hindi.economyAiPromptSceneNature1, 'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला');
+    expect(hindi.economyAiPromptLightingGoldenHour, 'सुनहरी बेला की');
+    expect(hindi.economyAiPromptMoodDreamy, 'स्वप्निल');
+    expect(hindi.economyAiPromptQualityCrispTextures, 'स्पष्ट बनावट');
+    expect(hindi.economyAiPromptSuffix, 'फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट');
+    expect(
+      hindi.economyAiPromptComposition(
+        hindi.economyAiPromptSceneNature1,
+        hindi.economyAiPromptLightingGoldenHour,
+        hindi.economyAiPromptMoodDreamy,
+        hindi.economyAiPromptQualityCrispTextures,
+        hindi.economyAiPromptSuffix,
+      ),
+      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, सुनहरी बेला की रोशनी, '
+      'स्वप्निल माहौल, स्पष्ट बनावट, फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+    );
+    expect(hindi.onboardingAiPromptNature3, 'उफनती लहरों और गंभीर आसमान वाली नाटकीय समुद्री चट्टान');
+    expect(hindi.coreSignInCreatorSearchFeature, 'क्रिएटर खोज');
+    expect(hindi.economyAiMadeWithPrism, 'Prism AI से बनाया गया');
+    expect(hindi.debugLogExportSubject, 'Prism की डिबग लॉग फ़ाइलें');
+    expect(
+      AiPromptPools.sceneIdea(hindi, AiStylePreset.nature, 0),
+      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+    );
+    expect(
+      OnboardingV2Config.aiOnboardingPrompts(hindi, AiStylePreset.nature).first,
+      'सूर्योदय की गर्म सुनहरी रोशनी में धुंध से ढकी पर्वत-शृंखला',
+    );
   });
 
   test('Hindi wallpaper plural has explicit zero, one, and many forms', () async {

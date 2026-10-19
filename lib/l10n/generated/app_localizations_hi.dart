@@ -11,6 +11,12 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get coreSignInCreatorSearchFeature => 'क्रिएटर खोज';
+
+  @override
+  String get debugLogExportSubject => 'Prism की डिबग लॉग फ़ाइलें';
+
+  @override
   String get accountAbout => 'परिचय';
 
   @override
@@ -9381,6 +9387,283 @@ class AppLocalizationsHi extends AppLocalizations {
   String wallpaperWotdByPhotographer(String name) {
     return 'आज का वॉलपेपर, $name द्वारा';
   }
+
+  @override
+  String get economyAiPromptSceneAnime1 => 'हवा में तैरते द्वीपों के ऊपर ऐनिमे शहर का क्षितिज';
+
+  @override
+  String get economyAiPromptSceneAnime2 => 'नियॉन रोशनी वाली बरसाती सड़क पर अकेला समुराई';
+
+  @override
+  String get economyAiPromptSceneAnime3 => 'चेरी के फूलों और होलोग्राम वाला भविष्यवादी मंदिर';
+
+  @override
+  String get economyAiPromptSceneAnime4 => 'लालटेनों की रोशनी से जगमगाता स्वप्निल ऐनिमे रात का बाज़ार';
+
+  @override
+  String get economyAiPromptSceneAnime5 => 'नीले धुंधलके में साइबर-ऐनिमे शहर का क्षितिज';
+
+  @override
+  String get economyAiPromptSceneMinimal1 => 'सादे रेत के टीले और सूरज का एक गोलाकार रूप';
+
+  @override
+  String get economyAiPromptSceneMinimal2 => 'साफ़-सुथरी ज्यामितीय पहाड़ी परतें';
+
+  @override
+  String get economyAiPromptSceneMinimal3 => 'शांत, एकरंगी समुद्री क्षितिज';
+
+  @override
+  String get economyAiPromptSceneMinimal4 => 'संतुलित दूरी वाली सरल अमूर्त रेखाएँ';
+
+  @override
+  String get economyAiPromptSceneMinimal5 => 'समतल पहाड़ियों के ऊपर मुलायम ग्रेडिएंट वाला आकाश';
+
+  @override
+  String get economyAiPromptSceneCyberpunk1 => 'गीली सड़क पर रोशनियों के प्रतिबिंबों वाला नियॉन महानगर';
+
+  @override
+  String get economyAiPromptSceneCyberpunk2 => 'होलोग्राफ़िक बिलबोर्ड वाली भविष्यवादी गली';
+
+  @override
+  String get economyAiPromptSceneCyberpunk3 => 'उड़ते वाहनों के रास्तों वाला हाई-टेक शहर का क्षितिज';
+
+  @override
+  String get economyAiPromptSceneCyberpunk4 => 'जगमगाते टावरों को निहारती साइबरपंक छत';
+
+  @override
+  String get economyAiPromptSceneCyberpunk5 => 'आधी रात के शहर का चौराहा, टील और मैजेंटा रोशनियों के साथ';
+
+  @override
+  String get economyAiPromptSceneWatercolor1 => 'भोर में जलरंगों से बनी वन-घाटी';
+
+  @override
+  String get economyAiPromptSceneWatercolor2 => 'हाथ से बनाया गया पहाड़ी झील का दृश्य';
+
+  @override
+  String get economyAiPromptSceneWatercolor3 => 'लहराती पहाड़ियों के ऊपर मुलायम जलरंग के बादल';
+
+  @override
+  String get economyAiPromptSceneWatercolor4 => 'पेस्टल रंगों वाला शांत नदी-तट';
+
+  @override
+  String get economyAiPromptSceneWatercolor5 => 'सूर्यास्त के समय जलरंगों में चित्रित कलात्मक तटरेखा';
+
+  @override
+  String get economyAiPromptSceneMeshGradient1 => 'परतदार आकृतियों में बहता मुलायम मेश ग्रेडिएंट';
+
+  @override
+  String get economyAiPromptSceneMeshGradient2 => 'गहराई लिए जीवंत, बहती ग्रेडिएंट लहरें';
+
+  @override
+  String get economyAiPromptSceneMeshGradient3 => 'मुलायम बहुरंगी मेश आकृतियाँ और कोमल वक्र';
+
+  @override
+  String get economyAiPromptSceneMeshGradient4 => 'तेज़ कंट्रास्ट वाले मेश ग्रेडिएंट रिबन';
+
+  @override
+  String get economyAiPromptSceneMeshGradient5 => 'हल्की बनावट वाली पेस्टल मेश ग्रेडिएंट आभा';
+
+  @override
+  String get economyAiPromptSceneAbstract1 => 'गतिशील वक्रों वाली अमूर्त फ़्रैक्टल रचना';
+
+  @override
+  String get economyAiPromptSceneAbstract2 => 'आधुनिक गहराई वाली परतदार तरल आकृतियाँ';
+
+  @override
+  String get economyAiPromptSceneAbstract3 => 'मुलायम किनारों वाली उभरी हुई अमूर्त आकृतियाँ';
+
+  @override
+  String get economyAiPromptSceneAbstract4 => 'हवा में तैरती ज्यामितीय आकृतियों का अतियथार्थवादी अमूर्त संसार';
+
+  @override
+  String get economyAiPromptSceneAbstract5 => 'सिनेमाई कंट्रास्ट वाली प्राकृतिक रूप की अमूर्त लहरें';
+
+  @override
+  String get economyAiPromptSceneNature1 => 'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला';
+
+  @override
+  String get economyAiPromptSceneNature2 => 'सूरज की किरणों वाला घना सदाबहार जंगल';
+
+  @override
+  String get economyAiPromptSceneNature3 => 'टकराती लहरों वाली नाटकीय समुद्री चट्टान';
+
+  @override
+  String get economyAiPromptSceneNature4 => 'गोधूलि के आकाश तले शांत पर्वतीय झील';
+
+  @override
+  String get economyAiPromptSceneNature5 => 'गर्म सुनहरी रोशनी से नहाई रेगिस्तानी घाटी';
+
+  @override
+  String get economyAiPromptLightingSoftAmbient => 'मुलायम परिवेशी';
+
+  @override
+  String get economyAiPromptLightingCinematicRim => 'सिनेमाई किनारी';
+
+  @override
+  String get economyAiPromptLightingGoldenHour => 'सुनहरी बेला की';
+
+  @override
+  String get economyAiPromptLightingMoonlit => 'चाँदनी वाली';
+
+  @override
+  String get economyAiPromptLightingVolumetric => 'वॉल्यूमेट्रिक';
+
+  @override
+  String get economyAiPromptMoodCalm => 'शांत';
+
+  @override
+  String get economyAiPromptMoodDreamy => 'स्वप्निल';
+
+  @override
+  String get economyAiPromptMoodEpic => 'भव्य';
+
+  @override
+  String get economyAiPromptMoodMoody => 'गंभीर रंगत वाला';
+
+  @override
+  String get economyAiPromptMoodUplifting => 'उमंगभरा';
+
+  @override
+  String get economyAiPromptQualityHighDetail => 'बारीक विवरण';
+
+  @override
+  String get economyAiPromptQualityCleanComposition => 'बेहद साफ़-सुथरी संरचना';
+
+  @override
+  String get economyAiPromptQualityCrispTextures => 'स्पष्ट बनावट';
+
+  @override
+  String get economyAiPromptQualityBalancedContrast => 'संतुलित कंट्रास्ट';
+
+  @override
+  String get economyAiPromptQualityNaturalColors => 'चटख लेकिन प्राकृतिक रंग';
+
+  @override
+  String get economyAiPromptSuffix => 'फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट';
+
+  @override
+  String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
+    return '$scene, $lighting रोशनी, $mood माहौल, $quality, $suffix';
+  }
+
+  @override
+  String economyAiPromptSceneOnly(String scene, String suffix) {
+    return '$scene, $suffix';
+  }
+
+  @override
+  String get economyAiMadeWithPrism => 'Prism AI से बनाया गया';
+
+  @override
+  String get onboardingAiPromptFallback => 'एक सुंदर वॉलपेपर';
+
+  @override
+  String get onboardingAiPromptNature1 => 'सूर्योदय की गर्म सुनहरी रोशनी में धुंध से ढकी पर्वत-शृंखला';
+
+  @override
+  String get onboardingAiPromptNature2 => 'पेड़ों की छतरी से छनती सूरज की किरणों वाला घना सदाबहार जंगल';
+
+  @override
+  String get onboardingAiPromptNature3 => 'उफनती लहरों और गंभीर आसमान वाली नाटकीय समुद्री चट्टान';
+
+  @override
+  String get onboardingAiPromptNature4 => 'गोधूलि के आकाश तले तारों के प्रतिबिंबों वाली शांत पर्वतीय झील';
+
+  @override
+  String get onboardingAiPromptNature5 => 'गर्म सुनहरी रोशनी और नाटकीय चट्टानी बनावट वाली रेगिस्तानी घाटी';
+
+  @override
+  String get onboardingAiPromptAbstract1 => 'गतिशील वक्रों और चटख रंगों वाली अमूर्त फ़्रैक्टल रचना';
+
+  @override
+  String get onboardingAiPromptAbstract2 => 'आधुनिक गहराई और धातुई चमक वाली परतदार तरल आकृतियाँ';
+
+  @override
+  String get onboardingAiPromptAbstract3 => 'मुलायम किनारों और सिनेमाई कंट्रास्ट वाली उभरी अमूर्त आकृतियाँ';
+
+  @override
+  String get onboardingAiPromptAbstract4 =>
+      'नियॉन रोशनी में नहाया हवा में तैरती ज्यामितीय आकृतियों का अतियथार्थवादी संसार';
+
+  @override
+  String get onboardingAiPromptAbstract5 => 'समृद्ध बनावट और फोकस की गहराई वाली प्राकृतिक रूप की अमूर्त लहरें';
+
+  @override
+  String get onboardingAiPromptWatercolor1 => 'भोर में मुलायम पेस्टल धुंध से ढकी जलरंगों की वन-घाटी';
+
+  @override
+  String get onboardingAiPromptWatercolor2 => 'स्वप्निल जलरंगों में हाथ से बनाया गया पहाड़ी झील का दृश्य';
+
+  @override
+  String get onboardingAiPromptWatercolor3 => 'सुनहरी बेला में लहराती पहाड़ियों के ऊपर मुलायम जलरंग के बादल';
+
+  @override
+  String get onboardingAiPromptWatercolor4 => 'पेस्टल जलरंग प्रतिबिंबों वाला शांत नदी-तट';
+
+  @override
+  String get onboardingAiPromptWatercolor5 => 'सूर्यास्त के गर्म रंगों में जलरंगों से चित्रित कलात्मक तटरेखा';
+
+  @override
+  String get onboardingAiPromptMinimal1 => 'क्षितिज पर रेत के सादे टीले और सूरज का एक गोलाकार रूप';
+
+  @override
+  String get onboardingAiPromptMinimal2 => 'मद्धम मुलायम रंगों वाली साफ़ ज्यामितीय पहाड़ी परतें';
+
+  @override
+  String get onboardingAiPromptMinimal3 => 'सांझ के समय शांत, एकरंगी समुद्री क्षितिज';
+
+  @override
+  String get onboardingAiPromptMinimal4 => 'बेहतरीन संतुलित खाली जगह वाली सरल अमूर्त रेखाएँ';
+
+  @override
+  String get onboardingAiPromptMinimal5 => 'समतल मिनिमल शैली की पहाड़ियों के ऊपर मुलायम ग्रेडिएंट वाला आकाश';
+
+  @override
+  String get onboardingAiPromptAnime1 => 'सुनहरी बेला में शहर की ऐनिमे-शैली वाली छत, उड़ती चेरी की पंखुड़ियों के साथ';
+
+  @override
+  String get onboardingAiPromptAnime2 => 'विशाल बादलों भरे आकाश तले ग्रामीण इलाके से गुज़रती स्वप्निल ऐनिमे ट्रेन';
+
+  @override
+  String get onboardingAiPromptAnime3 => 'सांझ में जगमगाती लालटेनों और मुलायम धुंध वाला ऐनिमे पहाड़ी गाँव';
+
+  @override
+  String get onboardingAiPromptAnime4 => 'पेस्टल सूर्यास्त और ऊँचे बादलों तले शांत ऐनिमे समुद्रतटीय कस्बा';
+
+  @override
+  String get onboardingAiPromptAnime5 => 'शांत झील के ऊपर हवा में तैरती रोशनियों वाली ऐनिमे तारों-भरी रात';
+
+  @override
+  String get onboardingAiPromptMeshGradient1 =>
+      'मुलायम दानेदार बनावट वाला कोरल, टील और गर्म पीले रंगों का मेश ग्रेडिएंट';
+
+  @override
+  String get onboardingAiPromptMeshGradient2 => 'गहरी वायलेट और इलेक्ट्रिक नीली आभा वाला बहता मेश ग्रेडिएंट';
+
+  @override
+  String get onboardingAiPromptMeshGradient3 => 'आपस में घुलते पीच, लाइलैक और मिंट रंगों का पेस्टल मेश ग्रेडिएंट';
+
+  @override
+  String get onboardingAiPromptMeshGradient4 => 'परतदार मैजेंटा और नारंगी रंगों वाला जीवंत मेश ग्रेडिएंट सूर्यास्त';
+
+  @override
+  String get onboardingAiPromptMeshGradient5 =>
+      'समुद्री नीले और समुद्री झाग जैसे हरे रंगों का शांत मेश ग्रेडिएंट, हल्की रोशनी की आभा के साथ';
+
+  @override
+  String get onboardingAiPromptCyberpunk1 => 'गीली सड़क के प्रतिबिंबों और उड़ते वाहनों वाला नियॉन महानगर';
+
+  @override
+  String get onboardingAiPromptCyberpunk2 => 'होलोग्राफ़िक बिलबोर्ड और टील-मैजेंटा रोशनी वाली भविष्यवादी गली';
+
+  @override
+  String get onboardingAiPromptCyberpunk3 => 'रात में चमकते यातायात मार्गों वाला हाई-टेक शहर का क्षितिज';
+
+  @override
+  String get onboardingAiPromptCyberpunk4 => 'जगमगाते टावरों के शहर को निहारती साइबरपंक छत';
+
+  @override
+  String get onboardingAiPromptCyberpunk5 => 'टील और मैजेंटा नियॉन में नहाया आधी रात का शहर का चौराहा';
 
   @override
   String wallpaperWotdByline(String name) {
