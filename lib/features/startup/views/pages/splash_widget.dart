@@ -4,9 +4,11 @@ import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/version_compare.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
@@ -58,10 +60,31 @@ class _SplashWidgetState extends State<SplashWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final s = context.read<StartupBloc>().state;
-      if (s.status == LoadStatus.success && !s.isObsoleteVersion) {
+      final bool bootstrapDone = s.status == LoadStatus.success || s.status == LoadStatus.failure;
+      if (bootstrapDone ? s.status == LoadStatus.success && !s.isObsoleteVersion : _canSkipBootstrap()) {
         _navigatePostBootstrap(context);
       }
     });
+  }
+
+  /// A returning user only waits on bootstrap to learn whether this version is obsolete. The last answer is stored, so
+  /// route on it; [ObsoleteVersionGate] covers a version that turns obsolete later.
+  bool _canSkipBootstrap() {
+    final String lastObsolete = _settingsLocal.get<String>(PersistenceKeys.obsoleteAppVersion, defaultValue: '');
+    if (lastObsolete.isEmpty || isVersionOlder(app_state.currentAppVersion, lastObsolete)) {
+      return false;
+    }
+    final bool isOnboarded =
+        !(OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession) &&
+        _settingsLocal.get<bool>(OnboardingV2Keys.onboardedNew, defaultValue: false);
+    return !<bool>[true, false].any(
+      (v2) => shouldShowOnboarding(
+        isLoggedIn: app_state.prismUser.loggedIn,
+        isOnboarded: isOnboarded,
+        v2Enabled: v2,
+        guestBrowsingAllowed: true,
+      ),
+    );
   }
 
   void _navigatePostBootstrap(BuildContext context) {
