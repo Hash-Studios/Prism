@@ -16,6 +16,8 @@ export interface StudioConfig {
   generationEnabled: boolean;
   dailyCandidates: number;
   maxCandidatesPerDay: number;
+  /** Walls of each UTC day that go straight to the next weekly Drop instead of the review queue. 0 turns it off. */
+  dailyDropReserves: number;
   model: string;
   width: number;
   height: number;
@@ -26,6 +28,7 @@ export interface StudioConfig {
 
 const DEFAULTS = {
   dailyCandidates: 10,
+  dailyDropReserves: 1,
   model: "openai/gpt-image-2.5/sunburst/text-to-image",
   width: 1440,
   height: 3200,
@@ -90,6 +93,7 @@ export function parseStudioConfig(data: admin.firestore.DocumentData | undefined
     dailyCandidates: clampInt(data?.dailyCandidates, DEFAULTS.dailyCandidates, 1, STUDIO_MAX_CANDIDATES_PER_DAY),
     maxCandidatesPerDay: clampInt(data?.maxCandidatesPerDay, STUDIO_MAX_CANDIDATES_PER_DAY, 0,
       STUDIO_MAX_CANDIDATES_PER_DAY),
+    dailyDropReserves: clampInt(data?.dailyDropReserves, DEFAULTS.dailyDropReserves, 0, STUDIO_MAX_CANDIDATES_PER_DAY),
     model: str(data?.model) || DEFAULTS.model,
     width: dimensions.width,
     height: dimensions.height,

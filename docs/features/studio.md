@@ -60,6 +60,12 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 - A verified Studio wall is not evidence for the `firstWallpaperUpload` coin award. A failed provenance lookup awards no coins. A community wall that merely claims `origin: studio` still follows the community path.
 - A rejection writes the usual "Wallpaper Rejected" notice to the Studio account. Nobody uses that account on a device, so no push arrives.
 
+### Weekly Drop reserve
+
+- The first Studio wall that passes the checks each UTC day gets `dropReserved: true`. `planWeeklyDrop` puts reserved walls in the next Monday Drop, so about 7 walls a week go to the Drop with no admin step.
+- `studioConfig/current.dailyDropReserves` (1) sets how many walls a day are reserved. 0 turns it off. `studioDropReserves/{yyyy-mm-dd}` counts them.
+- A reserved wall stays in the review queue with a "Reserved for the next Drop" line. Unreserve sends it back to normal review. Do not approve a reserved wall: approval makes it public, and the planner skips it.
+
 ### Telegram post
 
 - `onStudioWallApproved` (`functions/src/studio/telegram.ts`) posts the first Studio wall approved each day (India time) to the Telegram channel in `TELEGRAM_CHAT_ID`, with the bot in `TELEGRAM_BOT_TOKEN`. Other walls approved that day are not posted.
@@ -88,10 +94,11 @@ No visual test of the models was run yet. Compare the first week of candidates b
 
 | Collection | Holds |
 |---|---|
-| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `model` (`openai/gpt-image-2.5/sunburst/text-to-image`), `width` (1440), `height` (3200), `seriesWeights`, `identity {by, email, userPhoto}` |
+| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `dailyDropReserves` (1), `model` (`openai/gpt-image-2.5/sunburst/text-to-image`), `width` (1440), `height` (3200), `seriesWeights`, `identity {by, email, userPhoto}` |
 | `studioRuns/{runId}` | One run: source, day, count, model, size |
 | `studioRuns/{runId}/candidates/{id}` | Prompt, status (`queued`, `generating`, `rejected`, `failed`, `pending_review`), attempt ownership, worker answer, check results, wall id, `cleanupKeys`, `outputAssetKeys` |
 | `studioDaily/{yyyy-mm-dd}` | Candidates made that day |
+| `studioDropReserves/{yyyy-mm-dd}` | Walls reserved for the weekly Drop that day |
 | `studioSubjectUse/{subjectId}` | When a subject was last used |
 | `studioSignatures/{candidateId}` | Image signature of each Studio wall (base64 16x36 grey thumbnail) |
 | `studioState/signatureIndex` | Revision used to serialize signature checks and publication |

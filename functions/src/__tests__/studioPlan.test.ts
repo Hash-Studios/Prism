@@ -162,6 +162,9 @@ test("config is off without the flag or an identity email, and numbers are clamp
   assert.deepEqual([clamped.dailyCandidates, clamped.maxCandidatesPerDay, clamped.width, clamped.height],
     [30, STUDIO_MAX_CANDIDATES_PER_DAY, -5, 2.5]);
   assert.equal(parseStudioConfig({dailyCandidates: 0}).dailyCandidates, 1);
+  assert.equal(off.dailyDropReserves, 1);
+  assert.equal(parseStudioConfig({dailyDropReserves: 0}).dailyDropReserves, 0);
+  assert.equal(parseStudioConfig({dailyDropReserves: 99}).dailyDropReserves, STUDIO_MAX_CANDIDATES_PER_DAY);
   assert.deepEqual(parseStudioConfig({seriesWeights: {"a": 2, "b": -1, "c": "x", "d": 0}}).seriesWeights, {a: 2, d: 0});
   const customModel = parseStudioConfig({generationEnabled: true, identity, model: "unlisted/model"});
   assert.equal(customModel.generationEnabled, true);
