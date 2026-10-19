@@ -120,7 +120,6 @@ Future<void> completeSignIn({
     final Future<void> favourites = _startFavouritesSync(user.uid);
     await PurchasesService.instance.checkAndPersistPremium();
     await CoinsService.instance.bootstrapForCurrentUser();
-    await CoinsService.instance.refreshBalance();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await CoinsService.instance.processPendingReferralIfEligible();
     await favourites;
