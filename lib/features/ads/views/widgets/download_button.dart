@@ -656,7 +656,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String title = _tap.wallpaperTitle?.trim() ?? '';
     if (title.isNotEmpty) return title;
     final String creator = _tap.creatorName?.trim() ?? '';
-    return creator.isEmpty ? null : 'Wallpaper by $creator';
+    return creator.isEmpty ? null : context.l10n.wallpaperByCreator(creator);
   }
 
   Future<CoinGateResult> _gatedDownload() {

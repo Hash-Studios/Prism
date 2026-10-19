@@ -21,6 +21,7 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
@@ -42,13 +43,25 @@ int? quickActionTabIndex(String shortcutType) => switch (shortcutType) {
 };
 
 @visibleForTesting
-List<ShortcutItem> prismShortcutItems({required bool android}) => <ShortcutItem>[
-  ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: android ? '@drawable/ic_feed' : null),
-  ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: android ? '@drawable/ic_collections' : null),
-  ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: android ? '@drawable/ic_downloads' : null),
+List<ShortcutItem> prismShortcutItems({required bool android, required AppLocalizations l10n}) => <ShortcutItem>[
+  ShortcutItem(
+    type: 'Personalized_Feed',
+    localizedTitle: l10n.wallpaperFeedTabForYou,
+    icon: android ? '@drawable/ic_feed' : null,
+  ),
+  ShortcutItem(
+    type: 'Collections',
+    localizedTitle: l10n.wallpaperNavCollections,
+    icon: android ? '@drawable/ic_collections' : null,
+  ),
+  ShortcutItem(
+    type: 'Downloads',
+    localizedTitle: l10n.wallpaperDownloadsTitle,
+    icon: android ? '@drawable/ic_downloads' : null,
+  ),
   ShortcutItem(
     type: _wallOfTheDayShortcut,
-    localizedTitle: 'Wall of the Day',
+    localizedTitle: l10n.wallpaperShortcutsSourceWotd,
     icon: android ? '@drawable/ic_tile_wotd' : null,
   ),
 ];
@@ -72,6 +85,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
+  String? _shortcutLocale;
   StreamSubscription<String>? _fcmTokenSubscription;
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<FavouritesSyncUpdate>? _favouritesSubscription;
@@ -166,7 +180,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
       _openQuickAction(shortcutType);
     });
 
-    quickActions.setShortcutItems(prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _showChangelogCheck();
     });
@@ -176,6 +189,17 @@ class _HomeTabPageState extends State<HomeTabPage> {
       if (mounted) setState(() => _isOnline = isOnline);
     });
     unawaited(_startMessaging());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppLocalizations l10n = context.l10n;
+    if (_shortcutLocale == l10n.localeName) return;
+    _shortcutLocale = l10n.localeName;
+    const QuickActions().setShortcutItems(
+      prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
+    );
   }
 
   /// Push setup needs a Firebase app. Startup continues without one when initialisation fails.
