@@ -867,7 +867,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           action: OriginalAccessAction.download,
         );
       }
-      if (!prepared)
+      if (!prepared) {
         await _retainCompletedOriginal(
           assetStore,
           _originalIdentity(link, tap.contentId),
@@ -875,6 +875,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           downloadsBefore,
           result.message,
         );
+      }
     } on PlatformException catch (e) {
       _failureReason = 'platform_error';
       if (e.code == 'channel-error') {
