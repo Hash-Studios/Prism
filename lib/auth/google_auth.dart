@@ -184,6 +184,7 @@ class GoogleAuth {
   Future<bool> signOutGoogle() async {
     clearInAppNotificationSyncGateAll();
     await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
+    await _bounded(FcmTokenService.instance.clearSyncedToken, 'clear synced FCM token');
     await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
     if (getIt.isRegistered<FavouritesSyncService>()) {
       await _bounded(getIt<FavouritesSyncService>().stop, 'stop favourites sync');

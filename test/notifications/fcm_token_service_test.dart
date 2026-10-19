@@ -158,4 +158,53 @@ void main() {
     await expectLater(cancel, completes);
     await sync;
   });
+
+  group('token write skip', () {
+    late FakeFirestoreClient client;
+
+    Future<void> sync(String userId, String token) => FcmTokenService.instance.syncToken(
+      userId: userId,
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => token,
+      client: client,
+    );
+
+    int tokenWrites() => client.writes.where((w) => w.data?['fcmToken'] != null).length;
+
+    setUp(() async {
+      await getIt.reset();
+      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+      client = FakeFirestoreClient();
+    });
+    tearDown(getIt.reset);
+
+    test('the same user and token are written once across launches', () async {
+      await sync('uid1', 'tok');
+      await sync('uid1', 'tok');
+
+      expect(tokenWrites(), 1);
+    });
+
+    test('a changed token writes again', () async {
+      await sync('uid1', 'tok');
+      await sync('uid1', 'tok2');
+
+      expect(client.writes.map((w) => w.data?['fcmToken']), <Object?>['tok', 'tok2']);
+    });
+
+    test('a different user writes the same token again', () async {
+      await sync('uid1', 'tok');
+      await sync('uid2', 'tok');
+
+      expect(client.writes.map((w) => w.id), <String>['session', 'session']);
+      expect(client.writes.map((w) => w.collection), <String>['usersv2/uid1/private', 'usersv2/uid2/private']);
+    });
+
+    test('after the synced token is cleared the same token writes again', () async {
+      await sync('uid1', 'tok');
+      await FcmTokenService.instance.clearSyncedToken();
+      await sync('uid1', 'tok');
+
+      expect(tokenWrites(), 2);
+    });
+  });
 }
