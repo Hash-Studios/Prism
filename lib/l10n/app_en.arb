@@ -1250,6 +1250,10 @@
   "@accountPurchasesRestored": {
     "description": "Success toast after restoring purchases."
   },
+  "accountPurchasesRestoredPending": "Purchases restored. Pro can take a minute to unlock.",
+  "@accountPurchasesRestoredPending": {
+    "description": "Toast after a restore when the store has the purchase but the server has not confirmed Pro yet."
+  },
   "accountQuickTiles": "Quick tiles",
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
@@ -6048,6 +6052,14 @@
   "premiumPageViewPlans": "View plans",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPurchasePending": "Your purchase is saved. Pro can take a minute to unlock.",
+  "@premiumPurchasePending": {
+    "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPurchaseUnconfirmed": "Could not confirm your purchase. Try Restore purchases in Settings.",
+  "@premiumPurchaseUnconfirmed": {
+    "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
   "wallpaperAccentColor": "Accent color",
   "@wallpaperAccentColor": {

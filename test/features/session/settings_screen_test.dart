@@ -39,6 +39,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/wait_for_real_io.dart';
@@ -204,7 +205,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(find.text('Restore purchases'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Restore purchases'));
+    await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
     await tester.pump();
 
     expect(messages, <String>['Restoring purchases…']);
@@ -216,6 +217,127 @@ void main() {
     expect(haptics, <String>['HapticFeedbackType.errorNotification']);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  for (final disposed in <bool>[false, true]) {
+    testWidgets('restore failure is silent after ${disposed ? 'leaving settings' : 'changing accounts'}', (
+      tester,
+    ) async {
+      final pendingRestore = Completer<Object?>();
+      unawaited(pendingRestore.future.catchError((Object _) => null));
+      messenger.setMockMethodCallHandler(purchasesChannel, (call) => pendingRestore.future);
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
+      );
+      await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text('Restore purchases'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
+      await tester.pump();
+      if (disposed) {
+        await tester.pumpWidget(const SizedBox());
+      } else {
+        when(() => sessionRepository.currentUser).thenReturn(testUser()..id = 'different-user');
+      }
+      pendingRestore.completeError(PlatformException(code: 'restore_failed'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(messages, <String>['Restoring purchases…']);
+      expect(haptics, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  }
+
+  for (final outcome in <String>['confirmed', 'pending', 'empty']) {
+    testWidgets('restore reports the $outcome store result', (tester) async {
+      await getIt.unregister<SessionRepository>();
+      final backend = CoinsTestBackend();
+      await backend.install();
+      final paid = outcome != 'empty';
+      final entitlement = <String, Object?>{
+        'identifier': 'prism_v3_pro_access',
+        'isActive': true,
+        'willRenew': true,
+        'latestPurchaseDate': '2026-10-01T00:00:00Z',
+        'originalPurchaseDate': '2026-10-01T00:00:00Z',
+        'productIdentifier': 'prism_pro_yearly',
+        'isSandbox': false,
+        'expirationDate': '2027-10-01T00:00:00Z',
+      };
+      final customer = <String, Object?>{
+        'entitlements': <String, Object?>{
+          'all': <String, Object?>{if (paid) 'prism_v3_pro_access': entitlement},
+          'active': <String, Object?>{if (paid) 'prism_v3_pro_access': entitlement},
+        },
+        'allPurchaseDates': <String, Object?>{},
+        'activeSubscriptions': <String>[],
+        'allPurchasedProductIdentifiers': <String>[],
+        'nonSubscriptionTransactions': <Object?>[],
+        'firstSeen': '',
+        'originalAppUserId': backend.userId,
+        'allExpirationDates': <String, Object?>{},
+        'requestDate': '',
+      };
+      var restoreCalls = 0;
+      messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
+        switch (call.method) {
+          case 'logIn':
+            return <String, Object?>{'customerInfo': customer, 'created': false};
+          case 'restorePurchases':
+            restoreCalls++;
+            return customer;
+          case 'getCustomerInfo':
+            throw StateError('Restore must use the store result.');
+          default:
+            return null;
+        }
+      });
+      messenger.setMockDecodedMessageHandler<Object?>(
+        const BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call',
+          StandardMessageCodec(),
+        ),
+        (_) async => <Object?>[
+          if (outcome == 'pending')
+            <String, Object?>{}
+          else
+            <String, Object?>{'premium': paid, 'subscriptionTier': paid ? 'pro' : 'free'},
+        ],
+      );
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
+      );
+      await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text('Restore purchases'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
+      await waitForRealIo(tester, () => messages.length > 1, reason: '$outcome restore result');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 1));
+
+      final expected = switch (outcome) {
+        'confirmed' => 'Purchases restored.',
+        'pending' => 'Purchases restored. Pro can take a minute to unlock.',
+        _ => 'No purchases to restore for this account.',
+      };
+      expect(restoreCalls, 1);
+      expect(messages, <String>['Restoring purchases…', expected]);
+      expect(haptics, <String>[
+        if (outcome == 'empty') 'HapticFeedbackType.errorNotification' else 'HapticFeedbackType.successNotification',
+      ]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  }
 
   for (final succeeds in <bool>[true, false]) {
     testWidgets('clear favourites reports the ${succeeds ? 'success' : 'failure'} outcome once', (tester) async {

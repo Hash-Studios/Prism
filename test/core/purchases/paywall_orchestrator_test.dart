@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -16,6 +19,8 @@ import '../../support/profile_user_fixture.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  const purchasesChannel = MethodChannel('purchases_flutter');
+  const paywallChannel = MethodChannel('purchases_ui_flutter');
   final orchestrator = PaywallOrchestrator.instance;
   late FakeAppAnalytics fakeAnalytics;
   late SettingsLocalDataSource settings;
@@ -38,11 +43,281 @@ void main() {
 
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(paywallChannel, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
   });
 
   group('present', () {
+    Future<CoinsTestBackend> installPaywall({
+      required Future<String> Function() present,
+      bool paid = true,
+      bool confirmed = true,
+      bool emitPurchase = false,
+      bool loginFails = false,
+    }) async {
+      final backend = CoinsTestBackend();
+      await backend.install();
+      backend.onCall = (_, _) async => confirmed
+          ? <String, Object?>{'premium': paid, 'subscriptionTier': paid ? 'pro' : 'free'}
+          : <String, Object?>{};
+      final entitlement = <String, Object?>{
+        'identifier': 'prism_v3_pro_access',
+        'isActive': true,
+        'willRenew': true,
+        'latestPurchaseDate': '2026-10-01T00:00:00Z',
+        'originalPurchaseDate': '2026-10-01T00:00:00Z',
+        'productIdentifier': 'prism_pro_yearly',
+        'isSandbox': false,
+        'expirationDate': '2027-10-01T00:00:00Z',
+      };
+      final customer = <String, Object?>{
+        'entitlements': <String, Object?>{
+          'all': <String, Object?>{if (paid) 'prism_v3_pro_access': entitlement},
+          'active': <String, Object?>{if (paid) 'prism_v3_pro_access': entitlement},
+        },
+        'allPurchaseDates': <String, Object?>{},
+        'activeSubscriptions': <String>[],
+        'allPurchasedProductIdentifiers': <String>[],
+        'nonSubscriptionTransactions': <Object?>[],
+        'firstSeen': '',
+        'originalAppUserId': backend.userId,
+        'allExpirationDates': <String, Object?>{},
+        'requestDate': '',
+      };
+      const offering = <String, Object?>{
+        'identifier': 'test-offering',
+        'serverDescription': '',
+        'metadata': <String, Object?>{},
+        'availablePackages': <Object?>[],
+      };
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockDecodedMessageHandler<Object?>(
+        const BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call',
+          StandardMessageCodec(),
+        ),
+        (message) async {
+          final arguments = (message! as List<Object?>).first! as Map<Object?, Object?>;
+          return <Object?>[await backend.onCall(arguments['functionName']! as String, <String, dynamic>{})];
+        },
+      );
+      messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
+        switch (call.method) {
+          case 'logIn':
+            if (loginFails) throw PlatformException(code: 'login_failed');
+            return <String, Object?>{'customerInfo': customer, 'created': false};
+          case 'getCurrentOfferingForPlacement':
+            return offering;
+          case 'getOfferings':
+            return <String, Object?>{
+              'all': <String, Object?>{'test-offering': offering},
+              'current': offering,
+            };
+          case 'getCustomerInfo':
+            return customer;
+          default:
+            return null;
+        }
+      });
+      messenger.setMockMethodCallHandler(paywallChannel, (call) async {
+        if (emitPurchase) {
+          final id = (call.arguments as Map<Object?, Object?>)['presentationId'];
+          final channel = 'com.revenuecat.purchasesui/PresentedPaywall/$id';
+          const codec = StandardMethodCodec();
+          Future<void> emit(String method, Object? arguments) {
+            final completed = Completer<void>();
+            ServicesBinding.instance.channelBuffers.push(
+              channel,
+              codec.encodeMethodCall(MethodCall(method, arguments)),
+              (_) => completed.complete(),
+            );
+            return completed.future;
+          }
+
+          await emit('onPurchaseStarted', <String, Object?>{
+            'identifier': 'annual',
+            'packageType': 'ANNUAL',
+            'presentedOfferingContext': <String, Object?>{'offeringIdentifier': 'test-offering'},
+            'product': <String, Object?>{
+              'identifier': 'prism_pro_yearly',
+              'description': '',
+              'title': '',
+              'price': 499,
+              'priceString': '499',
+              'currencyCode': 'INR',
+            },
+          });
+          for (var duplicate = 0; duplicate < 2; duplicate++) {
+            await emit('onPurchaseCompleted', <String, Object?>{
+              'customerInfo': customer,
+              'storeTransaction': <String, Object?>{
+                'transactionIdentifier': 'tx-one',
+                'productIdentifier': 'prism_pro_yearly',
+                'purchaseDate': '2026-10-19T00:00:00Z',
+              },
+            });
+          }
+        }
+        return present();
+      });
+      return backend;
+    }
+
+    for (final sdkResult in <String>['PURCHASED', 'RESTORED']) {
+      test('an unconfirmed $sdkResult does not report completion and keeps the receipt result once', () async {
+        await installPaywall(present: () async => sdkResult, confirmed: false);
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+        await AnalyticsRuntime.instance.flush();
+
+        expect(result, PaywallResultValue.error);
+        expect(toasts, <String>['Your purchase is saved. Pro can take a minute to unlock.']);
+        final events = fakeAnalytics.events.whereType<PaywallResultEvent>().toList();
+        expect(events, hasLength(1));
+        expect(
+          events.single.result,
+          sdkResult == 'PURCHASED' ? PaywallResultValue.purchased : PaywallResultValue.restored,
+        );
+        expect(events.single.entitlementSynced, 0);
+      });
+    }
+
+    test('a confirmed purchase reports completion and clears the upsell counter', () async {
+      await installPaywall(present: () async => 'PURCHASED');
+      await settings.set('paywall_ad_watch_count', 3);
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.purchased,
+      );
+      await AnalyticsRuntime.instance.flush();
+      expect(settings.get<int>('paywall_ad_watch_count', defaultValue: -1), 0);
+      expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.entitlementSynced, 1);
+      expect(toasts, isEmpty);
+    });
+
+    test('receipt and conversion are recorded once while server confirmation retries', () async {
+      final backend = await installPaywall(present: () async => 'PURCHASED', emitPurchase: true);
+      var syncs = 0;
+      backend.onCall = (_, _) async => <String, Object?>{
+        'premium': ++syncs > 1,
+        'subscriptionTier': syncs > 1 ? 'pro' : 'free',
+      };
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.purchased,
+      );
+      await AnalyticsRuntime.instance.flush();
+
+      expect(syncs, 2);
+      expect(fakeAnalytics.events.whereType<PurchaseVerifiedEvent>(), hasLength(1));
+      expect(fakeAnalytics.events.whereType<SubscriptionConversionEvent>(), hasLength(1));
+      expect(fakeAnalytics.events.whereType<RevenueRecordedEvent>(), isEmpty);
+      expect(fakeAnalytics.events.whereType<PaywallResultEvent>(), hasLength(1));
+    });
+
+    test('a cancelled paywall does not wait for paid entitlement confirmation', () async {
+      final backend = await installPaywall(present: () async => 'CANCELLED');
+      var syncs = 0;
+      backend.onCall = (_, _) async {
+        syncs++;
+        return <String, Object?>{'premium': false, 'subscriptionTier': 'free'};
+      };
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.cancelled,
+      );
+      expect(syncs, 0);
+      expect(toasts, isEmpty);
+    });
+
+    test('a failed account login never presents the paywall', () async {
+      var presented = false;
+      await installPaywall(
+        loginFails: true,
+        present: () async {
+          presented = true;
+          return 'PURCHASED';
+        },
+      );
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.rcError,
+      );
+      expect(presented, isFalse);
+    });
+
+    test('a purchase of the previous account cannot sync or complete as the new account', () async {
+      final presented = Completer<void>();
+      final dismissed = Completer<String>();
+      final backend = await installPaywall(
+        present: () {
+          presented.complete();
+          return dismissed.future;
+        },
+      );
+      var syncs = 0;
+      backend.onCall = (_, _) async {
+        syncs++;
+        return <String, Object?>{'premium': true, 'subscriptionTier': 'pro'};
+      };
+      final result = orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+      await presented.future;
+      app_state.prismUser = profileUser(premium: true)..id = 'different-user';
+      dismissed.complete('PURCHASED');
+
+      expect(await result, PaywallResultValue.error);
+      await AnalyticsRuntime.instance.flush();
+      expect(syncs, 0);
+      expect(toasts, isEmpty);
+      expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.entitlementSynced, 0);
+    });
+
+    test('a failed paywall of the previous account is silent after changing accounts', () async {
+      final presented = Completer<void>();
+      final dismissed = Completer<String>();
+      await installPaywall(
+        present: () {
+          presented.complete();
+          return dismissed.future;
+        },
+      );
+      final result = orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+      await presented.future;
+      app_state.prismUser = profileUser()..id = 'different-user';
+      dismissed.completeError(PlatformException(code: 'paywall_failed'));
+
+      expect(await result, PaywallResultValue.error);
+      expect(toasts, isEmpty);
+    });
+
+    for (final sdkResult in <String>['NOT_PRESENTED', 'ERROR']) {
+      test('a stale $sdkResult result does not show an unavailable toast', () async {
+        final presented = Completer<void>();
+        final dismissed = Completer<String>();
+        await installPaywall(
+          present: () {
+            presented.complete();
+            return dismissed.future;
+          },
+        );
+        final result = orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+        await presented.future;
+        app_state.prismUser = profileUser()..id = 'different-user';
+        dismissed.complete(sdkResult);
+
+        expect(await result, PaywallResultValue.error);
+        await AnalyticsRuntime.instance.flush();
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>(), hasLength(1));
+        expect(toasts, isEmpty);
+      });
+    }
+
     test('tells the user when no paywall can be shown', () async {
       final result = await orchestrator.present(placement: PaywallPlacement.lowBalance, source: 'test');
       final AppLocalizations messages = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
