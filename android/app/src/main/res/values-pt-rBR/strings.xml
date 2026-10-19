@@ -21,12 +21,12 @@
     <string name="wotd_widget_set_failed">Não foi possível definir o papel de parede</string>
     <string name="media_saved_in_pictures">Salvo em Pictures/%1$s!</string>
     <string name="notif_push_wall_approved_for_artist_title">Seu papel de parede está no ar! 🎉</string>
-    <string name="notif_push_wall_approved_for_artist_body">"%1$s" foi aprovado e agora está visível para todos.</string>
+    <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" foi aprovado e agora está visível para todos.</string>
     <string name="notif_push_wall_approved_for_artist_body_untitled">Seu papel de parede foi aprovado e agora está visível para todos.</string>
     <string name="notif_push_wall_live_for_followers_title">Novo papel de parede de %1$s</string>
-    <string name="notif_push_wall_live_for_followers_body">"%1$s" já está no ar no Prism.</string>
+    <string name="notif_push_wall_live_for_followers_body">\"%1$s\" já está no ar no Prism.</string>
     <string name="notif_push_wall_approved_for_admin_title">Papel de parede aprovado ✅</string>
-    <string name="notif_push_wall_approved_for_admin_body">"%1$s", de %2$s, já está no ar.</string>
+    <string name="notif_push_wall_approved_for_admin_body">\"%1$s\", de %2$s, já está no ar.</string>
     <string name="notif_push_new_follower_title">Você tem um novo seguidor! 🎉</string>
     <string name="notif_push_new_follower_body">%1$s começou a seguir você.</string>
     <string name="notif_push_streak_reminder_title">Sua sequência está prestes a acabar!</string>
