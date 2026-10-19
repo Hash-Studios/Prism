@@ -1653,6 +1653,12 @@ abstract class AppLocalizations {
   /// **'Purchases restored.'**
   String get accountPurchasesRestored;
 
+  /// Toast after a restore when the store has the purchase but the server has not confirmed Pro yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored. Pro can take a minute to unlock.'**
+  String get accountPurchasesRestoredPending;
+
   /// Settings item for Quick Settings tiles.
   ///
   /// In en, this message translates to:
@@ -11148,6 +11154,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View plans'**
   String get premiumPageViewPlans;
+
+  /// Toast after a purchase when the store has it but the server has not confirmed Pro yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your purchase is saved. Pro can take a minute to unlock.'**
+  String get premiumPurchasePending;
+
+  /// Toast after a purchase that neither the store nor the server could confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm your purchase. Try Restore purchases in Settings.'**
+  String get premiumPurchaseUnconfirmed;
 
   /// Wallpaper interface text: wallpaperAccentColor.
   ///

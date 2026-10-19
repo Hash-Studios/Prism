@@ -959,6 +959,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountPurchasesRestored => 'Purchases restored.';
 
   @override
+  String get accountPurchasesRestoredPending => 'Purchases restored. Pro can take a minute to unlock.';
+
+  @override
   String get accountQuickTiles => 'Quick tiles';
 
   @override
@@ -7207,6 +7210,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'View plans';
+
+  @override
+  String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
+
+  @override
+  String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
 
   @override
   String get wallpaperAccentColor => 'Accent color';
