@@ -57,8 +57,7 @@ class PaywallOrchestrator {
         ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
         : PaywallResultValue.notPresented;
     if (_unavailableResults.contains(result)) {
-      final AppLocalizations localized =
-          messages ?? await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
       toasts.error(localized.premiumPagePlansUnavailable);
     }
     return result;

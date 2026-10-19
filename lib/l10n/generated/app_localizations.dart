@@ -93,6 +93,12 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('pt'), Locale('pt', 'BR')];
 
+  /// Failed filter export action inserted before refund status.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get economyExportFailedLabel;
+
   /// Feature name inserted into the sign-in title for creator search.
   ///
   /// In en, this message translates to:

@@ -138,7 +138,7 @@ class NotificationRouteMapper {
       return mapped;
     }
     if (route.isNotEmpty) {
-      final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      final l10n = await loadDeviceAppLocalizations();
       toasts.error(l10n.coreContentNotAvailable);
     }
     return const PageLinkIntent(path: '/notifications', rawUri: '/notifications');

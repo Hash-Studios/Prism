@@ -11,6 +11,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'Export failed';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'busca de criadores';
 
   @override
@@ -966,6 +969,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountPurchasesRestored => 'Compras restauradas.';
+
+  @override
+  String get accountPurchasesRestoredPending => 'Purchases restored. Pro can take a minute to unlock.';
 
   @override
   String get accountQuickTiles => 'Blocos rápidos';
@@ -7464,6 +7470,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
+
+  @override
+  String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
 
   @override
   String get wallpaperAccentColor => 'Cor de destaque';
