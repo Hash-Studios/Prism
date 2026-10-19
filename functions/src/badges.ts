@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {grantXp, loadEconomy, xpReceipt} from "./economy";
@@ -156,7 +157,10 @@ export const checkBadges = onCall(
 
     const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs, email);
     const lateCreatedMs = facts.streakBest < 7 && !ownedIds(existing.badges).has("prism_veteran") ?
-      badgeIo.accountCreatedMs(uid).catch(() => null) : null;
+      badgeIo.accountCreatedMs(uid).catch((error) => {
+        logger.warn("badges: account creation lookup failed", {uid, error});
+        return null;
+      }) : null;
     const [config, createdMs] = await Promise.all([loadEconomy(), lateCreatedMs]);
 
     let response = skip();
