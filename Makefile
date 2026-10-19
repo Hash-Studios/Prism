@@ -327,6 +327,7 @@ native-ios-check: get
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
 		$(FLUTTER) test $(TEST_FLAGS); \
+		$(FLUTTER) test $(TEST_FLAGS) --dart-define=dart.vm.product=true --dart-define=PRISM_PERF_AUTODRIVE=true test/core/debug/performance_probe_release_test.dart test/core/platform/cloud_functions_perf_test.dart; \
 	else \
 		echo "No test files found, skipping."; \
 	fi
