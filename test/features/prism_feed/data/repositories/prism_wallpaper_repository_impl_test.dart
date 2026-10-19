@@ -14,6 +14,35 @@ import '../../../../support/fake_user_block_repository.dart';
 
 void main() {
   group('PrismWallpaperRepositoryImpl', () {
+    test('canonical lookup requires server-only identity and current membership', () async {
+      final docs = _buildWallDocs(count: 1);
+      docs.single.data['collections'] = <String>['space'];
+      final firestore = _walls(docs, matchIdField: true);
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      final result = await repo.fetchCanonicalById('wall-1');
+      expect(result.data?.collections, <String>['space']);
+      expect(firestore.querySpecs.single.cachePolicy, FirestoreCachePolicy.serverOnly);
+      expect(firestore.querySpecs.single.limit, 2);
+      expect((await repo.fetchCanonicalById('doc-1')).data, isNull);
+      firestore.queryError = FirestoreError(message: 'offline', code: 'unavailable');
+      expect((await repo.fetchCanonicalById('wall-1')).failure, isA<NetworkFailure>());
+    });
+
+    test('canonical lookup refuses duplicate identity', () async {
+      final docs = _buildWallDocs(count: 2);
+      docs[1].data['id'] = 'wall-1';
+      final repo = PrismWallpaperRepositoryImpl(
+        _walls(docs, matchIdField: true),
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      expect((await repo.fetchCanonicalById('wall-1')).isFailure, isTrue);
+    });
+
     test('waits for blocked creators and refills filtered pages without skipping visible rows', () async {
       final firestore = _walls(_buildWallDocs(count: 30));
       final cache = FakeFeedCacheLocalDataSource();
