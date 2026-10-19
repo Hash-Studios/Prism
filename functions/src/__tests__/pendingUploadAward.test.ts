@@ -13,7 +13,13 @@ function setup(t: TestContext, kind = "github") {
     OWNED_ASSET_BUCKET: "private-test", GCLOUD_PROJECT: "prism-wallpapers"})) {
     const previous = process.env[key];
     process.env[key] = value;
-    t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+    t.after(() => {
+      if (previous === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = previous;
+      }
+    });
   }
   const store = installFakeDb(t, {
     "usersv2/creator": {coins: 9, email: "creator@example.com"},
