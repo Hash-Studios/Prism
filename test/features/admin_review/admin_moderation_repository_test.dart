@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show FieldValue;
 import 'package:flutter_test/flutter_test.dart';
@@ -169,5 +170,30 @@ void main() {
     expect(data['review'], isFalse);
     expect(data['is_streak_exclusive'], isTrue);
     expect(data['streak_shop_coin_cost'], 20);
+  });
+
+  group('depth override', () {
+    test('changes only the tier and the author when the detector already wrote a depth map', () async {
+      const wall = FirestoreDocument('wall-5', <String, dynamic>{
+        'review': false,
+        'depth': <String, dynamic>{'tier': 'none', 'kind': 'sky', 'top': 0.4, 'v': 1, 'by': 'detector'},
+      });
+
+      await repository.setDepthTier(wall, WallDepthTier.menu);
+
+      final write = client.writes.single;
+      expect((write.op, write.collection, write.id), ('update', FirebaseCollections.walls, 'wall-5'));
+      expect(write.data, <String, dynamic>{'depth.tier': 'menu', 'depth.by': 'admin'});
+    });
+
+    test('writes a whole depth map for a wall that was never checked', () async {
+      const wall = FirestoreDocument('wall-6', <String, dynamic>{'review': false});
+
+      await repository.setDepthTier(wall, WallDepthTier.auto);
+
+      expect(client.writes.single.data, <String, dynamic>{
+        'depth': <String, dynamic>{'tier': 'auto', 'by': 'admin', 'v': 1, 'kind': null, 'top': null},
+      });
+    });
   });
 }

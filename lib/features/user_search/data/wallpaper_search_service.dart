@@ -46,12 +46,19 @@ class WallpaperSearchService {
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
   static const Duration _cachedSearchDecisionBudget = Duration(seconds: 3);
+  static const int _prismLimit = 12;
+
+  /// The Depth Effect list has no next page, so a browse asks for a full screen at once.
+  static const int _depthBrowseLimit = 48;
 
   /// First page of [query]. An empty [query] is allowed with a colour filter. Pexels needs a query, so a colour-only
   /// search skips it. When Wallhaven fails the search moves to Pexels so the user still gets results.
   /// When both providers fail but Prism has matches, the page has provider [SearchProviderValue.prism], no
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
+  /// With [SearchFilters.depthOnly] only Prism walls can match, so the page holds them as [WallpaperSearchPage.results]
+  /// and never throws.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
+    if (filters.depthOnly) return _depthSearch(query, filters);
     List<FeedItemEntity> cachedResults = const <FeedItemEntity>[];
     try {
       cachedResults = await _localResults(query, filters);
@@ -127,6 +134,25 @@ class WallpaperSearchService {
     throw WallpaperSearchException('Wallhaven and Pexels both failed: $failure');
   }
 
+  Future<WallpaperSearchPage> _depthSearch(String query, SearchFilters filters) async {
+    List<FeedItemEntity> results = await _prismResults(query, filters);
+    bool isLocal = false;
+    if (results.isEmpty) {
+      try {
+        results = await _localResults(query, filters);
+        isLocal = results.isNotEmpty;
+      } catch (error) {
+        logger.w('Local wallpaper catalog search failed: $error');
+      }
+    }
+    return (
+      provider: SearchProviderValue.prism,
+      results: results,
+      prismResults: const <FeedItemEntity>[],
+      isLocal: isLocal,
+    );
+  }
+
   Future<List<FeedItemEntity>> _localResults(String query, SearchFilters filters) async {
     final List<FeedItemEntity> local = (await _offlineCatalog.search(
       query,
@@ -141,6 +167,14 @@ class WallpaperSearchService {
 
   bool _matchesLocalFilters(FeedItemEntity item, SearchFilters filters) {
     if (!filters.acceptsResolution(item.wallpaperCore.resolution)) return false;
+    if (filters.depthOnly) {
+      final bool supportsDepth = item.when(
+        prism: (_, wall) => wall.depthTier?.supportsDepth ?? false,
+        wallhaven: (_, _) => false,
+        pexels: (_, _) => false,
+      );
+      if (!supportsDepth) return false;
+    }
     final color = filters.color;
     if (color == null) return true;
     final List<String> colors = item.when(
@@ -197,7 +231,12 @@ class WallpaperSearchService {
       filters.color == null ? 'search:$query' : 'search:$query:color:${filters.color!.id}';
 
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
-    final List<PrismWallpaper> walls = await _prismSearch.search(query, colorId: filters.color?.id);
+    final List<PrismWallpaper> walls = await _prismSearch.search(
+      query,
+      limit: filters.depthOnly && query.trim().isEmpty ? _depthBrowseLimit : _prismLimit,
+      colorId: filters.color?.id,
+      depthOnly: filters.depthOnly,
+    );
     return walls
         .where((wall) => filters.acceptsResolution(wall.core.resolution))
         .map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall))

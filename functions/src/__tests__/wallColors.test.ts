@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {mock} from "node:test";
 import * as admin from "firebase-admin";
 import sharp from "sharp";
 import {db} from "../common";
 import {categorizeWallpaper} from "../categorizeWallpaper";
 import {onWallCategorize} from "../onWallCategorize";
 import * as wallCategory from "../wallCategory";
+import * as wallDepth from "../wallDepth";
 import {backfillWallColors, parseBackfillArgs} from "../scripts/backfillWallColors";
 import {
   ColorFetch,
@@ -17,6 +18,11 @@ import {
 } from "../wallColors";
 
 const SIZE = 48;
+
+test.before(() => {
+  mock.method(wallDepth, "wallDepthFor", async () => undefined);
+});
+test.after(() => mock.restoreAll());
 
 function rgbOf(hex: string): [number, number, number] {
   return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];

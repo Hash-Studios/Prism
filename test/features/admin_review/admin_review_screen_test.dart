@@ -196,6 +196,23 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('pending wallpaper card shows the Depth Effect tier, or that it was not checked', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('wall-a', <String, dynamic>{
+          'review': false,
+          'depth': <String, dynamic>{'tier': 'menu'},
+        }),
+        FirestoreDocument('wall-b', <String, dynamic>{'review': false}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.bySemanticsLabel('Depth: Menu'), findsOneWidget);
+    expect(find.bySemanticsLabel('Depth: Not checked'), findsOneWidget);
+    semantics.dispose();
+  });
+
   testWidgets('a community wall has no Reserve button', (WidgetTester tester) async {
     await pumpReviewScreen(tester, _FakeAdminReviewRepository());
 

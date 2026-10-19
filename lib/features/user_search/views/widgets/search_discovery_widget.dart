@@ -18,6 +18,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
     this.onRecentPressed,
     this.onClearRecents,
     this.onColorPressed,
+    this.onDepthPressed,
   });
 
   final List<String> tags;
@@ -33,6 +34,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
   /// Called with the swatch the user taps in "Browse by colour". Without it the section is hidden.
   final void Function(PrismPaletteColor color)? onColorPressed;
 
+  /// Opens the walls that work with the iOS Lock Screen Depth Effect. Without it the row is hidden.
+  final VoidCallback? onDepthPressed;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -44,7 +48,15 @@ class SearchDiscoveryWidget extends StatelessWidget {
             _RecentSearches(searches: recentSearches, onPressed: onRecentPressed, onClear: onClearRecents),
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
           const SizedBox(height: PrismSpace.md),
-          const Padding(padding: PrismSpace.pageInsets, child: _FindCreatorsCard()),
+          Padding(
+            padding: PrismSpace.pageInsets,
+            child: PrismGroup(
+              children: <Widget>[
+                const _FindCreatorsRow(),
+                if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
+              ],
+            ),
+          ),
           if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
           const TrendingSection(),
           const CategorySection(),
@@ -123,23 +135,46 @@ class _TagsRow extends StatelessWidget {
   }
 }
 
-class _FindCreatorsCard extends StatelessWidget {
-  const _FindCreatorsCard();
+class _FindCreatorsRow extends StatelessWidget {
+  const _FindCreatorsRow();
 
   @override
   Widget build(BuildContext context) {
-    return PrismGroup(
-      children: <Widget>[
-        PrismRow(
-          icon: Icons.person_search_rounded,
-          title: 'Find creators',
-          subtitle: 'Search Prism users by name',
-          onTap: () {
-            PrismHaptics.tap();
-            context.router.push(const UserSearchRoute());
-          },
-        ),
-      ],
+    return PrismRow(
+      icon: Icons.person_search_rounded,
+      title: 'Find creators',
+      subtitle: 'Search Prism users by name',
+      onTap: () {
+        PrismHaptics.tap();
+        context.router.push(const UserSearchRoute());
+      },
+    );
+  }
+}
+
+class _DepthEffectRow extends StatelessWidget {
+  const _DepthEffectRow({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    void open() {
+      PrismHaptics.tap();
+      onPressed();
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Depth Effect, subject in front of the clock',
+      excludeSemantics: true,
+      onTap: open,
+      child: PrismRow(
+        icon: Icons.layers_rounded,
+        title: 'Depth Effect',
+        subtitle: 'Subject in front of the clock',
+        onTap: open,
+      ),
     );
   }
 }

@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/admin_review/views/widgets/depth_tier_pill.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
@@ -286,6 +289,22 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                   onPanCancel: _onPanCancel,
                   onTap: () => _showFullImage(currentWall),
                   child: const SizedBox.expand(),
+                ),
+                // Above the gesture layer so it takes taps. It hides while the card moves, because it does not follow.
+                Positioned(
+                  top: SwipeWallpaperCard.margin.top + PrismSpace.sm,
+                  left: SwipeWallpaperCard.margin.left + PrismSpace.sm,
+                  child: IgnorePointer(
+                    ignoring: _phase != _SwipePhase.idle,
+                    child: AnimatedOpacity(
+                      opacity: _phase == _SwipePhase.idle ? 1 : 0,
+                      duration: context.motion(PrismDurations.fast),
+                      child: DepthTierPill(
+                        tier: wallDepthTier(currentWall),
+                        onChanged: (WallDepthTier picked) => _bloc.add(ReviewBatchDepthChanged(currentWall.id, picked)),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -24,6 +24,7 @@ import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -648,6 +649,37 @@ void main() {
       await tester.pump();
 
       verifyNever(() => service.search(any(), filters: any(named: 'filters')));
+    });
+  });
+
+  group('Depth Effect row', () {
+    testWidgets('on iOS it lists Depth Effect walls with an empty query', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+          (_) async => _page(const <FeedItemEntity>[], prismResults: <FeedItemEntity>[_wallpaper('prism-1')]),
+        );
+        await pumpScreen(tester);
+
+        await tester.tap(find.text('Depth Effect'));
+        await tester.pump();
+        await tester.pump();
+
+        verify(() => service.search('', filters: const SearchFilters(depthOnly: true))).called(1);
+        expect(find.byType(SearchGrid), findsOneWidget);
+        expect(find.byTooltip('Clear Depth Effect'), findsOneWidget);
+        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+        expect(analytics.events.whereType<SearchSubmittedEvent>().single.sourceContext, 'search_depth');
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('off iOS the row is not shown', (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.text('Find creators'), findsOneWidget);
+      expect(find.text('Depth Effect'), findsNothing);
     });
   });
 }

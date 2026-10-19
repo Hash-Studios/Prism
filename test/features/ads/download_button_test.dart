@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -408,15 +409,26 @@ void main() {
     );
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
-    Future<void> download(WidgetTester tester, OperationResult result) async {
+    final List<String> toastMessages = <String>[];
+
+    Future<void> download(
+      WidgetTester tester,
+      OperationResult result, {
+      WallDepthTier? depthTier,
+      bool guideShown = false,
+    }) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
-      IosWallpaperGuideSession.shown = false;
+      IosWallpaperGuideSession.shown = guideShown;
+      toastMessages.clear();
       tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
         channel,
         (_) async => <Object?>[result],
       );
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+        if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+        return true;
+      });
       addTearDown(() async {
         tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
@@ -424,8 +436,10 @@ void main() {
         await getIt.reset();
       });
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        MaterialApp(
+          home: Scaffold(
+            body: DownloadButton(link: 'https://example.com/wall.jpg', depthTier: depthTier),
+          ),
         ),
       );
       await tester.tap(find.byType(CircularMenuButton));
@@ -438,6 +452,27 @@ void main() {
       await download(tester, OperationResult(success: true));
 
       expect(find.text('Open Photos'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a saved Depth Effect wall ends the guide with the Depth Effect step', (tester) async {
+      await download(tester, OperationResult(success: true), depthTier: WallDepthTier.menu);
+
+      expect(find.text('Open Photos'), findsOneWidget);
+      expect(find.text('Tap ••• then Depth\u00A0Effect.'), findsOneWidget);
+      expect(toastMessages, <String>['Saved to Photos.']);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('once the guide has shown, the saved toast carries the Depth Effect step', (tester) async {
+      await download(tester, OperationResult(success: true), depthTier: WallDepthTier.menu, guideShown: true);
+
+      expect(find.text('Open Photos'), findsNothing);
+      expect(toastMessages, <String>['Saved to Photos. In the Lock Screen editor, tap ••• then Depth\u00A0Effect.']);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a wall without the Depth Effect keeps the plain toast after the guide', (tester) async {
+      await download(tester, OperationResult(success: true), guideShown: true);
+
+      expect(toastMessages, <String>['Saved to Photos.']);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a denied Photos permission offers Open settings', (tester) async {

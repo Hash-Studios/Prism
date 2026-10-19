@@ -38,6 +38,7 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   requiredStreakDays: (json['required_streak_days'] as num?)?.toInt(),
   streakShopCoinCost: (json['streak_shop_coin_cost'] as num?)?.toInt(),
   boostedUntil: const FirestoreDateTimeConverter().fromJson(json['boostedUntil']),
+  depth: json['depth'] == null ? const <String, Object?>{} : const FirestoreJsonMapConverter().fromJson(json['depth']),
 );
 
 Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <String, dynamic>{
@@ -64,4 +65,5 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'required_streak_days': instance.requiredStreakDays,
   'streak_shop_coin_cost': instance.streakShopCoinCost,
   'boostedUntil': const FirestoreDateTimeConverter().toJson(instance.boostedUntil),
+  'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
 };

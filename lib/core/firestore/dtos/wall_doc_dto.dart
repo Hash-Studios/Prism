@@ -19,6 +19,7 @@ abstract class WallDocDto with _$WallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
     @Default(false) bool review,
+    @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
   }) = _WallDocDto;
 
   factory WallDocDto.fromJson(Map<String, dynamic> json) => _$WallDocDtoFromJson(json);
@@ -40,6 +41,7 @@ abstract class FavouriteWallDocDto with _$FavouriteWallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
     @FirestoreDateTimeConverter() DateTime? favouritedAt,
+    @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
   }) = _FavouriteWallDocDto;
 
   factory FavouriteWallDocDto.fromJson(Map<String, dynamic> json) => _$FavouriteWallDocDtoFromJson(json);

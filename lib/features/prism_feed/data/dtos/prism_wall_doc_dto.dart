@@ -33,6 +33,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
     @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,
     @FirestoreDateTimeConverter() DateTime? boostedUntil,
+    @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
   }) = _PrismWallDocDto;
 
   factory PrismWallDocDto.fromJson(Map<String, dynamic> json) => _$PrismWallDocDtoFromJson(json);

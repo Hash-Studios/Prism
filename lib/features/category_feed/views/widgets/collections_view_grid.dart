@@ -8,6 +8,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -195,6 +196,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 child: Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurface.withValues(alpha: 0.4))),
               );
             }
+            final FeedItemEntity entity = _entityFor(wall, wallId);
             return KeyedSubtree(
               key: ValueKey<String>(wallId),
               child: PrismWallTile(
@@ -203,6 +205,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 memCacheHeight: decodeHeight,
                 heroTag: prismHeroTag(this, index, wallId),
                 semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by')),
+                overlay: depthTagFor(depthTierOf(entity)),
                 onTap: () {
                   PrismHaptics.tap();
                   unawaited(
@@ -219,7 +222,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                   );
                   context.router.push(
                     WallpaperDetailRoute(
-                      entity: _entityFor(wall, wallId),
+                      entity: entity,
                       analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
                       heroTag: prismHeroTag(this, index, wallId),
                     ),
@@ -227,7 +230,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 },
                 onLongPress: () {
                   PrismHaptics.impact();
-                  unawaited(showWallpaperQuickActions(context, _entityFor(wall, wallId)));
+                  unawaited(showWallpaperQuickActions(context, entity));
                 },
               ),
             );

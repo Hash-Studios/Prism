@@ -376,3 +376,16 @@ Spec: `docs/features/weekly-drops.md`. Each step needs the human owner's yes.
 2. Client release. Use the `prism-release` skill. Only clients with this release subscribe to the `drops` topic, so older clients get the inbox entry but no push.
 
 What breaks if the order is wrong: nothing. A new client on old functions shows no collector count and gets no Drop push.
+
+## Depth Effect
+
+Spec: `docs/features/depth-effect.md`. Each step needs the human owner's yes. Do the steps in this order.
+
+1. Secret: put the fal key as `FAL_KEY` in Doppler `prd`. Then run `make functions-secrets-sync`. `onWallCategorize` and `processStudioCandidate` list `FAL_KEY`, so a functions deploy fails without it.
+2. Rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. The rules keep `walls.depth` server and admin owned. Wait until the new `walls` index (`review`, `depth.tier`, `createdAt`) shows `READY`.
+3. Functions: `make functions-deploy`. This ships the depth check in `onWallCategorize` and the Studio Depth Effect series.
+4. Calibration sample: `cd functions && npm run build && FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --limit=50`. It is a dry run, but it calls Vision and fal, so it costs money. Read the printed tiers.
+5. Device check: set 3 `auto` walls and 3 `menu` walls from the sample on an iPhone. Make sure that iOS puts the subject in front of the clock by itself for `auto`, and from ••• then **Depth Effect** for `menu`.
+6. Backfill: `FAL_KEY=<key> node lib/scripts/backfillWallDepth.js --apply`. Resume with `--start-after=<wallId>` from the last logged id.
+
+How to test: after step 3, upload a wall with a person under the clock area. Make sure that its doc gets a `depth` field. Run `firebase functions:log --lines 60` and look for `wallDepth:` warnings.

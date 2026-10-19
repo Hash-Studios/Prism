@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -46,6 +47,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
       streakShopCoinCost: streakShopCoinCost,
       firestoreDocumentId: docId,
       boostedUntil: boostedUntil,
+      depthTier: WallDepthTier.parse(depth['tier']),
     );
   }
 }

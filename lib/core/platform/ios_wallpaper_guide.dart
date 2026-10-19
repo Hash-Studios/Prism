@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +16,9 @@ abstract final class IosWallpaperGuideSession {
 
 bool isPhotosPermissionDenied(String? errorCode) => errorCode == photosPermissionDeniedCode;
 
-/// Tells iOS users how to use a saved image as wallpaper. Shows at most once per session.
-Future<void> showIosSetWallpaperGuide(BuildContext context) async {
+/// Tells iOS users how to use a saved image as wallpaper. Shows at most once per session. For a wall that works with
+/// the Depth Effect ([depthTier]), it ends with the step that turns the effect on.
+Future<void> showIosSetWallpaperGuide(BuildContext context, {WallDepthTier? depthTier}) async {
   if (!hideSetWallpaperUi || IosWallpaperGuideSession.shown) return;
   if (!context.mounted) return;
   IosWallpaperGuideSession.shown = true;
@@ -25,8 +27,20 @@ Future<void> showIosSetWallpaperGuide(BuildContext context) async {
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => const IosWallpaperGuideSheet(),
+    builder: (_) => IosWallpaperGuideSheet(depthTier: depthTier),
   );
+}
+
+/// The toast after a save. Once the guide has shown this session, the toast carries the Depth Effect step instead.
+String savedWallpaperMessage({WallDepthTier? depthTier}) {
+  final String? tip = IosWallpaperGuideSession.shown && showDepthEffectUi
+      ? switch (depthTier) {
+          WallDepthTier.auto => 'Depth Effect turns on by itself.',
+          WallDepthTier.menu => 'In the Lock Screen editor, tap ••• then Depth\u00A0Effect.',
+          WallDepthTier.none || null => null,
+        }
+      : null;
+  return tip == null ? wallpaperSavedMessage : '$wallpaperSavedMessage $tip';
 }
 
 /// Shows a snackbar with an Open settings action after iOS refused access to Photos.
@@ -53,13 +67,23 @@ Future<void> _launch(String url) async {
 }
 
 class IosWallpaperGuideSheet extends StatelessWidget {
-  const IosWallpaperGuideSheet({super.key});
+  const IosWallpaperGuideSheet({super.key, this.depthTier});
+
+  final WallDepthTier? depthTier;
 
   static const List<String> steps = <String>['Open Photos.', 'Tap Share.', 'Tap Use as Wallpaper.'];
+
+  static String? _depthStepFor(WallDepthTier? tier) => switch (tier) {
+    WallDepthTier.auto =>
+      'Depth Effect turns on by itself. On iOS\u00A018 or older, keep widgets off the space under the clock.',
+    WallDepthTier.menu => 'Tap ••• then Depth\u00A0Effect.',
+    WallDepthTier.none || null => null,
+  };
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final List<String> steps = <String>[...IosWallpaperGuideSheet.steps, ?_depthStepFor(depthTier)];
     final ColorScheme scheme = theme.colorScheme;
     return SafeArea(
       child: Padding(
@@ -79,6 +103,8 @@ class IosWallpaperGuideSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: <Widget>[
                     CircleAvatar(
                       radius: 14,

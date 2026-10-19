@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -52,6 +53,30 @@ void main() {
     expect(decoded.wallpaper.tags, <String>['dark']);
     expect(decoded.wallpaper.aiMetadata, <String, Object?>{'model': 'x'});
     expect(decoded.wallpaper.firestoreDocumentId, 'doc-p1');
+  });
+
+  test('the Depth Effect tier survives a JSON round trip, and a wall without one stays unchecked', () {
+    for (final WallDepthTier tier in WallDepthTier.values) {
+      final item = FeedItemEntity.prism(
+        id: 'p1',
+        wallpaper: PrismWallpaper(core: _core('p1', WallpaperSource.prism), depthTier: tier),
+      );
+
+      expect(
+        decodeFeedItem(_viaJson(item)),
+        isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.depthTier, 'depthTier', tier),
+      );
+    }
+    final unchecked = FeedItemEntity.prism(
+      id: 'p2',
+      wallpaper: PrismWallpaper(core: _core('p2', WallpaperSource.prism)),
+    );
+
+    expect(
+      decodeFeedItem(_viaJson(unchecked)),
+      isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.depthTier, 'depthTier', isNull),
+    );
+    expect(encodeFeedItem(unchecked)['wallpaper'], isNot(contains('depthTier')));
   });
 
   test('wallhaven item survives a JSON round trip', () {

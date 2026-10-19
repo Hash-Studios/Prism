@@ -85,4 +85,79 @@ void main() {
       expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
     });
   });
+
+  group('depth', () {
+    Map<String, dynamic> doc(String id, {String? tier, List<String> colors = const <String>[]}) => <String, dynamic>{
+      'id': id,
+      'wallpaper_url': 'https://prism/$id.jpg',
+      'wallpaper_provider': 'prism',
+      'review': true,
+      'colors': colors,
+      'depth': ?(tier == null ? null : <String, dynamic>{'tier': tier}),
+    };
+
+    test('with an empty query lists the auto and menu walls newest first, without text filters', () async {
+      await search.search('', depthOnly: true);
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.depth');
+      expect(spec.collection, 'walls');
+      expect(spec.filters.map((f) => (f.field, f.op)), <(String, FirestoreFilterOp)>[
+        ('review', FirestoreFilterOp.isEqualTo),
+        ('depth.tier', FirestoreFilterOp.whereIn),
+      ]);
+      expect(spec.filters.first.value, true);
+      expect(spec.filters.last.value, <String>['auto', 'menu']);
+      expect(spec.orderBy.single.field, 'createdAt');
+      expect(spec.orderBy.single.descending, isTrue);
+      expect(spec.limit, 12);
+    });
+
+    test('with a query the depth tier is checked on the matches, so the text indexes stay in use', () async {
+      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+          ? <FakeDocRow>[
+              (id: 'a', data: doc('a', tier: 'auto')),
+              (id: 'b', data: doc('b', tier: 'none')),
+              (id: 'c', data: doc('c')),
+              (id: 'd', data: doc('d', tier: 'menu')),
+            ]
+          : const <FakeDocRow>[];
+
+      final walls = await search.search('forest', depthOnly: true);
+
+      expect(walls.map((wall) => wall.id), <String>['a', 'd']);
+      expect(firestore.querySpecs.expand((spec) => spec.filters).map((f) => f.field), isNot(contains('depth.tier')));
+      expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
+    });
+
+    test('with a colour too, the depth query runs and the colour is matched locally', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'a', data: doc('a', tier: 'auto', colors: <String>['blue'])),
+        (id: 'b', data: doc('b', tier: 'menu', colors: <String>['red'])),
+        (id: 'c', data: doc('c', tier: 'menu', colors: <String>['red', 'blue'])),
+      ];
+
+      final walls = await search.search('', colorId: 'blue', depthOnly: true);
+
+      expect(walls.map((wall) => wall.id), <String>['a', 'c']);
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.depth');
+      expect(spec.filters.map((f) => f.field), isNot(contains('colors')));
+      expect(spec.limit, 48);
+    });
+
+    test('a wall without a depth tier never passes, even if the query returned it', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[(id: 'a', data: doc('a')), (id: 'b', data: doc('b', tier: 'none'))];
+
+      expect(await search.search('', depthOnly: true), isEmpty);
+    });
+
+    test('without the depth filter the depth tier is ignored', () async {
+      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+          ? <FakeDocRow>[(id: 'a', data: doc('a', tier: 'none')), (id: 'c', data: doc('c'))]
+          : const <FakeDocRow>[];
+
+      expect((await search.search('forest')).map((wall) => wall.id), <String>['a', 'c']);
+    });
+  });
 }

@@ -38,6 +38,14 @@ test("walls have the colour search index: colors contains, review, newest first"
     [["review", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
 });
 
+test("walls have the depth feed index: review, depth.tier in, newest first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "walls" &&
+    i.fields[1]?.fieldPath === "depth.tier");
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]),
+    [["review", "ASCENDING"], ["depth.tier", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
+});
+
 const hasIndex = (collectionGroup: string, fields: Array<[string, string]>) =>
   config.indexes.some((i) => i.collectionGroup === collectionGroup &&
     JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));

@@ -1,4 +1,6 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
@@ -30,6 +32,8 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     on<ReviewBatchSwipeApproved>(_onSwipeApproved);
     on<ReviewBatchSwipeRejected>(_onSwipeRejected);
     on<ReviewBatchSwipeReserved>(_onSwipeReserved);
+    // One write at a time and in order, so two quick picks cannot reach Firestore the wrong way round.
+    on<ReviewBatchDepthChanged>(_onDepthChanged, transformer: (events, mapper) => events.asyncExpand(mapper));
     on<ReviewBatchSwipeSkipped>(_onSwipeSkipped);
     on<ReviewBatchUndoRequested>(_onUndoRequested);
     on<ReviewBatchNextBatchRequested>(_onNextBatchRequested);
@@ -137,6 +141,33 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
       );
     } catch (e) {
       emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: 'Failed to reserve: $e'));
+    }
+  }
+
+  Future<void> _onDepthChanged(ReviewBatchDepthChanged event, Emitter<ReviewBatchState> emit) async {
+    final int index = state.walls.indexWhere((candidate) => candidate.id == event.wallId);
+    if (index < 0) return;
+    final FirestoreDocument wall = state.walls[index];
+
+    List<FirestoreDocument> replace(FirestoreDocument replacement) => <FirestoreDocument>[
+      for (final FirestoreDocument candidate in state.walls)
+        if (candidate.id == wall.id) replacement else candidate,
+    ];
+
+    emit(state.copyWith(walls: replace(withDepthOverride(wall, event.tier))));
+    try {
+      await _moderation.setDepthTier(wall, event.tier);
+      if (state.status == ReviewBatchStatus.error) {
+        emit(state.copyWith(status: ReviewBatchStatus.loaded, clearErrorMessage: true));
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: ReviewBatchStatus.error,
+          walls: replace(wall),
+          errorMessage: 'Failed to set Depth Effect: $e',
+        ),
+      );
     }
   }
 

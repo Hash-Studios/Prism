@@ -7,6 +7,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
@@ -72,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
-    if (trimmed.isEmpty && _filters.color == null) return;
+    if (trimmed.isEmpty && !_filters.listsWithoutQuery) return;
     if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
     final String searchId = AnalyticsCorrelation.newId();
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
@@ -165,7 +166,7 @@ class _SearchScreenState extends State<SearchScreen> {
       isSubmitted = false;
       _searchId = null;
       _search = null;
-      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true);
+      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true, depthOnly: false);
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
@@ -175,7 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
     final String query = (isSubmitted ? _submittedQuery : searchController.text).trim();
-    if (query.isEmpty && picked.color == null) {
+    if (query.isEmpty && !picked.listsWithoutQuery) {
       if (isSubmitted) _backToDiscover();
     } else if (isSubmitted || query.isEmpty) {
       _triggerSearch(query);
@@ -188,9 +189,24 @@ class _SearchScreenState extends State<SearchScreen> {
     _triggerSearch('', sourceContext: 'search_color');
   }
 
+  void _searchByDepth() {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(depthOnly: true));
+    _triggerSearch('', sourceContext: 'search_depth');
+  }
+
   void _clearColor() {
     setState(() => _filters = _filters.copyWith(clearColor: true));
-    if (_submittedQuery.isEmpty) {
+    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
+  }
+
+  void _clearDepth() {
+    setState(() => _filters = _filters.copyWith(depthOnly: false));
+    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
       _backToDiscover();
     } else {
       _triggerSearch(_submittedQuery);
@@ -305,10 +321,14 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           final bool filtered = _filters != const SearchFilters();
+          final String listed = <String>[
+            if (_filters.color != null) _filters.color!.name.toLowerCase(),
+            if (_filters.depthOnly) 'Depth Effect',
+          ].join(' ');
           return GlintState(
             kind: GlintStateKind.empty,
             title: _submittedQuery.isEmpty
-                ? 'No ${_filters.color?.name.toLowerCase()} wallpapers found'
+                ? 'No $listed wallpapers found'
                 : 'No wallpapers found for "$_submittedQuery"',
             body: filtered ? 'Try fewer filters.' : 'Try a shorter or a different word.',
             actionLabel: filtered ? 'Reset filters' : null,
@@ -371,6 +391,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                   onTap: _clearColor,
                                 ),
                               ),
+                            if (_filters.color != null && _filters.depthOnly) const SizedBox(width: PrismSpace.xs),
+                            if (_filters.depthOnly)
+                              Tooltip(
+                                message: 'Clear Depth Effect',
+                                child: PrismChip(label: 'Depth Effect', selected: true, onTap: _clearDepth),
+                              ),
                           ],
                         ),
                       ),
@@ -384,6 +410,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     recentSearches: _recentSearches,
                     onClearRecents: () => unawaited(_clearRecents()),
                     onColorPressed: _searchByColor,
+                    onDepthPressed: showDepthEffectUi ? _searchByDepth : null,
                     onRecentPressed: (query) {
                       searchController.text = query;
                       _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);

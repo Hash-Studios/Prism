@@ -11,13 +11,13 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
@@ -45,6 +45,7 @@ class DownloadButton extends StatefulWidget {
     this.isPremiumContent = false,
     this.contentId,
     this.wallpaperSource,
+    this.depthTier,
     this.sourceContext,
     this.requestId,
     this.onDownloaded,
@@ -62,6 +63,9 @@ class DownloadButton extends StatefulWidget {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+
+  /// Adds the Depth Effect step to what iOS users see after the save.
+  final WallDepthTier? depthTier;
   final String? sourceContext;
   final String? requestId;
   final VoidCallback? onDownloaded;
@@ -108,6 +112,7 @@ class _DownloadTap {
     required this.isPremiumContent,
     required this.contentId,
     required this.wallpaperSource,
+    required this.depthTier,
     required this.sourceContext,
     required this.wallpaperTitle,
     required this.creatorName,
@@ -123,6 +128,7 @@ class _DownloadTap {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+  final WallDepthTier? depthTier;
   final String? sourceContext;
   final String? wallpaperTitle;
   final String? creatorName;
@@ -283,6 +289,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         isPremiumContent: widget.isPremiumContent,
         contentId: widget.contentId,
         wallpaperSource: widget.wallpaperSource,
+        depthTier: widget.depthTier,
         sourceContext: widget.sourceContext,
         wallpaperTitle: widget.wallpaperTitle,
         creatorName: widget.creatorName,
@@ -780,14 +787,14 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
     }
     try {
-      toasts.success(wallpaperSavedMessage);
+      toasts.success(savedWallpaperMessage(depthTier: tap.depthTier));
       onDownloaded?.call();
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
     }
     if (mounted) {
       try {
-        await showIosSetWallpaperGuide(context);
+        await showIosSetWallpaperGuide(context, depthTier: tap.depthTier);
       } catch (e, stackTrace) {
         logger.w('iOS wallpaper guide failed after media was saved', error: e, stackTrace: stackTrace);
       }

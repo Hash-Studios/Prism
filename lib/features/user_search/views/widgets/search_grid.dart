@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -273,6 +274,7 @@ class _SearchGridState extends State<SearchGrid> {
                       memCacheHeight: decodeHeight,
                       heroTag: prismHeroTag(this, index, wallpaper.id),
                       semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                      overlay: depthTagFor(depthTierOf(wallpaper)),
                       onTap: () {
                         PrismHaptics.tap();
                         _openWallpaper(wallpaper, index);
@@ -336,6 +338,7 @@ class _FromPrismRow extends StatelessWidget {
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),
                     semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                    overlay: depthTagFor(depthTierOf(wallpaper)),
                     onTap: () {
                       PrismHaptics.tap();
                       onOpen(wallpaper, index);

@@ -4,6 +4,7 @@ import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db, int, REGION, str, utcDateString} from "../common";
+import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
@@ -34,6 +35,8 @@ export type CandidateStatus = "queued" | "generating" | "rejected" | "failed" | 
 export interface StudioProcessDeps {
   worker: {base: string; secret: string};
   annotate: VisionAnnotate;
+  /** The Depth Effect check for a candidate of a depth series. Throws when the check cannot run. */
+  depth: (candidateId: string, jpeg: Buffer) => Promise<WallDepth>;
   rng: Rng;
   nowMs: () => number;
 }
@@ -323,6 +326,7 @@ function wallRecord(params: {
   wallUrl: string;
   thumbUrl: string;
   rendered: {wall: Buffer; width: number; height: number};
+  depth?: WallDepth;
 }): admin.firestore.DocumentData {
   const {identity, candidate, image, rendered} = params;
   const series = STUDIO_SERIES.find((s) => s.id === candidate.seriesId);
@@ -351,6 +355,7 @@ function wallRecord(params: {
     seriesId: str(candidate.seriesId),
     studioCandidateId: params.candidateId,
     studioRunId: params.runId,
+    ...(params.depth ? {depth: params.depth} : {}),
   };
 }
 
@@ -393,7 +398,9 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     image = await generate(deps, candidateId, candidate);
     if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
     const bytes = await download(image.imageUrl);
-    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures});
+    const wantsDepth = STUDIO_SERIES.find((s) => s.id === candidate.seriesId)?.depth === true;
+    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures,
+      ...(wantsDepth ? {depth: (jpeg: Buffer) => deps.depth(candidateId, jpeg)} : {})});
     if (!gates.passed) {
       const saved = await updateOwnedCandidate(ref, attempts, {
         status: "rejected",
@@ -420,7 +427,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       ref,
       attempts,
       wall: wallRecord({
-        identity: config.identity, candidate, runId, candidateId, image, wallUrl, thumbUrl, rendered,
+        identity: config.identity, candidate, runId, candidateId, image, wallUrl, thumbUrl, rendered, depth: gates.depth,
       }),
       signature: gates.signature,
       candidateUpdate: {gates: {passed: true, reasons: [], details: gates.details}, worker: image},
@@ -476,7 +483,7 @@ export const processStudioCandidate = onDocumentCreated(
     region: REGION,
     timeoutSeconds: 300,
     memory: "1GiB",
-    secrets: [studioSecret],
+    secrets: [studioSecret, falKey],
     retry: true,
     maxInstances: 5,
   },
@@ -484,6 +491,11 @@ export const processStudioCandidate = onDocumentCreated(
     await processCandidate(event.params.runId, event.params.candidateId, {
       worker: {base: workerBaseUrl(), secret: studioSecret.value()},
       annotate: annotateWithVision,
+      depth: async (candidateId, jpeg) => {
+        const depth = await wallDepthFor(candidateId, {jpeg});
+        if (!depth) throw new TransientError("depth: the check could not run.");
+        return depth;
+      },
       rng: Math.random,
       nowMs: Date.now,
     });

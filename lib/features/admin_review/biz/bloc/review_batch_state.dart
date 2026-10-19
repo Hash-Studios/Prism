@@ -33,6 +33,7 @@ class ReviewBatchState extends Equatable {
     int? totalPending,
     int? undoCount,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return ReviewBatchState(
       status: status ?? this.status,
@@ -41,7 +42,7 @@ class ReviewBatchState extends Equatable {
       currentIndex: currentIndex ?? this.currentIndex,
       totalPending: totalPending ?? this.totalPending,
       undoCount: undoCount ?? this.undoCount,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage ? null : errorMessage ?? this.errorMessage,
     );
   }
 

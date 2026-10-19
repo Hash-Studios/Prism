@@ -1,6 +1,7 @@
 import {ImageAnnotatorClient} from "@google-cloud/vision";
 import sharp from "sharp";
 import {str} from "../common";
+import type {WallDepth} from "../wallDepth";
 
 export const STUDIO_MIN_SHORT_EDGE = 1400;
 export const STUDIO_MIN_LONG_EDGE = 3000;
@@ -32,6 +33,8 @@ export interface GateResult {
   details: Record<string, unknown>;
   /** Signature of the image, empty when it does not decode. */
   signature: string;
+  /** The Depth Effect result when the series asked for a depth check and it gave one. */
+  depth?: WallDepth;
 }
 
 export interface KnownSignature {
@@ -50,6 +53,9 @@ export interface VisionResult {
 
 /** Sends a JPEG to Vision. Throws when the call fails, so the candidate tries again. */
 export type VisionAnnotate = (jpeg: Buffer) => Promise<VisionResult>;
+
+/** The Depth Effect check of a JPEG. Throws when the check cannot run, so the candidate tries again. */
+export type DepthCheck = (jpeg: Buffer) => Promise<WallDepth>;
 
 /** Rank of a Vision likelihood that arrives as an enum name or number. Anything else is UNKNOWN (0). */
 export function likelihoodRank(value: unknown): number {
@@ -161,6 +167,13 @@ export function visionCheck(result: VisionResult): {reasons: string[]; details: 
   return {reasons, details: {safeSearch, words: words.slice(0, 20), logos: logos.slice(0, 10)}};
 }
 
+export function depthCheck(depth: WallDepth): {reasons: string[]; details: Record<string, unknown>} {
+  return {
+    reasons: depth.tier === "none" ? ["depth"] : [],
+    details: {tier: depth.tier, kind: depth.kind, top: depth.top},
+  };
+}
+
 let visionClient: ImageAnnotatorClient | undefined;
 
 /** Safe search, text and logo detection in one Vision call. */
@@ -175,12 +188,13 @@ export const annotateWithVision: VisionAnnotate = async (jpeg) => {
 };
 
 /**
- * Size, duplicate and Vision checks of one generated image. Every check runs, so the details hold all values for
- * calibration. An image that does not decode is rejected with "undecodable". Vision and signature lookup errors throw.
+ * Size, duplicate and Vision checks of one generated image, and the Depth Effect check when `depth` is given. Every
+ * check runs, so the details hold all values for calibration. An image that does not decode is rejected with
+ * "undecodable". Vision and signature lookup errors throw.
  */
 export async function runGates(
   bytes: Buffer,
-  deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>},
+  deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>; depth?: DepthCheck},
 ): Promise<GateResult> {
   let width = 0;
   let height = 0;
@@ -203,12 +217,16 @@ export async function runGates(
     .resize({width: STUDIO_VISION_LONG_EDGE, height: STUDIO_VISION_LONG_EDGE, fit: "inside", withoutEnlargement: true})
     .jpeg({quality: 85})
     .toBuffer();
-  const vision = visionCheck(await deps.annotate(visionJpeg));
-  const reasons = [...size.reasons, ...duplicate.reasons, ...vision.reasons];
+  const [annotation, depthResult] = await Promise.all([deps.annotate(visionJpeg), deps.depth?.(visionJpeg)]);
+  const vision = visionCheck(annotation);
+  const depth = depthResult ? depthCheck(depthResult) : undefined;
+  const reasons = [...size.reasons, ...duplicate.reasons, ...vision.reasons, ...(depth?.reasons ?? [])];
   return {
     passed: reasons.length === 0,
     reasons,
-    details: {size: size.details, duplicate: duplicate.details, vision: vision.details},
+    details: {size: size.details, duplicate: duplicate.details, vision: vision.details,
+      ...(depth ? {depth: depth.details} : {})},
     signature,
+    ...(depthResult ? {depth: depthResult} : {}),
   };
 }

@@ -1,4 +1,5 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -35,18 +36,20 @@ int? shortSideOf(SearchFilters filters) {
   return width < height ? width : height;
 }
 
-/// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort] and [color] in the sheet.
+/// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort], [color] and [depthOnly] in the sheet.
 SearchFilters buildSearchFilters({
   required bool portraitOnly,
   required int? shortSide,
   required SearchSort sort,
   PrismPaletteColor? color,
+  bool depthOnly = false,
 }) {
   return SearchFilters(
     portraitOnly: portraitOnly,
     minResolution: minResolutionFor(shortSide: shortSide, portraitOnly: portraitOnly),
     sort: sort,
     color: color,
+    depthOnly: depthOnly,
   );
 }
 
@@ -82,6 +85,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
   late int? _shortSide = shortSideOf(widget.initial);
   late SearchSort _sort = widget.initial.sort;
   late PrismPaletteColor? _color = widget.initial.color;
+  late bool _depthOnly = widget.initial.depthOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +116,24 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               value: _portraitOnly,
               onChanged: (value) => setState(() => _portraitOnly = value),
             ),
+            if (showDepthEffectUi)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  'Depth Effect',
+                  style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
+                ),
+                subtitle: Text(
+                  'Subject can sit in front of the clock',
+                  style: TextStyle(
+                    color: scheme.secondary.withValues(alpha: 0.7),
+                    fontFamily: PrismFonts.proximaNova,
+                    fontSize: 13,
+                  ),
+                ),
+                value: _depthOnly,
+                onChanged: (value) => setState(() => _depthOnly = value),
+              ),
             const SizedBox(height: 8),
             Text('Min resolution', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
@@ -176,7 +198,13 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 const Spacer(),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(
-                    buildSearchFilters(portraitOnly: _portraitOnly, shortSide: _shortSide, sort: _sort, color: _color),
+                    buildSearchFilters(
+                      portraitOnly: _portraitOnly,
+                      shortSide: _shortSide,
+                      sort: _sort,
+                      color: _color,
+                      depthOnly: _depthOnly,
+                    ),
                   ),
                   child: const Text('Apply'),
                 ),

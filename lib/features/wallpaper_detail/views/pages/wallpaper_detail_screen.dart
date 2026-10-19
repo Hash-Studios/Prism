@@ -20,12 +20,14 @@ import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
@@ -52,6 +54,7 @@ import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
@@ -1097,6 +1100,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
         wallpaperSource: entity.source,
+        depthTier: depthTierOf(entity),
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
@@ -1229,6 +1233,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final tags = wallpaperTags(entity);
     final notes = wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context));
     final bool canBlock = canBlockWallCreator(entity);
+    final WallDepthTier? depthTier = depthTierOf(entity);
     final String? reportWallDocId = BundledWallpapers.isStarter(entity)
         ? null
         : switch (entity) {
@@ -1252,6 +1257,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
+      if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
         padded(
           Align(
