@@ -29,6 +29,9 @@ abstract class PersonalizedFeedRepository {
   /// list, so the home feed can paint before any network call.
   Future<PersonalizedFeedPage?> readCached();
 
+  /// Starts the [readCached] disk read now. The next [readCached] call for the same user takes its result.
+  void warmCache();
+
   /// Hides [item] for good and teaches the feed to show fewer like it.
   Future<void> lessLikeThis(FeedItemEntity item);
 

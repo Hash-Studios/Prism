@@ -60,6 +60,7 @@ import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -285,6 +286,7 @@ Future<void> main() async {
           : 'guest';
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
+      getIt<PersonalizedFeedRepository>().warmCache();
       unawaited(
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),

@@ -227,6 +227,16 @@ class _MemoryFeedCache extends FeedCacheLocalDataSource {
   }
 }
 
+class _CountingFeedCache extends _MemoryFeedCache {
+  final List<String> scopes = <String>[];
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) {
+    scopes.add(scope);
+    return super.read(source: source, scope: scope);
+  }
+}
+
 class _EmptyWallhaven extends Fake implements WallhavenWallpaperRepository {
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -1132,6 +1142,68 @@ void main() {
       expect(page!.items, isNotEmpty);
       expect(page.items.every(BundledWallpapers.isStarter), isTrue);
       expect(page.hasMore, isFalse);
+    });
+
+    test('warmCache reads the disk once and readCached takes that page', () async {
+      app_state.prismUser = _signedInUser();
+      final _CountingFeedCache cache = _CountingFeedCache()..snapshot = snapshot(<FeedItemEntity>[_prismItem('a')]);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      repository.warmCache();
+      repository.warmCache();
+      final PersonalizedFeedPage? warmed = await repository.readCached();
+
+      expect(cache.scopes, <String>['feed-test-user']);
+      expect(_itemIds(warmed!.items), <String>['a']);
+
+      await repository.readCached();
+      expect(cache.scopes, <String>['feed-test-user', 'feed-test-user']);
+    });
+
+    test('a creator blocked after warmCache started is not in the page readCached returns', () async {
+      app_state.prismUser = _signedInUser();
+      final _CountingFeedCache cache = _CountingFeedCache()
+        ..snapshot = snapshot(<FeedItemEntity>[
+          _prismItem('a', email: 'blocked@example.com'),
+          _prismItem('b'),
+        ]);
+      final _EmptyBlocks blocks = _EmptyBlocks();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      repository.warmCache();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      blocks.cached = <String>{'blocked@example.com'};
+      final PersonalizedFeedPage? page = await repository.readCached();
+
+      expect(_itemIds(page!.items), <String>['b']);
+    });
+
+    test('readCached reads fresh when the user changed after warmCache', () async {
+      app_state.prismUser = _signedInUser();
+      final _CountingFeedCache cache = _CountingFeedCache()..snapshot = snapshot(<FeedItemEntity>[_prismItem('a')]);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      repository.warmCache();
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await repository.readCached();
+
+      expect(cache.scopes, <String>['feed-test-user', 'guest']);
     });
 
     test('serves bundled starters when every remote feed source is offline', () async {

@@ -142,11 +142,45 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   Future<void> recordShown(Iterable<String> keys) =>
       _impressions.recordShown(keys, DateTime.now().toUtc(), expectedRevision: _impressions.revision);
 
+  String get _cacheScope {
+    final String userId = app_state.prismUser.id.trim();
+    return userId.isEmpty ? 'guest' : userId.toLowerCase();
+  }
+
+  ({String scope, Future<PersonalizedFeedPage?> page})? _warm;
+
+  @override
+  void warmCache() {
+    final String scope = _cacheScope;
+    if (_warm?.scope == scope) return;
+    _warm = (scope: scope, page: _readCachedPage(scope));
+  }
+
   @override
   Future<PersonalizedFeedPage?> readCached() async {
-    final String userId = app_state.prismUser.id.trim();
+    final String scope = _cacheScope;
+    final warm = _warm;
+    _warm = null;
+    if (warm == null || warm.scope != scope) return _readCachedPage(scope);
+    final PersonalizedFeedPage? page = await warm.page;
+    if (page == null) return null;
+    // The warm read can start before the blocked list loads, so filter again with what is known now.
+    final List<FeedItemEntity> items = BlockedCreatorsFilter.filterFeedItems(
+      page.items,
+      _userBlockRepository.cachedBlockedCreatorEmails,
+    );
+    if (items.length == page.items.length) return page;
+    return PersonalizedFeedPage(
+      items: items,
+      hasMore: page.hasMore,
+      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      isStale: page.isStale,
+    );
+  }
+
+  Future<PersonalizedFeedPage?> _readCachedPage(String scope) async {
     final _CachedFeed? cached = await _readCached(
-      scope: userId.isEmpty ? 'guest' : userId.toLowerCase(),
+      scope: scope,
       blocked: () async => _userBlockRepository.cachedBlockedCreatorEmails,
     );
     if (cached == null || cached.items.isEmpty) {
