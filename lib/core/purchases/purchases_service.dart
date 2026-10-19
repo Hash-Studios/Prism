@@ -18,6 +18,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+enum _SubscriptionPersistResult { confirmed, mismatch, failed, stale }
+
 /// Singleton service that owns all RevenueCat SDK interactions.
 /// Use [checkAndPersistPremium] to sync premium status; use [prismUser.premium] as the single source of truth.
 class PurchasesService {
@@ -25,6 +27,8 @@ class PurchasesService {
     : _addCustomerInfoListener = Purchases.addCustomerInfoUpdateListener,
       _syncSubscriptionOverride = null,
       _syncRetryBackoff = const Duration(seconds: 2),
+      _confirmRetryDelay = const Duration(seconds: 6),
+      _paidConfirmRetryDelay = const Duration(seconds: 31),
       _configurePurchases = Purchases.configure,
       _logIn = Purchases.logIn,
       _getCustomerInfo = Purchases.getCustomerInfo,
@@ -35,6 +39,8 @@ class PurchasesService {
     required void Function(CustomerInfoUpdateListener listener) addCustomerInfoListener,
     Future<Map<String, dynamic>> Function()? syncSubscription,
     Duration syncRetryBackoff = Duration.zero,
+    Duration confirmRetryDelay = Duration.zero,
+    Duration paidConfirmRetryDelay = const Duration(seconds: 31),
     Future<void> Function(PurchasesConfiguration configuration)? configurePurchases,
     Future<void> Function(String userId)? logIn,
     Future<CustomerInfo> Function()? getCustomerInfo,
@@ -42,6 +48,8 @@ class PurchasesService {
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
+       _confirmRetryDelay = confirmRetryDelay,
+       _paidConfirmRetryDelay = paidConfirmRetryDelay,
        _configurePurchases = configurePurchases ?? Purchases.configure,
        _logIn = logIn ?? Purchases.logIn,
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
@@ -52,6 +60,12 @@ class PurchasesService {
   final void Function(CustomerInfoUpdateListener listener) _addCustomerInfoListener;
   final Future<Map<String, dynamic>> Function()? _syncSubscriptionOverride;
   final Duration _syncRetryBackoff;
+
+  /// After a purchase or restore, the server may still answer with the old tier. A stored-Free user can retry after
+  /// the server's 5-second floor; a stored-paid user must wait beyond its 30-second cooldown.
+  final Duration _confirmRetryDelay;
+  final Duration _paidConfirmRetryDelay;
+  static const int _confirmAttempts = 3;
   final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
   final Future<dynamic> Function(String userId) _logIn;
   final Future<CustomerInfo> Function() _getCustomerInfo;
@@ -104,7 +118,7 @@ class PurchasesService {
 
   Future<T> _serializeSetup<T>(Future<T> Function() action) {
     final Future<T> result = _setupQueue.then((_) => action());
-    _setupQueue = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _setupQueue = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
 
@@ -126,7 +140,12 @@ class PurchasesService {
               eventUserId != app_state.prismUser.id.trim()) {
             return;
           }
-          await _applyCustomerInfo(info);
+          await _applyCustomerInfo(
+            info,
+            userId: eventUserId,
+            identityRevision: eventIdentityRevision,
+            loggedIn: app_state.prismUser.loggedIn,
+          );
         }).catchError((Object error, StackTrace stackTrace) {
           logger.w('Unable to apply a customer info update.', error: error, stackTrace: stackTrace);
         }),
@@ -165,6 +184,7 @@ class PurchasesService {
           _identityRevision++;
         } on PlatformException catch (e) {
           logger.w('RevenueCat login sync failed: $e');
+          rethrow;
         } finally {
           _identityTransitionInProgress = false;
         }
@@ -230,29 +250,48 @@ class PurchasesService {
     return !age.isNegative && age < _subscriptionResyncAfter;
   }
 
-  Future<void> _persistSubscriptionStateToFirestore({
+  bool _matchesSubscriptionRequest(String userId, int identityRevision, bool loggedIn, SubscriptionTier tier) =>
+      _matchesSubscriptionIdentity(userId, identityRevision, loggedIn) &&
+      app_state.prismUser.subscriptionTier == tier.name;
+
+  bool _matchesSubscriptionIdentity(String userId, int identityRevision, bool loggedIn) =>
+      userId == app_state.prismUser.id.trim() &&
+      loggedIn == app_state.prismUser.loggedIn &&
+      identityRevision == _identityRevision &&
+      (loggedIn ? userId == _configuredUserId : _configuredUserId.isEmpty);
+
+  Future<_SubscriptionPersistResult> _persistSubscriptionStateToFirestore({
     required bool isPremium,
     required SubscriptionTier tier,
+    required String userId,
+    required int identityRevision,
+    required bool loggedIn,
     bool force = false,
   }) async {
-    final String userId = app_state.prismUser.id.trim();
-    if (userId.isEmpty || !app_state.prismUser.loggedIn) {
-      return;
+    if (userId.isEmpty || !loggedIn) {
+      return force ? _SubscriptionPersistResult.mismatch : _SubscriptionPersistResult.confirmed;
     }
     final DateTime now = DateTime.now();
-    if (!force && _syncedRecently(userId, tier, now)) return;
+    if (!force && _syncedRecently(userId, tier, now)) return _SubscriptionPersistResult.confirmed;
     if (!force &&
         _lastPersistedUserId == userId &&
         _lastPersistedPremium == isPremium &&
         _lastPersistedTier == tier.name &&
         _lastPersistSubscriptionTime != null &&
         now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
-      return;
+      return _SubscriptionPersistResult.confirmed;
     }
-    for (int attempt = 0; attempt < 2; attempt++) {
-      if (userId != app_state.prismUser.id.trim() || !app_state.prismUser.loggedIn) return;
+    int failures = 0;
+    int mismatches = 0;
+    while (true) {
+      if (!_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
+        return _SubscriptionPersistResult.stale;
+      }
       try {
         final Map<String, dynamic> confirmed = await _callSyncSubscription();
+        if (!_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
+          return _SubscriptionPersistResult.stale;
+        }
         final Object? confirmedPremium = confirmed['premium'];
         final Object? confirmedTier = confirmed['subscriptionTier'];
         if (confirmedPremium is! bool || confirmedTier is! String) {
@@ -267,20 +306,20 @@ class PurchasesService {
         } catch (error, stackTrace) {
           logger.w('Unable to remember the synced subscription.', error: error, stackTrace: stackTrace);
         }
-        return;
+        final bool held = confirmedPremium == isPremium && confirmedTier == tier.name;
+        if (held) return _SubscriptionPersistResult.confirmed;
+        if (!force || !tier.isPaid || ++mismatches >= _confirmAttempts) return _SubscriptionPersistResult.mismatch;
+        await Future<void>.delayed(confirmedPremium ? _paidConfirmRetryDelay : _confirmRetryDelay);
       } catch (error, stackTrace) {
-        if (attempt == 0) {
+        if (!_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
+          return _SubscriptionPersistResult.stale;
+        }
+        if (++failures < 2) {
           await Future<void>.delayed(_syncRetryBackoff);
           continue;
         }
         logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
-        analytics.track(
-          SubscriptionEntitlementRefreshEvent(
-            result: SubscriptionEntitlementRefreshResultValue.failure,
-            errorCode: 'sync_subscription',
-            errorMessage: '$error',
-          ),
-        );
+        return _SubscriptionPersistResult.failed;
       }
     }
   }
@@ -302,22 +341,31 @@ class PurchasesService {
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  /// [forceSync] waits for the server sync request even when the tier is unchanged.
+  /// [forceSync] waits for the server sync request even when the tier is unchanged, and returns true only once the
+  /// server confirms the paid tier.
   Future<bool> checkAndPersistPremium({bool forceSync = false}) async {
+    final String requestedUserId = app_state.prismUser.id.trim();
     try {
-      final String requestedUserId = app_state.prismUser.id.trim();
       await ensureConfigured(requestedUserId);
       if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) {
-        return app_state.prismUser.premium;
+        return !forceSync && app_state.prismUser.premium;
       }
       final int requestedIdentityRevision = _identityRevision;
+      final bool requestedLoggedIn = app_state.prismUser.loggedIn;
       final info = await _getCustomerInfo();
       if (requestedIdentityRevision != _identityRevision ||
           requestedUserId != _configuredUserId ||
-          requestedUserId != app_state.prismUser.id.trim()) {
-        return app_state.prismUser.premium;
+          requestedUserId != app_state.prismUser.id.trim() ||
+          requestedLoggedIn != app_state.prismUser.loggedIn) {
+        return !forceSync && app_state.prismUser.premium;
       }
-      return await _applyCustomerInfo(info, forceSync: forceSync);
+      return await _applyCustomerInfo(
+        info,
+        forceSync: forceSync,
+        userId: requestedUserId,
+        identityRevision: requestedIdentityRevision,
+        loggedIn: requestedLoggedIn,
+      );
     } on PlatformException catch (e) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -327,7 +375,7 @@ class PurchasesService {
         ),
       );
       logger.d('checkAndPersistPremium failed: $e');
-      return app_state.prismUser.premium;
+      return !forceSync && app_state.prismUser.premium;
     } catch (error, stackTrace) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -337,22 +385,51 @@ class PurchasesService {
         ),
       );
       logger.w('checkAndPersistPremium failed.', error: error, stackTrace: stackTrace);
-      return app_state.prismUser.premium;
+      return !forceSync && app_state.prismUser.premium;
     }
   }
 
-  Future<bool> _applyCustomerInfo(CustomerInfo info, {bool forceSync = false}) async {
+  Future<bool> _applyCustomerInfo(
+    CustomerInfo info, {
+    bool forceSync = false,
+    required String userId,
+    required int identityRevision,
+    required bool loggedIn,
+  }) async {
     final SubscriptionTier tier = tierFromCustomerInfo(info);
     final bool isPremium = tier.isPaid;
+    if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) {
+      return !forceSync && app_state.prismUser.premium;
+    }
 
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
-    await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier, force: forceSync);
+    final _SubscriptionPersistResult syncResult = await _persistSubscriptionStateToFirestore(
+      isPremium: isPremium,
+      tier: tier,
+      userId: userId,
+      identityRevision: identityRevision,
+      loggedIn: loggedIn,
+      force: forceSync,
+    );
+    if (syncResult == _SubscriptionPersistResult.stale ||
+        !_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
+      return !forceSync && app_state.prismUser.premium;
+    }
+    final bool syncFailed =
+        syncResult == _SubscriptionPersistResult.failed ||
+        (forceSync && syncResult != _SubscriptionPersistResult.confirmed);
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
+    if (!_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
+      return !forceSync && app_state.prismUser.premium;
+    }
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
-        result: SubscriptionEntitlementRefreshResultValue.success,
+        result: syncFailed
+            ? SubscriptionEntitlementRefreshResultValue.failure
+            : SubscriptionEntitlementRefreshResultValue.success,
+        errorCode: syncFailed ? 'sync_subscription' : null,
         subscriptionTier: tier.name,
         isPremium: isPremium ? 1 : 0,
         activeEntitlements: info.entitlements.active.keys.join(','),
@@ -361,23 +438,37 @@ class PurchasesService {
     if (kDebugMode) {
       logger.d('Premium status: $isPremium');
     }
-    return isPremium;
+    // A purchase or restore completes only once the server, which gates paid actions, holds the same tier.
+    return forceSync ? isPremium && syncResult == _SubscriptionPersistResult.confirmed : isPremium;
   }
 
   /// Restores store purchases and applies them to this account. Returns whether premium is now active.
   Future<bool> restore() async {
+    final String requestedUserId = app_state.prismUser.id.trim();
     try {
-      await ensureConfigured(app_state.prismUser.id);
+      await ensureConfigured(requestedUserId);
+      if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) return false;
+      final int requestedIdentityRevision = _identityRevision;
+      final bool requestedLoggedIn = app_state.prismUser.loggedIn;
       final CustomerInfo info = await Purchases.restorePurchases();
+      if (!_matchesSubscriptionIdentity(requestedUserId, requestedIdentityRevision, requestedLoggedIn)) {
+        return false;
+      }
       for (final event in restoredPurchaseEvents(info.entitlements.active.values.map((e) => e.productIdentifier))) {
         analytics.track(event);
       }
+      return await _applyCustomerInfo(
+        info,
+        forceSync: true,
+        userId: requestedUserId,
+        identityRevision: requestedIdentityRevision,
+        loggedIn: requestedLoggedIn,
+      );
     } catch (error, stackTrace) {
       // The caller tells the user; "no purchases found" would be wrong when the store call itself failed.
       logger.w('restorePurchases failed.', error: error, stackTrace: stackTrace);
       rethrow;
     }
-    return checkAndPersistPremium(forceSync: true);
   }
 
   Future<Offerings?> getOfferings() async {
