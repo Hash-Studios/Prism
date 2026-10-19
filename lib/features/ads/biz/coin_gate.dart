@@ -313,7 +313,7 @@ class CoinGate {
         return CoinGateResult.cancelled;
       }
       if (spec.toastWhenInsufficient) {
-        _port.showError('Need ${(cost - _port.balance).clamp(1, cost)} more coins.');
+        _port.showError(_l10n.economyNeedMoreCoins((cost - _port.balance).clamp(1, cost)));
       }
       if (nudgeSpendSelected && !spec.repromptOnNudgeSpendInsufficient) {
         return result;

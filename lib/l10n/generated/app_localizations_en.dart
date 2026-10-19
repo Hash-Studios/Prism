@@ -3687,11 +3687,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get economyAiHistoryFailed => 'Couldn\'t load history. Pull to refresh.';
 
   @override
+  String get economyAiMatchingScreenSize => 'Matching your screen size…';
+
+  @override
+  String get economyAiApplyingStyle => 'Applying your style…';
+
+  @override
+  String get economyAiFinalizingWallpaper => 'Finalizing your wallpaper…';
+
+  @override
+  String get economyAiRemixHint => 'Darker sky, warmer palette, softer edges…';
+
+  @override
   String economyAiNeedCoinsToGenerate(int cost) {
     final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String costString = costNumberFormat.format(cost);
 
     return 'Need $costString coins to generate.';
+  }
+
+  @override
+  String economyNeedMoreCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Need $countString more coins.',
+      one: 'Need $countString more coin.',
+    );
+    return '$_temp0';
   }
 
   @override
