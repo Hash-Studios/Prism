@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isValidRequestId} from "./coinsCallables";
-import {coinTransactionDoc, db, int, REGION, str} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS, str} from "./common";
 import {loadEconomy} from "./economy";
 import {mergeBoosted} from "./trending";
 
@@ -23,7 +23,7 @@ interface BoostResponse {
 
 /** Pays coins to put an approved wall at the front of Trending for 24 hours. */
 export const boostWall = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<{wallId?: unknown; requestId?: unknown}>): Promise<BoostResponse> => {
     const uid = str(request.auth?.uid);
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in to boost a wallpaper.");

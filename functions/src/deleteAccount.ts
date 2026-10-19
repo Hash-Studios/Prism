@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION, str} from "./common";
+import {db, CALLABLE_REGIONS, str} from "./common";
 import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 
 const USERS = "usersv2";
@@ -74,7 +74,7 @@ async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: 
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
  * anonymized or the auth user is removed. A retry therefore finishes what an earlier call left.
  */
-export const deleteAccount = onCall({region: REGION, cors: true, timeoutSeconds: 300}, async (request: CallableRequest<unknown>) => {
+export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300}, async (request: CallableRequest<unknown>) => {
   const callerUid = request.auth?.uid;
   if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
 

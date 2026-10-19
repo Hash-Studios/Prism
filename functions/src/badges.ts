@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, REGION} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {grantXp, loadEconomy, xpReceipt} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
@@ -127,7 +127,7 @@ function ownedIds(badges: unknown): Set<string> {
 }
 
 export const checkBadges = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to earn badges.");

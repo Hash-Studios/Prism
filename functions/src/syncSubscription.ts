@@ -3,7 +3,7 @@ import {defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {db, REGION} from "./common";
+import {db, REGION, CALLABLE_REGIONS} from "./common";
 
 const USERS = "usersv2";
 const SYNC_STATE = "subscriptionSync";
@@ -127,7 +127,7 @@ async function applySubscription(
 }
 
 export const syncSubscription = onCall(
-  {region: REGION, cors: true, maxInstances: 10, secrets: [revenueCatSecret]},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10, secrets: [revenueCatSecret]},
   async (request: CallableRequest<unknown>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to sync your subscription.");

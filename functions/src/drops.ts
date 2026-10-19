@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {coinTransactionDoc, db, int, REGION, str} from "./common";
+import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
 import {sendNotification} from "./notificationHelper";
@@ -138,7 +138,7 @@ const priceOr = (value: unknown, fallback: number): number => {
 };
 
 export const unlockDrop = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<{weekKey?: unknown; wallId?: unknown; requestId?: unknown}>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");

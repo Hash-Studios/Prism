@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, readDailyCount, REGION, str, utcDateString} from "./common";
+import {coinTransactionDoc, db, int, readDailyCount, CALLABLE_REGIONS, str, utcDateString} from "./common";
 import {
   DEFAULT_ECONOMY, type EconomyConfig, grantXp, isPrice, loadEconomy, proPrice, type WheelSegment, weightedPick,
   xpReceipt, type XpReceipt,
@@ -62,7 +62,7 @@ const REFERRAL_NEW_ACCOUNT_MS = 14 * 86_400_000;
 // Mirrors defaultProfilePhotoUrl in lib/core/constants/app_constants.dart.
 const DEFAULT_PROFILE_PHOTO =
   "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4";
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 const AD_RATE_MIN_GAP_MS = 20_000;
 
 function requiredText(value: unknown, field: string): string {

@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {duplicateSpendResponse, isValidRequestId} from "./coinsCallables";
-import {coinTransactionDoc, db, REGION, str} from "./common";
+import {coinTransactionDoc, db, REGION, CALLABLE_REGIONS, str} from "./common";
 import {loadEconomy, weekBounds, weekKey, weightedPick} from "./economy";
 import {type PersonalPayload, type PushRecipient, sendToUser} from "./notificationHelper";
 
@@ -63,7 +63,7 @@ export function pickWinner(tickets: Array<{uid: string; count: number}>, random:
 const num = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : 0;
 
 export const buyDrawTicket = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<{requestId?: unknown}>) => {
     const callerUid = request.auth?.uid?.trim() ?? "";
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to buy a draw ticket.");

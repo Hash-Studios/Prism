@@ -2,7 +2,7 @@ import {isDeepStrictEqual} from "node:util";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, REGION} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {
   dayKey, type EconomyConfig, grantXp, isPrice, loadEconomy, randomInt, type WheelSegment, weekKey, weightedPick,
   xpReceipt, type XpReceipt,
@@ -26,7 +26,7 @@ const EVENT_RATE = "questEventRate";
 const DAY_MS = 86_400_000;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const EVENT_ID_HISTORY = 20;
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 
 function callerUid(request: CallableRequest<unknown>): string {
   const uid = request.auth?.uid?.trim() ?? "";

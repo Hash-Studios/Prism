@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
-import {coinTransactionDoc, db, int, REGION, str} from "./common";
+import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpReceipt, type XpReceipt} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
@@ -70,7 +70,7 @@ interface CoinState extends Record<string, unknown> {
 
 export const claimDailyStreak = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (

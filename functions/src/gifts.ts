@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isValidRequestId} from "./coinsCallables";
-import {coinTransactionDoc, db, int, readDailyCount, REGION, str, utcDateString} from "./common";
+import {coinTransactionDoc, db, int, readDailyCount, CALLABLE_REGIONS, str, utcDateString} from "./common";
 import {loadEconomy} from "./economy";
 import {type PersonalPayload, type PushRecipient, sendToUser} from "./notificationHelper";
 
@@ -32,7 +32,7 @@ interface GiftResponse {
 
 /** Pays coins to give another user a 24 hour Premium pass. */
 export const giftPremiumPass = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<{recipientUid?: unknown; requestId?: unknown}>): Promise<GiftResponse> => {
     const uid = str(request.auth?.uid);
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in to gift a pass.");

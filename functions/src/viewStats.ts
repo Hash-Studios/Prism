@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, utcDateString} from "./common";
 import {progressQuestForUser} from "./quests";
 import {dayKey} from "./economy";
 
@@ -127,7 +127,7 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
 
 export const recordWallpaperView = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{wallId?: string}>): Promise<RecordViewResponse> => {
@@ -141,7 +141,7 @@ export const recordWallpaperView = onCall(
 
 export const recordSetupView = onCall(
   {
-    region: REGION,
+    region: CALLABLE_REGIONS,
     cors: true,
   },
   async (request: CallableRequest<{setupId?: string}>): Promise<RecordViewResponse> => {

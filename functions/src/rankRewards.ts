@@ -1,5 +1,5 @@
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, int, REGION} from "./common";
+import {db, int, CALLABLE_REGIONS} from "./common";
 import {type EconomyConfig, grantXp, loadEconomy} from "./economy";
 import {SHOP_CATALOG} from "./shopCatalog";
 
@@ -35,7 +35,7 @@ export function rankRewardsFor(
 }
 
 export const reconcileRankRewards = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to receive rank rewards.");
