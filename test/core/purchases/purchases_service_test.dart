@@ -63,6 +63,32 @@ const Map<String, dynamic> _freeCustomerJson = <String, dynamic>{
   'requestDate': '',
 };
 
+const Map<String, dynamic> _proEntitlementJson = <String, dynamic>{
+  'identifier': PurchaseConstants.entitlementV3ProAccess,
+  'isActive': true,
+  'willRenew': true,
+  'latestPurchaseDate': '2026-01-01T00:00:00Z',
+  'originalPurchaseDate': '2026-01-01T00:00:00Z',
+  'productIdentifier': 'prism_pro_yearly',
+  'isSandbox': false,
+  'expirationDate': '2027-01-01T00:00:00Z',
+};
+
+const Map<String, dynamic> _proCustomerJson = <String, dynamic>{
+  'entitlements': <String, dynamic>{
+    'all': <String, dynamic>{PurchaseConstants.entitlementV3ProAccess: _proEntitlementJson},
+    'active': <String, dynamic>{PurchaseConstants.entitlementV3ProAccess: _proEntitlementJson},
+  },
+  'allPurchaseDates': <String, dynamic>{},
+  'activeSubscriptions': <String>['prism_pro_yearly'],
+  'allPurchasedProductIdentifiers': <String>['prism_pro_yearly'],
+  'nonSubscriptionTransactions': <Map<String, dynamic>>[],
+  'firstSeen': '',
+  'originalAppUserId': 'u1',
+  'allExpirationDates': <String, dynamic>{},
+  'requestDate': '',
+};
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late List<CustomerInfoUpdateListener> listeners;
@@ -737,6 +763,33 @@ void main() {
       expect(customerInfoReads, 0);
       expect(syncCalls, 1);
       expect(app_state.prismUser.subscriptionTier, 'free');
+    });
+
+    test('a paid notification from the restore itself does not reject the restore', () async {
+      final Completer<Object?> restoreResult = Completer<Object?>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async {
+          if (call.method == 'setLogLevel') return null;
+          if (call.method == 'restorePurchases') return restoreResult.future;
+          throw StateError('Unexpected RevenueCat call: ${call.method}');
+        },
+      );
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _proCustomer,
+        apiKey: () => 'test-key',
+      );
+
+      final Future<bool> pending = service.restore();
+      await pumpEventQueue();
+      for (final CustomerInfoUpdateListener listener in listeners) {
+        listener(_proCustomer);
+      }
+      await pumpEventQueue();
+      restoreResult.complete(_proCustomerJson);
+
+      expect(await pending, isTrue);
+      expect(app_state.prismUser.premium, isTrue);
     });
   });
 
