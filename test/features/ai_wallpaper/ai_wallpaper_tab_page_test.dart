@@ -217,6 +217,7 @@ void main() {
     appKey.currentState!.setLocale(const Locale('en', 'GB'));
     await tester.pumpAndSettle();
     expect(promptText(), manualPrompt);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('failed save resolution clears the saving lock so the user can retry', (tester) async {
