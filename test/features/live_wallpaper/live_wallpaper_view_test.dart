@@ -183,6 +183,8 @@ void main() {
       final Finder swatches = find.bySemanticsLabel(RegExp(r'^Gradient colour \d of 4$'));
       expect(swatches, findsNWidgets(4));
 
+      await tester.ensureVisible(find.bySemanticsLabel('Gradient colour 3 of 4'));
+      await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('Gradient colour 3 of 4'));
       await tester.pump();
       await applyGradient(tester);

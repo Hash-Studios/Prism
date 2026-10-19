@@ -39,6 +39,7 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
+      maxContentWidth: double.infinity,
       title: 'Past picks',
       body: BlocBuilder<WotdArchiveBloc, WotdArchiveState>(
         builder: (context, state) {

@@ -144,7 +144,7 @@ class HomePreviewLayer extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double scale = _layerScale(context, constraints);
-        final double iconWidth = constraints.maxWidth * 0.14;
+        final double iconWidth = math.min(constraints.maxWidth * 0.14, 68.0);
         return Stack(
           children: <Widget>[
             _topThird(

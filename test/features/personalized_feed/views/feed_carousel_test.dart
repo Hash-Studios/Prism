@@ -68,11 +68,13 @@ void main() {
   Future<void> pumpCarousel(
     WidgetTester tester,
     List<PrismFeedItem> walls, {
+    Size size = screen,
+    bool reduceMotion = true,
     List<PrismWallpaper> boosted = const <PrismWallpaper>[],
     WallOfTheDayEntity? wotdEntity,
     StackRouter? router,
   }) async {
-    tester.view.physicalSize = screen;
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final wotd = _MockWotdBloc();
@@ -84,8 +86,10 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        builder: (context, child) =>
-            MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+          child: child!,
+        ),
         home: Scaffold(
           body: BlocProvider<WotdBloc>.value(
             value: wotd,
@@ -145,6 +149,12 @@ void main() {
 
   String shownWallId(WidgetTester tester) =>
       tester.widget<WallpaperImpression>(find.byType(WallpaperImpression)).itemId;
+
+  List<String> shownWallIds(WidgetTester tester) => find
+      .byType(WallpaperImpression)
+      .evaluate()
+      .map((element) => (element.widget as WallpaperImpression).itemId)
+      .toList();
 
   testWidgets('the Wall of the Day leads, then the boosted walls with a Boosted tag and no caption, then the banner', (
     tester,
@@ -263,6 +273,66 @@ void main() {
     expect(dots.center.dx, closeTo(carousel.center.dx, 0.01));
     expect(carousel.bottom - dots.bottom, greaterThan(0));
     expect(carousel.bottom - dots.bottom, lessThan(16));
+  });
+
+  testWidgets('a tablet shows two unpadded half-width cards and keeps the selected page after resizing', (
+    tester,
+  ) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
+    await swipeToNextPage(tester);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+    expect(shownWallId(tester), 'a');
+
+    tester.view.physicalSize = const Size(960, 744);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final CarouselSlider slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
+    expect(slider.options.viewportFraction, 0.5);
+    expect(slider.options.padEnds, isFalse);
+    expect(slider.options.enableInfiniteScroll, isTrue);
+    expect(slider.itemCount, 3);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+    expect(tester.getRect(find.byType(FeedHeroCard).first).width, 472);
+    expect(shownWallIds(tester), <String>['a', 'b']);
+  });
+
+  testWidgets('autoplay is gated by page count and motion, and tablet dots track the leading card', (tester) async {
+    const Size tablet = Size(1032, 744);
+    await pumpCarousel(tester, const <PrismFeedItem>[], size: tablet, reduceMotion: false);
+    CarouselSlider slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
+    expect(slider.itemCount, 1);
+    expect(slider.options.enableInfiniteScroll, isFalse);
+    expect(slider.options.autoPlay, isFalse);
+    expect(find.byType(FeedCarouselDots), findsNothing);
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(find.byType(FeedCarouselDots), findsNothing);
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], size: tablet);
+    slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
+    expect(slider.itemCount, 2);
+    expect(slider.options.enableInfiniteScroll, isTrue);
+    expect(slider.options.autoPlay, isFalse);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], size: tablet, reduceMotion: false);
+    slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
+    expect(slider.options.autoPlay, isTrue);
+    expect(tester.getRect(find.byType(FeedCarouselDots)).center.dx, 258);
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+    expect(shownWallId(tester), 'a');
+    expect(tester.getRect(find.byType(WallpaperImpression)).left, 4);
+    expect(tester.getRect(find.byType(FeedCarouselDots)).center.dx, 258);
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+    expect(tester.getRect(find.byType(FeedHeroCard).first).left, 4);
   });
 
   testWidgets('a single page has no dots', (tester) async {

@@ -12,6 +12,7 @@ class FavouriteWallpaperScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
+      maxContentWidth: double.infinity,
       title: 'Favourites',
       body: app_state.prismUser.loggedIn ? const FavouriteGrid() : const SignInPrompt(feature: 'favourites'),
     );

@@ -32,6 +32,7 @@ class _DropDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
+      maxContentWidth: double.infinity,
       title: 'Drop',
       body: BlocConsumer<DropsBloc, DropsState>(
         listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,

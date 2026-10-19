@@ -11,8 +11,8 @@ const double _maxPixelBudget = 2.9 * 1000 * 1000;
 /// and rounds both edges to a multiple of 8.
 String aiTargetSize({required Size size, required double devicePixelRatio}) {
   final double dpr = devicePixelRatio.clamp(1.0, 3.0);
-  final int rawW = (size.width * dpr).round().clamp(360, 4096);
-  final int rawH = (size.height * dpr).round().clamp(640, 4096);
+  final int rawW = (size.shortestSide * dpr).round().clamp(360, 4096);
+  final int rawH = (size.longestSide * dpr).round().clamp(640, 4096);
 
   final bool portrait = rawH >= rawW;
   final int longRaw = portrait ? rawH : rawW;

@@ -12,6 +12,7 @@ export 'package:Prism/core/widgets/prism/prism_button.dart';
 export 'package:Prism/core/widgets/prism/prism_card.dart';
 export 'package:Prism/core/widgets/prism/prism_chip.dart';
 export 'package:Prism/core/widgets/prism/prism_field.dart';
+export 'package:Prism/core/widgets/prism/prism_max_width.dart';
 export 'package:Prism/core/widgets/prism/prism_page.dart';
 export 'package:Prism/core/widgets/prism/prism_row.dart';
 export 'package:Prism/core/widgets/prism/prism_section.dart';
