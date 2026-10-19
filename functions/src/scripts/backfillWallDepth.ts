@@ -26,7 +26,7 @@ export const USAGE = `Usage: node lib/scripts/backfillWallDepth.js [--apply] [--
 
 Sets walls.depth (the iOS Depth Effect tier) on reviewed walls, in document id order.
 A dry run writes nothing, but it still calls Vision and fal for every wall it checks, so it costs money.
-Use --limit=50 for a cheap calibration sample. FAL_KEY must be set in the environment.
+Use --limit=50 for a cheap calibration sample. FAL_API_KEY must be set in the environment.
 --force recomputes walls that have depth.v >= ${DEPTH_VERSION}. Walls with depth.by "admin" are never changed.`;
 
 export function needsDepth(depth: unknown, force: boolean): boolean {
@@ -133,7 +133,7 @@ if (require.main === module) {
     if (!admin.apps.length) {
       admin.initializeApp();
     }
-    const deps: WallDepthDeps = {annotate: annotateForDepth, fetch, key: () => process.env.FAL_KEY ?? ""};
+    const deps: WallDepthDeps = {annotate: annotateForDepth, fetch, key: () => process.env.FAL_API_KEY ?? ""};
     backfillWallDepth(admin.firestore(), parseDepthBackfillArgs(argv), deps).catch((err) => {
       console.error(err);
       process.exitCode = 1;

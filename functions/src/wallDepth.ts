@@ -17,7 +17,7 @@ export interface WallDepth {
   by: "detector" | "admin";
 }
 
-export const falKey = defineSecret("FAL_KEY");
+export const falKey = defineSecret("FAL_API_KEY");
 
 /** iPhone 15 Pro lock screen in points. The wall is an aspect-fill centre crop to this shape. */
 const DEPTH_SCREEN = {width: 393, height: 852};
@@ -141,7 +141,7 @@ export const annotateForDepth: DepthAnnotate = async (image) => {
 
 /** The BiRefNet subject mask of an image URL or data URI, decoded from the data URI that sync mode returns. */
 async function falMask(imageUrl: string, key: string, fetchImpl: DepthFetch): Promise<Buffer> {
-  if (key.trim() === "") throw new Error("FAL_KEY is empty");
+  if (key.trim() === "") throw new Error("FAL_API_KEY is empty");
   const response = await fetchImpl(FAL_BIREFNET_URL, {
     method: "POST",
     headers: {"Authorization": `Key ${key}`, "content-type": "application/json"},
