@@ -271,7 +271,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               prev.isFetchingMore != curr.isFetchingMore ||
               prev.hasMore != curr.hasMore ||
               prev.chip != curr.chip ||
-              prev.isRefreshing != curr.isRefreshing,
+              prev.isRefreshing != curr.isRefreshing ||
+              prev.liveDrop != curr.liveDrop,
           builder: (context, state) {
             // The scroll view starts under the status bar, so the floating header slides in right below the strip and
             // never under it.

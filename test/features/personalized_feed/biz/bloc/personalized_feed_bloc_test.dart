@@ -736,5 +736,40 @@ void main() {
 
       expect(bloc.state.liveDrop?.weekKey, '2026-W42');
     });
+
+    test('turning the flag off clears the Drop', () async {
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(dropEntity()));
+      final bloc = build();
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
+
+      EconomyConfig.current = const EconomyConfig(flags: EconomyFlags(dropsEnabled: false));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop, isNull);
+    });
+
+    test('an older fetch that returns last does not replace a newer result', () async {
+      final Completer<Result<DropEntity?>> older = Completer<Result<DropEntity?>>();
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) => older.future);
+      final bloc = build();
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+
+      when(
+        () => dropsRepository.fetchLive(any()),
+      ).thenAnswer((_) async => Result.success<DropEntity?>(dropEntity(weekKey: '2026-W43')));
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      older.complete(Result.success<DropEntity?>(dropEntity()));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W43');
+    });
   });
 }

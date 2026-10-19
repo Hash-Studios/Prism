@@ -57,6 +57,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   final UserBlockRepository _userBlockRepository;
   final DropsRepository _dropsRepository;
   late bool _dropsWereEnabled;
+  int _liveDropRequest = 0;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
   int _loadVersion = 0;
   Future<void> _lessLikeThisInFlight = Future<void>.value();
@@ -76,18 +77,22 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
   void _onEconomyConfigChanged() {
     final bool enabled = EconomyConfig.notifier.value.flags.dropsEnabled;
-    final bool turnedOn = enabled && !_dropsWereEnabled;
+    final bool changed = enabled != _dropsWereEnabled;
     _dropsWereEnabled = enabled;
-    if (turnedOn && !isClosed) add(const PersonalizedFeedEvent.liveDropRequested());
+    if (changed && !isClosed) add(const PersonalizedFeedEvent.liveDropRequested());
   }
 
   /// Runs beside the feed load, so the carousel paints first and gains the Drop page when it arrives. A failed
   /// fetch keeps the Drop already on screen.
   Future<void> _onLiveDropRequested(_LiveDropRequested event, Emitter<PersonalizedFeedState> emit) async {
-    if (!EconomyConfig.notifier.value.flags.dropsEnabled) return;
+    final int request = ++_liveDropRequest;
+    if (!EconomyConfig.notifier.value.flags.dropsEnabled) {
+      if (state.liveDrop != null) emit(state.copyWith(liveDrop: null));
+      return;
+    }
     try {
       final result = await _dropsRepository.fetchLive(DateTime.now());
-      if (emit.isDone || result.isFailure) return;
+      if (emit.isDone || request != _liveDropRequest || result.isFailure) return;
       if (result.data != state.liveDrop) emit(state.copyWith(liveDrop: result.data));
     } catch (e) {
       logger.w('[PersonalizedFeed] live drop unavailable: $e');
