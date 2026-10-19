@@ -46,4 +46,11 @@ void main() {
 
     expect(result.data!.obsoleteAppVersion, defaultObsoleteAppVersion);
   });
+
+  test('an empty or blank remote value uses the cached version', () {
+    expect(resolveObsoleteVersion('', '99.0.0'), '99.0.0');
+    expect(resolveObsoleteVersion('  ', '99.0.0'), '99.0.0');
+    expect(resolveObsoleteVersion(' ', ''), defaultObsoleteAppVersion);
+    expect(resolveObsoleteVersion(' 5.0.0 ', '99.0.0'), '5.0.0');
+  });
 }

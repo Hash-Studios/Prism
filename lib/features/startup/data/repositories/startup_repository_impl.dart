@@ -75,6 +75,13 @@ Future<void> prepareRemoteConfig(
   }
 }
 
+/// The activated remote value when it has text, else the cached version, else the hardcoded minimum.
+String resolveObsoleteVersion(String? remote, String cached) {
+  final String trimmedRemote = remote?.trim() ?? '';
+  if (trimmedRemote.isNotEmpty) return trimmedRemote;
+  return cached.isEmpty ? defaultObsoleteAppVersion : cached;
+}
+
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
   // FirebaseRemoteConfig is intentionally NOT injected via the constructor.
@@ -145,9 +152,7 @@ class StartupRepositoryImpl implements StartupRepository {
           : null;
       final String cachedObsolete =
           settings?.get<String>(PersistenceKeys.obsoleteAppVersion, defaultValue: '').trim() ?? '';
-      final obsoleteVersion =
-          remoteConfig?.getString('obsoleteVersion') ??
-          (cachedObsolete.isEmpty ? defaultObsoleteAppVersion : cachedObsolete);
+      final obsoleteVersion = resolveObsoleteVersion(remoteConfig?.getString('obsoleteVersion'), cachedObsolete);
       final verifiedUsers = _parseStringList(
         remoteConfig?.getString('verifiedUsers') ?? defaultVerifiedUsers.toString(),
       );
