@@ -3,13 +3,11 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
-import 'package:Prism/features/trending/domain/entities/trending_range.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The Trending tab of the home feed as slivers: the `This week | All time` switch, then the wallpapers in the home
-/// grid.
+/// The Trending tab of the home feed as slivers: the wallpapers trending this week in the home grid.
 class TrendingChipSliver extends StatelessWidget {
   const TrendingChipSliver({
     super.key,
@@ -22,42 +20,17 @@ class TrendingChipSliver extends StatelessWidget {
   final int crossAxisCount;
   final int tileMemCacheHeight;
 
-  static String _label(TrendingRange range) => switch (range) {
-    TrendingRange.week => 'This week',
-    TrendingRange.allTime => 'All time',
-  };
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TrendingBloc, TrendingState>(
-      bloc: bloc,
-      builder: (context, state) {
-        return SliverMainAxisGroup(
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.sm),
-                child: PrismSegmented<TrendingRange>(
-                  values: TrendingRange.values,
-                  selected: state.range,
-                  labelOf: _label,
-                  onChanged: (range) => bloc.add(TrendingEvent.rangeSelected(range)),
-                ),
-              ),
-            ),
-            _walls(context, state.current),
-          ],
-        );
-      },
-    );
+    return BlocBuilder<TrendingBloc, TrendingState>(bloc: bloc, builder: _walls);
   }
 
-  Widget _walls(BuildContext context, TrendingSection section) {
-    if (section.walls.isEmpty) {
-      if (section.status == LoadStatus.initial || section.status == LoadStatus.loading) {
+  Widget _walls(BuildContext context, TrendingState state) {
+    if (state.walls.isEmpty) {
+      if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
         return const SliverToBoxAdapter(child: LoadingCards(useFeedLayout: true));
       }
-      final bool failed = section.status == LoadStatus.failure;
+      final bool failed = state.status == LoadStatus.failure;
       return SliverToBoxAdapter(
         child: GlintState(
           kind: failed ? GlintStateKind.error : GlintStateKind.empty,
@@ -73,7 +46,7 @@ class TrendingChipSliver extends StatelessWidget {
       sliver: SliverGrid(
         gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
         delegate: SliverChildBuilderDelegate((context, index) {
-          final wall = section.walls[index];
+          final wall = state.walls[index];
           return KeyedSubtree(
             key: ValueKey<String>(wall.id),
             child: WallpaperTile(
@@ -86,7 +59,7 @@ class TrendingChipSliver extends StatelessWidget {
               overlay: boostedTagFor(wall),
             ),
           );
-        }, childCount: section.walls.length),
+        }, childCount: state.walls.length),
       ),
     );
   }

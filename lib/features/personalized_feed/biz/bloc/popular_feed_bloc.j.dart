@@ -5,7 +5,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:injectable/injectable.dart';
 
-/// The most viewed wallpapers, for the Popular chip on the home feed.
+/// The top wallpapers of all time, for the Popular chip on the home feed.
 @injectable
 class PopularFeedBloc extends PagedFeedBloc {
   PopularFeedBloc(this._repository)

@@ -1,6 +1,6 @@
 # Popular and trending
 
-The backend counts what users do with a wallpaper. Two scheduled lists, `trending` and `popular`, rank wallpapers from those counts. This page covers the backend. The app reads the two lists. See [trending.md](trending.md). The app does not read the counters.
+The backend counts what users do with a wallpaper. Two scheduled lists, `trending` and `popular`, rank wallpapers from those counts. This page covers the backend. The app reads the two lists in the Trending and Popular tabs. See [trending.md](trending.md) and [home-feed.md](home-feed.md). The app does not read the counters.
 
 ## Where to find it
 

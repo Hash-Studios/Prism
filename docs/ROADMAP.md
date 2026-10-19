@@ -111,7 +111,7 @@ These are important but not blocking the 3.0.0 release.
 | G4 | [ ] **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
 | G5 | [ ] **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |
 | G6 | [x] **Re-engagement push sequence** | Day 3/7/14/30/60 lapsed user notifications, then stop | Medium | Month 1 |
-| G7 | [x] **Trending feed** | Trending this week (7-day score, newer days count more) and all time. Social proof + FOMO. | Medium | Month 2 |
+| G7 | [x] **Trending feed** | Trending tab = this week (7-day score, newer days count more); Popular tab = all time. Social proof + FOMO. | Medium | Month 2 |
 
 ### H. Setup Features (Removed)
 
