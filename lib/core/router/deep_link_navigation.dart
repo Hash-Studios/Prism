@@ -11,7 +11,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 /// Keeps the inviter of a referral link and claims the reward when the user is signed in.
