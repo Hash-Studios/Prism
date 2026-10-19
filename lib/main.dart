@@ -284,10 +284,12 @@ Future<void> main() async {
           : 'guest';
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
-      await Future.wait(<Future<void>>[
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
-        applyAllowedOrientations(),
-      ]);
+      unawaited(
+        Future.wait(<Future<void>>[
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+          applyAllowedOrientations(),
+        ]),
+      );
       final bool lightChrome =
           themeMode == 'Light' ||
           (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
