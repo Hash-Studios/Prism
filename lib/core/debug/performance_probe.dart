@@ -131,8 +131,8 @@ class PerformanceProbe {
       try {
         final File file = await _resolveFile();
         await file.writeAsString('${jsonEncode(payload)}\n', mode: FileMode.append, flush: true);
-        if (file.lengthSync() > 2 * 1024 * 1024) {
-          final List<String> lines = file.readAsLinesSync();
+        if (await file.length() > 2 * 1024 * 1024) {
+          final List<String> lines = await file.readAsLines();
           await file.writeAsString('${lines.skip(lines.length ~/ 2).join('\n')}\n');
         }
       } catch (_) {
