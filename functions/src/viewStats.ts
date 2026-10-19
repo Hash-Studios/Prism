@@ -115,13 +115,15 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
     expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS),
   };
   if (!(await claimRateDoc(rateRef, rateSnap, claim))) return views;
-  await bumpViews(statsRef, rawViews);
-  if (collection === WALLPAPER_STATS) {
-    await bumpDaily(docId, "views", now).catch((err: unknown) => {
-      logger.warn("Could not record the daily view.", {err});
-    });
-    await progressQuestForUser(uid, "view_wallpaper", `${uid}_${docId}_${dayKey(now)}`, now);
-  }
+  await Promise.all([
+    bumpViews(statsRef, rawViews),
+    ...(collection === WALLPAPER_STATS ? [
+      bumpDaily(docId, "views", now).catch((err: unknown) => {
+        logger.warn("Could not record the daily view.", {err});
+      }),
+      progressQuestForUser(uid, "view_wallpaper", `${uid}_${docId}_${dayKey(now)}`, now),
+    ] : []),
+  ]);
   return views + 1;
 }
 
