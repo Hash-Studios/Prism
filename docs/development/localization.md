@@ -2,6 +2,12 @@
 
 Prism uses Flutter `gen-l10n`. `lib/l10n/app_en.arb` is the English template. The app follows the device locale and falls back to English when the device language is unsupported. Keep `en` in `preferred-supported-locales` in `l10n.yaml` when adding catalogs.
 
+## Shared English foundation
+
+The shared English localization foundation is already integrated in baseline `bdd3e48c3543c81c007ac13d0ee896f9128c048a`. It contains 2,401 message keys in `app_en.arb`; extend this catalog when app copy changes, rather than extracting the existing copy again. Keep ARB message keys stable and preserve each typed placeholder's name, type, and format across translations. Translate full messages and retain valid ICU plural/select structure.
+
+Flutter `gen-l10n` discovers `app_<locale>.arb` catalogs and generates `supportedLocales`; adding a catalog registers that locale without a separate Dart locale list. English remains the fallback through `preferred-supported-locales: [en]`. Each supported language still needs its native Android and iOS resources, including strings used by notifications and other background or platform UI, because Dart localization may not be available there. See the platform and notification steps below before shipping a locale.
+
 1. Copy `lib/l10n/app_en.arb` to `lib/l10n/app_<locale>.arb` and set `@@locale` to the new locale.
 2. Translate complete messages. Preserve message keys, placeholder names, and ICU plural and select syntax. Add the plural cases required by the target language.
 3. Run `fvm flutter gen-l10n`. Flutter derives `supportedLocales` from the ARB catalogs; no manual locale list is needed. Commit the catalog and generated Dart files in `lib/l10n/generated/` together.

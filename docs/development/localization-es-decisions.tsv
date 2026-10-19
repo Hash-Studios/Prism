@@ -1,0 +1,3 @@
+ts	phase	decision	why	evidence	result
+2026-10-19	start	Treat baseline bdd3e48c3543c81c007ac13d0ee896f9128c048a as already containing the shared English foundation	Avoid repeating extraction and preserve the completed 2401-key catalog	Git history identifies bdd3e48c3543c81c007ac13d0ee896f9128c048a as merged foundation; current app_en.arb is the template	Foundation handoff documented
+2026-10-19	scope	Decline three proposed 800-message work assignments and assign smaller 200-message work instead	Keep translation batches reviewable	Task handoff record	Smaller 200-message work assigned
