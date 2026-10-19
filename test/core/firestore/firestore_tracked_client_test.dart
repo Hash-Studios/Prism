@@ -333,6 +333,94 @@ void main() {
     expect(sink.events.single.success, isFalse);
   });
 
+  test('deferred client waits for Firebase readiness before the first read', () async {
+    final Completer<bool> ready = Completer<bool>();
+    var factoryCalls = 0;
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        return firestore;
+      },
+      sink,
+      waitUntilReady: () => ready.future,
+    );
+    final snapshot = _MockSnapshot();
+    when(() => snapshot.exists).thenReturn(true);
+    when(() => snapshot.id).thenReturn('a');
+    when(() => snapshot.data()).thenReturn(<String, dynamic>{'name': 'x'});
+    when(() => doc.get()).thenAnswer((_) async => snapshot);
+
+    final Future<String?> result = deferredClient.getById<String>(
+      'walls',
+      'a',
+      (data, id) => '${data['name']}:$id',
+      sourceTag: 'test.ready',
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(factoryCalls, 0);
+
+    ready.complete(true);
+
+    expect(await result, 'x:a');
+    expect(sink.events.single.success, isTrue);
+  });
+
+  test('deferred client watchQuery subscribes only after Firebase is ready', () async {
+    final Completer<bool> ready = Completer<bool>();
+    var factoryCalls = 0;
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        return firestore;
+      },
+      sink,
+      waitUntilReady: () => ready.future,
+    );
+    final snapshots = StreamController<QuerySnapshot<Map<String, dynamic>>>();
+    final emptySnapshot = _MockQuerySnapshot();
+    final metadata = _MockSnapshotMetadata();
+    when(() => emptySnapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+    when(() => emptySnapshot.metadata).thenReturn(metadata);
+    when(() => metadata.isFromCache).thenReturn(false);
+    when(() => collection.snapshots(includeMetadataChanges: false)).thenAnswer((_) => snapshots.stream);
+
+    final Future<List<String>> first = deferredClient
+        .watchQuery<String>(
+          const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch_ready', isStream: true),
+          (data, id) => id,
+        )
+        .first;
+    await Future<void>.delayed(Duration.zero);
+    expect(factoryCalls, 0);
+
+    ready.complete(true);
+    await Future<void>.delayed(Duration.zero);
+    snapshots.add(emptySnapshot);
+
+    expect(await first, isEmpty);
+    await snapshots.close();
+  });
+
+  test('telemetry durationMs excludes the readiness wait', () async {
+    final Completer<bool> ready = Completer<bool>();
+    final deferredClient = FirestoreTrackedClient.deferred(() => firestore, sink, waitUntilReady: () => ready.future);
+    final snapshot = _MockSnapshot();
+    when(() => snapshot.exists).thenReturn(false);
+    when(() => doc.get()).thenAnswer((_) async => snapshot);
+
+    final Future<String?> result = deferredClient.getById<String>(
+      'walls',
+      'a',
+      (data, id) => id,
+      sourceTag: 'test.duration',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    ready.complete(true);
+    await result;
+
+    expect(sink.events.single.durationMs, lessThan(100));
+  });
+
   group('FirestoreOperation', () {
     test('splits into reads and writes', () {
       expect(FirestoreOperation.values.where((op) => op.isRead), <FirestoreOperation>[

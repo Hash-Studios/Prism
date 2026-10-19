@@ -1,7 +1,6 @@
-import {ImageAnnotatorClient} from "@google-cloud/vision";
+import type {ImageAnnotatorClient} from "@google-cloud/vision";
 import {defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
-import sharp from "sharp";
 import {checkedImageUrl} from "./wallColors";
 
 export const DEPTH_VERSION = 1;
@@ -17,7 +16,7 @@ export interface WallDepth {
   by: "detector" | "admin";
 }
 
-export const falKey = defineSecret("FAL_KEY");
+export const falKey = defineSecret("FAL_API_KEY");
 
 /** iPhone 15 Pro lock screen in points. The wall is an aspect-fill centre crop to this shape. */
 const DEPTH_SCREEN = {width: 393, height: 852};
@@ -113,6 +112,7 @@ export function depthFromMaskPixels(pixels: Uint8Array, kind: DepthKind | null):
 
 /** The mask as iOS would place it: aspect-fill centre crop to DEPTH_SCREEN, one grey byte per pixel. */
 export async function maskPixels(mask: Buffer): Promise<Uint8Array> {
+  const sharp = (await import("sharp")).default;
   const {data} = await sharp(mask)
     .resize(DEPTH_SCREEN.width, DEPTH_SCREEN.height, {fit: "cover", position: "centre"})
     .flatten({background: "#000000"})
@@ -130,6 +130,7 @@ export async function scoreDepth(mask: Buffer, kind: DepthKind | null): Promise<
 let visionClient: ImageAnnotatorClient | undefined;
 
 export const annotateForDepth: DepthAnnotate = async (image) => {
+  const {ImageAnnotatorClient} = await import("@google-cloud/vision");
   visionClient ??= new ImageAnnotatorClient();
   const [result] = await visionClient.annotateImage({
     image: "url" in image ? {source: {imageUri: image.url}} : {content: image.jpeg},
@@ -141,7 +142,7 @@ export const annotateForDepth: DepthAnnotate = async (image) => {
 
 /** The BiRefNet subject mask of an image URL or data URI, decoded from the data URI that sync mode returns. */
 async function falMask(imageUrl: string, key: string, fetchImpl: DepthFetch): Promise<Buffer> {
-  if (key.trim() === "") throw new Error("FAL_KEY is empty");
+  if (key.trim() === "") throw new Error("FAL_API_KEY is empty");
   const response = await fetchImpl(FAL_BIREFNET_URL, {
     method: "POST",
     headers: {"Authorization": `Key ${key}`, "content-type": "application/json"},

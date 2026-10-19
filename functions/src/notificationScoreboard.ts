@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION, str, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, str, utcDateString} from "./common";
 
 /** Kinds shared with the app. A personal push to the uid topic and the token counts as two attempts. */
 export const NOTIFICATION_KINDS = [
@@ -182,7 +182,7 @@ async function claimSignal(plan: Extract<SignalPlan, {ok: true}>, day: string): 
 }
 
 /** Records a tap, a next-day return, or a permission result. One credit per id per UTC day. */
-export const recordNotificationSignal = onCall({region: REGION}, async (request) => {
+export const recordNotificationSignal = onCall({region: CALLABLE_REGIONS}, async (request) => {
   const body = request.data && typeof request.data === "object" ? request.data as Record<string, unknown> : {};
   const day = utcDateString();
   const plan = planNotificationSignal(request.auth?.uid, body, day);

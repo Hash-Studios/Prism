@@ -37,7 +37,7 @@ FIREBASE_PROJECT ?= prism-wallpapers
 FIREBASE_ACCOUNT ?=
 FIREBASE_ARGS = --project $(FIREBASE_PROJECT) $(if $(FIREBASE_ACCOUNT),--account $(FIREBASE_ACCOUNT),)
 FUNCTIONS_DOPPLER_CONFIG ?= prd
-FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY STUDIO_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID FAL_KEY
+FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY STUDIO_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID FAL_API_KEY
 FUNCTIONS_ENV_KEYS ?= GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS
 
 # Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
@@ -337,7 +337,8 @@ native-ios-check: get
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test $(TEST_FLAGS); \
+		$(FLUTTER) test $(TEST_FLAGS) && \
+		$(FLUTTER) test $(TEST_FLAGS) --dart-define=dart.vm.product=true --dart-define=PRISM_PERF_AUTODRIVE=true test/core/debug/performance_probe_release_test.dart test/core/platform/cloud_functions_perf_test.dart; \
 	else \
 		echo "No test files found, skipping."; \
 	fi

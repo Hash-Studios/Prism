@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -75,6 +76,13 @@ class FirestoreConsoleTelemetrySink implements FirestoreTelemetrySink {
   @override
   Future<void> emit(FirestoreTelemetryEvent event) async {
     logger.i('[Firestore]', tag: 'Firestore', fields: event.toJson());
+    PerformanceProbe.emit(
+      kind: 'firestore',
+      name: '${event.operation.name}.${event.sourceTag}',
+      durationMs: event.durationMs,
+      success: event.success,
+      extra: event.toJson(),
+    );
   }
 }
 

@@ -289,6 +289,11 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
       yield (items: <T>[if (data != null) map(data, 'economy')], isFromCache: false);
       return;
     }
+    if (collection == 'economyConfig') {
+      final Map<String, dynamic>? data = docs['economyConfig/current'];
+      yield (items: <T>[if (data != null) map(data, 'current')], isFromCache: false);
+      return;
+    }
     yield (items: <T>[], isFromCache: false);
   }
 }

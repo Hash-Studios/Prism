@@ -22,6 +22,19 @@ class _DelayedWriteFirestore extends FakeFirestoreClient {
   final Completer<void> writeStarted = Completer<void>();
   final Completer<void> writeGate = Completer<void>();
   bool _blockedOnce = false;
+  final List<String> readTags = <String>[];
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) {
+    readTags.add(sourceTag);
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 
   Future<void> _waitForWrite() async {
     if (!_blockedOnce) {
@@ -159,6 +172,18 @@ void main() {
     firestore.writeGate.complete();
     await signIn;
     expect(completed, isTrue);
+  });
+
+  test('sign-in reads the user document once for coins, not twice', () async {
+    final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
+    final Future<Object?> signIn = auth.signInWithGoogle();
+    await firestore.writeStarted.future;
+    firestore.writeGate.complete();
+    await signIn;
+    await waitForSignInBootstraps();
+
+    expect(firestore.readTags.where((String tag) => tag.startsWith('coins.')), contains('coins.bootstrap'));
+    expect(firestore.readTags, isNot(contains('coins.refresh_balance')));
   });
 
   test('new-user document create finishes before sign-in can complete', () async {

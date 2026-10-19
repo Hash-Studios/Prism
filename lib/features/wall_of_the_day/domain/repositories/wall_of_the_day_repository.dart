@@ -5,6 +5,9 @@ import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.da
 abstract class WallOfTheDayRepository {
   Future<Result<WallOfTheDayEntity?>> fetchToday();
 
+  /// Today's saved pick, without any network read. Null when nothing is saved for today (UTC) or its creator is blocked.
+  Future<WallOfTheDayEntity?> readCachedToday();
+
   /// The latest picks, newest first. Walls that are gone, hidden or not reviewed are left out.
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30});
 }
