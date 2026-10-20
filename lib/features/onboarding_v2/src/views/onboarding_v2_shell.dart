@@ -20,6 +20,7 @@ import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
@@ -610,6 +611,9 @@ class _SharedOverlayState extends State<_SharedOverlay> {
   @override
   Widget build(BuildContext context) {
     final step = widget.state.step;
+    final wallpaper = widget.state.wallpaperData.wallpaper;
+    final aiStyle = wallpaper?.aiStyle;
+    final wallpaperCategory = aiStyle == null ? wallpaper?.sourceCategory : aiStyleLabel(context.l10n, aiStyle);
     final overlayStyle = step == OnboardingV2Step.firstWallpaper
         ? edgeToEdgeOverlayStyle(
             statusBarIconBrightness: _statusBarIconBrightness,
@@ -635,7 +639,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
             _BottomText(
               step: step,
               sy: sy,
-              wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
+              wallpaperCategory: wallpaperCategory,
               aiGenerateStatus: widget.state.aiData.status,
               errorText: onboardingSaveFailed(widget.state)
                   ? _saveErrorHelper(widget.state, context.l10n)

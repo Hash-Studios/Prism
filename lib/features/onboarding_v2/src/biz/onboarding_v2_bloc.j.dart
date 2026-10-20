@@ -698,6 +698,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         fullUrl: event.imageUrl!,
         thumbnailUrl: event.thumbnailUrl ?? event.imageUrl!,
         sourceCategory: state.aiData.stylePreset.label,
+        aiStyle: state.aiData.stylePreset,
       );
       emit(
         state.copyWith(

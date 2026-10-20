@@ -1219,6 +1219,40 @@ void main() {
         expect(bloc.state.aiData.status, AiGenerateStatus.success);
         expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.thumbnailUrl, 'https://example.com/thumb.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a failed retry keeps the generated wallpaper style provenance',
+      setUp: () {
+        var attempts = 0;
+        when(
+          () => aiRepository.generate(
+            prompt: any(named: 'prompt'),
+            stylePreset: any(named: 'stylePreset'),
+            qualityTier: any(named: 'qualityTier'),
+            targetSize: any(named: 'targetSize'),
+            chargeMode: any(named: 'chargeMode'),
+            coinsSpent: any(named: 'coinsSpent'),
+          ),
+        ).thenAnswer((_) async {
+          if (attempts++ == 0) return _aiRecord();
+          throw Exception('offline on retry');
+        });
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+      },
+      wait: Duration.zero,
+      verify: (bloc) {
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
+        expect(bloc.state.aiData.status, AiGenerateStatus.failure);
       },
     );
 
