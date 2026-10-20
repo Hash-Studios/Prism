@@ -19,6 +19,23 @@ test("walls have the tag search index: tags contains, review, newest first", () 
   assert.deepEqual(index.fields.slice(1).map((f) => [f.fieldPath, f.order]), [["review", "ASCENDING"], ["createdAt", "DESCENDING"]]);
 });
 
+test("walls have the search terms index next to the tag index: protected asset fields, searchTerms contains, review, newest first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "walls" &&
+    i.fields.some((f) => f.fieldPath === "searchTerms"));
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order ?? f.arrayConfig]), [
+    ["originalProtected", "ASCENDING"],
+    ["wallpaper_url", "ASCENDING"],
+    ["wallpaper_path", "ASCENDING"],
+    ["wallpaper_sha", "ASCENDING"],
+    ["thumb_path", "ASCENDING"],
+    ["thumb_sha", "ASCENDING"],
+    ["searchTerms", "CONTAINS"],
+    ["review", "ASCENDING"],
+    ["createdAt", "DESCENDING"],
+  ]);
+});
+
 test("view rate docs expire through a TTL policy on expireAt", () => {
   assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === "viewRate" && o.fieldPath === "expireAt" && o.ttl === true));
 });
