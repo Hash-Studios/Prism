@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -1220,6 +1221,40 @@ void main() {
         expect(bloc.state.aiData.status, AiGenerateStatus.success);
         expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.thumbnailUrl, 'https://example.com/thumb.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a failed retry keeps the generated wallpaper style provenance',
+      setUp: () {
+        var attempts = 0;
+        when(
+          () => aiRepository.generate(
+            prompt: any(named: 'prompt'),
+            stylePreset: any(named: 'stylePreset'),
+            qualityTier: any(named: 'qualityTier'),
+            targetSize: any(named: 'targetSize'),
+            chargeMode: any(named: 'chargeMode'),
+            coinsSpent: any(named: 'coinsSpent'),
+          ),
+        ).thenAnswer((_) async {
+          if (attempts++ == 0) return _aiRecord();
+          throw Exception('offline on retry');
+        });
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+      },
+      wait: Duration.zero,
+      verify: (bloc) {
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
+        expect(bloc.state.aiData.status, AiGenerateStatus.failure);
       },
     );
 
@@ -1643,6 +1678,38 @@ void main() {
 
       expect(state.wallpaperData.target, WallpaperTarget.home);
       expect(state.wallpaperData.errorCode, isNull);
+    });
+
+    test('a recommended wallpaper passes its identity and source to the action', () async {
+      when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+        (_) async => const OnboardingWallpaperVm(
+          fullUrl: 'https://example.com/wall.jpg',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          sourceCategory: 'Nature',
+          wallpaperId: 'wall-123',
+          wallpaperSource: WallpaperSource.pexels,
+        ),
+      );
+      when(
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+
+      verify(
+        () => firstWallpaperService.performAction(
+          'https://example.com/wall.jpg',
+          wallpaperId: 'wall-123',
+          wallpaperSource: WallpaperSource.pexels,
+        ),
+      ).called(1);
     });
 
     test('a failure keeps the error code and trying again clears it', () async {
