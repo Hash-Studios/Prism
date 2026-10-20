@@ -1,5 +1,16 @@
 ## Changelog
 
+### v3.8.0
+- Prism now speaks Spanish, German, Hindi, Indonesian and Brazilian Portuguese
+- Weekly Drops are a limited collectible, with a preview and a push when a new Drop arrives
+- On iPhone, wallpapers that suit Depth Effect let the subject sit in front of the clock
+- A layout made for iPad and Android tablets
+- Faster start, faster feeds, and wallpapers load from a quicker image service
+- Search finds Prism wallpapers by title, creator and what is in the picture
+- Every page in the app can open from a link
+- Turning off anime now hides anime Prism wallpapers too
+- Security and stability fixes
+
 ### v3.7.0
 - A new home: tabs for For you, Following, Trending, Latest and Popular, and bigger wallpapers
 - The floating bar and plus button are back
