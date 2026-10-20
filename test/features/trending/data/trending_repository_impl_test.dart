@@ -4,14 +4,16 @@ import 'dart:math';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/trending/data/repositories/trending_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_feed_cache_local_data_source.dart';
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
+import '../../../support/in_memory_local_store.dart';
 
-Map<String, dynamic> _wall(String id, {String email = 'creator@example.com'}) => <String, dynamic>{
+Map<String, dynamic> _wall(String id, {String email = 'creator@example.com', String? category}) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://example.com/$id.jpg',
   'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
@@ -19,6 +21,7 @@ Map<String, dynamic> _wall(String id, {String email = 'creator@example.com'}) =>
   'by': 'Ana',
   'email': email,
   'review': true,
+  'category': ?category,
 };
 
 List<String> _idsOf(FirestoreQuerySpec spec) =>
@@ -38,6 +41,7 @@ void main() {
   late FakeFirestoreClient client;
   late FakeFeedCacheLocalDataSource cache;
   late FakeUserBlockRepository blocks;
+  late SettingsLocalDataSource settings;
   late TrendingRepositoryImpl repository;
   late Map<String, Map<String, dynamic>> walls;
 
@@ -57,7 +61,8 @@ void main() {
     );
     cache = FakeFeedCacheLocalDataSource();
     blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
-    repository = TrendingRepositoryImpl(client, cache, blocks);
+    settings = SettingsLocalDataSource(InMemoryLocalStore());
+    repository = TrendingRepositoryImpl(client, cache, blocks, settings);
   });
 
   test('keeps the order of the id list, not the order Firestore answers in', () async {
@@ -215,7 +220,7 @@ void main() {
     setList('trending', <Object?>['A']);
     await repository.fetch();
     final delayed = _DelayedFeedCache()..snapshots.addAll(cache.snapshots);
-    final pending = TrendingRepositoryImpl(client, delayed, blocks).readCached();
+    final pending = TrendingRepositoryImpl(client, delayed, blocks, settings).readCached();
 
     blocks.completeInitial(<String>{'later@example.com'});
     delayed.release.complete();
@@ -229,7 +234,7 @@ void main() {
     await repository.fetch();
     final pendingBlocks = FakeUserBlockRepository.pending();
     bool returned = false;
-    final pending = TrendingRepositoryImpl(client, cache, pendingBlocks).readCached().then((walls) {
+    final pending = TrendingRepositoryImpl(client, cache, pendingBlocks, settings).readCached().then((walls) {
       returned = true;
       return walls;
     });
@@ -251,6 +256,17 @@ void main() {
     final offline = await repository.fetch();
 
     expect(offline.data!.map((wall) => wall.id), <String>['A', 'B']);
+  });
+
+  test('hides anime walls online and from cache while the anime setting is off', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', category: 'Anime'), 'B': _wall('B', category: 'Nature')};
+    setList('trending', <Object?>['A', 'B']);
+
+    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['B']);
+    expect((await repository.readCached()).map((wall) => wall.id), <String>['B']);
+
+    await settings.set('WHcategories', 110);
+    expect((await repository.readCached()).map((wall) => wall.id), <String>['A', 'B']);
   });
 
   test('fails when the network fails and nothing is saved', () async {

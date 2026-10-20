@@ -15,6 +15,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -308,9 +309,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
+      final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
       final List<RankingCandidate> candidates = pools
           .expand((pool) => pool)
-          .where((c) => !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked))
+          .where(
+            (c) =>
+                !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked) &&
+                !AnimeContentFilter.hidesFeedItem(c.item, showAnime: showAnime),
+          )
           .toList(growable: false);
       for (final RankingCandidate candidate in candidates) {
         rememberFeedTerms(candidate.key, candidate.terms);
@@ -591,7 +597,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       return Result.success(
         PersonalizedFeedPage(
-          items: BlockedCreatorsFilter.filterFeedItems(creators.items, blocked),
+          items: AnimeContentFilter.filterFeedItems(
+            BlockedCreatorsFilter.filterFeedItems(creators.items, blocked),
+            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          ),
           hasMore: creators.hasMore,
         ),
       );
@@ -652,9 +661,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       return Result.success(
         PersonalizedFeedPage(
-          items: BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[
-            for (final String id in ids) ?byId[id],
-          ], blocked),
+          items: AnimeContentFilter.filterFeedItems(
+            BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[for (final String id in ids) ?byId[id]], blocked),
+            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          ),
           hasMore: false,
         ),
       );
@@ -677,11 +687,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     ),
   );
 
-  /// Walls from the taste's top categories, from a random point in each.
-  List<String> _tasteCategories(TasteProfile profile) => <String>{
-    for (final String term in profile.topTerms(6))
-      ?_wallCategories.where((c) => term.contains(c.toLowerCase()) || c.toLowerCase().contains(term)).firstOrNull,
-  }.toList()..shuffle(_random);
+  /// Walls from the taste's top categories, from a random point in each. Anime is left out when the user hides it.
+  List<String> _tasteCategories(TasteProfile profile) {
+    final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    return <String>{
+      for (final String term in profile.topTerms(6))
+        ?_wallCategories
+            .where((c) => showAnime || c != 'Anime')
+            .where((c) => term.contains(c.toLowerCase()) || c.toLowerCase().contains(term))
+            .firstOrNull,
+    }.toList()..shuffle(_random);
+  }
 
   Future<List<FeedItemEntity>> _fetchTasteItems(List<String> categories) async {
     final List<List<FeedItemEntity>> slices = await Future.wait(
@@ -862,13 +878,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return null;
     }
     final Set<String> blockedEmails = await blocked();
-    // A cache written under other content filters may hold Wallhaven items the user now excludes.
+    // A cache written under other content filters may hold Wallhaven items the user now excludes. Caches from
+    // older builds may also hold anime Prism walls.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
+    final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
     final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .where((item) => sameFilters || item is! WallhavenFeedItem)
+        .where((item) => !AnimeContentFilter.hidesFeedItem(item, showAnime: showAnime))
         .toList(growable: false);
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
     return (
