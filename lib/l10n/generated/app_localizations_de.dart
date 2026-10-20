@@ -586,7 +586,7 @@ class AppLocalizationsDe extends AppLocalizations {
     final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
-    return '$recipientName erhält bis morgen Premium-Sammlungen und Premium-Hintergrundbilder. Kostet $priceString Coins.';
+    return '$recipientName erhält 24 Stunden lang Premium-Sammlungen und Premium-Hintergrundbilder. Kostet $priceString Coins.';
   }
 
   @override
@@ -6863,7 +6863,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notifPushGiftReceivedBody =>
-      'Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet.';
+      'Premium-Sammlungen und Premium-Hintergrundbilder sind 24 Stunden lang freigeschaltet.';
 
   @override
   String notifPushGiftReceivedTitle(String senderName) {
@@ -8248,10 +8248,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperFilterHue => 'Farbton';
 
   @override
-  String get wallpaperFilterLightness => 'Helligkeit';
+  String get wallpaperFilterLightness => 'Farbhelligkeit';
 
   @override
-  String get wallpaperFilterLightnessUnavailable => 'Helligkeit ist auf diesem Gerät nicht verfügbar.';
+  String get wallpaperFilterLightnessUnavailable => 'Farbhelligkeit ist auf diesem Gerät nicht verfügbar.';
 
   @override
   String get wallpaperFilterNeedCoins => 'Für den Premium-Filter brauchst du Coins';

@@ -705,7 +705,7 @@
   "@accountGiftLimitReached": {
     "description": "Message shown when a user reaches the daily gift limit."
   },
-  "accountGiftPassMessage": "{recipientName} erhält bis morgen Premium-Sammlungen und Premium-Hintergrundbilder. Kostet {price} Coins.",
+  "accountGiftPassMessage": "{recipientName} erhält 24 Stunden lang Premium-Sammlungen und Premium-Hintergrundbilder. Kostet {price} Coins.",
   "@accountGiftPassMessage": {
     "description": "Gift pass sheet explanation.",
     "placeholders": {
@@ -5765,7 +5765,7 @@
     }
   },
   "notifPushDropLiveTitle": "Ein neuer Drop ist da",
-  "notifPushGiftReceivedBody": "Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet.",
+  "notifPushGiftReceivedBody": "Premium-Sammlungen und Premium-Hintergrundbilder sind 24 Stunden lang freigeschaltet.",
   "notifPushGiftReceivedTitle": "{senderName} hat dir einen 24-Stunden-Pro-Pass geschenkt",
   "@notifPushGiftReceivedTitle": {
     "placeholders": {
@@ -7214,11 +7214,11 @@
   "@wallpaperFilterHue": {
     "description": "Label for the hue adjustment slider."
   },
-  "wallpaperFilterLightness": "Helligkeit",
+  "wallpaperFilterLightness": "Farbhelligkeit",
   "@wallpaperFilterLightness": {
     "description": "Label for the lightness adjustment slider."
   },
-  "wallpaperFilterLightnessUnavailable": "Helligkeit ist auf diesem Gerät nicht verfügbar.",
+  "wallpaperFilterLightnessUnavailable": "Farbhelligkeit ist auf diesem Gerät nicht verfügbar.",
   "@wallpaperFilterLightnessUnavailable": {
     "description": "Wallpaper interface text: wallpaperFilterLightnessUnavailable."
   },

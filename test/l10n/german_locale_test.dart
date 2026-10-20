@@ -150,6 +150,17 @@ void main() {
     expect(de.economyNeedMoreCoins(1234), 'Dir fehlen noch 1.234 Coins.');
     expect(de.economyAiApplyingStyle, 'Dein Stil wird angewendet…');
     expect(
+      de.accountGiftPassMessage('Mira', 1234),
+      'Mira erhält 24 Stunden lang Premium-Sammlungen und Premium-Hintergrundbilder. Kostet 1.234 Coins.',
+    );
+    expect(
+      de.notifPushGiftReceivedBody,
+      'Premium-Sammlungen und Premium-Hintergrundbilder sind 24 Stunden lang freigeschaltet.',
+    );
+    expect(de.wallpaperFilterBrightness, 'Helligkeit');
+    expect(de.wallpaperFilterLightness, 'Farbhelligkeit');
+    expect(de.wallpaperFilterLightnessUnavailable, 'Farbhelligkeit ist auf diesem Gerät nicht verfügbar.');
+    expect(
       de.accountPurchasesRestoredPending,
       'Käufe wiederhergestellt. Es kann eine Minute dauern, bis Pro freigeschaltet wird.',
     );
