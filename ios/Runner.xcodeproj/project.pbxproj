@@ -90,6 +90,7 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0C000032F00000500C0C0C0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		C0C000052F00000500C0C0C0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1D1D00012F000005001D1D1D /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B2B000012F00000600B2B2B2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C0C000062F00000500C0C0C0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		484900012F00000500C0C0C0 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -216,6 +217,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				C0C000052F00000500C0C0C0 /* en */,
+				1D1D00012F000005001D1D1D /* id */,
 				B2B000012F00000600B2B2B2 /* pt-BR */,
 				C0C000062F00000500C0C0C0 /* de */,
 				484900012F00000500C0C0C0 /* hi */,
@@ -341,6 +343,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				id,
 				"pt-BR",
 				de,
 				hi,

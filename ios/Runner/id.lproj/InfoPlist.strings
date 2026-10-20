@@ -1,0 +1,3 @@
+"NSPhotoLibraryUsageDescription" = "Prism memerlukan akses ke perpustakaan foto agar Anda dapat memilih gambar untuk profil dan penataan layar Anda.";
+"NSPhotoLibraryAddUsageDescription" = "Prism memerlukan izin untuk menyimpan wallpaper ke perpustakaan foto Anda.";
+"NSCameraUsageDescription" = "Prism memerlukan akses kamera agar Anda dapat mengambil foto untuk gambar profil Anda.";
