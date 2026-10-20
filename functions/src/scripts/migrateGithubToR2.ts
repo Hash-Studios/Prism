@@ -261,7 +261,8 @@ function parseTreeEntries(raw: unknown, prefix: string): {truncated: boolean; en
     const path = typeof entry.path === "string" && entry.path ? prefix + entry.path : "";
     if (!path || path.startsWith("/") || path.includes("\\") ||
       path.split("/").some((part) => !part || part === "." || part === "..") ||
-      Array.from(path).some((character) => character.charCodeAt(0) < 32) ||
+      Array.from(path).some((character) => character.charCodeAt(0) < 32 ||
+        (character.charCodeAt(0) >= 127 && character.charCodeAt(0) <= 159)) ||
       typeof entry.type !== "string" || (entry.type === "blob" && (typeof entry.sha !== "string" ||
       !/^[a-f0-9]{40}$/.test(entry.sha) || typeof entry.size !== "number" || !Number.isSafeInteger(entry.size) || entry.size < 0)) ||
       (entry.type === "tree" && (typeof entry.sha !== "string" || !/^[a-f0-9]{40}$/.test(entry.sha)))) {
@@ -302,12 +303,13 @@ export async function listGithubTree(
   return {truncated, entries};
 }
 
-async function resolvePinnedTree(owner: string, repo: string, ref: string): Promise<{commit: string; tree: GithubTree}> {
+export async function resolvePinnedTree(owner: string, repo: string, ref: string,
+  fetchJson: (path: string) => Promise<unknown> = githubJson): Promise<{commit: string; tree: GithubTree}> {
   const repoPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
-  const commitResult = await githubJson(`${repoPath}/commits/${encodeURIComponent(ref)}`);
+  const commitResult = await fetchJson(`${repoPath}/commits/${encodeURIComponent(ref)}`);
   const commit = commitResult as {sha?: unknown};
   if (typeof commit.sha !== "string" || !/^[a-f0-9]{40}$/.test(commit.sha)) throw new Error("GitHub did not return a pinned commit");
-  return {commit: commit.sha, tree: await listGithubTree(githubJson, repoPath, commit.sha)};
+  return {commit: commit.sha, tree: await listGithubTree(fetchJson, repoPath, commit.sha)};
 }
 
 async function main(): Promise<void> {
