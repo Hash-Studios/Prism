@@ -11,8 +11,10 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
+import 'package:Prism/features/favourite_walls/data/hydrate_prism_favourites.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
+import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -34,11 +36,12 @@ bool _isPermanentFavouriteFailure(Object error) => const <String>{
 
 @LazySingleton(as: FavouriteWallsRepository)
 class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
-  FavouriteWallsRepositoryImpl(this._firestoreClient, this._favoritesLocal, this._guestStore);
+  FavouriteWallsRepositoryImpl(this._firestoreClient, this._favoritesLocal, this._guestStore, this._prismWallpapers);
 
   final FirestoreClient _firestoreClient;
   final FavoritesLocalDataSource _favoritesLocal;
   final GuestFavouritesStore _guestStore;
+  final PrismWallpaperRepository _prismWallpapers;
 
   String _collectionPath(String userId) => 'usersv2/$userId/images';
 
@@ -136,11 +139,11 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         ...items,
         ...retainedLocal,
       ]);
-      return Result.success(merged);
+      return Result.success(await hydratePrismFavourites(merged, _prismWallpapers));
     } catch (error) {
       try {
         final cached = await _favoritesLocal.readWallSnapshot(userId);
-        if (cached.isNotEmpty) return Result.success(cached);
+        if (cached.isNotEmpty) return Result.success(await hydratePrismFavourites(cached, _prismWallpapers));
       } catch (cacheError) {
         return Result.error(ServerFailure('Unable to fetch favourite walls: $error; local read failed: $cacheError'));
       }
