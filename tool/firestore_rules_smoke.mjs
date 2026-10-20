@@ -57,6 +57,7 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/leaked', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: 'https://example.com/original.jpg' } }, 'owner'),
   req('PATCH', 'ownedAssets/protected', { status: { stringValue: 'ready' } }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
+  req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']) }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -274,6 +275,14 @@ const cases = [
   ['owner removes an existing depth', () => req('PATCH', 'walls/w12', {}, Bu, ['depth']), 403],
   ['owner updates another field and leaves depth untouched', () => req('PATCH', 'walls/w12', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
   ['admin sets depth on a wall', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, ADM, ['depth']), 200],
+  ...['searchTerms', 'visionLabels'].flatMap((key) => [
+    [`owner creates a wall with ${key}`, () => req('PATCH', `walls/create-${key}`, { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, [key]: arr(['stuffed']) }, Bu), 403],
+    [`owner sets ${key} on own unreviewed wall`, () => req('PATCH', 'walls/w3', { [key]: arr(['stuffed']) }, Bu, [key]), 403],
+    [`owner changes an existing ${key}`, () => req('PATCH', 'walls/w14', { [key]: arr(['stuffed']) }, Bu, [key]), 403],
+    [`owner removes an existing ${key}`, () => req('PATCH', 'walls/w14', {}, Bu, [key]), 403],
+    [`admin sets ${key} on a wall`, () => req('PATCH', 'walls/w14', { [key]: arr(['admin']) }, ADM, [key]), 200],
+  ]),
+  ['owner updates another field and leaves searchTerms and visionLabels untouched', () => req('PATCH', 'walls/w14', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
 ];
 await seed();
 let bad = 0;
