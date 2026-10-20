@@ -224,13 +224,14 @@ void main() {
       hasPrismWalls: true,
     );
 
-    PrismWallpaper prismWall(String id, {String? url}) => PrismWallpaper(
+    PrismWallpaper prismWall(String id, {String? url, List<String>? tags}) => PrismWallpaper(
       core: WallpaperCore(
         id: id,
         source: WallpaperSource.prism,
         fullUrl: url ?? 'https://prism.test/$id.jpg',
         thumbnailUrl: 't',
       ),
+      tags: tags,
     );
 
     setUp(() {
@@ -303,6 +304,50 @@ void main() {
       final cached = await repository.fetchCategoryFeed(category: nature, refresh: true);
 
       expect(cached.data!.items.map((item) => item.id), <String>['p1', 'a']);
+    });
+
+    test('anime Prism walls stay out while the anime setting is off', () async {
+      when(() => prism.fetchByCategory('Nature')).thenAnswer(
+        (_) async => Result.success(<PrismWallpaper>[
+          prismWall('p1', tags: <String>['Anime']),
+          prismWall('p2', tags: <String>['Nature']),
+        ]),
+      );
+
+      final hidden = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(hidden.data!.items.map((item) => item.id), <String>['p2', 'a']);
+
+      await SettingsLocalDataSource(store).set('WHcategories', 110);
+      final shown = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(shown.data!.items.map((item) => item.id), <String>['p1', 'p2', 'a']);
+    });
+
+    test('a snapshot saved while anime was on drops anime walls once it is off', () async {
+      const CategoryEntity community = CategoryEntity(
+        name: 'Community',
+        source: WallpaperSource.prism,
+        searchType: CategorySearchType.search,
+        image: '',
+        image2: '',
+      );
+      bool prismOffline = false;
+      when(() => prism.hasMore).thenReturn(false);
+      when(() => prism.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer(
+        (_) async => prismOffline
+            ? Result.error<List<PrismWallpaper>>(const ServerFailure('503'))
+            : Result.success(<PrismWallpaper>[
+                prismWall('p1', tags: <String>['anime']),
+                prismWall('p2'),
+              ]),
+      );
+      await SettingsLocalDataSource(store).set('WHcategories', 110);
+      await repository.fetchCategoryFeed(category: community, refresh: true);
+
+      await SettingsLocalDataSource(store).set('WHcategories', 100);
+      prismOffline = true;
+      final cached = await repository.fetchCategoryFeed(category: community, refresh: true);
+
+      expect(cached.data!.items.map((item) => item.id), <String>['p2']);
     });
 
     test('getCategories marks the classifier names and adds an AMOLED tile', () async {
