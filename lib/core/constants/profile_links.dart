@@ -53,7 +53,12 @@ const int minUsernameLength = 3;
 const List<ProfileLinkKind> profileLinkKinds = <ProfileLinkKind>[
   ProfileLinkKind(ProfileLinkType.behance, 'https://behance.net/username', JamIcons.behance, 'behance.net'),
   ProfileLinkKind(ProfileLinkType.bioLink, 'https://bio.link/username', JamIcons.world, 'bio.link'),
-  ProfileLinkKind(ProfileLinkType.buyMeACoffee, 'https://buymeacoff.ee/username', JamIcons.coffee, 'buymeacoff.ee'),
+  ProfileLinkKind(
+    ProfileLinkType.buyMeACoffee,
+    'https://buymeacoffee.com/username',
+    JamIcons.coffee,
+    'buymeacoffee.com',
+  ),
   ProfileLinkKind(ProfileLinkType.custom, '', JamIcons.link, ''),
   ProfileLinkKind(ProfileLinkType.deviantArt, 'https://deviantart.com/username', JamIcons.deviantart, 'deviantart'),
   ProfileLinkKind(ProfileLinkType.dribbble, 'https://dribbble.com/username', JamIcons.basketball, 'dribbble'),
@@ -113,6 +118,16 @@ String? sanitizeProfileLink(ProfileLinkKind kind, String raw) {
   final Uri? uri = safeProfileLinkUri(value);
   if (uri == null) return null;
   if (uri.scheme == 'mailto' && kind.name != customLinkName) return null;
-  if (!value.toLowerCase().contains(kind.validator.toLowerCase())) return null;
+  if (kind.type == ProfileLinkType.buyMeACoffee) {
+    const Set<String> hosts = <String>{
+      'buymeacoffee.com',
+      'www.buymeacoffee.com',
+      'buymeacoff.ee',
+      'www.buymeacoff.ee',
+    };
+    if (!hosts.contains(uri.host.toLowerCase())) return null;
+  } else if (!value.toLowerCase().contains(kind.validator.toLowerCase())) {
+    return null;
+  }
   return uri.toString();
 }

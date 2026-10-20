@@ -37,6 +37,52 @@ void main() {
       expect(sanitizeProfileLink(_kind('github'), 'https://example.com/me'), isNull);
     });
 
+    test('accepts current and legacy Buy Me a Coffee hosts', () {
+      for (final String host in <String>[
+        'buymeacoffee.com',
+        'www.buymeacoffee.com',
+        'buymeacoff.ee',
+        'www.buymeacoff.ee',
+      ]) {
+        for (final String scheme in <String>['https', 'http']) {
+          final String url = '$scheme://$host/prism?ref=profile#support';
+          expect(sanitizeProfileLink(_kind('buymeacoffee'), url), url, reason: url);
+        }
+        expect(sanitizeProfileLink(_kind('buymeacoffee'), ' $host/prism '), 'https://$host/prism');
+        expect(
+          sanitizeProfileLink(_kind('buymeacoffee'), 'https://${host.toUpperCase()}/prism'),
+          'https://$host/prism',
+        );
+      }
+    });
+
+    test('Buy Me a Coffee matches the host rather than text elsewhere in the URL', () {
+      for (final String host in <String>['buymeacoffee.com', 'buymeacoff.ee']) {
+        for (final String raw in <String>[
+          'https://$host.example.com/prism',
+          'https://not$host/prism',
+          'https://creator.$host/prism',
+          'https://$host@example.com/prism',
+          'https://example.com/$host/prism',
+          'https://example.com/prism?ref=$host',
+          'https://example.com/prism#$host',
+        ]) {
+          expect(sanitizeProfileLink(_kind('buymeacoffee'), raw), isNull, reason: raw);
+        }
+      }
+    });
+
+    test('Buy Me a Coffee still refuses unsafe schemes and mailto', () {
+      for (final String raw in <String>[
+        'javascript:alert(1)//buymeacoffee.com',
+        'file://buymeacoff.ee/prism',
+        'mailto:prism@buymeacoffee.com',
+        'https://',
+      ]) {
+        expect(sanitizeProfileLink(_kind('buymeacoffee'), raw), isNull, reason: raw);
+      }
+    });
+
     test('empty text is not a link', () {
       expect(sanitizeProfileLink(_kind('custom link'), '   '), isNull);
     });
