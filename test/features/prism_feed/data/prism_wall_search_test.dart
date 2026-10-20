@@ -39,8 +39,18 @@ void main() {
       expect(spec.filters.last.value, <String>['boat', 'sunset']);
       expect(spec.orderBy.single.field, 'createdAt');
       expect(spec.orderBy.single.descending, isTrue);
-      expect(spec.limit, 12);
     });
+
+    test(
+      'a one word query asks for 12 walls, a longer one for 48 so older walls that match more words get ranked',
+      () async {
+        await search.search('boat');
+        await search.search('Boats at Sunset');
+        await search.search('boat sunset', colorId: 'blue');
+
+        expect(firestore.querySpecs.map((spec) => spec.limit), <int?>[12, 48, 48]);
+      },
+    );
 
     test('a query of only stopwords sends no query and returns nothing', () async {
       expect(await search.search('the'), isEmpty);

@@ -48,7 +48,10 @@ class PrismWallSearch {
     }
     // The query itself is exact for a lone colour or a lone depth tier. Anything left is checked on the matches.
     final bool checksMatches = browseOnly ? depthOnly && colorId != null : colorId != null || depthOnly;
-    final int fetchLimit = checksMatches ? limit * _localFilterOverfetch : limit;
+    final List<String> terms = searchTermsOf(trimmed).take(_maxTerms).toList(growable: false);
+    // Ranking can only lift an older wall that matches more words when the query fetched it.
+    final bool ranks = !browseOnly && terms.length > 1;
+    final int fetchLimit = checksMatches || ranks ? limit * _localFilterOverfetch : limit;
     try {
       final List<PrismWallpaper> matches = switch ((browseOnly, depthOnly)) {
         (true, true) => await _run('depth', fetchLimit, _depthFilter, _toWall),
@@ -58,7 +61,7 @@ class PrismWallSearch {
           FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
           _toWall,
         ),
-        _ => await _rankedTextMatches(trimmed, fetchLimit),
+        _ => await _rankedTextMatches(terms, fetchLimit),
       };
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
@@ -76,8 +79,7 @@ class PrismWallSearch {
     }
   }
 
-  Future<List<PrismWallpaper>> _rankedTextMatches(String query, int limit) async {
-    final List<String> terms = searchTermsOf(query).take(_maxTerms).toList(growable: false);
+  Future<List<PrismWallpaper>> _rankedTextMatches(List<String> terms, int limit) async {
     if (terms.isEmpty) return const <PrismWallpaper>[];
     final List<_ScoredWall> scored = <_ScoredWall>[
       ...await _run<_ScoredWall>(
