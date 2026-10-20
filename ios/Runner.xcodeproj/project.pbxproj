@@ -300,6 +300,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				D7685F5D2DC521475093A62D /* [CP] Embed Pods Frameworks */,
 				6BE71652FB15CCFDCFC39518 /* [CP] Copy Pods Resources */,
+				B8F1C0422FE0551300A12026 /* Strip embedded SDK symbols */,
 			);
 			buildRules = (
 			);
@@ -447,6 +448,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		B8F1C0422FE0551300A12026 /* Strip embedded SDK symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/strip_embedded_frameworks.sh",
+			);
+			name = "Strip embedded SDK symbols";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "/bin/bash \"${SRCROOT}/scripts/strip_embedded_frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		D7685F5D2DC521475093A62D /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
