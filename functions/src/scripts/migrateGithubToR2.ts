@@ -240,31 +240,74 @@ async function githubJson(path: string): Promise<unknown> {
   const headers: Record<string, string> = {"accept": "application/vnd.github+json", "user-agent": "Prism-R2-migration"};
   if (process.env.GH_TOKEN) headers.authorization = `Bearer ${process.env.GH_TOKEN}`;
   const response = await fetch(`https://api.github.com${path}`, {headers});
-  if (!response.ok) throw new Error(`GitHub API failed (${response.status}); check repo access and rate limits`);
+  if (!response.ok) {
+    throw new GithubApiError(response.status, `GitHub API failed (${response.status}); check repo access and rate limits`);
+  }
   return response.json();
 }
 
-async function resolvePinnedTree(owner: string, repo: string, ref: string): Promise<{commit: string; tree: GithubTree}> {
-  const commitResult = await githubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(ref)}`);
-  const commit = commitResult as {sha?: unknown};
-  if (typeof commit.sha !== "string" || !/^[a-f0-9]{40}$/.test(commit.sha)) throw new Error("GitHub did not return a pinned commit");
-  const treeResult = await githubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${commit.sha}?recursive=1`);
-  const tree = treeResult as {tree?: unknown; truncated?: unknown};
+export class GithubApiError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+  }
+}
+
+function parseTreeEntries(raw: unknown, prefix: string): {truncated: boolean; entries: GithubTreeEntry[]} {
+  const tree = raw as {tree?: unknown; truncated?: unknown};
   if (!Array.isArray(tree.tree)) throw new Error("GitHub tree response is invalid");
   const entries: GithubTreeEntry[] = tree.tree.map((value: unknown) => {
     if (!value || typeof value !== "object") throw new Error("GitHub tree entry is invalid");
     const entry = value as {path?: unknown; sha?: unknown; size?: unknown; type?: unknown};
-    if (typeof entry.path !== "string" || !entry.path || entry.path.startsWith("/") || entry.path.includes("\\") ||
-      entry.path.split("/").some((part) => !part || part === "." || part === "..") ||
-      Array.from(entry.path).some((character) => character.charCodeAt(0) < 32) ||
+    const path = typeof entry.path === "string" && entry.path ? prefix + entry.path : "";
+    if (!path || path.startsWith("/") || path.includes("\\") ||
+      path.split("/").some((part) => !part || part === "." || part === "..") ||
+      Array.from(path).some((character) => character.charCodeAt(0) < 32) ||
       typeof entry.type !== "string" || (entry.type === "blob" && (typeof entry.sha !== "string" ||
-      !/^[a-f0-9]{40}$/.test(entry.sha) || typeof entry.size !== "number" || !Number.isSafeInteger(entry.size) || entry.size < 0))) {
+      !/^[a-f0-9]{40}$/.test(entry.sha) || typeof entry.size !== "number" || !Number.isSafeInteger(entry.size) || entry.size < 0)) ||
+      (entry.type === "tree" && (typeof entry.sha !== "string" || !/^[a-f0-9]{40}$/.test(entry.sha)))) {
       throw new Error("GitHub tree entry is invalid");
     }
-    return {path: entry.path, sha: typeof entry.sha === "string" ? entry.sha : "",
+    return {path, sha: typeof entry.sha === "string" ? entry.sha : "",
       size: typeof entry.size === "number" ? entry.size : 0, type: entry.type};
   });
-  return {commit: commit.sha, tree: {truncated: tree.truncated === true, entries}};
+  return {truncated: tree.truncated === true, entries};
+}
+
+/**
+ * Lists every entry of the tree at `treeSha`. GitHub answers 5xx for the recursive call on very large
+ * repositories (prism-walls is about 16 GB), so a server error falls back to walking each tree level by level.
+ * The result has the same entries as the recursive call; a truncated level still marks the tree truncated.
+ */
+export async function listGithubTree(
+  fetchJson: (path: string) => Promise<unknown>,
+  repoPath: string,
+  treeSha: string,
+): Promise<GithubTree> {
+  try {
+    return parseTreeEntries(await fetchJson(`${repoPath}/git/trees/${treeSha}?recursive=1`), "");
+  } catch (error) {
+    if (!(error instanceof GithubApiError) || error.status < 500) throw error;
+  }
+  const entries: GithubTreeEntry[] = [];
+  let truncated = false;
+  const walk = async (sha: string, prefix: string): Promise<void> => {
+    const level = parseTreeEntries(await fetchJson(`${repoPath}/git/trees/${sha}`), prefix);
+    truncated = truncated || level.truncated;
+    for (const entry of level.entries) {
+      entries.push(entry);
+      if (entry.type === "tree") await walk(entry.sha, `${entry.path}/`);
+    }
+  };
+  await walk(treeSha, "");
+  return {truncated, entries};
+}
+
+async function resolvePinnedTree(owner: string, repo: string, ref: string): Promise<{commit: string; tree: GithubTree}> {
+  const repoPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const commitResult = await githubJson(`${repoPath}/commits/${encodeURIComponent(ref)}`);
+  const commit = commitResult as {sha?: unknown};
+  if (typeof commit.sha !== "string" || !/^[a-f0-9]{40}$/.test(commit.sha)) throw new Error("GitHub did not return a pinned commit");
+  return {commit: commit.sha, tree: await listGithubTree(githubJson, repoPath, commit.sha)};
 }
 
 async function main(): Promise<void> {
