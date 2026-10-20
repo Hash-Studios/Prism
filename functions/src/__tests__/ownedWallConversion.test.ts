@@ -4,8 +4,7 @@ import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
-import {onOwnedWallWritten} from "../ownedAssetDelivery";
-import {STUDIO_STORAGE_REPO, stored} from "../ownedAssetDelivery";
+import {onOwnedWallWritten, STUDIO_STORAGE_REPO, stored} from "../ownedAssetDelivery";
 import {convertApprovedWall, convertWall, buildStudioRow, gitBlobSha, type MigrationDeps, type MigrationResult,
   type MigrationWall, type WallInventory} from "../ownedWallConversion";
 import {installFakeDb} from "./fakeDb";
@@ -308,7 +307,7 @@ test("two deliveries of the same approval converge on one manifest", async (t) =
   assert.equal([...store.keys()].filter((key) => key.startsWith("ownedAssets/")).length, 1);
 });
 
-test("a loser of the bind race counts as converted when the manifest is ready", async (t) => {
+test("a loser of the bind race counts as converted when the manifest is ready", async () => {
   const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1, data: studioWall()};
   const row = buildStudioRow(wall) as WallInventory;
   assert.equal(row.status, "planned");

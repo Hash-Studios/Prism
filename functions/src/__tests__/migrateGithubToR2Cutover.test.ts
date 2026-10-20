@@ -117,7 +117,7 @@ test("a Studio row converts with Studio provenance, without receipts or a GitHub
   const inventory = buildGithubInventory([studioWall()], tree, options);
   const [result] = await migrateGithubInventory(inventory, {...options, apply: true}, deps);
   assert.equal(result.status, "migrated", result.detail);
-  assert.deepEqual(calls, ['bind-legacy:{"kind":"studio","runId":"run-1","candidateId":"cand-1"}']);
+  assert.deepEqual(calls, ["bind-legacy:{\"kind\":\"studio\",\"runId\":\"run-1\",\"candidateId\":\"cand-1\"}"]);
   assert.deepEqual(retained.map((row) => [row.uid, row.sourceKind, row.uploadId]),
     [["prism-studio", "studio", "cand-1"], ["prism-studio", "studio", "cand-1"]]);
   assert.equal(retained[0].sha, gitBlobSha(bytes), "the blob SHA comes from the downloaded bytes");

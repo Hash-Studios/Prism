@@ -133,6 +133,18 @@ GitHub upload receipts, assign creator rewards, or claim uploader identity. Mode
 completed GitHub receipts and intents. A matching source Git SHA from the pinned tree fills old rows that
 do not store a SHA; fetched bytes still must match that tree SHA.
 
+Apply touches only the walls in the reviewed report. A wall added after the dry run is skipped, because
+`onOwnedWallWritten` converts every wall at approval. A wall deleted since the dry run is skipped. A reviewed
+wall whose source changed still stops the run. A wall that the trigger already converted must match its
+reviewed manifest and counts as done. Prism Studio walls are inventoried from their worker URL pair instead of
+the GitHub tree. They need no flag: each is checked against its Studio candidate and stored with Studio
+provenance, and gets no receipt or creator credit. `npm run migrate:github-to-r2 -- <options>` builds and runs
+the script.
+
+Conversion also runs on every write of an approved wall that is still public (admin approval, 3.7.0 upload,
+Studio wall, released Drop wall). A permanent failure is logged as `owned wall conversion blocked`; the wall
+stays hidden from 3.8.0 until a later write retries it or the bulk script converts it.
+
 The script never deletes, privatizes or edits GitHub files. It does not revoke GitHub URLs, prior downloads,
 Git history, forks, mirrors or caches. A separate removal inventory must check shared-path references and
 receive explicit approval before any source-removal operation.
