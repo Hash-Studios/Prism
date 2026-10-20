@@ -28,9 +28,11 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -189,7 +191,7 @@ void main() {
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
     acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',
-    loadLocalizations: loadLocalizations,
+    loadLocalizations: loadLocalizations ?? () async => AppLocalizationsEn(),
   );
 
   Iterable<String> trackedNames() => analytics.events.map((event) => event.eventName);
@@ -1154,6 +1156,11 @@ void main() {
     });
 
     test('an anime interest gets an anime style with a prompt from its pool', () async {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      final nonEnglishLocale = AppLocalizations.supportedLocales.firstWhere((locale) => locale.languageCode != 'en');
+      binding.platformDispatcher.localesTestValue = <Locale>[nonEnglishLocale];
+      addTearDown(binding.platformDispatcher.clearLocalesTestValue);
+
       final bloc = buildBloc();
       addTearDown(bloc.close);
 
