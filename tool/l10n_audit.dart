@@ -64,6 +64,14 @@ const Set<String> _uiParameterNames = <String>{
   'iconTooltip',
 };
 
+const Map<String, Set<String>> _uiNamedArguments = <String, Set<String>>{
+  'PrismTextField': <String>{'hint', 'helper', 'error', 'label'},
+  'SignInPrompt': <String>{'feature'},
+  'CoinGateSpec': <String>{'adErrorMessage', 'spendErrorMessage', 'failureLabel'},
+  'ShortcutItem': <String>{'localizedTitle'},
+  'shareWallpaperCard': <String>{'contextLine'},
+};
+
 class _LiteralFinding {
   const _LiteralFinding({
     required this.file,
@@ -215,6 +223,9 @@ class _StringLiteralVisitor extends RecursiveAstVisitor<void> {
 
   (String, String) _classify(AstNode node, String literal) {
     if (literal.trim().isEmpty) return ('non_ui', 'empty text or whitespace separator');
+    if (RegExp(r'^[A-Za-z][A-Za-z0-9+.-]*://$').hasMatch(literal)) {
+      return ('non_ui', 'URL scheme placeholder');
+    }
     final RegExp punctuation = RegExp(r'''^[\s\d@,.:;!?%+×/()\[\]#'"\-·…]*$''');
     if (node is StringInterpolation &&
         node.elements.whereType<InterpolationString>().every((part) => punctuation.hasMatch(part.value))) {
@@ -287,8 +298,8 @@ class _StringLiteralVisitor extends RecursiveAstVisitor<void> {
         if (namedOwner == current &&
             !crossedOtherCall &&
             namedArgument != null &&
-            _uiParameterNames.contains(namedArgument) &&
-            _looksLikeUiType(name)) {
+            (_uiParameterNames.contains(namedArgument) && _looksLikeUiType(name) ||
+                _uiNamedArguments[name]?.contains(namedArgument) == true)) {
           return ('probable_ui', '$name.$namedArgument');
         }
         crossedOtherCall = true;
@@ -313,8 +324,8 @@ class _StringLiteralVisitor extends RecursiveAstVisitor<void> {
         if (namedOwner == current &&
             !crossedOtherCall &&
             namedArgument != null &&
-            _uiParameterNames.contains(namedArgument) &&
-            _looksLikeUiType(name)) {
+            (_uiParameterNames.contains(namedArgument) && _looksLikeUiType(name) ||
+                _uiNamedArguments[name]?.contains(namedArgument) == true)) {
           return ('probable_ui', '$name.$namedArgument');
         }
         if (_uiCallNames.contains(name) && !crossedOtherCall) {

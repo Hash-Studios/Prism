@@ -15,7 +15,9 @@ class FavouriteWallpaperScreen extends StatelessWidget {
     return PrismPage(
       maxContentWidth: double.infinity,
       title: context.l10n.wallpaperFavouritesTitle,
-      body: app_state.prismUser.loggedIn ? const FavouriteGrid() : const SignInPrompt(feature: 'favourites'),
+      body: app_state.prismUser.loggedIn
+          ? const FavouriteGrid()
+          : SignInPrompt(feature: context.l10n.wallpaperAutoRotateNounFavourites),
     );
   }
 }

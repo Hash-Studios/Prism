@@ -1,5 +1,17 @@
 {
   "@@locale": "en",
+  "economyExportFailedLabel": "Export failed",
+  "@economyExportFailedLabel": {
+    "description": "Failed filter export action inserted before refund status."
+  },
+  "coreSignInCreatorSearchFeature": "creator search",
+  "@coreSignInCreatorSearchFeature": {
+    "description": "Feature name inserted into the sign-in title for creator search."
+  },
+  "debugLogExportSubject": "Prism Debug Logs",
+  "@debugLogExportSubject": {
+    "description": "Subject of the shared diagnostic log export."
+  },
   "accountAbout": "About",
   "@accountAbout": {
     "description": "About page title."
@@ -1237,6 +1249,10 @@
   "accountPurchasesRestored": "Purchases restored.",
   "@accountPurchasesRestored": {
     "description": "Success toast after restoring purchases."
+  },
+  "accountPurchasesRestoredPending": "Purchases restored. Pro can take a minute to unlock.",
+  "@accountPurchasesRestoredPending": {
+    "description": "Toast after a restore when the store has the purchase but the server has not confirmed Pro yet."
   },
   "accountQuickTiles": "Quick tiles",
   "@accountQuickTiles": {
@@ -3073,10 +3089,36 @@
   "economyAiGenerationTime": "This takes about 20 seconds",
   "economyAiHistoryEmpty": "Each wallpaper you generate appears here, so you can compare or switch back.",
   "economyAiHistoryFailed": "Couldn't load history. Pull to refresh.",
+  "economyAiMatchingScreenSize": "Matching your screen size…",
+  "@economyAiMatchingScreenSize": {
+    "description": "AI wallpaper generation status shown while matching the output to the device screen."
+  },
+  "economyAiApplyingStyle": "Applying your style…",
+  "@economyAiApplyingStyle": {
+    "description": "AI wallpaper generation status shown while applying the selected style."
+  },
+  "economyAiFinalizingWallpaper": "Finalizing your wallpaper…",
+  "@economyAiFinalizingWallpaper": {
+    "description": "AI wallpaper generation status shown while completing the wallpaper."
+  },
+  "economyAiRemixHint": "Darker sky, warmer palette, softer edges…",
+  "@economyAiRemixHint": {
+    "description": "Example hint in the AI wallpaper remix text field."
+  },
   "economyAiNeedCoinsToGenerate": "Need {cost} coins to generate.",
   "@economyAiNeedCoinsToGenerate": {
     "placeholders": {
       "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyNeedMoreCoins": "{count, plural, one{Need {count} more coin.} other{Need {count} more coins.}}",
+  "@economyNeedMoreCoins": {
+    "description": "Toast shown when an action needs more coins than the user has.",
+    "placeholders": {
+      "count": {
         "type": "int",
         "format": "decimalPattern"
       }
@@ -6011,6 +6053,14 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumPurchasePending": "Your purchase is saved. Pro can take a minute to unlock.",
+  "@premiumPurchasePending": {
+    "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPurchaseUnconfirmed": "Could not confirm your purchase. Try Restore purchases in Settings.",
+  "@premiumPurchaseUnconfirmed": {
+    "description": "Toast after a purchase that neither the store nor the server could confirm."
+  },
   "wallpaperAccentColor": "Accent color",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."
@@ -8695,6 +8745,113 @@
       }
     }
   },
+  "economyAiPromptSceneAnime1": "an anime skyline above floating islands",
+  "economyAiPromptSceneAnime2": "a lone samurai on a neon-lit rainy street",
+  "economyAiPromptSceneAnime3": "a futuristic shrine with cherry blossoms and holograms",
+  "economyAiPromptSceneAnime4": "a dreamy anime night market with lantern glow",
+  "economyAiPromptSceneAnime5": "a cyber-anime city horizon at blue hour",
+  "economyAiPromptSceneMinimal1": "minimal dunes and a single sun disk",
+  "economyAiPromptSceneMinimal2": "clean geometric mountain layers",
+  "economyAiPromptSceneMinimal3": "a serene monochrome ocean horizon",
+  "economyAiPromptSceneMinimal4": "simple abstract lines with balanced spacing",
+  "economyAiPromptSceneMinimal5": "a soft gradient sky over flat hills",
+  "economyAiPromptSceneCyberpunk1": "a neon megacity street with wet reflections",
+  "economyAiPromptSceneCyberpunk2": "a futuristic alley with holographic billboards",
+  "economyAiPromptSceneCyberpunk3": "a high-tech skyline with flying traffic lanes",
+  "economyAiPromptSceneCyberpunk4": "a cyberpunk rooftop overlooking glowing towers",
+  "economyAiPromptSceneCyberpunk5": "a midnight city crossing with teal-magenta lights",
+  "economyAiPromptSceneWatercolor1": "a watercolor forest valley at dawn",
+  "economyAiPromptSceneWatercolor2": "a hand-painted mountain lake scene",
+  "economyAiPromptSceneWatercolor3": "soft watercolor clouds above rolling hills",
+  "economyAiPromptSceneWatercolor4": "a tranquil riverbank with pastel tones",
+  "economyAiPromptSceneWatercolor5": "an artistic watercolor coastline at sunset",
+  "economyAiPromptSceneMeshGradient1": "a smooth mesh gradient flow with layered blobs",
+  "economyAiPromptSceneMeshGradient2": "vibrant fluid gradient waves with depth",
+  "economyAiPromptSceneMeshGradient3": "soft multi-color mesh forms and gentle curves",
+  "economyAiPromptSceneMeshGradient4": "high-contrast mesh gradient ribbons",
+  "economyAiPromptSceneMeshGradient5": "pastel mesh gradient bloom with subtle texture",
+  "economyAiPromptSceneAbstract1": "an abstract fractal composition with dynamic curves",
+  "economyAiPromptSceneAbstract2": "layered liquid forms with modern depth",
+  "economyAiPromptSceneAbstract3": "bold abstract shapes with soft edges",
+  "economyAiPromptSceneAbstract4": "a surreal abstract field of floating geometry",
+  "economyAiPromptSceneAbstract5": "organic abstract waves with cinematic contrast",
+  "economyAiPromptSceneNature1": "a misty mountain range at sunrise",
+  "economyAiPromptSceneNature2": "a dense evergreen forest with sun rays",
+  "economyAiPromptSceneNature3": "a dramatic coastal cliff with crashing waves",
+  "economyAiPromptSceneNature4": "a calm alpine lake under twilight sky",
+  "economyAiPromptSceneNature5": "a desert canyon with warm golden light",
+  "economyAiPromptLightingSoftAmbient": "soft ambient",
+  "economyAiPromptLightingCinematicRim": "cinematic rim",
+  "economyAiPromptLightingGoldenHour": "golden hour",
+  "economyAiPromptLightingMoonlit": "moonlit",
+  "economyAiPromptLightingVolumetric": "volumetric",
+  "economyAiPromptMoodCalm": "calm",
+  "economyAiPromptMoodDreamy": "dreamy",
+  "economyAiPromptMoodEpic": "epic",
+  "economyAiPromptMoodMoody": "moody",
+  "economyAiPromptMoodUplifting": "uplifting",
+  "economyAiPromptQualityHighDetail": "high detail",
+  "economyAiPromptQualityCleanComposition": "ultra clean composition",
+  "economyAiPromptQualityCrispTextures": "crisp textures",
+  "economyAiPromptQualityBalancedContrast": "balanced contrast",
+  "economyAiPromptQualityNaturalColors": "vibrant but natural colors",
+  "economyAiPromptSuffix": "vertical phone wallpaper, no text",
+  "economyAiPromptComposition": "{scene}, {lighting} lighting, {mood} mood, {quality}, {suffix}",
+  "@economyAiPromptComposition": {
+    "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
+    "placeholders": {
+      "scene": { "type": "String" },
+      "lighting": { "type": "String" },
+      "mood": { "type": "String" },
+      "quality": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "economyAiPromptSceneOnly": "{scene}, {suffix}",
+  "@economyAiPromptSceneOnly": {
+    "description": "An AI wallpaper scene prompt with wallpaper instructions.",
+    "placeholders": {
+      "scene": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "economyAiMadeWithPrism": "Made with Prism AI",
+  "onboardingAiPromptFallback": "a beautiful wallpaper",
+  "onboardingAiPromptNature1": "a misty mountain range at sunrise with warm golden light",
+  "onboardingAiPromptNature2": "a dense evergreen forest with sun rays breaking through the canopy",
+  "onboardingAiPromptNature3": "a dramatic coastal cliff with crashing waves and moody sky",
+  "onboardingAiPromptNature4": "a calm alpine lake under a twilight sky with star reflections",
+  "onboardingAiPromptNature5": "a desert canyon with warm golden light and dramatic rock formations",
+  "onboardingAiPromptAbstract1": "an abstract fractal composition with dynamic curves and vivid color",
+  "onboardingAiPromptAbstract2": "layered liquid forms with modern depth and metallic sheen",
+  "onboardingAiPromptAbstract3": "bold abstract shapes with soft edges and cinematic contrast",
+  "onboardingAiPromptAbstract4": "a surreal abstract field of floating geometry bathed in neon light",
+  "onboardingAiPromptAbstract5": "organic abstract waves with rich texture and depth of field",
+  "onboardingAiPromptWatercolor1": "a watercolor forest valley at dawn with soft pastel mist",
+  "onboardingAiPromptWatercolor2": "a hand-painted mountain lake scene in dreamy watercolor tones",
+  "onboardingAiPromptWatercolor3": "soft watercolor clouds above rolling hills at golden hour",
+  "onboardingAiPromptWatercolor4": "a tranquil riverbank with pastel watercolor reflections",
+  "onboardingAiPromptWatercolor5": "an artistic watercolor coastline at sunset with warm hues",
+  "onboardingAiPromptMinimal1": "minimal sand dunes and a single sun disk on the horizon",
+  "onboardingAiPromptMinimal2": "clean geometric mountain layers in soft muted tones",
+  "onboardingAiPromptMinimal3": "a serene monochrome ocean horizon at dusk",
+  "onboardingAiPromptMinimal4": "simple abstract lines with perfectly balanced negative space",
+  "onboardingAiPromptMinimal5": "a soft gradient sky over flat minimalist hills",
+  "onboardingAiPromptAnime1": "an anime style city rooftop at golden hour with drifting cherry blossoms",
+  "onboardingAiPromptAnime2": "a dreamy anime countryside train crossing under a huge cloudy sky",
+  "onboardingAiPromptAnime3": "an anime mountain village at dusk with glowing lanterns and soft mist",
+  "onboardingAiPromptAnime4": "a quiet anime seaside town under a pastel sunset and towering clouds",
+  "onboardingAiPromptAnime5": "an anime starry night over a calm lake with floating lights",
+  "onboardingAiPromptMeshGradient1": "a smooth mesh gradient of coral, teal and warm yellow with soft grain",
+  "onboardingAiPromptMeshGradient2": "a flowing mesh gradient in deep violet and electric blue with gentle glow",
+  "onboardingAiPromptMeshGradient3": "a pastel mesh gradient of peach, lilac and mint blending into each other",
+  "onboardingAiPromptMeshGradient4": "a vibrant mesh gradient sunset with layered magenta and orange tones",
+  "onboardingAiPromptMeshGradient5": "a calm mesh gradient of ocean blues and seafoam with subtle light bloom",
+  "onboardingAiPromptCyberpunk1": "a neon megacity street with wet reflections and flying vehicles",
+  "onboardingAiPromptCyberpunk2": "a futuristic alley with holographic billboards and teal-magenta light",
+  "onboardingAiPromptCyberpunk3": "a high-tech skyline at night with glowing traffic lanes",
+  "onboardingAiPromptCyberpunk4": "a cyberpunk rooftop overlooking a city of glowing towers",
+  "onboardingAiPromptCyberpunk5": "a midnight city crossing drenched in teal and magenta neon",
   "wallpaperWotdByline": "by {name}",
   "@wallpaperWotdByline": {
     "description": "Creator byline for the daily featured wallpaper.",

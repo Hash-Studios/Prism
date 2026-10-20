@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
@@ -35,7 +36,7 @@ class F3AiGeneratePage extends StatelessWidget {
                   top: OnboardingLayout.aiChipY * sy,
                   left: OnboardingLayout.aiChipX * sx,
                   right: OnboardingLayout.aiChipX * sx,
-                  child: _PromptChip(prompt: aiData.prompt, style: aiData.stylePreset.label),
+                  child: _PromptChip(prompt: aiData.prompt, style: aiStyleLabel(context.l10n, aiData.stylePreset)),
                 ),
 
                 Positioned(

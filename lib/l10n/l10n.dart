@@ -21,3 +21,12 @@ Future<AppLocalizations> loadAppLocalizations(Locale locale) {
   final Locale resolvedLocale = basicLocaleListResolution(<Locale>[locale], AppLocalizations.supportedLocales);
   return AppLocalizations.delegate.load(resolvedLocale);
 }
+
+/// Loads messages for the device's preferred locale list using Flutter's locale resolution rules.
+Future<AppLocalizations> loadDeviceAppLocalizations() {
+  final Locale resolvedLocale = basicLocaleListResolution(
+    WidgetsBinding.instance.platformDispatcher.locales,
+    AppLocalizations.supportedLocales,
+  );
+  return loadAppLocalizations(resolvedLocale);
+}

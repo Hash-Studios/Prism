@@ -57,8 +57,7 @@ class PaywallOrchestrator {
         ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
         : PaywallResultValue.notPresented;
     if (_unavailableResults.contains(result)) {
-      final AppLocalizations localized =
-          messages ?? await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
       toasts.error(localized.premiumPagePlansUnavailable);
     }
     return result;
@@ -127,10 +126,16 @@ class PaywallOrchestrator {
   }
 
   Future<PaywallResultValue> _presentRevenueCatPaywall({required String placement, required String source}) async {
+    final String requestedUserId = app_state.prismUser.id.trim();
+    final bool requestedLoggedIn = app_state.prismUser.loggedIn;
+    bool isCurrentAccount() =>
+        requestedUserId == app_state.prismUser.id.trim() && requestedLoggedIn == app_state.prismUser.loggedIn;
     try {
-      await PurchasesService.instance.ensureConfigured(app_state.prismUser.id);
+      await PurchasesService.instance.ensureConfigured(requestedUserId);
+      if (!isCurrentAccount()) return PaywallResultValue.error;
       final Offering? placementOffering = await PurchasesService.instance.getCurrentOfferingForPlacement(placement);
       final Offerings? offerings = await PurchasesService.instance.getOfferings();
+      if (!isCurrentAccount()) return PaywallResultValue.error;
       final Offering? v3Offering = offerings?.all[PurchaseConstants.offeringV3Default];
       Offering? offering;
       if (v3Offering != null) {
@@ -211,11 +216,14 @@ class PaywallOrchestrator {
             rcOrFallback: RcOrFallbackValue.rc,
           ),
         );
-        return paywallResultValueFromSdkName(paywallResult.name);
+        return isCurrentAccount() ? paywallResultValueFromSdkName(paywallResult.name) : PaywallResultValue.error;
       }
 
-      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium(forceSync: true);
-      if (isPremium) {
+      final bool completed = paywallResult == PaywallResult.purchased || paywallResult == PaywallResult.restored;
+      final bool isPremium =
+          isCurrentAccount() && completed && await PurchasesService.instance.checkAndPersistPremium(forceSync: true);
+      final bool confirmedForCurrentAccount = isCurrentAccount() && isPremium;
+      if (confirmedForCurrentAccount) {
         _resetAdWatchCounter();
       }
 
@@ -224,13 +232,24 @@ class PaywallOrchestrator {
           source: source,
           placement: placement,
           result: paywallResultValueFromSdkName(paywallResult.name),
-          entitlementSynced: isPremium ? 1 : 0,
+          entitlementSynced: confirmedForCurrentAccount ? 1 : 0,
           entitlement: PurchaseConstants.entitlementV3ProAccess,
           rcOrFallback: RcOrFallbackValue.rc,
         ),
       );
+      if (!isCurrentAccount()) return PaywallResultValue.error;
+      if (completed && !confirmedForCurrentAccount) {
+        final AppLocalizations l10n = await loadDeviceAppLocalizations();
+        if (app_state.prismUser.premium) {
+          toasts.info(l10n.premiumPurchasePending);
+        } else {
+          toasts.error(l10n.premiumPurchaseUnconfirmed);
+        }
+        return PaywallResultValue.error;
+      }
       return paywallResultValueFromSdkName(paywallResult.name);
     } catch (error) {
+      if (!isCurrentAccount()) return PaywallResultValue.error;
       analytics.track(
         PaywallResultEvent(
           source: source,

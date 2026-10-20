@@ -63,6 +63,14 @@ void sample(String name) {
   showPrismConfirm(context, message: 'This cannot be undone');
   PagedChipSliver(failureTitle: 'Could not load', emptyTitle: 'No posts', emptyBody: 'Come back later');
   BottomBar(iconTooltip: 'Scroll to top');
+  PrismTextField(hint: 'Search wallpapers');
+  PrismTextField(hint: 'https://');
+  SignInPrompt(feature: 'your saved wallpapers');
+  CoinGateSpec(spendErrorMessage: 'Could not spend coins');
+  shareWallpaperCard(context, contextLine: 'Shared from your collection');
+  ShortcutItem(type: 'internal_key', localizedTitle: 'Downloads');
+  BottomText(errorText: enabled ? 'Could not save changes' : null);
+  ApiRequest(feature: 'protocol_feature', hint: 'wire_hint');
   Text('123');
   Text('…');
   showDialog(builder: (context) => AlertDialog(
@@ -100,6 +108,15 @@ void sample(String name) {
     expect(classifications['No posts'], 'probable_ui');
     expect(classifications['Come back later'], 'probable_ui');
     expect(classifications['Scroll to top'], 'probable_ui');
+    expect(classifications['Search wallpapers'], 'probable_ui');
+    expect(classifications['https://'], 'non_ui');
+    expect(classifications['your saved wallpapers'], 'probable_ui');
+    expect(classifications['Could not spend coins'], 'probable_ui');
+    expect(classifications['Shared from your collection'], 'probable_ui');
+    expect(classifications['Downloads'], 'probable_ui');
+    expect(classifications['Could not save changes'], 'probable_ui');
+    expect(classifications['protocol_feature'], isNot('probable_ui'));
+    expect(classifications['wire_hint'], isNot('probable_ui'));
     expect(classifications['downloads'], isNot('probable_ui'));
     expect(classifications['123'], 'review');
     expect(classifications['…'], 'review');
