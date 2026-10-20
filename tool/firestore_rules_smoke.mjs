@@ -15,7 +15,7 @@ async function req(method, path, fields, auth, mask) {
 const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = '') => {
   const r = await fetch(`${B}${parent ? `/${parent}` : ''}:runQuery`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' },
     body: JSON.stringify({
       structuredQuery: {
         from: [{ collectionId }],
@@ -56,6 +56,11 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/approval-race', { ...publicWall, review: { booleanValue: false }, wallpaper_path: { stringValue: 'originals/private.jpg' } }, 'owner'),
   req('PATCH', 'walls/leaked', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: 'https://example.com/original.jpg' } }, 'owner'),
   req('PATCH', 'ownedAssets/protected', { status: { stringValue: 'ready' } }, 'owner'),
+  req('PATCH', 'aiGenerationReceipts/gen-1', {
+    generationId: { stringValue: 'gen-1' }, userId: { stringValue: 'b' },
+    imageUrl: { stringValue: 'https://prismwalls.com/api/ai/assets/ai/original/gen-1.png' },
+    watermarkedImageUrl: { stringValue: 'https://prismwalls.com/api/ai/assets/ai/public/gen-1.png' },
+  }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']) }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
@@ -105,6 +110,15 @@ const cases = [
   ['owner cannot read R2 object registry', () => req('GET', 'r2ObjectRegistry/object-id', null, Bu), 403],
   ['owner cannot write R2 object registry', () => req('PATCH', 'r2ObjectRegistry/object-id', { status: { stringValue: 'active' } }, Bu), 403],
   ['owner cannot delete R2 object registry', () => req('DELETE', 'r2ObjectRegistry/object-id', null, Bu), 403],
+  ...[['owner', Bu], ['guest', undefined], ['admin', ADM]].flatMap(([role, auth]) => [
+    [`${role} cannot read AI generation receipt`, () => req('GET', 'aiGenerationReceipts/gen-1', null, auth), 403],
+    [`${role} cannot list AI generation receipts`, () => runQuery(auth, [
+      { fieldFilter: { field: { fieldPath: 'userId' }, op: 'EQUAL', value: { stringValue: 'b' } } },
+    ], 'aiGenerationReceipts'), 403],
+    [`${role} cannot create AI generation receipt`, () => req('PATCH', `aiGenerationReceipts/new-${role}`, { userId: { stringValue: 'b' } }, auth), 403],
+    [`${role} cannot update AI generation receipt`, () => req('PATCH', 'aiGenerationReceipts/gen-1', { userId: { stringValue: 'b' } }, auth, ['userId']), 403],
+    [`${role} cannot delete AI generation receipt`, () => req('DELETE', 'aiGenerationReceipts/gen-1', null, auth), 403],
+  ]),
   ['review-only public query keeps 3.7.0 feeds working', () => runQuery(A, [
     { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
   ], 'walls'), 200],

@@ -3,7 +3,8 @@ import {logger} from "firebase-functions/v2";
 import {db} from "./common";
 import * as admin from "firebase-admin";
 import {AI_LEGACY_UID, AI_RECORD_PROPAGATION_MS, AI_STORAGE_REPO, AiRecordError, aiRecordExpired, aiUploadId,
-  generationTimeMs, parseAiSource, readAiGenerationRecord} from "./aiWallSource";
+  generationTimeMs, parseAiSource, readAiGenerationReceipt, readAiGenerationRecord} from "./aiWallSource";
+import type {AiOwnerRecord} from "./aiWallSource";
 import * as delivery from "./ownedAssetDelivery";
 import type {AiBinding, StoredUpload, StudioBinding, WallBindingExpectation} from "./ownedAssetDelivery";
 import {R2Storage} from "./r2Storage";
@@ -229,9 +230,10 @@ export function buildAiRow(wall: MigrationWall): WallInventory | null {
 }
 
 /**
- * Proves the owner of an AI wall. A live Worker record must name the Auth user who posted the wall. An absent record
- * is accepted only under the reviewed AI legacy policy, only when the generation is older than the record TTL, and
- * only when no client `aiGenerations` doc names another user. The legacy proof claims no uid.
+ * Proves the owner of an AI wall. A live Worker record, or the receipt that `onWallSubmitted` copied from it, must name
+ * the Auth user who posted the wall. When both are absent, the wall is accepted only under the reviewed AI legacy
+ * policy, only when the generation is older than the record TTL, and only when no client `aiGenerations` doc names
+ * another user. The legacy proof claims no uid.
  */
 export async function proveAiWall(row: WallInventory, allowReviewedAiLegacy: boolean,
   firestore: FirebaseFirestore.Firestore = db, readRecord = readAiGenerationRecord): Promise<OwnershipProof> {
@@ -239,9 +241,9 @@ export async function proveAiWall(row: WallInventory, allowReviewedAiLegacy: boo
   if (!source || source.generationId !== row.ai?.generationId) throw new PermanentConversionError("AI wall source is invalid");
   const email = row.wall.data.email;
   if (typeof email !== "string" || !email) throw new PermanentConversionError("AI wall has no author email");
-  let record: Awaited<ReturnType<typeof readAiGenerationRecord>>;
+  let record: AiOwnerRecord | null;
   try {
-    record = await readRecord(source.generationId);
+    record = await readRecord(source.generationId) ?? await readAiGenerationReceipt(firestore, source.generationId);
   } catch (error) {
     if (error instanceof AiRecordError) throw new PermanentConversionError(error.message);
     throw error;

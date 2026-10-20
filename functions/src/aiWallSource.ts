@@ -1,4 +1,4 @@
-import type * as admin from "firebase-admin";
+import * as admin from "firebase-admin";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {STUDIO_ASSET_BASE} from "./studio/assetSource";
 
@@ -21,6 +21,10 @@ export class AiRecordError extends Error {}
 export type AiSource = {generationId: string; originalKey: string; thumbKey: string; originalUrl: string; thumbUrl: string};
 export type AiGenerationRecord = {generationId: string; userId: string; width: number; height: number;
   imageUrl: string; watermarkedImageUrl: string};
+/** The owner fields of a Worker record, as `proveAiWall` checks them. */
+export type AiOwnerRecord = Pick<AiGenerationRecord, "generationId" | "userId" | "imageUrl" | "watermarkedImageUrl">;
+/** Server-only copies of Worker records, made at submit time so that approval can outlive the 90-day record TTL. */
+export const AI_RECEIPTS = "aiGenerationReceipts";
 
 async function readJsonBody(response: Response): Promise<unknown> {
   try {
@@ -121,4 +125,35 @@ export async function readAiGenerationRecord(generationId: string): Promise<AiGe
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Copies the live Worker record of a submitted AI wall to the server-only `aiGenerationReceipts/{generationId}`.
+ * The first copy is kept. Returns false when the Worker has no record. Clients cannot write this collection.
+ */
+export async function saveAiGenerationReceipt(firestore: admin.firestore.Firestore, generationId: string,
+  readRecord = readAiGenerationRecord): Promise<boolean> {
+  const record = await readRecord(generationId);
+  if (!record) return false;
+  const {userId, imageUrl, watermarkedImageUrl} = record;
+  try {
+    await firestore.collection(AI_RECEIPTS).doc(generationId).create({generationId, userId, imageUrl,
+      watermarkedImageUrl, recordedAt: admin.firestore.FieldValue.serverTimestamp()});
+  } catch (error) {
+    if ((error as {code?: number}).code !== 6) throw error; // ALREADY_EXISTS: the first copy stays.
+  }
+  return true;
+}
+
+/** The receipt that `saveAiGenerationReceipt` wrote, or null. Throws `AiRecordError` for a malformed receipt. */
+export async function readAiGenerationReceipt(firestore: admin.firestore.Firestore,
+  generationId: string): Promise<AiOwnerRecord | null> {
+  const data = (await firestore.collection(AI_RECEIPTS).doc(generationId).get()).data();
+  if (!data) return null;
+  const {userId, imageUrl, watermarkedImageUrl} = data;
+  if (data.generationId !== generationId || typeof userId !== "string" || !userId || typeof imageUrl !== "string" ||
+    typeof watermarkedImageUrl !== "string") {
+    throw new AiRecordError("AI generation receipt is invalid");
+  }
+  return {generationId, userId, imageUrl, watermarkedImageUrl};
 }
