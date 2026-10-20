@@ -18,9 +18,14 @@ const created = (data: Doc) => ({
   data: {data: () => data},
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
-function setup(t: TestContext, wall: Doc, depth: (store: Map<string, Doc>) => Promise<unknown>) {
+function setup(
+  t: TestContext,
+  wall: Doc,
+  depth: (store: Map<string, Doc>) => Promise<unknown>,
+  labels: () => Promise<string[]> = async () => ["Mountain"],
+) {
   const store = installFakeDb(t, {"walls/w1": wall});
-  t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
+  t.mock.method(wallCategory, "detectLabels", labels);
   t.mock.method(wallColors, "wallColorsFor", async () => ["blue"]);
   const depthMock = t.mock.method(wallDepth, "wallDepthFor", () => depth(store));
   return {store, depthMock};
@@ -92,4 +97,51 @@ test("a wall approved before its check ends is filed into the collection of its 
   await onWallCategorize.run(created(wall));
   assert.equal(store.get("walls/w1")?.category, "Nature");
   assert.deepEqual(store.get("walls/w1")?.collections, ["community", "landscapes"]);
+});
+
+test("a new wall keeps the Vision labels next to its category", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => undefined, async () => ["Mountain", "Sky"]);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  assert.deepEqual(store.get("walls/w1")?.visionLabels, ["Mountain", "Sky"]);
+  assert.equal(store.get("walls/w1")?.category, "Nature");
+});
+
+test("a wall that already has a category still gets its Vision labels and keeps the category", async (t) => {
+  const wall = {wallpaper_url: WALL_URL, category: "Space", colors: ["blue"]};
+  const {store} = setup(t, wall, async () => undefined, async () => ["Mountain"]);
+  await onWallCategorize.run(created(wall));
+  assert.deepEqual(store.get("walls/w1"), {...wall, visionLabels: ["Mountain"]});
+});
+
+test("a wall with no labels from Vision gets the default category and an empty label list", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => undefined, async () => []);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  assert.equal(store.get("walls/w1")?.category, "General");
+  assert.deepEqual(store.get("walls/w1")?.visionLabels, []);
+});
+
+test("a Vision failure writes no labels, keeps the colours and gives a new wall the default category", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => undefined, async () => {
+    throw new Error("vision down");
+  });
+  const error = t.mock.method(logger, "error", () => undefined);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  const wall = store.get("walls/w1");
+  assert.equal("visionLabels" in (wall ?? {}), false);
+  assert.equal(wall?.category, "General");
+  assert.deepEqual(wall?.colors, ["blue"]);
+  assert.deepEqual(error.mock.calls[0].arguments, [
+    "onWallCategorize: failed to detect labels",
+    {wallId: "w1", error: "vision down"},
+  ]);
+});
+
+test("a Vision failure on a wall with a category keeps the category and still writes the colours", async (t) => {
+  const wall = {wallpaper_url: WALL_URL, category: "Space"};
+  const {store} = setup(t, wall, async () => undefined, async () => {
+    throw new Error("vision down");
+  });
+  t.mock.method(logger, "error", () => undefined);
+  await onWallCategorize.run(created(wall));
+  assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["blue"]});
 });

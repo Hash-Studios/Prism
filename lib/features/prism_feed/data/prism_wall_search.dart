@@ -1,16 +1,18 @@
+import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
+import 'package:Prism/features/prism_feed/data/wall_search_terms.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:collection/collection.dart';
 import 'package:injectable/injectable.dart';
 
-/// Reviewed Prism walls whose tags or category match a search query.
+/// Reviewed Prism walls whose search terms match a search query.
 @lazySingleton
 class PrismWallSearch {
   PrismWallSearch(this._firestoreClient, this._userBlockRepository);
@@ -20,9 +22,7 @@ class PrismWallSearch {
 
   static const int _minQueryLength = 2;
 
-  /// `array-contains-any` and `whereIn` take at most 30 values: 10 words with 3 spellings each.
-  static const int _maxTokens = 10;
-  static const int _maxFilterValues = 30;
+  static const int _maxTerms = 10;
 
   /// A colour or a depth tier is checked after the query, so the query asks for more walls to keep enough matches.
   static const int _localFilterOverfetch = 4;
@@ -48,22 +48,24 @@ class PrismWallSearch {
     }
     // The query itself is exact for a lone colour or a lone depth tier. Anything left is checked on the matches.
     final bool checksMatches = browseOnly ? depthOnly && colorId != null : colorId != null || depthOnly;
-    final int fetchLimit = checksMatches ? limit * _localFilterOverfetch : limit;
+    final List<String> terms = searchTermsOf(trimmed).take(_maxTerms).toList(growable: false);
+    // Ranking can only lift an older wall that matches more words when the query fetched it.
+    final bool ranks = !browseOnly && terms.length > 1;
+    final int fetchLimit = checksMatches || ranks ? limit * _localFilterOverfetch : limit;
     try {
-      final List<List<PrismWallpaper>> matches = switch ((browseOnly, depthOnly)) {
-        (true, true) => <List<PrismWallpaper>>[await _run('depth', fetchLimit, _depthFilter)],
-        (true, false) => <List<PrismWallpaper>>[
-          await _run(
-            'color',
-            fetchLimit,
-            FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
-          ),
-        ],
-        _ => await _textMatches(trimmed, fetchLimit),
+      final List<PrismWallpaper> matches = switch ((browseOnly, depthOnly)) {
+        (true, true) => await _run('depth', fetchLimit, _depthFilter, _toWall),
+        (true, false) => await _run(
+          'color',
+          fetchLimit,
+          FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
+          _toWall,
+        ),
+        _ => await _rankedTextMatches(terms, fetchLimit),
       };
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
-      for (final PrismWallpaper wall in matches.expand((List<PrismWallpaper> walls) => walls)) {
+      for (final PrismWallpaper wall in matches) {
         final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);
         final bool hasDepth = !depthOnly || (wall.depthTier?.supportsDepth ?? false);
         if (hasColor && hasDepth && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
@@ -77,24 +79,36 @@ class PrismWallSearch {
     }
   }
 
-  Future<List<List<PrismWallpaper>>> _textMatches(String query, int limit) {
-    return Future.wait(<Future<List<PrismWallpaper>>>[
-      _run(
-        'tags',
+  Future<List<PrismWallpaper>> _rankedTextMatches(List<String> terms, int limit) async {
+    if (terms.isEmpty) return const <PrismWallpaper>[];
+    final List<_ScoredWall> scored = <_ScoredWall>[
+      ...await _run<_ScoredWall>(
+        'terms',
         limit,
-        FirestoreFilter(field: 'tags', op: FirestoreFilterOp.arrayContainsAny, value: _tagVariants(query)),
+        FirestoreFilter(field: 'searchTerms', op: FirestoreFilterOp.arrayContainsAny, value: terms),
+        (data, docId) => (
+          wall: _toWall(data, docId),
+          score: _matchedTerms(const FirestoreStringListConverter().fromJson(data['searchTerms']), terms),
+        ),
       ),
-      _run(
-        'category',
-        limit,
-        FirestoreFilter(field: 'category', op: FirestoreFilterOp.whereIn, value: _categoryVariants(query)),
-      ),
-    ]);
+    ];
+    mergeSort(scored, compare: (_ScoredWall a, _ScoredWall b) => b.score.compareTo(a.score));
+    return <PrismWallpaper>[for (final _ScoredWall match in scored) match.wall];
   }
 
-  Future<List<PrismWallpaper>> _run(String kind, int limit, FirestoreFilter match) async {
+  int _matchedTerms(List<String> stored, List<String> terms) => terms.where(stored.contains).length;
+
+  PrismWallpaper _toWall(Map<String, dynamic> data, String docId) =>
+      PrismWallDocDto.fromJson(data).toDomain(docId: docId);
+
+  Future<List<T>> _run<T>(
+    String kind,
+    int limit,
+    FirestoreFilter match,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) async {
     try {
-      return await _firestoreClient.query<PrismWallpaper>(
+      return await _firestoreClient.query<T>(
         FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
           sourceTag: 'PrismWallSearch.$kind',
@@ -106,7 +120,7 @@ class PrismWallSearch {
           limit: limit,
           cachePolicy: FirestoreCachePolicy.memoryFirst,
         ),
-        (data, docId) => PrismWallDocDto.fromJson(data).toDomain(docId: docId),
+        map,
       );
     } catch (error, stackTrace) {
       final bool missingIndex = error.toString().contains(_failedPrecondition);
@@ -115,38 +129,9 @@ class PrismWallSearch {
         error: error,
         stackTrace: stackTrace,
       );
-      return const <PrismWallpaper>[];
+      return <T>[];
     }
   }
-
-  /// Each word of the query as a tag, in the spellings creators use. The whole phrase fills what is left.
-  List<String> _tagVariants(String query) {
-    final Set<String> variants = <String>{};
-    for (final String token in _tokens(query)) {
-      variants.addAll(<String>[token.toLowerCase(), token, _titleCase(token)]);
-    }
-    for (final String phrase in <String>[query.toLowerCase(), query, _titleCase(query)]) {
-      if (variants.length < _maxFilterValues) variants.add(phrase);
-    }
-    return variants.take(_maxFilterValues).toList(growable: false);
-  }
-
-  List<String> _tokens(String query) =>
-      query.split(RegExp(r'\s+')).where((String word) => word.isNotEmpty).toSet().take(_maxTokens).toList();
-
-  /// `walls.category` holds the catalogue's category names, so a known name matches exactly.
-  List<String> _categoryVariants(String query) {
-    final Set<String> words = <String>{query.toLowerCase(), ..._tokens(query).map((String t) => t.toLowerCase())};
-    return <String>{
-      _titleCase(query),
-      for (final definition in category_data.categoryDefinitions)
-        if (words.contains(definition.name.toLowerCase())) definition.name,
-    }.take(_maxFilterValues).toList(growable: false);
-  }
-
-  String _titleCase(String value) => value
-      .split(RegExp(r'\s+'))
-      .where((String word) => word.isNotEmpty)
-      .map((String word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-      .join(' ');
 }
+
+typedef _ScoredWall = ({PrismWallpaper wall, int score});

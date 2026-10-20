@@ -28,11 +28,12 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
-    const [colors, depth] = await Promise.all([
+    const [colors, depth, labels] = await Promise.all([
       hasPaletteColors(data.colors) ? undefined : wallColorsFor(wallId, data),
       data.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
+      detectLabelsIfAble(wallId, wallpaperUrl),
     ]);
-    const extra: ImageFields = colors ? {colors} : {};
+    const extra: ImageFields = {...(colors ? {colors} : {}), ...(labels ? {visionLabels: labels} : {})};
     await writeDepthIfAbsent(wallId, depth);
 
     if (data.category && data.category !== DEFAULT_CATEGORY) {
@@ -43,36 +44,31 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
-    try {
-      const labels = await detectLabels(wallpaperUrl);
-
-      if (labels.length === 0) {
-        logger.warn("onWallCategorize: no labels detected from Vision API", {wallId});
-        await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION], extra);
-        return;
-      }
-
-      const category = mapLabelsToCategory(labels);
-      const collections = [DEFAULT_COLLECTION];
-
-      logger.info("onWallCategorize: categorized wallpaper", {
-        wallId,
-        labels: labels.slice(0, 5),
-        category,
-      });
-
-      await updateWallpaperCategory(wallId, category, collections, extra);
-    } catch (error) {
-      logger.error("onWallCategorize: failed to categorize wallpaper", {
-        wallId,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    if (!labels || labels.length === 0) {
+      logger.warn("onWallCategorize: no labels to categorize by", {wallId});
       await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION], extra);
+      return;
     }
+
+    const category = mapLabelsToCategory(labels);
+    logger.info("onWallCategorize: categorized wallpaper", {wallId, labels: labels.slice(0, 5), category});
+    await updateWallpaperCategory(wallId, category, [DEFAULT_COLLECTION], extra);
   },
 );
 
-type ImageFields = {colors?: string[]};
+type ImageFields = {colors?: string[]; visionLabels?: string[]};
+
+async function detectLabelsIfAble(wallId: string, wallpaperUrl: string): Promise<string[] | undefined> {
+  try {
+    return await detectLabels(wallpaperUrl);
+  } catch (error) {
+    logger.error("onWallCategorize: failed to detect labels", {
+      wallId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return undefined;
+  }
+}
 
 /**
  * The check runs for up to a minute, and an admin can set `depth` meanwhile. A failure is logged, so it cannot fail

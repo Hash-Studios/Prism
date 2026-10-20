@@ -5,6 +5,7 @@ import sharp from "sharp";
 import {db} from "../common";
 import {onWallCategorize} from "../onWallCategorize";
 import {backfillWallDepth, needsDepth, parseDepthBackfillArgs} from "../scripts/backfillWallDepth";
+import * as wallCategory from "../wallCategory";
 import * as wallDepth from "../wallDepth";
 import {
   DEPTH_T_AUTO,
@@ -272,9 +273,10 @@ test("onWallCategorize uses the thumbnail only when there is no full image", asy
   const updates: Array<Record<string, unknown>> = [];
   fakeWalls(t, updates);
   const depthMock = t.mock.method(wallDepth, "wallDepthFor", async () => undefined);
+  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
   await onWallCategorize.run(created({wallpaper_thumb: WALL_URL, category: "Space", colors: ["blue"]}));
   assert.deepEqual(depthMock.mock.calls[0].arguments, ["w1", {url: WALL_URL}]);
-  assert.deepEqual(updates, [], "a failed check writes no depth");
+  assert.deepEqual(updates, [{visionLabels: ["Space"]}], "a failed check writes no depth");
 });
 
 test("onWallCategorize leaves an existing depth alone", async (t) => {
@@ -282,9 +284,10 @@ test("onWallCategorize leaves an existing depth alone", async (t) => {
   fakeWalls(t, updates);
   const depthMock = t.mock.method(wallDepth, "wallDepthFor", async () => MENU);
   const adminDepth = {tier: "auto", kind: null, top: null, v: 1, by: "admin"};
+  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
   await onWallCategorize.run(created({wallpaper_url: WALL_URL, category: "Space", colors: ["blue"], depth: adminDepth}));
   assert.equal(depthMock.mock.callCount(), 0);
-  assert.deepEqual(updates, []);
+  assert.deepEqual(updates, [{visionLabels: ["Space"]}]);
 });
 
 test("needsDepth skips admin values even with force, and current detector values without it", () => {
