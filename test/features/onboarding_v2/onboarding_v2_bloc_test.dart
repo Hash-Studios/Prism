@@ -190,6 +190,7 @@ void main() {
     settingsLocalDataSource,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
+    acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',
     loadLocalizations: loadLocalizations ?? () async => AppLocalizationsEn(),
   );
 
@@ -882,7 +883,7 @@ void main() {
       await bloc.stream.firstWhere((state) => state.loadStatus == LoadStatus.success);
     },
     verify: (bloc) {
-      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
     },
   );
 
@@ -1217,7 +1218,7 @@ void main() {
       wait: Duration.zero,
       verify: (bloc) {
         expect(bloc.state.aiData.status, AiGenerateStatus.success);
-        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.thumbnailUrl, 'https://example.com/thumb.jpg');
       },
     );
@@ -1283,7 +1284,11 @@ void main() {
         ),
       );
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
     },
     build: buildBloc,
@@ -1529,7 +1534,11 @@ void main() {
           ),
         );
         when(
-          () => firstWallpaperService.performAction(any()),
+          () => firstWallpaperService.performAction(
+            any(),
+            wallpaperId: any(named: 'wallpaperId'),
+            wallpaperSource: any(named: 'wallpaperSource'),
+          ),
         ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.both));
         when(
           () => aiRepository.generate(
@@ -1620,7 +1629,11 @@ void main() {
 
     test('a success keeps the screen that was set so the toast can name it', () async {
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
       final bloc = buildBloc();
       addTearDown(bloc.close);
@@ -1634,7 +1647,11 @@ void main() {
 
     test('a failure keeps the error code and trying again clears it', () async {
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
       final bloc = buildBloc();
       addTearDown(bloc.close);

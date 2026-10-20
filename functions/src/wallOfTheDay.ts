@@ -350,7 +350,6 @@ async function wotdPushPayload(wallId: string): Promise<{
   const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
   const wallTitle = (wall.title as string | undefined)?.trim() || "";
   const copy = notificationCopyPayload({kind: "wotdForAudience", wallTitle});
-  const wallpaperUrl = String(wall.wallpaper_url ?? "");
   const thumbnailUrl = String(wall.wallpaper_thumb ?? "");
   // Share links resolve walls by their `id` field, which is not the doc id.
   const shareId =
@@ -361,7 +360,7 @@ async function wotdPushPayload(wallId: string): Promise<{
       route: "wall_of_the_day",
       notification_kind: "wall_of_the_day",
       wall_id: wallId,
-      url: wallShareUrl({wallId: shareId, wallpaperUrl, thumbnailUrl}),
+      url: wallShareUrl({wallId: shareId, thumbnailUrl}),
     },
     imageUrl: thumbnailUrl || undefined,
     channelId: "wall_of_the_day",
@@ -549,25 +548,18 @@ function firestoreTimestampToDateString(
   }
 }
 
-function wallShareUrl({
+export function wallShareUrl({
   wallId,
-  wallpaperUrl,
   thumbnailUrl,
 }: {
   wallId: string;
-  wallpaperUrl: string;
   thumbnailUrl: string;
 }): string {
-  const thumb = thumbnailUrl.trim() || wallpaperUrl.trim();
   const params = new URLSearchParams({
     id: wallId,
     source: "prism",
     provider: "Prism",
-    thumb,
+    thumb: thumbnailUrl.trim(),
   });
-  const full = wallpaperUrl.trim();
-  if (full) {
-    params.set("url", full);
-  }
   return `https://prismwalls.com/share?${params.toString()}`;
 }

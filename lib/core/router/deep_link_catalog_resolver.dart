@@ -219,21 +219,21 @@ Future<PageRouteInfo?> _previewRoute({
     wallId: wallId,
     source: source ?? WallpaperSource.prism,
   );
-  if (entity == null ||
-      !_isTrustedImageUrl(entity.fullUrl, entity.source) ||
-      !_isTrustedImageUrl(entity.thumbnailUrl, entity.source)) {
+  if (entity == null || !_isTrustedImageUrl(entity.thumbnailUrl, entity.source)) {
     return null;
   }
+  final previewUrl = entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl;
+  if (!_isTrustedImageUrl(previewUrl, entity.source)) return null;
   if (clock) {
     return ClockPreviewRoute(
-      link: entity.fullUrl,
+      link: previewUrl,
       file: false,
       wallpaperId: entity.id,
       wallpaperSource: entity.source,
       thumbnailUrl: entity.thumbnailUrl,
     );
   }
-  return ReviewPhotoPreviewRoute(url: entity.fullUrl, thumbUrl: entity.thumbnailUrl);
+  return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: entity.thumbnailUrl);
 }
 
 Future<PageRouteInfo?> _adminImageRoute({
@@ -246,10 +246,12 @@ Future<PageRouteInfo?> _adminImageRoute({
     wallId: wallId,
     source: source ?? WallpaperSource.prism,
   );
-  if (entity == null || !_isTrustedImageUrl(entity.fullUrl, entity.source)) {
+  if (entity == null) {
     return null;
   }
-  return FullScreenImageRoute(imageUrl: entity.fullUrl);
+  final previewUrl = entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl;
+  if (!_isTrustedImageUrl(previewUrl, entity.source)) return null;
+  return FullScreenImageRoute(imageUrl: previewUrl);
 }
 
 Future<PageRouteInfo?> _relationRoute(
@@ -292,7 +294,13 @@ Future<PageRouteInfo?> _wallpaperActionRoute({
 }) async {
   if (wallId.isEmpty) return _inputRoute(workflow);
   final WallpaperSource selectedSource = source ?? WallpaperSource.prism;
+  if (selectedSource == WallpaperSource.prism) {
+    return WallpaperDetailRoute(wallId: wallId, source: selectedSource);
+  }
   final FeedItemEntity? entity = await (wallpaperLookup ?? _lookupWallpaper)(wallId: wallId, source: selectedSource);
+  if (entity?.source == WallpaperSource.prism) {
+    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism);
+  }
   if (entity == null || !_isTrustedImageUrl(entity.fullUrl, entity.source)) {
     return null;
   }
@@ -316,7 +324,11 @@ Future<PageRouteInfo?> _downloadRoute({
   Future<File> Function({required String imageUrl, required String wallId, required WallpaperSource source})?
   localFileResolver,
 }) async {
+  if (source == WallpaperSource.prism) return WallpaperDetailRoute(wallId: wallId, source: source);
   final FeedItemEntity? entity = await (wallpaperLookup ?? _lookupWallpaper)(wallId: wallId, source: source);
+  if (entity?.source == WallpaperSource.prism) {
+    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism);
+  }
   if (entity == null || !_isTrustedImageUrl(entity.fullUrl, entity.source)) {
     return null;
   }
@@ -340,6 +352,11 @@ bool _isTrustedImageUrl(String imageUrl, WallpaperSource source) {
   final Uri? uri = Uri.tryParse(imageUrl);
   if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
     return false;
+  }
+  if (source == WallpaperSource.prism && uri.host == 'asia-south1-prism-wallpapers.cloudfunctions.net') {
+    return RegExp(
+      r'^https://asia-south1-prism-wallpapers\.cloudfunctions\.net/ownedThumbnail/[A-Za-z0-9_-]{1,200}$',
+    ).hasMatch(imageUrl);
   }
   final Set<String> allowedHosts = switch (source) {
     WallpaperSource.prism => <String>{

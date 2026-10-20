@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -20,6 +23,7 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
@@ -116,12 +120,18 @@ void main() {
   });
 
   setUp(() async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'detail-set-owner'
+      ..loggedIn = true;
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
     await settings.set('notificationPermissionPromptedV2', true);
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(settings));
+    final downloaded = DownloadedWallIndex(settings);
+    getIt.registerSingleton<DownloadedWallIndex>(downloaded);
+    await downloaded.remember(link: _prism().fullUrl, id: 'prism-1', source: WallpaperSource.prism);
     recordAction = _MockRecordAction();
     when(() => recordAction(any(), any())).thenAnswer((_) async => Result.success(null));
     getIt.registerSingleton<RecordWallpaperActionUseCase>(recordAction);
@@ -133,6 +143,15 @@ void main() {
     themeBloc = _MockThemeBloc();
     whenListen(themeBloc, const Stream<ThemeState>.empty(), initialState: ThemeState.initial());
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(
+      const BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      ),
+      (_) async => <Object?>[
+        DownloadItemsResult(success: true, items: <String>[_prism().fullUrl]),
+      ],
+    );
     toastMessages = <String>[];
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (call) async {
       final Object? arguments = call.arguments;
@@ -147,11 +166,19 @@ void main() {
 
   tearDown(() async {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(
+      const BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      ),
+      null,
+    );
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
     aw.AsyncWallpaper.debugResetClient();
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
   Future<void> pump(WidgetTester tester, WallpaperDetailLoaded state, {Size? surfaceSize}) async {

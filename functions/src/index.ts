@@ -29,6 +29,7 @@ export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
+export {resolveOriginalAccess} from "./originalAccess";
 
 export {recordWallpaperAction, onFavouriteWritten} from "./wallStats";
 export {computeTrending} from "./trending";

@@ -10,6 +10,7 @@ import {pickChestCosmetic} from "./shopCatalog";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
 import {isStudioWall} from "./studio/isStudioWall";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
+import {verifiedUploadOwner} from "./creatorProgress";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -152,6 +153,8 @@ export function refundableDelta(
 ): number | null {
   const notRefundable = () => new HttpsError("failed-precondition", "No refundable spend.");
   if (!debit) throw notRefundable();
+  // Issued original URLs are short-lived bearer grants and cannot be recalled by a refund.
+  if (debit.originalAccess === true) throw notRefundable();
   if (debit.userId !== callerUid) throw notRefundable();
   if (debit.type !== "debit") throw notRefundable();
   if (debit.status !== "completed") throw notRefundable();
@@ -270,6 +273,16 @@ async function hasSubmittedWall(callerUid: string, emails: string[]): Promise<bo
     for (const wall of walls.docs) {
       const data = wall.data();
       if (await isStudioWall(wall.id, data)) continue;
+      if (data.originalProtected === true) {
+        const id = str(data.id);
+        if (!id) continue;
+        const canonical = await db.collection(WALLS).where("id", "==", id).limit(2).get();
+        if (canonical.size !== 1 || canonical.docs[0].ref.path !== wall.ref.path) continue;
+        const candidate = canonical.docs[0];
+        if (await isStudioWall(candidate.id, candidate.data())) continue;
+        if (await verifiedUploadOwner(candidate) === callerUid) return true;
+        continue;
+      }
       if (data.review === true) return true;
       const path = owner !== "" && repo !== "" ? thumbnailUploadPath(data.wallpaper_thumb, owner, repo) : null;
       if (path === null) continue;

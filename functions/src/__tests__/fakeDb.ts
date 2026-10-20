@@ -75,6 +75,7 @@ interface Snap {
   exists: boolean;
   data: () => Doc | undefined;
   updateTime?: {version: number};
+  createTime?: admin.firestore.Timestamp;
 }
 
 interface FakeRef {
@@ -118,6 +119,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       exists: data !== undefined,
       data: () => data === undefined ? undefined : clone(data) as Doc,
       updateTime: data === undefined ? undefined : {version: versions.get(path) ?? 0},
+      createTime: data === undefined ? undefined : admin.firestore.Timestamp.fromMillis(1),
     };
   };
 
