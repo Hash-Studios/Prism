@@ -179,6 +179,24 @@ same checks as a live record, and the wall gets the same `{kind: "ai"}` provenan
 warning, and the wall then depends on the live record at approval. Walls submitted before the receipt existed have
 no receipt.
 
+To close that gap, deploy the receipt trigger before the one-off backfill, and run the backfill before the oldest
+pending AI wall passes 90 days. From `functions/`, run `npm run migrate:ai-receipts` to build and run
+`backfillAiGenerationReceipts`. The script needs `STUDIO_SECRET` and Application Default Credentials. It selects
+pending user AI walls with `isAiGenerated: true`, `review: false`, and a source accepted by `parseAiSource`.
+
+The script runs a dry run by default. It reports live candidates as `receiptReady` and logs `would-write` without
+writing receipts. `npm run migrate:ai-receipts -- --apply` applies the backfill. `receiptReady` then counts
+successful applies with a receipt available, including when a concurrent trigger wrote the receipt first.
+`hadReceipt` means a receipt existed at the initial check, or the Worker record was absent and a receipt existed
+at recheck. `recordGone` means neither existed at recheck; it does not mean the state is permanent. The summary
+totals per-wall outcomes. Per-wall read and write errors count
+as `failed` and make the script exit with 1. Query errors abort the run and exit with 1 without a summary.
+
+Firestore merges its standard ascending single-field indexes for `isAiGenerated` and `review` with `__name__`
+ordering. The query adds no composite index ([Firestore index merging](https://firebase.google.com/docs/firestore/query-data/index-overview#use_index_merging)).
+Pagination is not a snapshot, so rerun if new walls may have appeared behind the cursor. Invalid arguments are
+refused before the backfill runs, and `--help` needs no credentials. Fix failures before rerunning.
+
 Client-writable `aiGenerations` documents do not prove ownership. A wall with no live record and no receipt is
 accepted only by the bulk script under the separate `--allow-reviewed-ai-legacy` policy, and only when all of these
 are true:
