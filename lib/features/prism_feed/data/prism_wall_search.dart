@@ -1,3 +1,4 @@
+import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -83,14 +84,17 @@ class PrismWallSearch {
         'terms',
         limit,
         FirestoreFilter(field: 'searchTerms', op: FirestoreFilterOp.arrayContainsAny, value: terms),
-        (data, docId) => (wall: _toWall(data, docId), score: _matchedTerms(data['searchTerms'], terms)),
+        (data, docId) => (
+          wall: _toWall(data, docId),
+          score: _matchedTerms(const FirestoreStringListConverter().fromJson(data['searchTerms']), terms),
+        ),
       ),
     ];
     mergeSort(scored, compare: (_ScoredWall a, _ScoredWall b) => b.score.compareTo(a.score));
     return <PrismWallpaper>[for (final _ScoredWall match in scored) match.wall];
   }
 
-  int _matchedTerms(Object? stored, List<String> terms) => stored is List ? terms.where(stored.contains).length : 0;
+  int _matchedTerms(List<String> stored, List<String> terms) => terms.where(stored.contains).length;
 
   PrismWallpaper _toWall(Map<String, dynamic> data, String docId) =>
       PrismWallDocDto.fromJson(data).toDomain(docId: docId);
