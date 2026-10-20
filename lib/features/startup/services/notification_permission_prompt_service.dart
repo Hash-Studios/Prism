@@ -125,9 +125,8 @@ class NotificationPermissionPromptService {
   @visibleForTesting
   Future<bool> askFirst(BuildContext context) async {
     final bool? turnOn = await showPrismSheet<bool>(
-      context: context,
+      context,
       useRootNavigator: true,
-      isScrollControlled: true,
       builder: (sheetContext) => PrismSheetBody(
         mood: GlintMood.surprised,
         centered: true,

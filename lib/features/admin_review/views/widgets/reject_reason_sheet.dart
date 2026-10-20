@@ -13,9 +13,9 @@ Future<void> showRejectReasonSheet(
   String? confirmLabel,
 }) {
   return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    enableDrag: false,
+    context,
+    swipeDismissible: false,
+    dismissKeyboardOnDrag: true,
     builder: (_) => _RejectReasonSheet(
       title: title ?? context.l10n.adminRejectWallpaper,
       confirmLabel: confirmLabel ?? context.l10n.adminRejectWallpaper,
@@ -110,7 +110,6 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       child: PrismSheetBody(
         title: widget.title,
         message: context.l10n.adminCreatorWillSeeFeedback,
-        scrollable: true,
         actions: <Widget>[
           PrismButton(label: widget.confirmLabel, expand: true, loading: _isSaving, onPressed: _submit),
           PrismButton(

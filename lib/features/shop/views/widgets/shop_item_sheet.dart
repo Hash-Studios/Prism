@@ -20,8 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Opens the sheet for [item]. The sheet owns its [ShopBloc], so any screen can call this.
 Future<void> showShopItemSheet(BuildContext context, ShopItem item) {
   return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (_) => BlocProvider<ShopBloc>(
       create: (_) => getIt<ShopBloc>()..add(const ShopEvent.started()),
       child: ShopItemSheet(item: item),
@@ -208,7 +207,6 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
           title: shopItemName(item, context.l10n),
           message: _message(context.l10n, state, availability, owned, missing),
           centered: true,
-          scrollable: true,
           actions: _actions(state, availability, owned, price),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -82,6 +82,7 @@ void main() {
       SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: button.id),
     );
     await tester.pump();
+    await tester.pump();
     expect(find.text(l10n.economyCollectionKeepStreakMessage(30, 500, 'true')), findsOneWidget);
     handle.dispose();
   });

@@ -21,11 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Opens the one notification preferences sheet, shared by the inbox and Settings.
 Future<void> showNotificationSettingsSheet(BuildContext context) {
-  return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => const NotificationSettingsSheet(),
-  );
+  return showPrismSheet<void>(context, builder: (_) => const NotificationSettingsSheet());
 }
 
 /// The operating system notification permission, behind one seam so the sheet can be tested.
@@ -188,7 +184,6 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   Widget build(BuildContext context) {
     return PrismSheetBody(
       title: context.l10n.notifPreferences,
-      scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

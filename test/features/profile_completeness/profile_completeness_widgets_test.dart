@@ -4,6 +4,7 @@ import 'package:Prism/features/profile_completeness/views/widgets/profile_comple
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smooth_sheets/smooth_sheets.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(
@@ -92,10 +93,10 @@ void main() {
     expect(find.textContaining('75% complete'), findsOneWidget);
     expect(find.textContaining('25 Prism coins'), findsOneWidget);
     expect(find.text('Add one social link'), findsOneWidget);
-    final route = ModalRoute.of(tester.element(find.text('Add one social link')))! as ModalBottomSheetRoute;
-    expect(route.useSafeArea, isTrue);
-    expect(route.isDismissible, isFalse);
-    expect(route.enableDrag, isFalse);
+    final route = ModalRoute.of(tester.element(find.text('Add one social link')))! as ModalSheetRoute;
+    expect(route.barrierDismissible, isFalse);
+    expect(route.swipeDismissible, isFalse);
+    expect(find.byTooltip('Close'), findsNothing);
 
     await tester.tap(find.text('Complete profile'));
     await tester.pump();

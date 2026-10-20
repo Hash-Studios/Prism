@@ -81,7 +81,6 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
         return PrismSheetBody(
           title: l10n.coreSetWallpaper,
           message: supported(WallpaperTarget.both) ? l10n.coreBothSetsScreens : null,
-          scrollable: true,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

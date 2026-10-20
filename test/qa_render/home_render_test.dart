@@ -293,9 +293,8 @@ class _Home {
     final TasteSignalStore store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
     unawaited(
       showPrismSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
+        context,
+        detents: const <PrismSheetDetent>[PrismSheetDetent.large],
         builder: (BuildContext sheetContext) => PersonalizedFeedSettingsSheet(
           catalog: _catalog,
           initialInterests: const <String>{'Nature', 'Abstract', 'Space', 'Cities'},

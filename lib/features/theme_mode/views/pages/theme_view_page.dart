@@ -29,9 +29,6 @@ TextStyle _titleStyle(Color color) =>
 TextStyle _sectionStyle(Color color) =>
     TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 16, fontWeight: FontWeight.w500, color: color);
 
-TextStyle _panelTitleStyle(Color color) =>
-    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 24, fontWeight: FontWeight.w500, color: color);
-
 TextStyle _chipLabelStyle(Color color) => TextStyle(
   fontFamily: PrismFonts.roboto,
   fontSize: 14,
@@ -156,8 +153,7 @@ class _ThemeViewState extends State<ThemeView> {
                   ListTile(
                     onTap: () {
                       showPrismSheet(
-                        isScrollControlled: true,
-                        context: context,
+                        context,
                         builder: (context) => _PreferencePanel(
                           selected: themeMode,
                           onSelected: (mode) {
@@ -492,74 +488,28 @@ class _PreferencePanel extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final String message = context.l10n.wallpaperThemePreferenceDescription;
     final TextStyle messageStyle = TextStyle(fontSize: 13, color: colors.onSurface);
-    final double height = MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400;
-
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Container(
-                        height: 5,
-                        width: 30,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(500),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  context.l10n.wallpaperThemePreference,
-                  style: _panelTitleStyle(Theme.of(context).colorScheme.onSurface),
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    _PreferenceOption(
-                      label: context.l10n.wallpaperThemeModeSystem,
-                      selected: selected == ThemeMode.system,
-                      onTap: () => onSelected(ThemeMode.system),
-                    ),
-                    _PreferenceOption(
-                      label: context.l10n.wallpaperThemeModeLight,
-                      selected: selected == ThemeMode.light,
-                      onTap: () => onSelected(ThemeMode.light),
-                    ),
-                    _PreferenceOption(
-                      label: context.l10n.wallpaperThemeModeDark,
-                      selected: selected == ThemeMode.dark,
-                      onTap: () => onSelected(ThemeMode.dark),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.8,
-                    child: Text(message, textAlign: TextAlign.center, style: messageStyle),
-                  ),
-                ),
-              ],
-            ),
+    return PrismSheetBody(
+      title: context.l10n.wallpaperThemePreference,
+      child: Column(
+        children: <Widget>[
+          _PreferenceOption(
+            label: context.l10n.wallpaperThemeModeSystem,
+            selected: selected == ThemeMode.system,
+            onTap: () => onSelected(ThemeMode.system),
           ),
-        ),
+          _PreferenceOption(
+            label: context.l10n.wallpaperThemeModeLight,
+            selected: selected == ThemeMode.light,
+            onTap: () => onSelected(ThemeMode.light),
+          ),
+          _PreferenceOption(
+            label: context.l10n.wallpaperThemeModeDark,
+            selected: selected == ThemeMode.dark,
+            onTap: () => onSelected(ThemeMode.dark),
+          ),
+          const SizedBox(height: PrismSpace.md),
+          Text(message, textAlign: TextAlign.center, style: messageStyle),
+        ],
       ),
     );
   }

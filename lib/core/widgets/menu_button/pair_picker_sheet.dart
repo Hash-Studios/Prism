@@ -4,10 +4,11 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,9 +39,8 @@ Future<PairPick?> showPairPickerSheet(BuildContext context, {String? excludeUrl}
   final List<PairCandidate> favourites = _favouriteCandidates(context);
   final List<PairCandidate> history = _historyCandidates();
   return showPrismSheet<PairPick>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
+    context,
+    detents: const <PrismSheetDetent>[PrismSheetDetent.large],
     builder: (_) => PairPickerSheet(
       favourites: _without(favourites, excludeUrl),
       history: _without(history, excludeUrl),
@@ -123,16 +123,14 @@ class PairPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final AppLocalizations l10n = context.l10n;
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.7,
+    return PrismSheetBody(
+      title: l10n.corePairPickerTitle,
+      childScrolls: true,
       child: DefaultTabController(
         length: PairSource.values.length,
         child: Column(
           children: <Widget>[
-            Text(l10n.corePairPickerTitle, style: theme.textTheme.displaySmall),
-            const SizedBox(height: 8),
             TabBar(
               tabs: <Widget>[
                 Tab(text: l10n.corePairPickerFavourites),
@@ -184,7 +182,7 @@ class _PairGrid extends StatelessWidget {
           );
         }
         return GridView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xl, vertical: 16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 12,

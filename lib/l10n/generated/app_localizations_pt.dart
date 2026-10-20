@@ -4407,9 +4407,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyClosePreview => 'Fechar prévia';
 
   @override
-  String get economyCloseXpExplanation => 'Fechar explicação de XP';
-
-  @override
   String economyCoinActivitySemantics(String label, String date, String amount, int coins) {
     String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: 'moedas', one: 'moeda', zero: 'moedas');
     return '$label, $date, $amount $_temp0';
@@ -5618,9 +5615,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get economyLastWeek => 'Semana passada';
-
-  @override
-  String get economyLeaderboardCloseScoring => 'Fechar explicação da pontuação';
 
   @override
   String economyLeaderboardEntrySemantics(int position, String name, String isMe, int xp, String hasRank, String rank) {
@@ -14356,9 +14350,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get economyClosePreview => 'Fechar prévia';
 
   @override
-  String get economyCloseXpExplanation => 'Fechar explicação de XP';
-
-  @override
   String economyCoinActivitySemantics(String label, String date, String amount, int coins) {
     String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: 'moedas', one: 'moeda', zero: 'moedas');
     return '$label, $date, $amount $_temp0';
@@ -15567,9 +15558,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get economyLastWeek => 'Semana passada';
-
-  @override
-  String get economyLeaderboardCloseScoring => 'Fechar explicação da pontuação';
 
   @override
   String economyLeaderboardEntrySemantics(int position, String name, String isMe, int xp, String hasRank, String rank) {

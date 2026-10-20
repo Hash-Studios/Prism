@@ -3568,7 +3568,6 @@
     }
   },
   "economyClosePreview": "Vorschau schließen",
-  "economyCloseXpExplanation": "XP-Erklärung schließen",
   "economyCoinActivitySemantics": "{label}, {date}, {amount} {coins, plural, one{Coin} other{Coins}}",
   "@economyCoinActivitySemantics": {
     "placeholders": {
@@ -4668,7 +4667,6 @@
   "economyJackpotAddedToBalance": "Jackpot! Deinem Guthaben hinzugefügt",
   "economyKeepStreakToday": "Öffne Prism heute, damit deine Serie weiterläuft.",
   "economyLastWeek": "Letzte Woche",
-  "economyLeaderboardCloseScoring": "Erklärung zur Wertung schließen",
   "economyLeaderboardEntrySemantics": "{position}, {name}{isMe, select, true{, du} other{}}, diese Woche {xp} XP{hasRank, select, true{, Rang auf Lebenszeit: {rank}} other{}}",
   "@economyLeaderboardEntrySemantics": {
     "placeholders": {

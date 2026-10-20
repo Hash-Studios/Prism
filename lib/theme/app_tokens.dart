@@ -261,20 +261,49 @@ abstract final class PrismFeedLayout {
 /// language — drag handles, section labels, action bars, and spacing all
 /// derive from here.
 abstract final class PrismBottomSheet {
-  static const double dragHandleWidth = 32;
+  static const double dragHandleWidth = 36;
   static const double dragHandleHeight = 4;
 
   /// Fully-rounded pill radius for the drag handle.
   static const double dragHandleRadius = 99;
 
-  /// Space between the sheet top edge and the drag handle.
-  static const double topGap = 12;
+  /// Gap between a floating sheet and the screen edges. It goes to 0 as the sheet is dragged to full height.
+  static const double inset = 16;
+
+  /// Gap between the status bar and the top of a full-height sheet.
+  static const double topInset = 6;
+
+  /// Radius of the sheet's top corners. The bottom corners follow the screen's own corner radius.
+  static const double topRadius = 32;
+
+  /// Height of the header row that holds the close button, the title and the trailing action.
+  static const double headerRowHeight = 44;
+
+  /// Width kept for the header's leading and trailing slots, so the title stays centred.
+  static const double headerSlotWidth = 44;
+
+  static const double closeButtonSize = 40;
+
+  static const EdgeInsets headerPadding = EdgeInsets.symmetric(horizontal: PrismSpace.xl, vertical: PrismSpace.xs);
+  static const EdgeInsets bodyPadding = EdgeInsets.fromLTRB(PrismSpace.xl, 0, PrismSpace.xl, PrismSpace.xl);
+  static const EdgeInsets actionsPadding = EdgeInsets.fromLTRB(
+    PrismSpace.xl,
+    PrismSpace.sm,
+    PrismSpace.xl,
+    PrismSpace.sm,
+  );
+
+  /// Cast under the floating sheet. Heavier than a card, so the sheet reads as a separate object.
+  static const List<BoxShadow> shadow = <BoxShadow>[
+    BoxShadow(color: Color(0x29000000), offset: Offset(0, 2), blurRadius: 6),
+    BoxShadow(color: Color(0x33000000), offset: Offset(0, 14), blurRadius: 36),
+  ];
+
+  /// Dims the screen behind a sheet.
+  static const Color barrier = Color(0x52000000);
 
   static const double chipSpacing = 8;
   static const double chipRunSpacing = 8;
-
-  /// Share of the screen height a tall sheet (e.g. "Tune your feed") takes.
-  static const double maxHeightFactor = 0.9;
 
   static const int interestGridColumns = 3;
   static const double interestTileSpacing = 8;

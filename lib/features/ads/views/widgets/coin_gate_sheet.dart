@@ -26,8 +26,7 @@ Future<T?> showCoinGateSheet<T>(
   required List<CoinGateOption<T>> options,
 }) {
   return showPrismSheet<T>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (sheetContext) {
       final int missing = (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
       return PrismSheetBody(
@@ -35,7 +34,6 @@ Future<T?> showCoinGateSheet<T>(
         message: message(missing),
         mood: missing > 0 ? GlintMood.worried : null,
         centered: true,
-        scrollable: true,
         actions: <Widget>[
           for (final (int index, CoinGateOption<T> option) in options.indexed)
             PrismButton(

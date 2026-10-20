@@ -593,6 +593,8 @@ void main() {
     expect(tester.widget<IconButton>(_iconButton('Reset')).onPressed, isNull);
     expect(tester.widget<IconButton>(_iconButton('Set as wallpaper')).onPressed, isNull);
 
+    // The sheet ignores a barrier tap until it is fully open.
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tapAt(const Offset(1, 1));
     await tester.pump(const Duration(milliseconds: 300));
     final Finder resetButton = _iconButton('Reset');

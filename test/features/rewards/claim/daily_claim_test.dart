@@ -277,15 +277,22 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: ValueListenableBuilder<bool>(
+        builder: (context, child) => ValueListenableBuilder<bool>(
           valueListenable: reduce,
           builder: (context, reduced, _) => MediaQuery(
             data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
-            child: Scaffold(body: DailyClaimSheet(result: _r())),
+            child: child!,
+          ),
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (c) => TextButton(onPressed: () => showDailyClaimSheet(c, _r()), child: const Text('go')),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('go'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('+8'), findsNothing);
     reduce.value = true;
@@ -362,6 +369,7 @@ void main() {
     navigator.currentState!.pop();
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
     expect(find.text(AppLocalizationsEn().economyNice), findsOneWidget);
     navigator.currentState!.pop();
     await tester.pump(const Duration(seconds: 1));
@@ -396,6 +404,7 @@ void main() {
       ),
     );
     await tester.tap(find.text('go'));
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text(AppLocalizationsEn().economyGetCoins), findsOneWidget);
     expect(find.text('Upgrade'), findsOneWidget);

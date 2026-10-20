@@ -28,30 +28,22 @@ Future<bool> showStartupChoiceSheet(
   required String dismissLabel,
 }) async {
   final bool? confirmed = await showPrismSheet<bool>(
-    context: context,
-    showDragHandle: true,
-    useSafeArea: true,
-    builder: (BuildContext sheetContext) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(message, style: PrismTextStyles.cardTitle(sheetContext)),
-          const SizedBox(height: 20),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: TextButton(onPressed: () => Navigator.of(sheetContext).pop(false), child: Text(dismissLabel)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(onPressed: () => Navigator.of(sheetContext).pop(true), child: Text(confirmLabel)),
-              ),
-            ],
-          ),
-        ],
-      ),
+    context,
+    builder: (BuildContext sheetContext) => PrismSheetBody(
+      actions: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: TextButton(onPressed: () => Navigator.of(sheetContext).pop(false), child: Text(dismissLabel)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(onPressed: () => Navigator.of(sheetContext).pop(true), child: Text(confirmLabel)),
+            ),
+          ],
+        ),
+      ],
+      child: Text(message, style: PrismTextStyles.cardTitle(sheetContext)),
     ),
   );
   return confirmed ?? false;

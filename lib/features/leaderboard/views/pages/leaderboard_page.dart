@@ -54,12 +54,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         PrismIconButton(
           icon: Icons.info_outline_rounded,
           tooltip: context.l10n.economyLeaderboardHowScoringWorks,
-          onPressed: () => showPrismSheet<void>(
-            context: context,
-            useSafeArea: true,
-            isScrollControlled: true,
-            builder: (_) => const _ScoringSheet(),
-          ),
+          onPressed: () => showPrismSheet<void>(context, builder: (_) => const _ScoringSheet()),
         ),
       ],
       body: BlocBuilder<LeaderboardBloc, LeaderboardState>(
@@ -125,43 +120,24 @@ class _ScoringSheet extends StatelessWidget {
   const _ScoringSheet();
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(PrismSpace.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  context.l10n.economyLeaderboardHowScoringWorks,
-                  style: PrismTextStyles.sectionTitle(context),
-                ),
-              ),
-              PrismIconButton(
-                icon: Icons.close_rounded,
-                tooltip: context.l10n.economyLeaderboardCloseScoring,
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: PrismSpace.md),
-          Text(context.l10n.economyLeaderboardScoringIntro, style: PrismTextStyles.body(context)),
-          const SizedBox(height: PrismSpace.lg),
-          Text(context.l10n.economyLeaderboardFollowing, style: PrismTextStyles.rowTitle(context)),
-          const SizedBox(height: PrismSpace.xs),
-          Text(context.l10n.economyLeaderboardFriendsDetails, style: PrismTextStyles.body(context)),
-          const SizedBox(height: PrismSpace.lg),
-          Text(context.l10n.economyLeaderboardGlobal, style: PrismTextStyles.rowTitle(context)),
-          const SizedBox(height: PrismSpace.xs),
-          Text(context.l10n.economyLeaderboardGlobalDetails, style: PrismTextStyles.body(context)),
-          const SizedBox(height: PrismSpace.lg),
-          Text(context.l10n.economyLeaderboardOffline, style: PrismTextStyles.caption(context)),
-        ],
-      ),
+  Widget build(BuildContext context) => PrismSheetBody(
+    title: context.l10n.economyLeaderboardHowScoringWorks,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(context.l10n.economyLeaderboardScoringIntro, style: PrismTextStyles.body(context)),
+        const SizedBox(height: PrismSpace.lg),
+        Text(context.l10n.economyLeaderboardFollowing, style: PrismTextStyles.rowTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
+        Text(context.l10n.economyLeaderboardFriendsDetails, style: PrismTextStyles.body(context)),
+        const SizedBox(height: PrismSpace.lg),
+        Text(context.l10n.economyLeaderboardGlobal, style: PrismTextStyles.rowTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
+        Text(context.l10n.economyLeaderboardGlobalDetails, style: PrismTextStyles.body(context)),
+        const SizedBox(height: PrismSpace.lg),
+        Text(context.l10n.economyLeaderboardOffline, style: PrismTextStyles.caption(context)),
+      ],
     ),
   );
 }

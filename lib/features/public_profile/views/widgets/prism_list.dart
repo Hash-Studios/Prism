@@ -87,7 +87,7 @@ class PrismList extends StatelessWidget {
 
   void _showSources(BuildContext context) {
     showPrismSheet<void>(
-      context: context,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: sheetContext.l10n.accountWallpaperSources,
         message: sheetContext.l10n.accountWallpaperSourcesMessage,

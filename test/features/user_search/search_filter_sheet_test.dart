@@ -92,7 +92,8 @@ void main() {
     }
     expect(styleOf('1440p').fontSize, 14);
     expect(styleOf('1440p').fontWeight, FontWeight.w600);
-    expect(styleOf('Filters').fontSize, 20);
+    // The shared sheet header draws the title as a 16 px card title.
+    expect(styleOf('Filters').fontSize, 16);
   });
 
   testWidgets('the sheet opens on the root navigator, above a nested tab navigator', (tester) async {

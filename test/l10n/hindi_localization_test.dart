@@ -185,21 +185,28 @@ void main() {
         locale: const Locale('hi', 'IN'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
         home: Scaffold(
           body: Builder(
-            builder: (BuildContext context) => MediaQuery(
-              data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-              child: PrismSheetBody(
-                scrollable: true,
-                title: context.l10n.premiumPageTitle,
-                message: context.l10n.accountAccountDeletionSubscriptionWarning,
-                actions: <Widget>[PrismButton(label: context.l10n.premiumPageTryAgain, onPressed: () {})],
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (BuildContext sheetContext) => PrismSheetBody(
+                  title: sheetContext.l10n.premiumPageTitle,
+                  message: sheetContext.l10n.accountAccountDeletionSubscriptionWarning,
+                  actions: <Widget>[PrismButton(label: sheetContext.l10n.premiumPageTryAgain, onPressed: () {})],
+                ),
               ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     final Finder button = find.byType(PrismButton);

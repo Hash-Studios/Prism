@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -15,10 +16,8 @@ Future<void> showReportProblemSheet(BuildContext context, {required String sourc
   unawaited(analytics.track(ReportProblemOpenedEvent(source: source)));
   final ReportProblemService reports = service ?? ReportProblemService.instance;
   return showPrismSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    useSafeArea: true,
+    context,
+    detents: const <PrismSheetDetent>[PrismSheetDetent.large],
     builder: (BuildContext sheetContext) => _ReportProblemBody(service: reports, theme: _themeLabel(sheetContext)),
   );
 }
@@ -63,77 +62,58 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 4, 24, 20 + MediaQuery.of(context).viewInsets.bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(context.l10n.accountReportAProblem, style: PrismTextStyles.cardTitle(context)),
-          const SizedBox(height: 8),
-          Text(context.l10n.accountReportPreviewNotice(supportEmail), style: theme.textTheme.bodySmall),
-          const SizedBox(height: 12),
-          Flexible(
-            child: FutureBuilder<String>(
-              future: _report,
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (snapshot.hasError) {
-                  return Text(context.l10n.accountCouldNotBuildReport, style: theme.textTheme.bodyMedium);
-                }
-                final String? report = snapshot.data;
-                if (report == null) {
-                  return const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Flexible(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Scrollbar(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(12),
-                            child: SelectableText(
-                              report,
-                              key: const Key('report_problem_preview'),
-                              style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 11),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(context.l10n.accountCancel),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: _sharing ? null : () => unawaited(_share(report)),
-                            child: Text(context.l10n.accountShare),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
+    return FutureBuilder<String>(
+      future: _report,
+      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+        final String? report = snapshot.data;
+        final Widget preview;
+        if (snapshot.hasError) {
+          preview = Text(context.l10n.accountCouldNotBuildReport, style: theme.textTheme.bodyMedium);
+        } else if (report == null) {
+          preview = const Center(child: CircularProgressIndicator());
+        } else {
+          preview = DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Scrollbar(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(12),
+                child: SelectableText(
+                  report,
+                  key: const Key('report_problem_preview'),
+                  style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 11),
+                ),
+              ),
+            ),
+          );
+        }
+        return PrismSheetBody(
+          title: context.l10n.accountReportAProblem,
+          message: context.l10n.accountReportPreviewNotice(supportEmail),
+          childScrolls: true,
+          actions: <Widget>[
+            if (report != null) ...<Widget>[
+              PrismButton(
+                label: context.l10n.accountShare,
+                expand: true,
+                onPressed: _sharing ? null : () => unawaited(_share(report)),
+              ),
+              PrismButton(
+                label: context.l10n.accountCancel,
+                expand: true,
+                variant: PrismButtonVariant.ghost,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xl),
+            child: preview,
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

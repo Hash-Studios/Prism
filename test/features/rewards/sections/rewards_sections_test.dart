@@ -443,6 +443,7 @@ void main() {
 
         await tester.tap(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)));
         await tester.pump();
+        await tester.pump();
         expect(find.text(AppLocalizationsEn().economyCollectionKeepStreakMessage(30, 500, 'true')), findsOneWidget);
       });
 

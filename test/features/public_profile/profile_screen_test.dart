@@ -477,6 +477,7 @@ void main() {
     expect(find.byTooltip('instagram'), findsOneWidget);
     expect(find.byTooltip('telegram'), findsNothing);
     await tester.tap(find.byTooltip('More links'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('More links'), findsOneWidget);
@@ -564,6 +565,7 @@ void main() {
       expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsOneWidget);
 
       await tester.tap(find.text('Silver'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('XP, ranks & rewards'), findsOneWidget);
     });
@@ -639,6 +641,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       await tester.tap(find.byTooltip('Gift a 24 h pass'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Gift a 24-hour Pro pass'), findsOneWidget);
@@ -657,6 +660,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       await tester.tap(find.byTooltip('Gift a 24 h pass'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Earn coins'), findsOneWidget);

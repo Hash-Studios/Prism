@@ -1,8 +1,8 @@
-import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -46,9 +46,7 @@ void main() {
     );
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    final route = ModalRoute.of(tester.element(find.text('Choose an option')))! as ModalBottomSheetRoute;
-    expect(route.isScrollControlled, isTrue);
-    expect(route.backgroundColor, isNull, reason: 'the sheet takes its fill from the theme');
+    expect(find.byType(PrismSheetBody), findsOneWidget);
     expect(find.text('You have 0 coins'), findsOneWidget);
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();

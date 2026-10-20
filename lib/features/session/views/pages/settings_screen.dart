@@ -365,7 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showDefaultApplyTargetSheet() {
     showPrismSheet<void>(
-      context: context,
+      context,
       builder: (ctx) {
         final ColorScheme cs = Theme.of(ctx).colorScheme;
         return PrismSheetBody(
@@ -856,8 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _confirmDeleteAccount() async {
     final bool premium = app_state.prismUser.premium;
     final bool? ok = await showPrismSheet<bool>(
-      context: context,
-      isScrollControlled: true,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: sheetContext.l10n.accountDeleteYourAccountQuestion,
         message: sheetContext.l10n.accountDeleteAccountConfirmation,
@@ -906,13 +905,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
     unawaited(
       showPrismSheet<void>(
-        context: context,
-        isDismissible: false,
-        enableDrag: false,
+        context,
+        barrierDismissible: false,
+        swipeDismissible: false,
         useRootNavigator: true,
         builder: (_) => PopScope(
           canPop: false,
-          child: PrismSheetBody(mood: GlintMood.curious, centered: true, title: l10n.accountDeletingYourAccount),
+          child: PrismSheetBody(
+            mood: GlintMood.curious,
+            centered: true,
+            title: l10n.accountDeletingYourAccount,
+            showCloseButton: false,
+            showHandle: false,
+          ),
         ),
       ),
     );

@@ -37,29 +37,20 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
   final FeedMix currentMix = FeedMix.parse(settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
   await showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (sheetContext) => AnimatedPadding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
-      duration: sheetContext.motion(PrismDurations.base),
-      child: MediaQuery.removeViewInsets(
-        context: sheetContext,
-        removeBottom: true,
-        child: PersonalizedFeedSettingsSheet(
-          catalog: catalog,
-          initialInterests: selected,
-          initialFeedMix: currentMix,
-          onSave: (List<String> interests, FeedMix feedMix) async {
-            final bool persisted = await _persistInterests(settingsLocal, interests);
-            if (!persisted) {
-              return false;
-            }
-            await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
-            return true;
-          },
-        ),
-      ),
+    context,
+    detents: const <PrismSheetDetent>[PrismSheetDetent.large],
+    builder: (sheetContext) => PersonalizedFeedSettingsSheet(
+      catalog: catalog,
+      initialInterests: selected,
+      initialFeedMix: currentMix,
+      onSave: (List<String> interests, FeedMix feedMix) async {
+        final bool persisted = await _persistInterests(settingsLocal, interests);
+        if (!persisted) {
+          return false;
+        }
+        await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
+        return true;
+      },
     ),
   );
 }
@@ -168,45 +159,30 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      heightFactor: PrismBottomSheet.maxHeightFactor,
-      child: PrismSheetBody(
-        title: context.l10n.wallpaperFeedTuneTitle,
-        message: context.l10n.wallpaperFeedTuneDescription,
-        scrollable: true,
-        actions: <Widget>[
-          Row(
-            children: <Widget>[
-              PrismButton(
-                label: context.l10n.wallpaperReset,
-                variant: PrismButtonVariant.ghost,
-                onPressed: _saving ? null : _resetToDefaults,
-              ),
-              const SizedBox(width: PrismSpace.sm),
-              Expanded(
-                child: PrismButton(
-                  label: context.l10n.wallpaperSave,
-                  expand: true,
-                  loading: _saving,
-                  onPressed: _canSave ? _save : null,
-                ),
-              ),
-            ],
-          ),
-        ],
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            AnimatedSwitcher(
-              duration: context.motion(PrismDurations.fast),
-              child: KeyedSubtree(key: ValueKey<bool>(_learned.topTerms(1).isEmpty), child: _buildLearned(context)),
-            ),
-            const SizedBox(height: PrismSpace.xl),
-            ..._buildStartingPoints(context),
-            const SizedBox(height: PrismSpace.xl),
-            ..._buildDiscovery(context),
-          ],
+    return PrismSheetBody(
+      title: context.l10n.wallpaperFeedTuneTitle,
+      message: context.l10n.wallpaperFeedTuneDescription,
+      trailingAction: PrismSheetAction(label: context.l10n.wallpaperReset, onTap: _saving ? null : _resetToDefaults),
+      actions: <Widget>[
+        PrismButton(
+          label: context.l10n.wallpaperSave,
+          expand: true,
+          loading: _saving,
+          onPressed: _canSave ? _save : null,
         ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          AnimatedSwitcher(
+            duration: context.motion(PrismDurations.fast),
+            child: KeyedSubtree(key: ValueKey<bool>(_learned.topTerms(1).isEmpty), child: _buildLearned(context)),
+          ),
+          const SizedBox(height: PrismSpace.xl),
+          ..._buildStartingPoints(context),
+          const SizedBox(height: PrismSpace.xl),
+          ..._buildDiscovery(context),
+        ],
       ),
     );
   }

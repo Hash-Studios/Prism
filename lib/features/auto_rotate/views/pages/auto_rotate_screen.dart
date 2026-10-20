@@ -8,9 +8,9 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
@@ -560,11 +560,9 @@ class _Controls extends StatelessWidget {
 Future<void> _pickCategory(BuildContext context, String current) async {
   final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
   final String? picked = await showPrismSheet<String>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (sheetContext) => PrismSheetBody(
       title: context.l10n.wallpaperAutoRotatePickCategory,
-      scrollable: true,
       child: PrismGroup(
         children: <Widget>[
           for (final String name in autoRotateCategories)

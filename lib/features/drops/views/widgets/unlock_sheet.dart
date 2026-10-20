@@ -9,8 +9,8 @@ import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// Asks how to unlock [wall]: this one, or every wall left. [onUnlock] gets the wall id, or null for the pack.
@@ -25,8 +25,7 @@ Future<void> showDropUnlockSheet(
 }) {
   final StackRouter router = context.router;
   return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (sheetContext) => DropUnlockSheet(
       drop: drop,
       wall: wall,
@@ -94,7 +93,6 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
         return PrismSheetBody(
           title: widget.wall.title.isEmpty ? widget.drop.displayTitle(context.l10n) : widget.wall.title,
           message: widget.wall.by.isEmpty ? null : context.l10n.economyDropByCreator(widget.wall.by),
-          scrollable: true,
           actions: <Widget>[
             PrismButton(
               label: context.l10n.economyDropUnlockWall(wallPrice),

@@ -103,7 +103,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.ensureVisible(find.text('Low resolution'));
     await tester.tap(find.text('Low resolution'));
-    final Finder rejectButton = find.text('Reject wallpaper').last;
+    final Finder rejectButton = find.widgetWithText(PrismButton, 'Reject wallpaper');
     await tester.ensureVisible(rejectButton);
     expect(tester.getRect(rejectButton).bottom, lessThanOrEqualTo(375 - 216));
     await tester.tap(rejectButton);
@@ -140,12 +140,10 @@ void main() {
             body: Builder(
               builder: (context) => TextButton(
                 onPressed: () => showPrismSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
+                  context,
                   builder: (_) => PrismSheetBody(
                     title: 'Sign in to Prism',
                     message: 'Keep favourites, uploads and coins on every device.',
-                    scrollable: true,
                     actions: <Widget>[
                       for (final String label in <String>['Continue with Apple', 'Continue with Google', 'Not now'])
                         PrismButton(label: label, expand: true, onPressed: () => selected = label),
@@ -243,8 +241,7 @@ void main() {
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () => showPrismSheet<void>(
-                context: context,
-                isScrollControlled: true,
+                context,
                 builder: (_) => PrismSheetBody(
                   title: 'Confirm change',
                   actions: <Widget>[PrismButton(label: 'Confirm', onPressed: () => confirmed = true)],

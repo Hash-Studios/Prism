@@ -57,8 +57,8 @@ Future<void> showContentReportSheet(
 
   PrismHaptics.tap();
   await showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
+    context,
+    dismissKeyboardOnDrag: true,
     builder: (BuildContext sheetContext) {
       return ContentReportSheetBody(
         contentType: contentType,
@@ -184,7 +184,6 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
       message: subtitle == null || subtitle.isEmpty
           ? l10n.coreContentReportWhy(label)
           : l10n.coreContentReportWhyWithDetails(label, subtitle),
-      scrollable: true,
       actions: <Widget>[
         PrismButton(label: l10n.coreSendReport, expand: true, loading: _submitting, onPressed: _submit),
       ],

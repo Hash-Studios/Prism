@@ -172,7 +172,7 @@ void main() {
     expect(find.textContaining('Pulling to refresh loads the latest snapshot.'), findsOneWidget);
     expect(find.text('If you are offline, saved scores may be shown.'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Close scoring explanation'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(find.text('How scoring works'), findsNothing);
   });

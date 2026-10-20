@@ -14,7 +14,7 @@ Future<void> showGetCoinsSheet(
 }) async {
   final bool watch =
       await showPrismSheet<bool>(
-        context: context,
+        context,
         builder: (BuildContext sheetContext) => PrismSheetBody(
           title: sheetContext.l10n.economyNotEnoughCoins,
           message: message,

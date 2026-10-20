@@ -47,7 +47,7 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
 
   void _openUploadSheet() {
     if (!mounted) return;
-    showPrismSheet<void>(context: context, isScrollControlled: true, builder: (context) => const UploadBottomPanel());
+    showPrismSheet<void>(context, builder: (context) => const UploadBottomPanel());
   }
 
   void _onPressed() {

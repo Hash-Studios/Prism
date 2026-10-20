@@ -79,22 +79,31 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
         home: Scaffold(
-          body: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: PrismSheetBody(
-              scrollable: true,
-              title: 'An intentionally extended translated confirmation title',
-              message: List<String>.filled(
-                10,
-                'A translated explanation can need more space than the English text.',
-              ).join(' '),
-              actions: <Widget>[PrismButton(label: 'Confirm the translated action', onPressed: () {})],
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (_) => PrismSheetBody(
+                  title: 'An intentionally extended translated confirmation title',
+                  message: List<String>.filled(
+                    10,
+                    'A translated explanation can need more space than the English text.',
+                  ).join(' '),
+                  actions: <Widget>[PrismButton(label: 'Confirm the translated action', onPressed: () {})],
+                ),
+              ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     final Finder button = find.byType(PrismButton);
     await tester.ensureVisible(button);

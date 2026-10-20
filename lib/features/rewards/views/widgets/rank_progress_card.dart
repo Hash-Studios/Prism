@@ -204,9 +204,7 @@ class RankInfoChip extends StatelessWidget {
 
 Future<void> showXpExplanation(BuildContext context, {RankProgress? progress, VoidCallback? onOpenShop}) =>
     showPrismSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
+      context,
       builder: (context) => XpExplanationSheet(progress: progress, onOpenShop: onOpenShop),
     );
 
@@ -222,81 +220,59 @@ class XpExplanationSheet extends StatelessWidget {
         progress ?? RankProgress(xp: 0, owned: const <String>{}, config: EconomyConfig.current);
     final EconomyAward awards = milestones.config.award;
     final EconomyXpActivities activities = milestones.config.xp.activities;
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(PrismSpace.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(child: Text(context.l10n.economyXpRanksRewards, style: PrismTextStyles.sectionTitle(context))),
-                IconButton(
-                  tooltip: context.l10n.economyCloseXpExplanation,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size.square(48),
-                    visualDensity: VisualDensity.standard,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
+    return PrismSheetBody(
+      title: context.l10n.economyXpRanksRewards,
+      actions: <Widget>[
+        if (onOpenShop != null)
+          PrismButton(
+            label: context.l10n.economyOpenShop,
+            expand: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              onOpenShop!();
+            },
+          ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _Explanation(
+            title: context.l10n.economyEarnXpAsYouGo,
+            text: context.l10n.economyXpActivityDetails(
+              activities.dailyStreak,
+              activities.streakWeek,
+              activities.questChest,
+              activities.firstWallpaperUpload,
+              activities.profileCompletion,
+              awards.questXp,
+              awards.weeklyQuestXp,
+            ),
+          ),
+          _Explanation(title: context.l10n.economySameActivitySameXp, text: context.l10n.economySameActivityXpDetails),
+          _Explanation(
+            title: context.l10n.economyLifetimePermanentRewards,
+            text: context.l10n.economyLifetimePermanentDetails,
+          ),
+          for (final RankRewardProgress reward in milestones.rewards)
+            Padding(
+              padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+              child: Text(
+                context.l10n.economyRankRewardMilestone(
+                  rankTitle(reward.rank.id, context.l10n),
+                  groupedXp(reward.rank.min, context.l10n),
+                  reward.name(context.l10n),
                 ),
-              ],
-            ),
-            const SizedBox(height: PrismSpace.md),
-            _Explanation(
-              title: context.l10n.economyEarnXpAsYouGo,
-              text: context.l10n.economyXpActivityDetails(
-                activities.dailyStreak,
-                activities.streakWeek,
-                activities.questChest,
-                activities.firstWallpaperUpload,
-                activities.profileCompletion,
-                awards.questXp,
-                awards.weeklyQuestXp,
+                style: PrismTextStyles.body(context),
               ),
             ),
-            _Explanation(
-              title: context.l10n.economySameActivitySameXp,
-              text: context.l10n.economySameActivityXpDetails,
-            ),
-            _Explanation(
-              title: context.l10n.economyLifetimePermanentRewards,
-              text: context.l10n.economyLifetimePermanentDetails,
-            ),
-            for (final RankRewardProgress reward in milestones.rewards)
-              Padding(
-                padding: const EdgeInsets.only(bottom: PrismSpace.sm),
-                child: Text(
-                  context.l10n.economyRankRewardMilestone(
-                    rankTitle(reward.rank.id, context.l10n),
-                    groupedXp(reward.rank.min, context.l10n),
-                    reward.name(context.l10n),
-                  ),
-                  style: PrismTextStyles.body(context),
-                ),
-              ),
-            const SizedBox(height: PrismSpace.sm),
-            _Explanation(
-              title: context.l10n.economyFreshLeaderboardWeekly,
-              text: context.l10n.economyFreshLeaderboardDetails,
-            ),
-            _Explanation(
-              title: context.l10n.economyCoinsAreYoursToSpend,
-              text: context.l10n.economyCoinsSpendingDetails,
-            ),
-            if (onOpenShop != null)
-              PrismButton(
-                label: context.l10n.economyOpenShop,
-                expand: true,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onOpenShop!();
-                },
-              ),
-          ],
-        ),
+          const SizedBox(height: PrismSpace.sm),
+          _Explanation(
+            title: context.l10n.economyFreshLeaderboardWeekly,
+            text: context.l10n.economyFreshLeaderboardDetails,
+          ),
+          _Explanation(title: context.l10n.economyCoinsAreYoursToSpend, text: context.l10n.economyCoinsSpendingDetails),
+        ],
       ),
     );
   }

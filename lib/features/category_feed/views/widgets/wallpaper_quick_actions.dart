@@ -29,36 +29,39 @@ Future<void> showWallpaperQuickActions(
 }) async {
   final bool isFavourite = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
   final _QuickAction? action = await showPrismSheet<_QuickAction>(
-    context: context,
-    showDragHandle: true,
-    builder: (BuildContext sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          ListTile(
-            leading: Icon(isFavourite ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-            title: Text(isFavourite ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite),
-            onTap: () => Navigator.of(sheetContext).pop(_QuickAction.favourite),
-          ),
-          ListTile(
-            leading: const Icon(Icons.link_rounded),
-            title: Text(context.l10n.wallpaperShareLink),
-            onTap: () => Navigator.of(sheetContext).pop(_QuickAction.share),
-          ),
-          if (!hideSetWallpaperUi)
+    context,
+    builder: (BuildContext sheetContext) => PrismSheetBody(
+      // The body already pads 24 on each side, so the rows drop their own inset and line up with the header.
+      child: ListTileTheme.merge(
+        contentPadding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
             ListTile(
-              leading: const Icon(Icons.wallpaper_rounded),
-              title: Text(context.l10n.wallpaperSetAsWallpaper),
-              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.set),
+              leading: Icon(isFavourite ? Icons.favorite_rounded : Icons.favorite_border_rounded),
+              title: Text(isFavourite ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite),
+              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.favourite),
             ),
-          if (onShowLessLikeThis != null)
             ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
-              title: Text(context.l10n.wallpaperShowLessLikeThis),
-              subtitle: Text(context.l10n.wallpaperFewerLikeThisConfirmation),
-              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.showLess),
+              leading: const Icon(Icons.link_rounded),
+              title: Text(context.l10n.wallpaperShareLink),
+              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.share),
             ),
-        ],
+            if (!hideSetWallpaperUi)
+              ListTile(
+                leading: const Icon(Icons.wallpaper_rounded),
+                title: Text(context.l10n.wallpaperSetAsWallpaper),
+                onTap: () => Navigator.of(sheetContext).pop(_QuickAction.set),
+              ),
+            if (onShowLessLikeThis != null)
+              ListTile(
+                leading: const Icon(Icons.visibility_off_outlined),
+                title: Text(context.l10n.wallpaperShowLessLikeThis),
+                subtitle: Text(context.l10n.wallpaperFewerLikeThisConfirmation),
+                onTap: () => Navigator.of(sheetContext).pop(_QuickAction.showLess),
+              ),
+          ],
+        ),
       ),
     ),
   );

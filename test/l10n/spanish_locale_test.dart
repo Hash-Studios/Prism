@@ -140,24 +140,31 @@ void main() {
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
         home: Scaffold(
-          body: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: Builder(
-              builder: (BuildContext context) => PrismSheetBody(
-                scrollable: true,
-                title: context.l10n.accountDeleteYourAccountQuestion,
-                message: context.l10n.accountDeleteAccountConfirmation,
-                actions: <Widget>[
-                  PrismButton(label: context.l10n.accountDeleteAccount, onPressed: () {}),
-                  PrismButton(label: context.l10n.accountCancel, onPressed: () {}),
-                ],
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (BuildContext sheetContext) => PrismSheetBody(
+                  title: sheetContext.l10n.accountDeleteYourAccountQuestion,
+                  message: sheetContext.l10n.accountDeleteAccountConfirmation,
+                  actions: <Widget>[
+                    PrismButton(label: sheetContext.l10n.accountDeleteAccount, onPressed: () {}),
+                    PrismButton(label: sheetContext.l10n.accountCancel, onPressed: () {}),
+                  ],
+                ),
               ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     final Finder confirm = find.text('Eliminar cuenta');

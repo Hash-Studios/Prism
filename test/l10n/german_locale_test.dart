@@ -38,12 +38,11 @@ Future<void> _pumpAt320(WidgetTester tester, Widget home) async {
       theme: ThemeData(fontFamily: 'Proxima Nova'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Builder(
-        builder: (BuildContext context) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
-          child: home,
-        ),
+      builder: (BuildContext context, Widget? child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+        child: child!,
       ),
+      home: home,
     ),
   );
   await tester.pumpAndSettle();
@@ -256,16 +255,23 @@ void main() {
             title = context.l10n.accountRemoveSavedOfflineQuestion;
             message = context.l10n.accountDeleteAccountConfirmation;
             action = context.l10n.accountDeleteAccount;
-            return PrismSheetBody(
-              scrollable: true,
-              title: title,
-              message: List<String>.filled(3, message).join(' '),
-              actions: <Widget>[PrismButton(label: action, onPressed: () {})],
+            return TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (_) => PrismSheetBody(
+                  title: title,
+                  message: List<String>.filled(3, message).join(' '),
+                  actions: <Widget>[PrismButton(label: action, onPressed: () {})],
+                ),
+              ),
+              child: const Text('open'),
             );
           },
         ),
       ),
     );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
 
     expect(find.text(title), findsOneWidget);
     expect(find.text(action), findsOneWidget);

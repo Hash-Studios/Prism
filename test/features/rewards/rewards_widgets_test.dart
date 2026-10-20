@@ -325,6 +325,7 @@ void main() {
     svc.balanceNotifier.value = 20;
     await _pump(tester, ThemeData.light(), FreezeCard(onEarnCoins: () {}));
     await tester.tap(find.textContaining('Get one'));
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('You need 50 coins.'), findsOneWidget);
     svc.balanceNotifier.value = 100;
@@ -430,6 +431,7 @@ void main() {
       svc.balanceNotifier.value = 240;
       await _pump(tester, theme, FreezeCard(onEarnCoins: () {}));
       await tester.tap(find.textContaining('Get one'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Buy a streak freeze for 50 coins?'), findsOneWidget);
       expect(find.text('Balance after: 190'), findsOneWidget);

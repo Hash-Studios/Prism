@@ -87,11 +87,9 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
   Future<void> _pickTag(Set<String> tags) async {
     final List<String> sorted = tags.toList()..sort();
     final String? picked = await showPrismSheet<String>(
-      context: context,
-      isScrollControlled: true,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: context.l10n.debugFilterByTag,
-        scrollable: true,
         child: PrismGroup(
           children: <Widget>[
             PrismRow(
@@ -290,11 +288,7 @@ class _LogEntryTile extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => showPrismSheet(
-          context: context,
-          isScrollControlled: true,
-          builder: (_) => _LogDetailSheet(record: record),
-        ),
+        onTap: () => showPrismSheet(context, builder: (_) => _LogDetailSheet(record: record)),
         child: row,
       ),
     );
@@ -325,7 +319,6 @@ class _LogDetailSheet extends StatelessWidget {
 
     return PrismSheetBody(
       title: context.l10n.debugLogDetail,
-      scrollable: true,
       actions: <Widget>[
         PrismButton(
           label: context.l10n.debugCopyFullDetail,
@@ -347,7 +340,7 @@ class _LogDetailSheet extends StatelessWidget {
             PrismSectionHeader(
               title: context.l10n.accountFields,
               small: true,
-              padding: EdgeInsets.only(top: PrismSpace.md),
+              padding: const EdgeInsets.only(top: PrismSpace.md),
             ),
             for (final e in record.fields.entries) _DetailRow(label: e.key, value: e.value?.toString() ?? 'null'),
           ],

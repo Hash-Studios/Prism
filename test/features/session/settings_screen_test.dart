@@ -17,6 +17,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -831,7 +832,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.byType(PrismSheetBody), findsNothing);
       expect(messages, <String>['Prism has not learned anything yet.']);
       await tester.pump(const Duration(seconds: 1));
     });

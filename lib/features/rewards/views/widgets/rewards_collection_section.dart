@@ -186,8 +186,7 @@ class _CollectionCard extends StatelessWidget {
     }
     PrismHaptics.warning();
     showPrismSheet<void>(
-      context: context,
-      useSafeArea: true,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: l10n.economyCollectionStillLocked,
         message: _lockedMessage(l10n),

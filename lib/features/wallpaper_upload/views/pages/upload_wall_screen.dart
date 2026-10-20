@@ -554,8 +554,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     final String? draftId = _draftId;
     if (draftId != null) {
       final _UploadExitChoice? choice = await showPrismSheet<_UploadExitChoice>(
-        context: context,
-        isScrollControlled: true,
+        context,
         builder: (sheetContext) => PrismSheetBody(
           title: context.l10n.wallpaperUploadLeaveTitle,
           message: context.l10n.wallpaperUploadLeaveBody,

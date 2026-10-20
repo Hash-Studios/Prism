@@ -42,7 +42,7 @@ Widget _host(Widget Function(BuildContext) sheet) => MaterialApp(
   home: Builder(
     builder: (context) => Scaffold(
       body: TextButton(
-        onPressed: () => showPrismSheet<void>(context: context, isScrollControlled: true, builder: sheet),
+        onPressed: () => showPrismSheet<void>(context, builder: sheet),
         child: const Text('open'),
       ),
     ),

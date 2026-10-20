@@ -11,9 +11,7 @@ import 'package:flutter/material.dart';
 Future<void> showChestOdds(BuildContext context, List<WheelSegment> slots) {
   final List<ChestOddsGroup> groups = chestOddsByTier(slots);
   return showPrismSheet<void>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
+    context,
     builder: (BuildContext sheetContext) => PrismSheetBody(
       title: context.l10n.economyOddsTitle,
       message: context.l10n.economyEveryChestPays,

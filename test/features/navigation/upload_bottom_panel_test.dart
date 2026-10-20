@@ -10,6 +10,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
@@ -65,18 +66,12 @@ class _PanelRouter extends AppRouter {
         builder: (_) => Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => context.router.push<Object?>(const _PanelRoute()),
+              onPressed: () =>
+                  showPrismSheet<void>(context, builder: (_) => UploadBottomPanel(draftStoreForTesting: draftStore)),
               child: const Text('Open panel'),
             ),
           ),
         ),
-      ),
-    ),
-    AutoRoute(
-      path: '/panel',
-      page: PageInfo(
-        _PanelRoute.name,
-        builder: (_) => Scaffold(body: UploadBottomPanel(draftStoreForTesting: draftStore)),
       ),
     ),
     AutoRoute(
@@ -100,12 +95,6 @@ class _PanelRouter extends AppRouter {
       ),
     ),
   ];
-}
-
-class _PanelRoute extends PageRouteInfo<void> {
-  const _PanelRoute() : super(name);
-
-  static const String name = 'PanelRoute';
 }
 
 class _ObservedUploadDraftStore extends UploadDraftStore {

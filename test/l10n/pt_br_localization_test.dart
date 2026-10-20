@@ -93,23 +93,34 @@ void main() {
         locale: const Locale('pt', 'BR'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
         home: Scaffold(
-          body: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: Builder(
-              builder: (BuildContext context) => PrismSheetBody(
-                scrollable: true,
-                title: context.l10n.onboardingWelcomeHeadline,
-                message: context.l10n.onboardingWelcomeDescription,
-                actions: <Widget>[
-                  PrismButton(label: context.l10n.onboardingRecoveryRetry, expand: true, onPressed: () => pressed++),
-                ],
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (BuildContext sheetContext) => PrismSheetBody(
+                  title: sheetContext.l10n.onboardingWelcomeHeadline,
+                  message: sheetContext.l10n.onboardingWelcomeDescription,
+                  actions: <Widget>[
+                    PrismButton(
+                      label: sheetContext.l10n.onboardingRecoveryRetry,
+                      expand: true,
+                      onPressed: () => pressed++,
+                    ),
+                  ],
+                ),
               ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     expect(find.text('Sua tela, reimaginada.'), findsOneWidget);

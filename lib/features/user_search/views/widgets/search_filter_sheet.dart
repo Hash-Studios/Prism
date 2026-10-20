@@ -1,5 +1,6 @@
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -65,9 +66,7 @@ String _resolutionLabel(AppLocalizations l10n, int? shortSide) => switch (shortS
 /// Opens the filter sheet. Returns the chosen filters, or `null` when the sheet is dismissed.
 Future<SearchFilters?> showSearchFilterSheet(BuildContext context, SearchFilters current) {
   return showPrismSheet<SearchFilters>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
+    context,
     // The Search tab has its own navigator under the floating nav bar; the root one puts the sheet above it.
     useRootNavigator: true,
     builder: (BuildContext sheetContext) => _SearchFilterSheet(initial: current),
@@ -102,119 +101,113 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
     Widget chip({required String label, required bool selected, required VoidCallback onSelected}) =>
         ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onSelected());
     final PrismPaletteColor accentMatch = nearestPaletteColor(scheme.primary);
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(context.l10n.accountSearchFilters, style: heading.copyWith(fontSize: 20)),
+    return PrismSheetBody(
+      title: context.l10n.accountSearchFilters,
+      trailingAction: PrismSheetAction(
+        label: context.l10n.accountReset,
+        onTap: () => Navigator.of(context).pop(const SearchFilters()),
+      ),
+      actions: <Widget>[
+        PrismButton(
+          label: context.l10n.accountApply,
+          expand: true,
+          onPressed: () => Navigator.of(context).pop(
+            buildSearchFilters(
+              portraitOnly: _portraitOnly,
+              shortSide: _shortSide,
+              sort: _sort,
+              color: _color,
+              depthOnly: _depthOnly,
+            ),
+          ),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              context.l10n.accountPortraitOnly,
+              style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
+            ),
+            value: _portraitOnly,
+            onChanged: (value) => setState(() => _portraitOnly = value),
+          ),
+          if (showDepthEffectUi)
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                context.l10n.accountPortraitOnly,
+                context.l10n.accountDepthEffect,
                 style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
               ),
-              value: _portraitOnly,
-              onChanged: (value) => setState(() => _portraitOnly = value),
-            ),
-            if (showDepthEffectUi)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  context.l10n.accountDepthEffect,
-                  style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
+              subtitle: Text(
+                context.l10n.accountSubjectCanSitInFrontOfClock,
+                style: TextStyle(
+                  color: scheme.secondary.withValues(alpha: 0.7),
+                  fontFamily: PrismFonts.proximaNova,
+                  fontSize: 13,
                 ),
-                subtitle: Text(
-                  context.l10n.accountSubjectCanSitInFrontOfClock,
-                  style: TextStyle(
-                    color: scheme.secondary.withValues(alpha: 0.7),
-                    fontFamily: PrismFonts.proximaNova,
-                    fontSize: 13,
-                  ),
-                ),
-                value: _depthOnly,
-                onChanged: (value) => setState(() => _depthOnly = value),
               ),
-            const SizedBox(height: 8),
-            Text(context.l10n.accountMinResolution, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final int? shortSide in searchResolutionChoices)
-                  chip(
-                    label: _resolutionLabel(context.l10n, shortSide),
-                    selected: _shortSide == shortSide,
-                    onSelected: () => setState(() => _shortSide = shortSide),
-                  ),
-              ],
+              value: _depthOnly,
+              onChanged: (value) => setState(() => _depthOnly = value),
             ),
-            const SizedBox(height: 16),
-            Text(context.l10n.accountSort, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final sort in SearchSort.values)
-                  chip(
-                    label: _sortLabel(context.l10n, sort),
-                    selected: _sort == sort,
-                    onSelected: () => setState(() => _sort = sort),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(context.l10n.accountColour, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            Wrap(
-              children: <Widget>[
-                for (final PrismPaletteColor entry in prismPalette)
-                  PaletteSwatch(
-                    color: entry,
-                    selected: _color == entry,
-                    onTap: () => setState(() => _color = _color == entry ? null : entry),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: PrismChip(
-                label: context.l10n.accountMyAccent,
-                selected: _color == accentMatch,
-                leading: DecoratedBox(
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
-                  child: const SizedBox(width: 14, height: 14),
+          const SizedBox(height: 8),
+          Text(context.l10n.accountMinResolution, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: <Widget>[
+              for (final int? shortSide in searchResolutionChoices)
+                chip(
+                  label: _resolutionLabel(context.l10n, shortSide),
+                  selected: _shortSide == shortSide,
+                  onSelected: () => setState(() => _shortSide = shortSide),
                 ),
-                onTap: () => setState(() => _color = accentMatch),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(context.l10n.accountSort, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: <Widget>[
+              for (final sort in SearchSort.values)
+                chip(
+                  label: _sortLabel(context.l10n, sort),
+                  selected: _sort == sort,
+                  onSelected: () => setState(() => _sort = sort),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(context.l10n.accountColour, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Wrap(
+            children: <Widget>[
+              for (final PrismPaletteColor entry in prismPalette)
+                PaletteSwatch(
+                  color: entry,
+                  selected: _color == entry,
+                  onTap: () => setState(() => _color = _color == entry ? null : entry),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismChip(
+              label: context.l10n.accountMyAccent,
+              selected: _color == accentMatch,
+              leading: DecoratedBox(
+                decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
+                child: const SizedBox(width: 14, height: 14),
               ),
+              onTap: () => setState(() => _color = accentMatch),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(const SearchFilters()),
-                  child: Text(context.l10n.accountReset),
-                ),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(
-                    buildSearchFilters(
-                      portraitOnly: _portraitOnly,
-                      shortSide: _shortSide,
-                      sort: _sort,
-                      color: _color,
-                      depthOnly: _depthOnly,
-                    ),
-                  ),
-                  child: Text(context.l10n.accountApply),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
