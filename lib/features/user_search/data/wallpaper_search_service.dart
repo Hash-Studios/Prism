@@ -6,6 +6,7 @@ import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -77,12 +78,12 @@ class WallpaperSearchService {
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
     final Set<String> blocked = await _blockedEmails();
-    if (filters.depthOnly) return _withoutBlocked(await _depthSearch(query, filters));
+    if (filters.depthOnly) return _withoutHidden(await _depthSearch(query, filters));
     final String cacheKey = _cacheKey(query, filters, blocked);
     final _CachedSearch? hit = _pageCache.remove(cacheKey);
     if (hit != null && DateTime.now().isBefore(hit.expiresAt)) {
       _pageCache[cacheKey] = hit;
-      return _withoutBlocked(hit.page);
+      return _withoutHidden(hit.page);
     }
     final WallpaperSearchPage page = await _searchNetwork(query, filters);
     if (page.provider != SearchProviderValue.prism && !page.isLocal) {
@@ -90,7 +91,7 @@ class WallpaperSearchService {
       _pageCache[cacheKey] = _CachedSearch(page, _paginationKey(query, filters), DateTime.now().add(_pageCacheTtl));
       if (_pageCache.length > _pageCacheSize) _pageCache.remove(_pageCache.keys.first);
     }
-    return _withoutBlocked(page);
+    return _withoutHidden(page);
   }
 
   String _cacheKey(String query, SearchFilters filters, Set<String> blocked) => jsonEncode(<Object?>[
@@ -105,13 +106,17 @@ class WallpaperSearchService {
     blocked.toList()..sort(),
   ]);
 
-  Future<WallpaperSearchPage> _withoutBlocked(WallpaperSearchPage page) async {
+  /// Drops walls from blocked creators, and anime Prism walls when the user hides anime.
+  Future<WallpaperSearchPage> _withoutHidden(WallpaperSearchPage page) async {
     final Set<String> blocked = await _blockedEmails();
-    if (blocked.isEmpty) return page;
+    final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    if (blocked.isEmpty && showAnime) return page;
+    List<FeedItemEntity> visible(List<FeedItemEntity> items) =>
+        AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(items, blocked), showAnime: showAnime);
     return (
       provider: page.provider,
-      results: BlockedCreatorsFilter.filterFeedItems(page.results, blocked),
-      prismResults: BlockedCreatorsFilter.filterFeedItems(page.prismResults, blocked),
+      results: visible(page.results),
+      prismResults: visible(page.prismResults),
       isLocal: page.isLocal,
     );
   }

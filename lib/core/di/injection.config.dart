@@ -502,6 +502,14 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i750.SearchUsersUseCase>(
     () => _i750.SearchUsersUseCase(gh<_i204.UserSearchRepository>()),
   );
+  gh.lazySingleton<_i72.TrendingRepository>(
+    () => _i149.TrendingRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
     () => _i759.PrismWallpaperRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -541,13 +549,6 @@ _i174.GetIt initGetIt(
       gh<_i937.LoadThemeUseCase>(),
       gh<_i937.UpdateThemeUseCase>(),
       gh<_i428.ThemeRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i72.TrendingRepository>(
-    () => _i149.TrendingRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i954.FeedCacheLocalDataSource>(),
-      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.lazySingleton<_i886.FetchTrendingUseCase>(
