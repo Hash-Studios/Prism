@@ -12,11 +12,11 @@ import 'package:Prism/data/user_blocks/firebase_user_block_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
-import 'package:fake_async/fake_async.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_firestore_client.dart';
@@ -58,6 +58,40 @@ class _WatchingClient extends FakeFirestoreClient {
   }
 }
 
+class _GatedReadStore extends DurableJsonStore {
+  _GatedReadStore({required Directory directory, required this.readStarted, required this.releaseRead})
+    : super('user_blocks', directory: directory);
+
+  final Completer<void> readStarted;
+  final Completer<void> releaseRead;
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readAll() async {
+    if (!readStarted.isCompleted) {
+      readStarted.complete();
+      await releaseRead.future;
+    }
+    return super.readAll();
+  }
+}
+
+class _RetryFailingStore extends DurableJsonStore {
+  _RetryFailingStore(this.retryReadStarted) : super('user_blocks');
+
+  final Completer<void> retryReadStarted;
+  var _reads = 0;
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readAll() async {
+    if (_reads++ == 0) return <String, Map<String, Object?>>{};
+    retryReadStarted.complete();
+    throw StateError('offline');
+  }
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async => null;
+}
+
 FakeDocRow _blocked(String uid, String email, {Object? createdAt, String? username}) =>
     (id: uid, data: <String, dynamic>{'blockedEmail': email, 'blockedUsername': ?username, 'createdAt': ?createdAt});
 
@@ -72,6 +106,13 @@ void main() {
   late StreamController<PrismUsersV2> sessionUsers;
   late _WatchingClient client;
   late FirebaseFunctionsPlatform previousFunctions;
+  final Set<FirebaseUserBlockRepository> repositories = <FirebaseUserBlockRepository>{};
+
+  FirebaseUserBlockRepository createRepository([DurableJsonStore? store]) {
+    final repository = FirebaseUserBlockRepository(session, client, store: store);
+    repositories.add(repository);
+    return repository;
+  }
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -89,15 +130,19 @@ void main() {
   });
 
   tearDown(() async {
+    for (final repository in repositories) {
+      await repository.dispose();
+    }
+    repositories.clear();
     await sessionUsers.close();
     await client.snapshots.close();
-    await storeDirectory.delete(recursive: true);
+    if (await storeDirectory.exists()) await storeDirectory.delete(recursive: true);
   });
 
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previousFunctions);
 
   test('a signed-in user gets a live, lowercased set from their blockedUsers collection', () async {
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
 
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
@@ -109,7 +154,7 @@ void main() {
   });
 
   test('a stream error keeps the last known set and ends the initial wait', () async {
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
 
@@ -133,7 +178,7 @@ void main() {
   test('a new account does not complete the initial block load with an unknown empty snapshot', () async {
     const String owner = 'unknown-block-snapshot-owner';
     when(() => session.currentUser).thenReturn(profileUser(id: owner));
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     var completed = false;
@@ -148,12 +193,9 @@ void main() {
     expect(completed, isTrue);
   });
 
-  test('waiting for the initial load gives up after 3 seconds and returns the cached set', () {
+  test('waiting for the initial load gives up after 3 seconds and returns the cached set', () async {
+    final repo = createRepository();
     fakeAsync((async) {
-      final repo = FirebaseUserBlockRepository(session, client);
-      sessionUsers.add(profileUser(id: 'me'));
-      async.flushMicrotasks();
-
       Set<String>? result;
       unawaited(repo.getBlockedCreatorEmails(waitForInitialLoad: true).then((value) => result = value));
       async.elapse(const Duration(seconds: 2));
@@ -162,10 +204,11 @@ void main() {
 
       expect(result, isEmpty);
     });
+    await repo.dispose();
   });
 
   test('signing out clears the set', () async {
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked('u1', 'bad@x.com')]);
@@ -179,9 +222,67 @@ void main() {
     expect(repo.cachedBlockedCreatorEmails, isEmpty);
   });
 
+  test('dispose waits for local hydration and stops lifecycle writes', () async {
+    final Completer<void> readStarted = Completer<void>();
+    final Completer<void> releaseRead = Completer<void>();
+    final store = _GatedReadStore(directory: storeDirectory, readStarted: readStarted, releaseRead: releaseRead);
+    final repo = createRepository(store);
+    sessionUsers.add(profileUser(id: 'me'));
+    await readStarted.future;
+
+    sessionUsers.add(profileUser(id: 'me', loggedIn: false));
+    await repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.isEmpty);
+    var disposed = false;
+    final Future<void> disposing = repo.dispose().then((_) => disposed = true);
+    await Future<void>.delayed(Duration.zero);
+    try {
+      expect(disposed, isFalse);
+      releaseRead.complete();
+      await disposing;
+    } finally {
+      if (!releaseRead.isCompleted) releaseRead.complete();
+    }
+    expect(repo.cachedBlockedCreatorEmails, isEmpty);
+    expect(sessionUsers.hasListener, isFalse);
+    expect(client.snapshots.hasListener, isFalse);
+    expect(await store.readAll(), isEmpty);
+    await storeDirectory.delete(recursive: true);
+    sessionUsers.add(profileUser(id: 'late-user'));
+    client.snapshots.add(<FakeDocRow>[_blocked('late', 'late@example.com')]);
+    expect(await storeDirectory.exists(), isFalse);
+  });
+
+  test('dispose cancels pending retry backoff timers', () async {
+    final List<Timer> retryTimers = <Timer>[];
+    final Completer<void> retryTimerStarted = Completer<void>();
+    await runZoned<Future<void>>(
+      () async {
+        final repo = createRepository(_RetryFailingStore(Completer<void>()));
+        sessionUsers.add(profileUser(id: 'me'));
+        await retryTimerStarted.future;
+        expect(retryTimers, hasLength(1));
+        expect(retryTimers.single.isActive, isTrue);
+
+        await repo.dispose();
+
+        expect(retryTimers.single.isActive, isFalse);
+      },
+      zoneSpecification: ZoneSpecification(
+        createTimer: (self, parent, zone, duration, callback) {
+          final timer = parent.createTimer(zone, duration, callback);
+          retryTimers.add(timer);
+          if (duration == const Duration(seconds: 2) && !retryTimerStarted.isCompleted) {
+            retryTimerStarted.complete();
+          }
+          return timer;
+        },
+      ),
+    );
+  });
+
   test('clearForUser waits for prior block writes and prevents later snapshot writes', () async {
     const String owner = 'me';
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
     final DurableJsonStore store = DurableJsonStore('user_blocks');
     await store.write('$owner::existing', <String, Object?>{'owner': owner});
     await store.write('other-owner::existing', <String, Object?>{'owner': 'other-owner'});
@@ -203,7 +304,7 @@ void main() {
         _blocked('new', 'new@x.com', createdAt: DateTime.utc(2025), username: ' newbie '),
         _blocked('blank', 'blank@x.com', createdAt: DateTime.utc(2023), username: '  '),
       ];
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       final rows = (await repo.fetchBlockedUsersList()).data!;
 
@@ -215,7 +316,7 @@ void main() {
 
     test('a signed-out user gets an empty list without a query', () async {
       when(() => session.currentUser).thenReturn(profileUser(loggedIn: false));
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       expect((await repo.fetchBlockedUsersList()).data, isEmpty);
       expect(client.querySpecs, isEmpty);
@@ -224,7 +325,7 @@ void main() {
     test('a query error is a failure, not an empty list', () async {
       when(() => session.currentUser).thenReturn(profileUser(id: 'block-query-error-owner'));
       client.queryError = StateError('offline');
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       expect((await repo.fetchBlockedUsersList()).failure, isA<ServerFailure>());
     });
@@ -245,7 +346,7 @@ void main() {
         'desired': true,
         'status': 'pending',
       });
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       expect((await repo.fetchBlockedUsersList()).failure, isA<ServerFailure>());
     });
@@ -254,7 +355,7 @@ void main() {
       const String owner = 'block-empty-snapshot-owner';
       when(() => session.currentUser).thenReturn(profileUser(id: owner));
       client.onQuery = (_) => <FakeDocRow>[];
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       expect((await repo.fetchBlockedUsersList()).data, isEmpty);
       client.queryError = StateError('offline');
@@ -273,7 +374,7 @@ void main() {
         'desired': true,
         'status': 'pending',
       });
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
 
       final result = await repo.fetchBlockedUsersList();
       expect(result.isSuccess, isTrue);
@@ -285,12 +386,12 @@ void main() {
       const String owner = 'block-snapshot-restart-owner';
       when(() => session.currentUser).thenReturn(profileUser(id: owner));
       client.onQuery = (spec) => <FakeDocRow>[_blocked('saved-target', 'saved@example.com', username: 'saved_user')];
-      final repo = FirebaseUserBlockRepository(session, client);
+      final repo = createRepository();
       final first = await repo.fetchBlockedUsersList();
       expect(first.data!.single.blockedUid, 'saved-target');
 
       client.queryError = StateError('offline after restart');
-      final restarted = FirebaseUserBlockRepository(session, client);
+      final restarted = createRepository();
       final restored = await restarted.fetchBlockedUsersList();
 
       expect(restored.isSuccess, isTrue);
@@ -303,14 +404,14 @@ void main() {
   test('last known blocked emails restore after a repository restart before network refresh', () async {
     const String owner = 'blocked-email-restart-owner';
     when(() => session.currentUser).thenReturn(profileUser(id: owner));
-    final first = FirebaseUserBlockRepository(session, client);
+    final first = createRepository();
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked('saved-target', 'Saved@Example.com')]);
     await first.watchBlockedCreatorEmails().firstWhere((emails) => emails.contains('saved@example.com'));
     expect(first.cachedBlockedCreatorEmails, <String>{'saved@example.com'});
 
-    final restarted = FirebaseUserBlockRepository(session, client);
+    final restarted = createRepository();
     sessionUsers.add(profileUser(id: owner));
     expect(await restarted.getBlockedCreatorEmails(waitForInitialLoad: true), <String>{'saved@example.com'});
 
@@ -318,7 +419,7 @@ void main() {
   });
 
   test('block and unblock reject a blank user id before calling the server', () async {
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
 
     expect((await repo.blockUser(targetUserId: ' ')).failure, isA<ValidationFailure>());
     expect((await repo.unblockUser(targetUserId: '')).failure, isA<ValidationFailure>());
@@ -342,7 +443,7 @@ void main() {
       }
       return <String, Object?>{'ok': true};
     });
-    final repo = FirebaseUserBlockRepository(session, client);
+    final repo = createRepository();
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked(target, 'target@example.com')]);

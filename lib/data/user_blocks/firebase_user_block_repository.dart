@@ -19,10 +19,9 @@ import 'package:rxdart/rxdart.dart';
 
 @LazySingleton(as: UserBlockRepository)
 class FirebaseUserBlockRepository implements UserBlockRepository {
-  FirebaseUserBlockRepository(this._session, this._firestoreClient) {
-    // Repository lifetime matches the app lifetime, so this subscription stays active.
-    // ignore: cancel_subscriptions
-    _session.watchCurrentUser().listen(_handleSessionUser);
+  FirebaseUserBlockRepository(this._session, this._firestoreClient, {@ignoreParam DurableJsonStore? store})
+    : _localBlocks = store ?? DurableJsonStore('user_blocks') {
+    _sessionSubscription = _session.watchCurrentUser().listen(_handleSessionUser);
   }
 
   static const Duration _timeout = Duration(seconds: 25);
@@ -31,17 +30,63 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   final SessionRepository _session;
   final FirestoreClient _firestoreClient;
-  final DurableJsonStore _localBlocks = DurableJsonStore('user_blocks');
+  final DurableJsonStore _localBlocks;
   final Map<String, Future<void>> _blockWriteTails = <String, Future<void>>{};
   final Map<String, Future<void>> _blockSendTails = <String, Future<void>>{};
+  final Set<Future<void>> _lifecycleTasks = <Future<void>>{};
   final Set<String> _clearingBlockUsers = <String>{};
   final Set<String> _retryingBlockUsers = <String>{};
+  final Map<String, Completer<void>> _retryCancellation = <String, Completer<void>>{};
+  late final StreamSubscription<PrismUsersV2> _sessionSubscription;
   StreamSubscription<Set<String>>? _blockedEmailsSubscription;
 
   final BehaviorSubject<Set<String>> _blockedEmailsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
   Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
   bool _hasLoadedBlockedCreatorEmails = false;
   String? _activeUserId;
+  bool _disposed = false;
+  Future<void>? _disposeFuture;
+
+  Future<void> dispose() => _disposeFuture ??= _dispose();
+
+  Future<void> _dispose() async {
+    _disposed = true;
+    _activeUserId = null;
+    for (final Completer<void> cancellation in _retryCancellation.values) {
+      if (!cancellation.isCompleted) cancellation.complete();
+    }
+    await _sessionSubscription.cancel();
+    await _blockedEmailsSubscription?.cancel();
+    _blockedEmailsSubscription = null;
+    while (_lifecycleTasks.isNotEmpty) {
+      await Future.wait<void>(List<Future<void>>.of(_lifecycleTasks));
+    }
+    await _blockedEmailsSubject.close();
+  }
+
+  void _trackLifecycle(Future<void> task) {
+    _lifecycleTasks.add(task);
+    unawaited(
+      task.then<void>((_) => _lifecycleTasks.remove(task)).catchError((Object error, StackTrace stackTrace) {
+        _lifecycleTasks.remove(task);
+        Zone.current.handleUncaughtError(error, stackTrace);
+      }),
+    );
+  }
+
+  Future<void> _waitForRetry(Duration delay, Completer<void> cancellation) {
+    final Completer<void> finished = Completer<void>();
+    final Timer timer = Timer(delay, finished.complete);
+    cancellation.future.then((_) {
+      if (!finished.isCompleted) finished.complete();
+    });
+    return finished.future.whenComplete(timer.cancel);
+  }
+
+  void _startPendingBlockRetry(String userId) {
+    if (_disposed || _retryingBlockUsers.contains(userId)) return;
+    _trackLifecycle(_retryPendingBlocks(userId));
+  }
 
   @override
   Set<String> get cachedBlockedCreatorEmails => _blockedEmailsSubject.value;
@@ -71,11 +116,17 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   void _handleSessionUser(PrismUsersV2 user) {
+    if (_disposed) return;
     final String nextUserId = (user.loggedIn ? user.id : '').trim();
     if (_activeUserId == nextUserId) {
       return;
     }
+    final String? previousUserId = _activeUserId;
     _activeUserId = nextUserId;
+    if (previousUserId != null) {
+      final Completer<void>? cancellation = _retryCancellation.remove(previousUserId);
+      if (cancellation != null && !cancellation.isCompleted) cancellation.complete();
+    }
     unawaited(_blockedEmailsSubscription?.cancel());
     _blockedEmailsSubscription = null;
 
@@ -86,16 +137,18 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
     _beginPendingInitialLoad();
     _blockedEmailsSubject.add(const <String>{});
-    unawaited(_loadLocalBlocks(nextUserId));
+    _trackLifecycle(_loadLocalBlocks(nextUserId));
     _blockedEmailsSubscription = _watchBlockedEmails(nextUserId).listen(
       (emails) {
         if (_activeUserId != nextUserId || _session.currentUser.id != nextUserId) return;
-        unawaited(_publishMergedSnapshot(nextUserId, serverEmails: emails));
-        unawaited(_retryPendingBlocks(nextUserId));
+        if (!_disposed) {
+          _trackLifecycle(_publishMergedSnapshot(nextUserId, serverEmails: emails));
+          _startPendingBlockRetry(nextUserId);
+        }
       },
       onError: (Object error, StackTrace stackTrace) {
         logger.w('Blocked users stream failed; keeping the last known set.', tag: 'UserBlocks', error: error);
-        unawaited(_publishMergedSnapshot(nextUserId, completeInitialLoadWhenUnavailable: true));
+        if (!_disposed) _trackLifecycle(_publishMergedSnapshot(nextUserId, completeInitialLoadWhenUnavailable: true));
       },
     );
   }
@@ -103,8 +156,8 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   Future<void> _loadLocalBlocks(String userId) async {
     try {
       await _publishMergedSnapshot(userId);
-      if (_activeUserId != userId || _session.currentUser.id != userId) return;
-      unawaited(_retryPendingBlocks(userId));
+      if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
+      _startPendingBlockRetry(userId);
     } catch (error, stackTrace) {
       logger.w('Could not read local blocked users.', tag: 'UserBlocks', error: error, stackTrace: stackTrace);
     }
@@ -122,12 +175,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         await _localBlocks.write('$userId::server_emails', UserBlockSnapshotCodec.encodeEmails(serverEmails));
       });
     }
-    if (_clearingBlockUsers.contains(userId)) return;
+    if (_disposed || _clearingBlockUsers.contains(userId)) return;
     final records = await _localBlocks.readAll();
-    if (_activeUserId != userId || _session.currentUser.id != userId) return;
+    if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
     final savedServerEmails = await _localBlocks.read('$userId::server_emails');
     final savedServerRows = await _localBlocks.read('$userId::server_rows');
-    if (_activeUserId != userId || _session.currentUser.id != userId) return;
+    if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
     final bool hasKnownServerSnapshot = serverEmails != null || savedServerEmails != null || savedServerRows != null;
     final Set<String> emails = <String>{
       ...serverEmails ??
@@ -295,11 +348,11 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         return Result.error(ServerFailure(e.message ?? 'The block was rejected by the server.'));
       }
       logger.w('Block remains local and pending server retry.', tag: 'UserBlocks', error: e);
-      unawaited(_retryPendingBlocks(uid));
+      _startPendingBlockRetry(uid);
       return Result.error(const ServerFailure('Pending sync: Block saved on this device; waiting to sync.'));
     } catch (e) {
       logger.w('Block remains local and pending server retry.', tag: 'UserBlocks', error: e);
-      unawaited(_retryPendingBlocks(uid));
+      _startPendingBlockRetry(uid);
       return Result.error(const ServerFailure('Pending sync: Block saved on this device; waiting to sync.'));
     }
   }
@@ -337,11 +390,11 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         return Result.error(ServerFailure(e.message ?? 'The unblock was rejected by the server.'));
       }
       logger.w('Unblock remains local and pending server retry.', tag: 'UserBlocks', error: e);
-      unawaited(_retryPendingBlocks(uid));
+      _startPendingBlockRetry(uid);
       return Result.error(const ServerFailure('Pending sync: Unblock saved on this device; waiting to sync.'));
     } catch (e) {
       logger.w('Unblock remains local and pending server retry.', tag: 'UserBlocks', error: e);
-      unawaited(_retryPendingBlocks(uid));
+      _startPendingBlockRetry(uid);
       return Result.error(const ServerFailure('Pending sync: Unblock saved on this device; waiting to sync.'));
     }
   }
@@ -355,16 +408,18 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }.contains(error.code);
 
   Future<void> _retryPendingBlocks(String userId) async {
-    if (!_retryingBlockUsers.add(userId)) return;
+    if (_disposed || !_retryingBlockUsers.add(userId)) return;
+    final Completer<void> cancellation = Completer<void>();
+    _retryCancellation[userId] = cancellation;
     var delay = const Duration(seconds: 2);
     try {
-      while (_activeUserId == userId && _session.currentUser.id == userId) {
+      while (!cancellation.isCompleted && _activeUserId == userId && _session.currentUser.id == userId) {
         Map<String, Map<String, Object?>> records;
         try {
           records = await _localBlocks.readAll();
         } catch (error, stackTrace) {
           logger.w('Could not read pending block operations.', tag: 'UserBlocks', error: error, stackTrace: stackTrace);
-          await Future<void>.delayed(delay);
+          await _waitForRetry(delay, cancellation);
           delay = Duration(seconds: (delay.inSeconds * 2).clamp(2, 60));
           continue;
         }
@@ -378,7 +433,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
             .toList(growable: false);
         if (pending.isEmpty) return;
         for (final entry in pending) {
-          if (_activeUserId != userId || _session.currentUser.id != userId) return;
+          if (cancellation.isCompleted || _activeUserId != userId || _session.currentUser.id != userId) return;
           final operation = entry.value;
           final String targetId = operation['targetId']?.toString() ?? '';
           final String operationId = operation['operationId']?.toString() ?? '';
@@ -390,7 +445,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
               );
             });
             if (!sent) continue;
-            if (_activeUserId != userId || _session.currentUser.id != userId) return;
+            if (cancellation.isCompleted || _activeUserId != userId || _session.currentUser.id != userId) return;
             await _updateBlockIntent(userId, targetId, operationId, status: 'synced');
           } on cf.FirebaseFunctionsException catch (error) {
             final bool rejected = error.code == 'permission-denied' || error.code == 'invalid-argument';
@@ -405,11 +460,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
             await _updateBlockIntent(userId, targetId, operationId, status: 'pending', error: error.toString());
           }
         }
-        await Future<void>.delayed(delay);
+        await _waitForRetry(delay, cancellation);
         delay = Duration(seconds: (delay.inSeconds * 2).clamp(2, 60));
       }
     } finally {
       _retryingBlockUsers.remove(userId);
+      if (identical(_retryCancellation[userId], cancellation)) _retryCancellation.remove(userId);
     }
   }
 
