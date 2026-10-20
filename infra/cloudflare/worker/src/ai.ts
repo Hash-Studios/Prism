@@ -2055,6 +2055,10 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
   if (!(await isStudioSecretValid(request.headers.get('x-studio-secret'), env.STUDIO_SECRET))) {
     return aiError('unauthorized', 401, 'Missing or invalid studio secret');
   }
+  const recordMatch = /^\/api\/ai\/studio\/generation-records\/(gen_[a-z0-9]+_[a-f0-9]{16})$/.exec(pathname);
+  if (request.method === 'GET' && recordMatch != null) {
+    return handleGenerationRecordRead(recordMatch[1], env);
+  }
   if (env.AI_IMAGES == null) {
     return aiError('service_disabled', 503, 'Studio asset storage is not configured');
   }
@@ -2069,6 +2073,23 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
     return handleStudioAssetDelete(assetKey, env);
   }
   return aiError('invalid_request', 404, 'Unsupported studio endpoint');
+}
+
+// Functions prove the owner of a user AI wall from this server-owned record. It omits the prompt.
+async function handleGenerationRecordRead(generationId: string, env: AiEnvBindings): Promise<Response> {
+  const record = await readGenerationRecord(generationId, env);
+  if (record == null || record.generationId !== generationId) {
+    return aiError('generation_not_found', 404, 'Generation not found');
+  }
+  return aiJson({
+    generationId: record.generationId,
+    userId: record.userId,
+    createdAt: record.createdAt,
+    width: record.width,
+    height: record.height,
+    imageUrl: record.imageUrl,
+    watermarkedImageUrl: record.watermarkedImageUrl,
+  });
 }
 
 // Studio can bill its own fal account. Without STUDIO_FAL_API_KEY it uses the consumer key.

@@ -150,13 +150,63 @@ the GitHub tree. They need no flag: each is checked against its Studio candidate
 provenance, and gets no receipt or creator credit. `npm run migrate:github-to-r2 -- <options>` builds and runs
 the script.
 
-Ordinary user AI community walls use `ai/public/{generationId}.png` for both the original and thumbnail URL.
-The GitHub and Studio converter does not handle these walls. Client-writable `aiGenerations` documents do not
-prove their source. Authoritative Worker `ai:gen:{generationId}` records expire after 90 days. Full cutover
-requires an approved provenance policy for these walls, including walls whose Worker records have expired.
+### User AI community walls
+
+A user AI wall (`isAiGenerated: true`) records Worker URLs for one generation. The thumbnail is the watermarked
+`ai/public/{generationId}.png`. The original is `ai/original/{generationId}.png` or the same public image, as the
+wall recorded it. Only the Worker generation path writes these keys. The wall `id` must equal the id that the app
+derives from the generation (`aiCommunityId`). The converter retains the recorded bytes. It does not change which
+image a wall delivers. The recorded `resolution` is the requested size, and providers often return another size,
+so the bytes are only decoded, not compared with it.
+
+The owner proof is the server-owned Worker record `ai:gen:{generationId}`. Functions read it through the
+secret-gated `GET /api/ai/studio/generation-records/{generationId}` route with `STUDIO_SECRET`. The route returns
+the owner fields and omits the prompt. The record user must be the Firebase Auth user whose email posted the wall,
+and that user must not be disabled. The manifest provenance is `{kind: "ai", generationId, uid}`.
+`onOwnedWallWritten` applies this proof at approval, so it binds `STUDIO_SECRET`.
+
+Worker records expire after 90 days. Client-writable `aiGenerations` documents do not prove ownership. An expired
+record is accepted only by the bulk script under the separate `--allow-reviewed-ai-legacy` policy, and only when all
+of these are true:
+
+- The wall is approved.
+- The Worker returns no record, and the time in the server-made generation id is more than 91 days ago.
+  A missing record for a younger generation blocks the wall.
+- The Worker still serves both images.
+- No `aiGenerations` document names a user other than the wall author.
+
+These walls use the reserved R2 owner `ai-legacy-migration` and the provenance `{kind: "ai-legacy", generationId}`.
+They claim no uid. The trigger never applies this policy.
+
+Neither AI provenance creates a GitHub receipt, creator credit or creator XP. Creator XP counts only `github` and
+`owned` provenance, so AI walls earn no XP after conversion, as before it.
+
+### Legacy Firebase Storage originals
+
+An old wall can keep its original in the project bucket `prism-wallpapers.appspot.com` and its thumbnail on GitHub.
+The dry run reads the public object metadata (generation, MD5, size), not the bytes, and pins them in the report.
+Apply downloads the recorded URL and refuses bytes whose generation, MD5 or size differ. The original uses the
+storage repo `firebase-storage` and the path `{bucket}/{object}`. The thumbnail comes from the pinned GitHub tree.
+Firebase Storage has no upload receipts, so the wall needs `--allow-reviewed-legacy` and gets `{kind: "legacy"}`
+provenance. The trigger does not convert these walls. The Firebase object stays unchanged.
+
+### Cohorts on 2026-10-20
+
+A read-only listing of approved walls found 2387 GitHub walls, 34 Studio walls, 12 user AI walls and 1 Firebase
+Storage wall. The 12 AI generations were made from 2026-02-19 to 2026-06-13, so all their Worker records have
+expired. Their client `aiGenerations` documents name the wall author. They need `--allow-reviewed-ai-legacy`.
+The Firebase Storage wall (`P4EM`, 2020) needs `--allow-reviewed-legacy`. A dry run that includes them:
+
+```sh
+node lib/scripts/migrateGithubToR2.js --ref master --report /secure/path/wall-assets.json \
+  --allow-reviewed-legacy --allow-reviewed-ai-legacy
+```
+
+The dry run needs `STUDIO_SECRET` in its environment to read Worker records. Without it, AI rows are blocked.
+Deploy the Worker route before the dry run. Apply must use the same policy flags as the reviewed dry run.
 
 Conversion also runs on every write of an approved wall that is still public (admin approval, 3.7.0 upload,
-Studio wall, released Drop wall). A permanent failure is logged as `owned wall conversion blocked`; the wall
+Studio wall, user AI wall with a live Worker record, released Drop wall). A permanent failure is logged as `owned wall conversion blocked`; the wall
 stays hidden from 3.8.0 until a later write retries it or the bulk script converts it.
 
 The script never deletes, privatizes or edits GitHub files. It does not revoke GitHub URLs, prior downloads,

@@ -2,6 +2,8 @@ import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {defineSecret} from "firebase-functions/params";
+import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId, isAiPreview, parseAiSource} from "./aiWallSource";
 import {db, REGION} from "./common";
 import {R2Storage, r2ObjectId, r2Secrets} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
@@ -16,15 +18,41 @@ export class PermanentOwnedAssetError extends Error {}
 class R2IntegrityError extends PermanentOwnedAssetError {}
 /** Storage "repo" of Prism Studio walls: their source is the worker bucket, not a GitHub repository. */
 export const STUDIO_STORAGE_REPO = "prism-studio";
-export type UploadIdentity = {repo: string; path: string; sha: string; uid?: string; sourceKind?: "owned" | "studio";
+/** Storage "repo" of a legacy original kept in the project's Firebase Storage bucket. It is imported like GitHub. */
+export const FIREBASE_STORAGE_REPO = "firebase-storage";
+export const LEGACY_FIREBASE_BUCKET = "prism-wallpapers.appspot.com";
+export type SourceKind = "owned" | "studio" | "ai";
+export type UploadIdentity = {repo: string; path: string; sha: string; uid?: string; sourceKind?: SourceKind;
   uploadId?: string};
-const objectPrefix = (kind?: "owned" | "studio") => kind === "owned" ? "private-originals" :
-  kind === "studio" ? "studio-originals" : "retained";
+const objectPrefix = (kind?: SourceKind) => kind === "owned" ? "private-originals" :
+  kind === "studio" ? "studio-originals" : kind === "ai" ? "ai-originals" : "retained";
+const SOURCE_KINDS: readonly string[] = ["owned", "studio", "ai"];
+
+/** The `{bucket}/{object}` path of a public Firebase Storage download URL in the legacy bucket, or null. */
+export function firebaseStoragePath(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  try {
+    const url = new URL(raw);
+    const match = /^\/v0\/b\/([^/]+)\/o\/([^/]+)$/.exec(url.pathname);
+    const params = [...url.searchParams.keys()];
+    if (url.protocol !== "https:" || url.hostname !== "firebasestorage.googleapis.com" || url.port || url.username ||
+      url.password || url.hash || !match || match[1] !== LEGACY_FIREBASE_BUCKET || url.searchParams.get("alt") !== "media" ||
+      params.some((key) => key !== "alt" && key !== "token") || params.length !== new Set(params).size) return null;
+    const name = decodeURIComponent(match[2]);
+    if (!name || name.length > 1024 || name.startsWith("/") || name.includes("\\") ||
+      name.split("/").some((part) => !part || part === "." || part === "..") ||
+      Array.from(name).some((character) => character.charCodeAt(0) < 32)) return null;
+    return `${LEGACY_FIREBASE_BUCKET}/${name}`;
+  } catch {
+    return null;
+  }
+}
 export type StoredUpload = UploadIdentity & {
   bucket: string; object: string; objectId: string; sha256: string; uid: string; previewObjectId?: string; uploadId?: string;
 };
 function objectName(input: UploadIdentity & {uid: string; digest?: string}): string {
-  const repos = input.sourceKind === "studio" ? [STUDIO_STORAGE_REPO] : [process.env.GH_REPO_WALLS, process.env.GH_REPO_SETUPS];
+  const repos = input.sourceKind === "studio" ? [STUDIO_STORAGE_REPO] : input.sourceKind === "ai" ? [AI_STORAGE_REPO] :
+    [process.env.GH_REPO_WALLS, process.env.GH_REPO_SETUPS, FIREBASE_STORAGE_REPO];
   if (!input.repo || !repos.includes(input.repo) || !/^[a-f0-9]{40}$/.test(input.sha) ||
     !input.path || input.path.length > 1024 || input.path.startsWith("/") || input.path.includes("\\") ||
     input.path.split("/").some((part) => !part || part === "." || part === "..")) throw new Error("Invalid upload identity");
@@ -155,13 +183,14 @@ export async function deleteRetainedUpload(input: UploadIdentity & {expected?: S
   if (expected.previewObjectId) await client.delete("preview", `previews/${expected.previewObjectId}.img`);
 }
 function previewId(input: UploadIdentity) {
+  if (input.sourceKind === "ai") return input.repo === AI_STORAGE_REPO && isAiPreview(input.path, input.uploadId);
   return (input.sourceKind === "studio" ? input.repo === STUDIO_STORAGE_REPO : input.repo === process.env.GH_REPO_WALLS) &&
     input.path.split("/").pop()?.startsWith("thumb_");
 }
 export function stored(value: unknown): value is StoredUpload {
   if (!value || typeof value !== "object") return false;
   const asset = value as Partial<StoredUpload>;
-  const kind = asset.sourceKind === "owned" || asset.sourceKind === "studio" ? asset.sourceKind : undefined;
+  const kind = SOURCE_KINDS.includes(asset.sourceKind as string) ? asset.sourceKind : undefined;
   const prefix = objectPrefix(kind);
   let expectedObject: string;
   try {
@@ -185,7 +214,8 @@ export function stored(value: unknown): value is StoredUpload {
     value.object === `${prefix}/${value.objectId}` && value.object === expectedObject &&
     (!asset.uploadId || (typeof asset.uploadId === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(asset.uploadId))) &&
     (!("previewObjectId" in value) || (value.previewObjectId === value.objectId && typeof asset.path === "string" &&
-      previewId({repo: asset.repo as string, path: asset.path, sha: asset.sha as string, ...(kind ? {sourceKind: kind} : {})}) === true));
+      previewId({repo: asset.repo as string, path: asset.path, sha: asset.sha as string, ...(kind ? {sourceKind: kind} : {}),
+        ...(asset.uploadId ? {uploadId: asset.uploadId} : {})}) === true));
 }
 function contentType(bytes: Buffer): string {
   return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png" :
@@ -284,7 +314,8 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
 export type WallBindingExpectation = {canonicalPath: string; incarnation: number; incarnationNanos: number;
   originalUrl: string; thumbUrl: string; originalPath: string; thumbPath: string; originalSha: string; thumbSha: string;
   recordedSource?: {originalPath: unknown; thumbPath: unknown; originalSha: unknown; thumbSha: unknown};
-  studio?: {runId: string; candidateId: string; resolution: string}};
+  studio?: {runId: string; candidateId: string; resolution: string};
+  ai?: {generationId: string; resolution: string; email: string}};
 
 function matchesExpectedWall(wall: FirebaseFirestore.QueryDocumentSnapshot, expected: WallBindingExpectation): boolean {
   const data = wall.data();
@@ -299,7 +330,9 @@ function matchesExpectedWall(wall: FirebaseFirestore.QueryDocumentSnapshot, expe
       data.thumb_sha === expected.recordedSource.thumbSha) &&
     (!expected.studio || data.origin === "studio" && data.email === STUDIO_ACCOUNT.email &&
       data.studioRunId === expected.studio.runId && data.studioCandidateId === expected.studio.candidateId &&
-      data.resolution === expected.studio.resolution);
+      data.resolution === expected.studio.resolution) &&
+    (!expected.ai || data.isAiGenerated === true && data.aiGenerationId === expected.ai.generationId &&
+      data.resolution === expected.ai.resolution && data.email === expected.ai.email);
 }
 
 export async function dropAllowsBinding(data: FirebaseFirestore.DocumentData, tx?: FirebaseFirestore.Transaction,
@@ -373,19 +406,35 @@ async function delivery(wallId: string) {
 }
 export const getOwnedWallDelivery = delivery;
 export type StudioBinding = {kind: "studio"; runId: string; candidateId: string};
+/** A user AI wall: `ai` when the Worker record proved its owner, `ai-legacy` when that record had expired. */
+export type AiBinding = {kind: "ai"; generationId: string; uid: string} | {kind: "ai-legacy"; generationId: string};
 /**
- * Binds a reviewed wall whose source has no upload receipts: a legacy GitHub wall, or a Prism Studio wall when `source`
- * is set. Studio is checked against the server-owned candidate backlink and never gets a GitHub receipt or creator credit.
+ * Binds a reviewed wall whose source has no upload receipts: a legacy GitHub or Firebase Storage wall, a Prism Studio
+ * wall, or a user AI wall. Studio is checked against the server-owned candidate backlink and AI against its Worker
+ * source. None of them gets a GitHub receipt or creator credit.
  */
 export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath: string; incarnation: number;
   incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload; source?: StudioBinding;
+  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload; source?: StudioBinding | AiBinding;
   expected?: WallBindingExpectation}): Promise<void> {
   const {source, expected, ...binding} = input;
-  const kind = source ? "studio" : undefined;
+  const kind = source?.kind === "studio" ? "studio" : source ? "ai" : undefined;
   if (!validId(input.wallId) || !stored(input.original) || !stored(input.thumb) ||
     input.original.sourceKind !== kind || input.thumb.sourceKind !== kind) throw new Error("Invalid legacy binding");
-  if (source) {
+  if (source?.kind === "ai" || source?.kind === "ai-legacy") {
+    const uid = source.kind === "ai" ? source.uid : AI_LEGACY_UID;
+    const thumbKey = `ai/public/${source.generationId}.png`;
+    const keys = [[`ai/original/${source.generationId}.png`, thumbKey], [thumbKey]];
+    [input.original, input.thumb].forEach((asset, index) => {
+      if (asset.repo !== AI_STORAGE_REPO || !keys[index].includes(asset.path) || asset.uid !== uid ||
+        (source.kind === "ai" && uid === AI_LEGACY_UID) ||
+        asset.uploadId !== aiUploadId(source.generationId, index === 0 ? "original" : "thumb") ||
+        [input.originalUrl, input.thumbUrl][index] !== `${STUDIO_ASSET_BASE}/${asset.path}`) {
+        throw new Error("Invalid AI origin");
+      }
+    });
+    await Promise.all([verifyStoredUpload(input.original), verifyStoredUpload(input.thumb)]);
+  } else if (source) {
     const keys = [`ai/studio/${source.candidateId}.jpg`, `ai/studio/thumb_${source.candidateId}.jpg`];
     const urls = [input.originalUrl, input.thumbUrl];
     [input.original, input.thumb].forEach((asset, index) => {
@@ -397,6 +446,13 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
     await Promise.all([verifyStoredUpload(input.original), verifyStoredUpload(input.thumb)]);
   } else {
     for (const [asset, raw] of [[input.original, input.originalUrl], [input.thumb, input.thumbUrl]] as const) {
+      if (asset.repo === FIREBASE_STORAGE_REPO) {
+        // Only an original can come from Firebase Storage; the public thumbnail role stays a GitHub file.
+        if (asset !== input.original || firebaseStoragePath(raw) !== asset.path ||
+          asset.object !== objectName({...asset, digest: asset.sha256})) throw new Error("Invalid legacy origin");
+        await verifyStoredUpload(asset);
+        continue;
+      }
       const url = new URL(raw);
       const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
       if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.username || url.password ||
@@ -417,17 +473,32 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
       (expected && !matchesExpectedWall(wall, expected)) || !await dropAllowsBinding(wall.data(), tx)) {
       throw new PermanentOwnedAssetError("Legacy wall changed or already bound");
     }
-    if (source) {
+    if (source?.kind === "studio") {
       const verified = await verifiedStudioSource(input.wallId, wall.data(), tx);
       if (verified?.runId !== source.runId || verified.candidateId !== source.candidateId) {
         throw new PermanentOwnedAssetError("Studio wall changed or is not a Studio wall");
       }
+    } else if (source) {
+      const verified = parseAiSource(wall.data());
+      if (verified?.generationId !== source.generationId || verified.originalUrl !== input.originalUrl ||
+        verified.thumbUrl !== input.thumbUrl) throw new PermanentOwnedAssetError("AI wall changed or is not an AI wall");
+      if (source.kind === "ai") {
+        // The Worker record proved this uid; the wall must still be posted by that account.
+        const author = await admin.auth().getUser(source.uid).catch((error: unknown) => {
+          if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return null;
+          throw error;
+        });
+        if (!author || author.disabled || !author.email || author.email !== wall.data().email) {
+          throw new PermanentOwnedAssetError("AI wall author no longer matches the generation owner");
+        }
+      }
     }
     await verifyStoredUploadRegistry(input.original, tx);
     await verifyStoredUploadRegistry(input.thumb, tx);
-    if (input.original.previewObjectId || !input.thumb.previewObjectId ||
-      input.original.path.split("/").pop()?.startsWith("thumb_") ||
-      !input.thumb.path.split("/").pop()?.startsWith("thumb_") || input.original.object === input.thumb.object) {
+    const thumbRole = (asset: StoredUpload) => asset.sourceKind === "ai" ? isAiPreview(asset.path, asset.uploadId) :
+      asset.path.split("/").pop()?.startsWith("thumb_");
+    if (input.original.previewObjectId || !input.thumb.previewObjectId || thumbRole(input.original) ||
+      !thumbRole(input.thumb) || input.original.object === input.thumb.object) {
       throw new Error("Legacy wall asset roles are invalid");
     }
     tx.create(ref, {...binding, incarnationNanos: wall.createTime.nanoseconds, status: "ready",
@@ -444,8 +515,10 @@ export async function signOriginalDelivery(wallId: string): Promise<{url: string
   const url = new R2Storage().presignGet(original.object, new Date(expiresAt));
   return {url, expiresAt, objectId: original.objectId};
 }
+// Reads the Worker AI generation record at approval. The Studio function binds the same secret.
+const studioSecret = defineSecret("STUDIO_SECRET");
 export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true,
-  secrets: r2Secrets, memory: "512MiB", timeoutSeconds: 120}, async (event) => {
+  secrets: [...r2Secrets, studioSecret], memory: "512MiB", timeoutSeconds: 120}, async (event) => {
   const after = event.data?.after;
   const before = event.data?.before;
   if (after?.exists) {
@@ -536,7 +609,7 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
       await stateRef.set({cursorId: row.id}, {merge: true});
       continue;
     }
-    const sourceKind = value.sourceKind === "owned" || value.sourceKind === "studio" ? value.sourceKind :
+    const sourceKind = SOURCE_KINDS.includes(value.sourceKind) ? value.sourceKind as SourceKind :
       value.sourceKind === "github" ? undefined : null;
     if (sourceKind === null || typeof value.objectId !== "string" || !/^[a-f0-9]{64}$/.test(value.objectId) ||
       typeof value.uid !== "string" || !validId(value.uid) || typeof value.repo !== "string" ||
@@ -553,7 +626,8 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
     }
     const preview = value.previewObjectId;
     if (preview !== undefined && (preview !== value.objectId || !previewId({repo: value.repo, path: value.path,
-      sha: value.sha, ...(sourceKind ? {sourceKind} : {})}))) {
+      sha: value.sha, ...(sourceKind ? {sourceKind} : {}),
+      ...(typeof value.uploadId === "string" && value.uploadId !== "imported" ? {uploadId: value.uploadId} : {})}))) {
       console.warn("Skipping invalid R2 preview tombstone", {registryId: row.id});
       await stateRef.set({cursorId: row.id}, {merge: true});
       continue;

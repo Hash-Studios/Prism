@@ -1480,6 +1480,31 @@ test('studio routes are off without STUDIO_SECRET and need the exact secret head
   }
 });
 
+test('studio generation-record route returns the owner fields only behind the studio secret', async () => {
+  const generationId = 'gen_mlt7o22q_7a9688a037a47de6';
+  const record = {
+    generationId, userId: 'user-1', createdAt: '2026-02-19T08:40:39.977Z', prompt: 'private prompt',
+    width: 1179, height: 2048, imageUrl: `https://prismwalls.com/api/ai/assets/ai/original/${generationId}.png`,
+    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/ai/public/${generationId}.png`,
+  };
+  const env = aiEnv(new MemoryKv([[`ai:gen:${generationId}`, JSON.stringify(record)]]),
+    new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET });
+  const path = `/api/ai/studio/generation-records/${generationId}`;
+
+  assert.equal((await studioFetch(env, 'GET', path, { secret: 'wrong' })).status, 401);
+  assert.equal((await studioFetch(env, 'GET', path, { secret: null })).status, 401);
+  const found = await studioFetch(env, 'GET', path);
+  assert.equal(found.status, 200);
+  const { prompt, ...owner } = record;
+  assert.equal(prompt, 'private prompt');
+  assert.deepEqual(await found.json(), owner);
+
+  const missing = await studioFetch(env, 'GET', '/api/ai/studio/generation-records/gen_mqc4rojc_ebbaa0bef876eff2');
+  assert.equal(missing.status, 404);
+  assert.equal((await missing.json()).error, 'generation_not_found');
+  assert.notEqual((await studioFetch(env, 'GET', '/api/ai/studio/generation-records/ai:gen:x')).status, 200);
+});
+
 test('studio generation refuses bad bodies and unknown models before any provider call', async () => {
   const stats = {};
   const env = studioEnv();
