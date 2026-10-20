@@ -105,6 +105,8 @@ const cases = [
   ['owner cannot read R2 object registry', () => req('GET', 'r2ObjectRegistry/object-id', null, Bu), 403],
   ['owner cannot write R2 object registry', () => req('PATCH', 'r2ObjectRegistry/object-id', { status: { stringValue: 'active' } }, Bu), 403],
   ['owner cannot delete R2 object registry', () => req('DELETE', 'r2ObjectRegistry/object-id', null, Bu), 403],
+  ['owner cannot read AI generation receipt', () => req('GET', 'aiGenerationReceipts/gen-1', null, Bu), 403],
+  ['owner cannot write AI generation receipt', () => req('PATCH', 'aiGenerationReceipts/gen-1', { userId: { stringValue: 'b' } }, Bu), 403],
   ['review-only public query keeps 3.7.0 feeds working', () => runQuery(A, [
     { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
   ], 'walls'), 200],

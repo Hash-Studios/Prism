@@ -1,14 +1,17 @@
 import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
+import {defineSecret} from "firebase-functions/params";
+import {parseAiSource, saveAiGenerationReceipt} from "./aiWallSource";
 import {getAdminEmails} from "./adminConfig";
 import {emailHash, sendToUserByEmail} from "./notificationHelper";
-import {findUserByEmail, REGION, str} from "./common";
+import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {authorOf, authorUpdate} from "./wallAuthor";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
+const studioSecret = defineSecret("STUDIO_SECRET");
 
 /** True when `url` is a https link on the GitHub raw host, where every upload of the app is served. */
 export function isGithubRawUrl(url: unknown): boolean {
@@ -22,13 +25,15 @@ export function isGithubRawUrl(url: unknown): boolean {
 
 /**
  * Fills `by` and `userPhoto` of a new wall from the owner's profile, because the client writes both. Logs, but does
- * not reject, an image link outside the GitHub raw host. Then notifies the admins in `config/adminNotifications`
- * when a premium user submits a wall (walls start with review=false).
+ * not reject, an image link outside the GitHub raw host. Copies the Worker record of a user AI wall to a server-only
+ * receipt, so the approval trigger can prove its owner after the record expires. Then notifies the admins in
+ * `config/adminNotifications` when a premium user submits a wall (walls start with review=false).
  */
 export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
     region: REGION,
+    secrets: [studioSecret],
   },
   async (event) => {
     const data = event.data?.data();
@@ -47,6 +52,17 @@ export const onWallSubmitted = onDocumentCreated(
     const artistEmail = str(data.email);
     const wallTitle = str(data.title) || "Untitled";
     const wallThumb = str(data.wallpaper_thumb);
+
+    const aiSource = parseAiSource(data);
+    if (aiSource) {
+      try {
+        if (!(await saveAiGenerationReceipt(db, aiSource.generationId))) {
+          logger.warn("onWallSubmitted: AI wall has no Worker record; no receipt.", {wallId});
+        }
+      } catch (err) {
+        logger.warn("onWallSubmitted: AI generation receipt failed.", {wallId, err});
+      }
+    }
 
     if (data.isAiGenerated !== true) {
       for (const field of ["wallpaper_url", "wallpaper_thumb"]) {

@@ -661,6 +661,47 @@ test("an AI wall is blocked without the Worker secret instead of retrying", asyn
   assert.ok(!network.fetched.some((url) => url.startsWith(RECORDS)), "no record request without the secret");
 });
 
+test("an AI wall whose Worker record expired converts in the trigger from its submit-time receipt", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const id = String(wall.id);
+  const {width, height, ...receipt} = JSON.parse(String(aiRecord(OLD_GEN)));
+  assert.ok(width && height);
+  const store = installFakeDb(t, {[`walls/${id}`]: wall, [`aiGenerationReceipts/${OLD_GEN}`]: receipt});
+  installNetwork(t, await aiSources(OLD_GEN));
+  mockAuth(t);
+  assert.equal(await convertApprovedWall(id), "converted");
+  const manifest = store.get(`ownedAssets/${id}`) as {original: Doc; provenance: Doc};
+  assert.deepEqual(manifest.provenance, {kind: "ai", generationId: OLD_GEN, uid: "creator-1"});
+  assert.equal(manifest.original.uid, "creator-1");
+  assert.equal(store.get(`walls/${id}`)?.originalProtected, true);
+});
+
+for (const [name, receipt, reason] of [
+  ["names another user", {userId: "someone-else"}, NOT_OWNER],
+  ["is for other image keys", {watermarkedImageUrl: `${WORKER}/ai/public/other.png`}, NOT_OWNER],
+  ["is for another generation", {generationId: NEW_GEN}, /receipt is invalid/],
+  ["has no user", {userId: ""}, /receipt is invalid/],
+] as const) {
+  test(`an expired AI wall is refused when its receipt ${name}`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(OLD_GEN);
+    const id = String(wall.id);
+    const store = installFakeDb(t, {[`walls/${id}`]: wall,
+      [`aiGenerationReceipts/${OLD_GEN}`]: {...JSON.parse(String(aiRecord(OLD_GEN))), ...receipt}});
+    const network = installNetwork(t, await aiSources(OLD_GEN));
+    mockAuth(t);
+    assert.equal(await convertApprovedWall(id), "blocked");
+    const reasons = (logger.error as unknown as {mock: {calls: {arguments: unknown[]}[]}}).mock.calls
+      .map((call) => String((call.arguments[1] as {reason?: unknown})?.reason));
+    assert.ok(reasons.some((value) => reason.test(value)), reasons.join("; "));
+    assert.equal(network.objects.size, 0);
+    assert.equal(store.has(`ownedAssets/${id}`), false);
+  });
+}
+
 /** The bulk path: one inventory row through the real Firestore and R2 dependencies. */
 async function bulkConvert(walls: Record<string, Doc>, options: {allowReviewedLegacy?: boolean; allowReviewedAiLegacy?: boolean},
   inventory: (wall: MigrationWall) => WallInventory | null) {

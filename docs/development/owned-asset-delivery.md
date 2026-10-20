@@ -170,12 +170,22 @@ row if any of these fields changed. A missing record for a generation less than 
 for KV propagation; it is not treated as expired. The manifest provenance is `{kind: "ai", generationId, uid}`.
 `onOwnedWallWritten` applies this proof at approval, so it binds `STUDIO_SECRET`.
 
-Worker records expire after 90 days. Client-writable `aiGenerations` documents do not prove ownership. An expired
-record is accepted only by the bulk script under the separate `--allow-reviewed-ai-legacy` policy, and only when all
-of these are true:
+Worker records expire after 90 days, and a wall can wait longer than that for approval. So `onWallSubmitted` reads
+the live record when a user AI wall is created and copies its owner fields to the server-only receipt
+`aiGenerationReceipts/{generationId}` (`generationId`, `userId`, `imageUrl`, `watermarkedImageUrl`, `recordedAt`).
+The first receipt is kept. Firestore rules refuse all client reads and writes of this collection. `onWallSubmitted`
+also binds `STUDIO_SECRET`. When the Worker has no record, the trigger and the bulk script use this receipt with the
+same checks as a live record, and the wall gets the same `{kind: "ai"}` provenance. A failed or empty read at submit only logs a
+warning, and the wall then depends on the live record at approval. Walls submitted before the receipt existed have
+no receipt.
+
+Client-writable `aiGenerations` documents do not prove ownership. A wall with no live record and no receipt is
+accepted only by the bulk script under the separate `--allow-reviewed-ai-legacy` policy, and only when all of these
+are true:
 
 - The wall is approved.
-- The Worker returns no record, and the time in the server-made generation id is more than 91 days ago.
+- The Worker returns no record, there is no receipt, and the time in the server-made generation id is more than 91
+  days ago.
   After the initial five-minute retry window, a missing record for a younger generation blocks the wall.
 - The Worker still serves both images.
 - A conflicting `aiGenerations` document blocks the conversion. This client-writable history is only a veto; it never
