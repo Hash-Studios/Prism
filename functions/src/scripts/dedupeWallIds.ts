@@ -121,8 +121,13 @@ export async function dedupeWallIds(
         const newRef = user.ref.collection("images").doc(next);
         await db.runTransaction(async (tx) => {
           const [current, existing] = await Promise.all([tx.get(oldRef), tx.get(newRef)]);
-          if (!current.exists) return;
-          if (!existing.exists) tx.set(newRef, {...current.data(), id: next});
+          const data = current.data() ?? {};
+          if (!current.exists || favouriteTarget(data, group)?.docId !== target.docId) return;
+          if (!existing.exists) {
+            tx.set(newRef, {...data, id: next});
+          } else if (favouriteTarget(existing.data() ?? {}, group)?.docId !== target.docId) {
+            throw new Error(`${newRef.path} holds a different favourite; check it before you run again`);
+          }
           tx.delete(oldRef);
         });
       }
@@ -139,7 +144,7 @@ export async function dedupeWallIds(
             tx.get(ref),
             tx.get(db.collection("walls").where("id", "==", next).limit(1)),
           ]);
-          if (text(current.data()?.id) !== wall.id || !clash.empty) {
+          if (!current.exists || toWallRow(wall.docId, current.data() ?? {}).id !== wall.id || !clash.empty) {
             throw new Error(`walls/${wall.docId} changed or ${next} is taken; run again`);
           }
           tx.update(ref, {id: next});

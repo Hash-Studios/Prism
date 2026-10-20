@@ -103,3 +103,24 @@ test("a rerun after a stop between the favourite moves and the wall rename finis
   assert.equal(store.get("walls/new")?.id, next);
   assert.deepEqual(store.get(`usersv2/u1/images/${next}`), {...fav("new"), id: next});
 });
+
+test("a wall with no id field uses its doc id, and a different favourite at the new id is not lost", async (t) => {
+  const first = installFakeDb(t, {
+    "walls/AML9": wall("AML9", "old", {id: undefined}),
+    "walls/new": wall("AML9", "new", {createdAt: "2022-01-01T00:00:00Z"}),
+  });
+  await dedupeWallIds(db, {apply: true}, () => undefined);
+  assert.equal(first.get("walls/AML9")?.id, undefined);
+  const next = first.get("walls/new")?.id as string;
+
+  const store = installFakeDb(t, {
+    "walls/AML9": wall("AML9", "old", {id: undefined}),
+    "walls/new": wall("AML9", "new", {createdAt: "2022-01-01T00:00:00Z"}),
+    "usersv2/u1": {},
+    "usersv2/u1/images/AML9": fav("new"),
+    [`usersv2/u1/images/${next}`]: fav("other", next),
+  });
+  await assert.rejects(dedupeWallIds(db, {apply: true}, () => undefined), /holds a different favourite/);
+  assert.deepEqual(store.get("usersv2/u1/images/AML9"), fav("new"));
+  assert.deepEqual(store.get(`usersv2/u1/images/${next}`), fav("other", next));
+});
