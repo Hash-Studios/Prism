@@ -14,6 +14,7 @@
     "migrate:view-stats": "npm run build && node lib/scripts/migrateGithubViewStats.js",
     "migrate:wall-collections": "npm run build && node lib/scripts/backfillWallCollections.js",
     "migrate:dedupe-wall-ids": "npm run build && node lib/scripts/dedupeWallIds.js",
+    "migrate:wall-authors": "npm run build && node lib/scripts/backfillWallAuthors.js",
     "economy:config": "node lib/scripts/economyConfig.js",
     "drops:reserve": "npm run build && node lib/scripts/reserveDrop.js",
     "studio:account": "npm run build && node lib/scripts/setupStudioAccount.js",

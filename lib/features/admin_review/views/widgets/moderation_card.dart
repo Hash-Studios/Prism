@@ -1,6 +1,8 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/features/admin_review/views/widgets/moderation_signals.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -17,6 +19,7 @@ class ModerationCard extends StatefulWidget {
     required this.onReject,
     this.onToggleReserve,
     this.reserved = false,
+    this.moderation,
   });
 
   final String previewUrl;
@@ -30,6 +33,9 @@ class ModerationCard extends StatefulWidget {
   /// Reserves the wall for the next weekly Drop, or undoes it. Null hides the button.
   final Future<void> Function()? onToggleReserve;
   final bool reserved;
+
+  /// The server check. Null when the wall was not checked yet.
+  final WallModeration? moderation;
 
   @override
   State<ModerationCard> createState() => _ModerationCardState();
@@ -109,6 +115,7 @@ class _ModerationCardState extends State<ModerationCard> {
                     children: <Widget>[
                       for (final (String label, String value) in widget.facts)
                         ModerationFact(label: label, value: value),
+                      ModerationSignals(moderation: widget.moderation, onImage: false),
                     ],
                   ),
                 ),
