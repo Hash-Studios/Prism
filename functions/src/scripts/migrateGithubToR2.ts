@@ -62,7 +62,7 @@ export function parseGithubAsset(raw: unknown, path: unknown, options: Migration
   const sourcePath = parts.slice(3).join("/");
   if (path !== undefined && path !== "" && path !== sourcePath) throw new Error("GitHub URL path mismatch");
   return {repo: options.repo, path: sourcePath, url: `https://raw.githubusercontent.com/${options.owner}/${options.repo}/${options.commit}/${
-    sourcePath.split("/").map(encodeURIComponent).join("/")}`, recordedUrl: url.href, sha: "", commit: options.commit,
+    sourcePath.split("/").map(encodeURIComponent).join("/")}`, recordedUrl: raw, sha: "", commit: options.commit,
   gitSha: "", size: 0};
 }
 

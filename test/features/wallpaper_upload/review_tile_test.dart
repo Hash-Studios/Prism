@@ -115,7 +115,7 @@ void main() {
       'id': 'wall',
       'wallpaper_url': '',
       'originalProtected': true,
-      'originalObjectId': '17',
+      'originalObjectId': '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       'wallpaper_path': '',
       'wallpaper_sha': '',
       'thumb_path': '',
@@ -141,7 +141,7 @@ void main() {
         (request) =>
             request.name == 'githubDeleteFile' &&
             request.data['wallId'] == 'wall' &&
-            request.data['originalObjectId'] == '17' &&
+            request.data['originalObjectId'] == '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' &&
             request.metadataPresent,
       ),
       isTrue,

@@ -132,6 +132,19 @@ function isOwnedThumbnailUrl(url: URL): boolean {
   }
 }
 
+function configuredPreviewHost(): string | undefined {
+  const base = process.env.R2_PREVIEW_BASE_URL;
+  if (!base) return undefined;
+  try {
+    const endpoint = new URL(base);
+    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
+      endpoint.search || endpoint.hash) return undefined;
+    return endpoint.hostname;
+  } catch {
+    return undefined;
+  }
+}
+
 export function checkedImageUrl(value: string): URL {
   let url: URL;
   try {
@@ -145,7 +158,8 @@ export function checkedImageUrl(value: string): URL {
   if (url.username || url.password || url.port) {
     throw new Error("image url must not have credentials or a port");
   }
-  if (url.hostname === new URL(process.env.R2_PREVIEW_BASE_URL ?? "https://invalid.invalid").hostname &&
+  const previewHost = configuredPreviewHost();
+  if (previewHost && url.hostname === previewHost &&
     !isOwnedThumbnailUrl(url)) throw new Error("R2 image path is not an allowed preview");
   if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname) && !isOwnedThumbnailUrl(url)) {
     throw new Error("image host is not allowed");

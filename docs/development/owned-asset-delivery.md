@@ -39,7 +39,13 @@ The account access key must be scoped to the two named buckets. Keep the private
 enable custom-domain access only for the preview bucket. Do not add lifecycle deletion that could remove
 objects referenced by ready manifests. With no R2 routing configuration, uploads keep using GitHub. Any
 partial R2 routing configuration fails closed; credentials alone may be staged before routing is enabled.
-The deployment still requires its declared runtime secret bindings to be configured.
+The deployment still requires its declared runtime secret bindings to be configured. Merging this PR
+does not create those bindings. The first full Functions deployment, or deployment of any function that
+binds R2 secrets, is blocked until the user approves secret setup and both secret versions exist.
+This prerequisite also applies to a pre-rollout deployment with routing keys absent. Do not run the
+default full Functions deployment for an unrelated hotfix before that approval. The default Makefile
+secret-sync list does not include R2; use the explicit approved list below. Do not create placeholder
+secrets or enable routing as an unapproved workaround.
 
 After approval, include routing keys in the explicit Functions export list and R2 secrets in the sync list:
 

@@ -192,6 +192,13 @@ test("wall URLs and source paths must match assets at the pinned commit", () => 
     "x.jpg", options), /Untrusted/);
 });
 
+test("asset preserves the exact recorded URL while downloads use the canonical pinned URL", () => {
+  const recordedUrl = `https://RAW.GITHUBUSERCONTENT.COM/hash/walls/${options.commit}/original.jpg`;
+  const asset = parseGithubAsset(recordedUrl, "original.jpg", options);
+  assert.equal(asset.recordedUrl, recordedUrl);
+  assert.equal(asset.url, `https://raw.githubusercontent.com/hash/walls/${options.commit}/original.jpg`);
+});
+
 test("R2 readback checks private and public-preview bytes against their SHA-256 digest", async () => {
   const asset = {repo: "walls", path: "thumb_original.jpg", sha, uid: "creator", bucket: "private",
     object: "retained/one", objectId: "1".repeat(64), sha256: createHash("sha256").update(bytes).digest("hex"),

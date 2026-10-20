@@ -170,6 +170,24 @@ test("R2 preview base configuration rejects unsafe bases", async (t) => {
   }
 });
 
+test("invalid R2 preview base config does not break legacy allowlisted images", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  const seen: string[] = [];
+  const ok: ColorFetch = async (url) => {
+    seen.push(url);
+    return replyOf(new Uint8Array([1]));
+  };
+  for (const base of ["", "not-a-url"]) {
+    process.env.R2_PREVIEW_BASE_URL = base;
+    assert.deepEqual([...await fetchImageBuffer(GOOD, ok)], [1]);
+    await assert.rejects(fetchImageBuffer("https://unknown.example/a.png", ok), /host is not allowed/);
+  }
+  assert.deepEqual(seen, [GOOD, GOOD]);
+});
+
 test("fetchImageBuffer refuses a bad url before any request", async () => {
   let calls = 0;
   const spy: ColorFetch = async () => {
