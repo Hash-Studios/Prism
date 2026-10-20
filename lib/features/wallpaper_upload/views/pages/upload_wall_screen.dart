@@ -120,6 +120,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String? thumbSha;
   String? wallpaperPath;
   String? thumbPath;
+  UploadSourceKind? wallpaperSourceKind;
+  UploadSourceKind? thumbSourceKind;
   String? _fileName;
   String? _wallDocId;
   bool _oversize = false;
@@ -262,11 +264,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             path: wallpaperPath!,
             sha: wallpaperSha!,
             message: wallpaperPath!,
+            sourceKind: wallpaperSourceKind,
           );
         }
         wallpaperPath = null;
         wallpaperSha = null;
         wallpaperUrl = null;
+        wallpaperSourceKind = null;
       }
       if (thumbPath != null && thumbSha != null) {
         if (widget.deleteFileForTesting case final deleteFileForTesting?) {
@@ -277,11 +281,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             path: thumbPath!,
             sha: thumbSha!,
             message: thumbPath!,
+            sourceKind: thumbSourceKind,
           );
         }
         thumbPath = null;
         thumbSha = null;
         wallpaperThumb = null;
+        thumbSourceKind = null;
       }
       logger.d('Unsubmitted wallpaper files deleted');
       return true;
@@ -324,6 +330,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperUrl = value.downloadUrl;
         wallpaperPath = value.path ?? baseName;
         wallpaperSha = value.sha;
+        wallpaperSourceKind = value.sourceKind;
         if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
           throw StateError('The wallpaper upload returned incomplete file details.');
         }
@@ -344,6 +351,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperThumb = thumbValue.downloadUrl;
         thumbPath = thumbValue.path ?? thumbName;
         thumbSha = thumbValue.sha;
+        thumbSourceKind = thumbValue.sourceKind;
         if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
           throw StateError('The preview upload returned incomplete file details.');
         }
@@ -438,8 +446,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               wallpaperTags: _metadata.tags,
               wallpaperPath: wallpaperPath,
               wallpaperSha: wallpaperSha,
+              wallpaperSourceKind: wallpaperSourceKind,
               thumbPath: thumbPath,
               thumbSha: thumbSha,
+              thumbSourceKind: thumbSourceKind,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
             );
       if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {

@@ -480,6 +480,7 @@ test("the timezone lock moves only for a different device offset after 24 hours"
 });
 
 test("a claim re-locks to the new device offset after 24 hours and keeps the streak", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-03T12:00:00Z")});
   const now = new Date();
   const lastClaimAt = new Date(now.getTime() - 25 * 60 * 60 * 1000);
   let storedState: Record<string, unknown> = {};
