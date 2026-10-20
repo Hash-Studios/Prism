@@ -103,7 +103,11 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
     await db.runTransaction(async (tx) => {
       const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
       for (const snap of snaps) {
-        if (snap.exists) tx.update(snap.ref, {review: true});
+        // Original access refuses a wall that still has drop markers, so a released wall drops them.
+        if (snap.exists) {
+          tx.update(snap.ref, {review: true, dropWeek: admin.firestore.FieldValue.delete(),
+            dropReserved: admin.firestore.FieldValue.delete()});
+        }
       }
       tx.update(doc.ref, {released: true});
     });

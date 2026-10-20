@@ -158,8 +158,10 @@ test("old drops release their walls to the feed once", async (t) => {
   });
   assert.equal(await releaseOldDrops(MONDAY), 1);
   assert.equal(store.get("walls/W1")?.review, true);
-  assert.equal(store.get("walls/W1")?.dropWeek, "2026-W30");
+  assert.equal(store.get("walls/W1")?.dropWeek, undefined, "a released wall must not keep the drop marker");
+  assert.equal(store.get("walls/W1")?.dropReserved, undefined);
   assert.equal(store.get("walls/W2")?.review, true);
+  assert.equal(store.get("walls/W2")?.dropWeek, undefined);
   assert.equal(store.get("walls/W3")?.review, false);
   assert.equal(store.get("walls/W4")?.review, false);
   assert.equal(store.get("drops/2026-W30")?.released, true);
