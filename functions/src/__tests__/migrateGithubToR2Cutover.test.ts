@@ -68,6 +68,34 @@ test("apply still aborts when a reviewed wall changed its source", async () => {
   await assert.rejects(validateReviewedInventory(reviewed, changed, options.commit, false), /changed since review/);
 });
 
+test("apply rejects a changed recorded URL even when its pinned path and bytes are unchanged", async () => {
+  const reviewed = reviewedFor([wall()]);
+  const changed = buildGithubInventory([wall({
+    wallpaper_url: "https://raw.githubusercontent.com/hash/walls/main/original.jpg",
+  })], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, changed, options.commit, false), /changed since review/);
+});
+
+test("apply rejects withdrawn approval and a recreated reviewed document", async () => {
+  const reviewed = reviewedFor([wall()]);
+  const unapproved = buildGithubInventory([wall({review: false})], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, unapproved, options.commit, false), /changed since review/);
+  const recreated = buildGithubInventory([{...wall(), incarnationNanos: 1_000_001}], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, recreated, options.commit, false), /changed since review/);
+});
+
+test("apply refuses old reports without reviewed source fingerprints", async () => {
+  const inventory = buildGithubInventory([wall()], tree, options);
+  const reviewed = reviewedFor([wall()]);
+  const snapshot = reviewed.inventory as Record<string, unknown>;
+  delete snapshot.sourceFingerprintVersion;
+  for (const row of snapshot.walls as Record<string, unknown>[]) {
+    delete row.review;
+    for (const role of ["original", "thumb"]) delete (row[role] as Record<string, unknown>).recordedUrlHash;
+  }
+  await assert.rejects(validateReviewedInventory(reviewed, inventory, options.commit, false), /run dry-run again/);
+});
+
 test("a wall converted by the approval trigger counts as done only when its manifest matches the review", async () => {
   const reviewed = reviewedFor([wall()]);
   const converted = wall({originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
@@ -95,11 +123,50 @@ test("a legacy wall without stored paths takes its paths from the validated URLs
   assert.equal(row.thumb?.path, "thumb_original.jpg");
 });
 
+test("converted-row verification receives the exact reviewed URL fingerprints without exposing URLs", async () => {
+  const reviewed = reviewedFor([wall()]);
+  const converted = wall({originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
+    wallpaper_thumb: "https://images.example.com/previews/x.img", wallpaper_path: "", thumb_path: "",
+    wallpaper_sha: "", thumb_sha: ""});
+  const authorized = await validateReviewedInventory(reviewed, buildGithubInventory([converted], tree, options),
+    options.commit, false, async (_wall, original, thumb) => {
+      const hash = (url: unknown) => createHash("sha256").update(String(url)).digest("hex");
+      assert.equal(original.recordedUrlHash, hash(wall().data.wallpaper_url));
+      assert.equal(thumb.recordedUrlHash, hash(wall().data.wallpaper_thumb));
+      return true;
+    });
+  assert.deepEqual([...authorized], ["walls/canonical"]);
+  assert.doesNotMatch(JSON.stringify(reviewed), /raw\.githubusercontent\.com/);
+});
+
 const studioWall = (data: Record<string, unknown> = {}): MigrationWall => ({docPath: "walls/studio", incarnation: 100,
   incarnationNanos: 1_000_000, data: {id: "studio_1", review: true, origin: "studio", email: "studio@prismwalls.com",
     studioRunId: "run-1", studioCandidateId: "cand-1", resolution: "1440x3200",
     wallpaper_url: "https://prismwalls.com/api/ai/assets/ai/studio/cand-1.jpg",
     wallpaper_thumb: "https://prismwalls.com/api/ai/assets/ai/studio/thumb_cand-1.jpg", ...data}});
+
+test("apply rejects a Studio source resolution changed after review", async () => {
+  const reviewed = reviewedFor([studioWall()]);
+  const changed = buildGithubInventory([studioWall({resolution: "1080x1920"})], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, changed, options.commit, false), /changed since review/);
+});
+
+test("converted Studio rows retain reviewed run, candidate, resolution and approval", async (t) => {
+  const reviewed = reviewedFor([studioWall()]);
+  const converted = {originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
+    wallpaper_thumb: "https://images.example.com/previews/x.img", wallpaper_path: "", thumb_path: ""};
+  for (const changed of [{studioRunId: "other-run"}, {studioCandidateId: "other-candidate"},
+    {resolution: "1080x1920"}, {review: false}, {origin: "upload"}, {email: "creator@example.com"}]) {
+    await t.test(JSON.stringify(changed), async () => {
+      const live = buildGithubInventory([studioWall({...converted, ...changed})], tree, options);
+      await assert.rejects(validateReviewedInventory(reviewed, live, options.commit, false, async () => true),
+        /changed since review/);
+    });
+  }
+  const live = buildGithubInventory([studioWall(converted)], tree, options);
+  const authorized = await validateReviewedInventory(reviewed, live, options.commit, false, async () => true);
+  assert.deepEqual([...authorized], ["walls/studio"]);
+});
 
 test("Studio walls are inventoried from their worker URLs, not from the GitHub tree", () => {
   const [row] = buildGithubInventory([studioWall()], tree, options).walls;

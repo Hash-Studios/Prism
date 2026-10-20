@@ -116,7 +116,11 @@ policy and apply must use the same flag.
 
 The report pins a commit SHA. Apply requires the exact commit SHA from that report, loads the existing report,
 and rebuilds inventory from current Firestore and GitHub state. It refuses apply if paths, hashes, counts
-or wall identities differ from the reviewed report. It then validates the same wall identity and paths before and after source download,
+or wall identities differ from the reviewed report. Reports include source URL hashes, approval status, and
+Studio resolution. Source URLs and full wall documents are excluded. Reports created before these source
+fingerprints require a new dry run. A trigger-converted wall must retain the reviewed source URLs in its
+private manifest and the reviewed Studio identity, run, candidate, resolution, and approval status.
+It then validates the same wall identity and paths before and after source download,
 verifies each downloaded byte stream against the pinned Git blob SHA, and verifies R2 metadata/readback
 before binding. It does not trust an old report as authorization or as proof that a wall is unchanged.
 Create-only content-addressed writes make a rerun safe after interruption; the report records in-progress,
@@ -133,13 +137,23 @@ GitHub upload receipts, assign creator rewards, or claim uploader identity. Mode
 completed GitHub receipts and intents. A matching source Git SHA from the pinned tree fills old rows that
 do not store a SHA; fetched bytes still must match that tree SHA.
 
+An interruption after retention but before manifest binding can leave active unbound registry rows and R2
+objects. The tombstone sweep does not reclaim these active orphans. Retries reuse the same content identity,
+but successive source changes can leave more orphan objects. A separate reviewed orphan inventory and
+approved cleanup are required. This change adds no destructive orphan cleanup.
+
 Apply touches only the walls in the reviewed report. A wall added after the dry run is skipped, because
-`onOwnedWallWritten` converts every wall at approval. A wall deleted since the dry run is skipped. A reviewed
+`onOwnedWallWritten` attempts conversion at approval. A wall deleted since the dry run is skipped. A reviewed
 wall whose source changed still stops the run. A wall that the trigger already converted must match its
 reviewed manifest and counts as done. Prism Studio walls are inventoried from their worker URL pair instead of
 the GitHub tree. They need no flag: each is checked against its Studio candidate and stored with Studio
 provenance, and gets no receipt or creator credit. `npm run migrate:github-to-r2 -- <options>` builds and runs
 the script.
+
+Ordinary user AI community walls use `ai/public/{generationId}.png` for both the original and thumbnail URL.
+The GitHub and Studio converter does not handle these walls. Client-writable `aiGenerations` documents do not
+prove their source. Authoritative Worker `ai:gen:{generationId}` records expire after 90 days. Full cutover
+requires an approved provenance policy for these walls, including walls whose Worker records have expired.
 
 Conversion also runs on every write of an approved wall that is still public (admin approval, 3.7.0 upload,
 Studio wall, released Drop wall). A permanent failure is logged as `owned wall conversion blocked`; the wall
@@ -155,6 +169,9 @@ purge copies already held by edge or browser caches. Any approved preview-object
 Cloudflare cache purge plan; originals remain in the private bucket and are never routed through this domain.
 
 ## Rollout gates
+
+Wall of the Day requires a pool of ready eligible walls. If that pool is empty, the picker logs an error
+and sends no pick or push. Establish and verify that pool during rollout before expecting daily announcements.
 
 1. Approve and create separate private and preview R2 buckets; configure scoped access credentials and the
    public preview custom domain. Disable public `r2.dev` access and keep all public access off the private

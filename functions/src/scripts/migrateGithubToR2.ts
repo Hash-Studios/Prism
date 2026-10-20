@@ -19,6 +19,9 @@ export type GithubTree = {truncated: boolean; entries: GithubTreeEntry[]};
 export type GithubInventory = {owner: string; repo: string; commit: string; generatedAt: string; wallCount: number;
   imageCount: number; totalImageBytes: number; referencedImageCount: number; orphanImageCount: number; assets: GithubAsset[];
   orphanImages: {path: string; sha: string; size: number}[]; treeHash: string; walls: WallInventory[]};
+type ReviewedAsset = GithubAsset & {recordedUrlHash: string};
+type ReportAsset = {path?: string; gitSha?: string; size?: number; commit?: string; recordedUrlHash?: string;
+  expectedResolution?: string};
 
 export function buildGithubInventory(walls: MigrationWall[], tree: GithubTree, options: MigrationOptions): GithubInventory {
   if (tree.truncated) throw new Error("GitHub returned a truncated recursive tree; inventory is incomplete");
@@ -118,13 +121,14 @@ export async function writeInventoryReport(path: string, report: unknown): Promi
 }
 
 export function createInventoryReport(inventory: GithubInventory) {
-  const asset = (value: GithubAsset) => ({path: value.path, gitSha: value.gitSha, size: value.size, commit: value.commit});
-  return {owner: inventory.owner, repo: inventory.repo, commit: inventory.commit, generatedAt: inventory.generatedAt,
+  const asset = (value: GithubAsset) => ({path: value.path, gitSha: value.gitSha, size: value.size, commit: value.commit,
+    recordedUrlHash: digest(value.recordedUrl), ...(value.expectedResolution ? {expectedResolution: value.expectedResolution} : {})});
+  return {sourceFingerprintVersion: 1, owner: inventory.owner, repo: inventory.repo, commit: inventory.commit, generatedAt: inventory.generatedAt,
     wallCount: inventory.wallCount, imageCount: inventory.imageCount, totalImageBytes: inventory.totalImageBytes,
     referencedImageCount: inventory.referencedImageCount, orphanImageCount: inventory.orphanImageCount,
     orphanImages: inventory.orphanImages, treeHash: inventory.treeHash, assets: inventory.assets.map(asset), walls: inventory.walls.map((row) => ({
       docPath: row.wall.docPath, wallId: row.wallId, incarnation: row.wall.incarnation,
-      incarnationNanos: row.wall.incarnationNanos,
+      incarnationNanos: row.wall.incarnationNanos, review: row.wall.data.review === true,
       original: row.original && asset(row.original), thumb: row.thumb && asset(row.thumb), status: row.status, detail: row.detail,
       ...(row.studio ? {studio: row.studio} : {}),
     }))};
@@ -147,7 +151,7 @@ function canonical(value: unknown): unknown {
  */
 export async function validateReviewedInventory(reviewed: unknown, inventory: GithubInventory, commit: string,
   allowReviewedLegacy: boolean,
-  verifyMigrated?: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<boolean>): Promise<Set<string>> {
+  verifyMigrated?: (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset) => Promise<boolean>): Promise<Set<string>> {
   if (!reviewed || typeof reviewed !== "object") throw new Error("Apply requires a reviewed dry-run inventory report");
   const report = reviewed as {mode?: unknown; inventory?: unknown; policy?: {allowReviewedLegacy?: unknown}};
   if (!(["dry-run", "apply"].includes(String(report.mode))) || !report.inventory || typeof report.inventory !== "object") {
@@ -155,7 +159,8 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
   }
   const envelope = reviewed as {reviewedInventory?: unknown};
   const snapshot = envelope.reviewedInventory ?? report.inventory;
-  const previous = snapshot as {owner?: unknown; repo?: unknown; commit?: unknown};
+  const previous = snapshot as {owner?: unknown; repo?: unknown; commit?: unknown; sourceFingerprintVersion?: unknown};
+  if (previous.sourceFingerprintVersion !== 1) throw new Error("Reviewed source fingerprints are missing; run dry-run again");
   if (report.policy?.allowReviewedLegacy !== allowReviewedLegacy || previous.owner !== inventory.owner ||
     previous.repo !== inventory.repo || previous.commit !== commit) {
     throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
@@ -181,11 +186,17 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
     authorized.add(row.docPath);
     if (digest(JSON.stringify(canonical(old))) === digest(JSON.stringify(canonical(row)))) continue;
     const source = inventory.walls.find((candidate) => candidate.wall.docPath === row.docPath);
-    const oldOriginal = old.original as {path?: string; gitSha?: string; size?: number; commit?: string} | undefined;
-    const oldThumb = old.thumb as {path?: string; gitSha?: string; size?: number; commit?: string} | undefined;
+    const oldOriginal = old.original as ReportAsset | undefined;
+    const oldThumb = old.thumb as ReportAsset | undefined;
+    const studio = old.studio as {runId?: unknown; candidateId?: unknown} | undefined;
     if (!verifyMigrated || !source || !oldOriginal || !oldThumb ||
       old.docPath !== source.wall.docPath || old.wallId !== source.wallId ||
+      old.review !== row.review ||
       old.incarnation !== source.wall.incarnation || old.incarnationNanos !== source.wall.incarnationNanos ||
+      (studio && (source.wall.data.origin !== "studio" || source.wall.data.email !== STUDIO_ACCOUNT.email ||
+        source.wall.data.studioRunId !== studio.runId ||
+        source.wall.data.studioCandidateId !== studio.candidateId ||
+        source.wall.data.resolution !== oldOriginal.expectedResolution)) ||
       !source.wall.data.originalProtected || source.wall.data.wallpaper_url !== "" ||
       typeof source.wall.data.originalObjectId !== "string" || source.wall.data.id !== old.wallId ||
       ![undefined, ""].includes(source.wall.data.wallpaper_path as string | undefined) ||
@@ -204,17 +215,19 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
   return authorized;
 }
 
-function reviewedAsset(value: {path?: string; gitSha?: string; size?: number; commit?: string}, source: {
+function reviewedAsset(value: ReportAsset, source: {
   owner?: unknown; repo?: unknown;
-}): GithubAsset {
+}): ReviewedAsset {
   if (typeof source.owner !== "string" || typeof source.repo !== "string" || typeof value.path !== "string" ||
-    typeof value.gitSha !== "string" || typeof value.size !== "number" || typeof value.commit !== "string") {
-    throw new Error("Reviewed inventory asset is invalid");
+    typeof value.gitSha !== "string" || typeof value.size !== "number" || typeof value.commit !== "string" ||
+    typeof value.recordedUrlHash !== "string" || !/^[a-f0-9]{64}$/.test(value.recordedUrlHash)) {
+    throw new Error("Reviewed inventory asset is invalid; run dry-run again");
   }
   const encodedPath = value.path.split("/").map(encodeURIComponent).join("/");
   const url = `https://raw.githubusercontent.com/${source.owner}/${source.repo}/${value.commit}/${encodedPath}`;
   return {repo: source.repo, path: value.path, url, recordedUrl: url, sha: value.gitSha, gitSha: value.gitSha,
-    size: value.size, commit: value.commit};
+    size: value.size, commit: value.commit, recordedUrlHash: value.recordedUrlHash,
+    ...(value.expectedResolution ? {expectedResolution: value.expectedResolution} : {})};
 }
 
 export function validateMigrationCommit(ref: string, apply: boolean): void {
@@ -292,11 +305,13 @@ async function main(): Promise<void> {
     } catch {
       throw new Error("Apply requires the existing private dry-run report at --report");
     }
-    const verifier = async (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => {
+    const verifier = async (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset) => {
       const manifest = (await db.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
       if (!manifest || manifest.status !== "ready" || !manifest.original || !manifest.thumb ||
         manifest.original.path !== original.path || manifest.thumb.path !== thumb.path ||
-        manifest.original.uid !== manifest.thumb.uid) return false;
+        manifest.original.uid !== manifest.thumb.uid || typeof manifest.originalUrl !== "string" ||
+        typeof manifest.thumbUrl !== "string" || digest(manifest.originalUrl) !== original.recordedUrlHash ||
+        digest(manifest.thumbUrl) !== thumb.recordedUrlHash) return false;
       // Studio assets are not pinned to a Git blob; the candidate backlink is their proof.
       const studio = manifest.provenance?.kind === "studio";
       if (!studio && (manifest.original.sha !== original.gitSha || manifest.thumb.sha !== thumb.gitSha)) return false;
