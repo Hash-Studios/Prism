@@ -65,6 +65,7 @@ export const categorizeWallpaper = onCall(
       collections: [DEFAULT_COLLECTION],
       categorizedAt: admin.firestore.FieldValue.serverTimestamp(),
       aiCategorized: true,
+      visionLabels: labels,
       ...(colors ? {colors} : {}),
     });
 

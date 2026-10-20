@@ -185,7 +185,7 @@ void main() {
   test('slow successful Prism search results are retained when the local catalog is empty', () async {
     final FakeFirestoreClient firestore = _DelayedPrismFirestore(
       const Duration(seconds: 4),
-      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
           ? <FakeDocRow>[(id: 'prism-slow', data: _prismDoc('prism-slow'))]
           : const <FakeDocRow>[],
     );
@@ -315,7 +315,7 @@ void main() {
       int prismCalls = 0;
       final firestore = FakeFirestoreClient(
         onQuery: (spec) {
-          if (spec.sourceTag == 'PrismWallSearch.tags') {
+          if (spec.sourceTag == 'PrismWallSearch.terms') {
             prismCalls++;
             return prismCalls == 1 ? const <FakeDocRow>[] : <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))];
           }
@@ -371,7 +371,7 @@ void main() {
     test('a repeated identical search makes no provider call and returns the same results', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
             ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1'))]
             : const <FakeDocRow>[],
       );
@@ -445,7 +445,7 @@ void main() {
     test('anime Prism walls are hidden while the anime setting is off', () async {
       final store = InMemoryLocalStore();
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
             ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', category: 'Anime')), (id: 'd2', data: _prismDoc('p2'))]
             : const <FakeDocRow>[],
       );
@@ -546,7 +546,7 @@ void main() {
 
   test('search returns a Prism-only page when both providers fail but Prism has matches', () async {
     final firestore = FakeFirestoreClient(
-      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
           ? <FakeDocRow>[(id: 'd1', data: _prismDoc('w1'))]
           : const <FakeDocRow>[],
     );
@@ -751,7 +751,7 @@ void main() {
 
     test('with a query the Prism matches are kept only when they have the colour', () async {
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
             ? <FakeDocRow>[
                 (id: 'd1', data: _prismDoc('blue1', colors: ['blue', 'white'])),
                 (id: 'd2', data: _prismDoc('red1', colors: ['red'])),
@@ -926,31 +926,26 @@ void main() {
   });
 
   group('prismResults', () {
-    test('holds Prism walls that match by tag or category, deduplicated and filtered by resolution', () async {
+    test('holds Prism walls that match the search terms, filtered by resolution', () async {
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => switch (spec.sourceTag) {
-          'PrismWallSearch.tags' => <FakeDocRow>[
-            (id: 'd1', data: _prismDoc('w1')),
-            (id: 'd2', data: _prismDoc('w2', resolution: '640x480')),
-          ],
-          'PrismWallSearch.category' => <FakeDocRow>[
-            (id: 'd1', data: _prismDoc('w1')),
-            (id: 'd3', data: _prismDoc('w3')),
-          ],
-          _ => const <FakeDocRow>[],
-        },
+        onQuery: (spec) => <FakeDocRow>[
+          (id: 'd1', data: _prismDoc('w1')),
+          (id: 'd2', data: _prismDoc('w2', resolution: '640x480')),
+          (id: 'd3', data: _prismDoc('w3')),
+        ],
       );
       final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]), firestore: firestore);
 
       final page = await service.search('Nature');
 
       expect(page.prismResults.map((wall) => wall.id), <String>['w1', 'w3']);
-      final tagSpec = firestore.querySpecs.firstWhere((spec) => spec.sourceTag == 'PrismWallSearch.tags');
-      expect(tagSpec.filters.map((f) => f.field), <String>['review', 'tags']);
-      expect(tagSpec.filters.last.op, FirestoreFilterOp.arrayContainsAny);
-      expect(tagSpec.filters.last.value, containsAll(<String>['nature', 'Nature']));
-      final categorySpec = firestore.querySpecs.firstWhere((spec) => spec.sourceTag == 'PrismWallSearch.category');
-      expect(categorySpec.filters.last.value, contains('Nature'));
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.terms');
+      expect(spec.filters.map((f) => (f.field, f.op)), <(String, FirestoreFilterOp)>[
+        ('review', FirestoreFilterOp.isEqualTo),
+        ('searchTerms', FirestoreFilterOp.arrayContainsAny),
+      ]);
+      expect(spec.filters.last.value, <String>['nature']);
     });
 
     test('is empty when the Prism query fails, for example because the index is not deployed', () async {

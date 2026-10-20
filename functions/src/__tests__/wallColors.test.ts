@@ -404,14 +404,16 @@ test("a wall that already has a category still gets colours, once", async (t) =>
   const updates: Array<Record<string, unknown>> = [];
   fakeWallsCollection(t, updates);
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
+  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
   await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space"}));
-  assert.deepEqual(updates, [{colors: ["red"]}]);
+  assert.deepEqual(updates, [{colors: ["red"], visionLabels: ["Space"]}]);
   updates.length = 0;
   await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors: ["blue"]}));
-  assert.deepEqual(updates, []);
+  assert.deepEqual(updates, [{visionLabels: ["Space"]}]);
 });
 
 test("a wall with an empty or invalid colours list gets its colours again", async (t) => {
+  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
   for (const colors of [[], ["nope"], ["blue", "nope"], "blue", [1]]) {
     const updates: Array<Record<string, unknown>> = [];
     fakeWallsCollection(t, updates);
@@ -422,7 +424,7 @@ test("a wall with an empty or invalid colours list gets its colours again", asyn
       colors,
     }));
     assert.equal(fetchMock.mock.callCount(), 1, JSON.stringify(colors));
-    assert.deepEqual(updates, [{colors: ["red"]}], JSON.stringify(colors));
+    assert.deepEqual(updates, [{colors: ["red"], visionLabels: ["Space"]}], JSON.stringify(colors));
     fetchMock.mock.restore();
   }
 });
@@ -431,13 +433,14 @@ test("a wall with a category and colours makes no request", async (t) => {
   const updates: Array<Record<string, unknown>> = [];
   fakeWallsCollection(t, updates);
   const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
+  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
   await onWallCategorize.run(created({
     wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png",
     category: "Space",
     colors: ["blue"],
   }));
   assert.equal(fetchMock.mock.callCount(), 0);
-  assert.deepEqual(updates, []);
+  assert.deepEqual(updates, [{visionLabels: ["Space"]}]);
 });
 
 test("the categorize callable writes colours with the category", async (t) => {
