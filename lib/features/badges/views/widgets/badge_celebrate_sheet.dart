@@ -11,14 +11,7 @@ import 'package:flutter/material.dart';
 /// Shows the sheet for one new badge. [onSeeRewards] runs after the sheet closes with "See badges".
 Future<void> showBadgeCelebrateSheet(BuildContext context, EarnedBadge badge, {VoidCallback? onSeeRewards}) async {
   PrismHaptics.success();
-  final bool? seeRewards = await showPrismSheet<bool>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    showDragHandle: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    builder: (_) => BadgeCelebrateSheet(badge: badge),
-  );
+  final bool? seeRewards = await showPrismSheet<bool>(context, builder: (_) => BadgeCelebrateSheet(badge: badge));
   if (seeRewards == true) onSeeRewards?.call();
 }
 
@@ -32,65 +25,58 @@ class BadgeCelebrateSheet extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final BadgeInfo? info = badgeInfo(badge.id);
     final bool small = MediaQuery.sizeOf(context).height < 700;
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Glint(mood: GlintMood.celebrate, size: small ? 88 : 140),
-            const SizedBox(height: 8),
-            Text(context.l10n.economyNewBadge, style: PrismTextStyles.caption(context)),
+    return PrismSheetBody(
+      title: context.l10n.economyNewBadge,
+      actions: <Widget>[
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            shape: const StadiumBorder(),
+            textStyle: PrismTextStyles.rowTitle(context),
+          ),
+          child: Text(context.l10n.economyNice),
+        ),
+        TextButton(
+          onPressed: () {
+            PrismHaptics.tap();
+            Navigator.of(context).pop(true);
+          },
+          child: Text(
+            context.l10n.economySeeBadges,
+            style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+          ),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Glint(mood: GlintMood.celebrate, size: small ? 88 : 140),
+          const SizedBox(height: 8),
+          Text(
+            info?.name(context.l10n) ?? context.l10n.economyBadgeEarned,
+            textAlign: TextAlign.center,
+            style: PrismTextStyles.sheetHeadline(context),
+          ),
+          if (info != null) ...<Widget>[
             const SizedBox(height: 4),
-            Text(
-              info?.name(context.l10n) ?? context.l10n.economyBadgeEarned,
-              textAlign: TextAlign.center,
-              style: PrismTextStyles.sheetHeadline(context),
-            ),
-            if (info != null) ...<Widget>[
-              const SizedBox(height: 4),
-              Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
-            ],
-            if (badge.coins > 0) ...<Widget>[
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const PrismCoinIcon(size: 32),
-                  const SizedBox(width: 10),
-                  Text(
-                    '+${formatLocalizedNumber(badge.coins, context.l10n)}',
-                    style: PrismTextStyles.numeral(context, 44),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                  textStyle: PrismTextStyles.rowTitle(context),
+            Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+          ],
+          if (badge.coins > 0) ...<Widget>[
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const PrismCoinIcon(size: 32),
+                const SizedBox(width: 10),
+                Text(
+                  '+${formatLocalizedNumber(badge.coins, context.l10n)}',
+                  style: PrismTextStyles.numeral(context, 44),
                 ),
-                child: Text(context.l10n.economyNice),
-              ),
-            ),
-            const SizedBox(height: 4),
-            TextButton(
-              onPressed: () {
-                PrismHaptics.tap();
-                Navigator.of(context).pop(true);
-              },
-              child: Text(
-                context.l10n.economySeeBadges,
-                style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
-              ),
+              ],
             ),
           ],
-        ),
+        ],
       ),
     );
   }

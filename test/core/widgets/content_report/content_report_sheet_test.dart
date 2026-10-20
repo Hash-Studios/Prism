@@ -140,7 +140,9 @@ void main() {
     if (signedIn) {
       await tester.pumpAndSettle();
     } else {
-      await tester.pump(const Duration(seconds: 1));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
     }
   }
 

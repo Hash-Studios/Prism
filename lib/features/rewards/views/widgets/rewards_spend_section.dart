@@ -143,8 +143,7 @@ class RewardsSpendSection extends StatelessWidget {
 
   static void _showInfo(BuildContext context, {required String title, required String body, bool showPro = true}) {
     showPrismSheet<void>(
-      context: context,
-      useSafeArea: true,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: title,
         message: body,

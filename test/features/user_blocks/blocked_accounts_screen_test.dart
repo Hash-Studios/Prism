@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
@@ -135,7 +136,7 @@ void main() {
     expect(find.textContaining('Their posts will appear in your feed again.'), findsOneWidget);
     expect(repo.unblocked, isEmpty);
 
-    await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Unblock')));
+    await tester.tap(find.descendant(of: find.byType(PrismSheetBody), matching: find.text('Unblock')));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 400));
 

@@ -7437,12 +7437,6 @@ abstract class AppLocalizations {
   /// **'Close preview'**
   String get economyClosePreview;
 
-  /// No description provided for @economyCloseXpExplanation.
-  ///
-  /// In en, this message translates to:
-  /// **'Close XP explanation'**
-  String get economyCloseXpExplanation;
-
   /// No description provided for @economyCoinActivitySemantics.
   ///
   /// In en, this message translates to:
@@ -8716,12 +8710,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last week'**
   String get economyLastWeek;
-
-  /// No description provided for @economyLeaderboardCloseScoring.
-  ///
-  /// In en, this message translates to:
-  /// **'Close scoring explanation'**
-  String get economyLeaderboardCloseScoring;
 
   /// No description provided for @economyLeaderboardEntrySemantics.
   ///

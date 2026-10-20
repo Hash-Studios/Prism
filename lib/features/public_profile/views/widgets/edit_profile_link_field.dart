@@ -12,11 +12,9 @@ Future<ProfileLinkKind?> showLinkKindSheet(
 }) {
   final ColorScheme cs = Theme.of(context).colorScheme;
   return showPrismSheet<ProfileLinkKind>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (sheetContext) => PrismSheetBody(
       title: context.l10n.accountLinkType,
-      scrollable: true,
       child: PrismGroup(
         children: <Widget>[
           for (final ProfileLinkKind kind in profileLinkKinds)

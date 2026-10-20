@@ -29,14 +29,16 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
     navigator.pop();
     loaderVisible = true;
     showPrismSheet<void>(
-      context: navigator.context,
+      navigator.context,
       useRootNavigator: true,
-      isDismissible: false,
-      enableDrag: false,
+      detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+      barrierDismissible: false,
+      swipeDismissible: false,
       builder: (_) => PopScope(
         canPop: false,
-        child: SafeArea(
-          top: false,
+        child: PrismSheetBody(
+          showHandle: false,
+          showCloseButton: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
             child: GlintState(kind: GlintStateKind.loading, title: l10n.coreSigningIn),
@@ -69,9 +71,8 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   }
 
   showPrismSheet<void>(
-    context: context,
+    context,
     useRootNavigator: true,
-    isScrollControlled: true,
     builder: (_) => PrismSheetBody(
       mood: GlintMood.happy,
       centered: true,

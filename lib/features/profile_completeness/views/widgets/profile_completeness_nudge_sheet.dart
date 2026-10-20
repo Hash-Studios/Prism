@@ -12,11 +12,10 @@ Future<ProfileCompletenessNudgeAction?> showProfileCompletenessNudgeSheet(
   required ProfileCompletenessStatus status,
 }) {
   return showPrismSheet<ProfileCompletenessNudgeAction>(
-    context: context,
-    isScrollControlled: true,
-    isDismissible: false,
-    enableDrag: false,
-    useSafeArea: true,
+    context,
+    detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+    barrierDismissible: false,
+    swipeDismissible: false,
     builder: (context) => _ProfileCompletenessNudgeSheet(status: status),
   );
 }
@@ -32,6 +31,8 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
     return PrismSheetBody(
       mood: GlintMood.proud,
       centered: true,
+      showHandle: false,
+      showCloseButton: false,
       title: context.l10n.accountFinishYourProfile,
       message: context.l10n.accountProfileNudgeMessage(status.percent, CoinPolicy.profileCompletion),
       actions: <Widget>[

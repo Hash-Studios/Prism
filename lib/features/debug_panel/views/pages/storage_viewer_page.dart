@@ -106,8 +106,8 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   Future<void> _showEditSheet(String key) async {
     final raw = _store?.get(key);
     await showPrismSheet<void>(
-      context: context,
-      isScrollControlled: true,
+      context,
+      dismissKeyboardOnDrag: true,
       builder: (_) => _EditValueSheet(
         storageKey: key,
         type: '${raw?.runtimeType ?? 'null'}',
@@ -315,7 +315,6 @@ class _EditValueSheetState extends State<_EditValueSheet> {
   Widget build(BuildContext context) {
     return PrismSheetBody(
       title: context.l10n.debugEditValue,
-      scrollable: true,
       actions: [
         PrismButton(label: context.l10n.debugSave, expand: true, loading: _saving, onPressed: _save),
         PrismButton(

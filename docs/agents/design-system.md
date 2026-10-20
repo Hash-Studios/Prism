@@ -51,7 +51,7 @@ Use `PrismTextStyles`. Do not use `Theme.of(context).textTheme` roles or raw `Te
 |---|---|---|
 | `display` | Fraunces 34 | One hero line: onboarding, paywall, a big moment |
 | `screenTitle` | 28 w700 | Page title (the header does this for you) |
-| `sheetHeadline` | 24 w700 | Sheet title (`PrismSheetBody` does this) |
+| `sheetHeadline` | 24 w700 | Headline under Glint on a moment sheet (`PrismSheetBody` does this) |
 | `sectionTitle` | 20 w700 | Section heading |
 | `barTitle` | 17 w700 | Title in a compact bar |
 | `cardTitle` | 16 w700 | Card heading |
@@ -70,8 +70,8 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 - `PrismSpace`: `xxs 4`, `xs 8`, `sm 12`, `md 16`, `lg 20`, `xl 24`, `xxl 32`, `xxxl 40`. Page margin is
   `PrismSpace.page` (20). The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
-- `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (sheets), `pill`. A nested surface takes the
-  next step down. Wallpaper tiles in a grid use `PrismRadius.sm`.
+- `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
+  next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
 - Tap targets are 44 points or more.
 
 ## Components
@@ -88,7 +88,7 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 | `PrismIconButton(icon:, tooltip:, onPressed:, filled:, onImage:)` | Every icon-only button. The tooltip is required. |
 | `PrismChip(label:, selected:, onTap:)` | Filters and choices. |
 | `PrismTextField(label:, hint:, error:)` | Text input. |
-| `showPrismSheet` + `PrismSheetBody(title:, message:, mood:, child:, actions:)` | Every bottom sheet. |
+| `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
 | `GlintState(kind:, title:, body:, actionLabel:, onAction:)` | Empty, error, offline, loading and nothing-new states. |
@@ -110,12 +110,32 @@ Rules:
 - Icon-only buttons need a tooltip. Tappable custom widgets need `Semantics(button: true, label: ...)`.
 - Icons: Material rounded (`Icons.*_rounded`) for new UI. Keep JamIcons where a glyph has no rounded match.
 
+## Bottom sheets
+
+`lib/core/widgets/prism_sheet/` is built on `smooth_sheets`.
+
+- The sheet floats 16 px in from the screen edges, with a shadow and a light dim behind it. Its bottom corners are
+  the screen corner radius minus the inset, so the curve sits concentric inside the bezel.
+- `detents` default to `[fit, large]`: the sheet opens at its content height and the user can drag it up to full
+  height. There it goes flush with the screen edges. Add `medium` for a half-height stop. Use `[fit]` for short
+  sheets that must not grow (confirms).
+- `PrismSheetBody` draws all chrome: the handle, a close button, the centred `title`, an optional `trailingAction`
+  ("Clear", "Reset") and the `actions`, which stay pinned to the bottom while the body scrolls. A sheet with a `mood`
+  shows its title as a headline under Glint.
+- A body that is its own list or grid sets `childScrolls: true`. A scroll view inside a sheet scrolls first, and the
+  sheet moves only when the scroll view is at its top.
+- The sheet lifts itself above the keyboard. Do not add `viewInsets` padding. Sheets with a text field pass
+  `dismissKeyboardOnDrag: true`.
+- A sheet the user must answer passes `barrierDismissible: false, swipeDismissible: false` and
+  `PrismSheetBody(showCloseButton: false, showHandle: false)`.
+- Build `PrismSheetBody` only inside a `showPrismSheet` builder.
+
 ## Motion
 
 Tokens live in `lib/core/motion/prism_motion.dart`.
 
 - Durations: `PrismDurations.press` 100, `fast` 160, `base` 240, `slow` 320, `stagger` 40. UI motion stays under
-  300 ms.
+  300 ms. Bottom sheets use `PrismDurations.sheet` (360) because the sheet travels the full screen height.
 - Curves: `PrismCurves.enter` (strong ease-out) for things that arrive or leave, `move` for things that change place,
   `sheet` for sheets, `pop` for a small overshoot on a badge or a tick. Never `Curves.easeIn`.
 - Wrap every duration in `context.motion(...)` so reduce motion turns it off.

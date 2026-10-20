@@ -16,6 +16,7 @@ import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -664,7 +665,7 @@ void main() {
       await tester.tap(find.byTooltip('Filters'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.bySemanticsLabel('Red')));
+      await tester.tap(find.descendant(of: find.byType(PrismSheetBody), matching: find.bySemanticsLabel('Red')));
       await tester.tap(find.text('Apply'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));

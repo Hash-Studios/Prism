@@ -368,7 +368,7 @@ class _ProfileChildState extends State<_ProfileChild> {
   void _openGiftSheet() {
     PrismHaptics.tap();
     showPrismSheet<void>(
-      context: context,
+      context,
       builder: (BuildContext sheetContext) => GiftPassSheet(
         recipientUid: _profile.id,
         recipientName: creatorLabel(
@@ -416,7 +416,7 @@ class _ProfileChildState extends State<_ProfileChild> {
   void _showMoreLinks() {
     _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_screen_more_links');
     showPrismSheet<void>(
-      context: context,
+      context,
       builder: (BuildContext sheetContext) => PrismSheetBody(
         title: context.l10n.accountMoreLinks,
         child: Wrap(

@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favourite_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -323,7 +324,7 @@ void main() {
       final params = verify(() => toggleUseCase(captureAny())).captured.single as ToggleFavouriteWallParams;
       expect(params.userId, '');
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.byType(PrismSheetBody), findsNothing);
       expect(recordingAnalytics.events.whereType<FavouriteSavedAsGuestEvent>(), hasLength(1));
       expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>().single.isFavourite, isTrue);
     });

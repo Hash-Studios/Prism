@@ -3697,7 +3697,6 @@
     }
   },
   "economyClosePreview": "Tutup pratinjau",
-  "economyCloseXpExplanation": "Tutup penjelasan XP",
   "economyCoinActivitySemantics": "{label}, {date}, {amount} {coins, plural, one{koin} other{koin}}",
   "@economyCoinActivitySemantics": {
     "placeholders": {
@@ -4797,7 +4796,6 @@
   "economyJackpotAddedToBalance": "Jackpot. Ditambahkan ke saldo Anda",
   "economyKeepStreakToday": "Buka Prism hari ini untuk mempertahankan rangkaian harian Anda.",
   "economyLastWeek": "Minggu lalu",
-  "economyLeaderboardCloseScoring": "Tutup penjelasan penilaian",
   "economyLeaderboardEntrySemantics": "{position}, {name}{isMe, select, true{, Anda} other{}}, {xp} XP minggu ini{hasRank, select, true{, peringkat keseluruhan {rank}} other{}}",
   "@economyLeaderboardEntrySemantics": {
     "placeholders": {

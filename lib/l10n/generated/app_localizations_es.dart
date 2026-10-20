@@ -4364,9 +4364,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyClosePreview => 'Cerrar vista previa';
 
   @override
-  String get economyCloseXpExplanation => 'Cerrar explicación de XP';
-
-  @override
   String economyCoinActivitySemantics(String label, String date, String amount, int coins) {
     String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: 'monedas', one: 'moneda');
     return '$label, $date, $amount $_temp0';
@@ -5522,9 +5519,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get economyLastWeek => 'La semana pasada';
-
-  @override
-  String get economyLeaderboardCloseScoring => 'Cerrar explicación de la puntuación';
 
   @override
   String economyLeaderboardEntrySemantics(int position, String name, String isMe, int xp, String hasRank, String rank) {

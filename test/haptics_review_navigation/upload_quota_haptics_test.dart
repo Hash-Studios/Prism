@@ -4,6 +4,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -50,12 +51,21 @@ void main() {
     }
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: UploadBottomPanel()),
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel()),
+              child: const Text('open'),
+            ),
+          ),
+        ),
       ),
     );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(l10n.wallpaperUploadTitle));
     await tester.pumpAndSettle();
 

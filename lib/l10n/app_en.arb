@@ -3576,7 +3576,6 @@
     }
   },
   "economyClosePreview": "Close preview",
-  "economyCloseXpExplanation": "Close XP explanation",
   "economyCoinActivitySemantics": "{label}, {date}, {amount} {coins, plural, one{coin} other{coins}}",
   "@economyCoinActivitySemantics": {
     "placeholders": {
@@ -4676,7 +4675,6 @@
   "economyJackpotAddedToBalance": "Jackpot. Added to your balance",
   "economyKeepStreakToday": "Open Prism today to keep your streak.",
   "economyLastWeek": "Last week",
-  "economyLeaderboardCloseScoring": "Close scoring explanation",
   "economyLeaderboardEntrySemantics": "{position}, {name}{isMe, select, true{, you} other{}}, {xp} XP this week{hasRank, select, true{, {rank} lifetime rank} other{}}",
   "@economyLeaderboardEntrySemantics": {
     "placeholders": {

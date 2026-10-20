@@ -70,7 +70,7 @@ class _WallReviewState extends State<_WallReview> {
   });
 
   void _openUploadSheet() {
-    showPrismSheet<void>(context: context, isScrollControlled: true, builder: (_) => const UploadBottomPanel());
+    showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel());
   }
 
   static bool _resolved(AsyncSnapshot<List<FirestoreDocument>> s) => s.hasData || s.hasError;

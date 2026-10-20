@@ -7,12 +7,7 @@ import 'package:github/github.dart';
 
 /// Opens a sheet with the GitHub profile of [username].
 void showContributorDetails(BuildContext context, String username) {
-  showPrismSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    builder: (_) => _ContributorSheet(username: username),
-  );
+  showPrismSheet<void>(context, useRootNavigator: true, builder: (_) => _ContributorSheet(username: username));
 }
 
 class _ContributorSheet extends StatefulWidget {

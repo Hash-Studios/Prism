@@ -4327,9 +4327,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get economyClosePreview => 'Close preview';
 
   @override
-  String get economyCloseXpExplanation => 'Close XP explanation';
-
-  @override
   String economyCoinActivitySemantics(String label, String date, String amount, int coins) {
     String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: 'coins', one: 'coin');
     return '$label, $date, $amount $_temp0';
@@ -5459,9 +5456,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get economyLastWeek => 'Last week';
-
-  @override
-  String get economyLeaderboardCloseScoring => 'Close scoring explanation';
 
   @override
   String economyLeaderboardEntrySemantics(int position, String name, String isMe, int xp, String hasRank, String rank) {

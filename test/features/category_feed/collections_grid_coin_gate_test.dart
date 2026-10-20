@@ -97,6 +97,7 @@ void main() {
 
     firestore.response.complete(null);
     await tester.pump();
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.textContaining('You need ${CoinPolicy.premiumPreview24h} more.'), findsOneWidget);
 
@@ -175,6 +176,7 @@ void main() {
     await tester.tap(tile);
     await tester.pump();
     firestore.response.completeError(StateError('preview lookup failed'));
+    await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.textContaining('You need ${CoinPolicy.premiumPreview24h} more.'), findsOneWidget);

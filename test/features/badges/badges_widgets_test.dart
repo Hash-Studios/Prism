@@ -75,13 +75,29 @@ void main() {
   });
 
   testWidgets('celebrate sheet shows the badge and its coins, and hides coins at zero', (tester) async {
-    await tester.pumpWidget(_app(const BadgeCelebrateSheet(badge: EarnedBadge(id: 'week_warrior', coins: 25))));
-    await tester.pump();
+    Future<void> open(EarnedBadge badge) async {
+      await tester.pumpWidget(
+        _app(
+          Builder(
+            builder: (context) =>
+                TextButton(onPressed: () => showBadgeCelebrateSheet(context, badge), child: const Text('open')),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    await open(const EarnedBadge(id: 'week_warrior', coins: 25));
     expect(find.text('Week Warrior'), findsOneWidget);
     expect(find.text('+25'), findsOneWidget);
-
-    await tester.pumpWidget(_app(const BadgeCelebrateSheet(badge: EarnedBadge(id: 'collector', coins: 0))));
+    await tester.tap(find.text('Nice'));
     await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(BadgeCelebrateSheet), findsNothing);
+
+    await open(const EarnedBadge(id: 'collector', coins: 0));
     expect(find.text('Collector'), findsOneWidget);
     expect(find.textContaining('+'), findsNothing);
   });
@@ -106,6 +122,7 @@ void main() {
     await tester.tap(find.text('Nice'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
     expect(find.text('Collector'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
 
@@ -156,6 +173,7 @@ void main() {
     Navigator.of(tester.element(find.text('other route'))).pop();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
     expect(find.text('Creator'), findsOneWidget);
   });
 
@@ -201,6 +219,7 @@ void main() {
     expect(repo.queue.value, isEmpty);
 
     repo.queue.value = const <EarnedBadge>[EarnedBadge(id: 'collector', coins: 0)];
+    await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Collector'), findsOneWidget);

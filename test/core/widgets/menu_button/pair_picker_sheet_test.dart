@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,9 +24,9 @@ void main() {
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async {
-              picked = await showModalBottomSheet<PairPick>(
-                context: context,
-                isScrollControlled: true,
+              picked = await showPrismSheet<PairPick>(
+                context,
+                detents: const <PrismSheetDetent>[PrismSheetDetent.large],
                 builder: (_) =>
                     PairPickerSheet(favourites: favourites, history: history, loadDownloads: () async => downloads),
               );

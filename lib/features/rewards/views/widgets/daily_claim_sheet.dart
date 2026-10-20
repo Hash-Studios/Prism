@@ -30,9 +30,7 @@ Future<void> showDailyClaimSheet(
   StreakRescueService? rescueService,
 }) async {
   final _ClaimSheetExit? exit = await showPrismSheet<_ClaimSheetExit>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
+    context,
     builder: (_) => DailyClaimSheet(result: result, rescueService: rescueService),
   );
   switch (exit) {
@@ -228,7 +226,6 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     );
     return PrismSheetBody(
       centered: true,
-      scrollable: true,
       actions: <Widget>[
         if (r.streakBroken && !offerOpen) ...<Widget>[seeRewards, done] else ...<Widget>[done, seeRewards],
       ],

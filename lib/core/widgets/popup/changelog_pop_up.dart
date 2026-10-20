@@ -31,25 +31,20 @@ const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 void showChangelog(BuildContext context, [VoidCallback? func]) {
   final AppLocalizations l10n = context.l10n;
   showPrismSheet<void>(
-    context: context,
+    context,
     useRootNavigator: true,
-    isScrollControlled: true,
-    builder: (sheetContext) => ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85),
-      child: PrismSheetBody(
-        title: l10n.corePopupWhatsNew,
-        message: l10n.corePopupAppVersion(currentAppVersion),
-        scrollable: true,
-        actions: <Widget>[
-          PrismButton(
-            label: l10n.coreSeeFullChangelog,
-            variant: PrismButtonVariant.ghost,
-            expand: true,
-            onPressed: () => openPrismLink(sheetContext, 'https://bit.ly/prismchanges'),
-          ),
-        ],
-        child: const _ChangelogList(),
-      ),
+    builder: (sheetContext) => PrismSheetBody(
+      title: l10n.corePopupWhatsNew,
+      message: l10n.corePopupAppVersion(currentAppVersion),
+      actions: <Widget>[
+        PrismButton(
+          label: l10n.coreSeeFullChangelog,
+          variant: PrismButtonVariant.ghost,
+          expand: true,
+          onPressed: () => openPrismLink(sheetContext, 'https://bit.ly/prismchanges'),
+        ),
+      ],
+      child: const _ChangelogList(),
     ),
   ).whenComplete(() => func?.call());
 }

@@ -90,7 +90,7 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpSheet(WidgetTester tester, _FakePermissions permissions) async {
+  Future<void> pumpSheet(WidgetTester tester, _FakePermissions permissions, {ThemeData? theme}) async {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -98,11 +98,20 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-
-        home: Scaffold(body: NotificationSettingsSheet(permissions: permissions)),
+        theme: theme,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showPrismSheet<void>(context, builder: (_) => NotificationSettingsSheet(permissions: permissions)),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
       ),
     );
-    await tester.pump();
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('one list: Wall of the Day is in, the dead Prism updates switch is out', (tester) async {
@@ -259,22 +268,10 @@ void main() {
   });
 
   testWidgets('the sheet title keeps the readable ink, not the titleMedium colour', (tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
     final ThemeData theme = ThemeData.dark().copyWith(
       textTheme: ThemeData.dark().textTheme.copyWith(titleMedium: const TextStyle(color: Color(0xFF2F2F2F))),
     );
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        theme: theme,
-        home: Scaffold(body: NotificationSettingsSheet(permissions: _FakePermissions(granted: true))),
-      ),
-    );
-    await tester.pump();
+    await pumpSheet(tester, _FakePermissions(granted: true), theme: theme);
 
     final Color? color = tester.widget<Text>(find.text('Notification preferences')).style?.color;
     expect(color, theme.colorScheme.onSurface);

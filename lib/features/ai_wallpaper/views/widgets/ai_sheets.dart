@@ -25,12 +25,10 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
   final AppLocalizations l10n = AppLocalizations.of(context);
   final String quoted = (metadata.title.isNotEmpty ? metadata.title : prompt).split(',').first.trim();
   return showPrismSheet<AiSubmissionMetadata>(
-    context: context,
-    isScrollControlled: true,
+    context,
     builder: (sheetContext) => PrismSheetBody(
       title: l10n.economyAiShareWithCommunity,
       message: l10n.economyAiShareReviewNotice,
-      scrollable: true,
       actions: <Widget>[
         PrismButton(
           label: l10n.economyAiSubmitForReview,
@@ -120,12 +118,11 @@ Future<void> showAiRefineSheet(
 }) {
   final AppLocalizations l10n = AppLocalizations.of(context);
   return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
+    context,
+    dismissKeyboardOnDrag: true,
     builder: (sheetContext) => PrismSheetBody(
       title: l10n.economyAiTryAnotherVersion,
       message: l10n.economyAiRefineExplanation,
-      scrollable: true,
       actions: <Widget>[
         ListenableBuilder(
           listenable: controller,

@@ -26,8 +26,7 @@ Future<void> buyStreakFreezeFlow(
   }
   if (playTapHaptic) PrismHaptics.tap();
   final _FreezeSheetResult? result = await showPrismSheet<_FreezeSheetResult>(
-    context: context,
-    useSafeArea: true,
+    context,
     builder: (_) => const _FreezeSheet(),
   );
   if (result == null || !context.mounted) return;

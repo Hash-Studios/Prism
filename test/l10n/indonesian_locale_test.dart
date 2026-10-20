@@ -159,21 +159,28 @@ void main() {
         locale: const Locale('id'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (BuildContext context) => Scaffold(
-            body: MediaQuery(
-              data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-              child: PrismSheetBody(
-                scrollable: true,
-                title: context.l10n.wallpaperFeedEmptyTitle,
-                message: context.l10n.wallpaperFeedEmptyBody,
-                actions: <Widget>[PrismButton(label: context.l10n.actionRetry, onPressed: () {})],
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (BuildContext sheetContext) => PrismSheetBody(
+                  title: sheetContext.l10n.wallpaperFeedEmptyTitle,
+                  message: sheetContext.l10n.wallpaperFeedEmptyBody,
+                  actions: <Widget>[PrismButton(label: sheetContext.l10n.actionRetry, onPressed: () {})],
+                ),
               ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     expect(find.text('Coba lagi'), findsOneWidget);

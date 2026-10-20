@@ -23,13 +23,7 @@ Future<void> showIosSetWallpaperGuide(BuildContext context, {WallDepthTier? dept
   if (!hideSetWallpaperUi || IosWallpaperGuideSession.shown) return;
   if (!context.mounted) return;
   IosWallpaperGuideSession.shown = true;
-  await showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (_) => IosWallpaperGuideSheet(depthTier: depthTier),
-  );
+  await showPrismSheet<void>(context, builder: (_) => IosWallpaperGuideSheet(depthTier: depthTier));
 }
 
 /// The toast after a save. Once the guide has shown this session, the toast carries the Depth Effect step instead.
@@ -91,54 +85,41 @@ class IosWallpaperGuideSheet extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final List<String> steps = <String>[...IosWallpaperGuideSheet.steps(l10n), ?_depthStepFor(depthTier, l10n)];
     final ColorScheme scheme = theme.colorScheme;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(l10n.coreSetItAsWallpaper, style: theme.textTheme.displaySmall),
-            const SizedBox(height: 4),
-            Text(
-              l10n.coreIosWallpaperGuideBody,
-              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            for (int i = 0; i < steps.length; i++)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: <Widget>[
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: scheme.primary,
-                      child: Text('${i + 1}', style: theme.textTheme.labelLarge?.copyWith(color: scheme.onPrimary)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(steps[i], style: theme.textTheme.bodyLarge)),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  PrismHaptics.tap();
-                  _launch('photos-redirect://');
-                },
-                child: Text(l10n.coreOpenPhotos),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone)),
-            ),
-          ],
+    return PrismSheetBody(
+      title: l10n.coreSetItAsWallpaper,
+      message: l10n.coreIosWallpaperGuideBody,
+      actions: <Widget>[
+        FilledButton(
+          onPressed: () {
+            PrismHaptics.tap();
+            _launch('photos-redirect://');
+          },
+          child: Text(l10n.coreOpenPhotos),
         ),
+        TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone)),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (int i = 0; i < steps.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: scheme.primary,
+                    child: Text('${i + 1}', style: theme.textTheme.labelLarge?.copyWith(color: scheme.onPrimary)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(steps[i], style: theme.textTheme.bodyLarge)),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

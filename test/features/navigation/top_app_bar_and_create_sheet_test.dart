@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
@@ -111,12 +112,21 @@ void main() {
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = premium;
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(body: UploadBottomPanel()),
+          home: Builder(
+            builder: (BuildContext context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel()),
+                child: const Text('Open sheet'),
+              ),
+            ),
+          ),
         ),
       );
+      await tester.tap(find.text('Open sheet'));
+      await tester.pumpAndSettle();
     }
 
     testWidgets('offers an upload and an AI wallpaper, and shows the weekly quota to free users', (tester) async {

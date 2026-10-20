@@ -649,8 +649,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool adsAllowed = await AdConsent.instance.ensure();
     if (!mounted) return null;
     await showPrismSheet<void>(
-      context: context,
-      isScrollControlled: true,
+      context,
       builder: (BuildContext sheetContext) => _GuestAdGateSheet(
         adsAllowed: adsAllowed,
         onBuyPremium: () {
@@ -1053,10 +1052,11 @@ class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
 
   Future<void> _watch() async {
     setState(() => _watching = true);
+    final AppLocalizations l10n = context.l10n;
     final RewardedAdResult watched = await watchRewardedAdResult(context.read<AdsBloc>());
     if (mounted) setState(() => _watching = false);
     if (!watched.earned) {
-      toasts.error(adFailureMessage(context.l10n, watched.failure));
+      toasts.error(adFailureMessage(l10n, watched.failure));
       return;
     }
     if (!mounted) return;

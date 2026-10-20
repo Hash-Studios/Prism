@@ -3564,7 +3564,6 @@
     }
   },
   "economyClosePreview": "प्रीव्यू बंद करें",
-  "economyCloseXpExplanation": "XP की जानकारी बंद करें",
   "economyCoinActivitySemantics": "{label}, {date}, {amount} {coins, plural, one{कॉइन} other{कॉइन्स}}",
   "@economyCoinActivitySemantics": {
     "placeholders": {
@@ -4664,7 +4663,6 @@
   "economyJackpotAddedToBalance": "जैकपॉट! आपके बैलेंस में जोड़ दिया गया",
   "economyKeepStreakToday": "अपनी स्ट्रीक बनाए रखने के लिए आज Prism खोलें।",
   "economyLastWeek": "पिछला हफ़्ता",
-  "economyLeaderboardCloseScoring": "लीडरबोर्ड स्कोरिंग की जानकारी बंद करें",
   "economyLeaderboardEntrySemantics": "{position}, {name}{isMe, select, true{, आप} other{}}, इस हफ़्ते {xp} XP{hasRank, select, true{, कुल {rank} रैंक} other{}}",
   "@economyLeaderboardEntrySemantics": {
     "placeholders": {

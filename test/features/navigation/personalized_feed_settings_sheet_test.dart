@@ -102,10 +102,12 @@ void main() {
     savedMix = null;
   });
 
-  Future<void> pumpSheet(
-    WidgetTester tester, {
+  /// Opens [sheet] in a Prism sheet, the way the app does. PrismSheetBody needs the sheet around it.
+  Future<void> openSheet(
+    WidgetTester tester,
+    Widget sheet, {
     Size size = const Size(600, 844),
-    Set<String> initial = const <String>{'Nature', 'Abstract'},
+    ThemeData? theme,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -114,24 +116,46 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-
-        home: Scaffold(
-          body: PersonalizedFeedSettingsSheet(
-            catalog: _catalog,
-            initialInterests: initial,
-            initialFeedMix: FeedMix.balanced,
-            tasteSignals: store,
-            onSave: (List<String> interests, FeedMix mix) async {
-              savedInterests = interests;
-              savedMix = mix;
-              return true;
-            },
+        theme: theme,
+        home: Builder(
+          builder: (BuildContext context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                detents: const <PrismSheetDetent>[PrismSheetDetent.large],
+                builder: (_) => sheet,
+              ),
+              child: const Text('Open sheet'),
+            ),
           ),
         ),
       ),
     );
     showToastsInTree(tester);
+    await tester.tap(find.text('Open sheet'));
     await tester.pumpAndSettle();
+  }
+
+  Future<void> pumpSheet(
+    WidgetTester tester, {
+    Size size = const Size(600, 844),
+    Set<String> initial = const <String>{'Nature', 'Abstract'},
+  }) async {
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: initial,
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (List<String> interests, FeedMix mix) async {
+          savedInterests = interests;
+          savedMix = mix;
+          return true;
+        },
+      ),
+      size: size,
+    );
   }
 
   FilledButton saveButton(WidgetTester tester) =>
@@ -164,27 +188,16 @@ void main() {
   });
 
   testWidgets('failed save keeps the sheet open and re-enables Save', (tester) async {
-    tester.view.physicalSize = const Size(600, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        home: Scaffold(
-          body: PersonalizedFeedSettingsSheet(
-            catalog: _catalog,
-            initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
-            initialFeedMix: FeedMix.balanced,
-            tasteSignals: store,
-            onSave: (List<String> _, FeedMix _) async => false,
-          ),
-        ),
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (List<String> _, FeedMix _) async => false,
       ),
     );
-    showToastsInTree(tester);
-    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
@@ -196,27 +209,16 @@ void main() {
   });
 
   testWidgets('thrown save error also releases the saving state', (tester) async {
-    tester.view.physicalSize = const Size(600, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        home: Scaffold(
-          body: PersonalizedFeedSettingsSheet(
-            catalog: _catalog,
-            initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
-            initialFeedMix: FeedMix.balanced,
-            tasteSignals: store,
-            onSave: (_, _) async => throw StateError('save failed'),
-          ),
-        ),
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (_, _) async => throw StateError('save failed'),
       ),
     );
-    showToastsInTree(tester);
-    await tester.pumpAndSettle();
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
@@ -261,8 +263,7 @@ void main() {
     );
     await tester.tap(find.text('Open settings'));
     await tester.pumpAndSettle();
-    final route = ModalRoute.of(tester.element(find.text('Tune your feed')))! as ModalBottomSheetRoute;
-    expect(route.useSafeArea, isTrue);
+    expect(find.byType(PrismSheetBody), findsOneWidget);
     await tester.ensureVisible(find.bySemanticsLabel('Interest: Nature, selected'));
     await tester.tap(find.bySemanticsLabel('Interest: Nature, selected'));
     await tester.pumpAndSettle();
@@ -286,27 +287,17 @@ void main() {
   for (final Brightness brightness in Brightness.values) {
     testWidgets('discovery uses the shared segmented control in ${brightness.name} mode', (tester) async {
       final ColorScheme scheme = ColorScheme.fromSeed(seedColor: const Color(0xff176b87), brightness: brightness);
-      tester.view.physicalSize = const Size(600, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-
-          theme: ThemeData(colorScheme: scheme),
-          home: Scaffold(
-            body: PersonalizedFeedSettingsSheet(
-              catalog: _catalog,
-              initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
-              initialFeedMix: FeedMix.balanced,
-              tasteSignals: store,
-              onSave: (_, _) async => true,
-            ),
-          ),
+      await openSheet(
+        tester,
+        PersonalizedFeedSettingsSheet(
+          catalog: _catalog,
+          initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+          initialFeedMix: FeedMix.balanced,
+          tasteSignals: store,
+          onSave: (_, _) async => true,
         ),
+        theme: ThemeData(colorScheme: scheme),
       );
-      await tester.pumpAndSettle();
 
       expect(find.byType(PrismSegmented<FeedMix>), findsOneWidget);
       expect(find.text('Your taste, with a few surprises.'), findsOneWidget);
@@ -363,9 +354,9 @@ void main() {
               ),
               Builder(
                 builder: (BuildContext context) => TextButton(
-                  onPressed: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
+                  onPressed: () => showPrismSheet<void>(
+                    context,
+                    detents: const <PrismSheetDetent>[PrismSheetDetent.large],
                     builder: (_) => PersonalizedFeedSettingsSheet(
                       catalog: _catalog,
                       initialInterests: const <String>{'Nature', 'Abstract', 'Space'},

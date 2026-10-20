@@ -10,11 +10,7 @@ import 'package:url_launcher/url_launcher.dart' show LaunchMode;
 
 /// Every signal the server check found, with its detail. They are hints for the admin, not a verdict.
 Future<void> showModerationSignalsSheet(BuildContext context, WallModeration moderation) {
-  return showPrismSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => _ModerationSignalsSheet(moderation: moderation),
-  );
+  return showPrismSheet<void>(context, builder: (_) => _ModerationSignalsSheet(moderation: moderation));
 }
 
 class _ModerationSignalsSheet extends StatelessWidget {
@@ -101,7 +97,6 @@ class _ModerationSignalsSheet extends StatelessWidget {
     return PrismSheetBody(
       title: l10n.adminModerationSignals,
       message: l10n.adminModerationHint,
-      scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

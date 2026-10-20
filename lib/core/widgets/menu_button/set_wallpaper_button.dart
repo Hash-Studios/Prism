@@ -43,8 +43,7 @@ Future<SetWallpaperChoice?> showSetWallpaperSheet(
   bool canAdjust = false,
 }) {
   return showPrismSheet<SetWallpaperChoice>(
-    isScrollControlled: true,
-    context: context,
+    context,
     builder: (sheetContext) => SetOptionsPanel(
       thumbnailUrl: thumbnailUrl,
       notes: notes,

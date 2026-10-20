@@ -8,9 +8,7 @@ import 'package:flutter/material.dart';
 Future<void> showWheelOdds(BuildContext context, List<WheelSegment> segments) {
   final List<WheelOdds> odds = wheelOdds(segments);
   return showPrismSheet<void>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
+    context,
     builder: (BuildContext sheetContext) => PrismSheetBody(
       title: context.l10n.economyOddsTitle,
       message: context.l10n.economyEverySpinPays,

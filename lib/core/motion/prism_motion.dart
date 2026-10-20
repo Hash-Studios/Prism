@@ -14,6 +14,9 @@ abstract final class PrismDurations {
   /// Larger surfaces and emphasis: sheets, hero moves, big reveals.
   static const Duration slow = Duration(milliseconds: 320);
 
+  /// A bottom sheet rising or falling.
+  static const Duration sheet = Duration(milliseconds: 360);
+
   /// Gap between items that enter one after another.
   static const Duration stagger = Duration(milliseconds: 40);
 
@@ -34,7 +37,7 @@ abstract final class PrismCurves {
   static const Curve move = Cubic(0.77, 0, 0.175, 1);
 
   /// Bottom sheets and drawers.
-  static const Curve sheet = Cubic(0.32, 0.72, 0, 1);
+  static const Curve sheet = Cubic(0.16, 1, 0.3, 1);
 
   /// A small overshoot for playful pops (badges, success ticks). Use sparingly.
   static const Curve pop = Cubic(.34, 1.56, .64, 1);

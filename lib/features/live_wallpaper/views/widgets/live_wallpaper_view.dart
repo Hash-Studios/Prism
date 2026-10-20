@@ -187,8 +187,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   Future<void> _offerUnlock(LiveWallpaperBloc bloc) async {
     final (String id, String label) = _lockedStyle;
     final _UnlockChoice? choice = await showPrismSheet<_UnlockChoice>(
-      context: context,
-      isScrollControlled: true,
+      context,
       builder: (sheetContext) => PrismSheetBody(
         title: context.l10n.wallpaperLiveUnlockStyleTitle(label),
         message: context.l10n.wallpaperLiveUnlockStyleBody,
