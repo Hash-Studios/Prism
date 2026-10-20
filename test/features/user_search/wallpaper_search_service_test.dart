@@ -445,7 +445,7 @@ void main() {
     test('anime Prism walls are hidden while the anime setting is off', () async {
       final store = InMemoryLocalStore();
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
             ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', category: 'Anime')), (id: 'd2', data: _prismDoc('p2'))]
             : const <FakeDocRow>[],
       );
