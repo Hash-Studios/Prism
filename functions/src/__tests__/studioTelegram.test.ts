@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import {logger} from "firebase-functions/v2";
 import {db} from "../common";
+import * as delivery from "../ownedAssetDelivery";
 import {STUDIO_SERIES} from "../studio/series";
 import {studioPrompt} from "../studio/plan";
 import {
@@ -405,4 +406,32 @@ test("approval failures never write the bot token to function logs", async (t) =
   });
   await onStudioWallApproved.run(approvalEvent({...studio, review: false}, studio));
   assert.doesNotMatch(JSON.stringify(errors), new RegExp(token));
+});
+
+test("a converted wall is posted from its signed original, never from the redacted wallpaper_url", async (t) => {
+  installTelegramFakeDb(t);
+  const signed: string[] = [];
+  t.mock.method(delivery, "signOriginalDelivery", async (wallId: string) => {
+    signed.push(wallId);
+    return {url: "https://r2.example/original.jpg?sig=1", expiresAt: Date.now() + 60_000, objectId: "a".repeat(64)};
+  });
+  const fetched: string[] = [];
+  t.mock.method(globalThis, "fetch", async (url: string) => {
+    fetched.push(url);
+    if (!url.includes("api.telegram.org")) return new Response(new Uint8Array([1]));
+    return new Response(JSON.stringify({ok: true, result: {message_id: 1}}));
+  });
+  const converted = {...wall, wallpaper_url: "", originalProtected: true};
+  assert.equal(await postFirstStudioWallOfDay("w1", converted, "token", "-100", morning), true);
+  assert.deepEqual(signed, ["w1"]);
+  assert.ok(fetched.includes("https://r2.example/original.jpg?sig=1"));
+  assert.ok(!fetched.includes(""));
+});
+
+test("an unprotected wall with no public image fails and frees the day", async (t) => {
+  const store = installTelegramFakeDb(t);
+  t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify({ok: true})));
+  await assert.rejects(postFirstStudioWallOfDay("w1", {...wall, wallpaper_url: ""}, "token", "-100", morning),
+    /no readable image/);
+  assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
 });

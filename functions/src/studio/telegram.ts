@@ -3,6 +3,8 @@ import {defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "../common";
+import {signOriginalDelivery} from "../ownedAssetDelivery";
+import {r2Secrets} from "../r2Storage";
 import {isStudioWall} from "./isStudioWall";
 import {STUDIO_SERIES} from "./series";
 
@@ -38,13 +40,25 @@ export function postDay(now: Date): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Kolkata"}).format(now);
 }
 
+/**
+ * Where the bot reads the image. A converted wall has an empty `wallpaper_url`, so the bot uses a short-lived signed
+ * URL of the private original. An unconverted wall still has its public worker URL.
+ */
+export async function studioImageUrl(wallId: string, wall: admin.firestore.DocumentData): Promise<string> {
+  if (wall.originalProtected === true) return (await signOriginalDelivery(wallId)).url;
+  const url = str(wall.wallpaper_url);
+  if (!url) throw new Error("Studio wall has no readable image.");
+  return url;
+}
+
 /** Uploads the image as a photo with the caption. An upload allows 10 MB; a photo URL allows only 5 MB. */
-export async function sendStudioPost(token: string, chatId: string, wall: admin.firestore.DocumentData): Promise<void> {
+export async function sendStudioPost(token: string, chatId: string, wall: admin.firestore.DocumentData,
+  imageUrl = str(wall.wallpaper_url)): Promise<void> {
   const signal = AbortSignal.timeout(60_000);
   let image: Response;
   let imageBytes: ArrayBuffer;
   try {
-    image = await fetch(str(wall.wallpaper_url), {signal});
+    image = await fetch(imageUrl, {signal});
     imageBytes = await image.arrayBuffer();
   } catch {
     throw new Error("Image download failed.");
@@ -92,7 +106,7 @@ export async function postFirstStudioWallOfDay(
     throw err;
   }
   try {
-    await sendStudioPost(token, chatId, wall);
+    await sendStudioPost(token, chatId, wall, await studioImageUrl(wallId, wall));
   } catch (sendError) {
     if ((sendError as {uncertain?: boolean}).uncertain) throw sendError;
     try {
@@ -108,7 +122,7 @@ export async function postFirstStudioWallOfDay(
 
 /** When a Studio wall is approved, it becomes the day's Telegram post if it is the first one that day. */
 export const onStudioWallApproved = onDocumentUpdated(
-  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 300, secrets: [telegramBotToken, telegramChatId]},
+  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 300, secrets: [telegramBotToken, telegramChatId, ...r2Secrets]},
   async (event) => {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();
