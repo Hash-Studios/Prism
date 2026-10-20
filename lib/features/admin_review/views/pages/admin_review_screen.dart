@@ -6,6 +6,7 @@ import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_sender_tab.dart';
@@ -134,6 +135,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
           ],
           reserved: reserved,
+          moderation: wallModeration(wall),
           onToggleReserve: canReserveForDrop(wall)
               ? () async {
                   if (reserved) {

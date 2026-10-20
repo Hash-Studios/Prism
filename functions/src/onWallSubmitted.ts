@@ -6,6 +6,7 @@ import {emailHash, sendToUserByEmail} from "./notificationHelper";
 import {findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {authorOf, authorUpdate} from "./wallAuthor";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 
@@ -123,11 +124,7 @@ async function syncOwnerFields(
   wall: admin.firestore.DocumentData,
   owner: admin.firestore.DocumentData,
 ): Promise<string> {
-  const by = str(owner.name) || str(owner.username);
-  const userPhoto = str(owner.profilePhoto);
-  const update: Record<string, string> = {};
-  if (by && by !== wall.by) update.by = by;
-  if (userPhoto && userPhoto !== wall.userPhoto) update.userPhoto = userPhoto;
+  const update = authorUpdate(wall, owner);
   if (ref && Object.keys(update).length > 0) await ref.update(update);
-  return by;
+  return authorOf(owner).by;
 }

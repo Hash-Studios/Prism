@@ -1520,6 +1520,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminMarkedReviewed => 'Marked reviewed';
 
   @override
+  String adminModerationDuplicate(int percent) {
+    return 'Looks like a Prism wall · $percent%';
+  }
+
+  @override
+  String get adminModerationHint => 'These are hints. Check before you reject.';
+
+  @override
+  String adminModerationLogo(String logo) {
+    return 'Logo: $logo';
+  }
+
+  @override
+  String get adminModerationLogos => 'Logos';
+
+  @override
+  String get adminModerationOpenFailed => 'Could not open the page.';
+
+  @override
+  String adminModerationOpenPage(String host) {
+    return 'Open $host';
+  }
+
+  @override
+  String get adminModerationSignals => 'Review signals';
+
+  @override
+  String get adminModerationSimilarWall => 'Similar Prism wall';
+
+  @override
+  String adminModerationSimilarity(int percent) {
+    return '$percent% similar';
+  }
+
+  @override
+  String adminModerationText(String words) {
+    return 'Text: $words';
+  }
+
+  @override
+  String get adminModerationTextInImage => 'Text in the image';
+
+  @override
+  String adminModerationUnsafe(String categories) {
+    return 'Unsafe: $categories';
+  }
+
+  @override
+  String get adminModerationUnsafeCategories => 'Unsafe categories';
+
+  @override
+  String adminModerationWeb(String host) {
+    return 'Found on $host';
+  }
+
+  @override
+  String adminModerationWebMore(String host, int more) {
+    return 'Found on $host +$more';
+  }
+
+  @override
+  String get adminModerationWebPages => 'Found on the web';
+
+  @override
   String get adminNewWallpapersPending => 'New wallpapers show up here when someone uploads one.';
 
   @override

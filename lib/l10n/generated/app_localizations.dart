@@ -2697,6 +2697,102 @@ abstract class AppLocalizations {
   /// **'Marked reviewed'**
   String get adminMarkedReviewed;
 
+  /// No description provided for @adminModerationDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a Prism wall · {percent}%'**
+  String adminModerationDuplicate(int percent);
+
+  /// No description provided for @adminModerationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These are hints. Check before you reject.'**
+  String get adminModerationHint;
+
+  /// No description provided for @adminModerationLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Logo: {logo}'**
+  String adminModerationLogo(String logo);
+
+  /// No description provided for @adminModerationLogos.
+  ///
+  /// In en, this message translates to:
+  /// **'Logos'**
+  String get adminModerationLogos;
+
+  /// No description provided for @adminModerationOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the page.'**
+  String get adminModerationOpenFailed;
+
+  /// No description provided for @adminModerationOpenPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {host}'**
+  String adminModerationOpenPage(String host);
+
+  /// No description provided for @adminModerationSignals.
+  ///
+  /// In en, this message translates to:
+  /// **'Review signals'**
+  String get adminModerationSignals;
+
+  /// No description provided for @adminModerationSimilarWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar Prism wall'**
+  String get adminModerationSimilarWall;
+
+  /// No description provided for @adminModerationSimilarity.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% similar'**
+  String adminModerationSimilarity(int percent);
+
+  /// No description provided for @adminModerationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text: {words}'**
+  String adminModerationText(String words);
+
+  /// No description provided for @adminModerationTextInImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Text in the image'**
+  String get adminModerationTextInImage;
+
+  /// No description provided for @adminModerationUnsafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsafe: {categories}'**
+  String adminModerationUnsafe(String categories);
+
+  /// No description provided for @adminModerationUnsafeCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsafe categories'**
+  String get adminModerationUnsafeCategories;
+
+  /// No description provided for @adminModerationWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on {host}'**
+  String adminModerationWeb(String host);
+
+  /// No description provided for @adminModerationWebMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on {host} +{more}'**
+  String adminModerationWebMore(String host, int more);
+
+  /// No description provided for @adminModerationWebPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on the web'**
+  String get adminModerationWebPages;
+
   /// No description provided for @adminNewWallpapersPending.
   ///
   /// In en, this message translates to:
