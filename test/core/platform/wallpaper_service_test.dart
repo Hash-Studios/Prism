@@ -581,6 +581,47 @@ void main() {
       expect(store.items().single.identity, item.identity);
     });
 
+    test('cached pair originals survive cache removal and retain their catalogue identities', () async {
+      assets.install();
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final original = await createHistoryImage('${cacheDirectory.path}/home-original.png');
+      final originalBytes = await original.readAsBytes();
+      final rendered = await createHistoryImage('${temporaryDirectory.path}/rendered-home.png');
+      await rendered.writeAsBytes([...originalBytes, 0]);
+      expect(await rendered.readAsBytes(), isNot(originalBytes));
+      final lock = await createHistoryImage('${cacheDirectory.path}/lock-original.png');
+
+      final homeResult = await WallpaperService.setWallpaper(
+        rendered.path,
+        WallpaperTarget.home,
+        wallpaperId: 'home-wall',
+        wallpaperSource: WallpaperSource.prism,
+        historySource: original.path,
+        historyOriginalIdentity: 'prism:home-wall',
+      );
+      final lockResult = await WallpaperService.setWallpaper(
+        lock.path,
+        WallpaperTarget.lock,
+        wallpaperId: 'lock-wall',
+        wallpaperSource: WallpaperSource.prism,
+        historySource: 'https://signed.example/lock?grant=first',
+      );
+
+      expect(homeResult.historyIds, hasLength(1));
+      expect(lockResult.historyIds, hasLength(1));
+      expect(store.items(), hasLength(2));
+      await temporaryDirectory.delete(recursive: true);
+      await cacheDirectory.delete(recursive: true);
+      for (final item in store.items()) {
+        expect(await File(item.fullUrl).exists(), isTrue);
+        expect(item.identity, 'prism:${item.wallpaperId}');
+        expect(item.fullUrl, isNot(contains('grant=')));
+      }
+      final retainedHome = store.items().singleWhere((item) => item.target == 'home');
+      expect(await File(retainedHome.fullUrl).readAsBytes(), originalBytes);
+      expect(retainedHome.fullUrl, isNot(rendered.path));
+    });
+
     test('edited local copies of the same original keep distinct history identities', () async {
       aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
       for (final name in ['tint-a.png', 'tint-b.png']) {

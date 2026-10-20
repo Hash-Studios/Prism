@@ -186,10 +186,18 @@ class WallpaperService {
           (wallpaperId?.isNotEmpty ?? false) &&
           !requestedHistorySource.startsWith('/') &&
           !requestedHistorySource.startsWith('file:');
-      final String recordedSource = remoteOriginal ? filePath : requestedHistorySource;
+      String recordedSource = remoteOriginal ? filePath : requestedHistorySource;
       String? originalIdentity = remoteOriginal
           ? '${wallpaperSource!.wireValue}:$wallpaperId'
           : historyOriginalIdentity;
+      if (recordHistory && originalIdentity != null && await _isScratchFile(recordedSource)) {
+        try {
+          final original = await OfflineAssetStore.instance.resolve(recordedSource, allowNetwork: false);
+          recordedSource = (await OfflineAssetStore.instance.retain(originalIdentity, file: original)).path;
+        } catch (error, stackTrace) {
+          logger.w('WallpaperService: could not retain history original', error: error, stackTrace: stackTrace);
+        }
+      }
       if (originalIdentity == null && getIt.isRegistered<WallpaperHistoryStore>()) {
         for (final item in WallpaperHistoryStore.instance.items()) {
           if (item.fullUrl == recordedSource &&
