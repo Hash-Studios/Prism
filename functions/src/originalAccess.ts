@@ -4,10 +4,11 @@ import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/ht
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {loadEconomy, type EconomyConfig} from "./economy";
 import {parseCollectionList} from "./wallOfTheDay";
-import {signOriginalDelivery} from "./ownedAssetDelivery";
+import {ownedThumbnailUrl, signOriginalDelivery, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
+import {r2Secrets} from "./r2Storage";
 
 type Action = "download" | "set" | "edit" | "live";
-type Delivery = {url: string; expiresAt: number; generation: string};
+type Delivery = {url: string; expiresAt: number; objectId: string};
 type Input = {assetId?: unknown; action?: unknown; assets?: unknown; requestId?: unknown; mode?: unknown; maxCoins?: unknown};
 
 function priceOriginal(isPremium: boolean, action: Action, data: admin.firestore.DocumentData,
@@ -55,7 +56,7 @@ async function classification(): Promise<string[]> {
   }
 }
 
-export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 10, secrets: r2Secrets},
   async (request: CallableRequest<Input>) => {
     const uid = request.auth?.uid;
     if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
@@ -79,7 +80,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
     const [premium, economy] = await Promise.all([classification(), loadEconomy()]);
     // Sign before any debit: signing failures leave the balance and grace allowance untouched.
     const deliveries = mode === "acquire" ? await Promise.all(items.map((item) => originalAccessDelivery.sign(item.assetId))) : [];
-    if (deliveries.some((delivery) => !delivery.url.startsWith("https://") || !delivery.generation ||
+    if (deliveries.some((delivery) => !delivery.url.startsWith("https://") || !/^[a-f0-9]{64}$/.test(delivery.objectId) ||
         !Number.isFinite(delivery.expiresAt) || delivery.expiresAt <= Date.now() ||
         delivery.expiresAt > Date.now() + 5 * 60_000)) {
       throw new HttpsError("unavailable", "Invalid original delivery.");
@@ -96,7 +97,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
       const privateData = privateSnap.data() ?? {};
       const currentBalance = Math.max(0, int(data.coins));
       let graceUsed = Math.max(0, int(privateData.graceDownloadsUsed));
-      const checked: {assetId: string; originalAction: Action; generation: string;
+      const checked: {assetId: string; originalAction: Action; objectId: string;
         isPremium: boolean; basis: string; cost: number}[] = [];
       for (let index = 0; index < items.length; index++) {
         const {assetId, action: originalAction} = items[index];
@@ -110,19 +111,26 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         const wall = wallSnap?.data();
         const owned = manifest.data();
         const original = owned?.original;
-        const generation = original?.generation;
+        const objectId = original?.objectId;
         if (walls.size !== 1 || wall?.review !== true || wall.originalProtected !== true ||
-            typeof generation !== "string" || !generation || wall.originalGeneration !== generation ||
-            owned?.status !== "ready" || (delivery && generation !== delivery.generation) ||
+            typeof objectId !== "string" || !/^[a-f0-9]{64}$/.test(objectId) || wall.originalObjectId !== objectId ||
+            owned?.status !== "ready" || (delivery && objectId !== delivery.objectId) ||
             !wallSnap.createTime || owned.canonicalPath !== wallSnap.ref.path ||
             owned.incarnation !== wallSnap.createTime.toMillis() ||
             owned.incarnationNanos !== wallSnap.createTime.nanoseconds || wall.wallpaper_url !== "" ||
-            typeof original.path !== "string" || !original.path || typeof original.sha !== "string" || !original.sha ||
-            typeof owned.thumb?.path !== "string" || !owned.thumb.path ||
-            typeof owned.thumb?.sha !== "string" || !owned.thumb.sha ||
+            !stored(original) || !stored(owned.thumb) ||
+            original.previewObjectId !== undefined || !owned.thumb.previewObjectId ||
+            original.objectId === owned.thumb.objectId || original.object === owned.thumb.object ||
+            wall.wallpaper_thumb !== ownedThumbnailUrl(owned.thumb) ||
             wall.wallpaper_path !== "" || wall.wallpaper_sha !== "" ||
             wall.thumb_path !== "" || wall.thumb_sha !== "") {
           throw new HttpsError("failed-precondition", "Protected original is unavailable or has changed.");
+        }
+        try {
+          await verifyStoredUploadRegistry(original, tx);
+          await verifyStoredUploadRegistry(owned.thumb, tx);
+        } catch {
+          throw new HttpsError("failed-precondition", "Protected original storage identity is unavailable or has changed.");
         }
         if (wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) {
           throw new HttpsError("permission-denied", "This original requires a separate entitlement.");
@@ -135,15 +143,15 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         const {basis, cost} = priceOriginal(isPremium, originalAction, data,
           {...privateData, graceDownloadsUsed: graceUsed}, economy);
         if (basis === "grace") graceUsed++;
-        checked.push({assetId, originalAction, generation, isPremium, basis, cost});
+        checked.push({assetId, originalAction, objectId, isPremium, basis, cost});
       }
       const cost = checked.reduce((total, item) => total + item.cost, 0);
       const basis = checked.every((item) => item.basis === checked[0].basis) ? checked[0].basis : "mixed";
       const first = checked[0];
       const delivery = deliveries[0];
       const grants = items.map((item, index) => ({...item, ...deliveries[index]}));
-      const identity = checked.map(({assetId, originalAction, generation, isPremium}) =>
-        ({assetId, originalAction, generation, isPremium}));
+      const identity = checked.map(({assetId, originalAction, objectId, isPremium}) =>
+        ({assetId, originalAction, objectId, isPremium}));
       const receipt = receiptSnap.data();
       if (receipt) {
         if (receipt.userId !== uid || receipt.batch !== batch ||
@@ -151,7 +159,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
             identity.some((item, index) => {
               const saved = receipt.identities[index];
               return !saved || saved.assetId !== item.assetId || saved.originalAction !== item.originalAction ||
-                saved.generation !== item.generation || saved.isPremium !== item.isPremium;
+                saved.objectId !== item.objectId || saved.isPremium !== item.isPremium;
             }) || receipt.requestId !== requestId ||
             receipt.status !== "completed" || receipt.originalAccess !== true || receipt.revoked === true ||
             !Array.isArray(receipt.bases) || receipt.bases.length !== items.length ||
@@ -162,7 +170,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         }
         if (mode === "quote") {
           return {status: "quoted" as const, ...(batch ? {} : {assetId: first.assetId,
-            action: first.originalAction, generation: first.generation}),
+            action: first.originalAction, objectId: first.objectId}),
           requiredCoins: 0, currentBalance, basis: receipt.basis};
         }
         return {status: "granted" as const, ...(batch ? {grants} : {...items[0], ...delivery}), transactionId,
@@ -170,7 +178,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
       }
       if (mode === "quote") {
         return {status: "quoted" as const, ...(batch ? {} : {assetId: first.assetId,
-          action: first.originalAction, generation: first.generation}),
+          action: first.originalAction, objectId: first.objectId}),
         requiredCoins: cost, currentBalance, basis};
       }
       if (!delivery) throw new HttpsError("unavailable", "Original delivery is unavailable.");
@@ -188,7 +196,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         action: "originalAccess", description: "Protected original access", sourceTag: "original.resolve",
         reason: "original_access_issued"}), originalAccess: true, batch, identities: identity,
       bases: checked.map((item) => item.basis), assetId: first.assetId, originalAction: first.originalAction,
-      generation: delivery.generation, requestId, chargedCoins: cost, basis, isPremium: first.isPremium, issuedAt: Date.now(),
+      objectId: delivery.objectId, requestId, chargedCoins: cost, basis, isPremium: first.isPremium, issuedAt: Date.now(),
       retryUntil: Date.now() + 5 * 60_000});
       return {status: "granted" as const, ...(batch ? {grants} : {...items[0], ...delivery}), transactionId,
         currentBalance: currentBalance - cost, chargedCoins: cost, basis};

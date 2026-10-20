@@ -104,11 +104,11 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalGeneration']);
+      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalGeneration']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId']);
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)

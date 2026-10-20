@@ -6,6 +6,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -353,18 +354,9 @@ bool _isTrustedImageUrl(String imageUrl, WallpaperSource source) {
   if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
     return false;
   }
-  if (source == WallpaperSource.prism && uri.host == 'asia-south1-prism-wallpapers.cloudfunctions.net') {
-    return RegExp(
-      r'^https://asia-south1-prism-wallpapers\.cloudfunctions\.net/ownedThumbnail/[A-Za-z0-9_-]{1,200}$',
-    ).hasMatch(imageUrl);
-  }
+  if (source == WallpaperSource.prism) return isSafePrismThumbnailUrl(imageUrl);
   final Set<String> allowedHosts = switch (source) {
-    WallpaperSource.prism => <String>{
-      'raw.githubusercontent.com',
-      'firebasestorage.googleapis.com',
-      'storage.googleapis.com',
-      'prismwalls.com',
-    },
+    WallpaperSource.prism => const <String>{},
     WallpaperSource.wallhaven => <String>{'w.wallhaven.cc', 'th.wallhaven.cc'},
     WallpaperSource.pexels => <String>{'images.pexels.com'},
     _ => const <String>{},

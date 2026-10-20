@@ -581,6 +581,9 @@ pattern = "www.prismwalls.com/not-found*"
 zone_name = "prismwalls.com"
 
 [vars]
+# R2_PREVIEW_BASE_URL = "https://cdn.example.com"
+# GH_USERNAME = "Hash-Studios"
+# GH_REPO_WALLS = "wallpaper-repository"
 PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.hash.prism"
 APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
 OG_FALLBACK_IMAGE = "https://raw.githubusercontent.com/Hash-Studios/Prism/master/web/public/assets/og/home.jpg"

@@ -5,6 +5,9 @@ import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
   OG_IMAGES?: R2Bucket;
+  R2_PREVIEW_BASE_URL?: string;
+  GH_USERNAME?: string;
+  GH_REPO_WALLS?: string;
   PLAY_STORE_URL: string;
   APP_STORE_URL: string;
   OG_FALLBACK_IMAGE?: string;
@@ -250,8 +253,8 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
     return json({ error: 'invalid_type' }, 400);
   }
 
-  const canonical = buildCanonicalUrl(body);
-  const parsedCanonical = canonical != null ? parseCanonicalFromUrl(canonical) : null;
+  const canonical = buildCanonicalUrl(body, env);
+  const parsedCanonical = canonical != null ? parseCanonicalFromUrl(canonical, env) : null;
   if (canonical == null || parsedCanonical == null || parsedCanonical.type !== body.type) {
     return json({ error: 'invalid_canonical_url' }, 400);
   }
@@ -351,7 +354,7 @@ async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
     return json({ error: 'not_found' }, 404);
   }
 
-  const parsedCanonical = parseCanonicalUrl(record.canonical_url);
+  const parsedCanonical = parseCanonicalUrl(record.canonical_url, env);
   if (parsedCanonical == null) {
     return json({ error: 'invalid_canonical_url' }, 500);
   }
@@ -464,7 +467,7 @@ function fallbackToStore(request: Request, env: Env): Response {
 }
 
 function renderDirectLanding(url: URL, request: Request, env: Env): Response {
-  const parsed = parseCanonicalUrl(`https://${DOMAIN}${url.pathname}${url.search}`);
+  const parsed = parseCanonicalUrl(`https://${DOMAIN}${url.pathname}${url.search}`, env);
   if (parsed == null) {
     return fallbackToStore(request, env);
   }
@@ -520,7 +523,7 @@ async function readLinkRecord(code: string, env: Env): Promise<LinkRecord | null
   }
 
   const obj = parsed as Record<string, unknown>;
-  const parsedCanonical = typeof obj.canonical_url === 'string' ? parseCanonicalUrl(obj.canonical_url) : null;
+  const parsedCanonical = typeof obj.canonical_url === 'string' ? parseCanonicalUrl(obj.canonical_url, env) : null;
   if (parsedCanonical == null) {
     return null;
   }
@@ -575,19 +578,19 @@ async function persistLinkRecord(code: string, record: LinkRecord, env: Env): Pr
   await env.LINKS_KV.put(code, JSON.stringify(record));
 }
 
-function buildCanonicalUrl(body: CreateLinkRequest): URL | null {
+function buildCanonicalUrl(body: CreateLinkRequest, env: Env): URL | null {
   if (isNonEmptyString(body.canonical_url)) {
-    return parseCanonicalUrl(body.canonical_url)?.canonical ?? null;
+    return parseCanonicalUrl(body.canonical_url, env)?.canonical ?? null;
   }
 
   if (body.payload == null) {
     return null;
   }
 
-  return buildCanonicalFromPayload(body.type, body.payload);
+  return buildCanonicalFromPayload(body.type, body.payload, env);
 }
 
-function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unknown>): URL | null {
+function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unknown>, env: Env): URL | null {
   if (type === 'page') {
     const path = payload.path;
     if (!isNonEmptyString(path) || !path.startsWith('/') || path.startsWith('//')) {
@@ -602,18 +605,18 @@ function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unkno
     if (candidate.origin !== `https://${DOMAIN}` || candidate.hash) {
       return null;
     }
-    const canonical = parseCanonicalFromUrl(candidate);
+    const canonical = parseCanonicalFromUrl(candidate, env);
     if (canonical?.type !== 'page') {
       return null;
     }
     appendPayloadQueryParams(payload, canonical.canonical, ['path']);
-    return parseCanonicalFromUrl(canonical.canonical)?.canonical ?? null;
+    return parseCanonicalFromUrl(canonical.canonical, env)?.canonical ?? null;
   }
 
   if (type === 'share') {
     const canonical = new URL(`https://${DOMAIN}/share`);
     appendPayloadQueryParams(payload, canonical);
-    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+    return parseCanonicalFromUrl(canonical, env)?.canonical ?? null;
   }
 
   if (type === 'user') {
@@ -623,7 +626,7 @@ function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unkno
     }
     const canonical = new URL(`https://${DOMAIN}/user/${encodeURIComponent(identifier)}`);
     appendPayloadQueryParams(payload, canonical, USER_IDENTIFIER_QUERY_KEYS);
-    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+    return parseCanonicalFromUrl(canonical, env)?.canonical ?? null;
   }
 
   if (type === 'setup') {
@@ -633,7 +636,7 @@ function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unkno
     }
     const canonical = new URL(`https://${DOMAIN}/setup/${encodeURIComponent(setupName)}`);
     appendPayloadQueryParams(payload, canonical, SETUP_NAME_QUERY_KEYS);
-    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+    return parseCanonicalFromUrl(canonical, env)?.canonical ?? null;
   }
 
   const inviterId = firstNonEmptyValue(payload, REFER_IDENTIFIER_QUERY_KEYS);
@@ -642,18 +645,18 @@ function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unkno
   }
   const canonical = new URL(`https://${DOMAIN}/refer/${encodeURIComponent(inviterId)}`);
   appendPayloadQueryParams(payload, canonical, REFER_IDENTIFIER_QUERY_KEYS);
-  return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+  return parseCanonicalFromUrl(canonical, env)?.canonical ?? null;
 }
 
-function parseCanonicalUrl(value: string): CanonicalParseResult | null {
+function parseCanonicalUrl(value: string, env: Env): CanonicalParseResult | null {
   try {
-    return parseCanonicalFromUrl(new URL(value));
+    return parseCanonicalFromUrl(new URL(value), env);
   } catch {
     return null;
   }
 }
 
-function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
+function parseCanonicalFromUrl(source: URL, env: Env): CanonicalParseResult | null {
   if (source.protocol !== 'https:' || (source.hostname !== DOMAIN && source.hostname !== `www.${DOMAIN}`)) {
     return null;
   }
@@ -681,13 +684,8 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
       canonical.searchParams.set('id', segmentId);
     }
     const provider = (canonical.searchParams.get('source') || canonical.searchParams.get('provider') || 'prism').toLowerCase();
-    if (provider === 'prism') {
-      const id = canonical.searchParams.get('id') ?? '';
-      canonical.searchParams.set('thumb', /^[A-Za-z0-9_-]{1,200}$/.test(id)
-        ? `https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/${id}` : '');
-    } else if (provider !== 'wallhaven' && provider !== 'pexels') {
-      canonical.searchParams.set('thumb', '');
-    }
+    const thumb = canonical.searchParams.get('thumb') ?? '';
+    canonical.searchParams.set('thumb', sanitizeShareImageUrl(thumb, env, provider));
     return {
       canonical,
       type: 'share',
@@ -920,6 +918,7 @@ function normalizePreview(
     description: clipText(sanitizeText(input?.description ?? defaults.description), 200),
     image_source_url: sanitizeImageUrl(
       type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
+      env,
     ),
     username: clipText(sanitizeText(input?.username ?? defaults.username), 60),
     provider: clipText(sanitizeText(input?.provider ?? defaults.provider), 60),
@@ -928,18 +927,18 @@ function normalizePreview(
     app_store_url: env.APP_STORE_URL,
     play_store_url: env.PLAY_STORE_URL,
     creator_name: clipText(sanitizeText(textInput(input?.creator_name)), 60),
-    creator_photo_url: sanitizeImageUrl(textInput(input?.creator_photo_url)),
+    creator_photo_url: sanitizeImageUrl(textInput(input?.creator_photo_url), env),
     resolution: clipText(sanitizeText(textInput(input?.resolution)), 20),
     follower_count: countInput(input?.follower_count),
     wallpaper_count: countInput(input?.wallpaper_count),
-    gallery: galleryInput(input?.gallery),
+    gallery: galleryInput(input?.gallery, env),
   };
 
   return merged;
 }
 
 function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewDefaults {
-  const parsedCanonical = parseCanonicalFromUrl(canonical);
+  const parsedCanonical = parseCanonicalFromUrl(canonical, env);
 
   if (type === 'share') {
     const wallId = canonical.searchParams.get('id') ?? 'Wallpaper';
@@ -1030,16 +1029,13 @@ function clipText(value: string, max: number): string {
   return `${value.slice(0, Math.max(0, max - 1))}…`;
 }
 
-function sanitizeImageUrl(value: string): string {
+function sanitizeImageUrl(value: string, env?: Env): string {
   if (!isNonEmptyString(value)) {
     return '';
   }
   try {
     const parsed = new URL(value);
-    if (parsed.hostname === 'asia-south1-prism-wallpapers.cloudfunctions.net') {
-      return /^https:\/\/asia-south1-prism-wallpapers\.cloudfunctions\.net\/ownedThumbnail\/[A-Za-z0-9_-]{1,200}$/.test(value)
-        ? parsed.toString() : '';
-    }
+    if (env != null && isR2PreviewUrl(parsed, env)) return parsed.toString();
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return '';
     }
@@ -1053,6 +1049,53 @@ function sanitizeImageUrl(value: string): string {
   }
 }
 
+function configuredR2PreviewBase(env: Env): URL | null {
+  if (!isNonEmptyString(env.R2_PREVIEW_BASE_URL)) return null;
+  try {
+    const base = new URL(env.R2_PREVIEW_BASE_URL);
+    if (base.protocol !== 'https:' || base.username || base.password || base.port || base.search || base.hash) return null;
+    return base;
+  } catch {
+    return null;
+  }
+}
+
+function isR2PreviewUrl(value: URL, env: Env): boolean {
+  const base = configuredR2PreviewBase(env);
+  if (base == null || value.protocol !== 'https:' || value.username || value.password || value.port || value.search || value.hash) return false;
+  const prefix = `${base.pathname.replace(/\/$/, '')}/previews/`;
+  return value.origin === base.origin && value.pathname.startsWith(prefix)
+    && /^[a-f0-9]{64}\.img$/.test(value.pathname.slice(prefix.length));
+}
+
+function sanitizeShareImageUrl(value: string, env: Env, provider: string): string {
+  if (!isNonEmptyString(value)) return '';
+  try {
+    const parsed = new URL(value);
+    if (isR2PreviewUrl(parsed, env)) return parsed.toString();
+    if (parsed.hostname === 'raw.githubusercontent.com') {
+      const owner = env.GH_USERNAME?.trim();
+      const repo = env.GH_REPO_WALLS?.trim();
+      const segments = parsed.pathname.split('/').filter(Boolean);
+      return parsed.protocol === 'https:'
+        && parsed.username === '' && parsed.password === '' && !parsed.port && !parsed.search && !parsed.hash
+        && owner != null && owner.length > 0 && repo != null && repo.length > 0
+        && segments.length >= 4 && segments[0].toLowerCase() === owner.toLowerCase() && segments[1] === repo
+        && segments.at(-1)?.startsWith('thumb_')
+        ? parsed.toString() : '';
+    }
+    if (parsed.hostname === 'prismwalls.com') {
+      return parsed.protocol === 'https:' && !parsed.username && !parsed.password && !parsed.port && !parsed.search
+        && !parsed.hash && /^\/api\/ai\/assets\/ai\/studio\/thumb_[A-Za-z0-9_-]+\.jpg$/.test(parsed.pathname)
+        ? parsed.toString() : '';
+    }
+    if (!['wallhaven', 'pexels'].includes(provider)) return '';
+    return sanitizeImageUrl(value, env);
+  } catch {
+    return '';
+  }
+}
+
 function textInput(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
@@ -1061,14 +1104,32 @@ function countInput(value: unknown): number | null {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
-function galleryInput(value: unknown): string[] {
+function galleryInput(value: unknown, env: Env): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
   return value
     .slice(0, GALLERY_MAX_ITEMS)
-    .map((item) => sanitizeImageUrl(textInput(item)))
+    .map((item) => sanitizeGalleryImageUrl(textInput(item), env))
     .filter((url) => url.length > 0);
+}
+
+function sanitizeGalleryImageUrl(value: string, env: Env): string {
+  if (!isNonEmptyString(value)) return '';
+  try {
+    const parsed = new URL(value);
+    if (isR2PreviewUrl(parsed, env)) return parsed.toString();
+    if (parsed.hostname === 'raw.githubusercontent.com') return sanitizeShareImageUrl(value, env, 'prism');
+    if (parsed.hostname === 'prismwalls.com') {
+      return parsed.protocol === 'https:' && !parsed.username && !parsed.password && !parsed.port && !parsed.search
+        && !parsed.hash && /^\/api\/ai\/assets\/ai\/studio\/thumb_[A-Za-z0-9_-]+\.jpg$/.test(parsed.pathname)
+        ? parsed.toString() : '';
+    }
+    if (!/^lh[3-6]\.googleusercontent\.com$/.test(parsed.hostname)) return '';
+    return sanitizeImageUrl(value, env);
+  } catch {
+    return '';
+  }
 }
 
 async function generateUniqueCode(env: Env): Promise<string> {

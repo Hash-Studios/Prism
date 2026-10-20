@@ -236,6 +236,10 @@ make run
 `make run` injects Dart defines from Doppler. If the Android Google Services file is absent, it skips Firebase initialization, including on iOS.
 See the [Doppler workflow](docs/development/doppler.md) for access checks, secret updates, and troubleshooting.
 The [contribution guide](CONTRIBUTING.md) covers configuration for your own development Firebase project.
+Server-side wallpaper storage uses separate private and preview Cloudflare R2 buckets when enabled. The
+[owned asset delivery guide](docs/development/owned-asset-delivery.md) documents configuration and the
+GitHub-to-R2 inventory. It is an operator guide, not permission to configure secrets, deploy, migrate, or
+remove public GitHub files.
 
 ## Common development commands
 

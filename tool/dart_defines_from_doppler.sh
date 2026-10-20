@@ -28,7 +28,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   [[ -z "$key" || -z "$value" ]] && continue
   [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-  [[ "$key" == "GH_TOKEN" ]] && continue
+  case "$key" in
+    GH_TOKEN|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|R2_ACCOUNT_ID|R2_PRIVATE_BUCKET|R2_PREVIEW_BUCKET) continue ;;
+  esac
 
   token="--dart-define=$key=$value"
   defines="$defines $(printf '%q' "$token")"

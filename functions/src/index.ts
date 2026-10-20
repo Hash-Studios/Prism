@@ -16,7 +16,7 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
-export {ownedThumbnail, onOwnedWallWritten} from "./ownedAssetDelivery";
+export {onOwnedWallWritten, onR2TombstoneCleanup} from "./ownedAssetDelivery";
 export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak, claimProSpin, spinWheel} from "./coinsCallables";
 export {progressQuest, openQuestChest, openDailyChest} from "./quests";
 export {purchaseShopItem, equipCosmetic} from "./shop";

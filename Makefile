@@ -149,6 +149,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
+	@bash tool/dart_defines_from_doppler_test.sh
 
 env-guard:
 	@./tool/env_define_guard.sh

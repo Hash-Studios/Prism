@@ -6,16 +6,16 @@ class _RecordingGitHub extends GitHubContentApi {
   final List<({String repo, String path, String sha})> deleted = <({String repo, String path, String sha})>[];
   final Set<String> failPaths = <String>{};
   final List<UploadSourceKind?> sourceKinds = <UploadSourceKind?>[];
-  final List<({String wallId, String originalGeneration, String assetRole})> assets = [];
+  final List<({String wallId, String originalObjectId, String assetRole})> assets = [];
 
   @override
   Future<void> deleteWallAsset({
     required String wallId,
-    required String originalGeneration,
+    required String originalObjectId,
     required String assetRole,
   }) async {
     if (failPaths.contains(assetRole)) throw StateError('cleanup down');
-    assets.add((wallId: wallId, originalGeneration: originalGeneration, assetRole: assetRole));
+    assets.add((wallId: wallId, originalObjectId: originalObjectId, assetRole: assetRole));
   }
 
   @override
@@ -42,11 +42,12 @@ void main() {
 
   test('protected wall cleanup uses only wall identity and attempts both assets on failure', () async {
     final github = _RecordingGitHub()..failPaths.add('wallpaper');
+    final objectId = List<String>.filled(64, 'a').join();
     final count = await deleteWallFiles(
       <String, dynamic>{
         'id': 'wall',
         'originalProtected': true,
-        'originalGeneration': '17',
+        'originalObjectId': objectId,
         'wallpaper_path': '',
         'wallpaper_sha': '',
         'thumb_path': '',
@@ -56,7 +57,7 @@ void main() {
       repo: 'org/walls',
     );
     expect(count, 1);
-    expect(github.assets, [(wallId: 'wall', originalGeneration: '17', assetRole: 'thumb')]);
+    expect(github.assets, [(wallId: 'wall', originalObjectId: objectId, assetRole: 'thumb')]);
     expect(github.deleted, isEmpty);
   });
 

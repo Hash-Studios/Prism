@@ -46,12 +46,13 @@ void main() {
   testWidgets('protected collection preview keeps the original empty', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
-    const thumb = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1';
+    const thumb =
+        'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img';
     anyCollectionWalls = <Map<String, dynamic>>[
       <String, dynamic>{
         'id': 'wall-1',
         'originalProtected': true,
-        'originalGeneration': 'g1',
+        'originalObjectId': 'g1',
         'wallpaper_thumb': thumb,
         'wallpaper_url': '',
       },

@@ -304,7 +304,7 @@ void main() {
       final directory = Directory.systemTemp.createTempSync('rotation-acquired');
       addTearDown(() => directory.deleteSync(recursive: true));
       final file = File('${directory.path}/owned.jpg')..writeAsBytesSync([1]);
-      const owned = 'https://storage.googleapis.com/private/owned.jpg';
+      const owned = 'https://images.example.com/private/owned.jpg';
       final index = DownloadedWallIndex(settings, ownerId: () => 'alice');
       getIt.registerSingleton<DownloadedWallIndex>(index);
       await index.remember(link: owned, id: 'canonical', source: WallpaperSource.prism);
@@ -328,7 +328,7 @@ void main() {
         await repository.start(const AutoRotateConfig(), [
           owned,
           'https://raw.githubusercontent.com/private/original.jpg',
-          'https://firebasestorage.googleapis.com/private.jpg',
+          'https://images.example.com/private.jpg',
           'https://images.pexels.com.evil.test/1.jpg',
           'http://images.pexels.com/1.jpg',
           'https://images.pexels.com/1.jpg',
@@ -346,7 +346,7 @@ void main() {
         stops++;
         return const StandardMessageCodec().encodeMessage(<Object?>[true]);
       });
-      await settings.set('autoRotate.appliedSources', jsonEncode(['https://storage.googleapis.com/private.jpg']));
+      await settings.set('autoRotate.appliedSources', jsonEncode(['https://images.example.com/private.jpg']));
       expect(await repository.rotateNow(), isFalse);
       expect(stops, 1);
       expect(await repository.loadAppliedSources(), isNull);

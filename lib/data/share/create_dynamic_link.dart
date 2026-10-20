@@ -24,9 +24,8 @@ const String _shareDomain = 'prismwalls.com';
 String safeWallpaperShareThumbnail(String id, WallpaperSource source, String thumbUrl) {
   if (BundledWallpapers.isStarterIdentity(id, source)) return thumbUrl;
   if (source == WallpaperSource.wallhaven || source == WallpaperSource.pexels) return thumbUrl;
-  if (source != WallpaperSource.prism) return '';
-  if (!RegExp(r'^[A-Za-z0-9_-]{1,200}$').hasMatch(id)) return '';
-  return 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/$id';
+  if (source != WallpaperSource.prism || !isSafePrismThumbnailUrl(thumbUrl)) return '';
+  return thumbUrl;
 }
 
 class _CanonicalLinkBuilder {
