@@ -7,6 +7,7 @@ import {backfillWallSignatures, parseBackfillArgs} from "../scripts/backfillWall
 import {db} from "../common";
 import {imageSignature} from "../studio/gates";
 import {isStudioWall} from "../studio/isStudioWall";
+import {fetchImageBuffer} from "../wallColors";
 import {
   buildModeration,
   type ModerationAnnotate,
@@ -124,6 +125,34 @@ test("the thumbnail is read when the original is private", async (t) => {
   await moderateWall("w1", wall, value);
   assert.deepEqual(fetched, [url("thumb")]);
   assert.deepEqual(withoutTime(store.get("walls/w1")?.moderation), EMPTY);
+});
+
+test("a private original with an exact R2 preview is moderated through the real image fetcher", async (t) => {
+  quiet(t);
+  const previousEnv = {...process.env};
+  t.after(() => {
+    process.env = previousEnv;
+  });
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com/assets";
+
+  const image = await gradient("down");
+  const preview = `https://images.example.com/assets/previews/${"a".repeat(64)}.img`;
+  const wall = {wallpaper_url: "", wallpaper_thumb: preview};
+  const store = installFakeDb(t, {"walls/w1": wall});
+  const fetched: string[] = [];
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    fetched.push(String(input));
+    return new Response(new Uint8Array(image), {headers: {"content-type": "image/png"}});
+  });
+
+  await moderateWall("w1", wall, {
+    fetchImage: (imageUrl) => fetchImageBuffer(imageUrl),
+    annotate: async () => CLEAR,
+  });
+
+  assert.deepEqual(fetched, [preview]);
+  assert.deepEqual(withoutTime(store.get("walls/w1")?.moderation), EMPTY);
+  assert.equal(store.get("wallSignatures/w1")?.signature, await imageSignature(image));
 });
 
 test("the thumbnail is the fallback when the original cannot be read", async (t) => {
