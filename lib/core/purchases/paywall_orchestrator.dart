@@ -34,6 +34,9 @@ class PaywallOrchestrator {
   static const String _adWatchCountKey = 'paywall_ad_watch_count';
   static const String _adWatchPromptedAtKey = 'paywall_ad_watch_prompted_at';
   static const Duration _adWatchPromptGap = Duration(hours: 24);
+
+  /// A RevenueCat setup or offerings call that never settles must not leave the caller loading forever.
+  static const Duration _loadTimeout = Duration(seconds: 10);
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
@@ -131,10 +134,12 @@ class PaywallOrchestrator {
     bool isCurrentAccount() =>
         requestedUserId == app_state.prismUser.id.trim() && requestedLoggedIn == app_state.prismUser.loggedIn;
     try {
-      await PurchasesService.instance.ensureConfigured(requestedUserId);
+      await PurchasesService.instance.ensureConfigured(requestedUserId).timeout(_loadTimeout);
       if (!isCurrentAccount()) return PaywallResultValue.error;
-      final Offering? placementOffering = await PurchasesService.instance.getCurrentOfferingForPlacement(placement);
-      final Offerings? offerings = await PurchasesService.instance.getOfferings();
+      final Offering? placementOffering = await PurchasesService.instance
+          .getCurrentOfferingForPlacement(placement)
+          .timeout(_loadTimeout);
+      final Offerings? offerings = await PurchasesService.instance.getOfferings().timeout(_loadTimeout);
       if (!isCurrentAccount()) return PaywallResultValue.error;
       final Offering? v3Offering = offerings?.all[PurchaseConstants.offeringV3Default];
       Offering? offering;
