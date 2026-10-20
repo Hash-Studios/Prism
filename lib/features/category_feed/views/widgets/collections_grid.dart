@@ -127,7 +127,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       confirmFirst: confirmFirst,
       toastWhenInsufficient: true,
       logInsufficientOnlyWhenLow: true,
-      spendErrorMessage: "Couldn't unlock the preview. Try again.",
+      spendErrorMessage: context.l10n.economyDropUnlockFailed,
       refundOnFailure: false,
       isMounted: () => mounted,
       choose: _choosePreviewAction,

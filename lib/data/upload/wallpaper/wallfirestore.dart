@@ -11,7 +11,6 @@ import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/widgets.dart';
 
 export 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 
@@ -113,11 +112,11 @@ Future<WallSubmissionResult> createRecord(
   );
 
   if (result == WallSubmissionResult.quotaExceeded) {
-    final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+    final l10n = await loadDeviceAppLocalizations();
     toasts.error(l10n.wallpaperUploadFreeQuotaMessage(UploadQuota.freeUploadsPerWeek));
     return result;
   }
-  final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+  final l10n = await loadDeviceAppLocalizations();
   toasts.success(l10n.coreUploadSubmittedSuccess);
   return result;
 }

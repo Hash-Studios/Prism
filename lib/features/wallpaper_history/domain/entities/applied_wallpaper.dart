@@ -7,6 +7,7 @@ class AppliedWallpaper {
     required this.target,
     required this.appliedAt,
     this.wallpaperId,
+    this.originalIdentity,
   });
 
   final String id;
@@ -16,6 +17,14 @@ class AppliedWallpaper {
   final String target;
   final DateTime appliedAt;
   final String? wallpaperId;
+  final String? originalIdentity;
+
+  /// Originals keep their catalogue identity; edited local copies keep their own path.
+  String get identity =>
+      originalIdentity ??
+      (source == 'prism' && (wallpaperId?.isNotEmpty ?? false) && fullUrl.startsWith('http')
+          ? '$source:$wallpaperId'
+          : fullUrl);
 
   Map<String, Object?> toJson() => <String, Object?>{
     'id': id,
@@ -25,6 +34,7 @@ class AppliedWallpaper {
     'target': target,
     'appliedAt': appliedAt.toUtc().toIso8601String(),
     if (wallpaperId != null) 'wallpaperId': wallpaperId,
+    if (originalIdentity != null) 'originalIdentity': originalIdentity,
   };
 
   static AppliedWallpaper? tryFromJson(Object? json) {
@@ -35,6 +45,7 @@ class AppliedWallpaper {
     final Object? fullUrl = json['fullUrl'];
     final Object? target = json['target'];
     final Object? appliedAt = json['appliedAt'];
+    final Object? originalIdentity = json['originalIdentity'];
     if (id is! String || source is! String || thumbnailUrl is! String) return null;
     if (fullUrl is! String || fullUrl.isEmpty || target is! String || appliedAt is! String) return null;
     final DateTime? parsed = DateTime.tryParse(appliedAt);
@@ -47,6 +58,7 @@ class AppliedWallpaper {
       target: target,
       appliedAt: parsed,
       wallpaperId: json['wallpaperId'] is String ? json['wallpaperId'] as String : null,
+      originalIdentity: originalIdentity is String ? originalIdentity : null,
     );
   }
 }

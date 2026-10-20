@@ -11,6 +11,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'Export failed';
+
+  @override
+  String get coreSignInCreatorSearchFeature => 'creator search';
+
+  @override
+  String get debugLogExportSubject => 'Prism Debug Logs';
+
+  @override
   String get accountAbout => 'About';
 
   @override
@@ -951,6 +960,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountPurchasesRestored => 'Purchases restored.';
+
+  @override
+  String get accountPurchasesRestoredPending => 'Purchases restored. Pro can take a minute to unlock.';
 
   @override
   String get accountQuickTiles => 'Quick tiles';
@@ -3687,11 +3699,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get economyAiHistoryFailed => 'Couldn\'t load history. Pull to refresh.';
 
   @override
+  String get economyAiMatchingScreenSize => 'Matching your screen size…';
+
+  @override
+  String get economyAiApplyingStyle => 'Applying your style…';
+
+  @override
+  String get economyAiFinalizingWallpaper => 'Finalizing your wallpaper…';
+
+  @override
+  String get economyAiRemixHint => 'Darker sky, warmer palette, softer edges…';
+
+  @override
   String economyAiNeedCoinsToGenerate(int cost) {
     final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String costString = costNumberFormat.format(cost);
 
     return 'Need $costString coins to generate.';
+  }
+
+  @override
+  String economyNeedMoreCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Need $countString more coins.',
+      one: 'Need $countString more coin.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7177,6 +7215,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumPageViewPlans => 'View plans';
 
   @override
+  String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
+
+  @override
+  String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
+
+  @override
   String get wallpaperAccentColor => 'Accent color';
 
   @override
@@ -9211,6 +9255,283 @@ class AppLocalizationsEn extends AppLocalizations {
   String wallpaperWotdByPhotographer(String name) {
     return 'Wall of the day by $name';
   }
+
+  @override
+  String get economyAiPromptSceneAnime1 => 'an anime skyline above floating islands';
+
+  @override
+  String get economyAiPromptSceneAnime2 => 'a lone samurai on a neon-lit rainy street';
+
+  @override
+  String get economyAiPromptSceneAnime3 => 'a futuristic shrine with cherry blossoms and holograms';
+
+  @override
+  String get economyAiPromptSceneAnime4 => 'a dreamy anime night market with lantern glow';
+
+  @override
+  String get economyAiPromptSceneAnime5 => 'a cyber-anime city horizon at blue hour';
+
+  @override
+  String get economyAiPromptSceneMinimal1 => 'minimal dunes and a single sun disk';
+
+  @override
+  String get economyAiPromptSceneMinimal2 => 'clean geometric mountain layers';
+
+  @override
+  String get economyAiPromptSceneMinimal3 => 'a serene monochrome ocean horizon';
+
+  @override
+  String get economyAiPromptSceneMinimal4 => 'simple abstract lines with balanced spacing';
+
+  @override
+  String get economyAiPromptSceneMinimal5 => 'a soft gradient sky over flat hills';
+
+  @override
+  String get economyAiPromptSceneCyberpunk1 => 'a neon megacity street with wet reflections';
+
+  @override
+  String get economyAiPromptSceneCyberpunk2 => 'a futuristic alley with holographic billboards';
+
+  @override
+  String get economyAiPromptSceneCyberpunk3 => 'a high-tech skyline with flying traffic lanes';
+
+  @override
+  String get economyAiPromptSceneCyberpunk4 => 'a cyberpunk rooftop overlooking glowing towers';
+
+  @override
+  String get economyAiPromptSceneCyberpunk5 => 'a midnight city crossing with teal-magenta lights';
+
+  @override
+  String get economyAiPromptSceneWatercolor1 => 'a watercolor forest valley at dawn';
+
+  @override
+  String get economyAiPromptSceneWatercolor2 => 'a hand-painted mountain lake scene';
+
+  @override
+  String get economyAiPromptSceneWatercolor3 => 'soft watercolor clouds above rolling hills';
+
+  @override
+  String get economyAiPromptSceneWatercolor4 => 'a tranquil riverbank with pastel tones';
+
+  @override
+  String get economyAiPromptSceneWatercolor5 => 'an artistic watercolor coastline at sunset';
+
+  @override
+  String get economyAiPromptSceneMeshGradient1 => 'a smooth mesh gradient flow with layered blobs';
+
+  @override
+  String get economyAiPromptSceneMeshGradient2 => 'vibrant fluid gradient waves with depth';
+
+  @override
+  String get economyAiPromptSceneMeshGradient3 => 'soft multi-color mesh forms and gentle curves';
+
+  @override
+  String get economyAiPromptSceneMeshGradient4 => 'high-contrast mesh gradient ribbons';
+
+  @override
+  String get economyAiPromptSceneMeshGradient5 => 'pastel mesh gradient bloom with subtle texture';
+
+  @override
+  String get economyAiPromptSceneAbstract1 => 'an abstract fractal composition with dynamic curves';
+
+  @override
+  String get economyAiPromptSceneAbstract2 => 'layered liquid forms with modern depth';
+
+  @override
+  String get economyAiPromptSceneAbstract3 => 'bold abstract shapes with soft edges';
+
+  @override
+  String get economyAiPromptSceneAbstract4 => 'a surreal abstract field of floating geometry';
+
+  @override
+  String get economyAiPromptSceneAbstract5 => 'organic abstract waves with cinematic contrast';
+
+  @override
+  String get economyAiPromptSceneNature1 => 'a misty mountain range at sunrise';
+
+  @override
+  String get economyAiPromptSceneNature2 => 'a dense evergreen forest with sun rays';
+
+  @override
+  String get economyAiPromptSceneNature3 => 'a dramatic coastal cliff with crashing waves';
+
+  @override
+  String get economyAiPromptSceneNature4 => 'a calm alpine lake under twilight sky';
+
+  @override
+  String get economyAiPromptSceneNature5 => 'a desert canyon with warm golden light';
+
+  @override
+  String get economyAiPromptLightingSoftAmbient => 'soft ambient';
+
+  @override
+  String get economyAiPromptLightingCinematicRim => 'cinematic rim';
+
+  @override
+  String get economyAiPromptLightingGoldenHour => 'golden hour';
+
+  @override
+  String get economyAiPromptLightingMoonlit => 'moonlit';
+
+  @override
+  String get economyAiPromptLightingVolumetric => 'volumetric';
+
+  @override
+  String get economyAiPromptMoodCalm => 'calm';
+
+  @override
+  String get economyAiPromptMoodDreamy => 'dreamy';
+
+  @override
+  String get economyAiPromptMoodEpic => 'epic';
+
+  @override
+  String get economyAiPromptMoodMoody => 'moody';
+
+  @override
+  String get economyAiPromptMoodUplifting => 'uplifting';
+
+  @override
+  String get economyAiPromptQualityHighDetail => 'high detail';
+
+  @override
+  String get economyAiPromptQualityCleanComposition => 'ultra clean composition';
+
+  @override
+  String get economyAiPromptQualityCrispTextures => 'crisp textures';
+
+  @override
+  String get economyAiPromptQualityBalancedContrast => 'balanced contrast';
+
+  @override
+  String get economyAiPromptQualityNaturalColors => 'vibrant but natural colors';
+
+  @override
+  String get economyAiPromptSuffix => 'vertical phone wallpaper, no text';
+
+  @override
+  String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
+    return '$scene, $lighting lighting, $mood mood, $quality, $suffix';
+  }
+
+  @override
+  String economyAiPromptSceneOnly(String scene, String suffix) {
+    return '$scene, $suffix';
+  }
+
+  @override
+  String get economyAiMadeWithPrism => 'Made with Prism AI';
+
+  @override
+  String get onboardingAiPromptFallback => 'a beautiful wallpaper';
+
+  @override
+  String get onboardingAiPromptNature1 => 'a misty mountain range at sunrise with warm golden light';
+
+  @override
+  String get onboardingAiPromptNature2 => 'a dense evergreen forest with sun rays breaking through the canopy';
+
+  @override
+  String get onboardingAiPromptNature3 => 'a dramatic coastal cliff with crashing waves and moody sky';
+
+  @override
+  String get onboardingAiPromptNature4 => 'a calm alpine lake under a twilight sky with star reflections';
+
+  @override
+  String get onboardingAiPromptNature5 => 'a desert canyon with warm golden light and dramatic rock formations';
+
+  @override
+  String get onboardingAiPromptAbstract1 => 'an abstract fractal composition with dynamic curves and vivid color';
+
+  @override
+  String get onboardingAiPromptAbstract2 => 'layered liquid forms with modern depth and metallic sheen';
+
+  @override
+  String get onboardingAiPromptAbstract3 => 'bold abstract shapes with soft edges and cinematic contrast';
+
+  @override
+  String get onboardingAiPromptAbstract4 => 'a surreal abstract field of floating geometry bathed in neon light';
+
+  @override
+  String get onboardingAiPromptAbstract5 => 'organic abstract waves with rich texture and depth of field';
+
+  @override
+  String get onboardingAiPromptWatercolor1 => 'a watercolor forest valley at dawn with soft pastel mist';
+
+  @override
+  String get onboardingAiPromptWatercolor2 => 'a hand-painted mountain lake scene in dreamy watercolor tones';
+
+  @override
+  String get onboardingAiPromptWatercolor3 => 'soft watercolor clouds above rolling hills at golden hour';
+
+  @override
+  String get onboardingAiPromptWatercolor4 => 'a tranquil riverbank with pastel watercolor reflections';
+
+  @override
+  String get onboardingAiPromptWatercolor5 => 'an artistic watercolor coastline at sunset with warm hues';
+
+  @override
+  String get onboardingAiPromptMinimal1 => 'minimal sand dunes and a single sun disk on the horizon';
+
+  @override
+  String get onboardingAiPromptMinimal2 => 'clean geometric mountain layers in soft muted tones';
+
+  @override
+  String get onboardingAiPromptMinimal3 => 'a serene monochrome ocean horizon at dusk';
+
+  @override
+  String get onboardingAiPromptMinimal4 => 'simple abstract lines with perfectly balanced negative space';
+
+  @override
+  String get onboardingAiPromptMinimal5 => 'a soft gradient sky over flat minimalist hills';
+
+  @override
+  String get onboardingAiPromptAnime1 => 'an anime style city rooftop at golden hour with drifting cherry blossoms';
+
+  @override
+  String get onboardingAiPromptAnime2 => 'a dreamy anime countryside train crossing under a huge cloudy sky';
+
+  @override
+  String get onboardingAiPromptAnime3 => 'an anime mountain village at dusk with glowing lanterns and soft mist';
+
+  @override
+  String get onboardingAiPromptAnime4 => 'a quiet anime seaside town under a pastel sunset and towering clouds';
+
+  @override
+  String get onboardingAiPromptAnime5 => 'an anime starry night over a calm lake with floating lights';
+
+  @override
+  String get onboardingAiPromptMeshGradient1 => 'a smooth mesh gradient of coral, teal and warm yellow with soft grain';
+
+  @override
+  String get onboardingAiPromptMeshGradient2 =>
+      'a flowing mesh gradient in deep violet and electric blue with gentle glow';
+
+  @override
+  String get onboardingAiPromptMeshGradient3 =>
+      'a pastel mesh gradient of peach, lilac and mint blending into each other';
+
+  @override
+  String get onboardingAiPromptMeshGradient4 => 'a vibrant mesh gradient sunset with layered magenta and orange tones';
+
+  @override
+  String get onboardingAiPromptMeshGradient5 =>
+      'a calm mesh gradient of ocean blues and seafoam with subtle light bloom';
+
+  @override
+  String get onboardingAiPromptCyberpunk1 => 'a neon megacity street with wet reflections and flying vehicles';
+
+  @override
+  String get onboardingAiPromptCyberpunk2 => 'a futuristic alley with holographic billboards and teal-magenta light';
+
+  @override
+  String get onboardingAiPromptCyberpunk3 => 'a high-tech skyline at night with glowing traffic lanes';
+
+  @override
+  String get onboardingAiPromptCyberpunk4 => 'a cyberpunk rooftop overlooking a city of glowing towers';
+
+  @override
+  String get onboardingAiPromptCyberpunk5 => 'a midnight city crossing drenched in teal and magenta neon';
 
   @override
   String wallpaperWotdByline(String name) {

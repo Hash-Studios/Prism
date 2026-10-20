@@ -83,7 +83,7 @@ List<PairCandidate> _historyCandidates() {
     final Set<String> seen = <String>{};
     return WallpaperHistoryStore.instance
         .items()
-        .where((item) => seen.add(item.fullUrl))
+        .where((item) => seen.add(item.identity))
         .map(
           (item) => PairCandidate(
             fullUrl: item.fullUrl,

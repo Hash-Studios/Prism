@@ -177,6 +177,32 @@ test("reclassification and pass expiry invalidate earlier receipt retries", asyn
   await assert.rejects(() => resolveOriginalAccess.run(request({requestId: "request_pass"})), {code: "failed-precondition"});
 });
 
+test("Remote Config reclassification between quote and acquire uses current premium pricing", async (t) => {
+  const store = setup(t, {collections: ["nature"]});
+  const quote = await resolveOriginalAccess.run(request({mode: "quote"}));
+  assert(quote.status === "quoted");
+  assert.equal(quote.requiredCoins, DEFAULT_ECONOMY.spend.wallpaperDownload);
+  const before = structuredClone([...store.entries()]);
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: "[\"premium\",\"nature\"]"}},
+  }}));
+  const result = await resolveOriginalAccess.run(request({maxCoins: quote.requiredCoins}));
+  assert.equal(result.status, "price_changed");
+  assert.equal("requiredCoins" in result && result.requiredCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
+  assert.deepEqual([...store.entries()], before);
+});
+
+test("Remote Config failure after a successful quote still fails acquisition closed", async (t) => {
+  const store = setup(t);
+  await resolveOriginalAccess.run(request({mode: "quote"}));
+  const before = structuredClone([...store.entries()]);
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    throw new Error("offline after quote");
+  });
+  await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "unavailable"});
+  assert.deepEqual([...store.entries()], before);
+});
+
 test("insufficient balance leaves no receipt or charge", async (t) => {
   const store = setup(t, {}, {coins: 0});
   const result = await resolveOriginalAccess.run(request());

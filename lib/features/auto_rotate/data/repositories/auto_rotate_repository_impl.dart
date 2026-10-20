@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart' show isWallpaperTargetSupported;
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repository.dart';
@@ -230,15 +231,23 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
           sourceTag: 'auto_rotate.category',
         );
         if (result.isFailure) return null;
-        return _safeSources(result.data!.map((wallpaper) => wallpaper.fullUrl));
+        return _safeWallSources(
+          result.data!.map((wallpaper) => (wallpaper.id, WallpaperSource.prism, wallpaper.fullUrl)),
+        );
       case AutoRotateSource.wallOfTheDay:
         final result = await _wallOfTheDay.fetchRecent();
         if (result.isFailure) return null;
-        return _safeSources(result.data!.map((pick) => pick.wallpaper.fullUrl));
+        return _safeWallSources(
+          result.data!.map((pick) => (pick.wallpaper.id, WallpaperSource.prism, pick.wallpaper.fullUrl)),
+        );
       case AutoRotateSource.history:
         // The history order changes with every wallpaper Prism sets. Sorting keeps the list the same for the same
         // wallpapers, so a new entry for a wallpaper already in the list does not restart the rotation.
-        return (await _safeSources(_history.items().map((item) => item.fullUrl)))..sort();
+        return (await _safeWallSources(
+          _history.items().map(
+            (item) => (item.wallpaperId ?? '', WallpaperSourceX.fromWire(item.source), item.fullUrl),
+          ),
+        ))..sort();
       case AutoRotateSource.favourites:
       case AutoRotateSource.downloads:
         return const <String>[];
@@ -262,6 +271,22 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         safe.add(source);
       } else if (getIt.isRegistered<DownloadedWallIndex>()) {
         final file = await getIt<DownloadedWallIndex>().localFileForLink(source);
+        if (file != null) safe.add(file.path);
+      }
+    }
+    return safe.toList(growable: false);
+  }
+
+  Future<List<String>> _safeWallSources(Iterable<(String, WallpaperSource, String)> walls) async {
+    final Set<String> safe = <String>{};
+    for (final (id, source, url) in walls) {
+      if (_isLocalSource(url) || _isExternalSource(url)) {
+        safe.add(url);
+      } else if (getIt.isRegistered<DownloadedWallIndex>()) {
+        final index = getIt<DownloadedWallIndex>();
+        final file = id.isNotEmpty && source != WallpaperSource.unknown
+            ? await index.localFileForIdentity(id: id, source: source)
+            : await index.localFileForLink(url);
         if (file != null) safe.add(file.path);
       }
     }

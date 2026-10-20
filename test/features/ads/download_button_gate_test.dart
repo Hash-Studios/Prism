@@ -1732,6 +1732,19 @@ void main() {
   });
 
   group('guest', () {
+    testWidgets('a protected Prism original offers sign in without calling original access', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      backend.originalAuthenticated = false;
+      await pump(tester, source: WallpaperSource.prism, link: '');
+      await tapSave(tester);
+      expect(find.text('Sign in'), findsOneWidget);
+      expect(backend.originalCalls, isEmpty);
+      expect(enqueued, isEmpty);
+      Navigator.of(tester.element(find.text('Sign in'))).pop();
+      await settle(tester);
+      expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
+    });
+
     testWidgets('a Pro wallpaper offers sign in or Pro, never an ad', (tester) async {
       app_state.prismUser = app_constants.createGuestPrismUser();
       await pump(tester, premiumContent: true);

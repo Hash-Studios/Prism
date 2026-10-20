@@ -14,6 +14,11 @@ const CoinGateTags _tags = CoinGateTags(
   retrySpend: 'x.retry.spend',
 );
 
+class _TestCoinLocalizations extends AppLocalizationsEn {
+  @override
+  String economyNeedMoreCoins(int count) => 'Localized shortfall: $count';
+}
+
 void main() {
   late FakeCoinGatePort port;
   late int performed;
@@ -27,6 +32,35 @@ void main() {
     performResult = true;
     choice = CoinGateChoice.cancel;
     prompts = <CoinGatePrompt>[];
+  });
+
+  test('coin shortfall copy keeps singular, plural, and number grouping', () {
+    final AppLocalizationsEn english = AppLocalizationsEn();
+
+    expect(english.economyNeedMoreCoins(1), 'Need 1 more coin.');
+    expect(english.economyNeedMoreCoins(12345), 'Need 12,345 more coins.');
+  });
+
+  test('insufficient spend shows the localized shortfall copy', () async {
+    port.balance = 1;
+    port.spendAlwaysInsufficient = true;
+    final List<CoinGateChoice> choices = <CoinGateChoice>[CoinGateChoice.spend, CoinGateChoice.cancel];
+    final CoinGateResult result = await CoinGate(port, l10n: _TestCoinLocalizations()).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (_) async => choices.removeAt(0),
+        confirmFirst: true,
+        toastWhenInsufficient: true,
+      ),
+    );
+
+    expect(result, CoinGateResult.cancelled);
+    expect(port.errors, <String>['Localized shortfall: 4']);
   });
 
   CoinGateSpec spec({

@@ -599,7 +599,7 @@ void main() {
     await tapTab(tester, 'Following');
     await _settle(tester);
 
-    expect(find.text('Sign in to use following'), findsOneWidget);
+    expect(find.text('Sign in to use Following'), findsOneWidget);
     verifyNever(() => feedRepository.fetchFollowing(page: any(named: 'page')));
   });
 

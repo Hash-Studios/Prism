@@ -74,22 +74,29 @@ class OriginalAccessService {
     }
   }
 
-  Future<String> _requestId(String owner, String id, OriginalAccessAction action, String? preferred) async {
+  Future<String> _requestId(
+    String owner,
+    String id,
+    OriginalAccessAction action,
+    String? preferred, {
+    bool acquire = true,
+  }) async {
     final key = _key(owner, id, action);
     final settings = _settings;
     final stored = settings?.get<String?>(key, hasDefault: true);
     final until = _pendingUntil[key] ?? settings?.get<int?>('$key.until', hasDefault: true);
     if (until != null && until <= _now().millisecondsSinceEpoch) {
       await complete(owner: owner, wallpaperId: id, action: action);
-      throw StateError('Previous original access attempt expired. Please try again.');
+      if (acquire) throw StateError('Previous original access attempt expired. Please try again.');
+      return _requestId(owner, id, action, null, acquire: false);
     }
     final value = _pending[key] ?? stored ?? preferred ?? AnalyticsCorrelation.newId();
-    final deadline = until ?? _now().add(const Duration(minutes: 5)).millisecondsSinceEpoch;
+    final deadline = until ?? (acquire ? _now().add(const Duration(minutes: 5)).millisecondsSinceEpoch : null);
     _pending[key] = value;
-    _pendingUntil[key] = deadline;
+    if (deadline != null) _pendingUntil[key] = deadline;
     if (settings != null) {
       await settings.set(key, value);
-      await settings.set('$key.until', deadline);
+      if (deadline != null) await settings.set('$key.until', deadline);
     }
     return value;
   }
@@ -105,7 +112,7 @@ class OriginalAccessService {
   Future<OriginalAccessQuote> quote({required String wallpaperId, required OriginalAccessAction action}) async {
     final owner = _owner();
     if (await _acquiredLocal(wallpaperId) != null) return OriginalAccessQuote(0, app_state.prismUser.coins);
-    final requestId = await _requestId(owner, wallpaperId, action, null);
+    final requestId = await _requestId(owner, wallpaperId, action, null, acquire: false);
     if (_owner() != owner) throw StateError('Original access unavailable');
     final reply = await _callForOperation(
       {'assetId': wallpaperId, 'action': action.name, 'requestId': requestId, 'mode': 'quote'},
@@ -134,7 +141,7 @@ class OriginalAccessService {
     assetIds = remoteIds;
     if (assetIds.isEmpty) return OriginalAccessQuote(0, app_state.prismUser.coins);
     if (assetIds.length == 1) return quote(wallpaperId: assetIds.single, action: OriginalAccessAction.set);
-    final requestId = await _requestId(owner, _pairId(assetIds), OriginalAccessAction.set, null);
+    final requestId = await _requestId(owner, _pairId(assetIds), OriginalAccessAction.set, null, acquire: false);
     if (owner != _owner()) throw StateError('Original access unavailable');
     final reply = await _callForOperation(
       {

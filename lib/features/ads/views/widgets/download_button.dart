@@ -354,6 +354,11 @@ class _DownloadButtonState extends State<DownloadButton> {
               isValidNetworkUrl(tap.link));
       if (serverAccess) {
         _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
+        if (tap.isGuest && _authorizedSource == null) {
+          await _showGuestPremiumPrompt();
+          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
+          return;
+        }
         final result = await _gatedDownload(originalAccess: true, variant: variant);
         _trackGateResult(result);
         return;
@@ -697,7 +702,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String title = _tap.wallpaperTitle?.trim() ?? '';
     if (title.isNotEmpty) return title;
     final String creator = _tap.creatorName?.trim() ?? '';
-    return creator.isEmpty ? null : 'Wallpaper by $creator';
+    return creator.isEmpty ? null : context.l10n.wallpaperByCreator(creator);
   }
 
   Future<CoinGateResult> _gatedDownload({bool originalAccess = false, DownloadVariant? variant}) async {

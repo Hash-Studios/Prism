@@ -117,11 +117,7 @@ class _StatusLine extends StatefulWidget {
 }
 
 class _StatusLineState extends State<_StatusLine> {
-  static const List<String> _lines = <String>[
-    'Matching your screen size…',
-    'Applying your style…',
-    'Finalizing your wallpaper…',
-  ];
+  static const int _lineCount = 3;
 
   Timer? _timer;
   int _index = 0;
@@ -130,7 +126,7 @@ class _StatusLineState extends State<_StatusLine> {
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) setState(() => _index = (_index + 1) % _lines.length);
+      if (mounted) setState(() => _index = (_index + 1) % _lineCount);
     });
   }
 
@@ -142,7 +138,13 @@ class _StatusLineState extends State<_StatusLine> {
 
   @override
   Widget build(BuildContext context) {
-    final String line = context.reduceMotion ? _lines.first : _lines[_index];
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final List<String> lines = <String>[
+      l10n.economyAiMatchingScreenSize,
+      l10n.economyAiApplyingStyle,
+      l10n.economyAiFinalizingWallpaper,
+    ];
+    final String line = context.reduceMotion ? lines.first : lines[_index];
     return Semantics(
       liveRegion: true,
       child: AnimatedSwitcher(
