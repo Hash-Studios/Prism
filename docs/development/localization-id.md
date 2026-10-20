@@ -15,7 +15,7 @@ No full local `make ci` run is claimed here.
 
 ## Coverage
 
-The Indonesian ARB covers all 2,502 canonical English messages, with source
+The Indonesian ARB covers all 2,518 canonical English messages, with source
 metadata, placeholder types, number formats and ICU selector values preserved.
 This includes onboarding, browsing, search, categories, wallpaper actions,
 creator accounts, authentication, settings, Premium, coins, streaks, referrals,

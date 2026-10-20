@@ -1518,6 +1518,70 @@ class AppLocalizationsId extends AppLocalizations {
   String get adminMarkedReviewed => 'Ditandai sudah ditinjau';
 
   @override
+  String adminModerationDuplicate(int percent) {
+    return 'Sepertinya mirip wallpaper Prism · $percent%';
+  }
+
+  @override
+  String get adminModerationHint => 'Ini hanya petunjuk. Periksa sebelum menolak.';
+
+  @override
+  String adminModerationLogo(String logo) {
+    return 'Logo: $logo';
+  }
+
+  @override
+  String get adminModerationLogos => 'Logo';
+
+  @override
+  String get adminModerationOpenFailed => 'Halaman tidak dapat dibuka.';
+
+  @override
+  String adminModerationOpenPage(String host) {
+    return 'Buka $host';
+  }
+
+  @override
+  String get adminModerationSignals => 'Sinyal peninjauan';
+
+  @override
+  String get adminModerationSimilarWall => 'Wallpaper Prism serupa';
+
+  @override
+  String adminModerationSimilarity(int percent) {
+    return '$percent% mirip';
+  }
+
+  @override
+  String adminModerationText(String words) {
+    return 'Teks: $words';
+  }
+
+  @override
+  String get adminModerationTextInImage => 'Teks dalam gambar';
+
+  @override
+  String adminModerationUnsafe(String categories) {
+    return 'Tidak aman: $categories';
+  }
+
+  @override
+  String get adminModerationUnsafeCategories => 'Kategori konten tidak aman';
+
+  @override
+  String adminModerationWeb(String host) {
+    return 'Ditemukan di $host';
+  }
+
+  @override
+  String adminModerationWebMore(String host, int more) {
+    return 'Ditemukan di $host +$more';
+  }
+
+  @override
+  String get adminModerationWebPages => 'Ditemukan di web';
+
+  @override
   String get adminNewWallpapersPending => 'Wallpaper baru akan muncul di sini saat seseorang mengunggahnya.';
 
   @override

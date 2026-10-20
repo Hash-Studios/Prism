@@ -2014,6 +2014,81 @@
   "adminMarkReviewed": "Tandai sudah ditinjau",
   "adminMarkReviewedFailed": "Laporan tidak dapat ditandai sudah ditinjau. Coba lagi.",
   "adminMarkedReviewed": "Ditandai sudah ditinjau",
+  "adminModerationDuplicate": "Sepertinya mirip wallpaper Prism · {percent}%",
+  "@adminModerationDuplicate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationHint": "Ini hanya petunjuk. Periksa sebelum menolak.",
+  "adminModerationLogo": "Logo: {logo}",
+  "@adminModerationLogo": {
+    "placeholders": {
+      "logo": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationLogos": "Logo",
+  "adminModerationOpenFailed": "Halaman tidak dapat dibuka.",
+  "adminModerationOpenPage": "Buka {host}",
+  "@adminModerationOpenPage": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationSignals": "Sinyal peninjauan",
+  "adminModerationSimilarWall": "Wallpaper Prism serupa",
+  "adminModerationSimilarity": "{percent}% mirip",
+  "@adminModerationSimilarity": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationText": "Teks: {words}",
+  "@adminModerationText": {
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationTextInImage": "Teks dalam gambar",
+  "adminModerationUnsafe": "Tidak aman: {categories}",
+  "@adminModerationUnsafe": {
+    "placeholders": {
+      "categories": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationUnsafeCategories": "Kategori konten tidak aman",
+  "adminModerationWeb": "Ditemukan di {host}",
+  "@adminModerationWeb": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationWebMore": "Ditemukan di {host} +{more}",
+  "@adminModerationWebMore": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "more": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationWebPages": "Ditemukan di web",
   "adminNewWallpapersPending": "Wallpaper baru akan muncul di sini saat seseorang mengunggahnya.",
   "adminNoNotificationCounts": "Belum ada jumlah notifikasi.",
   "adminNoOpenReports": "Tidak ada laporan terbuka",

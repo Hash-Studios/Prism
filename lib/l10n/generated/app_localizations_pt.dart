@@ -1530,6 +1530,70 @@ class AppLocalizationsPt extends AppLocalizations {
   String get adminMarkedReviewed => 'Marcada como revisada';
 
   @override
+  String adminModerationDuplicate(int percent) {
+    return 'Parece um papel de parede do Prism · $percent%';
+  }
+
+  @override
+  String get adminModerationHint => 'Estas são apenas indicações. Verifique antes de rejeitar.';
+
+  @override
+  String adminModerationLogo(String logo) {
+    return 'Logotipo: $logo';
+  }
+
+  @override
+  String get adminModerationLogos => 'Logotipos';
+
+  @override
+  String get adminModerationOpenFailed => 'Não foi possível abrir a página.';
+
+  @override
+  String adminModerationOpenPage(String host) {
+    return 'Abrir $host';
+  }
+
+  @override
+  String get adminModerationSignals => 'Sinais para análise';
+
+  @override
+  String get adminModerationSimilarWall => 'Papel de parede semelhante do Prism';
+
+  @override
+  String adminModerationSimilarity(int percent) {
+    return '$percent% semelhante';
+  }
+
+  @override
+  String adminModerationText(String words) {
+    return 'Texto: $words';
+  }
+
+  @override
+  String get adminModerationTextInImage => 'Texto na imagem';
+
+  @override
+  String adminModerationUnsafe(String categories) {
+    return 'Conteúdo inseguro: $categories';
+  }
+
+  @override
+  String get adminModerationUnsafeCategories => 'Categorias de conteúdo inseguro';
+
+  @override
+  String adminModerationWeb(String host) {
+    return 'Encontrado em $host';
+  }
+
+  @override
+  String adminModerationWebMore(String host, int more) {
+    return 'Encontrado em $host +$more';
+  }
+
+  @override
+  String get adminModerationWebPages => 'Encontrado na web';
+
+  @override
   String get adminNewWallpapersPending => 'Novos papéis de parede aparecerão aqui quando alguém enviar um.';
 
   @override
@@ -11413,6 +11477,70 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get adminMarkedReviewed => 'Marcada como revisada';
+
+  @override
+  String adminModerationDuplicate(int percent) {
+    return 'Parece ser um papel de parede do Prism · $percent%';
+  }
+
+  @override
+  String get adminModerationHint => 'Estas são apenas indicações. Confira antes de rejeitar.';
+
+  @override
+  String adminModerationLogo(String logo) {
+    return 'Logotipo: $logo';
+  }
+
+  @override
+  String get adminModerationLogos => 'Logotipos';
+
+  @override
+  String get adminModerationOpenFailed => 'Não foi possível abrir a página.';
+
+  @override
+  String adminModerationOpenPage(String host) {
+    return 'Abrir $host';
+  }
+
+  @override
+  String get adminModerationSignals => 'Sinais para análise';
+
+  @override
+  String get adminModerationSimilarWall => 'Papel de parede semelhante do Prism';
+
+  @override
+  String adminModerationSimilarity(int percent) {
+    return '$percent% semelhante';
+  }
+
+  @override
+  String adminModerationText(String words) {
+    return 'Texto: $words';
+  }
+
+  @override
+  String get adminModerationTextInImage => 'Texto na imagem';
+
+  @override
+  String adminModerationUnsafe(String categories) {
+    return 'Conteúdo impróprio: $categories';
+  }
+
+  @override
+  String get adminModerationUnsafeCategories => 'Categorias de conteúdo impróprio';
+
+  @override
+  String adminModerationWeb(String host) {
+    return 'Encontrado em $host';
+  }
+
+  @override
+  String adminModerationWebMore(String host, int more) {
+    return 'Encontrado em $host +$more';
+  }
+
+  @override
+  String get adminModerationWebPages => 'Encontrado na web';
 
   @override
   String get adminNewWallpapersPending => 'Novos papéis de parede aparecerão aqui quando alguém enviar um.';
