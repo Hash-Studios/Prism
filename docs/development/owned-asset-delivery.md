@@ -179,6 +179,14 @@ same checks as a live record, and the wall gets the same `{kind: "ai"}` provenan
 warning, and the wall then depends on the live record at approval. Walls submitted before the receipt existed have
 no receipt.
 
+To close that gap, run the one-off backfill after the receipt trigger is deployed and before the oldest pending AI
+wall passes 90 days. `npm run migrate:ai-receipts` builds and runs `backfillAiGenerationReceipts`. It reads pending
+user AI walls (`isAiGenerated: true`, `review: false`, accepted by `parseAiSource`) that have no receipt, and reads
+their Worker records. It needs `STUDIO_SECRET` and Application Default Credentials. It is a dry run by default.
+`npm run migrate:ai-receipts -- --apply` writes each live record to its receipt; an existing receipt is kept. It
+reports `receiptWritten` (would write, in a dry run), `hadReceipt`, `recordGone`, `skipped` and `failed`. A
+`recordGone` wall stays without a receipt. The script exits with 1 when any read or write failed, so run it again.
+
 Client-writable `aiGenerations` documents do not prove ownership. A wall with no live record and no receipt is
 accepted only by the bulk script under the separate `--allow-reviewed-ai-legacy` policy, and only when all of these
 are true:
