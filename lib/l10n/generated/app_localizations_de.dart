@@ -2717,7 +2717,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get coreShareWallpaperGeneric => 'Dieses enthaltene Hintergrundbild ist in der Prism-App verfügbar.';
+  String get coreShareWallpaperGeneric => 'Dieses Hintergrundbild ist in der Prism-App verfügbar.';
 
   @override
   String get coreSignInFeatureBody => 'Mit deinem Konto sind deine Coins, Favoriten und Uploads an einem Ort.';

@@ -2559,7 +2559,7 @@
     },
     "description": "Clipboard text for a wallpaper share link."
   },
-  "coreShareWallpaperGeneric": "Dieses enthaltene Hintergrundbild ist in der Prism-App verfügbar.",
+  "coreShareWallpaperGeneric": "Dieses Hintergrundbild ist in der Prism-App verfügbar.",
   "coreSignInFeatureBody": "Mit deinem Konto sind deine Coins, Favoriten und Uploads an einem Ort.",
   "coreSignInFeatureTitle": "Melde dich für „{feature}“ an",
   "@coreSignInFeatureTitle": {
