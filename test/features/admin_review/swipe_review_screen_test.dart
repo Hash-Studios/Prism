@@ -16,15 +16,21 @@ class _MockReviewBatchBloc extends MockBloc<ReviewBatchEvent, ReviewBatchState> 
 
 class _FakeEvent extends Fake implements ReviewBatchEvent {}
 
-FirestoreDocument _wall(String id, String title, {String? origin, Map<String, dynamic>? depth}) =>
-    FirestoreDocument(id, <String, dynamic>{
-      'origin': ?origin,
-      'depth': ?depth,
-      'title': title,
-      'category': 'Nature',
-      'by': 'Ann',
-      'wallpaper_thumb': 'https://example.com/$id.jpg',
-    });
+FirestoreDocument _wall(
+  String id,
+  String title, {
+  String? origin,
+  Map<String, dynamic>? depth,
+  Map<String, dynamic>? moderation,
+}) => FirestoreDocument(id, <String, dynamic>{
+  'origin': ?origin,
+  'depth': ?depth,
+  'moderation': ?moderation,
+  'title': title,
+  'category': 'Nature',
+  'by': 'Ann',
+  'wallpaper_thumb': 'https://example.com/$id.jpg',
+});
 
 void main() {
   late _MockReviewBatchBloc bloc;
@@ -194,6 +200,64 @@ void main() {
     expect(find.text('Reject'), findsOneWidget);
     await gesture.up();
     await tester.pumpAndSettle();
+  });
+
+  group('moderation signals', () {
+    testWidgets('pills sit under the depth pill, most serious first, and open the sheet', (tester) async {
+      await pump(
+        tester,
+        ReviewBatchState(
+          status: ReviewBatchStatus.loaded,
+          walls: <FirestoreDocument>[
+            _wall(
+              'a',
+              'Sunset',
+              moderation: <String, dynamic>{
+                'v': 1,
+                'flags': <String>['duplicate', 'web_match', 'text'],
+                'duplicate': <String, dynamic>{'wallId': 'w9', 'similarity': 0.96, 'thumb': ''},
+                'web': <Map<String, String>>[
+                  <String, String>{'url': 'https://backdrops.app/x', 'host': 'backdrops.app'},
+                ],
+                'words': <String>['@someone', 'backdrops'],
+              },
+            ),
+          ],
+        ),
+      );
+
+      final double depthY = tester.getTopLeft(find.text('Depth: Not checked')).dy;
+      final double duplicateY = tester.getTopLeft(find.text('Looks like a Prism wall · 96%')).dy;
+      final double webY = tester.getTopLeft(find.text('Found on backdrops.app')).dy;
+      final double textY = tester.getTopLeft(find.text('Text: @someone backdrops')).dy;
+      expect(<double>[
+        depthY,
+        duplicateY,
+        webY,
+        textY,
+      ], orderedEquals(<double>[depthY, duplicateY, webY, textY]..sort()));
+
+      await tester.tap(find.text('Found on backdrops.app'));
+      await tester.pumpAndSettle();
+      expect(find.text('Review signals'), findsOneWidget);
+    });
+
+    testWidgets('no pills for a wall that was not checked or came back clear', (tester) async {
+      await pump(
+        tester,
+        ReviewBatchState(
+          status: ReviewBatchStatus.loaded,
+          walls: <FirestoreDocument>[
+            _wall('a', 'Sunset', moderation: <String, dynamic>{'v': 1, 'flags': <String>[]}),
+          ],
+        ),
+      );
+
+      expect(find.text('Depth: Not checked'), findsOneWidget);
+      expect(find.textContaining('Text:'), findsNothing);
+      expect(find.textContaining('Found on'), findsNothing);
+      expect(find.textContaining('Prism wall'), findsNothing);
+    });
   });
 
   group('depth', () {
