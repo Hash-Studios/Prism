@@ -174,6 +174,23 @@ void main() {
     expect(sheet.left, PrismBottomSheet.inset);
   });
 
+  testWidgets('a sheet taller than the screen rests floating with round bottom corners', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        (context) => showPrismSheet<void>(
+          context,
+          builder: (_) => PrismSheetBody(
+            title: 'Very tall',
+            child: Column(children: <Widget>[for (int i = 0; i < 40; i++) const SizedBox(height: 40)]),
+          ),
+        ),
+      ),
+    );
+    await _open(tester);
+    expect(tester.getRect(find.byType(SheetContentScaffold)).left, PrismBottomSheet.inset);
+    expect(_surfaceRadius(tester).bottomLeft, const Radius.circular(48 - PrismBottomSheet.inset));
+  });
+
   testWidgets('a sheet the user must answer ignores the barrier', (tester) async {
     await tester.pumpWidget(
       _app(

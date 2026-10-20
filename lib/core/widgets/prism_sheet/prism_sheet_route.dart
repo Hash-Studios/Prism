@@ -83,40 +83,58 @@ Future<T?> showPrismSheet<T>(
   bool useRootNavigator = false,
 }) {
   assert(detents.isNotEmpty, 'detents must contain at least one entry');
-  final bool hasLarge = detents.contains(PrismSheetDetent.large);
   final bool hasFit = detents.contains(PrismSheetDetent.fit);
   final bool fitOnly = detents.length == 1 && hasFit;
   final SheetController controller = SheetController();
-  return Navigator.of(context, rootNavigator: useRootNavigator)
-      .push<T>(
-        ModalSheetRoute<T>(
-          barrierColor: PrismBottomSheet.barrier,
-          barrierDismissible: barrierDismissible,
-          swipeDismissible: swipeDismissible,
-          transitionDuration: context.motion(PrismDurations.sheet),
-          transitionCurve: PrismCurves.sheet,
-          viewportBuilder: (_, child) => _PrismSheetViewport(controller: controller, fromFit: hasFit, child: child),
-          builder: (_) {
-            final Widget sheet = _PrismSheet(
-              controller: controller,
-              detents: detents,
-              initialDetent: initialDetent ?? detents.first,
-              hasLarge: hasLarge,
-              fitOnly: fitOnly,
-              child: Builder(builder: builder),
-            );
-            if (!dismissKeyboardOnDrag) return sheet;
-            return SheetKeyboardDismissible(
-              dismissBehavior: const SheetKeyboardDismissBehavior.onDragDown(isContentScrollAware: true),
-              child: sheet,
-            );
-          },
-        ),
-      )
-      .whenComplete(() {
-        // Dispose one frame later: the popped sheet must finish unmounting before its controller goes away.
-        WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
-      });
+  return Navigator.of(context, rootNavigator: useRootNavigator).push<T>(
+    _PrismSheetRoute<T>(
+      sheetController: controller,
+      barrierColor: PrismBottomSheet.barrier,
+      barrierDismissible: barrierDismissible,
+      swipeDismissible: swipeDismissible,
+      transitionDuration: context.motion(PrismDurations.sheet),
+      transitionCurve: PrismCurves.sheet,
+      viewportBuilder: (_, child) => _PrismSheetViewport(controller: controller, fromFit: hasFit, child: child),
+      builder: (_) {
+        final Widget sheet = _PrismSheet(
+          controller: controller,
+          detents: detents,
+          initialDetent: initialDetent ?? detents.first,
+          fitOnly: fitOnly,
+          child: Builder(builder: builder),
+        );
+        if (!dismissKeyboardOnDrag) return sheet;
+        return SheetKeyboardDismissible(
+          dismissBehavior: const SheetKeyboardDismissBehavior.onDragDown(isContentScrollAware: true),
+          child: sheet,
+        );
+      },
+    ),
+  );
+}
+
+/// Disposes the sheet controller with the route. The navigator disposes a route only after its subtree is unmounted,
+/// so nothing listens to the controller any more.
+class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
+  _PrismSheetRoute({
+    required this.sheetController,
+    required super.builder,
+    super.viewportBuilder,
+    super.barrierColor,
+    super.barrierDismissible,
+    super.swipeDismissible,
+    super.transitionDuration,
+    super.transitionCurve,
+  });
+
+  final SheetController sheetController;
+
+  @override
+  void dispose() {
+    // One frame later, so a notification the controller queued for the end of this frame still finds it alive.
+    WidgetsBinding.instance.addPostFrameCallback((_) => sheetController.dispose());
+    super.dispose();
+  }
 }
 
 /// Floats the sheet on its inset, removes the inset as the sheet nears full height, and lifts the sheet above the
@@ -163,7 +181,6 @@ class _PrismSheet extends StatefulWidget {
     required this.controller,
     required this.detents,
     required this.initialDetent,
-    required this.hasLarge,
     required this.fitOnly,
     required this.child,
   });
@@ -171,7 +188,6 @@ class _PrismSheet extends StatefulWidget {
   final SheetController controller;
   final List<PrismSheetDetent> detents;
   final PrismSheetDetent initialDetent;
-  final bool hasLarge;
   final bool fitOnly;
   final Widget child;
 
@@ -209,8 +225,7 @@ class _PrismSheetState extends State<_PrismSheet> {
             ),
       decoration: SheetDecorationBuilder(
         size: SheetSize.stretch,
-        builder: (_, child) =>
-            _PrismSheetSurface(controller: widget.controller, flush: _flush, hasLarge: widget.hasLarge, child: child),
+        builder: (_, child) => _PrismSheetSurface(flush: _flush, child: child),
       ),
       child: widget.child,
     );
@@ -220,19 +235,12 @@ class _PrismSheetState extends State<_PrismSheet> {
 /// Paints the sheet fill, its shadow and its corners.
 ///
 /// The bottom radius goes from `screen radius - inset` (floating, so the curve sits concentric inside the bezel) up to
-/// the screen radius as the sheet goes flush. At the large detent it is 0, because the screen's own corners clip the
-/// sheet there. A sheet without a large detent is never flush, so it keeps its round corners at its top height.
+/// the screen radius as the sheet goes flush. Once fully flush it is 0, because the screen's own corners clip the sheet
+/// there.
 class _PrismSheetSurface extends StatefulWidget {
-  const _PrismSheetSurface({
-    required this.controller,
-    required this.flush,
-    required this.hasLarge,
-    required this.child,
-  });
+  const _PrismSheetSurface({required this.flush, required this.child});
 
-  final SheetController controller;
   final Animation<double> flush;
-  final bool hasLarge;
   final Widget child;
 
   @override
@@ -241,11 +249,7 @@ class _PrismSheetSurface extends StatefulWidget {
 
 class _PrismSheetSurfaceState extends State<_PrismSheetSurface> {
   // Merged once: a new merge on each layout tick would move listeners onto a controller that may be disposed.
-  late final Listenable _repaint = Listenable.merge(<Listenable>[
-    widget.flush,
-    widget.controller,
-    PrismDeviceCornerRadius.listenable,
-  ]);
+  late final Listenable _repaint = Listenable.merge(<Listenable>[widget.flush, PrismDeviceCornerRadius.listenable]);
 
   @override
   Widget build(BuildContext context) {
@@ -256,14 +260,13 @@ class _PrismSheetSurfaceState extends State<_PrismSheetSurface> {
       builder: (context, _) {
         // Read here, not outside the builder: the radius can arrive after the first paint.
         final double screen = PrismDeviceCornerRadius.resolve(context);
-        final SheetMetrics? m = widget.controller.metrics;
-        final bool atMax = m != null && m.offset >= m.maxOffset - 0.5;
         final double floating = lerpDouble(
           screen - PrismBottomSheet.inset,
           screen,
           widget.flush.value,
         )!.clamp(0.0, screen);
-        final Radius bottom = Radius.circular(atMax && widget.hasLarge ? 0 : floating);
+        // Square only once fully flush: a sheet at its top height can still float when its content is that tall.
+        final Radius bottom = Radius.circular(widget.flush.value >= 1 ? 0 : floating);
         final BorderRadius shape = BorderRadius.only(
           topLeft: top,
           topRight: top,

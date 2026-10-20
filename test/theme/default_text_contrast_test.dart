@@ -120,6 +120,7 @@ void main() {
           ),
         );
         await tester.tap(find.text('Open'));
+        await tester.pump();
         await tester.pump(const Duration(seconds: 1));
 
         _expectReadable(tester, find.textContaining('Your profile is 50% complete'), reason: 'body', page: page);
