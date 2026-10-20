@@ -18,7 +18,7 @@ void main() {
   testWidgets('device loader resolves to English when every preferred locale is unsupported', (
     WidgetTester tester,
   ) async {
-    tester.binding.platformDispatcher.localesTestValue = const <Locale>[Locale('fr', 'CA'), Locale('de', 'DE')];
+    tester.binding.platformDispatcher.localesTestValue = const <Locale>[Locale('fr', 'CA'), Locale('ja', 'JP')];
     addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
 
     final AppLocalizations messages = await loadDeviceAppLocalizations();

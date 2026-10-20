@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
 import test, {type TestContext} from "node:test";
+import * as admin from "firebase-admin";
 import {db} from "../common";
+import * as ownedAssets from "../ownedAssetDelivery";
 
 import {
   canDeleteUpload,
@@ -18,10 +20,391 @@ const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const run = (fn: {run: (request: any) => Promise<any>}, request: Record<string, unknown>) => fn.run(request);
 
+function manifestCleanupFixture(t: TestContext, privateOriginal = true) {
+  testGithubEnvironment(t);
+  const priorBucket = process.env.OWNED_ASSET_BUCKET;
+  process.env.OWNED_ASSET_BUCKET = "owned";
+  t.after(() => {
+    if (priorBucket === undefined) delete process.env.OWNED_ASSET_BUCKET;
+    else process.env.OWNED_ASSET_BUCKET = priorBucket;
+  });
+  const asset = (path: string, kind?: "owned") => ({
+    bucket: "owned", object: `${kind ? "private-originals" : "retained"}/${
+      createHash("sha256").update(`walls\0${path}\0${"c".repeat(40)}`).digest("hex")}`,
+    generation: "1", sha256: "b".repeat(64), uid: "u", repo: "walls", path, sha: "c".repeat(40),
+    ...(kind ? {sourceKind: kind} : {}),
+  });
+  const original = asset("private.jpg", privateOriginal ? "owned" : undefined);
+  const thumb = asset("thumb_wall.jpg");
+  const manifest = {status: "ready", canonicalPath: "walls/doc", incarnation: 123, incarnationNanos: 42,
+    original, thumb, provenance: {uid: "u", kind: privateOriginal ? "owned" : "github"}};
+  const receiptKey = (item: typeof thumb, kind?: string) => `githubUploads/${kind === "owned" ? "owned_" : ""}file_${
+    createHash("sha256").update(`walls\0${item.path}\0${item.sha}`).digest("hex")}`;
+  const race: {beforeClaim?: () => void} = {};
+  let transactions = 0;
+  const docs = uploadStore(t, {
+    "ownedAssets/wall": manifest,
+    [receiptKey(original, privateOriginal ? "owned" : undefined)]: {...original, retainedAsset: original, generation: "receipt-original"},
+    [receiptKey(thumb)]: {...thumb, retainedAsset: thumb, generation: "receipt-thumb", weeklyQuotaCharged: true,
+      uploadWeek: weekStartUtc(Date.now())},
+    "githubUploadStats/u": {week: weekStartUtc(Date.now()), weekCount: 1},
+  }, 0, () => {
+    if (++transactions === 2) race.beforeClaim?.();
+  });
+  const remove = (assetRole = "wallpaper", uid = "u", extras: Record<string, unknown> = {}) => run(githubDeleteFile, {
+    auth: {uid}, data: {wallId: "wall", originalGeneration: "1", assetRole, ...extras},
+  });
+  const retained = t.mock.method(ownedAssets, "deleteRetainedUpload", async () => {
+    docs.set("ownedAssets/wall", {...docs.get("ownedAssets/wall"), status: "deleted"});
+  });
+  const github = t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+  return {docs, original, thumb, manifest, remove, retained, github, receiptKey, race};
+}
+
+test("manifest cleanup resolves redacted assets after wall deletion and retries without charging quota twice", async (t) => {
+  const {remove, docs, retained, github} = manifestCleanupFixture(t);
+  assert.deepEqual(await remove(), {ok: true});
+  assert.deepEqual(await remove("thumb"), {ok: true});
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
+  assert.deepEqual(await remove(), {ok: true});
+  assert.deepEqual(await remove("thumb"), {ok: true});
+  assert.equal(retained.mock.callCount(), 2);
+  assert.equal(github.mock.callCount(), 1);
+});
+
+test("manifest cleanup rejects strangers, mixed identifiers and stale original generations", async (t) => {
+  const {remove, retained, github} = manifestCleanupFixture(t);
+  await assert.rejects(() => remove("wallpaper", "stranger"), {code: "permission-denied"});
+  await assert.rejects(() => remove("wallpaper", "u", {repo: "walls"}), {code: "invalid-argument"});
+  await assert.rejects(() => remove("wallpaper", "u", {originalGeneration: "2"}), {code: "failed-precondition"});
+  assert.equal(retained.mock.callCount(), 0);
+  assert.equal(github.mock.callCount(), 0);
+});
+
+test("manifest cleanup rejects same-path same-SHA replacement storage generations", async (t) => {
+  const {remove, docs, original, receiptKey, retained} = manifestCleanupFixture(t);
+  const key = receiptKey(original, "owned");
+  docs.set(key, {...docs.get(key), retainedAsset: {...original, generation: "2"}});
+  await assert.rejects(remove, {code: "failed-precondition"});
+  assert.equal(retained.mock.callCount(), 0);
+});
+
+for (const changedId of ["wall", "replacement"]) {
+  test(`manifest cleanup rejects a recreated canonical wall with id ${changedId}`, async (t) => {
+    const {remove, docs, retained} = manifestCleanupFixture(t);
+    docs.set("walls/doc", {id: changedId, review: false, originalGeneration: "1", originalProtected: true,
+      __createTime: {toMillis: () => 123, nanoseconds: 43}});
+    await assert.rejects(remove, {code: "failed-precondition"});
+    assert.equal(retained.mock.callCount(), 0);
+  });
+}
+
+test("manifest cleanup preserves a failed asset for retry after the other asset was removed", async (t) => {
+  const {remove, retained, docs} = manifestCleanupFixture(t);
+  await remove();
+  retained.mock.mockImplementationOnce(async () => {
+    throw new Error("storage unavailable");
+  });
+  await assert.rejects(() => remove("thumb"), /storage unavailable/);
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
+  await remove("thumb");
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
+});
+
+test("manifest cleanup rechecks wall incarnation inside the deletion claim", async (t) => {
+  const {remove, docs, retained, race} = manifestCleanupFixture(t);
+  race.beforeClaim = () => docs.set("walls/doc", {id: "wall", review: false, originalGeneration: "1",
+    originalProtected: true, __createTime: {toMillis: () => 124, nanoseconds: 42}});
+  await assert.rejects(remove, {code: "failed-precondition"});
+  assert.equal(retained.mock.callCount(), 0);
+});
+
+test("manifest cleanup rejects an approved current wall", async (t) => {
+  const {remove, docs, retained} = manifestCleanupFixture(t);
+  docs.set("walls/doc", {id: "wall", review: true, originalGeneration: "1", originalProtected: true,
+    __createTime: {toMillis: () => 123, nanoseconds: 42}});
+  await assert.rejects(remove, {code: "failed-precondition"});
+  assert.equal(retained.mock.callCount(), 0);
+});
+
+test("manifest cleanup supports a legacy GitHub original without private path inputs", async (t) => {
+  const {remove, github, retained} = manifestCleanupFixture(t, false);
+  assert.deepEqual(await remove(), {ok: true});
+  assert.equal(github.mock.callCount(), 1);
+  assert.equal(retained.mock.callCount(), 1);
+});
+
+test("manifest cleanup fences a replacement receipt between resolution and claim", async (t) => {
+  const {remove, docs, original, receiptKey, retained, race} = manifestCleanupFixture(t);
+  const key = receiptKey(original, "owned");
+  race.beforeClaim = () => docs.set(key, {...docs.get(key), generation: "replacement-receipt",
+    retainedAsset: {...original, generation: "2"}});
+  await assert.rejects(remove, {code: "failed-precondition"});
+  assert.equal(retained.mock.callCount(), 0);
+});
+
+test("manifest cleanup uses the real generation-conditional retained deletion and tombstones its manifest", async (t) => {
+  const {remove, docs, original, retained, receiptKey} = manifestCleanupFixture(t);
+  retained.mock.restore();
+  docs.set("walls/doc", {id: "wall", review: false, originalProtected: true, originalGeneration: "1",
+    __createTime: {toMillis: () => 123, nanoseconds: 42}});
+  const target = admin.storage().bucket("owned");
+  const file = target.file(original.object);
+  t.mock.method(admin.storage(), "bucket", () => target);
+  t.mock.method(target, "file", (path: string) => {
+    assert.equal(path, original.object);
+    file.name = path;
+    return file;
+  });
+  t.mock.method(file, "getMetadata", async () => [{generation: "1"}]);
+  const deleted = t.mock.method(file, "delete", async (options: {ifGenerationMatch?: string}) => {
+    assert.equal(options.ifGenerationMatch, "1");
+  });
+  await remove();
+  assert.equal(deleted.mock.callCount(), 1);
+  assert.equal(docs.get("ownedAssets/wall")?.status, "deleted");
+  assert.equal(docs.has(receiptKey(original, "owned")), false);
+  assert.equal(docs.has("walls/doc"), true);
+});
+
+test("private originals use a separate identity from legacy GitHub paths", async (t) => {
+  testGithubEnvironment(t);
+  const path = "a.jpg";
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const pathHash = createHash("sha256").update(`walls\0${path}`).digest("hex");
+  const fileHash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+  const legacy = {uid: "victim", repo: "walls", path, sha, sourceKind: "github"};
+  const docs = uploadStore(t, {[`githubUploads/file_${fileHash}`]: legacy});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(ownedAssets, "retainUpload", async (input: {sourceKind?: string}) => {
+    assert.equal(input.sourceKind, "owned");
+    return {bucket: "owned", object: "private-originals/digest", generation: "1", sha256: "digest", uid: "u", repo: "walls", path, sha};
+  });
+  const fetch = t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("Path validation must not depend on GitHub");
+  });
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path, message: "upload", contentBase64: "/9j/"}};
+  await run(githubPutFile, request);
+  await run(githubPutFile, request);
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.deepEqual(docs.get(`githubUploads/file_${fileHash}`), legacy);
+  assert.equal(docs.has(`githubUploadIntents/path_${pathHash}`), false);
+  assert.equal(docs.get(`githubUploadIntents/owned_path_${pathHash}`)?.uid, "u");
+  assert.equal(docs.get(`githubUploads/owned_file_${fileHash}`)?.uid, "u");
+  const legacyIntent = {uid: "victim", repo: "walls", path, sha, blobSha: sha, sourceKind: "github", status: "complete"};
+  docs.set(`githubUploadIntents/path_${pathHash}`, legacyIntent);
+  await run(githubPutFile, request);
+  assert.deepEqual(docs.get(`githubUploadIntents/path_${pathHash}`), legacyIntent);
+});
+
+test("private original upload, completed retry and deletion never contact GitHub", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let retained = 0;
+  t.mock.method(ownedAssets, "retainUpload", async () => {
+    retained++;
+    return {bucket: "owned", object: "retained", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: "private.jpg", sha};
+  });
+  let deleted = 0;
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => {
+    deleted++;
+  });
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path: "private.jpg", message: "upload", contentBase64: "/9j/"}};
+  const expected = {content: {path: "private.jpg", sha, download_url: ""}, sourceKind: "owned"};
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.equal(retained, 1);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].sourceKind, "owned");
+  await run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path: "private.jpg", message: "delete", sha}});
+  assert.equal(deleted, 1);
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+});
+
+for (const legacyUid of ["u", "victim"]) {
+  test(`private deletion cannot remove a colliding GitHub upload owned by ${legacyUid}`, async (t) => {
+    testGithubEnvironment(t);
+    const path = "a.jpg";
+    const sha = "abc";
+    const hash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const pathHash = createHash("sha256").update(`walls\0${path}`).digest("hex");
+    const legacy = {uid: legacyUid, repo: "walls", path, sha, sourceKind: "github", generation: "legacy"};
+    const docs = uploadStore(t, {
+      [`githubUploads/file_${hash}`]: legacy,
+      [`githubUploads/owned_file_${hash}`]: {uid: "u", repo: "walls", path, sha, sourceKind: "owned", generation: "owned"},
+    });
+    t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+    const fetch = t.mock.method(globalThis, "fetch", async () => {
+      throw new Error("No GitHub delete allowed");
+    });
+    const retained = t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {sourceKind?: string}) => {
+      assert.equal(input.sourceKind, "owned");
+    });
+    const data = {repo: "walls", path, sha, message: "delete"};
+    if (legacyUid === "u") {
+      await assert.rejects(run(githubDeleteFile, {auth: {uid: "u"}, data}), {code: "failed-precondition"});
+      assert.equal(retained.mock.callCount(), 0);
+    }
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {...data, sourceKind: "owned"}});
+    if (legacyUid === "u") {
+      await assert.rejects(run(githubDeleteFile, {auth: {uid: "u"}, data}), {code: "failed-precondition"});
+    } else {
+      await run(githubDeleteFile, {auth: {uid: "u"}, data});
+    }
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {...data, sourceKind: "owned"}});
+    assert.equal(retained.mock.callCount(), 1);
+    assert.equal(fetch.mock.callCount(), 0);
+    assert.deepEqual(docs.get(`githubUploads/file_${hash}`), legacy);
+    assert.equal(docs.has(`githubUploads/owned_file_${hash}`), false);
+    assert.equal(docs.has(`githubUploadIntents/owned_path_${pathHash}`), false);
+    assert.equal(docs.get(`ownedUploadDeletions/owned_file_${hash}`)?.status, "deleted");
+  });
+}
+
+for (const privateDeleted of [false, true]) {
+  test(`another user's private ${privateDeleted ? "tombstone" : "receipt"} cannot block legacy deletion`, async (t) => {
+    testGithubEnvironment(t);
+    const path = "a.jpg";
+    const sha = "abc";
+    const hash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const privateRecord = {uid: "attacker", repo: "walls", path, sha, sourceKind: "owned", generation: "owned"};
+    const privateKey = privateDeleted ? `ownedUploadDeletions/owned_file_${hash}` : `githubUploads/owned_file_${hash}`;
+    const privateState = privateDeleted ? {...privateRecord, status: "deleted"} : privateRecord;
+    const docs = uploadStore(t, {
+      [`githubUploads/file_${hash}`]: {uid: "victim", repo: "walls", path, sha, sourceKind: "github", generation: "legacy"},
+      [privateKey]: privateState,
+    });
+    const fetch = t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+    t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+    t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {sourceKind?: string}) => {
+      assert.equal(input.sourceKind, undefined);
+    });
+    await run(githubDeleteFile, {auth: {uid: "victim"}, data: {repo: "walls", path, sha, message: "delete"}});
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.equal(docs.has(`githubUploads/file_${hash}`), false);
+    assert.deepEqual(docs.get(privateKey), privateState);
+  });
+}
+
+test("private rollout blocks legacy pending originals before any public GitHub write", async (t) => {
+  testGithubEnvironment(t);
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const key = `path_${createHash("sha256").update("walls\0pending.jpg").digest("hex")}`;
+  uploadStore(t, {[`githubUploadIntents/${key}`]: {
+    uid: "u", repo: "walls", path: "pending.jpg", blobSha: sha, status: "pending", attemptExpiresAt: 0,
+  }});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let fetches = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    fetches++; throw new Error("No origin request allowed");
+  });
+  await assert.rejects(run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "pending.jpg", message: "retry", contentBase64: "/9j/",
+  }}), /reconciliation/);
+  assert.equal(fetches, 0);
+});
+
+test("private deletion tombstones permit same-path reuploads with same or different bytes", async (t) => {
+  testGithubEnvironment(t);
+  uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("No GitHub request allowed");
+  });
+  t.mock.method(ownedAssets, "retainUpload", async (input: {sha: string}) => ({
+    bucket: "owned", object: "private-originals/digest", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: "a.jpg", sha: input.sha,
+  }));
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => undefined);
+  for (const contentBase64 of ["/9j/", "/9j/", "/9j/AA=="]) {
+    const result = await run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "a.jpg", message: "upload", contentBase64}});
+    assert.equal(result.content.path, "a.jpg");
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path: "a.jpg", sha: result.content.sha, message: "delete"}});
+  }
+});
+
+test("retention failure retries without a second GitHub write and preserves exact upload bytes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01, 0xfe]);
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const content = {path: "thumb_retained.jpg", sha, download_url: "https://raw.githubusercontent.com/owner/walls/main/thumb_retained.jpg"};
+  let writes = 0;
+  let remote = false;
+  t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
+    if (init.method === "PUT") {
+      writes++; remote = true; return {ok: true, json: async () => ({content})};
+    }
+    return {ok: remote, status: remote ? 200 : 404, json: async () => remote ? content : {}};
+  });
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let retains = 0;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {bytes: Buffer}) => {
+    assert.deepEqual(input.bytes, bytes);
+    if (++retains === 1) throw new Error("storage unavailable");
+    return {bucket: "owned", object: "retained", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: content.path, sha};
+  });
+  const upload = () => run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: content.path, message: "upload", contentBase64: bytes.toString("base64"),
+  }});
+  await assert.rejects(upload, /storage unavailable/);
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.deepEqual(await upload(), {content, sourceKind: "github"});
+  assert.equal(writes, 1);
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
+  assert.ok([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].retainedAsset);
+  // A deployment upgrade can repair older completed receipts without contacting GitHub.
+  for (const [key, value] of docs) {
+    if (key.startsWith("githubUploads/") || key.startsWith("githubUploadIntents/")) delete value.retainedAsset;
+    if (key.startsWith("githubUploadIntents/")) value.response = {content};
+  }
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub origin unavailable");
+  });
+  assert.deepEqual(await upload(), {content, sourceKind: "github"});
+  assert.equal(retains, 3);
+  assert.ok([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].retainedAsset);
+});
+
 test("allows configured repositories only", () => {
   assert.equal(isAllowedRepo("walls", env), true);
   assert.equal(isAllowedRepo("other", env), false);
   assert.equal(isAllowedRepo("owner/walls", env), false);
+});
+
+test("retained deletion failure preserves evidence and retries after GitHub is gone", async (t) => {
+  testGithubEnvironment(t);
+  const week = weekStartUtc(Date.now());
+  const docs = uploadStore(t, {
+    "githubUploads/sha": {uid: "u", repo: "walls", path: "thumb_a.jpg", sha: "sha",
+      retainedAsset: {bucket: "owned"}, weeklyQuotaCharged: true, uploadWeek: week},
+    "githubUploadStats/u": {week, weekCount: 1},
+  });
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async () => ({ok: ++requests === 1, status: requests === 1 ? 200 : 404,
+    json: async () => ({})}));
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  let deletes = 0;
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async (identity: unknown) => {
+    assert.deepEqual(identity, {repo: "walls", path: "thumb_a.jpg", sha: "sha"});
+    if (++deletes === 1) throw new Error("storage delete unavailable");
+  });
+  const remove = () => run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "thumb_a.jpg", message: "delete", sha: "sha",
+  }});
+  await assert.rejects(remove, /storage delete unavailable/);
+  assert.equal(docs.has("githubUploads/sha"), true);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploadIntents/"))?.[1].status, "deleting");
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
+  assert.deepEqual(await remove(), {ok: true});
+  assert.equal(docs.has("githubUploads/sha"), false);
+  assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
 });
 
 test("isValidBase64 accepts canonical data and rejects malformed encodings", () => {
@@ -71,7 +454,8 @@ test("canDeleteUpload: allows the owner to delete their own upload", () => {
   assert.equal(canDeleteUpload(record, "user-1", "walls", "images/a.png", false), true);
 });
 
-function uploadStore(t: TestContext, seed: Record<string, Record<string, unknown>>, failReceiptWrites = 0) {
+function uploadStore(t: TestContext, seed: Record<string, Record<string, unknown>>, failReceiptWrites = 0,
+  beforeTransaction?: () => void) {
   const docs = new Map<string, Record<string, unknown>>(Object.entries(seed));
   let transactionQueue = Promise.resolve();
   const set = (path: string, data: Record<string, unknown>) => {
@@ -87,16 +471,33 @@ function uploadStore(t: TestContext, seed: Record<string, Record<string, unknown
     set: async (data: Record<string, unknown>) => set(path, data),
     delete: async () => void docs.delete(path),
   });
-  t.mock.method(db, "collection", (name: string) => ({doc: (id: string) => ref(`${name}/${id}`)}));
+  t.mock.method(db, "collection", (name: string) => ({
+    doc: (id: string) => ref(`${name}/${id}`),
+    where: (field: string, _op: string, value: unknown) => ({
+      limit: () => ({query: {name, field, value}}),
+      get: async () => ({docs: [...docs.entries()].filter(([path, data]) => {
+        const actual = field.split(".").reduce<unknown>((item, part) =>
+          item && typeof item === "object" ? (item as Record<string, unknown>)[part] : undefined, data);
+        return path.startsWith(`${name}/`) && actual === value;
+      }).map(([path, data]) => ({ref: ref(path), data: () => data}))}),
+    }),
+  }));
   t.mock.method(db, "runTransaction", async (callback: (tx: unknown) => Promise<unknown>) => {
     const run = transactionQueue.then(async () => {
+      beforeTransaction?.();
       const writes: (() => void)[] = [];
       let hasWritten = false;
       const tx = {
-        get: async (document: {path: string}) => {
+        get: async (document: {path: string; query?: {name: string; field: string; value: unknown}}) => {
           if (hasWritten) throw new Error("Firestore transactions require reads before writes");
+          if (document.query) {
+            const {name, field, value} = document.query;
+            const rows = [...docs.entries()].filter(([path, data]) => path.startsWith(`${name}/`) && data[field] === value)
+              .map(([path, data]) => ({ref: ref(path), data: () => data, createTime: data.__createTime}));
+            return {size: rows.length, docs: rows};
+          }
           const value = docs.get(document.path);
-          return {exists: value !== undefined, data: () => value};
+          return {exists: value !== undefined, data: () => value, ref: document, createTime: value?.__createTime};
         },
         update: (document: {path: string}, data: Record<string, unknown>) => {
           hasWritten = true;
@@ -355,7 +756,7 @@ test("githubPutFile keeps a main wall upload when a failed preview is retried", 
     data: {repo: "walls", path: "thumb_wall.jpg", message: "thumb_wall.jpg", contentBase64: "/9j/"},
   }), {code: "permission-denied"});
   const recovered = await put("thumb_wall.jpg");
-  assert.deepEqual(recovered, {content: remote.get("thumb_wall.jpg")});
+  assert.deepEqual(recovered, {content: remote.get("thumb_wall.jpg"), sourceKind: "github"});
   assert.equal(docs.get("githubUploadStats/u")?.count, 3);
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
   assert.equal(previewPutCount, 1);
@@ -396,7 +797,7 @@ test("githubPutFile retries receipt persistence without charging the weekly quot
   await assert.rejects(put, /temporary receipt write failure/);
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
   const recovered = await put();
-  assert.deepEqual(recovered, {content: remote.get("thumb_wall.jpg")});
+  assert.deepEqual(recovered, {content: remote.get("thumb_wall.jpg"), sourceKind: "github"});
   assert.equal(putCount, 1);
   assert.equal(docs.get("githubUploadStats/u")?.count, 2);
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
@@ -463,7 +864,7 @@ for (const premiumInitially of [false, true]) {
     docs.set("githubUploadStats/u", {...docs.get("githubUploadStats/u"), weekCount: 2});
     assert.deepEqual(await upload(), {content: {
       path: "thumb_wall.jpg", sha: blobSha, download_url: "https://raw.example/thumb_wall.jpg",
-    }});
+    }, sourceKind: "github"});
     assert.equal(puts, 2);
     assert.equal(docs.get("githubUploadStats/u")?.weekCount, 3);
     const receipt = [...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1];

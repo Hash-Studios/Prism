@@ -48,6 +48,11 @@ function clone(value: unknown): unknown {
 
 const comparable = (v: unknown) => v instanceof admin.firestore.Timestamp ? v.toMillis() : v;
 
+function fieldValue(data: Doc, path: string): unknown {
+  return path.split(".").reduce<unknown>((value, part) =>
+    typeof value === "object" && value !== null ? (value as Doc)[part] : undefined, data);
+}
+
 function matches(value: unknown, op: string, expected: unknown): boolean {
   const a = comparable(value) as never;
   const b = comparable(expected) as never;
@@ -70,6 +75,7 @@ interface Snap {
   exists: boolean;
   data: () => Doc | undefined;
   updateTime?: {version: number};
+  createTime?: admin.firestore.Timestamp;
 }
 
 interface FakeRef {
@@ -113,6 +119,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       exists: data !== undefined,
       data: () => data === undefined ? undefined : clone(data) as Doc,
       updateTime: data === undefined ? undefined : {version: versions.get(path) ?? 0},
+      createTime: data === undefined ? undefined : admin.firestore.Timestamp.fromMillis(1),
     };
   };
 
@@ -163,10 +170,10 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
         .filter((p) => p.startsWith(`${path}/`) && p.split("/").length === depth)
         .map(snap)
         .filter((d) => state.filters.every(([field, op, value]) =>
-          matches((d.data() as Doc)[field], op, value)));
+          matches(fieldValue(d.data() as Doc, field), op, value)));
       for (const [field, dir] of [...state.orders].reverse()) {
         const key = (d: Snap) =>
-          field === "__name__" ? d.id : comparable((d.data() as Doc)[field as string]) as never;
+          field === "__name__" ? d.id : comparable(fieldValue(d.data() as Doc, field as string)) as never;
         docs = docs.sort((x, y) => (key(x) < key(y) ? -1 : key(x) > key(y) ? 1 : 0) * (dir === "desc" ? -1 : 1));
       }
       if (state.startAt !== undefined) docs = docs.filter((d) => d.id >= (state.startAt as string));

@@ -17,6 +17,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -30,8 +31,8 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -46,6 +47,8 @@ class DownloadButton extends StatefulWidget {
     this.isPremiumContent = false,
     this.contentId,
     this.wallpaperSource,
+    this.indexSource,
+    this.savedIdentity,
     this.depthTier,
     this.sourceContext,
     this.requestId,
@@ -64,6 +67,12 @@ class DownloadButton extends StatefulWidget {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+
+  /// Canonical identity of a reopened local file. Never used to authorize remote originals.
+  final WallpaperSource? indexSource;
+
+  /// Stable indexed identity when reopening an existing local copy, including its saved variation.
+  final String? savedIdentity;
 
   /// Adds the Depth Effect step to what iOS users see after the save.
   final WallDepthTier? depthTier;
@@ -113,6 +122,7 @@ class _DownloadTap {
     required this.isPremiumContent,
     required this.contentId,
     required this.wallpaperSource,
+    required this.indexSource,
     required this.depthTier,
     required this.sourceContext,
     required this.wallpaperTitle,
@@ -129,6 +139,7 @@ class _DownloadTap {
   final bool isPremiumContent;
   final String? contentId;
   final WallpaperSource? wallpaperSource;
+  final WallpaperSource? indexSource;
   final WallDepthTier? depthTier;
   final String? sourceContext;
   final String? wallpaperTitle;
@@ -143,6 +154,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   bool _saved = false;
   late String _savedOwner;
   String? _preparedSource;
+  String? _authorizedSource;
   late _DownloadTap _activeTap;
   bool _attemptStarted = false;
   bool _resultTracked = false;
@@ -174,6 +186,8 @@ class _DownloadButtonState extends State<DownloadButton> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.link != widget.link ||
         oldWidget.variant?.key != widget.variant?.key ||
+        oldWidget.savedIdentity != widget.savedIdentity ||
+        oldWidget.indexSource != widget.indexSource ||
         _savedOwner != app_state.prismUser.id) {
       _savedOwner = app_state.prismUser.id;
       _saved = _isSaved(_currentIdentity);
@@ -182,15 +196,19 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   String? get _currentIdentity {
     final String link = widget.link?.trim() ?? '';
-    return link.isEmpty ? null : widget.variant?.identityOf(link) ?? link;
+    if (link.isEmpty && (widget.contentId?.trim().isEmpty ?? true)) return null;
+    final original = _originalIdentity(link, widget.contentId);
+    return widget.savedIdentity ?? widget.variant?.identityOf(original) ?? original;
   }
+
+  String _originalIdentity(String link, String? id) => link.isEmpty ? '$id.jpg' : link;
 
   bool _isSaved(String? identity) {
     final String trimmed = identity?.trim() ?? '';
     if (trimmed.isEmpty) return false;
     try {
       final String? id = widget.contentId?.trim();
-      final WallpaperSource? source = widget.wallpaperSource;
+      final WallpaperSource? source = widget.indexSource ?? widget.wallpaperSource;
       if (source != null && (id == null || id.isEmpty)) return false;
       if (id != null && id.isNotEmpty && source != null && getIt.isRegistered<DownloadedWallIndex>()) {
         return getIt<DownloadedWallIndex>().hasAcquired(link: trimmed, id: id, source: source);
@@ -275,7 +293,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
 
     final String link = widget.link?.trim() ?? '';
-    if (link.isEmpty) {
+    if (link.isEmpty && widget.wallpaperSource != WallpaperSource.prism) {
       toasts.error(context.l10n.economyDownloadLinkUnavailable);
       return;
     }
@@ -291,10 +309,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         requestId: widget.requestId,
         operationId: AnalyticsCorrelation.newId(),
         link: link,
-        identity: variant?.identityOf(link) ?? link,
+        identity: _currentIdentity ?? _originalIdentity(link, widget.contentId),
         isPremiumContent: widget.isPremiumContent,
         contentId: widget.contentId,
         wallpaperSource: widget.wallpaperSource,
+        indexSource: widget.indexSource ?? widget.wallpaperSource,
         depthTier: widget.depthTier,
         sourceContext: widget.sourceContext,
         wallpaperTitle: widget.wallpaperTitle,
@@ -315,6 +334,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       _failureReason = null;
       _failureStage = 'download';
+      _authorizedSource = null;
       _attemptStarted = true;
       _track(
         DownloadAttemptEvent(
@@ -326,8 +346,30 @@ class _DownloadButtonState extends State<DownloadButton> {
           requestId: tap.requestId,
         ),
       );
+      final bool serverAccess =
+          OriginalAccessService.requiresGrant(tap.link, tap.contentId, tap.wallpaperSource) ||
+          ((tap.wallpaperSource == null ||
+                  tap.wallpaperSource == WallpaperSource.unknown ||
+                  tap.wallpaperSource == WallpaperSource.downloaded) &&
+              isValidNetworkUrl(tap.link));
+      if (serverAccess) {
+        _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
+        if (tap.isGuest && _authorizedSource == null) {
+          await _showGuestPremiumPrompt();
+          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
+          return;
+        }
+        final result = await _gatedDownload(originalAccess: true, variant: variant);
+        _trackGateResult(result);
+        return;
+      }
       if (variant != null) {
-        _preparedSource = await runPrepareSource(variant.prepare, l10n: l10n);
+        _preparedSource = await runPrepareSource(
+          variant.prepareAuthorized == null
+              ? variant.prepare
+              : () => variant.prepareAuthorized!(_authorizedSource ?? tap.link),
+          l10n: l10n,
+        );
         if (_preparedSource == null || !mounted) {
           _track(
             DownloadResultEvent(
@@ -401,6 +443,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       final CoinGateResult result = await _gatedDownload();
       _trackGateResult(result);
+    } catch (error, stackTrace) {
+      logger.w('Could not acquire wallpaper', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(l10n.economyAiDownloadFailed);
     } finally {
       if (_attemptStarted && !_resultTracked) {
         _track(
@@ -507,7 +552,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final WallpaperSource? source = tap.wallpaperSource;
     if (tap.isGuest ||
         !_ownerStillMatches(tap) ||
-        tap.identity != tap.link ||
+        tap.identity != _originalIdentity(tap.link, tap.contentId) ||
         id == null ||
         id.isEmpty ||
         source == null) {
@@ -515,12 +560,13 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
     if (!getIt.isRegistered<DownloadedWallIndex>()) return null;
     final DownloadedWallIndex index = getIt<DownloadedWallIndex>();
-    if (!index.hasAcquired(link: tap.link, id: id, source: source)) return null;
+    final original = _originalIdentity(tap.link, id);
+    if (!index.hasAcquired(link: original, id: id, source: source)) return null;
     try {
       final OfflineAssetStore store = OfflineAssetStore.instance;
-      final File? retainedOrCached = await store.lookup(tap.link);
+      final File? retainedOrCached = await store.lookup(original);
       if (retainedOrCached != null) return retainedOrCached;
-      final File? downloaded = await index.localFileFor(link: tap.link, id: id, source: source);
+      final File? downloaded = await index.localFileFor(link: original, id: id, source: source);
       return downloaded == null ? null : await store.lookup(downloaded.path);
     } catch (error, stackTrace) {
       logger.w('Could not inspect a previously acquired local original', error: error, stackTrace: stackTrace);
@@ -533,7 +579,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final DownloadedWallIndex? index = getIt.isRegistered<DownloadedWallIndex>() ? getIt<DownloadedWallIndex>() : null;
     if (index != null) {
       final String? id = _tap.contentId?.trim();
-      final WallpaperSource? source = _tap.wallpaperSource;
+      final WallpaperSource? source = _tap.indexSource;
       final File? exactFile = id != null && id.isNotEmpty && source != null
           ? await index.localFileFor(link: identity, id: id, source: source)
           : await index.localFileForLink(identity);
@@ -659,10 +705,59 @@ class _DownloadButtonState extends State<DownloadButton> {
     return creator.isEmpty ? null : context.l10n.wallpaperByCreator(creator);
   }
 
-  Future<CoinGateResult> _gatedDownload() {
+  Future<CoinGateResult> _gatedDownload({bool originalAccess = false, DownloadVariant? variant}) async {
     final String contentId = _tap.contentId?.trim() ?? '';
+    int? serverRequiredCoins;
+    int? serverBalance;
+    if (originalAccess && _authorizedSource == null) {
+      final quote = await OriginalAccessService.instance.quote(
+        wallpaperId: contentId,
+        action: OriginalAccessAction.download,
+      );
+      serverRequiredCoins = quote.requiredCoins;
+      serverBalance = quote.currentBalance;
+      if (!mounted || !_ownerStillMatches(_tap)) return CoinGateResult.cancelled;
+      CoinsService.instance.balanceNotifier.value = quote.currentBalance;
+    }
     return CoinGate.forContext(context).run(
       CoinGateSpec(
+        premiumBypass: !originalAccess,
+        refundOnFailure: !originalAccess,
+        confirmFirst: originalAccess && (serverRequiredCoins ?? 0) > 0,
+        spend: !originalAccess
+            ? null
+            : (_) async {
+                if (!_ownerStillMatches(_tap)) throw StateError('Download account changed');
+                final balance = CoinsService.instance.balanceNotifier.value;
+                try {
+                  _authorizedSource ??= await OriginalAccessService.instance.resolve(
+                    url: _tap.link,
+                    wallpaperId: _tap.contentId,
+                    wallpaperSource: _tap.wallpaperSource,
+                    action: OriginalAccessAction.download,
+                    requestId: _tap.requestId,
+                    maxCoins: serverRequiredCoins,
+                  );
+                  return CoinMutationResult(
+                    success: true,
+                    changed: false,
+                    previousBalance: balance,
+                    currentBalance: balance,
+                    delta: 0,
+                  );
+                } on OriginalAccessInsufficientBalance catch (error) {
+                  serverRequiredCoins = error.requiredCoins;
+                  serverBalance = error.currentBalance;
+                  return CoinMutationResult(
+                    success: false,
+                    changed: false,
+                    previousBalance: error.currentBalance,
+                    currentBalance: error.currentBalance,
+                    delta: 0,
+                    insufficientBalance: true,
+                  );
+                }
+              },
         action: _tapSpendAction,
         reason: contentId.isEmpty ? null : 'content_$contentId',
         label: _ledgerLabel,
@@ -675,12 +770,45 @@ class _DownloadButtonState extends State<DownloadButton> {
         ),
         upsellSource: 'download_watch_and_download_rewarded_ad',
         upgradeSource: 'download_low_balance_upgrade',
-        precheckBalance: !_downloadIsFree(_tap.isPremiumContent),
+        precheckBalance: !originalAccess && !_downloadIsFree(_tap.isPremiumContent),
         repromptOnNudgeSpendInsufficient: false,
         onPaid: (String txId) => _paidTxId = txId,
-        isMounted: () => mounted,
-        perform: _performDownload,
-        choose: _chooseLowBalanceAction,
+        isMounted: () => mounted && _ownerStillMatches(_tap),
+        perform: !originalAccess
+            ? _performDownload
+            : () async {
+                if (!_ownerStillMatches(_tap)) return false;
+                if (variant != null) {
+                  _preparedSource = await runPrepareSource(
+                    variant.prepareAuthorized == null
+                        ? variant.prepare
+                        : () => variant.prepareAuthorized!(_authorizedSource!),
+                    l10n: context.l10n,
+                  );
+                  if (_preparedSource == null || !_ownerStillMatches(_tap)) return false;
+                }
+                return _performDownload();
+              },
+        choose: (prompt) async {
+          final actualPrompt = CoinGatePrompt(
+            phase: prompt.phase,
+            cost: serverRequiredCoins ?? prompt.cost,
+            balance: serverBalance ?? prompt.balance,
+            adsAllowed: prompt.adsAllowed,
+            adsRemaining: prompt.adsRemaining,
+          );
+          if (originalAccess && actualPrompt.canSpend) {
+            return await showCoinGateSheet<CoinGateChoice>(
+                  context,
+                  title: context.l10n.economyDownload,
+                  cost: actualPrompt.cost,
+                  message: (_) => context.l10n.economyDownloadCost(context.l10n.economyDownload, actualPrompt.cost),
+                  options: [CoinGateOption(label: context.l10n.economyDownload, value: CoinGateChoice.spend)],
+                ) ??
+                CoinGateChoice.cancel;
+          }
+          return _chooseLowBalanceAction(actualPrompt);
+        },
         onWatchChosen: () => CoinsService.instance.logWatchAndDownloadUsed(
           isPremiumContent: _tap.isPremiumContent,
           sourceTag: 'coins.download.watch_and_download',
@@ -696,21 +824,21 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String? sourceContext = tap.sourceContext;
     final bool premiumContent = tap.isPremiumContent;
     final VoidCallback? onDownloaded = tap.onDownloaded;
-    if (link.isEmpty) {
+    if (link.isEmpty && _authorizedSource == null) {
       toasts.error(context.l10n.economyDownloadLinkUnavailable);
       return false;
     }
     final bool prepared = _preparedSource != null;
     final OfflineAssetStore assetStore = OfflineAssetStore.instance;
     File? cachedOriginal = cachedOriginalForRestore;
-    if (!prepared && cachedOriginal == null) {
+    if (!prepared && cachedOriginal == null && _authorizedSource == null) {
       try {
         cachedOriginal = await assetStore.lookup(link);
       } catch (error, stackTrace) {
         logger.w('Could not inspect the wallpaper cache before saving', error: error, stackTrace: stackTrace);
       }
     }
-    final String saveLink = _preparedSource ?? cachedOriginal?.path ?? link;
+    final String saveLink = _preparedSource ?? cachedOriginal?.path ?? _authorizedSource ?? link;
     final Uri? sourceUri = Uri.tryParse(saveLink);
     final bool isLocalFile =
         prepared || cachedOriginal != null || saveLink.startsWith('/') || sourceUri?.scheme == 'file';
@@ -737,7 +865,22 @@ class _DownloadButtonState extends State<DownloadButton> {
         }
         return false;
       }
-      if (!prepared) await _retainCompletedOriginal(assetStore, link, cachedOriginal, downloadsBefore, result.message);
+      if (tap.contentId != null && tap.wallpaperSource == WallpaperSource.prism) {
+        await OriginalAccessService.instance.complete(
+          owner: tap.ownerId,
+          wallpaperId: tap.contentId!,
+          action: OriginalAccessAction.download,
+        );
+      }
+      if (!prepared) {
+        await _retainCompletedOriginal(
+          assetStore,
+          _originalIdentity(link, tap.contentId),
+          cachedOriginal,
+          downloadsBefore,
+          result.message,
+        );
+      }
     } on PlatformException catch (e) {
       _failureReason = 'platform_error';
       if (e.code == 'channel-error') {
@@ -760,7 +903,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
 
     final String? contentId = tap.contentId?.trim();
-    final WallpaperSource? wallpaperSource = tap.wallpaperSource;
+    final WallpaperSource? wallpaperSource = tap.indexSource;
     final bool isBundledStarter =
         contentId != null &&
         contentId.isNotEmpty &&
@@ -776,6 +919,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         id: contentId,
         source: wallpaperSource,
         ownerId: tap.ownerId,
+        original: !prepared && tap.indexSource == tap.wallpaperSource,
       );
     }
 

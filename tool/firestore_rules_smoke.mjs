@@ -36,12 +36,26 @@ const ticketIdFilter = (id) => documentIdFilter(`drawTickets/${id}`);
 const ticketUidFilter = (uid) => ({
   fieldFilter: { field: { fieldPath: 'uid' }, op: 'EQUAL', value: { stringValue: uid } },
 });
+const provenanceFields = ['wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha'];
+const redactedProvenance = Object.fromEntries(provenanceFields.map((field) => [field, { stringValue: '' }]));
+const publicWall = {
+  email: { stringValue: 'b@x.com' }, review: { booleanValue: true },
+  originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, ...redactedProvenance,
+};
 const seed = () => Promise.all([
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'walls/protected', { ...publicWall, wallpaper_thumb: { stringValue: 'https://example.com/preview.jpg' } }, 'owner'),
+  ...provenanceFields.flatMap((field) => [
+    req('PATCH', `walls/leaked-${field}`, { ...publicWall, [field]: { stringValue: 'private-original-provenance' } }, 'owner'),
+    req('PATCH', `walls/missing-${field}`, Object.fromEntries(Object.entries(publicWall).filter(([key]) => key !== field)), 'owner'),
+  ]),
+  req('PATCH', 'walls/approval-race', { ...publicWall, review: { booleanValue: false }, wallpaper_path: { stringValue: 'originals/private.jpg' } }, 'owner'),
+  req('PATCH', 'walls/leaked', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: 'https://example.com/original.jpg' } }, 'owner'),
+  req('PATCH', 'ownedAssets/protected', { status: { stringValue: 'ready' } }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -67,6 +81,36 @@ const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const cases = [
+  ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
+  ['guest cannot read legacy reviewed original', () => req('GET', 'walls/w9'), 403],
+  ['guest cannot read falsely marked original', () => req('GET', 'walls/leaked'), 403],
+  ...provenanceFields.flatMap((field) => [
+    [`guest cannot read leaked ${field}`, () => req('GET', `walls/leaked-${field}`), 403],
+    [`guest cannot read missing ${field}`, () => req('GET', `walls/missing-${field}`), 403],
+    [`owner retains access to ${field} for cleanup`, () => req('GET', `walls/leaked-${field}`, null, Bu), 200],
+  ]),
+  ['owner reads pending provenance', () => req('GET', 'walls/approval-race', null, Bu), 200],
+  ['admin approves before binder redaction', () => req('PATCH', 'walls/approval-race', { review: { booleanValue: true } }, ADM, ['review']), 200],
+  ['approval race stays private until binder redacts', () => req('GET', 'walls/approval-race'), 403],
+  ['admin retains approval race access', () => req('GET', 'walls/approval-race', null, ADM), 200],
+  ['binder redacts approval race provenance', () => req('PATCH', 'walls/approval-race', redactedProvenance, 'owner', provenanceFields), 200],
+  ['guest reads approval only after binder redaction', () => req('GET', 'walls/approval-race'), 200],
+  ['free user cannot read original manifest', () => req('GET', 'ownedAssets/protected', null, Bu), 403],
+  ['guest cannot read original manifest', () => req('GET', 'ownedAssets/protected'), 403],
+  ['review-only public query cannot leak legacy originals', () => runQuery(A, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+  ], 'walls'), 403],
+  ['URL-only redaction query cannot leak provenance', () => runQuery(A, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
+  ], 'walls'), 403],
+  ['redacted public query keeps feeds usable', () => runQuery(A, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
+    ...provenanceFields.map((fieldPath) => ({ fieldFilter: { field: { fieldPath }, op: 'EQUAL', value: { stringValue: '' } } })),
+  ], 'walls'), 200],
   ['no-op follow (already following)', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, A, ['followers']), 200],
   ['follow', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com', 'b@x.com']) }, Bu, ['followers']), 200],
   ['unfollow', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, Bu, ['followers']), 200],
@@ -144,6 +188,8 @@ const cases = [
   ['admin email without a verified token reads an unreviewed wall', () => req('GET', 'walls/w8', null, ADM_UNVERIFIED), 403],
   ['admin with a verified token reads an unreviewed wall', () => req('GET', 'walls/w8', null, ADM), 200],
   ['owner edits own unreviewed wall', () => req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, by: { stringValue: 'B' } }, Bu), 200],
+  ['owner cannot forge protected upload metadata', () => req('PATCH', 'walls/forged-protection', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, originalProtected: { booleanValue: true }, originalGeneration: { stringValue: '1' } }, Bu), 403],
+  ['owner cannot change protected upload markers', () => req('PATCH', 'walls/w8', { originalProtected: { booleanValue: true }, originalGeneration: { stringValue: '1' } }, Bu, ['originalProtected', 'originalGeneration']), 403],
   ['owner unpublishes own approved wall', () => req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner unpublishes own approved setup', () => req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner deletes own rejected wall', () => req('DELETE', 'rejectedWalls/rw1', null, Bu), 200],

@@ -14,6 +14,83 @@ import '../../../../support/fake_user_block_repository.dart';
 
 void main() {
   group('PrismWallpaperRepositoryImpl', () {
+    test('canonical document lookup is server-only and retains canonical wall identity', () async {
+      final docs = _buildWallDocs(count: 1);
+      docs.single.data.addAll(<String, dynamic>{'originalProtected': true, 'wallpaper_url': ''});
+      final firestore = _walls(docs, matchIdField: true);
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+
+      final result = await repo.fetchCanonicalByDocumentId('doc-1');
+
+      expect(result.data?.id, 'wall-1');
+      expect(result.data?.firestoreDocumentId, 'doc-1');
+      expect(firestore.querySpecs.single.cachePolicy, FirestoreCachePolicy.serverOnly);
+      expect(firestore.querySpecs.single.filters.first.field, firestoreDocumentIdField);
+      expect((await repo.fetchCanonicalByDocumentId('missing')).data, isNull);
+      firestore.queryError = FirestoreError(message: 'offline', code: 'unavailable');
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).failure, isA<NetworkFailure>());
+      firestore.queryError = FirestoreError(message: 'denied', code: 'permission-denied');
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).isFailure, isTrue);
+    });
+
+    test('canonical document lookup rejects unsafe markers and blocked creators', () async {
+      final docs = _buildWallDocs(count: 1);
+      final repo = PrismWallpaperRepositoryImpl(
+        _walls(docs, matchIdField: true),
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      final data = docs.single.data;
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
+      data.addAll(<String, dynamic>{'originalProtected': true, 'wallpaper_url': '', 'review': false});
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
+      data['review'] = true;
+      final blockedRepo = PrismWallpaperRepositoryImpl(
+        _walls(docs, matchIdField: true),
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{'creator1@example.com'}),
+      );
+      expect((await blockedRepo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
+      data['originalProtected'] = false;
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
+      data['originalProtected'] = true;
+      data['wallpaper_url'] = 'https://example.com/unsafe.jpg';
+      expect((await repo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
+    });
+
+    test('canonical lookup requires server-only identity and current membership', () async {
+      final docs = _buildWallDocs(count: 1);
+      docs.single.data['collections'] = <String>['space'];
+      final firestore = _walls(docs, matchIdField: true);
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      final result = await repo.fetchCanonicalById('wall-1');
+      expect(result.data?.collections, <String>['space']);
+      expect(firestore.querySpecs.single.cachePolicy, FirestoreCachePolicy.serverOnly);
+      expect(firestore.querySpecs.single.limit, 2);
+      expect((await repo.fetchCanonicalById('doc-1')).data, isNull);
+      firestore.queryError = FirestoreError(message: 'offline', code: 'unavailable');
+      expect((await repo.fetchCanonicalById('wall-1')).failure, isA<NetworkFailure>());
+    });
+
+    test('canonical lookup refuses duplicate identity', () async {
+      final docs = _buildWallDocs(count: 2);
+      docs[1].data['id'] = 'wall-1';
+      final repo = PrismWallpaperRepositoryImpl(
+        _walls(docs, matchIdField: true),
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      expect((await repo.fetchCanonicalById('wall-1')).isFailure, isTrue);
+    });
+
     test('waits for blocked creators and refills filtered pages without skipping visible rows', () async {
       final firestore = _walls(_buildWallDocs(count: 30));
       final cache = FakeFeedCacheLocalDataSource();
@@ -219,8 +296,9 @@ FakeFirestoreClient _walls(List<({String docId, Map<String, dynamic> data})> doc
     onQuery: (spec) {
       final Iterable<({String docId, Map<String, dynamic> data})> rows;
       if (matchIdField) {
+        final Object? documentId = spec.filters.where((f) => f.field == firestoreDocumentIdField).firstOrNull?.value;
         final Object? id = spec.filters.where((f) => f.field == 'id').firstOrNull?.value;
-        rows = docs.where((doc) => doc.data['id'] == id);
+        rows = docs.where((doc) => documentId == null ? doc.data['id'] == id : doc.docId == documentId);
       } else {
         final int lastIndex = docs.indexWhere((doc) => doc.docId == spec.startAfterDocId);
         rows = docs.skip(lastIndex + 1).take(spec.limit ?? docs.length);

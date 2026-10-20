@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -28,6 +29,82 @@ void main() {
     ));
     expect(index.resolve('/Pictures/Prism/Downloads/image_picker1529041162 (1).jpg')?.id, 'abc123');
   });
+
+  test('identity-only local reuse requires current-owner acquisition and an existing listed native file', () async {
+    var owner = 'alice';
+    final localIndex = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => owner);
+    await localIndex.remember(link: 'https://old.example/acquired.jpg', id: 'canonical', source: WallpaperSource.prism);
+    final directory = Directory.systemTemp.createTempSync('prism_identity_download');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final saved = File('${directory.path}/acquired.jpg')..writeAsBytesSync([1]);
+    var listed = <String>[saved.path];
+    const channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(
+      channel,
+      (_) async => <Object?>[DownloadItemsResult(success: true, items: listed)],
+    );
+    addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+    expect((await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism))?.path, saved.path);
+    owner = 'bob';
+    expect(await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism), isNull);
+    owner = 'alice';
+    expect(await localIndex.localFileForIdentity(id: 'other', source: WallpaperSource.prism), isNull);
+    listed = [];
+    expect(await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism), isNull);
+    listed = [saved.path];
+    saved.deleteSync();
+    expect(await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism), isNull);
+  });
+
+  for (final historical in [false, true]) {
+    test(
+      'a ${historical ? 'historical' : 'new'} variant stays acquired but cannot stand in for the original',
+      () async {
+        final store = InMemoryLocalStore();
+        final localIndex = DownloadedWallIndex(SettingsLocalDataSource(store), ownerId: () => 'alice');
+        const variantLink = 'wall_tint-ff8800.png';
+        await localIndex.remember(link: variantLink, id: 'canonical', source: WallpaperSource.prism, original: false);
+        if (historical) {
+          final records = json.decode(store.data['settings.downloaded_walls_v1']! as String) as Map;
+          for (final value in records.values) {
+            (value as Map).remove('original');
+          }
+          store.data['settings.downloaded_walls_v1'] = json.encode(records);
+        }
+        final directory = Directory.systemTemp.createTempSync('prism_variant_identity');
+        addTearDown(() => directory.deleteSync(recursive: true));
+        final variant = File('${directory.path}/wall_tint-ff8800.png')..writeAsBytesSync([1]);
+        final original = File('${directory.path}/wall.jpg')..writeAsBytesSync([2]);
+        const channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+          PrismMediaHostApi.pigeonChannelCodec,
+        );
+        final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        messenger.setMockDecodedMessageHandler<Object?>(
+          channel,
+          (_) async => <Object?>[
+            DownloadItemsResult(success: true, items: [variant.path, original.path]),
+          ],
+        );
+        addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+        expect(localIndex.hasAcquired(link: variantLink, id: 'canonical', source: WallpaperSource.prism), isTrue);
+        expect(localIndex.resolve(variant.path), (id: 'canonical', source: WallpaperSource.prism));
+        expect((await localIndex.localFileForLink(variantLink))?.path, variant.path);
+        expect(await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism), isNull);
+
+        await localIndex.remember(link: 'https://example.com/wall.jpg', id: 'canonical', source: WallpaperSource.prism);
+        expect(
+          (await localIndex.localFileForIdentity(id: 'canonical', source: WallpaperSource.prism))?.path,
+          original.path,
+        );
+        expect(variant.existsSync(), isTrue);
+      },
+    );
+  }
 
   test('legacy basename rows resolve navigation identity but never acquisition', () {
     final InMemoryLocalStore store = InMemoryLocalStore()

@@ -1,0 +1,41 @@
+# Spanish localization verification
+
+## Catalog and runtime
+
+`lib/l10n/app_en.arb` remains the canonical English catalog. Spanish uses `app_es.arb`, Flutter `gen-l10n`, and device-locale selection. Unsupported languages fall back to English. The catalog contains 2,502 messages, including accessibility text, errors, onboarding, search, downloads, creator tools, Premium, coins, rewards, referrals, and AI prompts.
+
+`python3 tool/check_l10n.py` checks key parity across both locales. A separate placeholder-use audit found no missing English placeholder names in Spanish messages. Native coverage includes all 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. Existing English resource values and backend identifiers remain unchanged.
+
+The generated messages are exercised by `test/l10n/spanish_locale_test.dart`. It checks device selection, es-MX and es-ES resolution, English fallback, live locale changes, plurals, number grouping, and a 320-pixel confirmation sheet at double text scale. Shared tests cover AI prompt composition, user prompt preservation, localized progress, coin shortfall errors, and upload size formatting.
+
+## Manual source review
+
+The AST audit alone misses indirect strings. Source review also traced AI example pools, sign-in feature interpolation, app shortcuts, upload sliders, saved transaction labels, category chips, native errors, and purchase presentation. Persisted creator names, user prompts, artwork titles, protocol codes, routes, analytics values, and product brands are not translated.
+
+The nine bundled text font assets cover the Spanish accented letters and punctuation. This is a font-character-set check, not a device-rendering result.
+
+## Unavailable proof
+
+This Linux host has no Xcode or `axe`, so the required iOS Simulator run cannot start. The Android build SDK exists, but there is no emulator executable, AVD, system image, attached device, or `/dev/kvm`. The `verify-prism` doctor fails on missing platform tools. No device screenshots or signed-in app-flow checks are claimed.
+
+The purchase sheet comes from `RevenueCatUI.presentPaywall`. Its remote templates and App Store and Play product metadata cannot be inspected from this repository without authorized dashboard credentials. Spanish coverage of those externally managed surfaces remains unverified. No remote product, paywall, store, or deployment changes were made.
+
+## Final gates
+
+`make file-gen` passed before the final master merge and produced no tracked changes. After that merge, `fvm flutter gen-l10n` and `python3 tool/check_l10n.py` passed for all 2,502 messages.
+
+The 152-test focused suite passed at `4c041480d`. The full local run then passed the localization audit tests, search guards, environment and secret guards, and analytics checks. It was stopped when master added three purchase-status messages, so that run does not prove the merged tree.
+
+After host recovery, the merged-tree purchase and locale suite passed all 118 tests at `7bdf461f6`. It includes the Spanish purchase-status regression with French followed by Spanish in the device preference list. The log is `/tmp/prism-es-purchase-recovered.log` on this host.
+
+The hosted run at Spanish commit `095fbb57e` passed required CI run `39313155204`. It passed 5,055 Flutter tests with 191 existing skips, six release checks, Android APK and native unit and lint checks, and iOS build-for-testing. This run predates the AI prompt integration below and does not prove that integration.
+
+The delayed-localization regression failed with the guard disabled. It expected the interests step after Back but observed AI generation. With the guard restored, all 292 focused tests passed on the review-fix tree. The suite includes onboarding bloc and error widgets, Rewards, Following, Spanish runtime and native resources, purchases, and settings. Logs are `/tmp/prism-es-onboarding-locale-red.log` and `/tmp/prism-es-review-focused.log`.
+
+Hindi's AI prompt regression log `/tmp/prism-hi-ai-prompt-red.log` records two passes and four failures before the shared fix. The portable regression suite then passed all 11 tests on Hindi's tree in `/tmp/prism-hi-ai-prompt-portable.log`. These results do not replace a run on the integrated Spanish tree.
+
+`make file-gen` passed after the onboarding constructor change. It formatted 1,438 files and left generated outputs unchanged. Full local `make ci` passed format, catalog, audit, guards, analysis, and 64 Cloudflare Worker tests. It reached 1,249 passes and 190 skips with no reported failures, then stopped by design to integrate the reviewed AI prompt fix. This run is not a full pass for the final tree.
+
+The earlier hosted pass and APK session `24949` do not prove the final tree. The APK session was still live when the AI prompt change entered the shared tree. A fresh final-tree APK build and full CI run remain separate proof gates. Use the PR 597 Verification section for results tied to the exact PR commit: https://github.com/Hash-Studios/Prism/pull/597.
+
+The AI prompt fix adds no catalog entries. Coverage remains 2,502 messages, 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. The device and remote-paywall verification limits above still apply.

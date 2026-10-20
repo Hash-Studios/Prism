@@ -58,6 +58,9 @@ const List<WallpaperSource> _filterSources = <WallpaperSource>[
 
 enum _FavouritesMenuAction { export, clearAll }
 
+bool _isExternalSource(WallpaperSource source) =>
+    source == WallpaperSource.wallhaven || source == WallpaperSource.pexels;
+
 class FavouriteGrid extends StatefulWidget {
   const FavouriteGrid({super.key, this.header});
 
@@ -291,7 +294,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         link = await createDynamicLink(
           first.id,
           first.source,
-          first.fullUrl,
+          _isExternalSource(first.source) ? first.fullUrl : null,
           first.thumbnailUrl,
           l10n: context.l10n,
           core: first.toFeedItem().wallpaperCore,
@@ -302,14 +305,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           link ??
           walls
               .map(
-                (wall) => BundledWallpapers.isStarterIdentity(wall.id, wall.source)
-                    ? canonicalWallpaperLink(
-                        id: wall.id,
-                        source: wall.source,
-                        url: wall.fullUrl,
-                        thumbUrl: wall.thumbnailUrl,
-                      )
-                    : wall.fullUrl,
+                (wall) => _isExternalSource(wall.source)
+                    ? wall.fullUrl
+                    : canonicalWallpaperLink(id: wall.id, source: wall.source, url: null, thumbUrl: wall.thumbnailUrl),
               )
               .where((url) => url.isNotEmpty)
               .join('\n');
@@ -464,6 +462,11 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   FavouriteTileImage(
                     thumbnailUrl: wall.thumbnailUrl,
                     fullUrl: wall.fullUrl,
+                    allowFullUrlFallback:
+                        _isExternalSource(wall.source) ||
+                        wall.fullUrl.startsWith('/') ||
+                        Uri.tryParse(wall.fullUrl)?.scheme == 'file' ||
+                        BundledWallpapers.isStarterIdentity(wall.id, wall.source),
                     heroTag: prismHeroTag(this, index, wall.id),
                     onUnavailable: () => _markUnavailable(wall.id),
                   ),
@@ -695,6 +698,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       SetWallpaperButton(
                         url: selectedWalls.first.fullUrl,
                         thumbnailUrl: selectedWalls.first.thumbnailUrl,
+                        wallpaperId: selectedWalls.first.id,
+                        wallpaperSource: selectedWalls.first.source,
                         onSet: _exitSelection,
                       ),
                     CircularMenuButton(

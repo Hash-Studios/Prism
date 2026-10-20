@@ -16,6 +16,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
@@ -33,6 +34,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
 
 class _OrderedAnalytics extends FakeAppAnalytics {
@@ -217,6 +219,7 @@ void main() {
     VoidCallback? onDownloaded,
     DownloadVariant? variant,
     String link = _link,
+    WallpaperSource source = WallpaperSource.wallhaven,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -229,7 +232,7 @@ void main() {
             label: 'Save',
             isPremiumContent: premiumContent,
             contentId: contentId,
-            wallpaperSource: WallpaperSource.prism,
+            wallpaperSource: source,
             sourceContext: sourceContext,
             requestId: requestId,
             wallpaperTitle: title,
@@ -449,7 +452,13 @@ void main() {
       final _RecordingStats stats = _RecordingStats();
       getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
       addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
-      await pump(tester, contentId: 'starter-sunset', link: '/starter-sunset.jpg', requestId: 'browse-request');
+      await pump(
+        tester,
+        contentId: 'starter-sunset',
+        link: '/starter-sunset.jpg',
+        requestId: 'browse-request',
+        source: WallpaperSource.prism,
+      );
 
       await tapSave(tester);
       await pumpUntil(tester, () => results().isNotEmpty);
@@ -483,6 +492,7 @@ void main() {
       await pump(
         tester,
         contentId: 'starter-sunset',
+        source: WallpaperSource.prism,
         link: original,
         variant: DownloadVariant(key: 'tint-ff8800', prepare: () async => tinted),
       );
@@ -764,6 +774,9 @@ void main() {
     testWidgets('charges the usual price, saves the prepared file into Downloads under the variant name', (
       tester,
     ) async {
+      final index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
       int prepared = 0;
       await pump(
         tester,
@@ -784,6 +797,15 @@ void main() {
       expect(request.filenameWithoutExtension, 'sunset_tint-ff8800');
       expect(saved, isEmpty);
       expect(results().single.result, 'success');
+      final variantFile = File('${tempDir.path}/sunset_tint-ff8800.png')
+        ..writeAsBytesSync(File(tinted).readAsBytesSync());
+      downloadsOnDisk = [variantFile.path];
+      expect(
+        index.hasAcquired(link: 'sunset_tint-ff8800.png', id: 'wall-1', source: WallpaperSource.wallhaven),
+        isTrue,
+      );
+      expect((await index.localFileForLink('sunset_tint-ff8800.png'))?.path, variantFile.path);
+      expect(await index.localFileForIdentity(id: 'wall-1', source: WallpaperSource.wallhaven), isNull);
     });
 
     testWidgets('a plain download still sends the URL as a remote file named after it', (tester) async {
@@ -824,7 +846,7 @@ void main() {
       expect(request.isLocalFile, isTrue);
       expect(request.link, retained.path);
       expect(await tester.runAsync(() => assets.lookup(_link)), isNotNull);
-      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isTrue);
     });
 
     testWidgets('a successful native save is not reported as saved offline when durable retention fails', (
@@ -849,7 +871,7 @@ void main() {
       expect(find.text('Saved'), findsOneWidget);
       expect(semanticsLabel(tester), 'Saved. Already in Downloads');
       expect(toastMessages.join(' ').toLowerCase(), isNot(contains('offline')));
-      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isTrue);
       expect(spendCalls, hasLength(1));
     });
 
@@ -870,7 +892,12 @@ void main() {
         await index.clearOwner(app_state.prismUser.id);
         await getIt.unregister<DownloadedWallIndex>();
       });
-      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: app_state.prismUser.id);
+      await index.remember(
+        link: _link,
+        id: 'wall-1',
+        source: WallpaperSource.wallhaven,
+        ownerId: app_state.prismUser.id,
+      );
 
       final Completer<void> completed = Completer<void>();
       await pump(tester, onDownloaded: completed.complete);
@@ -902,7 +929,12 @@ void main() {
         await index.clearOwner(app_state.prismUser.id);
         await getIt.unregister<DownloadedWallIndex>();
       });
-      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: app_state.prismUser.id);
+      await index.remember(
+        link: _link,
+        id: 'wall-1',
+        source: WallpaperSource.wallhaven,
+        ownerId: app_state.prismUser.id,
+      );
 
       final Completer<void> completed = Completer<void>();
       await pump(tester, link: otherUrl, onDownloaded: completed.complete);
@@ -946,23 +978,23 @@ void main() {
       await completed.future;
       await tester.pump(const Duration(seconds: 2));
 
-      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isFalse);
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isFalse);
       app_state.prismUser = app_constants.createGuestPrismUser()
         ..id = ownerA
         ..loggedIn = true;
-      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isTrue);
     });
 
     testWidgets('an account switch before the coin gate cancels instead of charging the new account', (tester) async {
       signInAgain();
       final String ownerA = app_state.prismUser.id;
-      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      final DownloadedWallIndex index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()));
       getIt.registerSingleton<DownloadedWallIndex>(index);
       addTearDown(() async {
         await index.clearOwner(ownerA);
         await getIt.unregister<DownloadedWallIndex>();
       });
-      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: ownerA);
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven, ownerId: ownerA);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
         listChannel,
         (_) async {
@@ -977,6 +1009,7 @@ void main() {
       await pump(tester);
       await tapSave(tester);
 
+      expect(app_state.prismUser.id, 'account-b');
       expect(spendCalls, isEmpty);
       expect(enqueued, isEmpty);
     });
@@ -1359,8 +1392,18 @@ void main() {
           home: Scaffold(
             body: Column(
               children: <Widget>[
-                DownloadButton(key: ValueKey<String>('a'), link: _link, label: 'Save'),
-                DownloadButton(key: ValueKey<String>('b'), link: _link, label: 'Save'),
+                DownloadButton(
+                  key: ValueKey<String>('a'),
+                  link: _link,
+                  label: 'Save',
+                  wallpaperSource: WallpaperSource.wallhaven,
+                ),
+                DownloadButton(
+                  key: ValueKey<String>('b'),
+                  link: _link,
+                  label: 'Save',
+                  wallpaperSource: WallpaperSource.wallhaven,
+                ),
               ],
             ),
           ),
@@ -1537,7 +1580,171 @@ void main() {
     });
   });
 
+  group('protected Prism originals', () {
+    testWidgets('verified acquired native original is reused by canonical identity without remote access', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      backend.originalAuthenticated = false;
+      final index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
+      final file = await fixtureImage(tester, 'acquired.jpg');
+      downloadsOnDisk = [file.path];
+      await index.remember(link: 'https://old.example/acquired.jpg', id: 'wall-1', source: WallpaperSource.prism);
+      expect(
+        await OriginalAccessService.instance.resolve(
+          url: file.path,
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+          action: OriginalAccessAction.edit,
+        ),
+        file.path,
+      );
+      await pump(tester, source: WallpaperSource.prism, link: '');
+      await tapSave(tester);
+      expect(enqueued, hasLength(1));
+      final request = enqueued.single! as DownloadRequest;
+      expect(request.link, file.path);
+      expect(request.isLocalFile, isTrue);
+      expect(backend.originalCalls, isEmpty);
+      expect(backend.originalDebits, 0);
+    });
+
+    testWidgets('insufficient server balance offers recovery without acquiring or transforming', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      backend.originalBalance = 2;
+      var transformed = false;
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        variant: DownloadVariant(
+          key: 'tint-ff8800',
+          prepare: () async {
+            transformed = true;
+            return tinted;
+          },
+          prepareAuthorized: (_) async {
+            transformed = true;
+            return tinted;
+          },
+        ),
+      );
+      await tapSave(tester);
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(find.text('Upgrade to Pro'), findsOneWidget);
+      expect(find.text(watchAdOptionLabel(AppLocalizationsEn())), findsOneWidget);
+      expect(transformed, isFalse);
+      expect(enqueued, isEmpty);
+      expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), isEmpty);
+      expect(backend.originalDebits, 0);
+    });
+
+    testWidgets('server premium metadata and price override a stale free client snapshot', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      await pump(tester, source: WallpaperSource.prism, premiumContent: false, link: '');
+      await tapSave(tester);
+      expect(enqueued, isEmpty);
+      expect(find.textContaining('20'), findsWidgets);
+      expect(backend.originalCalls.every((call) => call['mode'] == 'quote'), isTrue);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+      expect(enqueued, hasLength(1));
+      expect((enqueued.single! as DownloadRequest).link, 'https://signed.test/wall-1');
+      expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'wall-1');
+      expect(backend.originalDebits, 1);
+      expect(backend.originalBalance, 80);
+      expect(spendCalls, isEmpty);
+    });
+
+    for (final entitlement in ['pro', 'pass']) {
+      testWidgets('server $entitlement grants premium access without a client-side spend', (tester) async {
+        backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+        backend.originalPro = entitlement == 'pro';
+        backend.originalPass = entitlement == 'pass';
+        await pump(tester, source: WallpaperSource.prism, premiumContent: true);
+        await tapSave(tester);
+        expect(enqueued, hasLength(1));
+        expect(backend.originalDebits, 0);
+        expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), hasLength(1));
+        expect(spendCalls, isEmpty);
+      });
+    }
+
+    testWidgets('authentication denial never transforms or saves an arbitrary cached Prism original', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      backend.originalAuthenticated = false;
+      final cached = await fixtureImage(tester, 'unacquired.jpg');
+      offlineFixture.mapSource(_link, cached);
+      var transformed = false;
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        variant: DownloadVariant(
+          key: 'tint-ff8800',
+          prepare: () async {
+            transformed = true;
+            return tinted;
+          },
+          prepareAuthorized: (_) async {
+            transformed = true;
+            return tinted;
+          },
+        ),
+      );
+      await tapSave(tester);
+      expect(transformed, isFalse);
+      expect(enqueued, isEmpty);
+      expect(backend.originalDebits, 0);
+      expect(spendCalls, isEmpty);
+    });
+
+    testWidgets('account switch after quote never acquires or saves for the next account', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      await pump(tester, source: WallpaperSource.prism);
+      await tapSave(tester);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'other-user'
+        ..loggedIn = true;
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+      expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), isEmpty);
+      expect(backend.originalDebits, 0);
+      expect(enqueued, isEmpty);
+    });
+
+    testWidgets('a failed native save retries its original receipt without a second debit', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      enqueueSucceeds = false;
+      await pump(tester, source: WallpaperSource.prism);
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+      expect(backend.originalDebits, 1);
+      enqueueSucceeds = true;
+      await tapSave(tester);
+      expect(enqueued, hasLength(2));
+      expect(backend.originalDebits, 1);
+      final acquisitions = backend.originalCalls.where((call) => call['mode'] != 'quote').toList();
+      expect(acquisitions[0]['requestId'], acquisitions[1]['requestId']);
+      expect(spendCalls, isEmpty);
+    });
+  });
+
   group('guest', () {
+    testWidgets('a protected Prism original offers sign in without calling original access', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      backend.originalAuthenticated = false;
+      await pump(tester, source: WallpaperSource.prism, link: '');
+      await tapSave(tester);
+      expect(find.text('Sign in'), findsOneWidget);
+      expect(backend.originalCalls, isEmpty);
+      expect(enqueued, isEmpty);
+      Navigator.of(tester.element(find.text('Sign in'))).pop();
+      await settle(tester);
+      expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
+    });
+
     testWidgets('a Pro wallpaper offers sign in or Pro, never an ad', (tester) async {
       app_state.prismUser = app_constants.createGuestPrismUser();
       await pump(tester, premiumContent: true);

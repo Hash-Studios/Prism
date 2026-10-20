@@ -16,7 +16,7 @@ enum FirestoreFilterOp {
   isNull,
 }
 
-enum FirestoreCachePolicy { networkOnly, staleWhileRevalidate, memoryFirst, diskFirst }
+enum FirestoreCachePolicy { networkOnly, serverOnly, staleWhileRevalidate, memoryFirst, diskFirst }
 
 class FirestoreFilter {
   const FirestoreFilter({required this.field, required this.op, this.value});

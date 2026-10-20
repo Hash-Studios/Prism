@@ -51,7 +51,7 @@
     <string name="notif_push_draw_winner_title">Você ganhou o Sorteio Prism</string>
     <string name="notif_push_draw_winner_body">Um mês de Pro e a moldura Prism são seus.</string>
     <string name="notif_push_gift_received_title">%1$s enviou a você um passe Pro de 24 horas</string>
-    <string name="notif_push_gift_received_body">Coleções e papéis de parede premium estão disponíveis até amanhã.</string>
+    <string name="notif_push_gift_received_body">Coleções e papéis de parede premium ficarão disponíveis por 24 horas.</string>
     <string name="notif_push_report_needs_review_title">Denúncia aguardando análise</string>
     <string name="notif_push_report_needs_review_body">Uma denúncia de conteúdo está aguardando análise há mais de 12 horas.</string>
     <string name="notif_push_new_content_report_title">Nova denúncia de conteúdo</string>

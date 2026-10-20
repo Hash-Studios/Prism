@@ -12,10 +12,12 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:fake_async/fake_async.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+
 import '../../../../support/fake_firestore_client.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../support/canonical_fixture.dart';
 import '../../support/fav_fixtures.dart';
 import '../../support/guest_store_fixture.dart';
 
@@ -200,7 +202,12 @@ void main() {
         (id: 'doc_2', data: <String, dynamic>{'id': 'wall_b2', 'provider': 'pexels'}),
       ],
     );
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     final Result<List<FavouriteWallEntity>> result = await repository.fetchFavourites(userId: 'user_b');
 
@@ -216,7 +223,12 @@ void main() {
     final local = _local();
     await local.setWallFavourite('user_b', 'cached_b', true);
     final firestore = _MetadataFirestore()..queryError = StateError('offline');
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     final Result<List<FavouriteWallEntity>> result = await repository.fetchFavourites(userId: 'user_b');
 
@@ -231,6 +243,7 @@ void main() {
       _MetadataFirestore()..cacheOnlyEmpty = true,
       local,
       unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
     );
 
     final result = await repository.fetchFavourites(userId: 'user_b');
@@ -250,7 +263,12 @@ void main() {
           (id: 'sdk_cached', data: <String, dynamic>{'id': 'sdk_cached', 'provider': 'prism'}),
         ]
         ..neverEmitServer = true;
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -271,7 +289,12 @@ void main() {
     fakeAsync((async) {
       final local = _local();
       final firestore = _NeverServerControllerFirestore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -292,7 +315,12 @@ void main() {
   test('a metadata read with no SDK cache keeps the full server timeout', () {
     fakeAsync((async) {
       final firestore = _NeverServerControllerFirestore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -313,7 +341,12 @@ void main() {
   test('a metadata cleanup failure does not prevent the bounded cached result', () {
     fakeAsync((async) {
       final firestore = _NeverServerControllerFirestore()..cancelError = StateError('cleanup failed');
-      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -335,7 +368,12 @@ void main() {
       local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('stale_wall')]);
       async.flushMicrotasks();
       final firestore = _NeverServerControllerFirestore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -356,7 +394,12 @@ void main() {
   test('a server error during the cache grace returns cached data without an unhandled error', () {
     fakeAsync((async) {
       final firestore = _NeverServerControllerFirestore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       Result<List<FavouriteWallEntity>>? result;
 
       unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
@@ -376,7 +419,12 @@ void main() {
   test('server-confirmed empty favourites clear the stale local snapshot', () async {
     final local = _local();
     await local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('removed_elsewhere')]);
-    final repository = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      _MetadataFirestore(),
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     final result = await repository.fetchFavourites(userId: 'user_b');
 
@@ -392,7 +440,12 @@ void main() {
       InMemoryLocalStore(),
       durableStore: DurableJsonStore('favourites', directory: directory),
     );
-    final online = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, store);
+    final online = FavouriteWallsRepositoryImpl(
+      _MetadataFirestore(),
+      local,
+      store,
+      EmptyCanonicalWallpaperRepository(),
+    );
     await online.toggleFavourite(userId: 'user_b', wall: prismFav('saved_wall'), currentlyFavourited: false);
 
     final restarted = FavouriteWallsRepositoryImpl(
@@ -402,6 +455,7 @@ void main() {
         durableStore: DurableJsonStore('favourites', directory: directory),
       ),
       store,
+      EmptyCanonicalWallpaperRepository(),
     );
 
     final Result<List<FavouriteWallEntity>> result = await restarted.fetchFavourites(userId: 'user_b');
@@ -489,7 +543,12 @@ void main() {
       await local.setWallFavourite('u', id, true);
     }
     final firestore = _BatchingFirestore();
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     final result = await repository.clearAll(userId: 'u', wallIds: <String>[...ids, ' ', 'w0']);
 
@@ -505,7 +564,12 @@ void main() {
     final local = _local();
     await local.setWallFavourite('u', 'w1', true);
     final firestore = _BatchingFirestore()..batchError = FirestoreError(message: 'denied', code: 'permission-denied');
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     final result = await repository.clearAll(userId: 'u', wallIds: <String>['w1']);
 
@@ -518,7 +582,12 @@ void main() {
     test('a heart tap with no network finishes after 8 seconds, keeps the local heart and reports success', () {
       fakeAsync((async) {
         final local = _local();
-        final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
+        final repository = FavouriteWallsRepositoryImpl(
+          _OfflineWriteFirestore(),
+          local,
+          unusedGuestStore(),
+          EmptyCanonicalWallpaperRepository(),
+        );
         Result<bool>? result;
 
         repository
@@ -545,7 +614,12 @@ void main() {
         final local = _local();
         local.setWallFavourite('u', 'w1', true);
         async.flushMicrotasks();
-        final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
+        final repository = FavouriteWallsRepositoryImpl(
+          _OfflineWriteFirestore(),
+          local,
+          unusedGuestStore(),
+          EmptyCanonicalWallpaperRepository(),
+        );
         Result<bool>? result;
 
         repository
@@ -561,7 +635,12 @@ void main() {
     test('permission-denied rolls the local heart back and reports a failure', () async {
       final local = _local();
       final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'no', code: 'permission-denied');
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
 
       final result = await repository.toggleFavourite(userId: 'u', wall: prismFav('w1'), currentlyFavourited: false);
 
@@ -573,7 +652,12 @@ void main() {
     test('an immediate unavailable error keeps the durable favourite intent pending', () async {
       final local = _local();
       final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'offline', code: 'unavailable');
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
 
       final result = await repository.toggleFavourite(userId: 'u', wall: prismFav('w1'), currentlyFavourited: false);
 
@@ -586,7 +670,12 @@ void main() {
       final local = _local();
       await local.setWallFavourite('u', 'w1', true);
       final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'offline', code: 'unavailable');
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
 
       final result = await repository.clearAll(userId: 'u', wallIds: <String>['w1']);
 
@@ -600,7 +689,12 @@ void main() {
         final local = _local();
         local.setWallFavourite('u', 'w1', true);
         async.flushMicrotasks();
-        final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
+        final repository = FavouriteWallsRepositoryImpl(
+          _OfflineWriteFirestore(),
+          local,
+          unusedGuestStore(),
+          EmptyCanonicalWallpaperRepository(),
+        );
         Result<bool>? result;
 
         repository.clearAll(userId: 'u', wallIds: <String>['w1']).then((value) => result = value);
@@ -615,7 +709,12 @@ void main() {
   group('favouritedAt', () {
     test('every source writes favouritedAt and keeps the one the entity already has', () async {
       final firestore = _MetadataFirestore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
       final DateTime stamped = DateTime.utc(2026, 5);
 
       for (final FavouriteWallEntity wall in <FavouriteWallEntity>[
@@ -665,7 +764,12 @@ void main() {
           ),
         ],
       );
-      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
 
       final result = await repository.fetchFavourites(userId: 'u');
 
@@ -679,7 +783,7 @@ void main() {
       final firestore = _MetadataFirestore();
       final local = _local();
       final store = tempGuestStore();
-      final repository = FavouriteWallsRepositoryImpl(firestore, local, store);
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, store, EmptyCanonicalWallpaperRepository());
 
       final result = await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: false);
 
@@ -692,7 +796,12 @@ void main() {
     test('a guest list reads back from the store and a guest removal deletes from it', () async {
       final local = _local();
       final store = tempGuestStore();
-      final repository = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, store);
+      final repository = FavouriteWallsRepositoryImpl(
+        _MetadataFirestore(),
+        local,
+        store,
+        EmptyCanonicalWallpaperRepository(),
+      );
       await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: false);
       await repository.toggleFavourite(userId: '', wall: prismFav('g2'), currentlyFavourited: false);
 
@@ -713,7 +822,12 @@ void main() {
   test('signed-in bundled starter favourites are stored locally without outbox or Firestore writes', () async {
     final local = _local();
     final firestore = _MetadataFirestore();
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
     final starter = prismFav('starter-sunset');
 
     final result = await repository.toggleFavourite(userId: 'account', wall: starter, currentlyFavourited: false);
@@ -732,7 +846,12 @@ void main() {
   test('clearing a signed-in bundled starter does not enqueue a Firestore delete', () async {
     final local = _local();
     final firestore = _MetadataFirestore();
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
     final starter = prismFav('starter-sunset');
     await local.saveWallSnapshot('account', <FavouriteWallEntity>[starter]);
     await local.setWallFavourite('account', starter.id, true);
@@ -749,7 +868,12 @@ void main() {
   test('toggleFavourite writes favouritedAt and fetch maps it back', () async {
     final local = _local();
     final firestore = _MetadataFirestore();
-    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
 
     await repository.toggleFavourite(userId: 'u', wall: prismFav('p1'), currentlyFavourited: false);
 
@@ -761,7 +885,12 @@ void main() {
         (id: 'd1', data: <String, dynamic>{'id': 'p1', 'provider': 'prism', 'favouritedAt': stamp}),
       ],
     );
-    final result = await FavouriteWallsRepositoryImpl(reader, local, unusedGuestStore()).fetchFavourites(userId: 'u');
+    final result = await FavouriteWallsRepositoryImpl(
+      reader,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    ).fetchFavourites(userId: 'u');
 
     expect(result.data!.single.favouritedAt, stamp);
   });
@@ -779,6 +908,7 @@ void main() {
       firestore,
       local,
       unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
     ).fetchFavourites(userId: 'u');
 
     expect(result.data!.single.favouritedAt, isNull);
@@ -790,7 +920,12 @@ void main() {
     final local = _local();
     final firestore = _MetadataFirestore();
 
-    await FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore()).toggleFavourite(
+    await FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    ).toggleFavourite(
       userId: 'u',
       wall: prismFav('p1', favouritedAt: stamp),
       currentlyFavourited: false,

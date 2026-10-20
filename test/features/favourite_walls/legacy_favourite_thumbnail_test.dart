@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
+import 'support/canonical_fixture.dart';
 import 'support/guest_store_fixture.dart';
 
 class _MetadataFakeFirestoreClient extends FakeFirestoreClient {
@@ -43,6 +44,7 @@ void main() {
       ),
       FavoritesLocalDataSource(InMemoryLocalStore()),
       tempGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
     );
 
     final result = await repository.fetchFavourites(userId: 'user-id');

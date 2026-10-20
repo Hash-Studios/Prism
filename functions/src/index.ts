@@ -16,6 +16,7 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
+export {ownedThumbnail, onOwnedWallWritten} from "./ownedAssetDelivery";
 export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak, claimProSpin, spinWheel} from "./coinsCallables";
 export {progressQuest, openQuestChest, openDailyChest} from "./quests";
 export {purchaseShopItem, equipCosmetic} from "./shop";
@@ -28,6 +29,7 @@ export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
+export {resolveOriginalAccess} from "./originalAccess";
 
 export {recordWallpaperAction, onFavouriteWritten} from "./wallStats";
 export {computeTrending} from "./trending";

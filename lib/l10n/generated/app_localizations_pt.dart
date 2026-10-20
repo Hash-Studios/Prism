@@ -588,7 +588,7 @@ class AppLocalizationsPt extends AppLocalizations {
     final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
-    return '$recipientName terá acesso às coleções e aos papéis de parede Premium até amanhã. Custa $priceString moedas.';
+    return '$recipientName terá acesso às coleções e aos papéis de parede Premium pelas próximas 24 horas. Custa $priceString moedas.';
   }
 
   @override
@@ -7046,7 +7046,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notifPushDropLiveTitle => 'Um novo Drop está disponível';
 
   @override
-  String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium estão disponíveis até amanhã.';
+  String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium ficarão disponíveis por 24 horas.';
 
   @override
   String notifPushGiftReceivedTitle(String senderName) {
@@ -10473,7 +10473,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
-    return '$recipientName terá acesso às coleções e aos papéis de parede Premium até amanhã. Custa $priceString moedas.';
+    return '$recipientName terá acesso às coleções e aos papéis de parede Premium pelas próximas 24 horas. Custa $priceString moedas.';
   }
 
   @override
@@ -16931,7 +16931,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notifPushDropLiveTitle => 'Um novo Drop está disponível';
 
   @override
-  String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium estão disponíveis até amanhã.';
+  String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium ficarão disponíveis por 24 horas.';
 
   @override
   String notifPushGiftReceivedTitle(String senderName) {
