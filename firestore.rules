@@ -137,14 +137,10 @@ service cloud.firestore {
 
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
-      allow read: if (resource.data.review == true
-          && resource.data.originalProtected == true
-          && resource.data.wallpaper_url == ''
-          && resource.data.wallpaper_path == ''
-          && resource.data.wallpaper_sha == ''
-          && resource.data.thumb_path == ''
-          && resource.data.thumb_sha == '')
-          || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      // Reviewed walls stay readable while 3.7.0 clients are installed: they read unconverted walls and the original URL.
+      // Tighten this to review == true && originalProtected == true && wallpaper_url == '' (and the four provenance
+      // fields == '') once 3.7.0 share is low. 3.8.0 clients already filter to protected walls on their side.
+      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if isConfiguredAdmin()
           || (isSignedIn()
