@@ -153,11 +153,17 @@ test("signed-out artist and admins keep inbox entries while artist followers sti
     "artist@example.com": {loggedIn: false},
     "admin@example.com": {loggedIn: false},
   });
+  const wall: Record<string, unknown> = {id: "w1", review: true, email: "artist@example.com", by: "Artist", title: "Dunes"};
+  const ref: {path: string; get: () => Promise<unknown>} = {path: "walls/w1", get: async () => snapshot};
+  const snapshot = {ref, createTime: admin.firestore.Timestamp.fromMillis(1), data: () => wall};
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    callback({get: async () => snapshot, update: (_ref: unknown, data: Record<string, unknown>) => Object.assign(wall, data),
+    } as unknown as admin.firestore.Transaction));
   await onWallApproved.run({
     params: {wallId: "w1"},
     data: {
       before: {data: () => ({review: false})},
-      after: {data: () => ({review: true, email: "artist@example.com", by: "Artist", title: "Dunes"})},
+      after: snapshot,
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
   assert.equal(inbox.length, 2);

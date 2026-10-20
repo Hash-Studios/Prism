@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
+import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db} from "../common";
 import * as delivery from "../ownedAssetDelivery";
 import {STUDIO_SERIES} from "../studio/series";
+import {STUDIO_ACCOUNT} from "../studio/account";
+import {STUDIO_ASSET_BASE} from "../studio/assetSource";
 import {studioPrompt} from "../studio/plan";
 import {
   onStudioWallApproved,
@@ -137,6 +140,10 @@ test("sendStudioPost sanitizes fetch exceptions that contain the token", async (
 const wall = {wallpaper_url: "https://cdn.example/w.jpg", seriesId: "paper-worlds", aiPrompt: "a kite", tags: []};
 const morning = new Date("2026-10-17T03:00:00Z");
 
+test("the approval trigger retries transient failures", () => {
+  assert.equal(onStudioWallApproved.__endpoint.eventTrigger?.retry, true);
+});
+
 test("only the first wall approved in a day is posted, and the next day posts again", async (t) => {
   const store = installTelegramFakeDb(t);
   const posts = fakeTelegram(t);
@@ -179,7 +186,9 @@ test("a timed-out image transfer releases the daily claim for the next approval"
 
 test("a lost Telegram response keeps the day claimed, so a possibly accepted post is not repeated", async (t) => {
   const first = verifiedStudioWall();
-  const second = {...first, studioRunId: "run-2", studioCandidateId: "candidate-2"};
+  const second = {...first, studioRunId: "run-2", studioCandidateId: "candidate-2",
+    wallpaper_url: `${STUDIO_ASSET_BASE}/ai/studio/candidate-2.jpg`,
+    wallpaper_thumb: `${STUDIO_ASSET_BASE}/ai/studio/thumb_candidate-2.jpg`};
   installTelegramFakeDb(t, {
     "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
     "studioRuns/run-2/candidates/candidate-2": {wallId: "wall-2"},
@@ -260,7 +269,8 @@ function approvalEvent(
     params: {wallId},
     data: before && after ? {
       before: {data: () => before},
-      after: {data: () => after, ref: {get: async () => ({data: () => after})}},
+      after: {data: () => after, createTime: admin.firestore.Timestamp.fromMillis(1),
+        ref: {get: async () => ({data: () => after})}},
     } : undefined,
   } as unknown as Parameters<typeof onStudioWallApproved.run>[0];
 }
@@ -273,6 +283,9 @@ function mockTelegramSecrets(t: TestContext, token = "sentinel-bot-token") {
 function verifiedStudioWall() {
   return {
     ...wall,
+    email: STUDIO_ACCOUNT.email,
+    wallpaper_url: `${STUDIO_ASSET_BASE}/ai/studio/candidate-1.jpg`,
+    wallpaper_thumb: `${STUDIO_ASSET_BASE}/ai/studio/thumb_candidate-1.jpg`,
     origin: "studio",
     studioRunId: "run-1",
     studioCandidateId: "candidate-1",
@@ -300,6 +313,35 @@ test("only a false-to-true verified Studio approval posts", async (t) => {
   assert.equal(posts[1].body?.get("chat_id"), "-100");
   assert.equal(posts[1].url.includes("sentinel-bot-token"), true);
 });
+
+for (const forged of [
+  {email: "attacker@example.com", wallpaper_url: "https://foreign.example/arbitrary.jpg"},
+  {email: STUDIO_ACCOUNT.email, wallpaper_url: "https://foreign.example/arbitrary.jpg"},
+  {email: "attacker@example.com", originalProtected: true, wallpaper_url: ""},
+]) {
+  test(`a copied Studio candidate backlink cannot authorize forged wall content: ${JSON.stringify(forged)}`, async (t) => {
+    const studio = {...verifiedStudioWall(), ...forged};
+    const store = installTelegramFakeDb(t, {
+      "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+      "walls/wall-1": studio,
+    });
+    mockTelegramSecrets(t);
+    let signatures = 0;
+    t.mock.method(delivery, "signOriginalDelivery", async () => {
+      signatures++;
+      return {url: "https://r2.example/original.jpg?sig=1", expiresAt: Date.now() + 60_000, objectId: "a".repeat(64)};
+    });
+    let downloads = 0;
+    t.mock.method(globalThis, "fetch", async () => {
+      downloads++;
+      return new Response(new Uint8Array([1]));
+    });
+    await onStudioWallApproved.run(approvalEvent({...studio, review: false}, studio));
+    assert.equal(downloads, 0);
+    assert.equal(signatures, 0);
+    assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+  });
+}
 
 test("non-transitions, missing snapshots, ordinary walls, and spoofed Studio walls do not post", async (t) => {
   const studio = verifiedStudioWall();
@@ -352,11 +394,121 @@ test("a stale approval snapshot does not post after the current wall was deleted
   assert.equal(posts.length, 0);
 });
 
+test("an approval from a deleted wall cannot post a recreated wall at the same path", async (t) => {
+  const studio = verifiedStudioWall();
+  const store = installTelegramFakeDb(t, {
+    "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+    "walls/wall-1": studio,
+  });
+  mockTelegramSecrets(t);
+  const posts = fakeTelegram(t);
+  const event = approvalEvent({...studio, review: false}, studio);
+  assert.ok(event.data);
+  Object.assign(event.data.after, {createTime: admin.firestore.Timestamp.fromMillis(0)});
+  await onStudioWallApproved.run(event);
+  assert.deepEqual(posts, []);
+  assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+});
+
+for (const failure of ["signing", "download"]) {
+  test(`a transient original ${failure} failure retries the same approval without duplicating its post`, async (t) => {
+    const studio = {...verifiedStudioWall(), originalProtected: true, wallpaper_url: ""};
+    const store = installTelegramFakeDb(t, {
+      "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+      "walls/wall-1": studio,
+    });
+    mockTelegramSecrets(t);
+    let up = false;
+    let posts = 0;
+    t.mock.method(delivery, "signOriginalDelivery", async () => {
+      if (!up && failure === "signing") throw new Error("temporary R2 signing failure");
+      return {url: "https://r2.example/original.jpg?sig=1", expiresAt: Date.now() + 60_000, objectId: "a".repeat(64)};
+    });
+    t.mock.method(globalThis, "fetch", async (url: string) => {
+      if (!url.includes("api.telegram.org")) {
+        if (!up && failure === "download") throw new Error("temporary R2 download failure");
+        return new Response(new Uint8Array([1]));
+      }
+      posts++;
+      return new Response(JSON.stringify({ok: true, result: {message_id: 1}}));
+    });
+    const event = approvalEvent({...studio, review: false}, studio);
+    await assert.rejects(onStudioWallApproved.run(event), /retry/i);
+    assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+    assert.equal(posts, 0);
+    up = true;
+    await onStudioWallApproved.run(event);
+    await onStudioWallApproved.run(event);
+    assert.equal(posts, 1);
+    assert.equal(store.get("studioTelegramPosts/2026-10-17")?.wallId, "wall-1");
+  });
+}
+
+for (const [target, status] of [["telegram", 400], ["telegram", 403], ["image", 404]] as const) {
+  test(`a permanent ${target} HTTP ${status} stops retrying the approval and frees the day`, async (t) => {
+    const studio = verifiedStudioWall();
+    const store = installTelegramFakeDb(t, {
+      "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+      "walls/wall-1": studio,
+    });
+    mockTelegramSecrets(t);
+    let rejectedAttempts = 0;
+    t.mock.method(globalThis, "fetch", async (url: string) => {
+      if (url.includes("api.telegram.org") === (target === "telegram")) {
+        rejectedAttempts++;
+        return new Response("permanent rejection", {status});
+      }
+      return new Response(new Uint8Array([1]));
+    });
+    await onStudioWallApproved.run(approvalEvent({...studio, review: false}, studio));
+    assert.equal(rejectedAttempts, 1);
+    assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+  });
+}
+
+test("a permanent protected-original integrity failure does not retry the approval", async (t) => {
+  const studio = {...verifiedStudioWall(), originalProtected: true, wallpaper_url: ""};
+  const store = installTelegramFakeDb(t, {
+    "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+    "walls/wall-1": studio,
+  });
+  mockTelegramSecrets(t);
+  t.mock.method(delivery, "signOriginalDelivery", async () => {
+    throw new delivery.PermanentOwnedAssetError("Retained upload mismatch");
+  });
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    requests++;
+    return new Response();
+  });
+  await onStudioWallApproved.run(approvalEvent({...studio, review: false}, studio));
+  assert.equal(requests, 0);
+  assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+});
+
+for (const status of [408, 429, 500]) {
+  test(`Telegram HTTP ${status} still retries the approval`, async (t) => {
+    const studio = verifiedStudioWall();
+    const store = installTelegramFakeDb(t, {
+      "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+      "walls/wall-1": studio,
+    });
+    mockTelegramSecrets(t);
+    t.mock.method(globalThis, "fetch", async (url: string) => url.includes("api.telegram.org") ?
+      new Response("try later", {status}) : new Response(new Uint8Array([1])));
+    await assert.rejects(onStudioWallApproved.run(approvalEvent({...studio, review: false}, studio)), /retry/i);
+    assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+  });
+}
+
 test("an approval event posts the current wall content, not its stale snapshot", async (t) => {
   const stale = verifiedStudioWall();
-  const current = {...stale, wallpaper_url: "https://cdn.example/current.jpg", aiPrompt: "current scene"};
+  const current = {...stale, studioCandidateId: "candidate-2", aiPrompt: "current scene",
+    wallpaper_url: `${STUDIO_ASSET_BASE}/ai/studio/candidate-2.jpg`,
+    wallpaper_thumb: `${STUDIO_ASSET_BASE}/ai/studio/thumb_candidate-2.jpg`};
   installTelegramFakeDb(t, {
     "studioRuns/run-1/candidates/candidate-1": {wallId: "wall-1"},
+    "studioRuns/run-1/candidates/candidate-2": {wallId: "wall-1"},
     "walls/wall-1": current,
   });
   mockTelegramSecrets(t);

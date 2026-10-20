@@ -512,6 +512,14 @@ function failStudioCandidateRead(t: TestContext) {
   } : collection(name));
 }
 
+async function approvalEvent(store: Map<string, Doc>): Promise<Parameters<typeof onWallApproved.run>[0]> {
+  const before = store.get("walls/WALL1AAAAA");
+  store.set("walls/WALL1AAAAA", {...before, id: "WALL1AAAAA", review: true});
+  return {params: {wallId: "WALL1AAAAA"}, data: {before: {data: () => before},
+    after: await db.doc("walls/WALL1AAAAA").get()},
+  } as unknown as Parameters<typeof onWallApproved.run>[0];
+}
+
 test("onWallSubmitted leaves a Studio wall alone: no owner sync, no admin push", async (t) => {
   const {store, send} = walls2(t, studioWall());
   await onWallSubmitted.run({
@@ -550,37 +558,19 @@ test("onWallSubmitted stops before owner sync or notification when the candidate
 
 test("onWallApproved sends no pushes for a Studio wall", async (t) => {
   const {store, send} = walls2(t, studioWall());
-  await onWallApproved.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {
-      before: {data: () => store.get("walls/WALL1AAAAA")},
-      after: {data: () => ({...store.get("walls/WALL1AAAAA"), review: true})},
-    },
-  } as unknown as Parameters<typeof onWallApproved.run>[0]);
+  await onWallApproved.run(await approvalEvent(store));
   assert.equal(send.mock.callCount(), 0);
 });
 
 test("onWallApproved stops before notification when the candidate read fails", async (t) => {
   const {store, send} = walls2(t, studioWall());
   failStudioCandidateRead(t);
-  await assert.rejects(onWallApproved.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {
-      before: {data: () => store.get("walls/WALL1AAAAA")},
-      after: {data: () => ({...store.get("walls/WALL1AAAAA"), review: true})},
-    },
-  } as unknown as Parameters<typeof onWallApproved.run>[0]), /candidate read failed/);
+  await assert.rejects(onWallApproved.run(await approvalEvent(store)), /candidate read failed/);
   assert.equal(send.mock.callCount(), 0);
 });
 
 test("a user wall that only claims origin studio still gets approval notifications", async (t) => {
   const {store, send} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
-  await onWallApproved.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {
-      before: {data: () => store.get("walls/WALL1AAAAA")},
-      after: {data: () => ({...store.get("walls/WALL1AAAAA"), review: true})},
-    },
-  } as unknown as Parameters<typeof onWallApproved.run>[0]);
+  await onWallApproved.run(await approvalEvent(store));
   assert.ok(send.mock.callCount() > 0, "the spoofed Studio wall still sends approval notifications");
 });

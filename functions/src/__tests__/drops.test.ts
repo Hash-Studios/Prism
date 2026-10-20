@@ -174,11 +174,25 @@ test("the planner releases old drops even when it plans nothing", async (t) => {
       endsAt: MONDAY - 40 * 86_400_000,
       walls: [{id: "W1"}],
     },
-    "walls/W1": wall(1, {dropReserved: false}),
+    "walls/W1": wall(1, {dropReserved: false, dropWeek: "2026-W30"}),
   });
   await plan(t);
   assert.equal(store.get("walls/W1")?.review, true);
   assert.equal(store.has(`drops/${KEY}`), false);
+});
+
+test("releasing an old snapshot cannot publish a wall reassigned to a pending drop or recreated without markers", async (t) => {
+  const store = installFakeDb(t, {
+    "drops/2026-W30": {endsAt: MONDAY - 40 * 86_400_000, walls: [{id: "W1"}, {id: "W2"}]},
+    "walls/W1": wall(1, {dropWeek: KEY, dropReserved: true}),
+    "walls/W2": wall(2, {dropReserved: false}),
+  });
+  assert.equal(await releaseOldDrops(MONDAY), 1);
+  assert.equal(store.get("walls/W1")?.review, false);
+  assert.equal(store.get("walls/W1")?.dropWeek, KEY);
+  assert.equal(store.get("walls/W1")?.dropReserved, true);
+  assert.equal(store.get("walls/W2")?.review, false);
+  assert.equal(store.get("drops/2026-W30")?.released, true);
 });
 
 const live = {

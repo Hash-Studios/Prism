@@ -3,9 +3,11 @@ import {defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "../common";
-import {signOriginalDelivery} from "../ownedAssetDelivery";
+import {PermanentOwnedAssetError, signOriginalDelivery} from "../ownedAssetDelivery";
 import {r2Secrets} from "../r2Storage";
 import {isStudioWall} from "./isStudioWall";
+import {STUDIO_ACCOUNT} from "./account";
+import {parseStudioSource} from "./assetSource";
 import {STUDIO_SERIES} from "./series";
 
 // The bot posts the first Studio wall approved each day to the Telegram channel: the image and a caption.
@@ -13,6 +15,12 @@ export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 export const telegramChatId = defineSecret("TELEGRAM_CHAT_ID");
 
 const MAX_HASHTAGS = 5;
+class PermanentStudioPostError extends Error {}
+
+function responseError(message: string, status: number): Error {
+  return status >= 400 && status < 500 && status !== 408 && status !== 429 ?
+    new PermanentStudioPostError(`${message}: ${status}`) : new Error(`${message}: ${status}`);
+}
 
 /** "A winding road through ... trees.", the collection line and hashtags. Reads only the wall doc. */
 export function studioPostCaption(wall: admin.firestore.DocumentData): string {
@@ -45,9 +53,18 @@ export function postDay(now: Date): string {
  * URL of the private original. An unconverted wall still has its public worker URL.
  */
 export async function studioImageUrl(wallId: string, wall: admin.firestore.DocumentData): Promise<string> {
-  if (wall.originalProtected === true) return (await signOriginalDelivery(wallId)).url;
+  if (wall.originalProtected === true) {
+    try {
+      return (await signOriginalDelivery(wallId)).url;
+    } catch (error) {
+      if (error instanceof Error && ["Invalid wall identity", "Owned wall unavailable"].includes(error.message)) {
+        throw new PermanentStudioPostError("Studio wall has no valid original delivery.");
+      }
+      throw error;
+    }
+  }
   const url = str(wall.wallpaper_url);
-  if (!url) throw new Error("Studio wall has no readable image.");
+  if (!url) throw new PermanentStudioPostError("Studio wall has no readable image.");
   return url;
 }
 
@@ -63,7 +80,7 @@ export async function sendStudioPost(token: string, chatId: string, wall: admin.
   } catch {
     throw new Error("Image download failed.");
   }
-  if (!image.ok) throw new Error(`Image download failed: ${image.status}`);
+  if (!image.ok) throw responseError("Image download failed", image.status);
   const form = new FormData();
   form.set("chat_id", chatId);
   form.set("caption", studioPostCaption(wall));
@@ -74,7 +91,7 @@ export async function sendStudioPost(token: string, chatId: string, wall: admin.
   } catch {
     throw uncertain("Telegram sendPhoto request failed.");
   }
-  if (!res.ok) throw new Error(`Telegram sendPhoto failed: ${res.status}`);
+  if (!res.ok) throw responseError("Telegram sendPhoto failed", res.status);
   let result: unknown;
   try {
     result = await res.json();
@@ -82,6 +99,9 @@ export async function sendStudioPost(token: string, chatId: string, wall: admin.
     throw uncertain("Telegram sendPhoto returned an invalid response.");
   }
   if (typeof result !== "object" || result === null || !("ok" in result) || result.ok !== true) {
+    if (result && typeof result === "object" && "error_code" in result && typeof result.error_code === "number") {
+      throw responseError("Telegram sendPhoto was not accepted", result.error_code);
+    }
     throw new Error("Telegram sendPhoto was not accepted.");
   }
 }
@@ -122,7 +142,8 @@ export async function postFirstStudioWallOfDay(
 
 /** When a Studio wall is approved, it becomes the day's Telegram post if it is the first one that day. */
 export const onStudioWallApproved = onDocumentUpdated(
-  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 300, secrets: [telegramBotToken, telegramChatId, ...r2Secrets]},
+  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 300, retry: true,
+    secrets: [telegramBotToken, telegramChatId, ...r2Secrets]},
   async (event) => {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();
@@ -131,7 +152,11 @@ export const onStudioWallApproved = onDocumentUpdated(
     try {
       const current = await db.collection("walls").doc(wallId).get();
       const wall = current.data();
-      if (!wall || wall.review !== true || !(await isStudioWall(wallId, wall))) return;
+      if (!wall || !current.createTime || !event.data?.after.createTime ||
+          !current.createTime.isEqual(event.data.after.createTime) ||
+          wall.review !== true || wall.email !== STUDIO_ACCOUNT.email ||
+          (wall.originalProtected !== true && !parseStudioSource(wall)) ||
+          !(await isStudioWall(wallId, wall))) return;
       const posted = await postFirstStudioWallOfDay(
         wallId,
         wall,
@@ -141,8 +166,9 @@ export const onStudioWallApproved = onDocumentUpdated(
       );
       logger.info(posted ? "onStudioWallApproved: posted." : "onStudioWallApproved: today's post is taken.", {wallId});
     } catch (err) {
-      // The send errors are fixed texts, so the message holds no token.
-      logger.error("onStudioWallApproved: post failed.", {wallId, err: String(err)});
+      logger.error("onStudioWallApproved: post failed.", {wallId});
+      if (!(err as {uncertain?: boolean}).uncertain && !(err instanceof PermanentStudioPostError) &&
+          !(err instanceof PermanentOwnedAssetError)) throw new Error("Studio Telegram post failed; retry approval.");
     }
   },
 );

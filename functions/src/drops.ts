@@ -93,25 +93,25 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
     .get();
   let released = 0;
   for (const doc of old.docs.filter((d) => d.data().released !== true)) {
-    const walls = Array.isArray(doc.data().walls) ?
-      (doc.data().walls as Array<{ id?: unknown }>) :
-      [];
-    const refs = walls
-      .map((w) => str(w.id))
-      .filter((id) => WALL_ID.test(id))
-      .map((id) => db.collection("walls").doc(id));
-    await db.runTransaction(async (tx) => {
+    const didRelease = await db.runTransaction(async (tx) => {
+      const current = (await tx.get(doc.ref)).data();
+      if (!current || current.released === true || typeof current.endsAt !== "number" ||
+          current.endsAt >= nowMs - RELEASE_AFTER_MS) return false;
+      const walls = Array.isArray(current.walls) ? current.walls as Array<{id?: unknown}> : [];
+      const refs = walls.map((w) => str(w.id)).filter((id) => WALL_ID.test(id))
+        .map((id) => db.collection("walls").doc(id));
       const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
       for (const snap of snaps) {
         // Original access refuses a wall that still has drop markers, so a released wall drops them.
-        if (snap.exists) {
+        if (snap.exists && snap.data()?.dropWeek === doc.id) {
           tx.update(snap.ref, {review: true, dropWeek: admin.firestore.FieldValue.delete(),
             dropReserved: admin.firestore.FieldValue.delete()});
         }
       }
       tx.update(doc.ref, {released: true});
+      return true;
     });
-    released += 1;
+    if (didRelease) released += 1;
   }
   if (released > 0) logger.info("drops: released", {count: released});
   return released;
