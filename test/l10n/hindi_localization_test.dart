@@ -1,0 +1,235 @@
+import 'dart:io';
+import 'dart:math';
+
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
+import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+
+void main() {
+  test('Hindi localization contract checker passes', () async {
+    final ProcessResult result = await Process.run('python3', <String>['tool/check_hi_l10n.py']);
+
+    expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
+  });
+
+  test('Hindi is registered and unsupported locales resolve to English', () async {
+    expect(AppLocalizations.supportedLocales, contains(const Locale('hi')));
+
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+    expect(hindi.localeName, 'hi');
+    expect(hindi.actionRetry, 'फिर कोशिश करें');
+
+    final AppLocalizations english = await loadAppLocalizations(const Locale('fr'));
+    expect(AppLocalizations.supportedLocales.first, const Locale('en'));
+    expect(english.localeName, 'en');
+    expect(english.actionRetry, 'Try again');
+  });
+
+  testWidgets('device localization resolves Hindi and falls back to English', (WidgetTester tester) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('hi', 'IN')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    final AppLocalizations hindi = await loadDeviceAppLocalizations();
+    expect(hindi.localeName, 'hi');
+    expect(hindi.economyExportFailedLabel, 'एक्सपोर्ट नहीं हो सका');
+
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('zz')];
+    final AppLocalizations english = await loadDeviceAppLocalizations();
+    expect(english.localeName, 'en');
+    expect(english.economyExportFailedLabel, 'Export failed');
+  });
+
+  test('Hindi messages cover key journeys and preserve placeholders', () async {
+    await initializeDateFormatting('hi');
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    expect(hindi.onboardingWelcomeHeadline, 'आपकी स्क्रीन, नए अंदाज़ में।');
+    expect(hindi.premiumPageTitle, 'Prism Premium');
+    expect(hindi.accountSignIn, 'साइन इन करें');
+    expect(hindi.accountSettings, 'सेटिंग्स');
+    expect(hindi.accountShop, 'दुकान');
+    expect(hindi.accountUseShortcutsAutomation, 'Shortcuts ऑटोमेशन का इस्तेमाल करें');
+    expect(hindi.accountPurchasesRestoredPending, 'खरीदारियाँ वापस पा ली गईं। Pro अनलॉक होने में एक मिनट लग सकता है।');
+    expect(hindi.premiumPurchasePending, 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।');
+    expect(
+      hindi.premiumPurchaseUnconfirmed,
+      'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।',
+    );
+    expect(hindi.coreProfileUpdated, 'प्रोफ़ाइल अपडेट की गई');
+    expect(hindi.accountBlockThisUserTitle('Asha'), 'Asha को ब्लॉक करें?');
+    expect(hindi.coreWallpaperBySemanticLabel('Asha'), 'Asha का वॉलपेपर');
+    expect(hindi.coreRelativeTimeMinutesAgo(5), '5 मिनट पहले');
+    expect(hindi.coreRelativeTimeHoursAgo(0), '0 घंटे पहले');
+    expect(hindi.coreRelativeTimeHoursAgo(1), '1 घंटे पहले');
+    expect(hindi.coreRelativeTimeHoursAgo(3), '3 घंटे पहले');
+    expect(hindi.coreRelativeTimeJustNow, 'अभी-अभी');
+    expect(hindi.notifYesterday, 'कल');
+    expect(hindi.economyAiMatchingScreenSize, 'आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…');
+    expect(hindi.economyAiApplyingStyle, 'आपकी शैली लागू कर रहे हैं…');
+    expect(hindi.economyAiFinalizingWallpaper, 'आपके वॉलपेपर को अंतिम रूप दे रहे हैं…');
+    expect(hindi.economyAiRemixHint, 'गहरा आसमान, गर्म रंग, किनारे थोड़े नरम…');
+    expect(hindi.economyNeedMoreCoins(0), 'अभी 0 कॉइन और चाहिए।');
+    expect(hindi.economyNeedMoreCoins(1), 'अभी 1 कॉइन और चाहिए।');
+    expect(hindi.economyNeedMoreCoins(1234567), 'अभी 12,34,567 कॉइन और चाहिए।');
+    expect(DateFormat.yMMMMd(hindi.localeName).format(DateTime(2025, 1, 5)), '5 जनवरी 2025');
+    expect(formatLocalizedNumber(1234567, hindi), '12,34,567');
+  });
+
+  test('Hindi AI prompt and report copy preserve reviewed wording', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    expect(hindi.economyAiPromptSceneNature1, 'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला');
+    expect(hindi.economyAiPromptLightingGoldenHour, 'सुनहरी बेला की');
+    expect(hindi.economyAiPromptMoodDreamy, 'स्वप्निल');
+    expect(hindi.economyAiPromptQualityCrispTextures, 'स्पष्ट बनावट');
+    expect(hindi.economyAiPromptSuffix, 'मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट');
+    expect(
+      hindi.economyAiPromptComposition(
+        hindi.economyAiPromptSceneNature1,
+        hindi.economyAiPromptLightingGoldenHour,
+        hindi.economyAiPromptMoodDreamy,
+        hindi.economyAiPromptQualityCrispTextures,
+        hindi.economyAiPromptSuffix,
+      ),
+      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, सुनहरी बेला की रोशनी, '
+      'स्वप्निल माहौल, स्पष्ट बनावट, मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+    );
+    expect(hindi.onboardingAiPromptNature3, 'उफनती लहरों और गंभीर आसमान वाली नाटकीय समुद्री चट्टान');
+    expect(hindi.coreSignInCreatorSearchFeature, 'क्रिएटर खोज');
+    expect(
+      hindi.coreSignInFeatureTitle(hindi.coreSignInCreatorSearchFeature),
+      'क्रिएटर खोज का इस्तेमाल करने के लिए साइन इन करें',
+    );
+    expect(hindi.coreSignInFeatureTitle(hindi.accountFollowing), 'फ़ॉलोइंग का इस्तेमाल करने के लिए साइन इन करें');
+    expect(hindi.accountFollowingCountLabel('20'), '20 फ़ॉलोइंग');
+    expect(hindi.economyAiMadeWithPrism, 'Prism AI से बनाया गया');
+    expect(hindi.debugLogExportSubject, 'Prism की डिबग लॉग फ़ाइलें');
+    expect(
+      AiPromptPools.sceneIdea(hindi, AiStylePreset.nature, 0),
+      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+    );
+    expect(
+      OnboardingV2Config.aiOnboardingPrompts(hindi, AiStylePreset.nature).first,
+      'सूर्योदय की गर्म सुनहरी रोशनी में धुंध से ढकी पर्वत-शृंखला',
+    );
+  });
+
+  test('Hindi production AI prompts stay within the 160 UTF-16 unit limit', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    for (final AiStylePreset style in AiStylePreset.values) {
+      for (int scene = 0; scene < 5; scene++) {
+        for (int lighting = 0; lighting < 5; lighting++) {
+          for (int mood = 0; mood < 5; mood++) {
+            for (int quality = 0; quality < 5; quality++) {
+              final _PromptIndicesRandom random = _PromptIndicesRandom(<int>[scene, lighting, mood, quality]);
+              final String prompt = AiPromptPools.randomPrompt(hindi, style, random);
+              expect(random.isExhausted, isTrue);
+              expect(
+                prompt.length,
+                lessThanOrEqualTo(160),
+                reason: '$style scene=$scene lighting=$lighting mood=$mood quality=$quality: $prompt',
+              );
+            }
+          }
+        }
+      }
+
+      for (int scene = 0; scene < 3; scene++) {
+        final String prompt = AiPromptPools.sceneIdea(hindi, style, scene);
+        expect(prompt.length, lessThanOrEqualTo(160), reason: '$style scene idea $scene: $prompt');
+      }
+
+      for (final String prompt in OnboardingV2Config.aiOnboardingPrompts(hindi, style)) {
+        expect(prompt.length, lessThanOrEqualTo(160), reason: '$style onboarding prompt: $prompt');
+      }
+    }
+  });
+
+  test('Hindi wallpaper plural has explicit zero, one, and many forms', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    expect(hindi.wallpaperCount(0), 'कोई वॉलपेपर नहीं');
+    expect(hindi.wallpaperCount(1), '1 वॉलपेपर');
+    expect(hindi.wallpaperCount(3), '3 वॉलपेपर');
+  });
+
+  test('Hindi quest semantics cover nested selectors and optional false branches', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    expect(
+      hindi.economyQuestTileSemantics('मिशन', 'false', 3, 10, 0, 0, 'false', 'false', 'false', '', 'false'),
+      'मिशन, 10 में से 3',
+    );
+    expect(
+      hindi.economyQuestTileSemantics('मिशन', 'true', 3, 10, 0, 0, 'false', 'false', 'true', '', 'false'),
+      'मिशन, पूरा. साप्ताहिक मिशन',
+    );
+  });
+
+  testWidgets('real Hindi button and sheet remain usable at narrow width and 2x text', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(640, 1280);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('hi', 'IN'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+              child: PrismSheetBody(
+                scrollable: true,
+                title: context.l10n.premiumPageTitle,
+                message: context.l10n.accountAccountDeletionSubscriptionWarning,
+                actions: <Widget>[PrismButton(label: context.l10n.premiumPageTryAgain, onPressed: () {})],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder button = find.byType(PrismButton);
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    expect(button.hitTestable(), findsOneWidget);
+    expect(find.text('फिर कोशिश करें'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+class _PromptIndicesRandom implements Random {
+  _PromptIndicesRandom(this._indices);
+
+  final List<int> _indices;
+  int _offset = 0;
+
+  bool get isExhausted => _offset == _indices.length;
+
+  @override
+  int nextInt(int max) {
+    if (max != 5 || _offset >= _indices.length) {
+      throw StateError('Unexpected random prompt selection');
+    }
+    return _indices[_offset++];
+  }
+
+  @override
+  bool nextBool() => throw UnsupportedError('nextBool is not used by randomPrompt');
+
+  @override
+  double nextDouble() => throw UnsupportedError('nextDouble is not used by randomPrompt');
+}

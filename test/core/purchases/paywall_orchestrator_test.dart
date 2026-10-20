@@ -184,6 +184,18 @@ void main() {
       });
     }
 
+    test('uses the preferred Spanish locale for an unconfirmed purchase toast', () async {
+      final TestPlatformDispatcher dispatcher = TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher;
+      dispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('es', 'MX')];
+      addTearDown(dispatcher.clearLocalesTestValue);
+      await installPaywall(present: () async => 'PURCHASED', confirmed: false);
+
+      final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+
+      expect(result, PaywallResultValue.error);
+      expect(toasts, <String>['Tu compra está guardada. Pro puede tardar un minuto en activarse.']);
+    });
+
     test('a confirmed purchase reports completion and clears the upsell counter', () async {
       await installPaywall(present: () async => 'PURCHASED');
       await settings.set('paywall_ad_watch_count', 3);

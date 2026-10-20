@@ -5,10 +5,11 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wall_files.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 export 'package:Prism/data/upload/wallpaper/wall_submission.dart';
@@ -27,8 +28,10 @@ Future<WallSubmissionResult> createRecord(
   List<String>? wallpaperTags,
   String? wallpaperPath,
   String? wallpaperSha,
+  UploadSourceKind? wallpaperSourceKind,
   String? thumbPath,
   String? thumbSha,
+  UploadSourceKind? thumbSourceKind,
   bool isAiGenerated = false,
   String? aiGenerationId,
   String? aiProvider,
@@ -86,10 +89,12 @@ Future<WallSubmissionResult> createRecord(
       if (wallpaperPath != null && wallpaperSha != null) ...{
         WallFileFields.wallpaperPath: wallpaperPath,
         WallFileFields.wallpaperSha: wallpaperSha,
+        if (wallpaperSourceKind != null) WallFileFields.wallpaperSourceKind: wallpaperSourceKind.name,
       },
       if (thumbPath != null && thumbSha != null) ...{
         WallFileFields.thumbPath: thumbPath,
         WallFileFields.thumbSha: thumbSha,
+        if (thumbSourceKind != null) WallFileFields.thumbSourceKind: thumbSourceKind.name,
       },
       if (wallpaperTags != null) 'tags': wallpaperTags.map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList(),
       'isAiGenerated': isAiGenerated,

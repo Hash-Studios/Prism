@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {db} from "../common";
 import {onCreatorWallWritten, onCreatorFavouriteCreated} from "../creatorProgress";
+import {bindOwnedWall} from "../ownedAssetDelivery";
 import {installFakeDb, type Doc} from "./fakeDb";
 
 const NOW = Date.UTC(2026, 9, 18, 12);
@@ -29,14 +30,17 @@ const row = (store: Map<string, Doc>, path: string): Doc => {
 
 function setup(t: TestContext) {
   t.mock.method(Date, "now", () => NOW);
-  const previousEnv = {owner: process.env.GH_USERNAME, repo: process.env.GH_REPO_WALLS};
+  const previousEnv = {owner: process.env.GH_USERNAME, repo: process.env.GH_REPO_WALLS, bucket: process.env.OWNED_ASSET_BUCKET};
   process.env.GH_USERNAME = "hash";
   process.env.GH_REPO_WALLS = "walls";
+  process.env.OWNED_ASSET_BUCKET = "private-bucket";
   t.after(() => {
     if (previousEnv.owner === undefined) delete process.env.GH_USERNAME;
     else process.env.GH_USERNAME = previousEnv.owner;
     if (previousEnv.repo === undefined) delete process.env.GH_REPO_WALLS;
     else process.env.GH_REPO_WALLS = previousEnv.repo;
+    if (previousEnv.bucket === undefined) delete process.env.OWNED_ASSET_BUCKET;
+    else process.env.OWNED_ASSET_BUCKET = previousEnv.bucket;
   });
   const store = installFakeDb(t, {
     "usersv2/creator": {email: "creator@example.com", xp: 10, coins: 9},
@@ -119,6 +123,217 @@ test("approval credits a logical ID distinct from the document ID atomically, on
   assert.equal(store.get("usersv2/creator")?.xp, 60);
   assert.equal(store.get(privatePath)?.rev, 1);
 });
+
+function protectWall(store: Map<string, Doc>, data: Doc): void {
+  const retained = (path: string, sha: string): Doc => ({repo: "walls", path, sha, uid,
+    bucket: "private-bucket", object: `retained/${createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex")}`,
+    generation: "123", sha256: "c".repeat(64)});
+  const original = retained(data.wallpaper_path as string, data.wallpaper_sha as string);
+  const thumb = retained(data.thumb_path as string, data.thumb_sha as string);
+  for (const file of [original, thumb]) {
+    row(store, `githubUploads/${uploadId(file.path as string, file.sha as string)}`).retainedAsset = {...file};
+    row(store, `githubUploadIntents/path_${createHash("sha256").update(`walls\0${file.path}`).digest("hex")}`)
+      .retainedAsset = {...file};
+  }
+  store.set("ownedAssets/logical", {
+    status: "ready", canonicalPath: "walls/wall_logical", incarnation: SOURCE,
+    incarnationNanos: timestamp(SOURCE).nanoseconds, provenance: {kind: "github", uid},
+    originalUrl: data.wallpaper_url, thumbUrl: data.wallpaper_thumb,
+    original, thumb,
+  });
+  Object.assign(data, {wallpaper_url: "", wallpaper_thumb:
+    "https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/logical",
+  wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
+  originalProtected: true, originalGeneration: "123"});
+}
+
+function privateOriginal(store: Map<string, Doc>): void {
+  const manifest = row(store, "ownedAssets/logical");
+  manifest.provenance = {kind: "owned", uid};
+  manifest.originalUrl = "";
+  (manifest.original as Doc).repo = "walls";
+  (manifest.original as Doc).sourceKind = "owned";
+  (manifest.original as Doc).object = String((manifest.original as Doc).object).replace("retained/", "private-originals/");
+  const uploadPath = `githubUploads/${uploadId("logical.jpg", "a".repeat(40))}`;
+  const intentPath = `githubUploadIntents/path_${createHash("sha256").update("walls\0logical.jpg").digest("hex")}`;
+  const upload = row(store, uploadPath);
+  const intent = row(store, intentPath);
+  upload.sourceKind = intent.sourceKind = "owned";
+  upload.retainedAsset = {...manifest.original as Doc};
+  intent.retainedAsset = {...manifest.original as Doc};
+  intent.response = {content: {path: "logical.jpg", sha: "a".repeat(40), download_url: ""}};
+  store.set(uploadPath.replace("/file_", "/owned_file_"), upload);
+  store.set(intentPath.replace("/path_", "/owned_path_"), intent);
+  store.delete(uploadPath);
+  store.delete(intentPath);
+}
+
+test("redacted owned walls preserve strict upload provenance for creator credit", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  protectWall(store, data);
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+});
+
+test("private-only original receipts earn creator credit without inventing a raw original URL", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  protectWall(store, data);
+  privateOriginal(store);
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+});
+
+test("binding after approval credits a private original once and retries do not duplicate rewards", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  data.wallpaper_url = "";
+  const unbound = {...data};
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 10);
+  assert.equal(store.has(receiptPath()), false);
+  protectWall(store, data);
+  privateOriginal(store);
+  await approve(data, "wall_logical", unbound);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+  assert.equal((store.get(privatePath)?.creator as Doc).approvedWalls, 1);
+  await approve(data, "wall_logical", unbound);
+  await approve(data, "wall_logical", {...data});
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+  assert.equal(store.get(privatePath)?.rev, 1);
+});
+
+for (const owned of [false, true]) {
+  test(`actual binder output credits ${owned ? "private" : "migrated GitHub"} approvals and members once`, async (t) => {
+    const {store, seedWall} = setup(t);
+    const data = seedWall();
+    protectWall(store, data);
+    if (owned) privateOriginal(store);
+    for (const [path, intent] of store) {
+      if (path.startsWith("githubUploadIntents/path_")) delete intent.retainedAsset;
+    }
+    store.delete("ownedAssets/logical");
+    Object.assign(data, wall());
+    delete data.originalProtected;
+    delete data.originalGeneration;
+    if (owned) data.wallpaper_url = "";
+    const previousBase = process.env.OWNED_THUMBNAIL_BASE_URL;
+    process.env.OWNED_THUMBNAIL_BASE_URL = "https://example.com/ownedThumbnail";
+    t.after(() => {
+      if (previousBase === undefined) delete process.env.OWNED_THUMBNAIL_BASE_URL;
+      else process.env.OWNED_THUMBNAIL_BASE_URL = previousBase;
+    });
+    const target = admin.storage().bucket("private-bucket");
+    const file = target.file("mock");
+    t.mock.method(admin.storage(), "bucket", () => target);
+    t.mock.method(target, "file", () => file);
+    t.mock.method(file, "getMetadata", async () => [{generation: "123", metadata: {sha256: "c".repeat(64)}}]);
+    await bindOwnedWall("logical");
+    const bound = row(store, "walls/wall_logical");
+    assert.equal(bound.originalProtected, true);
+    for (const key of ["wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]) {
+      assert.equal(bound[key], "");
+    }
+    await approve(bound);
+    await approve(bound);
+    await favourite(store);
+    await favourite(store);
+    assert.equal(store.get("usersv2/creator")?.xp, 85);
+    assert.equal((store.get(privatePath)?.creator as Doc).approvedWalls, 1);
+    assert.equal((store.get(privatePath)?.creator as Doc).uniqueMembers, 1);
+  });
+
+  test(`${owned ? "private" : "GitHub"} protected assets ignore opposite-source twins and count each member once`, async (t) => {
+    const {store, seedWall} = setup(t);
+    const data = seedWall();
+    protectWall(store, data);
+    if (owned) privateOriginal(store);
+    for (let i = 0; i < 9; i++) {
+      const id = i === 0 ? `${owned ? "" : "owned_"}${uploadId("logical.jpg", "a".repeat(40))}` : `twin_${i}`;
+      store.set(`githubUploads/${id}`, {
+        uid: "attacker", repo: "walls", path: "logical.jpg", sha: "a".repeat(40),
+        ...(owned ? {} : {sourceKind: "owned"}),
+      });
+    }
+    store.set(`githubUploadIntents/${owned ? "" : "owned_"}path_${createHash("sha256").update("walls\0logical.jpg").digest("hex")}`, {
+      uid: "attacker", repo: "walls", path: "logical.jpg", blobSha: "a".repeat(40), status: "complete",
+      ...(owned ? {} : {sourceKind: "owned"}),
+    });
+    await approve(data);
+    await approve(data);
+    await favourite(store);
+    await favourite(store);
+    assert.equal(store.get("usersv2/creator")?.xp, 85);
+    assert.equal((store.get(privatePath)?.creator as Doc).approvedWalls, 1);
+    assert.equal((store.get(privatePath)?.creator as Doc).uniqueMembers, 1);
+  });
+
+  for (const failure of ["missing-receipt", "missing-intent", "receipt-source", "intent-source", "receipt-generation", "intent-generation",
+    "receipt-object", "intent-digest", "manifest-owner", "thumb-generation", "public-sha", "public-thumb-path", "public-thumb-sha",
+    "missing-original", "missing-thumb", "malformed-original", "malformed-thumb", "wrong-bucket",
+    ...(owned ? ["missing-intent-retained"] : [])]) {
+    test(`${owned ? "private" : "GitHub"} protected proof rejects ${failure}`, async (t) => {
+      const {store, seedWall} = setup(t);
+      const data = seedWall();
+      protectWall(store, data);
+      if (owned) privateOriginal(store);
+      const prefix = owned ? "owned_" : "";
+      const receipt = row(store, `githubUploads/${prefix}${uploadId("logical.jpg", "a".repeat(40))}`);
+      const intentPath = `githubUploadIntents/${prefix}path_${createHash("sha256").update("walls\0logical.jpg").digest("hex")}`;
+      const intent = row(store, intentPath);
+      const manifest = row(store, "ownedAssets/logical");
+      if (failure === "missing-intent-retained") delete intent.retainedAsset;
+      if (failure === "missing-original") {
+        delete manifest.original;
+        delete data.originalGeneration;
+      }
+      if (failure === "missing-thumb") delete manifest.thumb;
+      if (failure === "malformed-original") manifest.original = [];
+      if (failure === "malformed-thumb") manifest.thumb = "invalid";
+      if (failure === "wrong-bucket") {
+        for (const proof of [manifest.original, receipt.retainedAsset, intent.retainedAsset]) {
+          (proof as Doc).bucket = "wrong-bucket";
+        }
+      }
+      if (failure === "missing-receipt") store.delete(`githubUploads/${prefix}${uploadId("logical.jpg", "a".repeat(40))}`);
+      if (failure === "missing-intent") store.delete(intentPath);
+      if (failure === "receipt-source") receipt.sourceKind = owned ? "github" : "owned";
+      if (failure === "intent-source") intent.sourceKind = owned ? "github" : "owned";
+      if (failure === "receipt-generation") (receipt.retainedAsset as Doc).generation = "456";
+      if (failure === "intent-generation") (intent.retainedAsset as Doc).generation = "456";
+      if (failure === "receipt-object") (receipt.retainedAsset as Doc).object = "other";
+      if (failure === "intent-digest") (intent.retainedAsset as Doc).sha256 = "d".repeat(64);
+      if (failure === "manifest-owner") (row(store, "ownedAssets/logical").provenance as Doc).uid = "attacker";
+      if (failure === "thumb-generation") (row(store, "ownedAssets/logical").thumb as Doc).generation = "456";
+      if (failure === "public-sha") data.wallpaper_sha = "a".repeat(40);
+      if (failure === "public-thumb-path") data.thumb_path = "thumb_logical.jpg";
+      if (failure === "public-thumb-sha") data.thumb_sha = "b".repeat(40);
+      await approve(data);
+      await favourite(store);
+      assert.equal(store.get("usersv2/creator")?.xp, 10);
+      assert.equal(store.has(receiptPath()), false);
+    });
+  }
+}
+
+for (const failure of ["legacy", "generation", "incarnation", "path", "deleted", "missing-receipts"]) {
+  test(`owned provenance rejects ${failure} without granting creator credit`, async (t) => {
+    const {store, seedWall} = setup(t);
+    const data = seedWall();
+    protectWall(store, data);
+    const manifest = row(store, "ownedAssets/logical");
+    if (failure === "legacy") manifest.provenance = {kind: "legacy"};
+    if (failure === "generation") data.originalGeneration = "456";
+    if (failure === "incarnation") manifest.incarnationNanos = 1;
+    if (failure === "path") data.wallpaper_path = "different.jpg";
+    if (failure === "deleted") manifest.status = "deleted";
+    if (failure === "missing-receipts") store.delete(`githubUploads/${uploadId("logical.jpg", "a".repeat(40))}`);
+    await approve(data);
+    assert.equal(store.get("usersv2/creator")?.xp, 10);
+    assert.equal(store.has(receiptPath()), false);
+  });
+}
 
 test("first favourite counts a member once across works and gives only milestone XP", async (t) => {
   const {store, seedWall} = setup(t);

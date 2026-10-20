@@ -1,156 +1,1406 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Get a wallpaper from %1$@" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a wallpaper from %1$@"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Hintergrundbild von %1$@ abrufen"}}}
+  "sourceLanguage": "en",
+  "strings": {
+    "Get a wallpaper from %1$@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get a wallpaper from %1$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild von %1$@ abrufen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ से वॉलपेपर पाएँ"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener un fondo de pantalla de %1$@"
+          }
+        }
+      }
     },
-    "Get a %1$@ wallpaper" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a %1$@ wallpaper"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "%1$@-Hintergrundbild abrufen"}}}
+    "Get a %1$@ wallpaper": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get a %1$@ wallpaper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@-Hintergrundbild abrufen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ वॉलपेपर पाएँ"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener un fondo de pantalla de %1$@"
+          }
+        }
+      }
     },
-    "Wallpaper source" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpaper source"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Hintergrundbildquelle"}}}
+    "Wallpaper source": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper source"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbildquelle"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉलपेपर का स्रोत"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origen del fondo de pantalla"
+          }
+        }
+      }
     },
-    "Wall of the Day" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall of the Day"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Hintergrundbild des Tages"}}}
+    "Wall of the Day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wall of the Day"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild des Tages"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आज का वॉलपेपर"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fondo del día"
+          }
+        }
+      }
     },
-    "Random favourite" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Random favourite"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Zufälliger Favorit"}}}
+    "Random favourite": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Random favourite"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zufälliger Favorit"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पसंदीदा में से कोई वॉलपेपर"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorito aleatorio"
+          }
+        }
+      }
     },
-    "No favourites yet. Open Prism and tap the heart on a wallpaper." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No favourites yet. Open Prism and tap the heart on a wallpaper."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Noch keine Favoriten. Öffne Prism und tippe bei einem Hintergrundbild auf das Herz."}}}
+    "No favourites yet. Open Prism and tap the heart on a wallpaper.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No favourites yet. Open Prism and tap the heart on a wallpaper."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Favoriten. Öffne Prism und tippe bei einem Hintergrundbild auf das Herz."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी कोई पसंदीदा वॉलपेपर नहीं है। Prism खोलें और किसी वॉलपेपर पर दिल के निशान पर टैप करें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no tienes favoritos. Abre Prism y toca el corazón de un fondo de pantalla."
+          }
+        }
+      }
     },
-    "Could not load the Wall of the Day. Check your connection." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load the Wall of the Day. Check your connection."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Das Hintergrundbild des Tages konnte nicht geladen werden. Prüfe deine Verbindung."}}}
+    "Could not load the Wall of the Day. Check your connection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load the Wall of the Day. Check your connection."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Hintergrundbild des Tages konnte nicht geladen werden. Prüfe deine Verbindung."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आज का वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar el Fondo del día. Comprueba tu conexión."
+          }
+        }
+      }
     },
-    "Could not load your favourite wallpaper. Check your connection." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load your favourite wallpaper. Check your connection."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dein Lieblingshintergrundbild konnte nicht geladen werden. Prüfe deine Verbindung."}}}
+    "Could not load your favourite wallpaper. Check your connection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load your favourite wallpaper. Check your connection."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Lieblingshintergrundbild konnte nicht geladen werden. Prüfe deine Verbindung."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका पसंदीदा वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar tu fondo de pantalla favorito. Comprueba tu conexión."
+          }
+        }
+      }
     },
-    "This wallpaper is in a format that Shortcuts cannot use." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "This wallpaper is in a format that Shortcuts cannot use."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dieses Hintergrundbild hat ein Format, das Kurzbefehle nicht verwenden können."}}}
+    "This wallpaper is in a format that Shortcuts cannot use.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This wallpaper is in a format that Shortcuts cannot use."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Hintergrundbild hat ein Format, das Kurzbefehle nicht verwenden können."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह वॉलपेपर ऐसे फ़ॉर्मैट में है जिसका उपयोग Shortcuts नहीं कर सकता।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este fondo de pantalla tiene un formato incompatible con Atajos."
+          }
+        }
+      }
     },
-    "Get Prism Wallpaper" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get Prism Wallpaper"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Prism-Hintergrundbild abrufen"}}}
+    "Get Prism Wallpaper": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Prism Wallpaper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism-Hintergrundbild abrufen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism वॉलपेपर पाएँ"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener fondo de pantalla de Prism"
+          }
+        }
+      }
     },
-    "Gets a Prism wallpaper. Pass it to the Set Wallpaper action." : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Ruft ein Prism-Hintergrundbild ab. Übergib es an die Aktion „Hintergrundbild festlegen“."}}}
+    "Gets a Prism wallpaper. Pass it to the Set Wallpaper action.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruft ein Prism-Hintergrundbild ab. Übergib es an die Aktion „Hintergrundbild festlegen“."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism से वॉलपेपर पाएँ। इसे वॉलपेपर सेट करें ऐक्शन में दें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtiene un fondo de pantalla de Prism. Pásalo a la acción Establecer fondo de pantalla."
+          }
+        }
+      }
     },
-    "Source" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Source"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Quelle"}}}
+    "Source": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelle"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्रोत"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origen"
+          }
+        }
+      }
     },
-    "notif_push_wall_approved_for_artist_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is live! 🎉"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dein Hintergrundbild ist jetzt online! 🎉"}}}
+    "notif_push_wall_approved_for_artist_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your wallpaper is live! 🎉"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild ist jetzt online! 🎉"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका वॉलपेपर लाइव है! 🎉"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Tu fondo de pantalla ya está publicado! 🎉"
+          }
+        }
+      }
     },
-    "notif_push_wall_approved_for_artist_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" has been approved and is now visible to everyone."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "„%1$@“ wurde freigegeben und ist jetzt für alle sichtbar."}}}
+    "notif_push_wall_approved_for_artist_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" has been approved and is now visible to everyone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ wurde freigegeben und ist jetzt für alle sichtbar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" मंज़ूर हो गया है और अब सभी को दिखाई दे रहा है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se aprobó «%1$@» y ya está visible para todos."
+          }
+        }
+      }
     },
-    "notif_push_wall_approved_for_artist_body_untitled" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper has been approved and is now visible to everyone."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar."}}}
+    "notif_push_wall_approved_for_artist_body_untitled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your wallpaper has been approved and is now visible to everyone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका वॉलपेपर मंज़ूर हो गया है और अब सभी को दिखाई दे रहा है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu fondo de pantalla se aprobó y ya está visible para todos."
+          }
+        }
+      }
     },
-    "notif_push_wall_live_for_followers_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New wall by %1$@"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Neues Hintergrundbild von %1$@"}}}
+    "notif_push_wall_live_for_followers_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New wall by %1$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Hintergrundbild von %1$@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ का नया वॉलपेपर"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo fondo de %1$@"
+          }
+        }
+      }
     },
-    "notif_push_wall_live_for_followers_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" is now live on Prism."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "„%1$@“ ist jetzt auf Prism verfügbar."}}}
+    "notif_push_wall_live_for_followers_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" is now live on Prism."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ ist jetzt auf Prism verfügbar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" अब Prism पर लाइव है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%1$@» ya está publicado en Prism."
+          }
+        }
+      }
     },
-    "notif_push_wall_approved_for_admin_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall approved ✅"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Hintergrundbild freigegeben ✅"}}}
+    "notif_push_wall_approved_for_admin_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wall approved ✅"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild freigegeben ✅"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉलपेपर मंज़ूर ✅"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fondo aprobado ✅"
+          }
+        }
+      }
     },
-    "notif_push_wall_approved_for_admin_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" by %2$@ is now live."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "„%1$@“ von %2$@ ist jetzt online."}}}
+    "notif_push_wall_approved_for_admin_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" by %2$@ is now live."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ von %2$@ ist jetzt online."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ का \"%1$@\" अब लाइव है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%1$@», de %2$@, ya está publicado."
+          }
+        }
+      }
     },
-    "notif_push_new_follower_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You have a new follower! 🎉"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Du hast einen neuen Follower! 🎉"}}}
+    "notif_push_new_follower_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have a new follower! 🎉"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast einen neuen Follower! 🎉"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोई आपको फ़ॉलो करने लगा है! 🎉"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Tienes un nuevo seguidor! 🎉"
+          }
+        }
+      }
     },
-    "notif_push_new_follower_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ is now following you."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ folgt dir jetzt."}}}
+    "notif_push_new_follower_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is now following you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ folgt dir jetzt."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ अब आपको फ़ॉलो कर रहे हैं।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ahora te sigue."
+          }
+        }
+      }
     },
-    "notif_push_streak_reminder_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your streak is about to break!"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Deine Serie droht abzubrechen!"}}}
+    "notif_push_streak_reminder_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your streak is about to break!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Serie droht abzubrechen!"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी स्ट्रीक टूटने वाली है!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Tu racha está a punto de perderse!"
+          }
+        }
+      }
     },
-    "notif_push_streak_reminder_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism now to keep your login streak alive 🔥"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Öffne jetzt Prism, damit deine Anmeldeserie weiterläuft 🔥"}}}
+    "notif_push_streak_reminder_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Prism now to keep your login streak alive 🔥"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne jetzt Prism, damit deine Anmeldeserie weiterläuft 🔥"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी लॉगिन स्ट्रीक बनाए रखने के लिए अभी Prism खोलें 🔥"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Prism ahora para mantener tu racha de inicios de sesión 🔥"
+          }
+        }
+      }
     },
-    "notif_push_wotd_for_creator_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is the Wall of the Day"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dein Hintergrundbild ist das Hintergrundbild des Tages"}}}
+    "notif_push_wotd_for_creator_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your wallpaper is the Wall of the Day"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild ist das Hintergrundbild des Tages"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका वॉलपेपर आज का वॉलपेपर है"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu fondo de pantalla es el Fondo del día"
+          }
+        }
+      }
     },
-    "notif_push_wotd_for_creator_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism picked your wallpaper for everyone today. Thank you for sharing it."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Prism hat dein Hintergrundbild heute für alle ausgewählt. Danke, dass du es geteilt hast."}}}
+    "notif_push_wotd_for_creator_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism picked your wallpaper for everyone today. Thank you for sharing it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism hat dein Hintergrundbild heute für alle ausgewählt. Danke, dass du es geteilt hast."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism ने आज सभी के लिए आपका वॉलपेपर चुना है। इसे साझा करने के लिए धन्यवाद।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism eligió hoy tu fondo de pantalla para todos. Gracias por compartirlo."
+          }
+        }
+      }
     },
-    "notif_push_wotd_for_audience_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Today's Wall of the Day is here"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Das Hintergrundbild des Tages ist da"}}}
+    "notif_push_wotd_for_audience_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's Wall of the Day is here"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Hintergrundbild des Tages ist da"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आज का वॉलपेपर आ गया है"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya llegó el Fondo del día"
+          }
+        }
+      }
     },
-    "notif_push_wotd_for_audience_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "%1$@"}}}
+    "notif_push_wotd_for_audience_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        }
+      }
     },
-    "notif_push_wotd_for_audience_body_untitled" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism to see today's Wall of the Day."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Öffne Prism, um das heutige Hintergrundbild des Tages zu sehen."}}}
+    "notif_push_wotd_for_audience_body_untitled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Prism to see today's Wall of the Day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Prism, um das heutige Hintergrundbild des Tages zu sehen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आज का वॉलपेपर देखने के लिए Prism खोलें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Prism para ver el Fondo del día."
+          }
+        }
+      }
     },
-    "notif_push_win_back7_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your feed has new walls"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "In deinem Feed gibt es neue Hintergrundbilder"}}}
+    "notif_push_win_back7_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your feed has new walls"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In deinem Feed gibt es neue Hintergrundbilder"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी फ़ीड में नए वॉलपेपर हैं"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay nuevos fondos en tu feed"
+          }
+        }
+      }
     },
-    "notif_push_win_back7_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Fresh wallpapers landed while you were away."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Während deiner Abwesenheit sind neue Hintergrundbilder dazugekommen."}}}
+    "notif_push_win_back7_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fresh wallpapers landed while you were away."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Während deiner Abwesenheit sind neue Hintergrundbilder dazugekommen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके दूर रहने के दौरान नए वॉलपेपर आए हैं।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mientras no estabas, llegaron nuevos fondos de pantalla."
+          }
+        }
+      }
     },
-    "notif_push_win_back14_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New walls are waiting"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Neue Hintergrundbilder warten auf dich"}}}
+    "notif_push_win_back14_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New walls are waiting"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Hintergrundbilder warten auf dich"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नए वॉलपेपर आपका इंतज़ार कर रहे हैं"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te esperan nuevos fondos"
+          }
+        }
+      }
     },
-    "notif_push_win_back14_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Come see what creators added this fortnight."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Sieh dir an, was die Kreativen in den letzten zwei Wochen hinzugefügt haben."}}}
+    "notif_push_win_back14_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come see what creators added this fortnight."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh dir an, was die Kreativen in den letzten zwei Wochen hinzugefügt haben."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "देखें कि क्रिएटर्स ने इस पखवाड़े क्या नया जोड़ा है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descubre lo que han añadido los creadores estas dos semanas."
+          }
+        }
+      }
     },
-    "notif_push_win_back30_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New AI styles to try"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Neue KI-Stile zum Ausprobieren"}}}
+    "notif_push_win_back30_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New AI styles to try"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue KI-Stile zum Ausprobieren"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI की नई शैलियाँ आज़माएँ"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba nuevos estilos de IA"
+          }
+        }
+      }
     },
-    "notif_push_win_back30_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Make a wallpaper that feels like you."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Gestalte ein Hintergrundbild, das zu dir passt."}}}
+    "notif_push_win_back30_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make a wallpaper that feels like you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestalte ein Hintergrundbild, das zu dir passt."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी पसंद का वॉलपेपर बनाएँ।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un fondo de pantalla que vaya contigo."
+          }
+        }
+      }
     },
-    "notif_push_win_back60_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism misses you"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Prism vermisst dich"}}}
+    "notif_push_win_back60_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism misses you"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism vermisst dich"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism आपको याद कर रहा है"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism te echa de menos"
+          }
+        }
+      }
     },
-    "notif_push_win_back60_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your next favourite wall is a tap away."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Dein nächstes Lieblingshintergrundbild ist nur einen Fingertipp entfernt."}}}
+    "notif_push_win_back60_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your next favourite wall is a tap away."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein nächstes Lieblingshintergrundbild ist nur einen Fingertipp entfernt."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका अगला पसंदीदा वॉलपेपर बस एक टैप दूर है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu próximo fondo favorito está a un toque."
+          }
+        }
+      }
     },
-    "notif_push_drop_live_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new Drop is live"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Ein neuer Drop ist da"}}}
+    "notif_push_drop_live_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new Drop is live"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Drop ist da"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नया Drop लाइव है"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya está disponible un nuevo Drop"
+          }
+        }
+      }
     },
-    "notif_push_drop_live_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Hintergrundbilder im aktuellen Drop: %1$@. Sieh ihn dir an, bevor er endet."}}}
+    "notif_push_drop_live_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbilder im aktuellen Drop: %1$@. Sieh ihn dir an, bevor er endet."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस हफ़्ते के Drop में वॉलपेपर: %1$@। बंद होने से पहले Drop देखें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fondos del Drop de esta semana: %1$@. Descúbrelo antes de que termine."
+          }
+        }
+      }
     },
-    "notif_push_drop_last_call_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Last call on this week's Drop"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Letzte Chance für den aktuellen Drop"}}}
+    "notif_push_drop_last_call_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last call on this week's Drop"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Chance für den aktuellen Drop"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस हफ़्ते के Drop का आख़िरी मौका"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última oportunidad para el Drop de esta semana"
+          }
+        }
+      }
     },
-    "notif_push_drop_last_call_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ endet in %2$@ Std. Danach sind die Hintergrundbilder einen Monat lang nicht verfügbar."}}}
+    "notif_push_drop_last_call_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ endet in %2$@ Std. Danach sind die Hintergrundbilder einen Monat lang nicht verfügbar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@ घंटे में समाप्त होगा। इसके बाद एक महीने तक वॉलपेपर उपलब्ध नहीं होंगे।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ termina en %2$@ h. Después, los fondos no estarán disponibles durante un mes."
+          }
+        }
+      }
     },
-    "notif_push_draw_winner_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You won the Prism Draw"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Du hast die Prism-Verlosung gewonnen"}}}
+    "notif_push_draw_winner_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You won the Prism Draw"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast die Prism-Verlosung gewonnen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपने Prism Draw जीत लिया"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has ganado el sorteo de Prism"
+          }
+        }
+      }
     },
-    "notif_push_draw_winner_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "One month of Pro and the Prism frame are yours."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Ein Monat Pro und der Prism-Rahmen gehören dir."}}}
+    "notif_push_draw_winner_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One month of Pro and the Prism frame are yours."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Monat Pro und der Prism-Rahmen gehören dir."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक महीने का Pro और Prism फ़्रेम अब आपके हैं।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un mes de Pro y el marco de Prism son tuyos."
+          }
+        }
+      }
     },
-    "notif_push_gift_received_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ sent you a 24-hour Pro pass"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ hat dir einen 24-Stunden-Pro-Pass gesendet"}}}
+    "notif_push_gift_received_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ sent you a 24-hour Pro pass"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat dir einen 24-Stunden-Pro-Pass gesendet"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ने आपको 24 घंटे का Pro पास भेजा"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ te envió un pase Pro de 24 horas"
+          }
+        }
+      }
     },
-    "notif_push_gift_received_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet."}}}
+    "notif_push_gift_received_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium collections and premium walls are open until tomorrow."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रीमियम कलेक्शन और वॉलपेपर कल तक उपलब्ध हैं।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las colecciones prémium y los fondos prémium estarán disponibles hasta mañana."
+          }
+        }
+      }
     },
-    "notif_push_report_needs_review_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Report waiting for review"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Meldung wartet auf Prüfung"}}}
+    "notif_push_report_needs_review_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report waiting for review"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldung wartet auf Prüfung"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिपोर्ट समीक्षा के इंतज़ार में"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay un reporte pendiente de revisión"
+          }
+        }
+      }
     },
-    "notif_push_report_needs_review_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A content report has been waiting for review for over 12 hours."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Eine Inhaltsmeldung wartet seit über 12 Stunden auf Prüfung."}}}
+    "notif_push_report_needs_review_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A content report has been waiting for review for over 12 hours."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Inhaltsmeldung wartet seit über 12 Stunden auf Prüfung."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कंटेंट की एक रिपोर्ट 12 घंटे से ज़्यादा समय से समीक्षा के इंतज़ार में है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un reporte de contenido lleva más de 12 horas pendiente de revisión."
+          }
+        }
+      }
     },
-    "notif_push_new_content_report_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New content report"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Neue Inhaltsmeldung"}}}
+    "notif_push_new_content_report_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New content report"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Inhaltsmeldung"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कंटेंट की नई रिपोर्ट"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo reporte de contenido"
+          }
+        }
+      }
     },
-    "notif_push_new_content_report_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new content report is ready for review."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Eine neue Inhaltsmeldung kann geprüft werden."}}}
+    "notif_push_new_content_report_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new content report is ready for review."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine neue Inhaltsmeldung kann geprüft werden."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कंटेंट की नई रिपोर्ट समीक्षा के लिए तैयार है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay un nuevo reporte de contenido listo para revisar."
+          }
+        }
+      }
     },
-    "notif_push_wall_submitted_for_review_title" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New Premium Wall for review! 🎉"}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Neues Premium-Hintergrundbild zur Prüfung! 🎉"}}}
+    "notif_push_wall_submitted_for_review_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Premium Wall for review! 🎉"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Premium-Hintergrundbild zur Prüfung! 🎉"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समीक्षा के लिए नया Premium वॉल! 🎉"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Nuevo fondo prémium para revisar! 🎉"
+          }
+        }
+      }
     },
-    "notif_push_wall_submitted_for_review_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New post by %1$@ (%2$@) is up for review."}}, "de" : {"stringUnit" : {"state" : "translated", "value" : "Ein neuer Beitrag von %1$@ (%2$@) wartet auf Prüfung."}}}
+    "notif_push_wall_submitted_for_review_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New post by %1$@ (%2$@) is up for review."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Beitrag von %1$@ (%2$@) wartet auf Prüfung."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ (%2$@) की नई पोस्ट समीक्षा के लिए आई है।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay una nueva publicación de %1$@ (%2$@) pendiente de revisión."
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

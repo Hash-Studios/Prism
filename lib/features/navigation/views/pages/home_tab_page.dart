@@ -22,6 +22,7 @@ import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_s
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
@@ -85,6 +86,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
+  bool _shortcutUpdateInFlight = false;
   String? _shortcutLocale;
   StreamSubscription<String>? _fcmTokenSubscription;
   StreamSubscription<bool>? _connectivitySubscription;
@@ -194,12 +196,35 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final AppLocalizations l10n = context.l10n;
-    if (_shortcutLocale == l10n.localeName) return;
-    _shortcutLocale = l10n.localeName;
-    const QuickActions().setShortcutItems(
-      prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
-    );
+    unawaited(_reconcileShortcutItems());
+  }
+
+  Future<void> _reconcileShortcutItems() async {
+    if (_shortcutUpdateInFlight) return;
+    _shortcutUpdateInFlight = true;
+    try {
+      while (mounted) {
+        final AppLocalizations l10n = context.l10n;
+        final String locale = l10n.localeName;
+        if (_shortcutLocale == locale) return;
+
+        _shortcutLocale = null;
+        try {
+          await const QuickActions().setShortcutItems(
+            prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
+          );
+        } catch (error, stackTrace) {
+          logger.w('Failed to update localized quick actions.', error: error, stackTrace: stackTrace);
+          if (!mounted || context.l10n.localeName == locale) return;
+          continue;
+        }
+
+        if (!mounted) return;
+        if (context.l10n.localeName == locale) _shortcutLocale = locale;
+      }
+    } finally {
+      _shortcutUpdateInFlight = false;
+    }
   }
 
   /// Push setup needs a Firebase app. Startup continues without one when initialisation fails.

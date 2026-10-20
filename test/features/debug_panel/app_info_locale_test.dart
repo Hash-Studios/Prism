@@ -17,7 +17,14 @@ void main() {
     );
   });
 
-  for (final locale in <Locale>[const Locale('de'), const Locale('en')]) {
+  const localeCases = <({Locale locale, String label, String decimal})>[
+    (locale: Locale('de'), label: 'Geräte-Pixelverhältnis', decimal: '2,75'),
+    (locale: Locale('es'), label: 'Relación de píxeles del dispositivo', decimal: '2,75'),
+    (locale: Locale('en'), label: 'Device Pixel Ratio', decimal: '2.75'),
+  ];
+
+  for (final ({Locale locale, String label, String decimal}) localeCase in localeCases) {
+    final locale = localeCase.locale;
     testWidgets('formats device pixel ratio with ${locale.languageCode} decimal separator', (tester) async {
       tester.view.devicePixelRatio = 2.75;
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -31,56 +38,55 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.scrollUntilVisible(
-        find.text(locale.languageCode == 'de' ? 'Geräte-Pixelverhältnis' : 'Device Pixel Ratio'),
-        250,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await tester.scrollUntilVisible(find.text(localeCase.label), 250, scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
-      expect(find.text(locale.languageCode == 'de' ? '2,75' : '2.75'), findsOneWidget);
+      expect(find.text(localeCase.decimal), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
 
-  testWidgets('updates decimal separator when locale changes on the same page', (tester) async {
-    tester.view.devicePixelRatio = 2.75;
-    addTearDown(tester.view.resetDevicePixelRatio);
-    var locale = const Locale('de');
-    await tester.pumpWidget(
-      StatefulBuilder(
-        builder: (context, setState) => MaterialApp(
-          locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: Column(
-              children: [
-                TextButton(onPressed: () => setState(() => locale = const Locale('en')), child: const Text('Switch')),
-                const Expanded(child: AppInfoPage()),
-              ],
+  for (final ({Locale locale, String label}) localeCase in <({Locale locale, String label})>[
+    (locale: Locale('de'), label: 'Geräte-Pixelverhältnis'),
+    (locale: Locale('es'), label: 'Relación de píxeles del dispositivo'),
+  ]) {
+    testWidgets('updates decimal separator from ${localeCase.locale.languageCode} to English on the same page', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var locale = localeCase.locale;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => MaterialApp(
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Column(
+                children: [
+                  TextButton(onPressed: () => setState(() => locale = const Locale('en')), child: const Text('Switch')),
+                  const Expanded(child: AppInfoPage()),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final State<AppInfoPage> pageState = tester.state(find.byType(AppInfoPage));
-    expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), const Locale('de'));
-    await tester.scrollUntilVisible(
-      find.text('Geräte-Pixelverhältnis'),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('2,75'), findsOneWidget);
+      );
+      await tester.pumpAndSettle();
+      final State<AppInfoPage> pageState = tester.state(find.byType(AppInfoPage));
+      expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), localeCase.locale);
+      await tester.scrollUntilVisible(find.text(localeCase.label), 250, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
+      expect(find.text('2,75'), findsOneWidget);
 
-    await tester.tap(find.text('Switch'));
-    await tester.pumpAndSettle();
-    expect(identical(tester.state(find.byType(AppInfoPage)), pageState), isTrue);
-    expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), const Locale('en'));
-    await tester.scrollUntilVisible(find.text('Device Pixel Ratio'), 250, scrollable: find.byType(Scrollable).first);
-    await tester.pumpAndSettle();
-    expect(find.text('2.75'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+      await tester.tap(find.text('Switch'));
+      await tester.pumpAndSettle();
+      expect(identical(tester.state(find.byType(AppInfoPage)), pageState), isTrue);
+      expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), const Locale('en'));
+      await tester.scrollUntilVisible(find.text('Device Pixel Ratio'), 250, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
+      expect(find.text('2.75'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }

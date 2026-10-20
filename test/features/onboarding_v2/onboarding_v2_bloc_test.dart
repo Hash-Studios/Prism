@@ -28,9 +28,11 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -124,6 +126,8 @@ void main() {
   late _MockAiGenerationRepository aiRepository;
   late FakeAppAnalytics analytics;
   late Completer<Result<List<OnboardingStarterCreatorEntity>>> pendingStarterPackLoad;
+  late Completer<AppLocalizationsEn> pendingLocalizations;
+  late Completer<void> localizationsLoadStarted;
 
   setUpAll(() {
     registerFallbackValue(const <String>[]);
@@ -148,6 +152,8 @@ void main() {
     settingsLocalDataSource = _MockSettingsLocalDataSource();
     remoteConfig = _MockFirebaseRemoteConfig();
     aiRepository = _MockAiGenerationRepository();
+    pendingLocalizations = Completer<AppLocalizationsEn>();
+    localizationsLoadStarted = Completer<void>();
 
     // Empty remote config and cache make PersonalizedInterestsCatalog fall back to the built-in
     // catalog, which is non-empty, so _onStarted never calls categoryFeedRepository.getCategories().
@@ -170,7 +176,10 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  OnboardingV2Bloc buildBloc({bool includeRemoteConfig = true}) => OnboardingV2Bloc(
+  OnboardingV2Bloc buildBloc({
+    bool includeRemoteConfig = true,
+    Future<AppLocalizationsEn> Function()? loadLocalizations,
+  }) => OnboardingV2Bloc(
     fetchStarterPackUseCase,
     saveInterestsUseCase,
     followStarterPackUseCase,
@@ -181,6 +190,7 @@ void main() {
     settingsLocalDataSource,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
+    loadLocalizations: loadLocalizations ?? () async => AppLocalizationsEn(),
   );
 
   Iterable<String> trackedNames() => analytics.events.map((event) => event.eventName);
@@ -318,6 +328,31 @@ void main() {
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     },
     verify: (_) => expect(trackedNames(), isNot(contains('onboarding_v2_interests_completed'))),
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'keeps the interests step when backing out while starter-pack localization is pending',
+    build: () => buildBloc(
+      loadLocalizations: () {
+        if (!localizationsLoadStarted.isCompleted) localizationsLoadStarted.complete();
+        return pendingLocalizations.future;
+      },
+    ),
+    act: (bloc) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await localizationsLoadStarted.future;
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.interests);
+      pendingLocalizations.complete(AppLocalizationsEn());
+      await Future<void>.delayed(Duration.zero);
+    },
+    verify: (bloc) => expect(bloc.state.step, OnboardingV2Step.interests),
   );
 
   group('save failures', () {
@@ -1120,6 +1155,11 @@ void main() {
     });
 
     test('an anime interest gets an anime style with a prompt from its pool', () async {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      final nonEnglishLocale = AppLocalizations.supportedLocales.firstWhere((locale) => locale.languageCode != 'en');
+      binding.platformDispatcher.localesTestValue = <Locale>[nonEnglishLocale];
+      addTearDown(binding.platformDispatcher.clearLocalesTestValue);
+
       final bloc = buildBloc();
       addTearDown(bloc.close);
 
