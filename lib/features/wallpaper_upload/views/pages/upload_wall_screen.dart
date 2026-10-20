@@ -326,6 +326,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 message: baseName,
                 contentBase64: base64Encode(imageBytes),
                 path: baseName,
+                purpose: 'wallpaper',
               );
         wallpaperUrl = value.downloadUrl;
         wallpaperPath = value.path ?? baseName;
@@ -347,6 +348,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 message: thumbName,
                 contentBase64: base64Encode(imageBytesThumb),
                 path: thumbName,
+                purpose: 'wallpaper',
               );
         wallpaperThumb = thumbValue.downloadUrl;
         thumbPath = thumbValue.path ?? thumbName;

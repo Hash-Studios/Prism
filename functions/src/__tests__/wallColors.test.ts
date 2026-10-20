@@ -139,48 +139,53 @@ test("only the GitHub raw and prismwalls.com hosts are allowed", () => {
   assert.deepEqual([...ALLOWED_IMAGE_HOSTS], ["raw.githubusercontent.com", "prismwalls.com"]);
 });
 
-test("owned thumbnail endpoint is allowed without allowing other functions or original URLs", async (t) => {
+test("configured R2 preview allows only an exact content-addressed thumbnail", async (t) => {
   const previous = {...process.env};
   t.after(() => {
     process.env = previous;
   });
-  delete process.env.OWNED_THUMBNAIL_BASE_URL;
-  process.env.GCLOUD_PROJECT = "prism-wallpapers";
-  const base = "https://asia-south1-prism-wallpapers.cloudfunctions.net";
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com/assets";
   const ok: ColorFetch = async () => replyOf(new Uint8Array([1, 2, 3]));
-  assert.deepEqual([...await fetchImageBuffer(`${base}/ownedThumbnail/wall-1`, ok)], [1, 2, 3]);
+  assert.deepEqual([...await fetchImageBuffer(`https://images.example.com/assets/previews/${"a".repeat(64)}.img`, ok)], [1, 2, 3]);
   for (const url of [
-    `${base}/original/wall-1`, `${base}/ownedThumbnail/wall-1?url=secret`,
-    `${base}/ownedThumbnail/wall-1#secret`, `${base}/ownedThumbnail/a/b`,
-    "https://evil.cloudfunctions.net/ownedThumbnail/wall-1",
-  ]) await assert.rejects(fetchImageBuffer(url, ok), /not allowed/);
+    "https://images.example.com/assets/previews/wall-1", "https://images.example.com/assets/previews/wall-1.img",
+    `https://images.example.com/assets/previews/${"a".repeat(64)}.img?x=1`,
+    `https://images.example.com/assets/previews/${"a".repeat(64)}.img#fragment`,
+    "https://evil.example.com/assets/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img",
+  ]) await assert.rejects(fetchImageBuffer(url, ok), /allowed/);
 });
 
-test("configured and staging thumbnail endpoints allow only an exact thumbnail path", async (t) => {
+test("R2 preview base configuration rejects unsafe bases", async (t) => {
   const previous = {...process.env};
   t.after(() => {
     process.env = previous;
   });
   const ok: ColorFetch = async () => replyOf(new Uint8Array([1]));
-  delete process.env.OWNED_THUMBNAIL_BASE_URL;
-  process.env.GCLOUD_PROJECT = "prism-staging";
-  assert.deepEqual([...await fetchImageBuffer(
-    "https://asia-south1-prism-staging.cloudfunctions.net/ownedThumbnail/wall_1", ok)], [1]);
-  process.env.OWNED_THUMBNAIL_BASE_URL = "https://images.example.com/private/preview/";
-  assert.deepEqual([...await fetchImageBuffer("https://images.example.com/private/preview/wall-1", ok)], [1]);
-  for (const url of [
-    "https://images.example.com/private/preview/", "https://images.example.com/private/preview/a/b",
-    "https://images.example.com/private/preview/wall?url=secret", "https://images.example.com/private/preview/wall#secret",
-    "https://images.example.com/private/original/wall", "https://images.example.com/private/preview/%77all",
-    "https://images.example.com.evil/private/preview/wall",
-    "https://asia-south1-prism-staging.cloudfunctions.net/ownedThumbnail/wall",
-  ]) await assert.rejects(fetchImageBuffer(url, ok), /not allowed/);
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com/private/preview/";
   for (const base of ["http://images.example.com/preview", "https://user:pass@images.example.com/preview",
     "https://images.example.com:8443/preview", "https://images.example.com/preview?x=1",
     "https://images.example.com/preview#fragment", "not-a-url"]) {
-    process.env.OWNED_THUMBNAIL_BASE_URL = base;
-    await assert.rejects(fetchImageBuffer("https://images.example.com/preview/wall", ok), /not allowed/);
+    process.env.R2_PREVIEW_BASE_URL = base;
+    await assert.rejects(fetchImageBuffer(`https://images.example.com/preview/previews/${"b".repeat(64)}.img`, ok));
   }
+});
+
+test("invalid R2 preview base config does not break legacy allowlisted images", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  const seen: string[] = [];
+  const ok: ColorFetch = async (url) => {
+    seen.push(url);
+    return replyOf(new Uint8Array([1]));
+  };
+  for (const base of ["", "not-a-url"]) {
+    process.env.R2_PREVIEW_BASE_URL = base;
+    assert.deepEqual([...await fetchImageBuffer(GOOD, ok)], [1]);
+    await assert.rejects(fetchImageBuffer("https://unknown.example/a.png", ok), /host is not allowed/);
+  }
+  assert.deepEqual(seen, [GOOD, GOOD]);
 });
 
 test("fetchImageBuffer refuses a bad url before any request", async () => {
@@ -281,16 +286,21 @@ test("fetchImageBuffer gives the request a timeout signal", async () => {
   assert.ok(signal);
 });
 
-test("wallColorsFor reads the thumbnail first and never throws", async () => {
+test("wallColorsFor reads only the thumbnail and never throws", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
   const png = await bandsPng([["cc0000", SIZE]]);
   const urls: string[] = [];
   const ok: ColorFetch = async (url) => {
     urls.push(url);
     return replyOf(png);
   };
-  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/full.png", wallpaper_thumb: "https://raw.githubusercontent.com/o/r/main/thumb.png"};
+  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/full.png", wallpaper_thumb: `https://images.example.com/previews/${"c".repeat(64)}.img`};
   assert.deepEqual(await wallColorsFor("w1", wall, ok), ["red"]);
-  assert.deepEqual(urls, ["https://raw.githubusercontent.com/o/r/main/thumb.png"]);
+  assert.deepEqual(urls, [wall.wallpaper_thumb]);
   assert.deepEqual(await wallColorsFor("w1", {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/full.png"}, ok), ["red"]);
   assert.equal(await wallColorsFor("w1", {}, ok), undefined);
   assert.equal(await wallColorsFor("w1", wall, async () => {
@@ -299,9 +309,14 @@ test("wallColorsFor reads the thumbnail first and never throws", async () => {
   assert.equal(await wallColorsFor("w1", wall, async () => replyOf("not an image")), undefined);
 });
 
-test("wallColorsFor falls back to the full image when the thumbnail cannot be read", async () => {
+test("wallColorsFor falls back only for unprotected walls when the thumbnail cannot be read", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
   const png = await bandsPng([["cc0000", SIZE]]);
-  const thumb = "https://raw.githubusercontent.com/o/r/main/thumb.png";
+  const thumb = `https://images.example.com/previews/${"d".repeat(64)}.img`;
   const full = "https://raw.githubusercontent.com/o/r/main/full.png";
   const urls: string[] = [];
   const thumbFails: ColorFetch = async (url) => {
@@ -310,6 +325,9 @@ test("wallColorsFor falls back to the full image when the thumbnail cannot be re
   };
   assert.deepEqual(await wallColorsFor("w1", {wallpaper_thumb: thumb, wallpaper_url: full}, thumbFails), ["red"]);
   assert.deepEqual(urls, [thumb, full]);
+  urls.length = 0;
+  assert.equal(await wallColorsFor("w1", {wallpaper_thumb: thumb, wallpaper_url: full, originalProtected: true}, thumbFails), undefined);
+  assert.deepEqual(urls, [thumb]);
   urls.length = 0;
   const thumbUndecodable: ColorFetch = async (url) => {
     urls.push(url);

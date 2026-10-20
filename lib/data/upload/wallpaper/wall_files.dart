@@ -29,13 +29,13 @@ Future<int> deleteWallFiles(
   bool failed = false;
   if (wallData['originalProtected'] == true) {
     final Object? wallId = wallData['id'];
-    final Object? generation = wallData['originalGeneration'];
-    if (wallId is! String || wallId.isEmpty || generation is! String || generation.isEmpty) {
+    final Object? objectId = wallData['originalObjectId'];
+    if (wallId is! String || wallId.isEmpty || objectId is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(objectId)) {
       throw StateError('Protected wall cleanup requires its original identity.');
     }
     for (final role in <String>['wallpaper', 'thumb']) {
       try {
-        await api.deleteWallAsset(wallId: wallId, originalGeneration: generation, assetRole: role);
+        await api.deleteWallAsset(wallId: wallId, originalObjectId: objectId, assetRole: role);
         deleted++;
       } catch (error, stackTrace) {
         failed = true;

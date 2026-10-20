@@ -210,7 +210,8 @@ void main() {
   test('protected today and archive previews retain empty originals online and offline', () async {
     firestoreClient = _WotdMetadataFirestoreClient()..docs.addAll(firestoreClient.docs);
     final today = DateTime.now().toUtc();
-    const thumb = 'https://staging.example.test/ownedThumbnail/wall-1';
+    const thumb =
+        'https://images.example.com/previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.img';
     const protected = PrismWallpaper(
       core: WallpaperCore(id: 'wall-1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: thumb),
       firestoreDocumentId: 'wall-doc-1',

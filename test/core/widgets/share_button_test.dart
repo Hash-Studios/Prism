@@ -57,10 +57,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pumpAndSettle();
 
-    expect(calls, <String?>[
-      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
-      'by Akshay',
-    ]);
+    expect(calls, <String?>['', 'by Akshay']);
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.format, ShareFormatValue.card);
     expect(result.toWireParameters()['format'], 'card');
@@ -202,11 +199,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(secondShare, isEmpty);
-    expect(firstShare, <String?>[
-      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
-      'https://prismwalls.com/share?id=wall-1',
-      'by One',
-    ]);
+    expect(firstShare, <String?>['', 'https://prismwalls.com/share?id=wall-1', 'by One']);
     expect(analytics.events.whereType<InviteShareResultEvent>().single.format, ShareFormatValue.card);
   });
 
@@ -282,7 +275,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(sharedImageUrl, 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1');
+    expect(sharedImageUrl, isEmpty);
   });
 
   testWidgets('a failed short link shares the canonical wallpaper URL', (tester) async {

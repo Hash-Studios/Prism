@@ -7,9 +7,10 @@ import '../../support/coins_test_backend.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final calls = <Map<String, dynamic>>[];
+  late CoinsTestBackend backend;
   setUp(() async {
     calls.clear();
-    final backend = CoinsTestBackend();
+    backend = CoinsTestBackend();
     await backend.install();
     backend.onCall = (name, parameters) async {
       expect(name, 'githubDeleteFile');
@@ -28,9 +29,35 @@ void main() {
     expect(calls.last.containsKey('sourceKind'), isFalse);
   });
 
-  test('manifest cleanup sends only opaque wall identity, original generation and role', () async {
-    await GitHubContentApi().deleteWallAsset(wallId: 'wall', originalGeneration: '17', assetRole: 'wallpaper');
-    expect(calls.single, <String, dynamic>{'wallId': 'wall', 'originalGeneration': '17', 'assetRole': 'wallpaper'});
+  test('manifest cleanup sends only opaque wall identity, R2 object ID and role', () async {
+    final objectId = List<String>.filled(64, 'a').join();
+    await GitHubContentApi().deleteWallAsset(wallId: 'wall', originalObjectId: objectId, assetRole: 'wallpaper');
+    expect(calls.single, <String, dynamic>{'wallId': 'wall', 'originalObjectId': objectId, 'assetRole': 'wallpaper'});
+  });
+
+  test('wallpaper upload purpose is sent only when supplied', () async {
+    backend.onCall = (name, parameters) async {
+      expect(name, 'githubPutFile');
+      calls.add(parameters);
+      return <String, dynamic>{
+        'content': <String, dynamic>{'path': 'file.jpg', 'sha': 'sha', 'download_url': 'https://example.test/file.jpg'},
+      };
+    };
+
+    final api = GitHubContentApi();
+    await api.putFile(repo: 'walls', path: 'wall.jpg', contentBase64: 'eA==', message: 'wall', purpose: 'wallpaper');
+    await api.putFile(
+      repo: 'walls',
+      path: 'wall_thumb.jpg',
+      contentBase64: 'eA==',
+      message: 'wall_thumb',
+      purpose: 'wallpaper',
+    );
+    await api.putFile(repo: 'walls', path: 'profile.jpg', contentBase64: 'eA==', message: 'profile');
+
+    expect(calls[0]['purpose'], 'wallpaper');
+    expect(calls[1]['purpose'], 'wallpaper');
+    expect(calls[2].containsKey('purpose'), isFalse);
   });
 
   test('upload response retains authoritative source kind without URL inference', () {

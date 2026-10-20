@@ -11,7 +11,8 @@ void main() {
       final wall = PrismWallDocDto.fromJson(<String, dynamic>{
         'wallpaper_provider': provider,
         'wallpaper_url': '',
-        'wallpaper_thumb': 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/w1',
+        'wallpaper_thumb':
+            'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img',
       }).toDomain(docId: 'w1');
       expect(wall.source, WallpaperSource.prism);
       expect(wall.fullUrl, isEmpty);
@@ -19,10 +20,11 @@ void main() {
   });
 
   test('protected feed and profile previews never substitute the thumbnail for the original', () {
-    const thumb = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/w1';
+    const thumb =
+        'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img';
     final wall = PrismWallDocDto.fromJson(<String, dynamic>{
       'originalProtected': true,
-      'originalGeneration': 'g1',
+      'originalObjectId': 'g1',
       'wallpaper_url': '',
       'wallpaper_thumb': thumb,
     }).toDomain(docId: 'w1');

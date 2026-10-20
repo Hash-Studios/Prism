@@ -221,7 +221,7 @@ void main() {
     final result = await undoWallpaperSet(
       _success(
         restore: <WallpaperRestore>[
-          WallpaperRestore(WallpaperTarget.home, _row('1', 'https://storage.googleapis.com/private.jpg', 'home')),
+          WallpaperRestore(WallpaperTarget.home, _row('1', 'https://images.example.com/private.jpg', 'home')),
         ],
         ids: <String>['2'],
       ),

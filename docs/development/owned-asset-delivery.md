@@ -1,192 +1,186 @@
-# Owned asset delivery (#523)
+# Owned wallpaper asset delivery
 
-When owned storage is enabled, Prism stores new wallpaper originals only in a private
-Google Cloud Storage bucket. Thumbnail uploads and legacy uploads keep their existing
-GitHub source and gain an independently retained copy. The private
-`ownedAssets/{wall.id}` manifest binds exact object generations to a unique canonical
-wall and its creation time. Public wall records expose an owned thumbnail URL,
-`originalProtected: true`, `originalGeneration: <string>`, and `wallpaper_url: ''`.
-Binding also clears `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha`.
-Delivery requires those fields to stay empty. Exact paths and SHAs remain server-only.
-Original delivery goes through server entitlement checks in #521 and a 120-second signed URL.
-An owned marker alone is not proof: delivery also checks the private manifest and wall incarnation.
-Thumbnails remain public, including pending submission thumbnails, as they already are
-in the GitHub upload flow. This lets creators and moderators load retained previews.
-Original authorization is separate. A thumbnail endpoint never returns an original object.
+Prism keeps wallpaper originals private in `R2_PRIVATE_BUCKET`. It serves public thumbnails only from
+`R2_PREVIEW_BUCKET` through the configured `R2_PREVIEW_BASE_URL` custom domain. The app and creator upload
+flow continue to use GitHub as the source while R2 is not configured. Wallpaper clients explicitly identify
+wallpaper uploads; profile photos, covers and other public uploads keep their existing GitHub delivery.
+Enabling R2 is an explicit rollout;
+this code change does not provision buckets, configure secrets, deploy functions or migrate live data.
+No storage infrastructure has been provisioned or deployed by this PR.
 
-Private-original upload intents, receipts and retained objects use a separate namespace
-from GitHub assets, even when repository, path and blob SHA match. Client paths do not
-change. A private copy cannot claim or delete the corresponding public GitHub copy.
-If one caller owns both copies, deletion requires an explicit `sourceKind` of `owned`
-or `github`; an ambiguous request fails without deleting either. Private deletion keeps
-a server-only `ownedUploadDeletions` tombstone outside the upload intent. Path reuse remains
-possible, but a deletion retry cannot fall through to public-source deletion. Pre-fix staging
-owned records in the GitHub namespace require explicit reconciliation, not automatic adoption.
+The private `ownedAssets/{wall.id}` manifest binds stored objects to one canonical wall document and its
+creation time. Public wall records contain `originalProtected: true`, `wallpaper_url: ''`, the original
+object id, and the public preview URL. Server-only manifests keep source paths, Git SHAs, object ids,
+SHA-256 digests and provenance. Protected-original access still goes through the existing entitlement
+callable, which returns a short-lived R2 S3 presigned URL. Cloudflare documents that presigned URLs use
+the S3 API endpoint and cannot use a custom domain. Preview URLs use the custom domain.
 
-Upload responses include a server-selected `sourceKind` of `owned` or `github`.
-Clients keep each file's selector for staged cleanup. Legacy responses without a
-selector remain unspecified, so ambiguous deletions still fail closed.
+R2 object ids are stable SHA-256 identities derived from the uploader/source identity and byte digest.
+Uploads use create-only writes; retries verify existing metadata and bytes rather than replacing an
+object. The private and preview buckets are separate. No original is placed in the public preview bucket.
+Existing GitHub-backed assets keep their GitHub receipt provenance during migration. A migration must not
+claim them as new private-origin uploads or fabricate creator receipts. Legacy rows require explicit
+reviewed-legacy opt-in and use a reserved migration identity.
 
-For a bound pending wall, cleanup sends `wallId`, `originalGeneration` and
-`assetRole` (`wallpaper` or `thumb`) to `githubDeleteFile`, not private paths.
-The server resolves the manifest and checks receipt ownership, the retained generation
-and the canonical wall incarnation before deletion. A deleted manifest remains usable
-for partial-cleanup retries. The client keeps the pending wall record until file
-cleanup succeeds, so a transient failure leaves a retry available. Existing per-file
-delete leases and thumbnail quota accounting remain authoritative.
+## Runtime configuration
 
-## Operator prerequisites
+The Functions runtime uses these settings:
 
-No bucket creation, IAM change, deploy or live migration is authorized by this document.
-Obtain explicit approval at each concrete production step. Use ADC for the intended project,
-and verify the project and runtime service account before running a command.
+- `R2_ACCOUNT_ID`
+- `R2_PRIVATE_BUCKET`
+- `R2_PREVIEW_BUCKET`
+- `R2_PREVIEW_BASE_URL`, an HTTPS custom domain attached to the public preview bucket
+- `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, configured as runtime secrets
+- `GH_USERNAME`, `GH_REPO_WALLS` and existing GitHub callable credentials
 
-Configure these server environment names through the existing Doppler/deploy process:
+Each function that accesses R2 must bind both R2 secrets. Configure the secrets through the approved
+Doppler/deploy process only after production approval. Secret values must not be printed or checked in.
+The account access key must be scoped to the two named buckets. Keep the private bucket non-public and
+enable custom-domain access only for the preview bucket. Do not add lifecycle deletion that could remove
+objects referenced by ready manifests. With no R2 routing configuration, uploads keep using GitHub. Any
+partial R2 routing configuration fails closed; credentials alone may be staged before routing is enabled.
+The deployment still requires its declared runtime secret bindings to be configured. Merging this PR
+does not create those bindings. The first full Functions deployment, or deployment of any function that
+binds R2 secrets, is blocked until the user approves secret setup and both secret versions exist.
+This prerequisite also applies to a pre-rollout deployment with routing keys absent. Do not run the
+default full Functions deployment for an unrelated hotfix before that approval. The default Makefile
+secret-sync list does not include R2; use the explicit approved list below. Do not create placeholder
+secrets or enable routing as an unapproved workaround.
 
-- `OWNED_ASSET_BUCKET`: dedicated bucket name, without `gs://`.
-- `OWNED_THUMBNAIL_BASE_URL`: HTTPS URL of the deployed `ownedThumbnail` function,
-  without a wall id. The service appends `/<encoded wall.id>`.
-- `GH_USERNAME` and `GH_REPO_WALLS`: exact trusted GitHub owner and wallpaper repository.
-- Existing GitHub callable credentials remain server-only. Raw migration downloads do not send them.
-
-The default `make functions-env` exports only the existing GitHub keys. After approval
-and after the new values exist in the selected Doppler config, include them explicitly:
+After approval, include routing keys in the explicit Functions export list and R2 secrets in the sync list:
 
 ```sh
-make functions-env FUNCTIONS_ENV_KEYS='GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS OWNED_ASSET_BUCKET OWNED_THUMBNAIL_BASE_URL'
+make functions-env FUNCTIONS_ENV_KEYS='GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS R2_ACCOUNT_ID R2_PRIVATE_BUCKET R2_PREVIEW_BUCKET R2_PREVIEW_BASE_URL'
+make functions-secrets-sync FUNCTIONS_SECRETS='GH_TOKEN REVENUECAT_SECRET_KEY STUDIO_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID FAL_API_KEY R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY'
 ```
 
-This writes local deployment configuration. It does not create the bucket or deploy
-functions. Do not run it during code-only verification. A later export with the default
-key list omits owned storage, so use the same explicit list for subsequent approved deploys.
+These commands change local deployment configuration or sync secrets. Do not run them until the user
+approves the concrete production configuration step. Mobile builds need `R2_PREVIEW_BASE_URL`, `GH_USERNAME`
+and `GH_REPO_WALLS` as Dart defines. The GitHub defines keep existing public thumbnails usable during rollout.
+The Doppler-to-Dart helper must exclude all R2 credentials, account id and bucket names from app
+builds. The Worker needs no private-bucket credentials or a second R2 binding to embed the public preview
+URL. Set its `R2_PREVIEW_BASE_URL` variable to the same HTTPS base URL as Functions and the app before
+migrated walls are exposed in share/OG cards. Deploy that Worker change before metadata migration. Do not put bucket secrets in
+`wrangler.toml`.
+Set the Worker's `GH_USERNAME` and `GH_REPO_WALLS` variables to retain safe legacy GitHub thumbnails during rollout.
+Put all three public variables under `[vars]` in the approved Wrangler configuration, using the examples in
+`infra/cloudflare/worker/wrangler.toml`. For a named environment, put them under that environment's `vars` table.
+Do not rely on dashboard-only variables; a Wrangler deploy can remove variables absent from its configuration.
 
-Create the bucket in the approved project and region with uniform bucket-level access
-and public-access prevention enforced. Do not grant `allUsers` or `allAuthenticatedUsers`
-any bucket role. Do not configure Firebase download tokens or public object ACLs.
-Do not expose this bucket through a public CDN or Firebase Storage rule. Do not apply
-a lifecycle rule which removes retained generations still referenced by manifests.
-Audit inherited organization/project grants as well as bucket grants.
+## Delivery and deletion
 
-The function runtime principal needs bucket-scoped `roles/storage.objectUser`
-(create, read, metadata, delete). For signed URLs, enable the IAM Service Account
-Credentials API and grant the runtime principal `roles/iam.serviceAccountTokenCreator`
-on the signing service account, not broadly across the project. ADC migration operators
-need Firestore read access for dry runs; apply additionally requires scoped Firestore
-writes and bucket object creation/read. Retention uses create-only generation preconditions,
-and rejects existing bytes or metadata that do not match.
+An owned wall must have a unique logical `wall.id`, a ready private manifest, matching immutable wall
+incarnation and an object id that agrees with the public marker. The original is never delivered from the
+preview bucket. The public custom domain serves immutable preview objects without a per-request manifest check.
+Upload receipt ownership, delete leases, quota accounting and server-side access checks
+remain authoritative. A storage deletion must verify the expected object id and mark affected manifests
+before retrying a delete. It must not fall back to deleting the corresponding GitHub asset.
+The wall-delete trigger validates the original and thumbnail identities atomically against the matching
+manifest incarnation and registry rows. It marks the manifest deleted and tombstones each unshared asset
+so a delayed upload cannot republish it. It immediately deletes an unshared preview; the tombstone sweep
+reclaims the private original and thumbnail copies after the cleanup grace period. Shared assets remain
+active, and stale wall incarnations fail closed.
+Admin cleanup of a reviewed-legacy manifest uses its exact wall incarnation and registry identity without
+requiring a fabricated upload receipt or deleting the GitHub source. A shared ready preview stays available.
+Uploads that never bind have no manifest for the wall-delete trigger to resolve. Use authorized path-mode
+cleanup with the uploader receipt for these abandoned uploads; do not infer ownership from a filename.
+Permanent registry tombstones prevent deleted identities from becoming active again. A daily cleanup scans
+up to 100 tombstones per invocation and persists its cursor. Each full pass starts again so that a delayed
+writer cannot leave an untracked object after a crash. This creates recurring Firestore reads and R2 requests.
+Monitor cleanup failures and the time to complete a pass. Invalid identities are logged and skipped without deleting bytes.
+Deleting an imported identity intentionally prevents re-import of that same identity. New user uploads use a
+fresh upload incarnation so that an authorized re-upload can use the same file path safely.
 
-Server Admin SDK access bypasses Firestore rules. Confirm clients cannot read or write
-`ownedAssets` or `ownedUploadDeletions`, or mutate owned delivery markers. Coordinate these rules with #521:
-do not deploy rules that reject writes from still-supported store clients without the
-approved compatibility/adoption plan. An unrelated permissive rule must not expose the manifest.
+## GitHub-to-R2 inventory and migration
 
-## Safe rollout order
+The migration reads `walls` metadata and a recursive GitHub tree pinned to one commit. It refuses a
+truncated tree. It reports referenced image paths, orphan image count, source Git blob SHA, byte size,
+wall identity, duplicate ids and blocked reasons. Dry-run downloads no image bytes and writes no Firestore
+or R2 objects. Its JSON report is private operational data and should be stored outside public source control.
 
-1. Approve and configure the private bucket, runtime IAM and environment. Verify no public access.
-2. Deploy backend retention, binding, thumbnail delivery and entitlement-gated original delivery.
-   Confirm actual function URLs before setting `OWNED_THUMBNAIL_BASE_URL`.
-3. Verify new uploads retain both assets before publishing protected markers. Test original
-   denial without entitlement, grant after acquisition, URL expiry, generation pinning,
-   tombstones, missing assets and a reused logical wall id.
-   New originals return an empty `download_url` with server-owned path/SHA receipts.
-   Existing pending public-origin uploads require explicit reconciliation before retry.
-4. Ship compatible clients and coordinate #521 rules with supported store versions.
-5. Review a metadata-only dry run. Approve and execute bounded migration operations
-   under the intended project. Review blocked rows and rerun after fixing their source.
-6. Separately approve any GitHub source removal using a reviewed removal inventory.
+The operator host needs Node.js, built Functions, read access to the configured public GitHub repository,
+and Application Default Credentials for the approved Firestore project. Apply additionally needs scoped R2
+credentials and Firestore write access. Do not use a production credential for local tests. Reports can
+contain private source paths and must stay outside the repository.
 
-These are separate gates. A local test pass does not establish deployed IAM, production
-carrier reliability, entitlement behavior, or Android/iOS device behavior.
-
-## Legacy migration
-
-Build locally, then run the compiled script with explicitly selected project credentials:
+Example metadata-only inventory:
 
 ```sh
 cd functions
 npm run build
-node lib/scripts/migrateOwnedAssets.js
+node lib/scripts/migrateGithubToR2.js --ref master --report /secure/path/wall-assets.json
 ```
 
-The default is a read-only dry run. It reads walls, private manifests, upload receipts
-and intents. It does not download images, write Firestore or write Storage. The JSON
-report includes the document path, logical `wall.id`, status and whether the GitHub
-public original remains. Treat reports as private operational records. The scan checks
-all canonical wall documents, including auto-generated legacy document ids; duplicate
-logical ids block every matching record. Do not resolve duplicates by guessing which
-document is canonical.
+For a separate reviewed-legacy preview, include `--allow-reviewed-legacy`; this changes the recorded
+policy and apply must use the same flag.
 
-Modern provenance requires exact server-owned upload receipts and completed intents
-for both assets, with a consistent uploader. Missing proof is blocked by default.
-Dry-run planning cannot prove object availability or image integrity; apply performs
-those checks before binding.
-
-Some legacy records predate those receipts. An explicitly approved legacy policy allows
-only `review: true` canonical walls with a unique logical id and two separate raw assets
-under the configured owner/repository. The operator must review the corpus and provenance
-before opting in; `review: true` is editorial review, not cryptographic ownership proof.
-This policy stores private legacy provenance and uses the reserved retention identity
-`legacy-migration`. It does not fabricate uploader receipts, ownership or creator rewards.
-Unsafe URLs, ambiguous ids and unreviewed walls remain blocked.
-
-Preview that policy without mutation:
+The report pins a commit SHA. Apply requires the exact commit SHA from that report, loads the existing report,
+and rebuilds inventory from current Firestore and GitHub state. It refuses apply if paths, hashes, counts
+or wall identities differ from the reviewed report. It then validates the same wall identity and paths before and after source download,
+verifies each downloaded byte stream against the pinned Git blob SHA, and verifies R2 metadata/readback
+before binding. It does not trust an old report as authorization or as proof that a wall is unchanged.
+Create-only content-addressed writes make a rerun safe after interruption; the report records in-progress,
+completed and blocked rows as work advances. Apply requires explicit operator approval at the final
+concrete step:
 
 ```sh
-node lib/scripts/migrateOwnedAssets.js --allow-reviewed-legacy
+node lib/scripts/migrateGithubToR2.js --ref <commit-SHA-from-report> --report /secure/path/wall-assets.json \
+  --apply --confirm-approved-migration
 ```
 
-Only after explicit production approval, the apply form is:
+Only add `--allow-reviewed-legacy` when that separate policy has explicit approval. It does not create
+GitHub upload receipts, assign creator rewards, or claim uploader identity. Modern rows require matching
+completed GitHub receipts and intents. A matching source Git SHA from the pinned tree fills old rows that
+do not store a SHA; fetched bytes still must match that tree SHA.
 
-```sh
-node lib/scripts/migrateOwnedAssets.js --apply --confirm-approved-migration
-# Add --allow-reviewed-legacy only if that separate policy was explicitly approved.
-```
+The script never deletes, privatizes or edits GitHub files. It does not revoke GitHub URLs, prior downloads,
+Git history, forks, mirrors or caches. A separate removal inventory must check shared-path references and
+receive explicit approval before any source-removal operation.
 
-The confirmation flag is an operator acknowledgement, not an authorization service.
-Never run apply merely to see what happens. The script currently scans the full corpus;
-estimate memory and operation counts from the dry run before approving a production run.
-There is no automatic live retry loop. A failed row is reported and other rows continue;
-rerunning safely resumes content-addressed retention and reports already-bound manifests.
-Partial failures can leave private retained objects or enriched receipts, but do not
-publish a half-bound wall. Review these before any cleanup; no automatic deletion occurs.
-Missing retained objects and invalid durability metadata leave the wall unbound.
-Transient storage errors still propagate so the binding trigger can retry.
+Preview object keys end in `.img` and are immutable by object id. Set object `Content-Type` metadata to the
+detected image MIME type and use a public cache policy at the R2 custom domain. A preview delete does not
+purge copies already held by edge or browser caches. Any approved preview-object removal must include a
+Cloudflare cache purge plan; originals remain in the private bucket and are never routed through this domain.
 
-Downloads accept only HTTPS `raw.githubusercontent.com`, the configured owner/repo,
-one explicit ref segment and safe file segments. Existing path/SHA fields must match.
-Redirects are errors. Downloads have a 15-second deadline and a 32 MiB streaming limit,
-JPEG/PNG/WebP/GIF metadata/pixel limits, and verify a supplied Git blob SHA. Legacy assets without
-an existing SHA have the Git blob SHA derived from fetched bytes. Both assets are fetched
-before retention writes. Final binding rechecks the canonical wall and fences its incarnation
-and source identity. Concurrent changes can block a row; inspect and rerun.
+## Rollout gates
 
-## Public-source removal is separate
+1. Approve and create separate private and preview R2 buckets; configure scoped access credentials and the
+   public preview custom domain. Disable public `r2.dev` access and keep all public access off the private
+   bucket. Set a Cloudflare Cache Rule to cache `/previews/*.img`; this extension is not cached by default.
+   No bucket or secret changes are included here.
+2. Configure runtime secrets and deploy the Functions code through the approved deployment process.
+3. Verify new uploads retain the expected private original and public-only preview. Test entitlement denial,
+   successful acquisition, presigned URL expiry, retry behavior, object integrity and missing-object errors.
+   Verify that profile and cover photo uploads still return usable public URLs and that both wallpaper
+   upload roles use the explicit wallpaper purpose.
+4. Preserve the GitHub upload path until R2 configuration and deployed delivery have been verified.
+   Deploy the Worker preview allowlist and configure the app preview base before exposing migrated walls.
+   Do not release a client that requires grants for a cohort until that cohort has ready manifests and
+   its entitlement, preview, acquisition and retry checks pass against the deployed backend.
+5. Run and review a dry-run inventory. Approve and execute apply separately, then inspect every blocked or
+   partial result and rerun safely where needed.
+6. Review and approve any GitHub removal as a separate operation.
 
-Migration does **not** delete GitHub files, change GitHub repository visibility, purge
-GitHub caches, or make a previously public source private. Clearing `wallpaper_url` is
-not revocation. Each result reports `publicOriginalRemains: true`, including already-owned
-records, because no approved source-removal proof exists in this tool.
+If a pre-cutover check fails, keep routing absent so new uploads continue on GitHub. After a wall is marked
+protected and its GitHub URL is redacted, do not remove R2 routing/secrets or roll back to a binary that
+cannot read R2. Protected originals must fail closed, not fall back to a still-public GitHub URL. Keep R2
+delivery configured for migrated walls; pause migration/new protected uploads or deploy a compatible fix.
+Legacy GitHub copies remaining public does not make them an authorized app-delivery fallback.
 
-Before claiming originals are private, create a separate reviewed removal inventory from
-the private manifest: wall id, canonical path/incarnation, original and thumbnail source
-URLs, repository paths/blob SHAs, retained generations/digests, and all other references
-to each shared GitHub path. Get explicit approval before removal. Check Git history,
-forks, mirrors and caches as separate exposure risks. Do not delete a shared path merely
-because one wall was migrated. This script never performs source removal.
+## Cloudflare references
 
-Already acquired local copies remain usable under the existing acquisition policy.
-Signed-URL expiry limits future origin access; it cannot revoke copied bytes.
-Deleting wall metadata tombstones its delivery manifest. It does not delete objects that
-another wall may reference. The existing authorized file-delete flow deletes the retained
-generation and tombstones every manifest that references it. Account deletion still
-anonymizes published walls instead of removing them. Staged orphan cleanup requires a
-separate reviewed inventory and approval; no background retention change is introduced.
+- [R2 S3-compatible API](https://developers.cloudflare.com/r2/api/s3/api/)
+- [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)
+- [R2 public buckets and custom domains](https://developers.cloudflare.com/r2/buckets/public-buckets/)
+- [R2 pricing](https://developers.cloudflare.com/r2/pricing/)
 
-## Proof and known gaps
-
-Local tests cover metadata-only dry runs, logical-id duplicates, URL allowlisting,
-legacy policy gating, fetch failure, partial-retention retries and public-source warnings.
-They are not production Storage/IAM or device tests. Before rollout, capture Android
-and iOS screenshots and test slow/offline/mobile-carrier networks, thumbnail fallback,
-expired URL refresh and acquired-original persistence. Production migration, source
-removal, backend/rules deployment and real device/carrier checks require separate proof.
+The cited pricing page lists standard storage at $0.015/GB-month, Class A operations at $4.50/million,
+Class B at $0.36/million, and no R2 egress charge. It also lists free monthly allowances of 10 GB-month
+storage, 1 million Class A operations and 10 million Class B operations. Estimate cost as stored GB-month
+times $0.015, plus Class A requests per million times $4.50 and Class B requests per million times $0.36,
+after applicable allowances. No usage estimate is included because corpus bytes, request rates, retention
+and cache hit rates have not been measured. The migration CLI transfers bytes from the operator host
+directly from GitHub to R2, rather than through Firebase image delivery. New-upload Functions-to-R2
+transfers may still incur provider compute or network charges. Functions execution and Firestore auth,
+receipt and manifest operations also remain billable. R2's no-egress pricing is not a claim of zero total
+cost. Check current pricing and actual usage before approval.

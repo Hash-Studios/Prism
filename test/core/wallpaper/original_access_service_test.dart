@@ -333,7 +333,7 @@ void main() {
                 'assetId': id,
                 'url': 'https://signed.example/$id',
                 'expiresAt': now.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
-                'generation': '1',
+                'objectId': List.filled(64, 'a').join(),
               },
           ],
         };

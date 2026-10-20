@@ -55,7 +55,8 @@ void main() {
         'review': true,
         'originalProtected': true,
         'wallpaper_url': '',
-        'wallpaper_thumb': 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/safe',
+        'wallpaper_thumb':
+            'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img',
       },
       'missing-thumb': <String, dynamic>{
         'email': 'artist@example.test',
@@ -69,7 +70,7 @@ void main() {
         : <FakeDocRow>[];
     final result = await repository.fetchStarterPack();
     expect(result.data!.single.previewUrls, <String>[
-      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/safe',
+      'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img',
     ]);
   });
 

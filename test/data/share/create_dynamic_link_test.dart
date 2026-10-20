@@ -87,7 +87,7 @@ void main() {
         expect(
           (body['preview'] as Map)['image_source_url'],
           source == WallpaperSource.prism
-              ? 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/premium-wall'
+              ? ''
               : source == WallpaperSource.wallhaven || source == WallpaperSource.pexels
               ? thumb
               : '',
@@ -102,15 +102,12 @@ void main() {
     });
   }
 
-  test('Prism thumbnails cannot smuggle a legacy original into any link field', () async {
+  test('Prism shares do not synthesize an endpoint or include an original URL', () async {
     const original = 'https://raw.githubusercontent.com/Hash-Studios/private/original.jpg';
     final client = MockClient((request) async {
       expect(request.body, isNot(contains(original)));
       final body = jsonDecode(request.body) as Map<String, dynamic>;
-      expect(
-        (body['payload'] as Map)['thumb'],
-        'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
-      );
+      expect((body['payload'] as Map)['thumb'], '');
       return http.Response('{}', 200);
     });
     final link = await withApi(() => createDynamicLink('wall-1', WallpaperSource.prism, original, original), client);

@@ -1,5 +1,4 @@
 import {logger} from "firebase-functions/v2";
-import {REGION} from "./common";
 
 export type PaletteColor = {id: string; hex: string};
 
@@ -118,18 +117,31 @@ const MAX_REDIRECTS = 3;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 function isOwnedThumbnailUrl(url: URL): boolean {
-  const project = process.env.GCLOUD_PROJECT;
-  const base = process.env.OWNED_THUMBNAIL_BASE_URL ??
-    (project ? `https://${REGION}-${project}.cloudfunctions.net/ownedThumbnail` : undefined);
+  const base = process.env.R2_PREVIEW_BASE_URL;
   if (!base) return false;
   try {
     const endpoint = new URL(base);
     if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
       endpoint.search || endpoint.hash) return false;
-    const id = url.pathname.split("/").pop() ?? "";
-    return /^[A-Za-z0-9_-]{1,200}$/.test(id) && url.href === `${endpoint.href.replace(/\/$/, "")}/${id}`;
+    const prefix = `${endpoint.pathname.replace(/\/$/, "")}/previews/`;
+    const suffix = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : "";
+    const match = /^([a-f0-9]{64})\.img$/.exec(suffix);
+    return !!match && url.hostname === endpoint.hostname && url.href === `${endpoint.href.replace(/\/$/, "")}/previews/${match[1]}.img`;
   } catch {
     return false;
+  }
+}
+
+function configuredPreviewHost(): string | undefined {
+  const base = process.env.R2_PREVIEW_BASE_URL;
+  if (!base) return undefined;
+  try {
+    const endpoint = new URL(base);
+    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
+      endpoint.search || endpoint.hash) return undefined;
+    return endpoint.hostname;
+  } catch {
+    return undefined;
   }
 }
 
@@ -146,6 +158,9 @@ export function checkedImageUrl(value: string): URL {
   if (url.username || url.password || url.port) {
     throw new Error("image url must not have credentials or a port");
   }
+  const previewHost = configuredPreviewHost();
+  if (previewHost && url.hostname === previewHost &&
+    !isOwnedThumbnailUrl(url)) throw new Error("R2 image path is not an allowed preview");
   if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname) && !isOwnedThumbnailUrl(url)) {
     throw new Error("image host is not allowed");
   }
@@ -203,19 +218,17 @@ export async function fetchImageBuffer(
   return Buffer.concat(chunks);
 }
 
-export type WallImageUrls = {wallpaper_url?: unknown; wallpaper_thumb?: unknown};
+export type WallImageUrls = {wallpaper_url?: unknown; wallpaper_thumb?: unknown; originalProtected?: unknown};
 
 /**
- * Colours for a wall, read from its thumbnail when it has one (smaller download, same colours), then from the full
- * image when the thumbnail cannot be read. Never throws: a failure is logged and gives undefined, so it cannot fail
- * categorization.
+ * Read the thumbnail first; use the full image only for an unprotected legacy wall.
  */
 export async function wallColorsFor(
   wallId: string,
   wall: WallImageUrls,
   fetchImpl: ColorFetch = fetch,
 ): Promise<string[] | undefined> {
-  const urls = [wall.wallpaper_thumb, wall.wallpaper_url]
+  const urls = [wall.wallpaper_thumb, ...(wall.originalProtected === true ? [] : [wall.wallpaper_url])]
     .map((value) => (typeof value === "string" ? value.trim() : ""))
     .filter((value, index, all) => value.length > 0 && all.indexOf(value) === index);
   for (const url of urls) {

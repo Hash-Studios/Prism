@@ -75,7 +75,8 @@ void main() {
   });
 
   test('protected thumbnail previews remain visible online and from cache without an original', () async {
-    const thumb = 'https://staging.example.test/ownedThumbnail/A';
+    const thumb =
+        'https://images.example.com/previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.img';
     walls = <String, Map<String, dynamic>>{
       'A': <String, dynamic>{..._wall('A'), 'wallpaper_url': '', 'wallpaper_thumb': thumb, 'originalProtected': true},
     };

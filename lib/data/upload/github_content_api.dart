@@ -33,12 +33,12 @@ class GitHubContent {
 class GitHubContentApi {
   Future<void> deleteWallAsset({
     required String wallId,
-    required String originalGeneration,
+    required String originalObjectId,
     required String assetRole,
   }) async {
     await appFunctions.httpsCallable('githubDeleteFile').call(<String, dynamic>{
       'wallId': wallId,
-      'originalGeneration': originalGeneration,
+      'originalObjectId': originalObjectId,
       'assetRole': assetRole,
     });
   }
@@ -49,6 +49,7 @@ class GitHubContentApi {
     required String contentBase64,
     required String message,
     String? sha,
+    String? purpose,
   }) async {
     final result = await appFunctions.httpsCallable('githubPutFile').call(<String, dynamic>{
       'repo': repo,
@@ -56,6 +57,7 @@ class GitHubContentApi {
       'contentBase64': contentBase64,
       'message': message,
       if (sha != null) 'sha': sha,
+      if (purpose != null) 'purpose': purpose,
     });
     return GitHubContent.fromData(Map<String, dynamic>.from(result.data as Map));
   }

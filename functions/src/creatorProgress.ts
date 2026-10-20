@@ -4,7 +4,7 @@ import {onDocumentCreated, onDocumentWritten} from "firebase-functions/v2/firest
 import {db, int, REGION} from "./common";
 import {dayKey, grantXp, loadEconomy, weekBounds, weekKey} from "./economy";
 import {rankRewardsFor} from "./rankRewards";
-import {stored} from "./ownedAssetDelivery";
+import {ownedThumbnailUrl, stored} from "./ownedAssetDelivery";
 
 type Data = admin.firestore.DocumentData;
 type Snapshot = admin.firestore.DocumentSnapshot;
@@ -31,7 +31,7 @@ const hash = (value: string): string => createHash("sha256").update(value).diges
 const receiptRef = (id: string) => db.collection("creatorWallCredits").doc(hash(id));
 const barrierRef = (uid: string) => db.collection("creatorDeletionState").doc(uid);
 
-type Asset = {repo: string; path: string; sha: string; url: string};
+type Asset = {repo: string; path: string; sha: string; url: string; sourceKind?: "owned"};
 
 /** GitHub's returned download URL must reference the same protected repository and stored file path. */
 function asset(data: Data, prefix: "wallpaper" | "thumb"): Asset | null {
@@ -60,6 +60,7 @@ export async function verifiedUploadOwner(canonical: Snapshot, tx?: admin.firest
   if (!canonicalData) return null;
   let data: Data = canonicalData;
   let privateOriginal: Asset | undefined;
+  let privateThumb: Asset | undefined;
   let boundOwner: string | undefined;
   let retainedAssets: Data[] | undefined;
   if (data.originalProtected === true) {
@@ -72,7 +73,8 @@ export async function verifiedUploadOwner(canonical: Snapshot, tx?: admin.firest
       manifest.canonicalPath !== canonical.ref.path ||
       manifest.incarnation !== canonical.createTime.toMillis() ||
       manifest.incarnationNanos !== canonical.createTime.nanoseconds ||
-      manifest.original?.generation !== data.originalGeneration) return null;
+      manifest.original?.objectId !== data.originalObjectId || !manifest.thumb.previewObjectId ||
+      canonicalData.wallpaper_thumb !== ownedThumbnailUrl(manifest.thumb)) return null;
     if (!validUid(manifest.provenance.uid)) return null;
     boundOwner = manifest.provenance.uid;
     retainedAssets = [manifest.original, manifest.thumb];
@@ -82,17 +84,21 @@ export async function verifiedUploadOwner(canonical: Snapshot, tx?: admin.firest
         typeof original.path !== "string" || !original.path || original.path.length > 1024 || original.path.startsWith("/") ||
         original.path.includes("\\") || original.path.split("/").some((part: string) => !part || part === "." || part === "..") ||
         typeof original.sha !== "string" || !/^[a-f0-9]{40}$/.test(original.sha)) return null;
-      privateOriginal = {repo: original.repo, path: original.path, sha: original.sha, url: ""};
+      privateOriginal = {repo: original.repo, path: original.path, sha: original.sha, url: "", sourceKind: "owned"};
+    }
+    if (manifest.thumb.previewObjectId) {
+      privateThumb = {repo: manifest.thumb.repo, path: manifest.thumb.path, sha: manifest.thumb.sha,
+        url: manifest.thumbUrl, ...(manifest.thumb.sourceKind === "owned" ? {sourceKind: "owned" as const} : {})};
     }
     data = {...data, wallpaper_url: manifest.originalUrl, wallpaper_thumb: manifest.thumbUrl,
       wallpaper_path: manifest.original?.path, wallpaper_sha: manifest.original?.sha,
       thumb_path: manifest.thumb?.path, thumb_sha: manifest.thumb?.sha};
   }
-  const assets = [privateOriginal ?? asset(data, "wallpaper"), asset(data, "thumb")];
+  const assets = [privateOriginal ?? asset(data, "wallpaper"), privateThumb ?? asset(data, "thumb")];
   if (assets.some((value) => value === null)) return null;
   let owner: string | null = null;
   for (const [index, file] of (assets as Asset[]).entries()) {
-    const owned = file === privateOriginal;
+    const owned = file.sourceKind === "owned";
     const keyPrefix = owned ? "owned_" : "";
     let query = db.collection("githubUploads").where("path", "==", file.path)
       .orderBy(admin.firestore.FieldPath.documentId()).limit(8);
@@ -116,17 +122,17 @@ export async function verifiedUploadOwner(canonical: Snapshot, tx?: admin.firest
       intent.blobSha !== file.sha || content?.path !== file.path || content?.sha !== file.sha || content?.download_url !== file.url) return null;
     if (!owned && intent.sourceKind === "owned") return null;
     if (owned && (exact?.data().sourceKind !== "owned" || intent.sourceKind !== "owned" ||
-      exact.data().retainedAsset?.generation !== data.originalGeneration ||
-      intent.retainedAsset?.generation !== data.originalGeneration)) return null;
+      index === 0 && (exact.data().retainedAsset?.objectId !== data.originalObjectId ||
+        intent.retainedAsset?.objectId !== data.originalObjectId))) return null;
     if (retainedAssets) {
       const retained = retainedAssets[index];
       const proofs = [exact?.data().retainedAsset,
         ...(owned || intent.retainedAsset !== undefined ? [intent.retainedAsset] : [])];
       if (!retained || retained.uid !== uid || retained.repo !== file.repo || retained.path !== file.path ||
         retained.sha !== file.sha || (retained.sourceKind === "owned") !== owned ||
-        retained.object !== `${owned ? "private-originals" : "retained"}/${hash(`${file.repo}\0${file.path}\0${file.sha}`)}` ||
+        retained.object !== `${owned ? "private-originals" : "retained"}/${retained.objectId}` ||
         proofs.some((proof) => !proof ||
-          ["repo", "path", "sha", "uid", "bucket", "object", "generation", "sha256", "sourceKind"]
+          ["repo", "path", "sha", "uid", "bucket", "object", "objectId", "sha256", "sourceKind", "uploadId"]
             .some((field) => proof[field] !== retained[field]))) return null;
     }
     owner = uid;

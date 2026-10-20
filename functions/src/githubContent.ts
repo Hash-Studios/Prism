@@ -4,7 +4,9 @@ import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
-import {deleteRetainedUpload, ownedAssetStorageEnabled, retainUpload, stored, type StoredUpload} from "./ownedAssetDelivery";
+import {deleteRetainedUpload, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
+  type StoredUpload} from "./ownedAssetDelivery";
+import {r2Secrets} from "./r2Storage";
 
 const UPLOADS = "githubUploads";
 const UPLOAD_STATS = "githubUploadStats";
@@ -28,9 +30,10 @@ type GithubContentData = {
   contentBase64?: unknown;
   message?: unknown;
   sha?: unknown;
+  purpose?: unknown;
   sourceKind?: unknown;
   wallId?: unknown;
-  originalGeneration?: unknown;
+  originalObjectId?: unknown;
   assetRole?: unknown;
 };
 
@@ -181,6 +184,7 @@ async function claimUploadIntent(
       path: filePath,
       blobSha,
       sourceKind,
+      uploadId: randomUUID(),
       status: "pending",
       weeklyQuotaCharged: weekly,
       uploadWeek: week,
@@ -421,15 +425,15 @@ function requiredString(value: unknown, name: string): string {
 }
 
 type ManifestDeleteProof = {
-  wallId: string; originalGeneration: string; assetRole: "wallpaper" | "thumb";
+  wallId: string; originalObjectId: string; assetRole: "wallpaper" | "thumb";
   asset?: StoredUpload; canonicalPath?: unknown; incarnation?: unknown; incarnationNanos?: unknown;
 };
 
 function sameStoredUpload(left: unknown, right: unknown): boolean {
   if (!stored(left) || !stored(right)) return false;
-  return left.bucket === right.bucket && left.object === right.object && left.generation === right.generation &&
+  return left.bucket === right.bucket && left.objectId === right.objectId && left.object === right.object &&
     left.repo === right.repo && left.path === right.path && left.sha === right.sha && left.sha256 === right.sha256 &&
-    left.uid === right.uid && left.sourceKind === right.sourceKind;
+    left.uid === right.uid && left.sourceKind === right.sourceKind && left.uploadId === right.uploadId;
 }
 
 async function readManifestDeleteProof(
@@ -438,12 +442,16 @@ async function readManifestDeleteProof(
   const manifest = (await tx.get(db.collection("ownedAssets").doc(proof.wallId))).data();
   const asset = proof.assetRole === "wallpaper" ? manifest?.original : manifest?.thumb;
   if (!manifest || !["ready", "deleted"].includes(manifest.status) || !stored(manifest.original) || !stored(asset) ||
-    manifest.original.generation !== proof.originalGeneration || typeof manifest.canonicalPath !== "string" ||
+    manifest.original.objectId !== proof.originalObjectId || typeof manifest.canonicalPath !== "string" ||
     !/^walls\/[^/]+$/.test(manifest.canonicalPath)) {
     throw new HttpsError("failed-precondition", "Owned wall cleanup identity is unavailable.");
   }
   if (!isAdmin && (asset.uid !== callerUid || manifest.original.uid !== callerUid || manifest.provenance?.uid !== callerUid)) {
     throw new HttpsError("permission-denied", "You cannot delete this wall's files.");
+  }
+  if (asset.uid === "legacy-migration" && (manifest.provenance?.kind !== "legacy" ||
+    manifest.original.uid !== "legacy-migration")) {
+    throw new HttpsError("failed-precondition", "Legacy migration identity is unavailable.");
   }
   if (proof.asset && (!sameStoredUpload(proof.asset, asset) || manifest.canonicalPath !== proof.canonicalPath ||
     manifest.incarnation !== proof.incarnation || manifest.incarnationNanos !== proof.incarnationNanos)) {
@@ -458,7 +466,7 @@ async function readManifestDeleteProof(
     const wall = canonical.data();
     if (!canonical.createTime || wall?.id !== proof.wallId ||
       canonical.createTime.toMillis() !== manifest.incarnation || canonical.createTime.nanoseconds !== manifest.incarnationNanos ||
-      wall.originalProtected !== true || wall.originalGeneration !== proof.originalGeneration ||
+      wall.originalProtected !== true || wall.originalObjectId !== proof.originalObjectId ||
       (!isAdmin && wall.review !== false)) {
       throw new HttpsError("failed-precondition", "Wall is no longer the pending upload.");
     }
@@ -549,13 +557,17 @@ function githubHttpStatus(error: unknown): number | undefined {
 }
 
 export const githubPutFile = onCall(
-  {...CALLABLE_OPTIONS, secrets: [githubToken], timeoutSeconds: 60},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to upload files.");
     const rawSha = request.data?.sha;
     if (rawSha != null) throw new HttpsError("invalid-argument", "Overwrites are not allowed.");
     const {repo, path, message} = validateCommon(request.data ?? {});
+    const purpose = request.data?.purpose;
+    if (purpose != null && purpose !== "wallpaper" && purpose !== "profile") {
+      throw new HttpsError("invalid-argument", "purpose must be wallpaper or profile.");
+    }
     const contentBase64 = requiredString(request.data?.contentBase64, "contentBase64");
     if (base64DecodedBytes(contentBase64) > MAX_UPLOAD_BYTES) throw new HttpsError("invalid-argument", "File is too large.");
     if (!isValidBase64(contentBase64)) throw new HttpsError("invalid-argument", "contentBase64 must be valid base64.");
@@ -564,18 +576,17 @@ export const githubPutFile = onCall(
     const nowMs = Date.now();
     await reserveUploadSlot(callerUid, false, nowMs);
     const blobSha = gitBlobSha(contentBase64);
-    const privateOriginal = ownedAssetStorageEnabled() && repo === process.env.GH_REPO_WALLS?.trim() &&
-      !isWallSubmissionUpload(repo, path);
-    const sourceKind = privateOriginal ? "owned" : "github";
+    const ownedUpload = purpose === "wallpaper" && ownedAssetStorageEnabled() && repo === process.env.GH_REPO_WALLS?.trim();
+    const sourceKind = ownedUpload ? "owned" : "github";
     const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path, sourceKind));
     const priorIntent = await intentRef.get();
-    if (privateOriginal) {
+    if (ownedUpload) {
       const legacyIntent = await db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path)).get();
       if (legacyIntent.exists && (legacyIntent.data()?.status === "pending" || legacyIntent.data()?.sourceKind === "owned")) {
         throw new HttpsError("failed-precondition", "Legacy original upload requires reconciliation before retry.");
       }
     }
-    if (!priorIntent.exists && !privateOriginal) {
+    if (!priorIntent.exists && !ownedUpload) {
       const existing = await githubRequest(githubUrl(repo, path), {method: "GET"}, true);
       if (existing) throw new HttpsError("already-exists", "File already exists.");
     }
@@ -586,17 +597,25 @@ export const githubPutFile = onCall(
     });
     const complete = async (response: Record<string, unknown>) => {
       const content = response.content as Record<string, unknown> | undefined;
-      if (content?.sha !== blobSha || typeof content.path !== "string" || typeof content.download_url !== "string") {
-        throw new HttpsError("internal", "GitHub upload returned incomplete file details.");
+      if (content?.sha !== blobSha || typeof content.path !== "string" ||
+        !ownedUpload && typeof content.download_url !== "string") {
+        throw new HttpsError("internal", "Upload returned incomplete file details.");
       }
-      const retainedAsset = ownedAssetStorageEnabled() ? await retainUpload({
+      const retainedAsset = ownedUpload ? await retainUpload({
         repo, path, sha: blobSha, uid: callerUid, bytes: Buffer.from(contentBase64, "base64"),
         ...(intent.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+        ...(typeof intent.uploadId === "string" ? {uploadId: intent.uploadId} : {}),
       }) : undefined;
-      await completeUploadIntent(callerUid, repo, path, intent, claim.attemptId, response, retainedAsset);
+      const completedResponse = ownedUpload ? {content: {path, sha: blobSha,
+        download_url: path.split("/").pop()?.startsWith("thumb_") && retainedAsset ? ownedThumbnailUrl(retainedAsset) : ""}} : response;
+      await completeUploadIntent(callerUid, repo, path, intent, claim.attemptId, completedResponse, retainedAsset);
+      return completedResponse;
     };
     if (claim.completedResponse) {
-      if (ownedAssetStorageEnabled() && !claim.intent.retainedAsset) await complete(claim.completedResponse);
+      if (ownedUpload && !claim.intent.retainedAsset) {
+        const completed = await complete(claim.completedResponse);
+        return withSourceKind(completed);
+      }
       return withSourceKind(claim.completedResponse);
     }
     const attemptId = claim.attemptId;
@@ -604,12 +623,12 @@ export const githubPutFile = onCall(
     if (intent.sourceKind === "owned") {
       const result = {content: {path, sha: blobSha, download_url: ""}};
       try {
-        await complete(result);
+        const completed = await complete(result);
+        return withSourceKind(completed);
       } catch (error) {
         await releaseUploadAttempt(repo, path, intent, attemptId, callerUid, nowMs).catch(() => undefined);
         throw error;
       }
-      return withSourceKind(result);
     }
 
     if (!claim.newlyClaimed) {
@@ -667,27 +686,27 @@ export const githubPutFile = onCall(
 );
 
 export const githubDeleteFile = onCall(
-  {...CALLABLE_OPTIONS, secrets: [githubToken], timeoutSeconds: 60},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete files.");
     const isAdmin = await isAdminCaller(request.auth);
     const data = request.data ?? {};
-    const identityMode = data.wallId !== undefined || data.originalGeneration !== undefined || data.assetRole !== undefined;
+    const identityMode = data.wallId !== undefined || data.originalObjectId !== undefined || data.assetRole !== undefined;
     let manifestProof: ManifestDeleteProof | undefined;
     if (identityMode) {
       if ([data.repo, data.path, data.sha, data.message, data.sourceKind].some((value) => value !== undefined)) {
         throw new HttpsError("invalid-argument", "Wall identity and file identity cannot be combined.");
       }
       const wallId = requiredString(data.wallId, "wallId");
-      const originalGeneration = requiredString(data.originalGeneration, "originalGeneration");
-      if (!/^[A-Za-z0-9_-]{1,200}$/.test(wallId) || !/^\d+$/.test(originalGeneration) ||
+      const originalObjectId = requiredString(data.originalObjectId, "originalObjectId");
+      if (!/^[A-Za-z0-9_-]{1,200}$/.test(wallId) || !/^[a-f0-9]{64}$/.test(originalObjectId) ||
         (data.assetRole !== "wallpaper" && data.assetRole !== "thumb")) {
         throw new HttpsError("invalid-argument", "Invalid wall cleanup identity.");
       }
       const assetRole = data.assetRole;
       manifestProof = await db.runTransaction((tx) => readManifestDeleteProof(tx, callerUid, isAdmin,
-        {wallId, originalGeneration, assetRole}));
+        {wallId, originalObjectId, assetRole}));
     }
     const resolvedAsset = manifestProof?.asset;
     const {repo, path, message} = validateCommon(resolvedAsset ? {
@@ -712,7 +731,15 @@ export const githubDeleteFile = onCall(
     }
     const canDeleteOwned = ownedSnap.exists && canDeleteUpload(ownedSnap.data() as GithubUploadRecord, callerUid, repo, path, isAdmin);
     const canDeleteGithub = uploadSnap.exists && canDeleteUpload(uploadSnap.data() as GithubUploadRecord, callerUid, repo, path, isAdmin);
-    if (manifestProof && !(requestedKind === "owned" ? ownedSnap.exists : uploadSnap.exists)) return {ok: true};
+    if (manifestProof && !(requestedKind === "owned" ? ownedSnap.exists : uploadSnap.exists)) {
+      if (isAdmin && manifestProof.asset?.uid === "legacy-migration") {
+        const proof = manifestProof;
+        await deleteRetainedUpload({...proof.asset!, expected: proof.asset!, authorize: async (tx) => {
+          await readManifestDeleteProof(tx, callerUid, isAdmin, proof);
+        }});
+      }
+      return {ok: true};
+    }
     if (!ownedSnap.exists && requestedKind !== "github" && tombstone?.status === "deleted" && tombstone.sha === sha &&
       (tombstone.uid === callerUid || isAdmin)) {
       if (requestedKind === undefined && canDeleteGithub) {
@@ -738,6 +765,9 @@ export const githubDeleteFile = onCall(
     if (!canDeleteUpload(record, callerUid, repo, path, isAdmin)) {
       throw new HttpsError("permission-denied", "You cannot delete this file.");
     }
+    if ((record?.sourceKind === "owned" || record?.retainedAsset !== undefined) && !stored(record?.retainedAsset)) {
+      throw new HttpsError("failed-precondition", "Retained upload identity is unavailable.");
+    }
 
     const deletion = await claimDeleteIntent(callerUid, repo, path, sha, uploadRef, record, isAdmin, Date.now(), manifestProof);
     const nowMs = Date.now();
@@ -758,9 +788,10 @@ export const githubDeleteFile = onCall(
         throw error;
       }
     }
-    if (ownedAssetStorageEnabled() || record?.retainedAsset) {
+    if (record?.sourceKind === "owned" || record?.retainedAsset !== undefined) {
       try {
-        await deleteRetainedUpload({repo, path, sha, ...(record?.sourceKind === "owned" ? {sourceKind: "owned" as const} : {})});
+        await deleteRetainedUpload({repo, path, sha, ...(record?.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+          expected: record!.retainedAsset as StoredUpload});
       } catch (error) {
         // Keep ownership and the deleting state so a retry can finish cleanup after GitHub's 404.
         await db.runTransaction(async (tx) => {

@@ -45,8 +45,8 @@ void main() {
         core: WallpaperCore(
           id: 'wall1',
           source: WallpaperSource.prism,
-          fullUrl: 'https://raw.githubusercontent.com/hash-studios/prism/main/wall.jpg',
-          thumbnailUrl: 'https://raw.githubusercontent.com/hash-studios/prism/main/thumb.jpg',
+          fullUrl: 'https://raw.githubusercontent.com/hash-studios/walls/main/wall.jpg',
+          thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
         ),
       ),
     );
@@ -102,7 +102,7 @@ void main() {
       final PageRouteInfo? route = await routeForPageLink(
         intent,
         wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
-            _wallpaper('https://raw.githubusercontent.com/hash-studios/prism/main/wall.jpg'),
+            _wallpaper('https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg'),
         profileLookup: (String _) async => profile,
         localFileResolver:
             ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
@@ -259,8 +259,8 @@ void main() {
     }
   });
 
-  test('owned thumbnail endpoint has an exact URL allowlist', () async {
-    const endpoint = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall1';
+  test('non-canonical Prism thumbnails are not trusted', () async {
+    const endpoint = 'https://images.example.com/private/wall1';
     for (final url in [
       endpoint,
       '$endpoint?url=secret',
@@ -273,7 +273,7 @@ void main() {
         const PageLinkIntent(path: '/photo-preview?wallpaperId=wall1', rawUri: '/photo-preview?wallpaperId=wall1'),
         wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => _wallpaper(url),
       );
-      expect(route != null, url == endpoint, reason: url);
+      expect(route, isNull, reason: url);
     }
   });
 
