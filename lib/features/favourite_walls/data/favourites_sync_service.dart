@@ -10,7 +10,9 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_merger.dart';
+import 'package:Prism/features/favourite_walls/data/hydrate_prism_favourites.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -26,26 +28,41 @@ class FavouritesSyncUpdate {
 /// It listens for the whole session, so a favourite saved on another device shows up here.
 @lazySingleton
 class FavouritesSyncService {
-  FavouritesSyncService(this._firestoreClient, this._favoritesLocal, this._guestMerger);
+  FavouritesSyncService(this._firestoreClient, this._favoritesLocal, this._guestMerger, this._prismWallpapers);
 
   final FirestoreClient _firestoreClient;
   final FavoritesLocalDataSource _favoritesLocal;
   final GuestFavouritesMerger _guestMerger;
+  final PrismWallpaperRepository _prismWallpapers;
 
   final StreamController<FavouritesSyncUpdate> _updates = StreamController<FavouritesSyncUpdate>.broadcast();
   // stop() cancels it.
   // ignore: cancel_subscriptions
   StreamSubscription<void>? _subscription;
   String? _activeUserId;
+  int _session = 0;
+  int _publicationRevision = 0;
+  Future<void> _preparation = Future<void>.value();
   FavouritesSyncUpdate? _latest;
-  final Set<String> _retryingUsers = <String>{};
+  final Set<int> _retryingSessions = <int>{};
+
+  bool _isCurrent(String uid, int session) =>
+      _session == session && _activeUserId == uid && app_state.prismUser.id == uid;
+
+  bool _canPublish(String uid, int session, int revision) =>
+      _isCurrent(uid, session) && _publicationRevision == revision;
 
   String _imagesPath(String uid) => 'usersv2/$uid/images';
 
   /// Calls [onUpdate] with the latest update at once, if there is one, then with each new one.
   StreamSubscription<FavouritesSyncUpdate> listen(void Function(FavouritesSyncUpdate update) onUpdate) {
     final FavouritesSyncUpdate? latest = _latest;
-    if (latest != null) scheduleMicrotask(() => onUpdate(latest));
+    final int session = _session;
+    if (latest != null) {
+      scheduleMicrotask(() {
+        if (_isCurrent(latest.userId, session)) onUpdate(latest);
+      });
+    }
     return _updates.stream.listen(onUpdate);
   }
 
@@ -60,12 +77,13 @@ class FavouritesSyncService {
     if (_activeUserId != uid) {
       await stop();
       _activeUserId = uid;
+      final int session = _session;
       _subscription = _firestoreClient
           .watchQueryWithMetadata<FavouriteWallEntity>(
             FirestoreQuerySpec(collection: _imagesPath(uid), sourceTag: 'favourite_walls.watch', isStream: true),
             (data, docId) => mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(data), docId),
           )
-          .asyncMap((snapshot) => _apply(uid, snapshot.items, isFromCache: snapshot.isFromCache))
+          .asyncMap((snapshot) => _apply(uid, session, snapshot.items, isFromCache: snapshot.isFromCache))
           .listen(
             (_) {},
             onError: (Object error, StackTrace stackTrace) {
@@ -73,6 +91,7 @@ class FavouritesSyncService {
             },
           );
     }
+    final int session = _session;
     try {
       await _guestMerger.mergeInto(uid);
     } catch (error, stackTrace) {
@@ -83,10 +102,11 @@ class FavouritesSyncService {
         stackTrace: stackTrace,
       );
     }
-    unawaited(_retryPending(uid));
+    if (_isCurrent(uid, session)) unawaited(_retryPending(uid, session));
   }
 
   Future<void> stop() async {
+    _session++;
     final StreamSubscription<void>? subscription = _subscription;
     _subscription = null;
     _activeUserId = null;
@@ -94,34 +114,53 @@ class FavouritesSyncService {
     await subscription?.cancel();
   }
 
-  Future<void> _apply(String uid, List<FavouriteWallEntity> items, {required bool isFromCache}) async {
+  Future<void> _apply(String uid, int session, List<FavouriteWallEntity> items, {required bool isFromCache}) async {
+    if (_session != session || _activeUserId != uid) return;
     if (app_state.prismUser.id != uid) {
       await stop();
       return;
     }
     // A cold cache looks like an account with no favourites. Wait for the server before believing it.
     if (isFromCache && items.isEmpty) return;
-    final local = await _favoritesLocal.readWallSnapshot(uid);
-    final merged = await _favoritesLocal.mergeServerWallSnapshot(uid, <FavouriteWallEntity>[
-      ...items,
-      ...local.where(_isBundledStarter),
-    ]);
-    if (app_state.prismUser.id != uid) return;
-    final FavouritesSyncUpdate update = FavouritesSyncUpdate(userId: uid, items: merged);
+    final int revision = ++_publicationRevision;
+    final merged = await _prepareSnapshot(
+      uid,
+      session,
+      (local) => <FavouriteWallEntity>[...items, ...local.where(_isBundledStarter)],
+    );
+    if (merged == null || !_canPublish(uid, session, revision)) return;
+    final hydrated = await hydratePrismFavourites(merged, _prismWallpapers);
+    if (!_canPublish(uid, session, revision)) return;
+    final FavouritesSyncUpdate update = FavouritesSyncUpdate(userId: uid, items: hydrated);
     _latest = update;
     _updates.add(update);
-    if (!isFromCache) unawaited(_retryPending(uid));
+    if (!isFromCache) unawaited(_retryPending(uid, session));
   }
 
-  Future<void> _retryPending(String uid) async {
-    if (!_retryingUsers.add(uid)) return;
+  Future<List<FavouriteWallEntity>?> _prepareSnapshot(
+    String uid,
+    int session,
+    List<FavouriteWallEntity> Function(List<FavouriteWallEntity>) prepare,
+  ) {
+    final result = _preparation.then<List<FavouriteWallEntity>?>((_) async {
+      if (!_isCurrent(uid, session)) return null;
+      final snapshot = await _favoritesLocal.readWallSnapshot(uid);
+      if (!_isCurrent(uid, session)) return null;
+      return _favoritesLocal.mergeServerWallSnapshot(uid, prepare(snapshot));
+    });
+    _preparation = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
+  }
+
+  Future<void> _retryPending(String uid, int session) async {
+    if (!_isCurrent(uid, session) || !_retryingSessions.add(session)) return;
     try {
       var delay = const Duration(seconds: 2);
-      while (_activeUserId == uid && app_state.prismUser.id == uid) {
+      while (_isCurrent(uid, session)) {
         final operations = await _favoritesLocal.readFavouriteOperations(uid);
         var hasPending = false;
         for (final entry in operations.entries) {
-          if (_activeUserId != uid || app_state.prismUser.id != uid) return;
+          if (!_isCurrent(uid, session)) return;
           final operation = entry.value;
           if (operation['status'] != 'pending' || operation['owner'] != uid) continue;
           if (_isBundledStarterOperation(entry.key, operation)) {
@@ -157,9 +196,10 @@ class FavouritesSyncService {
               },
             );
             if (!sent) continue;
-            if (_activeUserId != uid || app_state.prismUser.id != uid) return;
+            if (!_isCurrent(uid, session)) return;
             await _favoritesLocal.updateFavouriteOperationStatus(uid, entry.key, operationId, status: 'synced');
           } on TimeoutException catch (error) {
+            if (!_isCurrent(uid, session)) return;
             await _favoritesLocal.updateFavouriteOperationStatus(
               uid,
               entry.key,
@@ -168,7 +208,7 @@ class FavouritesSyncService {
               error: error.toString(),
             );
           } catch (error, stackTrace) {
-            if (_activeUserId != uid || app_state.prismUser.id != uid) return;
+            if (!_isCurrent(uid, session)) return;
             final bool rejected = error is FirestoreError && error.code == 'permission-denied';
             final bool changed = await _favoritesLocal.updateFavouriteOperationStatus(
               uid,
@@ -177,8 +217,8 @@ class FavouritesSyncService {
               status: rejected ? 'rejected' : 'pending',
               error: error.toString(),
             );
-            if (changed && rejected && _activeUserId == uid && app_state.prismUser.id == uid) {
-              await _publishOperationStatus(uid, entry.key, operation, FavouriteSyncStatus.rejected);
+            if (changed && rejected && _isCurrent(uid, session)) {
+              await _publishOperationStatus(uid, session, entry.key, operation, FavouriteSyncStatus.rejected);
             }
             logger.w('Favourite retry failed.', tag: 'Favourites', error: error, stackTrace: stackTrace);
           }
@@ -188,7 +228,7 @@ class FavouritesSyncService {
         delay = Duration(seconds: (delay.inSeconds * 2).clamp(2, 60));
       }
     } finally {
-      _retryingUsers.remove(uid);
+      _retryingSessions.remove(session);
     }
   }
 
@@ -208,20 +248,23 @@ class FavouritesSyncService {
 
   Future<void> _publishOperationStatus(
     String uid,
+    int session,
     String wallId,
     Map<String, Object?> operation,
     FavouriteSyncStatus status,
   ) async {
     final wall = _operationWall(wallId, operation);
-    if (wall == null) return;
-    final snapshot = await _favoritesLocal.readWallSnapshot(uid);
-    if (_activeUserId != uid || app_state.prismUser.id != uid) return;
-    final items = await _favoritesLocal.mergeServerWallSnapshot(uid, <FavouriteWallEntity>[
-      ...snapshot.where((item) => item.id != wallId),
-      wall.withSyncStatus(status),
-    ]);
-    if (_activeUserId != uid || app_state.prismUser.id != uid) return;
-    final update = FavouritesSyncUpdate(userId: uid, items: items);
+    if (wall == null || !_isCurrent(uid, session)) return;
+    final int revision = ++_publicationRevision;
+    final items = await _prepareSnapshot(
+      uid,
+      session,
+      (snapshot) => <FavouriteWallEntity>[...snapshot.where((item) => item.id != wallId), wall.withSyncStatus(status)],
+    );
+    if (items == null || !_canPublish(uid, session, revision)) return;
+    final hydrated = await hydratePrismFavourites(items, _prismWallpapers);
+    if (!_canPublish(uid, session, revision)) return;
+    final update = FavouritesSyncUpdate(userId: uid, items: hydrated);
     _latest = update;
     _updates.add(update);
   }

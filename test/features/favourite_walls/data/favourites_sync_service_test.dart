@@ -2,20 +2,65 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_merger.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/in_memory_local_store.dart';
+import '../support/canonical_fixture.dart';
 import '../support/guest_store_fixture.dart';
 import '../support/merge_firestore.dart';
 
+class _CanonicalRepository extends EmptyCanonicalWallpaperRepository {
+  Future<Result<PrismWallpaper?>> Function(String)? lookup;
+  final List<String> reads = <String>[];
+
+  @override
+  Future<Result<PrismWallpaper?>> fetchCanonicalById(String id) async {
+    reads.add(id);
+    return lookup == null ? Result.success(null) : await lookup!(id);
+  }
+}
+
+PrismWallpaper _canonical({List<String> collections = const <String>['premium']}) => PrismWallpaper(
+  core: const WallpaperCore(
+    id: 'a',
+    source: WallpaperSource.prism,
+    fullUrl: '',
+    thumbnailUrl: 'https://example.com/current-thumb.jpg',
+  ),
+  collections: collections,
+);
+
 class _WatchFirestore extends MergeFirestore {
+  Object? writeError;
+  Future<void> Function()? beforeWrite;
+
+  @override
+  Future<void> setDoc(
+    String collection,
+    String docId,
+    Map<String, dynamic> data, {
+    bool merge = false,
+    required String sourceTag,
+  }) async {
+    await beforeWrite?.call();
+    if (writeError != null) throw writeError!;
+    await super.setDoc(collection, docId, data, merge: merge, sourceTag: sourceTag);
+  }
+
   final List<FirestoreQuerySpec> watched = <FirestoreQuerySpec>[];
   final List<void Function(Map<String, Map<String, dynamic>> docs, bool fromCache)> emitters = [];
   Completer<void> _cancelledSignal = Completer<void>();
@@ -54,6 +99,17 @@ class _WatchFirestore extends MergeFirestore {
 
 class _RecordingFavoritesLocalDataSource extends FavoritesLocalDataSource {
   _RecordingFavoritesLocalDataSource(super.store);
+
+  Future<void> Function()? afterNextSnapshotRead;
+
+  @override
+  Future<List<FavouriteWallEntity>> readWallSnapshot(String userId) async {
+    final afterRead = afterNextSnapshotRead;
+    afterNextSnapshotRead = null;
+    final snapshot = await super.readWallSnapshot(userId);
+    await afterRead?.call();
+    return snapshot;
+  }
 
   final List<({String wallId, String status, bool changed})> statusUpdates =
       <({String wallId, String status, bool changed})>[];
@@ -118,6 +174,7 @@ void main() {
   late _RecordingFavoritesLocalDataSource local;
   late GuestFavouritesStore guests;
   late FavouritesSyncService service;
+  late _CanonicalRepository canonical;
   late List<FavouritesSyncUpdate> updates;
   Completer<void> updateSignal = Completer<void>();
 
@@ -129,7 +186,8 @@ void main() {
     firestore = _WatchFirestore();
     local = _RecordingFavoritesLocalDataSource(InMemoryLocalStore());
     guests = tempGuestStore();
-    service = FavouritesSyncService(firestore, local, GuestFavouritesMerger(firestore, guests, local));
+    canonical = _CanonicalRepository();
+    service = FavouritesSyncService(firestore, local, GuestFavouritesMerger(firestore, guests, local), canonical);
     addTearDown(() async {
       await service.stop();
       await local.waitForOperationReadsToDrain();
@@ -161,6 +219,240 @@ void main() {
     expect(firestore.watched.single.sourceTag, 'favourite_walls.watch');
     expect(firestore.watched.single.isStream, isTrue);
   });
+
+  test('live and cached snapshots publish current canonical collections on every update', () async {
+    canonical.lookup = (_) async => Result.success(_canonical());
+    await service.start('u');
+    final saved = <String, Map<String, dynamic>>{
+      'a': <String, dynamic>{
+        'id': 'a',
+        'provider': 'prism',
+        'collections': <String>['free'],
+        'url': 'https://example.com/saved.jpg',
+        'thumb': 'https://example.com/saved-thumb.jpg',
+      },
+    };
+    firestore.emit(saved);
+    await waitForUpdateCount(1);
+    expect((updates.last.items.single as PrismFavouriteWall).wallpaper.collections, <String>['premium']);
+    expect(updates.last.items.single.fullUrl, '');
+    firestore.emit(saved, fromCache: true);
+    await waitForUpdateCount(2);
+    expect((updates.last.items.single as PrismFavouriteWall).wallpaper.collections, <String>['premium']);
+    canonical.lookup = (_) async => Result.success(_canonical(collections: <String>['free']));
+    firestore.emit(saved);
+    await waitForUpdateCount(3);
+    expect((updates.last.items.single as PrismFavouriteWall).wallpaper.collections, <String>['free']);
+    expect((await local.readWallSnapshot('u')).single.fullUrl, 'https://example.com/saved.jpg');
+  });
+
+  for (final outcome in <String>['missing', 'offline', 'throws']) {
+    test('$outcome canonical lookup preserves saved reference and metadata', () async {
+      canonical.lookup = (_) async {
+        if (outcome == 'throws') throw StateError('unavailable');
+        return outcome == 'offline' ? Result.error(const NetworkFailure('offline')) : Result.success(null);
+      };
+      await service.start('u');
+      firestore.emit(<String, Map<String, dynamic>>{
+        'a': <String, dynamic>{
+          'id': 'a',
+          'provider': 'prism',
+          'collections': <String>['free'],
+          'url': 'https://example.com/saved.jpg',
+          'thumb': 'https://example.com/saved-thumb.jpg',
+          'favouritedAt': DateTime.utc(2026, 1, 2),
+        },
+      });
+      await waitForUpdateCount(1);
+      final wall = updates.single.items.single as PrismFavouriteWall;
+      expect(wall.id, 'a');
+      expect(wall.fullUrl, 'https://example.com/saved.jpg');
+      expect(wall.thumbnailUrl, 'https://example.com/saved-thumb.jpg');
+      expect(wall.wallpaper.collections, <String>['free']);
+      expect(wall.favouritedAt, DateTime.utc(2026, 1, 2));
+      expect(wall.syncStatus, FavouriteSyncStatus.synced);
+    });
+  }
+
+  test('bundled starters and external favourites publish without canonical reads', () async {
+    await service.start('u');
+    firestore.emit(<String, Map<String, dynamic>>{
+      'starter-sunset': <String, dynamic>{'id': 'starter-sunset', 'provider': 'prism'},
+      'external': <String, dynamic>{'id': 'external', 'provider': 'pexels', 'url': 'https://example.com/external.jpg'},
+    });
+    await waitForUpdateCount(1);
+    expect(updates.single.items.map((wall) => wall.id), <String>['starter-sunset', 'external']);
+    expect(canonical.reads, isEmpty);
+  });
+
+  for (final change in <String>['stop', 'switch', 'restart']) {
+    test('canonical lookup completed after $change cannot publish or replace latest', () async {
+      final started = Completer<void>();
+      final pending = Completer<Result<PrismWallpaper?>>();
+      canonical.lookup = (_) {
+        started.complete();
+        return pending.future;
+      };
+      await service.start('u');
+      firestore.emit(<String, Map<String, dynamic>>{
+        'a': <String, dynamic>{
+          'id': 'a',
+          'provider': 'prism',
+          'collections': <String>['free'],
+        },
+      });
+      await started.future;
+      await service.stop();
+      if (change != 'stop') {
+        if (change == 'switch') app_state.prismUser.id = 'v';
+        await service.start(change == 'switch' ? 'v' : 'u');
+        firestore.emit(<String, Map<String, dynamic>>{
+          'current': <String, dynamic>{'id': 'current', 'provider': 'pexels'},
+        });
+        await waitForUpdateCount(1);
+      }
+      pending.complete(Result.success(_canonical()));
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        updates.map((update) => update.items.map((wall) => wall.id).toList()).toList(),
+        change == 'stop'
+            ? <List<String>>[]
+            : <List<String>>[
+                <String>['current'],
+              ],
+      );
+      final late = <FavouritesSyncUpdate>[];
+      final sub = service.listen(late.add);
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+      expect(
+        late.map((update) => update.items.map((wall) => wall.id).toList()).toList(),
+        change == 'stop'
+            ? <List<String>>[]
+            : <List<String>>[
+                <String>['current'],
+              ],
+      );
+    });
+  }
+
+  test('rejected operation publishes canonical collections and retains rejected status', () async {
+    canonical.lookup = (_) async => Result.success(_canonical());
+    firestore.writeError = FirestoreError(code: 'permission-denied', message: 'denied');
+    await local.createFavouriteOperation(
+      'u',
+      'a',
+      desired: true,
+      wall: <String, Object?>{
+        'id': 'a',
+        'provider': 'prism',
+        'collections': <String>['free'],
+        'url': 'https://example.com/saved.jpg',
+        'thumb': 'https://example.com/saved-thumb.jpg',
+      },
+    );
+    await service.start('u');
+    await waitForUpdateCount(1);
+    final wall = updates.single.items.single as PrismFavouriteWall;
+    expect(wall.wallpaper.collections, <String>['premium']);
+    expect(wall.fullUrl, '');
+    expect(wall.syncStatus, FavouriteSyncStatus.rejected);
+    expect((await local.readFavouriteOperation('u', 'a'))!['status'], 'rejected');
+  });
+
+  test('rejection racing server preparation preserves remote additions and deletions', () async {
+    await local.mergeServerWallSnapshot('u', const <FavouriteWallEntity>[
+      PexelsFavouriteWall(
+        id: 'c',
+        wallpaper: PexelsWallpaper(
+          core: WallpaperCore(id: 'c', source: WallpaperSource.pexels, fullUrl: '', thumbnailUrl: ''),
+        ),
+      ),
+    ]);
+    final writeStarted = Completer<void>();
+    final writeGate = Completer<void>();
+    firestore.beforeWrite = () {
+      writeStarted.complete();
+      return writeGate.future;
+    };
+    firestore.writeError = FirestoreError(code: 'permission-denied', message: 'denied');
+    await local.createFavouriteOperation(
+      'u',
+      'a',
+      desired: true,
+      wall: <String, Object?>{'id': 'a', 'provider': 'pexels'},
+    );
+    await service.start('u');
+    await writeStarted.future;
+    final readStarted = Completer<void>();
+    final readGate = Completer<void>();
+    local.afterNextSnapshotRead = () {
+      readStarted.complete();
+      return readGate.future;
+    };
+    firestore.emit(<String, Map<String, dynamic>>{
+      'b': <String, dynamic>{'id': 'b', 'provider': 'pexels'},
+    });
+    await readStarted.future;
+    writeGate.complete();
+    await local.waitForStatus('a', 'rejected');
+    await Future<void>.delayed(Duration.zero);
+    readGate.complete();
+    await waitForUpdateCount(1);
+    expect(updates.last.items.map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
+    expect((await local.readWallSnapshot('u')).map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
+    expect(local.isWallFavourite('u', 'b'), isTrue);
+    expect(local.isWallFavourite('u', 'c'), isFalse);
+    expect(updates.last.items.singleWhere((wall) => wall.id == 'a').syncStatus, FavouriteSyncStatus.rejected);
+  });
+
+  for (final olderPublication in <String>['snapshot', 'status']) {
+    test('older $olderPublication hydration cannot replace newer rejected canonical update', () async {
+      final writeGate = Completer<void>();
+      final lookupStarted = Completer<void>();
+      final olderLookup = Completer<Result<PrismWallpaper?>>();
+      firestore.beforeWrite = () => writeGate.future;
+      firestore.writeError = FirestoreError(code: 'permission-denied', message: 'denied');
+      var reads = 0;
+      canonical.lookup = (_) {
+        if (++reads == 1) {
+          lookupStarted.complete();
+          return olderLookup.future;
+        }
+        return Future.value(Result.success(_canonical()));
+      };
+      final saved = <String, dynamic>{
+        'id': 'a',
+        'provider': 'prism',
+        'collections': <String>['free'],
+        'url': 'https://example.com/saved.jpg',
+        'thumb': 'https://example.com/saved-thumb.jpg',
+      };
+      await local.createFavouriteOperation('u', 'a', desired: true, wall: saved);
+      await service.start('u');
+      if (olderPublication == 'snapshot') {
+        firestore.emit(<String, Map<String, dynamic>>{'a': saved});
+        await lookupStarted.future;
+        writeGate.complete();
+      } else {
+        writeGate.complete();
+        await lookupStarted.future;
+        firestore.emit(<String, Map<String, dynamic>>{'a': saved});
+      }
+      await waitForUpdateCount(1);
+      expect((updates.single.items.single as PrismFavouriteWall).wallpaper.collections, <String>['premium']);
+      expect(updates.single.items.single.syncStatus, FavouriteSyncStatus.rejected);
+      olderLookup.complete(Result.success(_canonical(collections: <String>['free'])));
+      await Future<void>.delayed(Duration.zero);
+      expect(updates, hasLength(1));
+      final latest = Completer<FavouritesSyncUpdate>();
+      final subscription = service.listen(latest.complete);
+      final replay = await latest.future;
+      await subscription.cancel();
+      expect((replay.items.single as PrismFavouriteWall).wallpaper.collections, <String>['premium']);
+      expect(replay.items.single.syncStatus, FavouriteSyncStatus.rejected);
+    });
+  }
 
   test('a server snapshot replaces the heart set and publishes the walls', () async {
     await local.setWallFavourite('u', 'stale', true);

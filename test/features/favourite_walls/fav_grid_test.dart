@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
@@ -336,14 +337,21 @@ void main() {
       addTearDown(() => messenger.setMockMethodCallHandler(toastChannel, null));
       await pumpLoaded(tester);
 
-      await tester.tap(find.bySemanticsLabel('Wallpaper by Old Timer'));
+      await tester.tap(find.byType(FavouriteTileImage));
       await tester.pump();
       expect(shown.single, contains('older version'));
 
-      await tester.longPress(find.bySemanticsLabel('Wallpaper by Old Timer'));
+      await tester.longPress(find.byType(FavouriteTileImage));
       await tester.pump();
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.bySemanticsLabel('Remove from favourites'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Remove from favourites'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      expect(bloc.state.items, isEmpty);
+      final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
+      expect(params.wallIds, <String>['old']);
       await tester.pump(const Duration(seconds: 2));
     });
 
@@ -433,6 +441,111 @@ void main() {
       await settle(tester);
     }
 
+    for (final wall in <FavouriteWallEntity>[
+      prismFav('prism'),
+      prismFav('starter-sunset'),
+      const LegacyFavouriteWall(
+        id: 'legacy-prism',
+        source: WallpaperSource.prism,
+        legacyPayload: <String, Object?>{'url': 'https://example.com/legacy.jpg'},
+      ),
+      pexelsFav('pexels'),
+      wallhavenFav('wallhaven'),
+      const LegacyFavouriteWall(
+        id: 'unknown-remote',
+        source: WallpaperSource.unknown,
+        legacyPayload: <String, Object?>{
+          'url': 'https://example.com/private.jpg',
+          'thumb': 'https://example.com/thumb.jpg',
+        },
+      ),
+      const LegacyFavouriteWall(
+        id: 'downloaded-remote',
+        source: WallpaperSource.downloaded,
+        legacyPayload: <String, Object?>{'url': 'https://example.com/private.jpg'},
+      ),
+    ]) {
+      testWidgets('selected Set keeps ${wall.id} identity', (tester) async {
+        createToolsBloc(<FavouriteWallEntity>[wall]);
+        await pumpLoaded(tester);
+        await tester.longPress(find.byType(FavouriteTileImage));
+        await tester.pump();
+
+        final button = tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton));
+        expect(button.wallpaperId, wall.id);
+        expect(button.wallpaperSource, wall.source);
+        expect(button.url, wall.fullUrl);
+      });
+
+      testWidgets('${wall.id} tile uses only permitted image fallback', (tester) async {
+        createToolsBloc(<FavouriteWallEntity>[wall]);
+        await pumpLoaded(tester);
+
+        final image = tester.widget<FavouriteTileImage>(find.byType(FavouriteTileImage));
+        expect(image.thumbnailUrl, wall.thumbnailUrl);
+        expect(
+          image.allowFullUrlFallback,
+          wall.source == WallpaperSource.wallhaven ||
+              wall.source == WallpaperSource.pexels ||
+              wall.id == 'starter-sunset',
+        );
+      });
+    }
+
+    for (final path in <String>['/tmp/acquired.jpg', 'file:///tmp/acquired.jpg']) {
+      testWidgets('unknown local copy keeps image fallback for $path', (tester) async {
+        createToolsBloc(<FavouriteWallEntity>[
+          LegacyFavouriteWall(
+            id: 'local-copy',
+            source: WallpaperSource.unknown,
+            legacyPayload: <String, Object?>{'url': path},
+          ),
+        ]);
+        await pumpLoaded(tester);
+
+        final image = tester.widget<FavouriteTileImage>(find.byType(FavouriteTileImage));
+        expect(image.allowFullUrlFallback, isTrue);
+        expect(image.fullUrl, path);
+      });
+    }
+
+    testWidgets('downloaded copy keeps image fallback', (tester) async {
+      createToolsBloc(<FavouriteWallEntity>[
+        const LegacyFavouriteWall(
+          id: 'downloaded-copy',
+          source: WallpaperSource.downloaded,
+          legacyPayload: <String, Object?>{'url': '/tmp/downloaded.jpg'},
+        ),
+      ]);
+      await pumpLoaded(tester);
+
+      expect(tester.widget<FavouriteTileImage>(find.byType(FavouriteTileImage)).allowFullUrlFallback, isTrue);
+    });
+
+    testWidgets('unknown remote sharing keeps a reference without the original URL', (tester) async {
+      createToolsBloc(<FavouriteWallEntity>[
+        const LegacyFavouriteWall(
+          id: 'unknown-remote',
+          source: WallpaperSource.unknown,
+          legacyPayload: <String, Object?>{
+            'url': 'https://example.com/private.jpg',
+            'thumb': 'https://example.com/thumb.jpg',
+          },
+        ),
+      ]);
+      await pumpLoaded(tester);
+      await tester.longPress(find.byType(FavouriteTileImage));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Share'));
+      await settle(tester);
+
+      final Uri link = Uri.parse((shareCalls.single.arguments as Map)['text'] as String);
+      expect(link.host, 'prismwalls.com');
+      expect(link.queryParameters['id'], 'unknown-remote');
+      expect(link.queryParameters['thumb'], isEmpty);
+      expect(link.queryParameters, isNot(contains('url')));
+    });
+
     testWidgets('the toolbar shows how many favourites there are', (tester) async {
       createToolsBloc(<FavouriteWallEntity>[prismFav('a'), pexelsFav('b')]);
       await pumpLoaded(tester);
@@ -442,10 +555,10 @@ void main() {
 
     testWidgets('sharing mixed favourites replaces a starter local path with its public landing link', (tester) async {
       const localPath = '/tmp/prism-bundled-wallpapers/starter-sunset.jpg';
-      final starter = PrismFavouriteWall(
+      const starter = PrismFavouriteWall(
         id: 'starter-sunset',
         wallpaper: PrismWallpaper(
-          core: const WallpaperCore(
+          core: WallpaperCore(
             id: 'starter-sunset',
             source: WallpaperSource.prism,
             fullUrl: localPath,
@@ -466,8 +579,43 @@ void main() {
 
       final String sharedText = (shareCalls.single.arguments as Map)['text'] as String;
       expect(sharedText, contains('https://prismwalls.com/'));
-      expect(sharedText, contains('https://example.com/a.jpg'));
+      final Uri prismLink = sharedText.split('\n').map(Uri.parse).firstWhere((uri) => uri.path == '/share');
+      expect(prismLink.queryParameters['id'], 'a');
+      expect(prismLink.queryParameters['source'], 'prism');
+      expect(prismLink.queryParameters, isNot(contains('url')));
+      expect(sharedText, isNot(contains('https://example.com/a.jpg')));
       expect(sharedText, isNot(contains(localPath)));
+    });
+
+    testWidgets('mixed sharing keeps external URLs but replaces legacy Prism originals', (tester) async {
+      createToolsBloc(<FavouriteWallEntity>[
+        const LegacyFavouriteWall(
+          id: 'legacy-prism',
+          source: WallpaperSource.prism,
+          legacyPayload: <String, Object?>{'url': 'https://example.com/private-original.jpg', 'photographer': 'Legacy'},
+        ),
+        pexelsFav('external', author: 'External'),
+      ]);
+      await pumpLoaded(tester);
+      await tester.longPress(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('legacy-prism')),
+          matching: find.byType(FavouriteTileImage),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Wallpaper by External'));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Share'));
+      await settle(tester);
+
+      final String text = (shareCalls.single.arguments as Map)['text'] as String;
+      final Uri prismLink = Uri.parse(text.split('\n').first);
+      expect(prismLink.host, 'prismwalls.com');
+      expect(prismLink.queryParameters['id'], 'legacy-prism');
+      expect(prismLink.queryParameters, isNot(contains('url')));
+      expect(text, isNot(contains('private-original.jpg')));
+      expect(text, contains('https://example.com/external.jpg'));
     });
 
     testWidgets('Clear all asks with the count, clears, and Undo restores the list', (tester) async {
