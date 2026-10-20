@@ -1,3 +1,4 @@
+import "./offlineGuard";
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
@@ -39,37 +40,38 @@ function store(t: TestContext, docs: Record<string, Record<string, unknown>>) {
     get: async (ref: {path: string}) => ({data: () => docs[ref.path]}),
     set: (ref: {path: string}, data: Record<string, unknown>) => applyStats(ref.path, data),
   }));
-  t.mock.method(db, "collection", (name: string) => ({
-    doc: (id: string) => {
-      const path = `${name}/${id}`;
-      return {
-        path,
-        get: async () => {
-          const data = docs[path];
-          const updateTime = data ? {version: versions[path] ?? 0} : undefined;
-          await tick();
-          return {exists: data !== undefined, data: () => data, updateTime};
-        },
-        set: async (data: Record<string, unknown>) => {
-          if (name.endsWith("_stats")) applyStats(path, data);
-          else writes.push({path, data});
-        },
-        create: async (data: Record<string, unknown>) => {
-          if (docs[path]) throw lost(6);
-          docs[path] = data;
-          versions[path] = 1;
-          writes.push({path, data});
-        },
-        update: async (data: Record<string, unknown>, precondition: {lastUpdateTime: {version: number}}) => {
-          if (!docs[path]) throw lost(5);
-          if ((versions[path] ?? 0) !== precondition.lastUpdateTime.version) throw lost(9);
-          docs[path] = data;
-          versions[path] = (versions[path] ?? 0) + 1;
-          writes.push({path, data});
-        },
-      };
-    },
-  }));
+  const docRef = (path: string): Record<string, unknown> => {
+    const name = path.split("/").slice(0, -1).join("/");
+    return {
+      path,
+      collection: (child: string) => ({doc: (id: string) => docRef(`${path}/${child}/${id}`)}),
+      get: async () => {
+        const data = docs[path];
+        const updateTime = data ? {version: versions[path] ?? 0} : undefined;
+        await tick();
+        return {exists: data !== undefined, data: () => data, updateTime};
+      },
+      set: async (data: Record<string, unknown>) => {
+        if (name.endsWith("_stats")) applyStats(path, data);
+        else writes.push({path, data});
+      },
+      create: async (data: Record<string, unknown>) => {
+        if (docs[path]) throw lost(6);
+        docs[path] = data;
+        versions[path] = 1;
+        writes.push({path, data});
+      },
+      update: async (data: Record<string, unknown>, precondition: {lastUpdateTime: {version: number}}) => {
+        if (!docs[path]) throw lost(5);
+        if ((versions[path] ?? 0) !== precondition.lastUpdateTime.version) throw lost(9);
+        docs[path] = data;
+        versions[path] = (versions[path] ?? 0) + 1;
+        writes.push({path, data});
+      },
+    };
+  };
+  t.mock.method(db, "doc", docRef);
+  t.mock.method(db, "collection", (name: string) => ({doc: (id: string) => docRef(`${name}/${id}`)}));
   return writes;
 }
 
