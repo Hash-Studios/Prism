@@ -70,10 +70,15 @@ test("every UTC slot of the day has at least one bucket and every bucket is hit 
 });
 
 test("streak-exclusive and premium-collection walls are not eligible", () => {
-  assert.equal(isWotdEligible({collections: ["nature"]}, PREMIUM), true);
-  assert.equal(isWotdEligible({}, PREMIUM), true);
-  assert.equal(isWotdEligible({is_streak_exclusive: true, collections: ["nature"]}, PREMIUM), false);
-  assert.equal(isWotdEligible({collections: ["nature", " space "]}, PREMIUM), false);
+  assert.equal(isWotdEligible({originalProtected: true, collections: ["nature"]}, PREMIUM), true);
+  assert.equal(isWotdEligible({originalProtected: true}, PREMIUM), true);
+  assert.equal(isWotdEligible({originalProtected: true, is_streak_exclusive: true, collections: ["nature"]}, PREMIUM), false);
+  assert.equal(isWotdEligible({originalProtected: true, collections: ["nature", " space "]}, PREMIUM), false);
+});
+
+test("walls with a public original are not eligible because 3.8.0 clients cannot set them", () => {
+  assert.equal(isWotdEligible({collections: ["nature"]}, PREMIUM), false);
+  assert.equal(isWotdEligible({originalProtected: false, collections: ["nature"]}, PREMIUM), false);
 });
 
 test("the premium list parses the app's remote config format", () => {
@@ -82,9 +87,12 @@ test("the premium list parses the app's remote config format", () => {
   assert.deepEqual(parseCollectionList(""), []);
 });
 
-function query(docs: Array<{id: string; data: () => Record<string, unknown>}>, count = docs.length) {
+function query(docs: Array<{id: string; data: () => Record<string, unknown>}>, count = docs.length, filters?: string[]) {
   const q = {
-    where: () => q,
+    where: (field: string, op: string, value: unknown) => {
+      filters?.push(`${field}${op}${JSON.stringify(value)}`);
+      return q;
+    },
     orderBy: () => q,
     limit: () => q,
     offset: () => q,
@@ -117,6 +125,7 @@ const deliveredWall = (h: Harness, topic: string) => (h.deliveries[topic] as {wa
 function harness(t: TestContext, options: {
   current?: Record<string, unknown>;
   walls?: Array<{id: string; data: () => Record<string, unknown>}>;
+  wallFilters?: string[];
   wallDoc?: Record<string, unknown>;
   sendFails?: boolean;
   deliveries?: Record<string, unknown>;
@@ -182,7 +191,7 @@ function harness(t: TestContext, options: {
     }
     if (name === "past_picks") return {...query([]), doc: () => ({set: async () => undefined})};
     if (name === "walls") {
-      return {...query(options.walls ?? []), doc: () => ({get: async () => ({data: () => options.wallDoc})})};
+      return {...query(options.walls ?? [], undefined, options.wallFilters), doc: () => ({get: async () => ({data: () => options.wallDoc})})};
     }
     if (name === "notifications") {
       return {
@@ -209,7 +218,7 @@ function harness(t: TestContext, options: {
 
 const wall = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
-  data: () => ({title: id, collections: ["nature"], ...extra}),
+  data: () => ({title: id, collections: ["nature"], originalProtected: true, ...extra}),
 });
 
 test("a run that finds today's announced pick does nothing", async (t) => {
@@ -249,6 +258,22 @@ test("the daily pick skips streak-exclusive and premium walls", async (t) => {
   assert.equal(h.sets.length, 1);
   assert.equal(h.sets[0].wallId, "ok");
   assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", "wall_of_the_day_utc_p0530"]);
+});
+
+test("the daily pick ignores unprotected walls and queries only protected rows", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T03:30:05Z")});
+  const old = admin.firestore.Timestamp.fromMillis(Date.now() - 2 * 86_400_000);
+  const filters: string[] = [];
+  const h = harness(t, {
+    current: {wallId: "old", date: old},
+    walls: [wall("legacy", {originalProtected: undefined}), wall("ok")],
+    wallDoc: {title: "ok"},
+    wallFilters: filters,
+  });
+  await wallOfTheDay.run(scheduled());
+  assert.equal(h.sets[0].wallId, "ok");
+  assert.ok(filters.includes("originalProtected==true"));
+  assert.ok(filters.includes("wallpaper_url==\"\""));
 });
 
 test("no eligible wall makes the run fail so the scheduler retries", async (t) => {

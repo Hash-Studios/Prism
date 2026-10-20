@@ -17,12 +17,24 @@ const BUCKET_STEP_MINUTES = 15;
 const PUSH_LOCAL_MINUTE = 9 * 60;
 const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
 
-/** Walls that a free user cannot open are never the free daily pick. */
+/** Approved walls with a private original: the only walls that 3.8.0 clients list and can set. */
+const protectedWalls = () =>
+  db
+    .collection("walls")
+    .where("review", "==", true)
+    .where("originalProtected", "==", true)
+    .where("wallpaper_url", "==", "")
+    .where("wallpaper_path", "==", "")
+    .where("wallpaper_sha", "==", "")
+    .where("thumb_path", "==", "")
+    .where("thumb_sha", "==", "");
+
+/** Walls that a free user cannot open are never the free daily pick. Unconverted walls cannot be set, so they are not either. */
 export function isWotdEligible(
   wall: admin.firestore.DocumentData,
   premiumCollections: string[],
 ): boolean {
-  if (wall.is_streak_exclusive === true) return false;
+  if (wall.originalProtected !== true || wall.is_streak_exclusive === true) return false;
   const collections: unknown[] = Array.isArray(wall.collections) ?
     wall.collections :
     [];
@@ -188,20 +200,14 @@ export const wallOfTheDay = onSchedule(
     let newWall: admin.firestore.DocumentData | null = null;
     let newWallId: string | null = null;
 
-    const countSnap = await db
-      .collection("walls")
-      .where("review", "==", true)
-      .count()
-      .get();
+    const countSnap = await protectedWalls().count().get();
     const totalCount = countSnap.data().count;
     logger.info(`Total approved walls: ${totalCount}`);
 
     if (totalCount > 0) {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const randomOffset = Math.floor(Math.random() * totalCount);
-        const snap = await db
-          .collection("walls")
-          .where("review", "==", true)
+        const snap = await protectedWalls()
           .orderBy(admin.firestore.FieldPath.documentId())
           .offset(randomOffset)
           .limit(1)
@@ -234,9 +240,7 @@ export const wallOfTheDay = onSchedule(
       logger.warn(
         `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
       );
-      const fallbackSnap = await db
-        .collection("walls")
-        .where("review", "==", true)
+      const fallbackSnap = await protectedWalls()
         .orderBy("createdAt", "desc")
         .limit(100)
         .get();
