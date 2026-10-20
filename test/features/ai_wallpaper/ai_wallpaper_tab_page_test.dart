@@ -18,6 +18,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
@@ -63,11 +64,12 @@ class _FailingResolveOfflineAssetStore extends OfflineAssetStore {
 }
 
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, this.metadata, {this.history});
+  _FakeAiGenerationRepository(this.record, this.metadata, {this.history, this.savedPrompt});
 
   final AiGenerationRecord record;
   final Completer<AiSubmissionMetadata> metadata;
   final Future<List<AiGenerationRecord>> Function()? history;
+  final String? savedPrompt;
   final List<AiGenerationRecord> savedRecords = <AiGenerationRecord>[];
   bool failHistorySave = false;
 
@@ -80,7 +82,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
       const <AiGenerationRecord>[];
 
   @override
-  Future<String?> loadPrompt({required String userId}) async => null;
+  Future<String?> loadPrompt({required String userId}) async => savedPrompt;
 
   @override
   Future<void> savePrompt({required String userId, required String prompt}) async {}
@@ -125,9 +127,103 @@ AiGenerationRecord _record({
 
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
+class _EnglishLocaleDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _EnglishLocaleDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) async => AppLocalizationsEn(locale.toString());
+
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'en';
+
+  @override
+  bool shouldReload(_EnglishLocaleDelegate old) => false;
+}
+
+class _LocaleTestApp extends StatefulWidget {
+  const _LocaleTestApp({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<_LocaleTestApp> createState() => _LocaleTestAppState();
+}
+
+class _LocaleTestAppState extends State<_LocaleTestApp> {
+  Locale _locale = const Locale('en');
+
+  void setLocale(Locale locale) => setState(() => _locale = locale);
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    locale: _locale,
+    localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+      const _EnglishLocaleDelegate(),
+      ...AppLocalizations.localizationsDelegates.skip(1),
+    ],
+    supportedLocales: const <Locale>[Locale('en'), Locale('en', 'GB')],
+    home: widget.child,
+  );
+}
+
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('locale changes preserve restored and explicitly generated prompts', (tester) async {
+    const String savedPrompt = 'A saved prompt that should stay untouched';
+    final GlobalKey<_LocaleTestAppState> appKey = GlobalKey<_LocaleTestAppState>();
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await tester.pumpWidget(
+      _LocaleTestApp(
+        key: appKey,
+        child: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(),
+            Completer<AiSubmissionMetadata>(),
+            history: () async => const <AiGenerationRecord>[],
+            savedPrompt: savedPrompt,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder promptField = find.descendant(of: find.byType(AiPromptField), matching: find.byType(TextField));
+    String promptText() => tester.widget<TextField>(promptField).controller!.text;
+
+    expect(promptText(), savedPrompt);
+    appKey.currentState!.setLocale(const Locale('en', 'GB'));
+    await tester.pumpAndSettle();
+    expect(promptText(), savedPrompt);
+
+    final Finder sceneIdeaButton = find.text('Scene idea');
+    await tester.ensureVisible(sceneIdeaButton);
+    await tester.tap(sceneIdeaButton);
+    await tester.pumpAndSettle();
+    final String generatedSceneIdea = promptText();
+    expect(generatedSceneIdea, isNot(savedPrompt));
+
+    appKey.currentState!.setLocale(const Locale('en'));
+    await tester.pumpAndSettle();
+    expect(promptText(), generatedSceneIdea);
+
+    const String manualPrompt = 'A prompt entered by the user';
+    await tester.enterText(promptField, manualPrompt);
+    appKey.currentState!.setLocale(const Locale('en', 'GB'));
+    await tester.pumpAndSettle();
+    expect(promptText(), manualPrompt);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('failed save resolution clears the saving lock so the user can retry', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);

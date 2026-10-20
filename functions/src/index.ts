@@ -7,6 +7,8 @@ export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress
 export {onFollowCreated} from "./onFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";
 export {onWallCategorize} from "./onWallCategorize";
+export {onWallSearchTerms} from "./wallSearchTerms";
+export {onWallModerate} from "./wallModeration";
 export {refreshCollections} from "./wallCollections";
 export {categorizeWallpaper} from "./categorizeWallpaper";
 export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested";

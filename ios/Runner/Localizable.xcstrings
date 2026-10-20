@@ -9,6 +9,18 @@
             "value": "Get a wallpaper from %1$@"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambil wallpaper dari %1$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obter um papel de parede de %1$@"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -35,6 +47,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Get a %1$@ wallpaper"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambil wallpaper %1$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obter um papel de parede de %1$@"
           }
         },
         "de": {
@@ -65,6 +89,18 @@
             "value": "Wallpaper source"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumber wallpaper"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origem do papel de parede"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -91,6 +127,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wall of the Day"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Hari Ini"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papel de parede do dia"
           }
         },
         "de": {
@@ -121,6 +169,18 @@
             "value": "Random favourite"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorit acak"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorito aleatório"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -147,6 +207,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "No favourites yet. Open Prism and tap the heart on a wallpaper."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belum ada favorit. Buka Prism dan ketuk ikon hati pada wallpaper."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você ainda não tem favoritos. Abra o Prism e toque no coração de um papel de parede."
           }
         },
         "de": {
@@ -177,6 +249,18 @@
             "value": "Could not load the Wall of the Day. Check your connection."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dapat memuat Wallpaper Hari Ini. Periksa koneksi Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar o papel de parede do dia. Verifique sua conexão."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -203,6 +287,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Could not load your favourite wallpaper. Check your connection."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dapat memuat wallpaper favorit Anda. Periksa koneksi Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar seu papel de parede favorito. Verifique sua conexão."
           }
         },
         "de": {
@@ -233,6 +329,18 @@
             "value": "This wallpaper is in a format that Shortcuts cannot use."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format wallpaper ini tidak dapat digunakan oleh Pintasan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este papel de parede está em um formato que o Atalhos não pode usar."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -259,6 +367,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Get Prism Wallpaper"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dapatkan Wallpaper Prism"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obter papel de parede do Prism"
           }
         },
         "de": {
@@ -289,6 +409,18 @@
             "value": "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mengambil wallpaper Prism. Teruskan ke tindakan Atur Wallpaper."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtém um papel de parede do Prism. Passe-o para a ação Definir Papel de Parede."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -315,6 +447,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Source"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumber"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origem"
           }
         },
         "de": {
@@ -345,6 +489,18 @@
             "value": "Your wallpaper is live! 🎉"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Anda sudah tayang! 🎉"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu papel de parede está no ar! 🎉"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -371,6 +527,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "\"%1$@\" has been approved and is now visible to everyone."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" telah disetujui dan kini dapat dilihat semua orang."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" foi aprovado e agora está visível para todos."
           }
         },
         "de": {
@@ -401,6 +569,18 @@
             "value": "Your wallpaper has been approved and is now visible to everyone."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Anda telah disetujui dan kini dapat dilihat semua orang."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu papel de parede foi aprovado e agora está visível para todos."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -427,6 +607,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "New wall by %1$@"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper baru dari %1$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo papel de parede de %1$@"
           }
         },
         "de": {
@@ -457,6 +649,18 @@
             "value": "\"%1$@\" is now live on Prism."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" kini tayang di Prism."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" já está no ar no Prism."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -483,6 +687,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wall approved ✅"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper disetujui ✅"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papel de parede aprovado ✅"
           }
         },
         "de": {
@@ -513,6 +729,18 @@
             "value": "\"%1$@\" by %2$@ is now live."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\" karya %2$@ kini tayang."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%1$@\", de %2$@, já está no ar."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -539,6 +767,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "You have a new follower! 🎉"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda mendapat pengikut baru! 🎉"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você tem um novo seguidor! 🎉"
           }
         },
         "de": {
@@ -569,6 +809,18 @@
             "value": "%1$@ is now following you."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ sekarang mengikuti Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ começou a seguir você."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -595,6 +847,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your streak is about to break!"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rangkaian harian Anda akan terputus!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua sequência está prestes a acabar!"
           }
         },
         "de": {
@@ -625,6 +889,18 @@
             "value": "Open Prism now to keep your login streak alive 🔥"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka Prism sekarang agar rangkaian masuk harian Anda tetap berlanjut 🔥"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Prism agora para manter sua sequência de acesso 🔥"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -651,6 +927,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your wallpaper is the Wall of the Day"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Anda menjadi Wallpaper Hari Ini"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu papel de parede é o papel de parede do dia"
           }
         },
         "de": {
@@ -681,6 +969,18 @@
             "value": "Prism picked your wallpaper for everyone today. Thank you for sharing it."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism memilih wallpaper Anda untuk semua orang hari ini. Terima kasih telah membagikannya."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoje, o Prism escolheu seu papel de parede para todos. Obrigado por compartilhá-lo."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -709,6 +1009,18 @@
             "value": "Today's Wall of the Day is here"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Hari Ini sudah hadir"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O papel de parede do dia chegou"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -732,6 +1044,18 @@
     "notif_push_wotd_for_audience_body": {
       "localizations": {
         "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "pt-BR": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@"
@@ -765,6 +1089,18 @@
             "value": "Open Prism to see today's Wall of the Day."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka Prism untuk melihat Wallpaper Hari Ini."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Prism para ver o papel de parede do dia."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -791,6 +1127,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your feed has new walls"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ada wallpaper baru di beranda Anda"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Há novos papéis de parede no seu feed"
           }
         },
         "de": {
@@ -821,6 +1169,18 @@
             "value": "Fresh wallpapers landed while you were away."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper baru hadir saat Anda tidak aktif."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novos papéis de parede chegaram enquanto você estava fora."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -847,6 +1207,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "New walls are waiting"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper baru menanti"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Há novos papéis de parede esperando por você"
           }
         },
         "de": {
@@ -877,6 +1249,18 @@
             "value": "Come see what creators added this fortnight."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lihat karya yang ditambahkan para kreator dalam dua minggu ini."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja o que os criadores adicionaram nestas últimas semanas."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -903,6 +1287,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "New AI styles to try"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gaya AI baru untuk dicoba"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novos estilos de IA para experimentar"
           }
         },
         "de": {
@@ -933,6 +1329,18 @@
             "value": "Make a wallpaper that feels like you."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buat wallpaper yang mencerminkan diri Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crie um papel de parede com a sua cara."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -959,6 +1367,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prism misses you"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism merindukan Anda"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Prism está com saudade"
           }
         },
         "de": {
@@ -989,6 +1409,18 @@
             "value": "Your next favourite wall is a tap away."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper favorit Anda berikutnya hanya berjarak satu ketukan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu próximo papel de parede favorito está a um toque de distância."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1015,6 +1447,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "A new Drop is live"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop baru sudah hadir"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um novo Drop está no ar"
           }
         },
         "de": {
@@ -1045,6 +1489,18 @@
             "value": "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper dalam Drop minggu ini: %1$@. Lihat pratinjau Drop sebelum berakhir."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papéis de parede no Drop desta semana: %1$@. Veja uma prévia antes que ele termine."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1071,6 +1527,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last call on this week's Drop"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kesempatan terakhir untuk Drop minggu ini"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última chance de aproveitar o Drop desta semana"
           }
         },
         "de": {
@@ -1101,6 +1569,18 @@
             "value": "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ berakhir dalam %2$@ jam. Setelah itu, wallpaper tidak tersedia selama sebulan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ termina em %2$@ h. Os papéis de parede ficarão indisponíveis por um mês depois disso."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1127,6 +1607,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "You won the Prism Draw"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda memenangkan Prism Draw"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você ganhou o Sorteio Prism"
           }
         },
         "de": {
@@ -1157,6 +1649,18 @@
             "value": "One month of Pro and the Prism frame are yours."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satu bulan Pro dan bingkai Prism menjadi milik Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um mês de Pro e a moldura Prism são seus."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1183,6 +1687,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ sent you a 24-hour Pro pass"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ mengirimkan akses Pro 24 jam kepada Anda"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ enviou a você um passe Pro de 24 horas"
           }
         },
         "de": {
@@ -1213,6 +1729,18 @@
             "value": "Premium collections and premium walls are open until tomorrow."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koleksi Premium dan wallpaper Premium dapat diakses selama 24 jam."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coleções e papéis de parede premium ficarão disponíveis por 24 horas."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1239,6 +1767,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Report waiting for review"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan menunggu peninjauan"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denúncia aguardando análise"
           }
         },
         "de": {
@@ -1269,6 +1809,18 @@
             "value": "A content report has been waiting for review for over 12 hours."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan konten telah menunggu peninjauan selama lebih dari 12 jam."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma denúncia de conteúdo está aguardando análise há mais de 12 horas."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1295,6 +1847,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "New content report"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan konten baru"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova denúncia de conteúdo"
           }
         },
         "de": {
@@ -1325,6 +1889,18 @@
             "value": "A new content report is ready for review."
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan konten baru siap ditinjau."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma nova denúncia de conteúdo está pronta para análise."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1353,6 +1929,18 @@
             "value": "New Premium Wall for review! 🎉"
           }
         },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper Premium baru untuk ditinjau! 🎉"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo papel de parede Premium para analisar! 🎉"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
@@ -1379,6 +1967,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "New post by %1$@ (%2$@) is up for review."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postingan baru dari %1$@ (%2$@) menunggu peninjauan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova publicação de %1$@ (%2$@) aguardando análise."
           }
         },
         "de": {

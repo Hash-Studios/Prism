@@ -1893,6 +1893,81 @@
   "adminMarkReviewed": "Mark reviewed",
   "adminMarkReviewedFailed": "Could not mark the report reviewed. Try again.",
   "adminMarkedReviewed": "Marked reviewed",
+  "adminModerationDuplicate": "Looks like a Prism wall · {percent}%",
+  "@adminModerationDuplicate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationHint": "These are hints. Check before you reject.",
+  "adminModerationLogo": "Logo: {logo}",
+  "@adminModerationLogo": {
+    "placeholders": {
+      "logo": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationLogos": "Logos",
+  "adminModerationOpenFailed": "Could not open the page.",
+  "adminModerationOpenPage": "Open {host}",
+  "@adminModerationOpenPage": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationSignals": "Review signals",
+  "adminModerationSimilarWall": "Similar Prism wall",
+  "adminModerationSimilarity": "{percent}% similar",
+  "@adminModerationSimilarity": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationText": "Text: {words}",
+  "@adminModerationText": {
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationTextInImage": "Text in the image",
+  "adminModerationUnsafe": "Unsafe: {categories}",
+  "@adminModerationUnsafe": {
+    "placeholders": {
+      "categories": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationUnsafeCategories": "Unsafe categories",
+  "adminModerationWeb": "Found on {host}",
+  "@adminModerationWeb": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationWebMore": "Found on {host} +{more}",
+  "@adminModerationWebMore": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "more": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationWebPages": "Found on the web",
   "adminNewWallpapersPending": "New wallpapers show up here when someone uploads one.",
   "adminNoNotificationCounts": "No notification counts yet.",
   "adminNoOpenReports": "No open reports",

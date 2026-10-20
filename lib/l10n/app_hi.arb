@@ -1907,6 +1907,81 @@
   "adminMarkReviewed": "समीक्षा की गई चिह्नित करें",
   "adminMarkReviewedFailed": "रिपोर्ट को समीक्षा की गई चिह्नित नहीं कर सके। फिर कोशिश करें।",
   "adminMarkedReviewed": "समीक्षा की गई चिह्नित",
+  "adminModerationDuplicate": "Prism की वॉल जैसा · {percent}%",
+  "@adminModerationDuplicate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationHint": "ये सिर्फ़ संकेत हैं। अस्वीकार करने से पहले जाँच लें।",
+  "adminModerationLogo": "लोगो: {logo}",
+  "@adminModerationLogo": {
+    "placeholders": {
+      "logo": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationLogos": "लोगो",
+  "adminModerationOpenFailed": "पेज नहीं खुल सका।",
+  "adminModerationOpenPage": "{host} खोलें",
+  "@adminModerationOpenPage": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationSignals": "समीक्षा संकेत",
+  "adminModerationSimilarWall": "मिलती-जुलती Prism वॉल",
+  "adminModerationSimilarity": "{percent}% मिलती-जुलती",
+  "@adminModerationSimilarity": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationText": "टेक्स्ट: {words}",
+  "@adminModerationText": {
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationTextInImage": "इमेज में टेक्स्ट",
+  "adminModerationUnsafe": "असुरक्षित: {categories}",
+  "@adminModerationUnsafe": {
+    "placeholders": {
+      "categories": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationUnsafeCategories": "असुरक्षित श्रेणियाँ",
+  "adminModerationWeb": "{host} पर मिली",
+  "@adminModerationWeb": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationWebMore": "{host} +{more} पर मिली",
+  "@adminModerationWebMore": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "more": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationWebPages": "वेब पर मिली",
   "adminNewWallpapersPending": "किसी के वॉलपेपर अपलोड करने पर वे यहाँ दिखेंगे।",
   "adminNoNotificationCounts": "अभी सूचनाओं की कोई गिनती नहीं है।",
   "adminNoOpenReports": "कोई खुली रिपोर्ट नहीं",

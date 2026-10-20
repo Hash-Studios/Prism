@@ -131,7 +131,7 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   }
 
   Map<String, String> get _screenInfo {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final view = View.of(context);
     final size = view.physicalSize;
     final dpr = view.devicePixelRatio;
     return {

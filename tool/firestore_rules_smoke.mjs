@@ -57,6 +57,7 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/leaked', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: 'https://example.com/original.jpg' } }, 'owner'),
   req('PATCH', 'ownedAssets/protected', { status: { stringValue: 'ready' } }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
+  req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']) }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -190,6 +191,8 @@ const cases = [
   ['owner edits own unreviewed wall', () => req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, by: { stringValue: 'B' } }, Bu), 200],
   ['owner cannot forge protected upload metadata', () => req('PATCH', 'walls/forged-protection', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, originalProtected: { booleanValue: true }, originalGeneration: { stringValue: '1' } }, Bu), 403],
   ['owner cannot change protected upload markers', () => req('PATCH', 'walls/w8', { originalProtected: { booleanValue: true }, originalGeneration: { stringValue: '1' } }, Bu, ['originalProtected', 'originalGeneration']), 403],
+  ['owner cannot forge moderation signals on create', () => req('PATCH', 'walls/forged-moderation', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu), 403],
+  ['owner cannot change moderation signals', () => req('PATCH', 'walls/w8', { moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu, ['moderation']), 403],
   ['owner unpublishes own approved wall', () => req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner unpublishes own approved setup', () => req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner deletes own rejected wall', () => req('DELETE', 'rejectedWalls/rw1', null, Bu), 200],
@@ -274,6 +277,14 @@ const cases = [
   ['owner removes an existing depth', () => req('PATCH', 'walls/w12', {}, Bu, ['depth']), 403],
   ['owner updates another field and leaves depth untouched', () => req('PATCH', 'walls/w12', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
   ['admin sets depth on a wall', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, ADM, ['depth']), 200],
+  ...['searchTerms', 'visionLabels'].flatMap((key) => [
+    [`owner creates a wall with ${key}`, () => req('PATCH', `walls/create-${key}`, { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, [key]: arr(['stuffed']) }, Bu), 403],
+    [`owner sets ${key} on own unreviewed wall`, () => req('PATCH', 'walls/w3', { [key]: arr(['stuffed']) }, Bu, [key]), 403],
+    [`owner changes an existing ${key}`, () => req('PATCH', 'walls/w14', { [key]: arr(['stuffed']) }, Bu, [key]), 403],
+    [`owner removes an existing ${key}`, () => req('PATCH', 'walls/w14', {}, Bu, [key]), 403],
+    [`admin sets ${key} on a wall`, () => req('PATCH', 'walls/w14', { [key]: arr(['admin']) }, ADM, [key]), 200],
+  ]),
+  ['owner updates another field and leaves searchTerms and visionLabels untouched', () => req('PATCH', 'walls/w14', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
 ];
 await seed();
 let bad = 0;

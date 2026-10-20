@@ -1885,6 +1885,81 @@
   "adminMarkReviewed": "Als geprüft markieren",
   "adminMarkReviewedFailed": "Die Meldung konnte nicht als geprüft markiert werden. Versuch es erneut.",
   "adminMarkedReviewed": "Als geprüft markiert",
+  "adminModerationDuplicate": "Sieht aus wie ein Prism-Hintergrund · {percent}%",
+  "@adminModerationDuplicate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationHint": "Das sind nur Hinweise. Prüf es, bevor du ablehnst.",
+  "adminModerationLogo": "Logo: {logo}",
+  "@adminModerationLogo": {
+    "placeholders": {
+      "logo": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationLogos": "Logos",
+  "adminModerationOpenFailed": "Die Seite konnte nicht geöffnet werden.",
+  "adminModerationOpenPage": "{host} öffnen",
+  "@adminModerationOpenPage": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationSignals": "Prüfhinweise",
+  "adminModerationSimilarWall": "Ähnlicher Prism-Hintergrund",
+  "adminModerationSimilarity": "{percent}% ähnlich",
+  "@adminModerationSimilarity": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationText": "Text: {words}",
+  "@adminModerationText": {
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationTextInImage": "Text im Bild",
+  "adminModerationUnsafe": "Nicht sicher: {categories}",
+  "@adminModerationUnsafe": {
+    "placeholders": {
+      "categories": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationUnsafeCategories": "Nicht sichere Kategorien",
+  "adminModerationWeb": "Gefunden auf {host}",
+  "@adminModerationWeb": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "adminModerationWebMore": "Gefunden auf {host} +{more}",
+  "@adminModerationWebMore": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "more": {
+        "type": "int"
+      }
+    }
+  },
+  "adminModerationWebPages": "Im Web gefunden",
   "adminNewWallpapersPending": "Neue Hintergrundbilder erscheinen hier, sobald jemand eines hochlädt.",
   "adminNoNotificationCounts": "Noch keine Benachrichtigungszahlen.",
   "adminNoOpenReports": "Keine offenen Meldungen",

@@ -1516,6 +1516,70 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminMarkedReviewed => 'समीक्षा की गई चिह्नित';
 
   @override
+  String adminModerationDuplicate(int percent) {
+    return 'Prism की वॉल जैसा · $percent%';
+  }
+
+  @override
+  String get adminModerationHint => 'ये सिर्फ़ संकेत हैं। अस्वीकार करने से पहले जाँच लें।';
+
+  @override
+  String adminModerationLogo(String logo) {
+    return 'लोगो: $logo';
+  }
+
+  @override
+  String get adminModerationLogos => 'लोगो';
+
+  @override
+  String get adminModerationOpenFailed => 'पेज नहीं खुल सका।';
+
+  @override
+  String adminModerationOpenPage(String host) {
+    return '$host खोलें';
+  }
+
+  @override
+  String get adminModerationSignals => 'समीक्षा संकेत';
+
+  @override
+  String get adminModerationSimilarWall => 'मिलती-जुलती Prism वॉल';
+
+  @override
+  String adminModerationSimilarity(int percent) {
+    return '$percent% मिलती-जुलती';
+  }
+
+  @override
+  String adminModerationText(String words) {
+    return 'टेक्स्ट: $words';
+  }
+
+  @override
+  String get adminModerationTextInImage => 'इमेज में टेक्स्ट';
+
+  @override
+  String adminModerationUnsafe(String categories) {
+    return 'असुरक्षित: $categories';
+  }
+
+  @override
+  String get adminModerationUnsafeCategories => 'असुरक्षित श्रेणियाँ';
+
+  @override
+  String adminModerationWeb(String host) {
+    return '$host पर मिली';
+  }
+
+  @override
+  String adminModerationWebMore(String host, int more) {
+    return '$host +$more पर मिली';
+  }
+
+  @override
+  String get adminModerationWebPages => 'वेब पर मिली';
+
+  @override
   String get adminNewWallpapersPending => 'किसी के वॉलपेपर अपलोड करने पर वे यहाँ दिखेंगे।';
 
   @override
