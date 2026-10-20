@@ -218,7 +218,7 @@ void main() {
       wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
           _wallpaper('https://evil.example/wall.jpg'),
     );
-    expect(position, isNull);
+    expect(position, isA<WallpaperDetailRoute>());
 
     for (final String path in <String>[
       '/photo-preview?wallpaperId=wall1',
@@ -236,6 +236,44 @@ void main() {
         isNull,
         reason: path,
       );
+    }
+  });
+
+  test('protected original actions route through detail without native acquisition', () async {
+    for (final path in [
+      '/wallpaper/wall1/position',
+      '/wallpaper/wall1/live',
+      '/download-wallpaper?wallpaperId=wall1',
+    ]) {
+      final intent = parser.parse(Uri.parse(path));
+      expect(intent, isA<PageLinkIntent>());
+      final route = await routeForPageLink(
+        intent as PageLinkIntent,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
+            throw StateError('must not acquire an original'),
+        localFileResolver:
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+                throw StateError('must not download an original'),
+      );
+      expect(route, isA<WallpaperDetailRoute>(), reason: path);
+    }
+  });
+
+  test('owned thumbnail endpoint has an exact URL allowlist', () async {
+    const endpoint = 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall1';
+    for (final url in [
+      endpoint,
+      '$endpoint?url=secret',
+      '$endpoint#fragment',
+      '$endpoint/extra',
+      endpoint.replaceFirst('.net/', '.net:443/'),
+      endpoint.replaceFirst('https://', 'https://user@'),
+    ]) {
+      final route = await routeForPageLink(
+        const PageLinkIntent(path: '/photo-preview?wallpaperId=wall1', rawUri: '/photo-preview?wallpaperId=wall1'),
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => _wallpaper(url),
+      );
+      expect(route != null, url == endpoint, reason: url);
     }
   });
 
@@ -287,11 +325,11 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.rewardsTab => 'RewardsTabRoute',
   DeepLinkPageTarget.collectionTab => 'CollectionTabRoute',
   DeepLinkPageTarget.downloadWallpaperInput =>
-    uri.contains('wallpaperId=') || uri.contains('/wallpaper/') ? 'DownloadWallpaperRoute' : 'DeepLinkInputRoute',
+    uri.contains('wallpaperId=') || uri.contains('/wallpaper/') ? 'WallpaperDetailRoute' : 'DeepLinkInputRoute',
   DeepLinkPageTarget.wallpaperPositionInput =>
-    uri.contains('/wallpaper/') || uri.contains('wallpaperId=') ? 'WallpaperPositionRoute' : 'DeepLinkInputRoute',
+    uri.contains('/wallpaper/') || uri.contains('wallpaperId=') ? 'WallpaperDetailRoute' : 'DeepLinkInputRoute',
   DeepLinkPageTarget.liveWallpaperInput =>
-    uri.contains('/wallpaper/') || uri.contains('wallpaperId=') ? 'LiveWallpaperRoute' : 'DeepLinkInputRoute',
+    uri.contains('/wallpaper/') || uri.contains('wallpaperId=') ? 'WallpaperDetailRoute' : 'DeepLinkInputRoute',
   DeepLinkPageTarget.chooseImage ||
   DeepLinkPageTarget.wallpaperFilterInput ||
   DeepLinkPageTarget.uploadInput ||

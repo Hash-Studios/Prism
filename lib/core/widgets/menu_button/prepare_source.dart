@@ -20,7 +20,9 @@ Future<String?> runPrepareSource(Future<String> Function() prepare, {required Ap
 /// Each variation is its own purchase. Its [identityOf] keys the coin gate recovery marker and the Downloads index,
 /// so a variation the user already saved never hides a failed payment for another one.
 class DownloadVariant {
-  const DownloadVariant({required this.key, required this.prepare});
+  const DownloadVariant({required this.key, required this.prepare, this.prepareAuthorized});
+
+  final Future<String> Function(String source)? prepareAuthorized;
 
   /// Safe in a file name and different for every variation of one wallpaper, for example `tint-ff8800`.
   final String key;

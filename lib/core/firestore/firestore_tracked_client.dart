@@ -162,6 +162,18 @@ class FirestoreTrackedClient implements FirestoreClient {
           query = query.where(field, isNull: filter.value as bool? ?? true);
       }
     }
+    if (spec.collection == 'walls' &&
+        spec.filters.any(
+          (filter) => filter.field == 'review' && filter.op == FirestoreFilterOp.isEqualTo && filter.value == true,
+        )) {
+      query = query
+          .where('originalProtected', isEqualTo: true)
+          .where('wallpaper_url', isEqualTo: '')
+          .where('wallpaper_path', isEqualTo: '')
+          .where('wallpaper_sha', isEqualTo: '')
+          .where('thumb_path', isEqualTo: '')
+          .where('thumb_sha', isEqualTo: '');
+    }
     for (final FirestoreOrderBy order in spec.orderBy) {
       query = order.field == firestoreDocumentIdField
           ? query.orderBy(FieldPath.documentId, descending: order.descending)
@@ -189,6 +201,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     }
     switch (spec.cachePolicy) {
       case FirestoreCachePolicy.networkOnly:
+      case FirestoreCachePolicy.serverOnly:
         return 0;
       case FirestoreCachePolicy.staleWhileRevalidate:
       case FirestoreCachePolicy.memoryFirst:
@@ -198,6 +211,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   bool _canUseCache(FirestoreQuerySpec spec) {
+    if (spec.cachePolicy == FirestoreCachePolicy.serverOnly) return false;
     return spec.cachePolicy != FirestoreCachePolicy.networkOnly || spec.dedupeWindowMs > 0;
   }
 
@@ -329,7 +343,9 @@ class FirestoreTrackedClient implements FirestoreClient {
       body: () async {
         Query<Map<String, dynamic>> query = _applySpec(spec);
         query = await _applyCursorIfRequired(query, spec);
-        final QuerySnapshot<Map<String, dynamic>> result = await query.get();
+        final QuerySnapshot<Map<String, dynamic>> result = spec.cachePolicy == FirestoreCachePolicy.serverOnly
+            ? await query.get(const GetOptions(source: Source.server))
+            : await query.get();
         for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
           _cacheCursorDoc(doc, spec.collection);
         }

@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -190,6 +191,7 @@ void main() {
     settingsLocalDataSource,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
+    acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',
     loadLocalizations: loadLocalizations ?? () async => AppLocalizationsEn(),
   );
 
@@ -882,7 +884,7 @@ void main() {
       await bloc.stream.firstWhere((state) => state.loadStatus == LoadStatus.success);
     },
     verify: (bloc) {
-      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
     },
   );
 
@@ -1217,7 +1219,7 @@ void main() {
       wait: Duration.zero,
       verify: (bloc) {
         expect(bloc.state.aiData.status, AiGenerateStatus.success);
-        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.thumbnailUrl, 'https://example.com/thumb.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
       },
@@ -1250,7 +1252,7 @@ void main() {
       },
       wait: Duration.zero,
       verify: (bloc) {
-        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
         expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.abstract);
         expect(bloc.state.aiData.status, AiGenerateStatus.failure);
       },
@@ -1317,7 +1319,11 @@ void main() {
         ),
       );
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
     },
     build: buildBloc,
@@ -1563,7 +1569,11 @@ void main() {
           ),
         );
         when(
-          () => firstWallpaperService.performAction(any()),
+          () => firstWallpaperService.performAction(
+            any(),
+            wallpaperId: any(named: 'wallpaperId'),
+            wallpaperSource: any(named: 'wallpaperSource'),
+          ),
         ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.both));
         when(
           () => aiRepository.generate(
@@ -1654,7 +1664,11 @@ void main() {
 
     test('a success keeps the screen that was set so the toast can name it', () async {
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
       final bloc = buildBloc();
       addTearDown(bloc.close);
@@ -1666,9 +1680,45 @@ void main() {
       expect(state.wallpaperData.errorCode, isNull);
     });
 
+    test('a recommended wallpaper passes its identity and source to the action', () async {
+      when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+        (_) async => const OnboardingWallpaperVm(
+          fullUrl: 'https://example.com/wall.jpg',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          sourceCategory: 'Nature',
+          wallpaperId: 'wall-123',
+          wallpaperSource: WallpaperSource.pexels,
+        ),
+      );
+      when(
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+
+      verify(
+        () => firstWallpaperService.performAction(
+          'https://example.com/wall.jpg',
+          wallpaperId: 'wall-123',
+          wallpaperSource: WallpaperSource.pexels,
+        ),
+      ).called(1);
+    });
+
     test('a failure keeps the error code and trying again clears it', () async {
       when(
-        () => firstWallpaperService.performAction(any()),
+        () => firstWallpaperService.performAction(
+          any(),
+          wallpaperId: any(named: 'wallpaperId'),
+          wallpaperSource: any(named: 'wallpaperSource'),
+        ),
       ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
       final bloc = buildBloc();
       addTearDown(bloc.close);

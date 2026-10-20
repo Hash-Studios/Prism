@@ -219,6 +219,22 @@ void main() {
   });
 
   group('other sources', () {
+    for (final source in [AutoRotateSource.category, AutoRotateSource.wallOfTheDay, AutoRotateSource.history]) {
+      test('$source preserves acquired local sources returned by the repository', () async {
+        const sources = <String>['/storage/Prism/acquired-a.jpg', 'file:///storage/Prism/acquired-b.jpg'];
+        final values = <String>[...sources, 'relative.jpg', 'content://unknown/file', 'http://unknown/image.jpg'];
+        if (source == AutoRotateSource.category) {
+          repository.categories['Nature'] = values;
+        } else {
+          repository.remote[source] = values;
+        }
+        repository.config = AutoRotateConfig(enabled: true, source: source);
+        await openAsPro();
+        expect(repository.starts.single.$2, sources);
+        expect(bloc.state.remoteCount, 2);
+      });
+    }
+
     test('Wall of the Day and history start with their own lists', () async {
       repository.remote[AutoRotateSource.wallOfTheDay] = _urls('wotd', 3);
       repository.remote[AutoRotateSource.history] = _urls('hist', 2);

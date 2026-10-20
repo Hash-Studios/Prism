@@ -23,6 +23,66 @@ class CoinsTestBackend {
 
   /// The timeout in milliseconds of the latest call of each function, as the plugin sent it.
   final Map<String, int> timeoutsMs = <String, int>{};
+  final Map<String, ({bool premium, int coins})> originalAssets = {};
+  final List<Map<String, dynamic>> originalCalls = [];
+  final Map<String, Map<String, dynamic>> _originalReceipts = {};
+  int originalBalance = 100;
+  int originalGrace = 0;
+  bool originalPro = false;
+  bool originalPass = false;
+  bool originalAuthenticated = true;
+  int originalDebits = 0;
+
+  Map<String, dynamic> resolveOriginal(Map<String, dynamic> input) {
+    originalCalls.add(input);
+    if (!originalAuthenticated) throw FirebaseFunctionsException(code: 'unauthenticated', message: 'Sign in');
+    final assetId = input['assetId'];
+    final asset = originalAssets[assetId];
+    if (asset == null) throw FirebaseFunctionsException(code: 'not-found', message: 'Missing asset');
+    final requestId = input['requestId'];
+    if (requestId is! String || requestId.isEmpty || input['action'] != 'download') {
+      throw FirebaseFunctionsException(code: 'invalid-argument', message: 'Invalid action');
+    }
+    final key = '$userId:$assetId:$requestId';
+    final previous = _originalReceipts[key];
+    final cost =
+        previous != null || originalPro || (asset.premium && originalPass) || (!asset.premium && originalGrace > 0)
+        ? 0
+        : asset.coins;
+    if (input['mode'] == 'quote') {
+      return {
+        'status': 'quoted',
+        'assetId': assetId,
+        'action': 'download',
+        'generation': '1',
+        'requiredCoins': cost,
+        'currentBalance': originalBalance,
+        'basis': cost == 0 ? 'entitlement' : 'coins',
+      };
+    }
+    if (previous != null) return previous;
+    if (input['maxCoins'] is num && cost > (input['maxCoins'] as num)) {
+      return {'status': 'price_changed', 'requiredCoins': cost, 'currentBalance': originalBalance};
+    }
+    if (originalBalance < cost) {
+      return {'status': 'insufficient_balance', 'requiredCoins': cost, 'currentBalance': originalBalance};
+    }
+    originalBalance -= cost;
+    if (cost > 0) originalDebits++;
+    if (!asset.premium && !originalPro && originalGrace > 0) originalGrace--;
+    final grant = <String, dynamic>{
+      'status': 'granted',
+      'url': 'https://signed.test/$assetId',
+      'expiresAt': DateTime.now().add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+      'generation': '1',
+      'transactionId': 'original:$key',
+      'currentBalance': originalBalance,
+      'chargedCoins': cost,
+      'basis': cost == 0 ? 'entitlement' : 'coins',
+    };
+    _originalReceipts[key] = grant;
+    return grant;
+  }
 
   static const Map<String, Object> claimPayload = <String, Object>{
     'claimed': true,
@@ -41,6 +101,15 @@ class CoinsTestBackend {
   late String userId;
 
   Future<void> install() async {
+    originalAssets.clear();
+    originalCalls.clear();
+    _originalReceipts.clear();
+    originalBalance = 100;
+    originalGrace = 0;
+    originalPro = false;
+    originalPass = false;
+    originalAuthenticated = true;
+    originalDebits = 0;
     CoinsService.instance.setEconomySnapshotStoreForTest(EconomySnapshotStore(store: _MemoryCoinsSnapshotStore()));
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(
@@ -82,6 +151,10 @@ class CoinsTestBackend {
           final Completer<void>? started = callStarted;
           if (started != null && !started.isCompleted) started.complete();
           timeoutsMs[arguments['functionName'] as String] = arguments['timeout'] as int;
+          final parameters = Map<String, dynamic>.from(arguments['parameters'] as Map<Object?, Object?>);
+          if (arguments['functionName'] == 'resolveOriginalAccess' && originalAssets.isNotEmpty) {
+            return <Object?>[resolveOriginal(parameters)];
+          }
           return <Object?>[
             await onCall(
               arguments['functionName'] as String,

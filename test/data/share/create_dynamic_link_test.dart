@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -72,6 +74,49 @@ void main() {
   Future<T> withApi<T>(Future<T> Function() body, http.Client client) => http.runWithClient(body, () => client);
 
   bool copiedToClipboard() => platformCalls.any((call) => call.method == 'Clipboard.setData');
+
+  for (final source in WallpaperSource.values) {
+    test('never sends the original in ${source.name} links or short-link payloads', () async {
+      const original = 'https://private.example/premium-original.jpg?token=secret&url=hostile';
+      const thumb = 'https://public.example/preview.jpg';
+      final client = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(request.body, isNot(contains('private.example')));
+        expect(body['payload'], isNot(contains('url')));
+        expect(Uri.parse(body['canonical_url'] as String).queryParameters, isNot(contains('url')));
+        expect(
+          (body['preview'] as Map)['image_source_url'],
+          source == WallpaperSource.prism
+              ? 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/premium-wall'
+              : source == WallpaperSource.wallhaven || source == WallpaperSource.pexels
+              ? thumb
+              : '',
+        );
+        return http.Response('{}', 200);
+      });
+
+      final link = await withApi(() => createDynamicLink('premium-wall', source, original, thumb), client);
+
+      expect(Uri.parse(link!).queryParameters, isNot(contains('url')));
+      expect(link, isNot(contains('private.example')));
+    });
+  }
+
+  test('Prism thumbnails cannot smuggle a legacy original into any link field', () async {
+    const original = 'https://raw.githubusercontent.com/Hash-Studios/private/original.jpg';
+    final client = MockClient((request) async {
+      expect(request.body, isNot(contains(original)));
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(
+        (body['payload'] as Map)['thumb'],
+        'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
+      );
+      return http.Response('{}', 200);
+    });
+    final link = await withApi(() => createDynamicLink('wall-1', WallpaperSource.prism, original, original), client);
+    expect(link, isNot(contains('original.jpg')));
+    expect(share.safeWallpaperShareThumbnail('../bad', WallpaperSource.prism, original), isEmpty);
+  });
 
   test('returns the short link without touching the clipboard', () async {
     final client = MockClient((_) async => http.Response('{"short_url":"https://prismwalls.com/s/abc"}', 200));

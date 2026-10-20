@@ -21,16 +21,23 @@ import 'package:http/http.dart' as http;
 
 const String _shareDomain = 'prismwalls.com';
 
+String safeWallpaperShareThumbnail(String id, WallpaperSource source, String thumbUrl) {
+  if (BundledWallpapers.isStarterIdentity(id, source)) return thumbUrl;
+  if (source == WallpaperSource.wallhaven || source == WallpaperSource.pexels) return thumbUrl;
+  if (source != WallpaperSource.prism) return '';
+  if (!RegExp(r'^[A-Za-z0-9_-]{1,200}$').hasMatch(id)) return '';
+  return 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/$id';
+}
+
 class _CanonicalLinkBuilder {
   const _CanonicalLinkBuilder();
 
-  Uri wallpaper({required String id, required WallpaperSource source, String? url, required String thumbUrl}) {
+  Uri wallpaper({required String id, required WallpaperSource source, required String thumbUrl}) {
     return Uri.https(_shareDomain, '/share', <String, String>{
       'id': id,
       'source': source.wireValue,
       'provider': source.legacyProviderString,
       'thumb': thumbUrl,
-      if (url != null) 'url': url,
     });
   }
 
@@ -112,7 +119,9 @@ String canonicalWallpaperLink({
   required String thumbUrl,
 }) => BundledWallpapers.isStarterIdentity(id, source)
     ? Uri.https(_shareDomain, '/').toString()
-    : _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl).toString();
+    : _canonicalLinkBuilder
+          .wallpaper(id: id, source: source, thumbUrl: safeWallpaperShareThumbnail(id, source, thumbUrl))
+          .toString();
 
 void _trackDynamicLinkCreateResult({
   required ShareTypeValue shareType,
@@ -165,6 +174,7 @@ Future<String?> createDynamicLink(
   required AppLocalizations l10n,
 }) async {
   try {
+    thumbUrl = safeWallpaperShareThumbnail(id, source, thumbUrl);
     final Uri canonical = Uri.parse(canonicalWallpaperLink(id: id, source: source, url: url, thumbUrl: thumbUrl));
     if (BundledWallpapers.isStarterIdentity(id, source)) {
       _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
@@ -177,7 +187,6 @@ Future<String?> createDynamicLink(
         'id': id,
         'source': source.wireValue,
         'provider': source.legacyProviderString,
-        if (url != null) 'url': url,
         'thumb': thumbUrl,
       },
       preview: <String, dynamic>{

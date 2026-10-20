@@ -119,7 +119,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     }
     if (urls == null) return false;
     final Set<String> seen = <String>{};
-    _remoteUrls = urls.where(_isValidHttpsUrl).where(seen.add).take(_maxSources).toList(growable: false);
+    _remoteUrls = urls.where(_isRepositorySource).where(seen.add).take(_maxSources).toList(growable: false);
     return true;
   }
 
@@ -148,6 +148,15 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         uri.scheme.toLowerCase() == 'https' &&
         uri.host.isNotEmpty &&
         uri.userInfo.isEmpty;
+  }
+
+  bool _isRepositorySource(String value) {
+    if (_isValidHttpsUrl(value)) return true;
+    if (value.trim() != value) return false;
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        ((uri.scheme.isEmpty && value.startsWith('/')) ||
+            (uri.scheme == 'file' && uri.host.isEmpty && uri.path.startsWith('/')));
   }
 
   bool _sameUrls(List<String> previous, List<String> next) => const ListEquality<String>().equals(previous, next);

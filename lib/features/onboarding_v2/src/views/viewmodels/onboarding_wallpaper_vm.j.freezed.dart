@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$OnboardingWallpaperVm {
 
- String get fullUrl; String get thumbnailUrl; String get sourceCategory; AiStylePreset? get aiStyle;
+ String get fullUrl; String get thumbnailUrl; String get sourceCategory; AiStylePreset? get aiStyle; String? get wallpaperId; WallpaperSource? get wallpaperSource;
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $OnboardingWallpaperVmCopyWith<OnboardingWallpaperVm> get copyWith => _$Onboardi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory)&&(identical(other.aiStyle, aiStyle) || other.aiStyle == aiStyle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory)&&(identical(other.aiStyle, aiStyle) || other.aiStyle == aiStyle)&&(identical(other.wallpaperId, wallpaperId) || other.wallpaperId == wallpaperId)&&(identical(other.wallpaperSource, wallpaperSource) || other.wallpaperSource == wallpaperSource));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory,aiStyle);
+int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory,aiStyle,wallpaperId,wallpaperSource);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory, aiStyle: $aiStyle)';
+  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory, aiStyle: $aiStyle, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $OnboardingWallpaperVmCopyWith<$Res>  {
   factory $OnboardingWallpaperVmCopyWith(OnboardingWallpaperVm value, $Res Function(OnboardingWallpaperVm) _then) = _$OnboardingWallpaperVmCopyWithImpl;
 @useResult
 $Res call({
- String fullUrl, String thumbnailUrl, String sourceCategory, AiStylePreset? aiStyle
+ String fullUrl, String thumbnailUrl, String sourceCategory, AiStylePreset? aiStyle, String? wallpaperId, WallpaperSource? wallpaperSource
 });
 
 
@@ -62,13 +62,15 @@ class _$OnboardingWallpaperVmCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,Object? aiStyle = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,Object? aiStyle = freezed,Object? wallpaperId = freezed,Object? wallpaperSource = freezed,}) {
   return _then(_self.copyWith(
 fullUrl: null == fullUrl ? _self.fullUrl : fullUrl // ignore: cast_nullable_to_non_nullable
 as String,thumbnailUrl: null == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String,sourceCategory: null == sourceCategory ? _self.sourceCategory : sourceCategory // ignore: cast_nullable_to_non_nullable
 as String,aiStyle: freezed == aiStyle ? _self.aiStyle : aiStyle // ignore: cast_nullable_to_non_nullable
-as AiStylePreset?,
+as AiStylePreset?,wallpaperId: freezed == wallpaperId ? _self.wallpaperId : wallpaperId // ignore: cast_nullable_to_non_nullable
+as String?,wallpaperSource: freezed == wallpaperSource ? _self.wallpaperSource : wallpaperSource // ignore: cast_nullable_to_non_nullable
+as WallpaperSource?,
   ));
 }
 
@@ -153,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle,  String? wallpaperId,  WallpaperSource? wallpaperSource)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm() when $default != null:
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle,_that.wallpaperId,_that.wallpaperSource);case _:
   return orElse();
 
 }
@@ -174,10 +176,10 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle,  String? wallpaperId,  WallpaperSource? wallpaperSource)  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm():
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle,_that.wallpaperId,_that.wallpaperSource);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +196,10 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fullUrl,  String thumbnailUrl,  String sourceCategory,  AiStylePreset? aiStyle,  String? wallpaperId,  WallpaperSource? wallpaperSource)?  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm() when $default != null:
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiStyle,_that.wallpaperId,_that.wallpaperSource);case _:
   return null;
 
 }
@@ -209,13 +211,15 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory,_that.aiSt
 
 
 class _OnboardingWallpaperVm implements OnboardingWallpaperVm {
-  const _OnboardingWallpaperVm({required this.fullUrl, required this.thumbnailUrl, required this.sourceCategory, this.aiStyle});
+  const _OnboardingWallpaperVm({required this.fullUrl, required this.thumbnailUrl, required this.sourceCategory, this.aiStyle, this.wallpaperId, this.wallpaperSource});
   
 
 @override final  String fullUrl;
 @override final  String thumbnailUrl;
 @override final  String sourceCategory;
 @override final  AiStylePreset? aiStyle;
+@override final  String? wallpaperId;
+@override final  WallpaperSource? wallpaperSource;
 
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +231,16 @@ _$OnboardingWallpaperVmCopyWith<_OnboardingWallpaperVm> get copyWith => __$Onboa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory)&&(identical(other.aiStyle, aiStyle) || other.aiStyle == aiStyle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory)&&(identical(other.aiStyle, aiStyle) || other.aiStyle == aiStyle)&&(identical(other.wallpaperId, wallpaperId) || other.wallpaperId == wallpaperId)&&(identical(other.wallpaperSource, wallpaperSource) || other.wallpaperSource == wallpaperSource));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory,aiStyle);
+int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory,aiStyle,wallpaperId,wallpaperSource);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory, aiStyle: $aiStyle)';
+  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory, aiStyle: $aiStyle, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource)';
 }
 
 
@@ -247,7 +251,7 @@ abstract mixin class _$OnboardingWallpaperVmCopyWith<$Res> implements $Onboardin
   factory _$OnboardingWallpaperVmCopyWith(_OnboardingWallpaperVm value, $Res Function(_OnboardingWallpaperVm) _then) = __$OnboardingWallpaperVmCopyWithImpl;
 @override @useResult
 $Res call({
- String fullUrl, String thumbnailUrl, String sourceCategory, AiStylePreset? aiStyle
+ String fullUrl, String thumbnailUrl, String sourceCategory, AiStylePreset? aiStyle, String? wallpaperId, WallpaperSource? wallpaperSource
 });
 
 
@@ -264,13 +268,15 @@ class __$OnboardingWallpaperVmCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,Object? aiStyle = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,Object? aiStyle = freezed,Object? wallpaperId = freezed,Object? wallpaperSource = freezed,}) {
   return _then(_OnboardingWallpaperVm(
 fullUrl: null == fullUrl ? _self.fullUrl : fullUrl // ignore: cast_nullable_to_non_nullable
 as String,thumbnailUrl: null == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String,sourceCategory: null == sourceCategory ? _self.sourceCategory : sourceCategory // ignore: cast_nullable_to_non_nullable
 as String,aiStyle: freezed == aiStyle ? _self.aiStyle : aiStyle // ignore: cast_nullable_to_non_nullable
-as AiStylePreset?,
+as AiStylePreset?,wallpaperId: freezed == wallpaperId ? _self.wallpaperId : wallpaperId // ignore: cast_nullable_to_non_nullable
+as String?,wallpaperSource: freezed == wallpaperSource ? _self.wallpaperSource : wallpaperSource // ignore: cast_nullable_to_non_nullable
+as WallpaperSource?,
   ));
 }
 

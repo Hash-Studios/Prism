@@ -50,7 +50,7 @@ Future<PairPick?> showPairPickerSheet(BuildContext context, {String? excludeUrl}
 }
 
 List<PairCandidate> _without(List<PairCandidate> items, String? url) =>
-    url == null ? items : items.where((item) => item.fullUrl != url).toList(growable: false);
+    url == null || url.isEmpty ? items : items.where((item) => item.fullUrl != url).toList(growable: false);
 
 List<PairCandidate> _favouriteCandidates(BuildContext context) {
   try {
@@ -66,7 +66,11 @@ List<PairCandidate> _favouriteCandidates(BuildContext context) {
             wallpaperSource: wall.source,
           ),
         )
-        .where((item) => item.fullUrl.isNotEmpty)
+        .where(
+          (item) =>
+              item.fullUrl.isNotEmpty ||
+              (item.wallpaperSource == WallpaperSource.prism && (item.wallpaperId?.isNotEmpty ?? false)),
+        )
         .toList(growable: false);
   } catch (error) {
     logger.w('Pair picker: no favourites available', error: error);
@@ -79,8 +83,15 @@ List<PairCandidate> _historyCandidates() {
     final Set<String> seen = <String>{};
     return WallpaperHistoryStore.instance
         .items()
-        .where((item) => seen.add(item.fullUrl))
-        .map((item) => PairCandidate(fullUrl: item.fullUrl, thumbnailUrl: item.thumbnailUrl))
+        .where((item) => seen.add(item.identity))
+        .map(
+          (item) => PairCandidate(
+            fullUrl: item.fullUrl,
+            thumbnailUrl: item.thumbnailUrl,
+            wallpaperId: item.wallpaperId,
+            wallpaperSource: WallpaperSourceX.fromWire(item.source),
+          ),
+        )
         .toList(growable: false);
   } catch (error) {
     logger.w('Pair picker: no history available', error: error);

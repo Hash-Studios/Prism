@@ -25,6 +25,7 @@ class DownloadedWallIndex {
 
   static const String _key = 'downloaded_walls_v1';
   static final RegExp _copySuffix = RegExp(r' \(\d+\)$');
+  static final RegExp _historicalTintSuffix = RegExp(r'_tint-[0-9a-f]{6}(?: \(\d+\))?$', caseSensitive: false);
   static final RegExp _wallhavenName = RegExp(r'^wallhaven-([a-z0-9]+)(?:\.(?:jpeg|jpg|png|webp|gif))?$');
   static final RegExp _pexelsName = RegExp(r'^pexels-photo-(\d+)(?:\.(?:jpeg|jpg|png|webp|gif))?$');
 
@@ -44,18 +45,22 @@ class DownloadedWallIndex {
     required String id,
     required WallpaperSource source,
     String? ownerId,
+    bool original = true,
   }) async {
     final String requestedOwner = (ownerId ?? _ownerId()).trim();
     final String owner = requestedOwner.isEmpty ? 'guest' : requestedOwner;
     if (link.trim().isEmpty || id.trim().isEmpty || source == WallpaperSource.unknown) return;
-    final Map<String, Object?> index = _read()
-      ..[_acquisitionKey(owner: owner, link: link, id: id, source: source)] = <String, Object?>{
-        'owner': owner,
-        'link': link,
-        'id': id,
-        'source': source.wireValue,
-        'acquired': true,
-      };
+    final Map<String, Object?> index = _read();
+    final String key = _acquisitionKey(owner: owner, link: link, id: id, source: source);
+    final bool alreadyOriginal = _decode(key, index[key])?.original ?? false;
+    index[key] = <String, Object?>{
+      'owner': owner,
+      'link': link,
+      'id': id,
+      'source': source.wireValue,
+      'acquired': true,
+      'original': original || alreadyOriginal,
+    };
     try {
       await _settingsLocal.set(_key, json.encode(index));
     } catch (error, stackTrace) {
@@ -216,6 +221,27 @@ class DownloadedWallIndex {
     return null;
   }
 
+  /// Recovers the stable acquisition key of a reopened local copy, without promoting it to an original.
+  String? acquiredIdentityForLocalFile({
+    required String filePath,
+    required String id,
+    required WallpaperSource source,
+  }) {
+    final name = _withoutCopySuffix(p.basenameWithoutExtension(filePath));
+    if (!File(filePath).existsSync() || _hasAmbiguousBasename(name)) return null;
+    final links = _records()
+        .where(
+          (record) =>
+              record.owner == _currentOwner &&
+              record.id == id &&
+              record.source == source &&
+              _withoutCopySuffix(downloadBaseName(record.link)) == name,
+        )
+        .map((record) => record.link)
+        .toSet();
+    return links.length == 1 ? links.single : null;
+  }
+
   Future<File?> localFileFor({required String link, required String id, required WallpaperSource source}) async {
     final String expectedName = downloadBaseName(link);
     final bool currentIdentity = _records().any(
@@ -227,6 +253,22 @@ class DownloadedWallIndex {
     if ((!currentIdentity && !legacyIdentity) || _hasAmbiguousBasename(expectedName)) return null;
 
     return _listedFileForName(expectedName);
+  }
+
+  Future<File?> localFileForIdentity({required String id, required WallpaperSource source}) async {
+    final owner = _currentOwner;
+    final names = _records()
+        .where((record) => record.owner == owner && record.id == id && record.source == source && record.original)
+        .map((record) => downloadBaseName(record.link))
+        .toSet();
+    final files = <String, File>{};
+    for (final name in names) {
+      if (_hasAmbiguousBasename(name)) continue;
+      final file = await _listedFileForName(name);
+      if (_currentOwner != owner) return null;
+      if (file != null) files[file.path] = file;
+    }
+    return files.length == 1 ? files.values.single : null;
   }
 
   Future<File?> localFileForLink(String link) async {
@@ -288,7 +330,15 @@ class DownloadedWallIndex {
       return null;
     }
     if (source == WallpaperSource.unknown || value['acquired'] != true) return null;
-    return _AcquiredWall(owner: owner, link: link, id: id, source: source);
+    return _AcquiredWall(
+      owner: owner,
+      link: link,
+      id: id,
+      source: source,
+      original:
+          value['original'] == true ||
+          (value['original'] == null && !_historicalTintSuffix.hasMatch(downloadBaseName(link))),
+    );
   }
 
   String _acquisitionKey({
@@ -300,10 +350,17 @@ class DownloadedWallIndex {
 }
 
 class _AcquiredWall {
-  const _AcquiredWall({required this.owner, required this.link, required this.id, required this.source});
+  const _AcquiredWall({
+    required this.owner,
+    required this.link,
+    required this.id,
+    required this.source,
+    required this.original,
+  });
 
   final String owner;
   final String link;
   final String id;
   final WallpaperSource source;
+  final bool original;
 }

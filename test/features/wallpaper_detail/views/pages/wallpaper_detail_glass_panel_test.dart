@@ -97,6 +97,9 @@ void main() {
   late OfflineAssetFixture offlineAssets;
 
   setUp(() async {
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
     offlineAssets = await OfflineAssetFixture.create();
     offlineAssets.install();
     copied = null;
@@ -263,7 +266,10 @@ void main() {
     testWidgets('swiping up on the wallpaper opens the panel', (tester) async {
       await pumpDetail(tester, loaded());
 
-      await tester.drag(_wallpaper().first, const Offset(0, -200));
+      final gesture = await tester.startGesture(tester.getCenter(_wallpaper().first));
+      await gesture.moveBy(const Offset(0, -40));
+      await gesture.moveBy(const Offset(0, -160));
+      await gesture.up();
       await tester.pumpAndSettle();
 
       expect(tester.getSize(find.byType(PrismGlass)).height, closeTo(_screenHeight * 0.55, 0.01));
@@ -406,7 +412,7 @@ void main() {
           tester,
           loaded(),
           boundary: boundary,
-          theme: ThemeData(brightness: Brightness.dark, primaryColor: const Color(0xFF808080)),
+          theme: ThemeData(brightness: Brightness.dark, scaffoldBackgroundColor: const Color(0xFF808080)),
         );
         final RenderRepaintBoundary render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final ui.Image image = (await tester.runAsync(() => render.toImage()))!;
@@ -458,8 +464,12 @@ void main() {
       when(() => palette.generatePalette(any())).thenAnswer((_) async => paletteResult);
       analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
+      final prism = _MockPrismRepository();
+      when(
+        () => prism.fetchCanonicalById('prism-1'),
+      ).thenAnswer((_) async => Result.success((_prism() as PrismFeedItem).wallpaper));
       final bloc = WallpaperDetailBloc(
-        _MockPrismRepository(),
+        prism,
         _MockWallhavenRepository(),
         _MockPexelsRepository(),
         views,
@@ -479,16 +489,26 @@ void main() {
         ),
       );
       await tester.pump();
-      await waitForRealIo(tester, () {
-        final WallpaperDetailState state = bloc.state;
-        final bool paletteReady =
-            !requirePalette || (state is WallpaperDetailLoaded && state.colors?.isNotEmpty == true);
-        final bool imageReady = find
-            .descendant(of: _wallpaper(), matching: find.byType(RawImage))
+      await waitForRealIo(
+        tester,
+        () =>
+            bloc.state is WallpaperDetailLoaded &&
+            (!requirePalette || (bloc.state as WallpaperDetailLoaded).colors?.isNotEmpty == true),
+        reason: 'the canonical wallpaper and requested palette to load',
+        pumpDuration: const Duration(milliseconds: 16),
+      );
+      await waitForRealIo(
+        tester,
+        () => find
+            .descendant(
+              of: _wallpaper(),
+              matching: find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null),
+            )
             .evaluate()
-            .isNotEmpty;
-        return paletteReady && imageReady;
-      }, reason: 'the wallpaper palette and cached preview image to load');
+            .isNotEmpty,
+        reason: 'the cached public thumbnail to decode into a real image',
+        pumpDuration: const Duration(milliseconds: 16),
+      );
       expect(
         bloc.state,
         isA<WallpaperDetailLoaded>().having(
@@ -550,33 +570,19 @@ void main() {
     ) async {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal, Colors.red], accent: Colors.teal));
       await openPanel(tester);
-      await waitForRealIo(
-        tester,
-        () =>
-            find
-                .descendant(
-                  of: find.ancestor(of: find.bySemanticsLabel('Original wallpaper colors'), matching: find.byType(Row)),
-                  matching: find.byWidgetPredicate((Widget widget) {
-                    if (widget is! Image) return false;
-                    final ImageProvider provider = widget.image is ResizeImage
-                        ? (widget.image as ResizeImage).imageProvider
-                        : widget.image;
-                    return provider is FileImage;
-                  }),
-                )
-                .evaluate()
-                .length ==
-            3,
-        reason: 'the three local palette swatch images to load',
-      );
-
       final Finder originalSwatch = find.bySemanticsLabel('Original wallpaper colors');
       final Finder swatchRow = find.ancestor(of: originalSwatch, matching: find.byType(Row));
-      final List<Image> swatches = tester
-          .widgetList<Image>(find.descendant(of: swatchRow, matching: find.byType(Image)))
-          .toList();
+      final Finder thumbnails = find.descendant(of: swatchRow, matching: find.byType(CachedNetworkImage));
+      await waitForRealIo(
+        tester,
+        () => thumbnails.evaluate().length == 3,
+        reason: 'the three public thumbnail palette swatches to mount',
+        pumpDuration: const Duration(milliseconds: 16),
+      );
+
+      final List<CachedNetworkImage> swatches = tester.widgetList<CachedNetworkImage>(thumbnails).toList();
       expect(swatches, hasLength(3));
-      expect(swatches.every((swatch) => swatch.image is FileImage), isTrue);
+      expect(swatches.map((swatch) => swatch.imageUrl), everyElement('https://img.test/thumb.jpg'));
       expect(swatches.map((swatch) => (swatch.color, swatch.colorBlendMode)), <Object>[
         (null, null),
         (Colors.teal, BlendMode.hue),
