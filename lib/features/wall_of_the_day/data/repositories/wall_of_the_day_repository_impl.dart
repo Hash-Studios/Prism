@@ -10,6 +10,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
@@ -79,7 +80,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       final wallResult = await _prismWallpaperRepository.fetchByDocumentId(pointer.wallDocumentId);
       return await wallResult.fold<Future<Result<WallOfTheDayEntity?>>>(
         onSuccess: (wallpaper) async {
-          if (wallpaper == null || wallpaper.fullUrl.isEmpty || wallpaper.review != true) {
+          if (wallpaper == null || !hasPrismPreview(wallpaper) || wallpaper.review != true) {
             await _invalidateToday();
             return Result.success(null);
           }
@@ -298,7 +299,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       if (featuredAt == null || !_isSameCalendarDayUtc(featuredAt, todayUtc)) return null;
       if (wallDocumentId != null && payload['documentId'] != wallDocumentId) return null;
       final FeedItemEntity? item = decodeFeedItem(toJsonMap(payload['item']));
-      if (item is! PrismFeedItem || item.wallpaper.fullUrl.isEmpty || item.wallpaper.review != true) return null;
+      if (item is! PrismFeedItem || !hasPrismPreview(item.wallpaper) || item.wallpaper.review != true) return null;
       final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(item.wallpaper);
       return _visibleForCaller(
         entity,
@@ -393,7 +394,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
     final Result<PrismWallpaper?> wall = await _prismWallpaperRepository.fetchByDocumentId(wallDocumentId);
     final PrismWallpaper? wallpaper = wall.data;
     if (wall.isFailure) return Result.error(wall.failure!);
-    if (wallpaper == null || wallpaper.review != true || wallpaper.fullUrl.isEmpty) return Result.success(null);
+    if (wallpaper == null || wallpaper.review != true || !hasPrismPreview(wallpaper)) return Result.success(null);
     return Result.success(WotdPastPick(date: date, wallpaper: wallpaper));
   }
 

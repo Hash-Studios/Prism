@@ -4,6 +4,7 @@ import {onDocumentCreated, onDocumentWritten} from "firebase-functions/v2/firest
 import {db, int, REGION} from "./common";
 import {dayKey, grantXp, loadEconomy, weekBounds, weekKey} from "./economy";
 import {rankRewardsFor} from "./rankRewards";
+import {stored} from "./ownedAssetDelivery";
 
 type Data = admin.firestore.DocumentData;
 type Snapshot = admin.firestore.DocumentSnapshot;
@@ -54,27 +55,83 @@ function asset(data: Data, prefix: "wallpaper" | "thumb"): Asset | null {
 }
 
 /** Also inspect conflicting records, including legacy SHA-keyed records, instead of trusting a copied UID. */
-async function uploadOwner(data: Data, tx?: admin.firestore.Transaction): Promise<string | null> {
-  const assets = [asset(data, "wallpaper"), asset(data, "thumb")];
+export async function verifiedUploadOwner(canonical: Snapshot, tx?: admin.firestore.Transaction): Promise<string | null> {
+  const canonicalData = canonical.data();
+  if (!canonicalData) return null;
+  let data: Data = canonicalData;
+  let privateOriginal: Asset | undefined;
+  let boundOwner: string | undefined;
+  let retainedAssets: Data[] | undefined;
+  if (data.originalProtected === true) {
+    if (!validId(data.id) || !canonical.createTime || data.wallpaper_url !== "" ||
+      ["wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"].some((field) => data[field] !== "")) return null;
+    const ref = db.collection("ownedAssets").doc(data.id);
+    const manifest = (tx ? await tx.get(ref) : await ref.get()).data();
+    if (manifest?.status !== "ready" || !["github", "owned"].includes(manifest.provenance?.kind) ||
+      !stored(manifest.original) || !stored(manifest.thumb) ||
+      manifest.canonicalPath !== canonical.ref.path ||
+      manifest.incarnation !== canonical.createTime.toMillis() ||
+      manifest.incarnationNanos !== canonical.createTime.nanoseconds ||
+      manifest.original?.generation !== data.originalGeneration) return null;
+    if (!validUid(manifest.provenance.uid)) return null;
+    boundOwner = manifest.provenance.uid;
+    retainedAssets = [manifest.original, manifest.thumb];
+    if (manifest.provenance.kind === "owned") {
+      const original = manifest.original;
+      if (manifest.originalUrl !== "" || original.repo !== text(process.env.GH_REPO_WALLS) ||
+        typeof original.path !== "string" || !original.path || original.path.length > 1024 || original.path.startsWith("/") ||
+        original.path.includes("\\") || original.path.split("/").some((part: string) => !part || part === "." || part === "..") ||
+        typeof original.sha !== "string" || !/^[a-f0-9]{40}$/.test(original.sha)) return null;
+      privateOriginal = {repo: original.repo, path: original.path, sha: original.sha, url: ""};
+    }
+    data = {...data, wallpaper_url: manifest.originalUrl, wallpaper_thumb: manifest.thumbUrl,
+      wallpaper_path: manifest.original?.path, wallpaper_sha: manifest.original?.sha,
+      thumb_path: manifest.thumb?.path, thumb_sha: manifest.thumb?.sha};
+  }
+  const assets = [privateOriginal ?? asset(data, "wallpaper"), asset(data, "thumb")];
   if (assets.some((value) => value === null)) return null;
   let owner: string | null = null;
-  for (const file of assets as Asset[]) {
-    const query = db.collection("githubUploads").where("path", "==", file.path).limit(8);
-    const rows = tx ? await tx.get(query) : await query.get();
-    if (rows.size >= 8) return null;
-    const records = rows.docs.filter((doc) => doc.data().repo === file.repo);
-    const exact = records.find((doc) => doc.id === `file_${hash(`${file.repo}\0${file.path}\0${file.sha}`)}` &&
+  for (const [index, file] of (assets as Asset[]).entries()) {
+    const owned = file === privateOriginal;
+    const keyPrefix = owned ? "owned_" : "";
+    let query = db.collection("githubUploads").where("path", "==", file.path)
+      .orderBy(admin.firestore.FieldPath.documentId()).limit(8);
+    const records: admin.firestore.QueryDocumentSnapshot[] = [];
+    while (true) {
+      const rows = tx ? await tx.get(query) : await query.get();
+      records.push(...rows.docs.filter((doc) => doc.data().repo === file.repo &&
+        (owned ? doc.data().sourceKind === "owned" : doc.data().sourceKind !== "owned")));
+      if (records.length >= 8) return null;
+      if (rows.size < 8) break;
+      query = query.startAfter(rows.docs[rows.docs.length - 1]);
+    }
+    const exact = records.find((doc) => doc.id === `${keyPrefix}file_${hash(`${file.repo}\0${file.path}\0${file.sha}`)}` &&
       doc.data().sha === file.sha);
     const uid = exact?.data().uid;
     if (!validUid(uid) || records.some((doc) => doc.data().uid !== uid) || owner !== null && owner !== uid) return null;
-    const intentRef = db.collection("githubUploadIntents").doc(`path_${hash(`${file.repo}\0${file.path}`)}`);
+    const intentRef = db.collection("githubUploadIntents").doc(`${keyPrefix}path_${hash(`${file.repo}\0${file.path}`)}`);
     const intent = (tx ? await tx.get(intentRef) : await intentRef.get()).data();
     const content = intent?.response?.content;
     if (intent?.status !== "complete" || intent.uid !== uid || intent.repo !== file.repo || intent.path !== file.path ||
       intent.blobSha !== file.sha || content?.path !== file.path || content?.sha !== file.sha || content?.download_url !== file.url) return null;
+    if (!owned && intent.sourceKind === "owned") return null;
+    if (owned && (exact?.data().sourceKind !== "owned" || intent.sourceKind !== "owned" ||
+      exact.data().retainedAsset?.generation !== data.originalGeneration ||
+      intent.retainedAsset?.generation !== data.originalGeneration)) return null;
+    if (retainedAssets) {
+      const retained = retainedAssets[index];
+      const proofs = [exact?.data().retainedAsset,
+        ...(owned || intent.retainedAsset !== undefined ? [intent.retainedAsset] : [])];
+      if (!retained || retained.uid !== uid || retained.repo !== file.repo || retained.path !== file.path ||
+        retained.sha !== file.sha || (retained.sourceKind === "owned") !== owned ||
+        retained.object !== `${owned ? "private-originals" : "retained"}/${hash(`${file.repo}\0${file.path}\0${file.sha}`)}` ||
+        proofs.some((proof) => !proof ||
+          ["repo", "path", "sha", "uid", "bucket", "object", "generation", "sha256", "sourceKind"]
+            .some((field) => proof[field] !== retained[field]))) return null;
+    }
     owner = uid;
   }
-  return owner;
+  return boundOwner !== undefined && boundOwner !== owner ? null : owner;
 }
 
 async function authUser(uid: string): Promise<admin.auth.UserRecord | null> {
@@ -114,7 +171,7 @@ async function recordCreator(source: Source): Promise<void> {
   if (canonical.size !== 1 || !approvedWall(canonical.docs[0].data())) return;
   const candidate = canonical.docs[0];
   if (!memberUid && (candidate.ref.path !== snapshot.ref.path || !sameIncarnation(candidate, snapshot))) return;
-  const owner = await uploadOwner(candidate.data());
+  const owner = await verifiedUploadOwner(candidate);
   if (!owner || memberUid === owner) return;
   const [creatorAuth, memberAuth, binding] = await Promise.all([
     authUser(owner), memberUid ? authUser(memberUid) : Promise.resolve(null), receiptRef(logicalId).get(),
@@ -130,7 +187,7 @@ async function recordCreator(source: Source): Promise<void> {
     if (rows.size !== 1) return;
     const wall = rows.docs[0];
     if (!approvedWall(wall.data()) || wall.ref.path !== candidate.ref.path ||
-      !memberUid && !sameIncarnation(wall, snapshot) || await uploadOwner(wall.data(), tx) !== owner) return;
+      !memberUid && !sameIncarnation(wall, snapshot) || await verifiedUploadOwner(wall, tx) !== owner) return;
     const [receipt, creator, privateSnap, creatorBarrier] = await Promise.all([
       tx.get(receiptRef(logicalId)), tx.get(creatorRef), tx.get(privateRef), tx.get(barrierRef(owner)),
     ]);
@@ -219,8 +276,11 @@ export const onCreatorWallWritten = onDocumentWritten(
   async (event) => {
     const after = event.data?.after;
     const data = after?.data();
+    const before = event.data?.before.data();
+    const becameProtected = data?.originalProtected === true && before?.originalProtected !== true;
     if (!after?.exists || !data || !validId(data.id) || data.review !== true ||
-      event.data?.before.data()?.review === true || after.ref.id !== event.params.wallId) return;
+      (before?.review === true && !becameProtected) ||
+      after.ref.id !== event.params.wallId) return;
     await recordCreator({logicalId: data.id, snapshot: after});
   },
 );

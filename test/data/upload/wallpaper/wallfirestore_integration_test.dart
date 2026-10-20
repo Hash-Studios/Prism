@@ -27,6 +27,7 @@ import '../../../support/in_memory_local_store.dart';
 
 class _FakeFirestorePlatform extends FirebaseFirestorePlatform {
   final List<String> updatedPaths = <String>[];
+  Map<String, dynamic>? savedWall;
   Completer<void>? wallWriteStarted;
   Completer<void>? allowWallWrite;
   Completer<void>? userUpdateAttempted;
@@ -54,6 +55,7 @@ class _FakeDocumentReference extends DocumentReferencePlatform {
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
     final _FakeFirestorePlatform platform = firestore as _FakeFirestorePlatform;
     if (path.startsWith('walls/')) {
+      platform.savedWall = Map<String, dynamic>.of(data);
       platform.wallWriteStarted?.complete();
       await platform.allowWallWrite?.future;
     }
@@ -140,6 +142,7 @@ void main() {
     app_state.prismUser = user;
     CoinsService.instance.resetSession();
     firestore.updatedPaths.clear();
+    firestore.savedWall = null;
     firestore.failUserUpdate = false;
     firestore.wallWriteStarted = null;
     firestore.allowWallWrite = null;
@@ -160,6 +163,28 @@ void main() {
       pathProviderChannel,
       null,
     );
+  });
+
+  test('private upload persists an empty original and its opaque original path', () async {
+    const thumb = 'https://example.test/preview.jpg';
+    final result = await createRecord(
+      'protected-wall',
+      'Prism',
+      thumb,
+      '',
+      null,
+      null,
+      null,
+      null,
+      null,
+      false,
+      wallpaperPath: 'private/original.jpg',
+      wallpaperSha: 'original-sha',
+    );
+    expect(result, WallSubmissionResult.submitted);
+    expect(firestore.savedWall!['wallpaper_url'], isEmpty);
+    expect(firestore.savedWall!['wallpaper_thumb'], thumb);
+    expect(firestore.savedWall!.values, contains('private/original.jpg'));
   });
 
   test('quota sync failure does not fail createRecord after the wall has been saved', () async {

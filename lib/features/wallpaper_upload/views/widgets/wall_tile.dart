@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -186,14 +184,17 @@ Future<void> _deleteDoc({
   Map<String, dynamic>? pendingWallData,
 }) async {
   try {
-    await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
     // A pending wall still holds a weekly upload slot. Deleting its files gives the slot back.
-    if (pendingWallData != null) unawaited(deleteWallFiles(pendingWallData));
+    if (pendingWallData != null) await deleteWallFiles(pendingWallData, throwOnFailure: true);
+    await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
     toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
     toasts.error(
       e.code == 'permission-denied' ? l10n.wallpaperUploadDeletePermissionError : l10n.wallpaperUploadDeleteError,
     );
+  } catch (error, stackTrace) {
+    logger.e('review file cleanup failed ($sourceTag)', error: error, stackTrace: stackTrace);
+    toasts.error(l10n.wallpaperUploadDeleteError);
   }
 }
