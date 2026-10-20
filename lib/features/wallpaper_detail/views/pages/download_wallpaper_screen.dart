@@ -173,7 +173,7 @@ class _ActionPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: PrismSpace.sm),
-              SetWallpaperButton(url: file.path, primary: true),
+              SetWallpaperButton(url: file.path, wallpaperSource: WallpaperSource.downloaded, primary: true),
             ],
           ),
         ),

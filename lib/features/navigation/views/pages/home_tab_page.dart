@@ -86,9 +86,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
+  bool _shortcutUpdateInFlight = false;
   String? _shortcutLocale;
-  String? _pendingShortcutLocale;
-  int _shortcutRequest = 0;
   StreamSubscription<String>? _fcmTokenSubscription;
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<FavouritesSyncUpdate>? _favouritesSubscription;
@@ -197,25 +196,34 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final AppLocalizations l10n = context.l10n;
-    final String locale = l10n.localeName;
-    if ((_shortcutLocale == locale && _pendingShortcutLocale == null) || _pendingShortcutLocale == locale) return;
-    _pendingShortcutLocale = locale;
-    final int request = ++_shortcutRequest;
-    unawaited(_setShortcutItems(locale, l10n, request));
+    unawaited(_reconcileShortcutItems());
   }
 
-  Future<void> _setShortcutItems(String locale, AppLocalizations l10n, int request) async {
+  Future<void> _reconcileShortcutItems() async {
+    if (_shortcutUpdateInFlight) return;
+    _shortcutUpdateInFlight = true;
     try {
-      await const QuickActions().setShortcutItems(
-        prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
-      );
-      if (!mounted || request != _shortcutRequest || context.l10n.localeName != locale) return;
-      _shortcutLocale = locale;
-    } catch (error, stackTrace) {
-      logger.w('Failed to update quick action shortcuts.', error: error, stackTrace: stackTrace);
+      while (mounted) {
+        final AppLocalizations l10n = context.l10n;
+        final String locale = l10n.localeName;
+        if (_shortcutLocale == locale) return;
+
+        _shortcutLocale = null;
+        try {
+          await const QuickActions().setShortcutItems(
+            prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android, l10n: l10n),
+          );
+        } catch (error, stackTrace) {
+          logger.w('Failed to update localized quick actions.', error: error, stackTrace: stackTrace);
+          if (!mounted || context.l10n.localeName == locale) return;
+          continue;
+        }
+
+        if (!mounted) return;
+        if (context.l10n.localeName == locale) _shortcutLocale = locale;
+      }
     } finally {
-      if (request == _shortcutRequest) _pendingShortcutLocale = null;
+      _shortcutUpdateInFlight = false;
     }
   }
 

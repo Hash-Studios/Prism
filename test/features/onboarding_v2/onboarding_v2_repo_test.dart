@@ -45,6 +45,34 @@ void main() {
     expect(result.data, isEmpty);
   });
 
+  test('protected creator previews use thumbnails and never fall back to an original', () async {
+    final config = _MockRemoteConfig();
+    when(() => config.getString(any())).thenReturn('[{"email":"artist@example.test","rank":1}]');
+    repository = OnboardingV2RepositoryImpl(firestore, settings, remoteConfig: config);
+    firestore.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{
+      'safe': <String, dynamic>{
+        'email': 'artist@example.test',
+        'review': true,
+        'originalProtected': true,
+        'wallpaper_url': '',
+        'wallpaper_thumb': 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/safe',
+      },
+      'missing-thumb': <String, dynamic>{
+        'email': 'artist@example.test',
+        'review': true,
+        'originalProtected': true,
+        'wallpaper_url': 'https://legacy.example.test/original.jpg',
+      },
+    };
+    firestore.onQuery = (spec) => spec.collection == FirebaseCollections.walls
+        ? firestore.docs[FirebaseCollections.walls]!.entries.map((entry) => (id: entry.key, data: entry.value)).toList()
+        : <FakeDocRow>[];
+    final result = await repository.fetchStarterPack();
+    expect(result.data!.single.previewUrls, <String>[
+      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/safe',
+    ]);
+  });
+
   test('a user doc without the onboarding map is not completed', () async {
     firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
       'u1': <String, dynamic>{

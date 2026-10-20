@@ -10,10 +10,19 @@ import {
   sendWallOfTheDayBuckets,
   wallOfTheDay,
   wotdBucketTopic,
+  wallShareUrl,
 } from "../wallOfTheDay";
 
 const scheduled = (at = new Date()) => ({jobName: "t", scheduleTime: at.toISOString()}) satisfies ScheduledEvent;
 const PREMIUM = ["space", "abstract"];
+
+test("wall shares contain identity and preview only", () => {
+  const link = new URL(wallShareUrl({wallId: "w1", thumbnailUrl: "https://example.com/thumb.jpg"}));
+  assert.equal(link.searchParams.get("id"), "w1");
+  assert.equal(link.searchParams.get("thumb"), "https://example.com/thumb.jpg");
+  assert.equal(link.searchParams.has("url"), false);
+  assert.equal(new URL(wallShareUrl({wallId: "w1", thumbnailUrl: ""})).searchParams.get("thumb"), "");
+});
 
 function assertLocalizedTopicFanout(actual: string[], legacyTopics: string[]): void {
   assert.deepEqual(

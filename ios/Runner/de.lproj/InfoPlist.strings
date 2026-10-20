@@ -1,0 +1,3 @@
+"NSPhotoLibraryUsageDescription" = "Prism benötigt Zugriff auf deine Fotomediathek, damit du Bilder für dein Profil und deine Setups auswählen kannst.";
+"NSPhotoLibraryAddUsageDescription" = "Prism benötigt die Berechtigung, um Hintergrundbilder in deiner Fotomediathek zu sichern.";
+"NSCameraUsageDescription" = "Prism benötigt Kamerazugriff, damit du ein Foto für dein Profilbild aufnehmen kannst.";

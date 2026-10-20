@@ -60,6 +60,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);
+    // Let the paywall's RevenueCat load timeout run out.
+    await tester.pump(const Duration(seconds: 10));
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

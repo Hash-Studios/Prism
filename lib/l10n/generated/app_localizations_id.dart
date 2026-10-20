@@ -577,7 +577,7 @@ class AppLocalizationsId extends AppLocalizations {
     final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
-    return '$recipientName akan mendapat koleksi premium dan wallpaper premium hingga besok. Biayanya $priceString koin.';
+    return '$recipientName akan mendapat koleksi premium dan wallpaper premium selama 24 jam. Biayanya $priceString koin.';
   }
 
   @override
@@ -6827,7 +6827,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifPushDropLiveTitle => 'Drop baru telah dimulai';
 
   @override
-  String get notifPushGiftReceivedBody => 'Koleksi Premium dan wallpaper Premium tersedia hingga besok.';
+  String get notifPushGiftReceivedBody => 'Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.';
 
   @override
   String notifPushGiftReceivedTitle(String senderName) {
@@ -8170,10 +8170,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperFilterHue => 'Corak';
 
   @override
-  String get wallpaperFilterLightness => 'Kecerahan';
+  String get wallpaperFilterLightness => 'Tingkat terang';
 
   @override
-  String get wallpaperFilterLightnessUnavailable => 'Pengaturan kecerahan tidak tersedia di perangkat ini.';
+  String get wallpaperFilterLightnessUnavailable => 'Pengaturan tingkat terang tidak tersedia di perangkat ini.';
 
   @override
   String get wallpaperFilterNeedCoins => 'Koin diperlukan untuk filter premium';

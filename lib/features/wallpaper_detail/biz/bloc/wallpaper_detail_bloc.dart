@@ -64,6 +64,22 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   }
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
+    if (event.entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(event.entity)) {
+      await _onLoadFromId(
+        LoadFromId(
+          wallId: event.entity.id,
+          source: event.entity.source,
+          thumbnailUrl: event.entity.thumbnailUrl,
+          localFilePath: event.localFilePath,
+        ),
+        emit,
+        allowDocumentIdFallback: switch (event.entity) {
+          PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
+          _ => false,
+        },
+      );
+      return;
+    }
     emit(WallpaperDetailLoaded(entity: event.entity));
     _fetchAndUpdateViews(event.entity);
     await Future.wait([
@@ -72,10 +88,18 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     ]);
   }
 
-  Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
+  Future<void> _onLoadFromId(
+    LoadFromId event,
+    Emitter<WallpaperDetailState> emit, {
+    bool allowDocumentIdFallback = true,
+  }) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
-    final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
+    final result = await _fetchWallpaper(
+      wallId: event.wallId,
+      source: event.source,
+      allowDocumentIdFallback: allowDocumentIdFallback,
+    );
     if (_closing) return;
     final failure = result.failure;
     if (failure != null) {
@@ -246,7 +270,19 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     return unique;
   }
 
-  Future<Result<FeedItemEntity>> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
+  Future<Result<FeedItemEntity>> _fetchWallpaper({
+    required String wallId,
+    required WallpaperSource source,
+    bool allowDocumentIdFallback = false,
+  }) async {
+    if (BundledWallpapers.isStarterIdentity(wallId, source)) {
+      try {
+        final starters = await BundledWallpapers.load();
+        return Result.success(starters.firstWhere((item) => item.id == wallId));
+      } catch (error) {
+        return Result.error(UnknownFailure('$error'));
+      }
+    }
     Result<FeedItemEntity> wrap<W>(Result<W?> result, FeedItemEntity Function(W wallpaper) toEntity) {
       return result.fold(
         onFailure: Result.error,
@@ -256,9 +292,15 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       );
     }
 
+    Future<Result<PrismWallpaper?>> fetchPrism() async {
+      final canonical = await _prismRepository.fetchCanonicalById(wallId);
+      if (canonical.isFailure || canonical.data != null || !allowDocumentIdFallback) return canonical;
+      return _prismRepository.fetchCanonicalByDocumentId(wallId);
+    }
+
     Future<Result<FeedItemEntity>> fetchRemote() async => switch (source) {
       WallpaperSource.prism => wrap(
-        await _prismRepository.fetchById(wallId),
+        await fetchPrism(),
         (wallpaper) => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
       ),
       WallpaperSource.wallhaven => wrap(
@@ -271,6 +313,14 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       ),
       _ => Result.error(ValidationFailure('Unsupported source: $source')),
     };
+
+    if (source == WallpaperSource.prism && !BundledWallpapers.isStarterIdentity(wallId, source)) {
+      try {
+        return await fetchRemote().timeout(_wallpaperLookupTimeout);
+      } catch (error) {
+        return Result.error(NetworkFailure('$error'));
+      }
+    }
 
     FeedItemEntity? cached;
     try {

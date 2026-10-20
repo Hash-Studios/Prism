@@ -4,6 +4,15 @@ Indonesian uses Prism's merged localisation foundation from #519
 (`bdd3e48c3543c81c007ac13d0ee896f9128c048a`). English remains the preferred
 fallback. The generated delegate registers `id` and resolves `id_ID`.
 
+## Current integration status
+
+The shared English localization fixes documented below are integrated in
+master baseline `4268b2459`; Indonesian does not depend on an open Spanish,
+Hindi, German, or Portuguese PR. That baseline has six catalogs (`en`, `de`,
+`es`, `hi`, `pt`, `pt_BR`); adding Indonesian makes seven. Current merge
+generation, focused-check, and hosted-CI results are recorded on PR #595.
+No full local `make ci` run is claimed here.
+
 ## Coverage
 
 The Indonesian ARB covers all 2,502 canonical English messages, with source
@@ -26,33 +35,35 @@ Identifiers, brands, creator content, storage paths and backend values remain
 unchanged. Indonesian uses Anda, kreator, koin, akses and rangkaian harian.
 
 The shared indirect-string fix `785403a67e469065de4d80ec56a2ae6baf0697aa`
-is cherry-picked with provenance. It fixes AI status and remix hints, coin
-warnings, quick actions, tile categories, creator ledger labels and the
-onboarding AI style chip. This PR does not depend on Spanish translations or
-introduce a second extraction system.
+was cherry-picked during the Indonesian locale work. It fixes AI status and
+remix hints, coin warnings, quick actions, tile categories, creator ledger
+labels and the onboarding AI style chip. This PR does not depend on Spanish
+translations or introduce a second extraction system.
 
-Shared follow-up `0b562d29baa5d54ea8bc2d2c3dc39ef2964e755f` is also
-cherry-picked with provenance. It adds translated AI prompt pools, sign-in
-feature labels and sharing copy, and localizes upload-size and slider displays
-without changing persisted values. All 92 additional messages are translated.
-Shared fix `133170f1023d5f730c60f3257101c33784c9b7d1` also localizes
+Shared follow-up `0b562d29baa5d54ea8bc2d2c3dc39ef2964e755f` was also
+cherry-picked during the Indonesian locale work. It adds translated AI prompt
+pools, sign-in feature labels and sharing copy, and localizes upload-size and
+slider displays without changing persisted values. All 92 additional messages
+are translated.
+Shared fix `133170f1023d5f730c60f3257101c33784c9b7d1` also localized
 collection-preview spend failures using the existing catalogue.
-Shared fix `e6f66cd8d2a4b95f562eeda30e026564e5162d38` resolves background
+Shared fix `e6f66cd8d2a4b95f562eeda30e026564e5162d38` resolved background
 messages from the full preferred-language list, strengthens the indirect-string
 guard and adds the translated filter-export failure label.
 
-Shared follow-up `cb46d861373ceac7e442d8d42100f96d708696c0` guards
-asynchronous onboarding prompt loads after Back or a newer attempt. Its
-regression test is reused; its three English expectation updates were already
-present. This source fix is cherry-picked, so there is no runtime dependency on
-unmerged PR #597. Spanish-only gift wording is not included.
+Historically, shared follow-up `cb46d861373ceac7e442d8d42100f96d708696c0`
+was reused to guard asynchronous onboarding prompt loads after Back or a newer
+attempt. Its regression test is reused; its three English expectation updates
+were already present. PR #597 has since merged into master, so this historical
+reuse creates no open-PR dependency. Spanish-only gift wording is not included.
 
 Shared prompt persistence fixes `8d0498874`, `1085c5ab5` and `fef381070`
-are cherry-picked with provenance. Explicit Shuffle, Scene idea and style
-choices now persist through draft hydration and locale changes, like manual
-edits. Untouched automatic examples remain unsaved and can follow the locale.
-The portable regression selects a supported non-English locale. This adds no
-catalogue messages and does not require Spanish resources or an unmerged PR.
+were cherry-picked during the Indonesian locale work. Explicit Shuffle, Scene
+idea and style choices now persist through draft hydration and locale changes,
+like manual edits. Untouched automatic examples remain unsaved and can follow
+the locale. The portable regression selects a supported non-English locale.
+This adds no catalogue messages and does not require Spanish resources or an
+unmerged PR.
 
 ## Reproducible checks
 

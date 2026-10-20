@@ -834,7 +834,7 @@
   "@accountGiftLimitReached": {
     "description": "Message shown when a user reaches the daily gift limit."
   },
-  "accountGiftPassMessage": "{recipientName} akan mendapat koleksi premium dan wallpaper premium hingga besok. Biayanya {price} koin.",
+  "accountGiftPassMessage": "{recipientName} akan mendapat koleksi premium dan wallpaper premium selama 24 jam. Biayanya {price} koin.",
   "@accountGiftPassMessage": {
     "description": "Gift pass sheet explanation.",
     "placeholders": {
@@ -5894,7 +5894,7 @@
     }
   },
   "notifPushDropLiveTitle": "Drop baru telah dimulai",
-  "notifPushGiftReceivedBody": "Koleksi Premium dan wallpaper Premium tersedia hingga besok.",
+  "notifPushGiftReceivedBody": "Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.",
   "notifPushGiftReceivedTitle": "{senderName} mengirimi Anda akses Pro selama 24 jam",
   "@notifPushGiftReceivedTitle": {
     "placeholders": {
@@ -7343,11 +7343,11 @@
   "@wallpaperFilterHue": {
     "description": "Label for the hue adjustment slider."
   },
-  "wallpaperFilterLightness": "Kecerahan",
+  "wallpaperFilterLightness": "Tingkat terang",
   "@wallpaperFilterLightness": {
     "description": "Label for the lightness adjustment slider."
   },
-  "wallpaperFilterLightnessUnavailable": "Pengaturan kecerahan tidak tersedia di perangkat ini.",
+  "wallpaperFilterLightnessUnavailable": "Pengaturan tingkat terang tidak tersedia di perangkat ini.",
   "@wallpaperFilterLightnessUnavailable": {
     "description": "Wallpaper interface text: wallpaperFilterLightnessUnavailable."
   },

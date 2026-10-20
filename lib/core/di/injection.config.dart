@@ -453,13 +453,6 @@ _i174.GetIt initGetIt(
   gh.factory<_i896.QuestsBloc>(
     () => _i896.QuestsBloc(gh<_i651.QuestsRepository>()),
   );
-  gh.lazySingleton<_i643.FavouriteWallsRepository>(
-    () => _i176.FavouriteWallsRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i640.FavoritesLocalDataSource>(),
-      gh<_i672.GuestFavouritesStore>(),
-    ),
-  );
   gh.factory<_i39.SearchDiscoveryBloc>(
     () => _i39.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
   );
@@ -494,13 +487,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
     ),
   );
-  gh.lazySingleton<_i99.FavouritesSyncService>(
-    () => _i99.FavouritesSyncService(
-      gh<_i349.FirestoreClient>(),
-      gh<_i640.FavoritesLocalDataSource>(),
-      gh<_i649.GuestFavouritesMerger>(),
-    ),
-  );
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -515,6 +501,14 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i750.SearchUsersUseCase>(
     () => _i750.SearchUsersUseCase(gh<_i204.UserSearchRepository>()),
+  );
+  gh.lazySingleton<_i72.TrendingRepository>(
+    () => _i149.TrendingRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
   );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
     () => _i759.PrismWallpaperRepositoryImpl(
@@ -541,18 +535,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
   );
-  gh.lazySingleton<_i406.FetchFavouriteWallsUseCase>(
-    () =>
-        _i406.FetchFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
-  );
-  gh.lazySingleton<_i406.ToggleFavouriteWallUseCase>(
-    () =>
-        _i406.ToggleFavouriteWallUseCase(gh<_i643.FavouriteWallsRepository>()),
-  );
-  gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
-    () =>
-        _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
-  );
   gh.factory<_i62.WallpaperHistoryBloc>(
     () => _i62.WallpaperHistoryBloc(gh<_i121.WallpaperHistoryStore>()),
   );
@@ -567,13 +549,6 @@ _i174.GetIt initGetIt(
       gh<_i937.LoadThemeUseCase>(),
       gh<_i937.UpdateThemeUseCase>(),
       gh<_i428.ThemeRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i72.TrendingRepository>(
-    () => _i149.TrendingRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i954.FeedCacheLocalDataSource>(),
-      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.lazySingleton<_i886.FetchTrendingUseCase>(
@@ -605,13 +580,6 @@ _i174.GetIt initGetIt(
       gh<_i289.PrismWallSearch>(),
     ),
   );
-  gh.factory<_i782.FavouriteWallsBloc>(
-    () => _i782.FavouriteWallsBloc(
-      gh<_i406.FetchFavouriteWallsUseCase>(),
-      gh<_i406.ToggleFavouriteWallUseCase>(),
-      gh<_i406.ClearFavouriteWallsUseCase>(),
-    ),
-  );
   gh.factory<_i618.WallpaperDetailBloc>(
     () => _i618.WallpaperDetailBloc(
       gh<_i727.PrismWallpaperRepository>(),
@@ -622,21 +590,16 @@ _i174.GetIt initGetIt(
       gh<_i364.GetWallpaperSetCountUseCase>(),
     ),
   );
-  gh.lazySingleton<_i567.PersonalizedFeedRepository>(
-    () => _i903.PersonalizedFeedRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i954.FeedCacheLocalDataSource>(),
-      gh<_i1073.SettingsLocalDataSource>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i112.UserBlockRepository>(),
-      gh<_i643.FavouriteWallsRepository>(),
-      gh<_i731.TasteSignalStore>(),
-      gh<_i535.FeedImpressionStore>(),
-    ),
-  );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
+  );
+  gh.lazySingleton<_i643.FavouriteWallsRepository>(
+    () => _i176.FavouriteWallsRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i640.FavoritesLocalDataSource>(),
+      gh<_i672.GuestFavouritesStore>(),
+      gh<_i727.PrismWallpaperRepository>(),
+    ),
   );
   gh.factory<_i462.LatestFeedBloc>(
     () => _i462.LatestFeedBloc(gh<_i727.PrismWallpaperRepository>()),
@@ -687,16 +650,25 @@ _i174.GetIt initGetIt(
       feedCacheLocal: gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
-  gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
-    () => _i212.FetchPersonalizedFeedUseCase(
-      gh<_i567.PersonalizedFeedRepository>(),
+  gh.lazySingleton<_i99.FavouritesSyncService>(
+    () => _i99.FavouritesSyncService(
+      gh<_i349.FirestoreClient>(),
+      gh<_i640.FavoritesLocalDataSource>(),
+      gh<_i649.GuestFavouritesMerger>(),
+      gh<_i727.PrismWallpaperRepository>(),
     ),
   );
-  gh.factory<_i567.FollowingFeedBloc>(
-    () => _i567.FollowingFeedBloc(gh<_i567.PersonalizedFeedRepository>()),
+  gh.lazySingleton<_i406.FetchFavouriteWallsUseCase>(
+    () =>
+        _i406.FetchFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
-  gh.factory<_i226.PopularFeedBloc>(
-    () => _i226.PopularFeedBloc(gh<_i567.PersonalizedFeedRepository>()),
+  gh.lazySingleton<_i406.ToggleFavouriteWallUseCase>(
+    () =>
+        _i406.ToggleFavouriteWallUseCase(gh<_i643.FavouriteWallsRepository>()),
+  );
+  gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
+    () =>
+        _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
@@ -705,12 +677,24 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
-  gh.factory<_i872.PersonalizedFeedBloc>(
-    () => _i872.PersonalizedFeedBloc(
-      gh<_i212.FetchPersonalizedFeedUseCase>(),
-      gh<_i567.PersonalizedFeedRepository>(),
+  gh.factory<_i782.FavouriteWallsBloc>(
+    () => _i782.FavouriteWallsBloc(
+      gh<_i406.FetchFavouriteWallsUseCase>(),
+      gh<_i406.ToggleFavouriteWallUseCase>(),
+      gh<_i406.ClearFavouriteWallsUseCase>(),
+    ),
+  );
+  gh.lazySingleton<_i567.PersonalizedFeedRepository>(
+    () => _i903.PersonalizedFeedRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
       gh<_i112.UserBlockRepository>(),
-      gh<_i96.DropsRepository>(),
+      gh<_i643.FavouriteWallsRepository>(),
+      gh<_i731.TasteSignalStore>(),
+      gh<_i535.FeedImpressionStore>(),
     ),
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
@@ -736,6 +720,17 @@ _i174.GetIt initGetIt(
   gh.factory<_i408.AutoRotateBloc>(
     () => _i408.AutoRotateBloc(gh<_i563.AutoRotateRepository>()),
   );
+  gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
+    () => _i212.FetchPersonalizedFeedUseCase(
+      gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
+  gh.factory<_i567.FollowingFeedBloc>(
+    () => _i567.FollowingFeedBloc(gh<_i567.PersonalizedFeedRepository>()),
+  );
+  gh.factory<_i226.PopularFeedBloc>(
+    () => _i226.PopularFeedBloc(gh<_i567.PersonalizedFeedRepository>()),
+  );
   gh.factory<_i183.WotdBloc>(
     () => _i183.WotdBloc(gh<_i398.FetchWallOfTheDayUseCase>()),
   );
@@ -752,6 +747,14 @@ _i174.GetIt initGetIt(
       gh<_i563.CategoryFeedRepository>(),
       gh<_i897.OnboardingV2Repository>(),
       gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
+  gh.factory<_i872.PersonalizedFeedBloc>(
+    () => _i872.PersonalizedFeedBloc(
+      gh<_i212.FetchPersonalizedFeedUseCase>(),
+      gh<_i567.PersonalizedFeedRepository>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i96.DropsRepository>(),
     ),
   );
   return getIt;

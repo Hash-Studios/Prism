@@ -9,10 +9,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -66,6 +68,13 @@ FeedItemEntity _wallpaper() => const FeedItemEntity.pexels(
   ),
 );
 
+const _prismWallpaper = FeedItemEntity.prism(
+  id: 'prism-1',
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(id: 'prism-1', source: WallpaperSource.prism, fullUrl: _fullUrl, thumbnailUrl: ''),
+  ),
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => registerFallbackValue(WallpaperFilterRoute(filePath: 'unused')));
@@ -90,6 +99,7 @@ void main() {
   late bool filterRoutePushed;
 
   setUp(() async {
+    IosWallpaperGuideSession.shown = false;
     await backend.install();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
@@ -146,6 +156,7 @@ void main() {
   });
 
   tearDown(() async {
+    IosWallpaperGuideSession.shown = false;
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(enqueueChannel, null);
     messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
@@ -184,10 +195,112 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> rememberSavedTint(String identity) =>
-      getIt<DownloadedWallIndex>().remember(link: identity, id: 'pexels-1', source: WallpaperSource.pexels);
+  Future<void> rememberSavedTint(String identity) => getIt<DownloadedWallIndex>().remember(
+    link: identity,
+    id: 'pexels-1',
+    source: WallpaperSource.pexels,
+    original: false,
+  );
 
   group('a tinted file reopened from Downloads', () {
+    testWidgets('a Prism derivative stays Saved without authorizing its original', (tester) async {
+      final file = downloadedFile('full_tint-ff8800.png');
+      downloadsOnDisk = <String>[file.path];
+      final index = getIt<DownloadedWallIndex>();
+      await index.remember(link: 'full_tint-ff8800.png', id: 'prism-1', source: WallpaperSource.prism, original: false);
+      await pumpReopened(
+        tester,
+        file,
+        state: const WallpaperDetailLoaded(entity: _prismWallpaper, paletteLoading: false),
+      );
+      expect(find.text('Saved'), findsOneWidget);
+      final download = tester.widget<DownloadButton>(find.byType(DownloadButton));
+      expect(download.wallpaperSource, WallpaperSource.downloaded);
+      expect(download.indexSource, WallpaperSource.prism);
+      expect(download.savedIdentity, 'full_tint-ff8800.png');
+      expect(
+        index.acquiredIdentityForLocalFile(filePath: file.path, id: 'other-wall', source: WallpaperSource.prism),
+        isNull,
+      );
+      expect(
+        index.acquiredIdentityForLocalFile(filePath: file.path, id: 'prism-1', source: WallpaperSource.pexels),
+        isNull,
+      );
+      final otherOwnerIndex = DownloadedWallIndex(getIt<SettingsLocalDataSource>(), ownerId: () => 'other-owner');
+      expect(
+        otherOwnerIndex.acquiredIdentityForLocalFile(filePath: file.path, id: 'prism-1', source: WallpaperSource.prism),
+        isNull,
+      );
+      await tester.tap(find.byTooltip('Edit'));
+      await waitForRealIo(tester, () => filterRoutePushed, reason: 'the acquired Prism derivative stays editable');
+      verify(() => router.push(WallpaperFilterRoute(filePath: file.path))).called(1);
+      expect(spent, isEmpty);
+      expect(
+        await tester.runAsync(() => index.localFileForIdentity(id: 'prism-1', source: WallpaperSource.prism)),
+        isNull,
+      );
+      await tester.runAsync(() async {
+        await expectLater(
+          OriginalAccessService.instance.resolve(
+            url: _fullUrl,
+            wallpaperId: 'prism-1',
+            wallpaperSource: WallpaperSource.prism,
+            action: OriginalAccessAction.download,
+          ),
+          throwsStateError,
+        );
+      });
+      expect(spent, <String>['resolveOriginalAccess']);
+      expect(enqueued, isEmpty);
+      await tester.pump(const Duration(seconds: 1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('resaving a derivative without a tint filename never promotes it to an original', (tester) async {
+      final file = downloadedFile('edited.png');
+      downloadsOnDisk = <String>[file.path];
+      final index = getIt<DownloadedWallIndex>();
+      await index.remember(link: file.path, id: 'prism-1', source: WallpaperSource.prism, original: false);
+      await pumpReopened(
+        tester,
+        file,
+        state: const WallpaperDetailLoaded(entity: _prismWallpaper, paletteLoading: false),
+      );
+      expect(find.text('Saved'), findsOneWidget);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await waitForRealIo(
+        tester,
+        () => find.text('Already in Downloads').evaluate().isNotEmpty,
+        reason: 'the acquired derivative confirmation to appear',
+      );
+      final again = find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(again);
+      await tester.tap(again);
+      await waitForRealIo(tester, () => enqueued.isNotEmpty, reason: 'the derivative to save from its local file');
+      expect(enqueued.single.link, file.path);
+      expect(enqueued.single.isLocalFile, isTrue);
+      await waitForRealIo(
+        tester,
+        () => find.text('Set it as your wallpaper').evaluate().isNotEmpty,
+        reason: 'the successful save bookkeeping to reach the guide',
+      );
+      expect(index.hasAcquired(link: file.path, id: 'prism-1', source: WallpaperSource.prism), isTrue);
+      expect(
+        await tester.runAsync(() => index.localFileForIdentity(id: 'prism-1', source: WallpaperSource.prism)),
+        isNull,
+      );
+      expect(spent, <String>['spendCoins']);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('Done'));
+      await tester.tap(find.text('Done'));
+      await waitForRealIo(
+        tester,
+        () => !tester.widget<PrimaryActionPill>(find.byType(PrimaryActionPill)).isLoading,
+        reason: 'the local resave flow to finish',
+      );
+      await tester.pump(const Duration(seconds: 1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     for (final String name in <String>['full_tint-ff8800.png', 'full_tint-ff8800 (2).png']) {
       testWidgets('the Save pill reads Saved for $name', (tester) async {
         await rememberSavedTint('full_tint-ff8800.png');
@@ -280,6 +393,46 @@ void main() {
   });
 
   group('an untinted file reopened from Downloads', () {
+    testWidgets('the original remote acquisition remains Saved when reopened as a local path', (tester) async {
+      await getIt<DownloadedWallIndex>().remember(link: _fullUrl, id: 'pexels-1', source: WallpaperSource.pexels);
+      final file = downloadedFile('full.jpg');
+      await pumpReopened(tester, file);
+      final download = tester.widget<DownloadButton>(find.byType(DownloadButton));
+      expect(download.link, file.path);
+      expect(download.savedIdentity, _fullUrl);
+      expect(download.indexSource, WallpaperSource.pexels);
+      expect(find.text('Saved'), findsOneWidget);
+      downloadsOnDisk = <String>[file.path];
+      await tester.tap(find.byType(PrimaryActionPill));
+      await waitForRealIo(
+        tester,
+        () => find.text('Already in Downloads').evaluate().isNotEmpty,
+        reason: 'the indexed original local resave confirmation',
+      );
+      final again = find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(again);
+      await tester.tap(again);
+      await waitForRealIo(
+        tester,
+        () => find.text('Set it as your wallpaper').evaluate().isNotEmpty,
+        reason: 'the original local resave bookkeeping to finish',
+      );
+      final original = await tester.runAsync(
+        () => getIt<DownloadedWallIndex>().localFileForIdentity(id: 'pexels-1', source: WallpaperSource.pexels),
+      );
+      expect(original?.path, file.path, reason: 'resaving an existing original cannot downgrade its exact acquisition');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('Done'));
+      await tester.tap(find.text('Done'));
+      await waitForRealIo(
+        tester,
+        () => !tester.widget<PrimaryActionPill>(find.byType(PrimaryActionPill)).isLoading,
+        reason: 'the original local resave flow to close',
+      );
+      await tester.pump(const Duration(seconds: 1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('Set and Download use the file as before, and Edit opens it', (tester) async {
       final File file = downloadedFile('full.jpg');
       await pumpReopened(tester, file);
@@ -287,6 +440,7 @@ void main() {
       expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).url, file.path);
       expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).prepareSource, isNull);
       expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).variant, isNull);
+      expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).indexSource, WallpaperSource.downloaded);
       expect(tester.widget<EditButton>(find.byType(EditButton)).prepareSource, isNotNull);
 
       await tester.tap(find.byTooltip('Edit'));

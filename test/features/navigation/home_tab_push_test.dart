@@ -21,13 +21,11 @@ import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
-import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -77,20 +75,6 @@ class _Sync extends Fake implements FavouritesSyncService {
 const _messaging = MethodChannel('plugins.flutter.io/firebase_messaging');
 const _quickActions = MethodChannel('plugins.flutter.io/quick_actions');
 const _ios = TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS});
-
-class _EnglishLocaleDelegate extends LocalizationsDelegate<AppLocalizations> {
-  const _EnglishLocaleDelegate();
-
-  @override
-  bool isSupported(Locale locale) => locale.languageCode == 'en';
-
-  @override
-  Future<AppLocalizations> load(Locale locale) =>
-      SynchronousFuture<AppLocalizations>(AppLocalizationsEn(locale.toString()));
-
-  @override
-  bool shouldReload(_EnglishLocaleDelegate old) => false;
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -184,32 +168,25 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> mount(
-    WidgetTester tester, {
-    Locale locale = const Locale('en'),
-    Brightness brightness = Brightness.light,
-  }) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: locale,
-        theme: ThemeData(brightness: brightness),
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-          _EnglishLocaleDelegate(),
-          ...AppLocalizations.localizationsDelegates,
-        ],
-        supportedLocales: const <Locale>[Locale('en'), Locale('en', 'GB')],
+  Widget homeApp({Locale locale = const Locale('en'), Brightness brightness = Brightness.light}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: locale,
+    themeAnimationDuration: Duration.zero,
+    theme: ThemeData(brightness: brightness),
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider<AdsBloc>.value(value: ads),
+        BlocProvider<InAppNotificationsBloc>.value(value: notifications),
+        BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+        BlocProvider<WotdBloc>.value(value: wotd),
+      ],
+      child: const HomeTabPage(),
+    ),
+  );
 
-        home: MultiBlocProvider(
-          providers: [
-            BlocProvider<AdsBloc>.value(value: ads),
-            BlocProvider<InAppNotificationsBloc>.value(value: notifications),
-            BlocProvider<FavouriteWallsBloc>.value(value: favourites),
-            BlocProvider<WotdBloc>.value(value: wotd),
-          ],
-          child: const HomeTabPage(),
-        ),
-      ),
-    );
+  Future<void> mount(WidgetTester tester, {Locale locale = const Locale('en')}) async {
+    await tester.pumpWidget(homeApp(locale: locale));
     await tester.pump();
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pump();
@@ -270,6 +247,100 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   }, variant: _ios);
 
+  testWidgets('failed shortcut update retries at the same locale and dedupes after success', (tester) async {
+    final Locale nonEnglishLocale = AppLocalizations.supportedLocales.firstWhere(
+      (locale) => locale.languageCode != 'en',
+    );
+    final AppLocalizations nonEnglish = await loadAppLocalizations(nonEnglishLocale);
+    var fail = true;
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      if (call.method == 'setShortcutItems' && fail) {
+        fail = false;
+        throw PlatformException(code: 'unavailable');
+      }
+      return null;
+    });
+
+    await mount(tester, locale: nonEnglishLocale);
+    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(1));
+
+    await tester.pumpWidget(homeApp(locale: nonEnglishLocale, brightness: Brightness.dark));
+    await tester.pump();
+
+    final updates = quickActionCalls.where((call) => call.method == 'setShortcutItems').toList();
+    expect(updates, hasLength(2));
+    expect((updates.last.arguments! as List<Object?>).map((item) => (item! as Map)['localizedTitle']), <String>[
+      nonEnglish.wallpaperFeedTabForYou,
+      nonEnglish.wallpaperNavCollections,
+      nonEnglish.wallpaperDownloadsTitle,
+      nonEnglish.wallpaperShortcutsSourceWotd,
+    ]);
+
+    await tester.pumpWidget(homeApp(locale: nonEnglishLocale));
+    await tester.pump();
+    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(2));
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
+  testWidgets('disposing while a shortcut update is pending is safe', (tester) async {
+    final update = Completer<void>();
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      if (call.method == 'setShortcutItems') await update.future;
+      return null;
+    });
+
+    await mount(tester);
+    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(1));
+
+    await tester.pumpWidget(const SizedBox());
+    update.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(1));
+  }, variant: _ios);
+
+  testWidgets('locale changes reconcile the installed shortcuts after a delayed update', (tester) async {
+    final Locale nonEnglishLocale = AppLocalizations.supportedLocales.firstWhere(
+      (locale) => locale.languageCode != 'en',
+    );
+    final AppLocalizations nonEnglish = await loadAppLocalizations(nonEnglishLocale);
+    final nonEnglishUpdate = Completer<void>();
+    final nonEnglishUpdateStarted = Completer<void>();
+    List<String>? installedTitles;
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      if (call.method == 'setShortcutItems') {
+        final titles = (call.arguments! as List<Object?>)
+            .map((item) => (item! as Map)['localizedTitle'] as String)
+            .toList();
+        if (titles.first == nonEnglish.wallpaperFeedTabForYou) {
+          if (!nonEnglishUpdateStarted.isCompleted) nonEnglishUpdateStarted.complete();
+          await nonEnglishUpdate.future;
+        }
+        installedTitles = titles;
+      }
+      return null;
+    });
+
+    await mount(tester);
+    await tester.pumpWidget(homeApp(locale: nonEnglishLocale));
+    await tester.pump();
+    await nonEnglishUpdateStarted.future;
+    await tester.pumpWidget(homeApp());
+    await tester.pump();
+    nonEnglishUpdate.complete();
+    await tester.pump();
+    await tester.pump();
+
+    final updates = quickActionCalls.where((call) => call.method == 'setShortcutItems').toList();
+    expect(updates, hasLength(3));
+    expect(installedTitles, <String>['For you', 'Collections', 'Downloads', 'Wall of the Day']);
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
   testWidgets('Android shortcuts keep their drawables', (tester) async {
     await mount(tester);
 
@@ -284,54 +355,6 @@ void main() {
     // On a macOS host Platform.isMacOS is true, so topic calls wait for an APNs token with retry timers.
     await tester.pump(const Duration(seconds: 3));
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.android}));
-
-  testWidgets('failed shortcut registration is retried after a same-locale dependency change', (tester) async {
-    var setShortcutItemsCalls = 0;
-    messenger.setMockMethodCallHandler(_quickActions, (call) async {
-      quickActionCalls.add(call);
-      if (call.method == 'setShortcutItems' && setShortcutItemsCalls++ == 0) {
-        throw PlatformException(code: 'unavailable');
-      }
-      return null;
-    });
-
-    await mount(tester);
-    await tester.pump();
-    await mount(tester, brightness: Brightness.dark);
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(quickActionCalls.where((call) => call.method == 'setShortcutItems'), hasLength(2));
-    await tester.pumpWidget(const SizedBox());
-  }, variant: _ios);
-
-  testWidgets('an older shortcut registration completion does not memoize its locale', (tester) async {
-    final completions = <Completer<void>>[];
-    var setShortcutItemsCalls = 0;
-    messenger.setMockMethodCallHandler(_quickActions, (call) async {
-      quickActionCalls.add(call);
-      if (call.method == 'setShortcutItems') {
-        if (setShortcutItemsCalls++ == 0) return null;
-        final Completer<void> completion = Completer<void>();
-        completions.add(completion);
-        await completion.future;
-      }
-      return null;
-    });
-
-    await mount(tester);
-    await tester.pump();
-    await mount(tester, locale: const Locale('en', 'GB'));
-    await tester.pump();
-    await mount(tester);
-    await tester.pump();
-
-    expect(completions, hasLength(2));
-    completions[0].complete();
-    await tester.pump();
-    completions[1].complete();
-    await tester.pump();
-    await tester.pumpWidget(const SizedBox());
-  }, variant: _ios);
 
   test('the For You and Collections shortcuts map to their tabs, others to none', () {
     expect(quickActionTabIndex('Personalized_Feed'), 0);

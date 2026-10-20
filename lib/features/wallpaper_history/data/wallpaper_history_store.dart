@@ -32,7 +32,7 @@ class WallpaperHistoryStore {
       item,
       ..._load().where(
         (existing) =>
-            !(existing.fullUrl == item.fullUrl &&
+            !(existing.identity == item.identity &&
                 existing.target == item.target &&
                 item.appliedAt.difference(existing.appliedAt).abs() < wallpaperHistoryDedupeWindow),
       ),

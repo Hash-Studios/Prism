@@ -1,7 +1,18 @@
 import 'package:Prism/core/constants/app_functions.dart';
 
+enum UploadSourceKind {
+  owned,
+  github;
+
+  static UploadSourceKind? fromData(Object? value) => switch (value) {
+    'owned' => owned,
+    'github' => github,
+    _ => null,
+  };
+}
+
 class GitHubContent {
-  const GitHubContent({required this.downloadUrl, required this.path, required this.sha});
+  const GitHubContent({required this.downloadUrl, required this.path, required this.sha, this.sourceKind});
 
   factory GitHubContent.fromData(Map<String, dynamic> data) {
     final Map<String, dynamic> content = (data['content'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
@@ -9,15 +20,29 @@ class GitHubContent {
       downloadUrl: content['download_url'] as String?,
       path: content['path'] as String?,
       sha: content['sha'] as String?,
+      sourceKind: UploadSourceKind.fromData(data['sourceKind']),
     );
   }
 
   final String? downloadUrl;
   final String? path;
   final String? sha;
+  final UploadSourceKind? sourceKind;
 }
 
 class GitHubContentApi {
+  Future<void> deleteWallAsset({
+    required String wallId,
+    required String originalGeneration,
+    required String assetRole,
+  }) async {
+    await appFunctions.httpsCallable('githubDeleteFile').call(<String, dynamic>{
+      'wallId': wallId,
+      'originalGeneration': originalGeneration,
+      'assetRole': assetRole,
+    });
+  }
+
   Future<GitHubContent> putFile({
     required String repo,
     required String path,
@@ -40,12 +65,14 @@ class GitHubContentApi {
     required String path,
     required String sha,
     required String message,
+    UploadSourceKind? sourceKind,
   }) async {
     await appFunctions.httpsCallable('githubDeleteFile').call(<String, dynamic>{
       'repo': repo,
       'path': path,
       'sha': sha,
       'message': message,
+      if (sourceKind != null) 'sourceKind': sourceKind.name,
     });
   }
 }

@@ -28,6 +28,16 @@ test("a category maps to its collection, and anything else maps to none", () => 
   assert.equal(categoryCollection(42), null);
 });
 
+test("collection covers never fall back to an original URL", async (t) => {
+  const store = installFakeDb(t, {
+    "collections/nature": {name: "nature", thumb1: "https://preview.test/retained.jpg"},
+    "walls/w1": {review: true, collections: ["nature"], createdAt: at("2026-10-19T00:00:00Z"),
+      wallpaper_thumb: "", wallpaper_url: "https://original.test/private.jpg"},
+  });
+  assert.deepEqual(await refreshCollectionCovers(), []);
+  assert.equal(store.get("collections/nature")?.thumb1, "https://preview.test/retained.jpg");
+});
+
 test("only a wall whose every collection is community is community-only", () => {
   assert.equal(isCommunityOnly(["community"]), true);
   assert.equal(isCommunityOnly(["community ", "Community"]), true);

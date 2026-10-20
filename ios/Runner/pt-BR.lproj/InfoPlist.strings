@@ -1,0 +1,3 @@
+"NSPhotoLibraryUsageDescription" = "O Prism precisa acessar sua biblioteca de fotos para que você escolha imagens para seu perfil e suas personalizações.";
+"NSPhotoLibraryAddUsageDescription" = "O Prism precisa de permissão para salvar papéis de parede na sua biblioteca de fotos.";
+"NSCameraUsageDescription" = "O Prism precisa acessar a câmera para que você tire uma foto para seu perfil.";

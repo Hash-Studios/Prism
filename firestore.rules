@@ -103,13 +103,12 @@ service cloud.firestore {
       return timestampOk && offsetOk;
     }
 
-    // Drop, boost and depth fields on walls are server and admin owned.
-    function wallDropKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth']);
+    function wallServerKeysAbsent() {
+      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalGeneration']);
     }
 
-    function wallDropKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth']);
+    function wallServerKeysUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalGeneration']);
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -138,17 +137,24 @@ service cloud.firestore {
 
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      allow read: if (resource.data.review == true
+          && resource.data.originalProtected == true
+          && resource.data.wallpaper_url == ''
+          && resource.data.wallpaper_path == ''
+          && resource.data.wallpaper_sha == ''
+          && resource.data.thumb_path == ''
+          && resource.data.thumb_sha == '')
+          || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
-              && wallDropKeysAbsent());
+              && wallServerKeysAbsent());
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
-              && wallDropKeysUntouched()
+              && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
               && request.resource.data.review != true);

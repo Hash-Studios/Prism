@@ -97,7 +97,9 @@ class OfflineAssetFixture {
     final Directory images = Directory('${directory.path}/images');
     images.createSync(recursive: true);
     final File image = File('${images.path}/$name');
-    image.writeAsBytesSync(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+    image.writeAsBytesSync(
+      base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII='),
+    );
     _sourceFiles[image.path] = image;
     _sourceFiles[image.uri.toString()] = image;
     return image;
