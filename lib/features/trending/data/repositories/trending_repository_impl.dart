@@ -3,9 +3,11 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
@@ -20,11 +22,12 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: TrendingRepository)
 class TrendingRepositoryImpl implements TrendingRepository {
-  TrendingRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository);
+  TrendingRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository, this._settingsLocal);
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
   final UserBlockRepository _userBlockRepository;
+  final SettingsLocalDataSource _settingsLocal;
 
   static const int _whereInLimit = 30;
   static const int _cacheTtlHours = 3;
@@ -84,11 +87,17 @@ class TrendingRepositoryImpl implements TrendingRepository {
     return <PrismWallpaper>[for (final String id in ids) ?byId[id]];
   }
 
-  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) => walls
-      .where(
-        (wall) => hasPrismPreview(wall) && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked),
-      )
-      .toList(growable: false);
+  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) {
+    final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    return walls
+        .where(
+          (wall) =>
+              hasPrismPreview(wall) &&
+              !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked) &&
+              (showAnime || !AnimeContentFilter.isAnime(wall)),
+        )
+        .toList(growable: false);
+  }
 
   Future<void> _writeCache(List<PrismWallpaper> walls) async {
     try {

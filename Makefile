@@ -314,13 +314,16 @@ repo-assets-check:
 
 ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
 
-.PHONY: native-android-check native-ios-check
+.PHONY: native-android-check native-ios-check ios-strip-test
 native-android-check: get
 	@tool/write_firebase_options_stub.sh
 	@JAVA_HOME="$(ANDROID_JAVA_HOME)" $(FLUTTER) build apk --debug --dart-define=SKIP_FIREBASE_INIT=true
 	@cd android && JAVA_HOME="$(ANDROID_JAVA_HOME)" ./gradlew :app:testDebugUnitTest :cloud_functions:testDebugUnitTest :app:lintDebug $(GRADLE_COMMON_OPTS)
 
-native-ios-check: get
+ios-strip-test:
+	@python3 ios/scripts/test_strip_embedded_frameworks.py
+
+native-ios-check: get ios-strip-test
 	@tool/write_firebase_options_stub.sh
 	@test -f ios/Runner/GoogleService-Info.plist || cp ios/Runner/GoogleService-Info.plist.stub ios/Runner/GoogleService-Info.plist
 	@swift test --package-path ios

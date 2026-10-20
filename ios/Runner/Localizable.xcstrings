@@ -9,6 +9,12 @@
             "value": "Get a wallpaper from %1$@"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild von %1$@ abrufen"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Get a %1$@ wallpaper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@-Hintergrundbild abrufen"
           }
         },
         "hi": {
@@ -53,6 +65,12 @@
             "value": "Wallpaper source"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbildquelle"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -73,6 +91,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wall of the Day"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild des Tages"
           }
         },
         "hi": {
@@ -97,6 +121,12 @@
             "value": "Random favourite"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zufälliger Favorit"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -117,6 +147,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No favourites yet. Open Prism and tap the heart on a wallpaper."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Favoriten. Öffne Prism und tippe bei einem Hintergrundbild auf das Herz."
           }
         },
         "hi": {
@@ -141,6 +177,12 @@
             "value": "Could not load the Wall of the Day. Check your connection."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Hintergrundbild des Tages konnte nicht geladen werden. Prüfe deine Verbindung."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -161,6 +203,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Could not load your favourite wallpaper. Check your connection."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Lieblingshintergrundbild konnte nicht geladen werden. Prüfe deine Verbindung."
           }
         },
         "hi": {
@@ -185,6 +233,12 @@
             "value": "This wallpaper is in a format that Shortcuts cannot use."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Hintergrundbild hat ein Format, das Kurzbefehle nicht verwenden können."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -205,6 +259,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Get Prism Wallpaper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism-Hintergrundbild abrufen"
           }
         },
         "hi": {
@@ -229,6 +289,12 @@
             "value": "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruft ein Prism-Hintergrundbild ab. Übergib es an die Aktion „Hintergrundbild festlegen“."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -249,6 +315,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Source"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelle"
           }
         },
         "hi": {
@@ -273,6 +345,12 @@
             "value": "Your wallpaper is live! 🎉"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild ist jetzt online! 🎉"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -293,6 +371,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "\"%1$@\" has been approved and is now visible to everyone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ wurde freigegeben und ist jetzt für alle sichtbar."
           }
         },
         "hi": {
@@ -317,6 +401,12 @@
             "value": "Your wallpaper has been approved and is now visible to everyone."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -337,6 +427,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New wall by %1$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Hintergrundbild von %1$@"
           }
         },
         "hi": {
@@ -361,6 +457,12 @@
             "value": "\"%1$@\" is now live on Prism."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ ist jetzt auf Prism verfügbar."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -381,6 +483,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wall approved ✅"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild freigegeben ✅"
           }
         },
         "hi": {
@@ -405,6 +513,12 @@
             "value": "\"%1$@\" by %2$@ is now live."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ von %2$@ ist jetzt online."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -425,6 +539,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "You have a new follower! 🎉"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast einen neuen Follower! 🎉"
           }
         },
         "hi": {
@@ -449,6 +569,12 @@
             "value": "%1$@ is now following you."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ folgt dir jetzt."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -469,6 +595,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your streak is about to break!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Serie droht abzubrechen!"
           }
         },
         "hi": {
@@ -493,6 +625,12 @@
             "value": "Open Prism now to keep your login streak alive 🔥"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne jetzt Prism, damit deine Anmeldeserie weiterläuft 🔥"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -513,6 +651,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your wallpaper is the Wall of the Day"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Hintergrundbild ist das Hintergrundbild des Tages"
           }
         },
         "hi": {
@@ -537,6 +681,12 @@
             "value": "Prism picked your wallpaper for everyone today. Thank you for sharing it."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism hat dein Hintergrundbild heute für alle ausgewählt. Danke, dass du es geteilt hast."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -559,6 +709,12 @@
             "value": "Today's Wall of the Day is here"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Hintergrundbild des Tages ist da"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -576,6 +732,12 @@
     "notif_push_wotd_for_audience_body": {
       "localizations": {
         "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@"
@@ -603,6 +765,12 @@
             "value": "Open Prism to see today's Wall of the Day."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Prism, um das heutige Hintergrundbild des Tages zu sehen."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -623,6 +791,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your feed has new walls"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In deinem Feed gibt es neue Hintergrundbilder"
           }
         },
         "hi": {
@@ -647,6 +821,12 @@
             "value": "Fresh wallpapers landed while you were away."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Während deiner Abwesenheit sind neue Hintergrundbilder dazugekommen."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -667,6 +847,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New walls are waiting"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Hintergrundbilder warten auf dich"
           }
         },
         "hi": {
@@ -691,6 +877,12 @@
             "value": "Come see what creators added this fortnight."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh dir an, was die Kreativen in den letzten zwei Wochen hinzugefügt haben."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -711,6 +903,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New AI styles to try"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue KI-Stile zum Ausprobieren"
           }
         },
         "hi": {
@@ -735,6 +933,12 @@
             "value": "Make a wallpaper that feels like you."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestalte ein Hintergrundbild, das zu dir passt."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -755,6 +959,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prism misses you"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism vermisst dich"
           }
         },
         "hi": {
@@ -779,6 +989,12 @@
             "value": "Your next favourite wall is a tap away."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein nächstes Lieblingshintergrundbild ist nur einen Fingertipp entfernt."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -799,6 +1015,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "A new Drop is live"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Drop ist da"
           }
         },
         "hi": {
@@ -823,6 +1045,12 @@
             "value": "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbilder im aktuellen Drop: %1$@. Sieh ihn dir an, bevor er endet."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -843,6 +1071,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last call on this week's Drop"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Chance für den aktuellen Drop"
           }
         },
         "hi": {
@@ -867,6 +1101,12 @@
             "value": "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ endet in %2$@ Std. Danach sind die Hintergrundbilder einen Monat lang nicht verfügbar."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -887,6 +1127,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "You won the Prism Draw"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast die Prism-Verlosung gewonnen"
           }
         },
         "hi": {
@@ -911,6 +1157,12 @@
             "value": "One month of Pro and the Prism frame are yours."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Monat Pro und der Prism-Rahmen gehören dir."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -931,6 +1183,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ sent you a 24-hour Pro pass"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat dir einen 24-Stunden-Pro-Pass gesendet"
           }
         },
         "hi": {
@@ -955,6 +1213,12 @@
             "value": "Premium collections and premium walls are open until tomorrow."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -975,6 +1239,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Report waiting for review"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldung wartet auf Prüfung"
           }
         },
         "hi": {
@@ -999,6 +1269,12 @@
             "value": "A content report has been waiting for review for over 12 hours."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Inhaltsmeldung wartet seit über 12 Stunden auf Prüfung."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -1019,6 +1295,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New content report"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Inhaltsmeldung"
           }
         },
         "hi": {
@@ -1043,6 +1325,12 @@
             "value": "A new content report is ready for review."
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine neue Inhaltsmeldung kann geprüft werden."
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -1065,6 +1353,12 @@
             "value": "New Premium Wall for review! 🎉"
           }
         },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Premium-Hintergrundbild zur Prüfung! 🎉"
+          }
+        },
         "hi": {
           "stringUnit": {
             "state": "translated",
@@ -1085,6 +1379,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New post by %1$@ (%2$@) is up for review."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Beitrag von %1$@ (%2$@) wartet auf Prüfung."
           }
         },
         "hi": {

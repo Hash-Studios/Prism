@@ -8,9 +8,11 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/gestures.dart';
@@ -96,16 +98,17 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpShell(WidgetTester tester, OnboardingV2State initial) async {
+  Future<void> pumpShell(WidgetTester tester, OnboardingV2State initial, {Locale locale = const Locale('en')}) async {
     tester.view.physicalSize = const Size(393, 852);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     whenListen(bloc, states.stream, initialState: initial);
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: OnboardingV2Shell(),
+        home: const OnboardingV2Shell(),
       ),
     );
     await tester.pump(const Duration(seconds: 1));
@@ -211,6 +214,100 @@ void main() {
 
       expect(find.text('looking good! opening your wallpaper'), findsOneWidget);
       expect(find.textContaining('use this wallpaper'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
+
+  group('generated wallpaper category', () {
+    testWidgets('keeps a generated style localized when a retry fails and the prior wallpaper remains', (tester) async {
+      final state = wallpaperStep().copyWith(
+        wallpaperData: const OnboardingWallpaperData(
+          status: FirstWallpaperStatus.failure,
+          wallpaper: OnboardingWallpaperVm(
+            fullUrl: 'generated-image',
+            thumbnailUrl: '',
+            sourceCategory: 'Abstract',
+            aiStyle: AiStylePreset.abstract,
+          ),
+        ),
+        aiData: OnboardingAiData.initial().copyWith(
+          status: AiGenerateStatus.failure,
+          imageUrl: null,
+          stylePreset: AiStylePreset.abstract,
+        ),
+      );
+      await pumpShell(tester, state, locale: const Locale('de'));
+
+      expect(
+        find.text('Wir haben dieses Hintergrundbild passend zu deinem Interesse an Abstrakt ausgewählt.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Abstract'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('localizes the generated style on F4', (tester) async {
+      final state = wallpaperStep().copyWith(
+        wallpaperData: OnboardingWallpaperData(
+          status: FirstWallpaperStatus.idle,
+          wallpaper: const OnboardingWallpaperVm(
+            fullUrl: 'generated-image',
+            thumbnailUrl: '',
+            sourceCategory: 'Abstract',
+            aiStyle: AiStylePreset.abstract,
+          ),
+        ),
+        aiData: OnboardingAiData.initial().copyWith(
+          status: AiGenerateStatus.success,
+          imageUrl: 'generated-image',
+          stylePreset: AiStylePreset.abstract,
+        ),
+      );
+      final displayedWallpaper = state.wallpaperData.wallpaper;
+      await pumpShell(tester, state, locale: const Locale('de'));
+
+      expect(
+        find.text('Wir haben dieses Hintergrundbild passend zu deinem Interesse an Abstrakt ausgewählt.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Abstract'), findsNothing);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          locale: Locale('hi'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: OnboardingV2Shell(),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('आपकी एब्स्ट्रैक्ट में रुचि के आधार पर हमने यह वॉलपेपर चुना है'), findsOneWidget);
+      expect(find.textContaining('Abstract'), findsNothing);
+      expect(identical(bloc.state.wallpaperData.wallpaper, displayedWallpaper), isTrue);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('preserves the displayed wallpaper category when it is not the generated image', (tester) async {
+      final state = wallpaperStep().copyWith(
+        wallpaperData: const OnboardingWallpaperData(
+          status: FirstWallpaperStatus.idle,
+          wallpaper: OnboardingWallpaperVm(
+            fullUrl: 'recommended-image',
+            thumbnailUrl: '',
+            sourceCategory: 'Creator picks',
+          ),
+        ),
+        aiData: OnboardingAiData.initial().copyWith(
+          status: AiGenerateStatus.success,
+          imageUrl: 'different-generated-image',
+          stylePreset: AiStylePreset.abstract,
+        ),
+      );
+      await pumpShell(tester, state, locale: const Locale('de'));
+
+      expect(
+        find.text('Wir haben dieses Hintergrundbild passend zu deinem Interesse an Creator picks ausgewählt.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Abstract'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 

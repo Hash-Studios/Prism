@@ -105,6 +105,22 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
   }) async => failUserDoc ? throw StateError('offline') : null;
 }
 
+class _AnimeWallFirestore extends _OneWallFirestore {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
+      <T>[
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/anime.jpg',
+          'category': 'Anime',
+        }, 'anime-doc'),
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/visible.jpg',
+        }, 'visible-doc'),
+      ];
+}
+
 class _CountingWallsFirestore extends _OneWallFirestore {
   final List<String> sourceTags = <String>[];
 
@@ -1503,6 +1519,26 @@ void main() {
       expect(_itemIds((await repository.readCached())!.items), <String>['prism']);
     });
 
+    test('drops anime Prism walls while the anime setting is off', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[
+            _prismItem('anime', tags: <String>['Anime']),
+            _prismItem('other'),
+          ]),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      expect(_itemIds((await repository.readCached())!.items), <String>['other']);
+
+      await settings.set('WHcategories', 110);
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['anime', 'other']);
+    });
+
     test('a cache written by a fetch carries the content filters', () async {
       final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
       await settings.set('WHpurity', 110);
@@ -1519,6 +1555,24 @@ void main() {
 
       expect((cache.snapshot!.payload! as Map)['filters'], '100.110');
     });
+  });
+
+  test('the feed leaves out anime Prism walls while the anime setting is off', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    PersonalizedFeedRepository repository() => _repository(
+      firestore: _AnimeWallFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      impressions: FeedImpressionStore(SettingsLocalDataSource(InMemoryLocalStore())),
+    );
+
+    final hidden = await repository().fetch(_firstPage);
+    expect(_itemIds(hidden.data!.items), <String>['visible-doc']);
+
+    await settings.set('WHcategories', 110);
+    final shown = await repository().fetch(_firstPage);
+    expect(_itemIds(shown.data!.items), <String>['anime-doc', 'visible-doc']);
   });
 
   group('undoLessLikeThis', () {
@@ -1734,18 +1788,20 @@ PrismFavouriteWall _favourite(String id) => PrismFavouriteWall(
   ),
 );
 
-FeedItemEntity _prismItem(String id, {String email = 'creator@example.com'}) => FeedItemEntity.prism(
-  id: id,
-  wallpaper: PrismWallpaper(
-    core: WallpaperCore(
+FeedItemEntity _prismItem(String id, {String email = 'creator@example.com', List<String>? tags}) =>
+    FeedItemEntity.prism(
       id: id,
-      source: WallpaperSource.prism,
-      fullUrl: 'https://example.com/$id.jpg',
-      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-      authorEmail: email,
-    ),
-  ),
-);
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/$id.jpg',
+          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+          authorEmail: email,
+        ),
+        tags: tags,
+      ),
+    );
 
 FeedItemEntity _wallhavenItem(String id) => FeedItemEntity.wallhaven(
   id: id,

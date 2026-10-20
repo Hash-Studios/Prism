@@ -40,7 +40,7 @@ void main() {
     expect(hindi.localeName, 'hi');
     expect(hindi.economyExportFailedLabel, 'एक्सपोर्ट नहीं हो सका');
 
-    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('de')];
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('zz')];
     final AppLocalizations english = await loadDeviceAppLocalizations();
     expect(english.localeName, 'en');
     expect(english.economyExportFailedLabel, 'Export failed');

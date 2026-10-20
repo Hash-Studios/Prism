@@ -153,6 +153,7 @@ Map<String, dynamic> _prismDoc(
   String email = 'a@example.com',
   List<String> colors = const <String>[],
   String? depthTier,
+  String? category,
 }) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://prism/$id.jpg',
@@ -163,6 +164,7 @@ Map<String, dynamic> _prismDoc(
   'review': true,
   'colors': colors,
   'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
+  'category': ?category,
 };
 
 void main() {
@@ -438,6 +440,25 @@ void main() {
       blocked = <String>{'later@example.com'};
 
       expect((await service.search('nature')).prismResults, isEmpty);
+    });
+
+    test('anime Prism walls are hidden while the anime setting is off', () async {
+      final store = InMemoryLocalStore();
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+            ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', category: 'Anime')), (id: 'd2', data: _prismDoc('p2'))]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(
+        wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]),
+        store: store,
+        firestore: firestore,
+      );
+
+      expect((await service.search('girl')).prismResults.map((wall) => wall.id), <String>['p2']);
+
+      await SettingsLocalDataSource(store).set('WHcategories', 110);
+      expect((await service.search('girl')).prismResults.map((wall) => wall.id), unorderedEquals(<String>['p1', 'p2']));
     });
 
     test('a failed search is not cached', () async {
