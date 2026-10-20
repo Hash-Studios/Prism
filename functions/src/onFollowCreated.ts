@@ -6,6 +6,7 @@ import {emailHash, isLoggedOut, sendToUser} from "./notificationHelper";
 import {usernameLowerOf} from "./usernameLower";
 import {db, findUserByEmail, REGION, str} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {authorOf, syncAuthorFields} from "./wallAuthor";
 
 /**
  * Fires whenever a document in `usersv2` is updated.
@@ -14,8 +15,9 @@ import {notificationCopyPayload} from "./notificationCatalog";
  * user documents (not as a subcollection), so we detect new follows by
  * diffing `before.followers` vs `after.followers`.
  *
- * It also keeps `usernameLower` and `nameLower` equal to the lowercased username and name. When a new follower
- * is blocked by the followed user, the follow is removed from both users instead of notified.
+ * It also keeps `usernameLower` and `nameLower` equal to the lowercased username and name, and copies a changed
+ * name or photo to the user's walls and setups. When a new follower is blocked by the followed user, the follow
+ * is removed from both users instead of notified.
  *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
@@ -51,6 +53,16 @@ export const onFollowCreated = onDocumentUpdated(
         await event.data?.after.ref.update(lowerFields);
       } catch (err) {
         logger.warn("onFollowCreated: lowercase name sync failed.", {err});
+      }
+    }
+
+    const beforeAuthor = authorOf(before);
+    const afterAuthor = authorOf(after);
+    if (beforeAuthor.by !== afterAuthor.by || beforeAuthor.userPhoto !== afterAuthor.userPhoto) {
+      try {
+        await syncAuthorFields(after);
+      } catch (err) {
+        logger.warn("onFollowCreated: author sync failed.", {err});
       }
     }
 

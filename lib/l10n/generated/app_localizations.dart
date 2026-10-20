@@ -10,6 +10,7 @@ import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
 import 'app_localizations_hi.dart';
+import 'app_localizations_pt.dart';
 
 // ignore_for_file: type=lint
 
@@ -93,7 +94,14 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('de'), Locale('es'), Locale('hi')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('de'),
+    Locale('es'),
+    Locale('hi'),
+    Locale('pt'),
+    Locale('pt', 'BR'),
+  ];
 
   /// Failed filter export action inserted before refund status.
   ///
@@ -2686,6 +2694,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Marked reviewed'**
   String get adminMarkedReviewed;
+
+  /// No description provided for @adminModerationDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a Prism wall · {percent}%'**
+  String adminModerationDuplicate(int percent);
+
+  /// No description provided for @adminModerationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These are hints. Check before you reject.'**
+  String get adminModerationHint;
+
+  /// No description provided for @adminModerationLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Logo: {logo}'**
+  String adminModerationLogo(String logo);
+
+  /// No description provided for @adminModerationLogos.
+  ///
+  /// In en, this message translates to:
+  /// **'Logos'**
+  String get adminModerationLogos;
+
+  /// No description provided for @adminModerationOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the page.'**
+  String get adminModerationOpenFailed;
+
+  /// No description provided for @adminModerationOpenPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {host}'**
+  String adminModerationOpenPage(String host);
+
+  /// No description provided for @adminModerationSignals.
+  ///
+  /// In en, this message translates to:
+  /// **'Review signals'**
+  String get adminModerationSignals;
+
+  /// No description provided for @adminModerationSimilarWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar Prism wall'**
+  String get adminModerationSimilarWall;
+
+  /// No description provided for @adminModerationSimilarity.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% similar'**
+  String adminModerationSimilarity(int percent);
+
+  /// No description provided for @adminModerationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text: {words}'**
+  String adminModerationText(String words);
+
+  /// No description provided for @adminModerationTextInImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Text in the image'**
+  String get adminModerationTextInImage;
+
+  /// No description provided for @adminModerationUnsafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsafe: {categories}'**
+  String adminModerationUnsafe(String categories);
+
+  /// No description provided for @adminModerationUnsafeCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsafe categories'**
+  String get adminModerationUnsafeCategories;
+
+  /// No description provided for @adminModerationWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on {host}'**
+  String adminModerationWeb(String host);
+
+  /// No description provided for @adminModerationWebMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on {host} +{more}'**
+  String adminModerationWebMore(String host, int more);
+
+  /// No description provided for @adminModerationWebPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on the web'**
+  String get adminModerationWebPages;
 
   /// No description provided for @adminNewWallpapersPending.
   ///
@@ -15145,13 +15249,25 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['de', 'en', 'es', 'hi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['de', 'en', 'es', 'hi', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+country codes are specified.
+  switch (locale.languageCode) {
+    case 'pt':
+      {
+        switch (locale.countryCode) {
+          case 'BR':
+            return AppLocalizationsPtBr();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'de':
@@ -15162,6 +15278,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEs();
     case 'hi':
       return AppLocalizationsHi();
+    case 'pt':
+      return AppLocalizationsPt();
   }
 
   throw FlutterError(
