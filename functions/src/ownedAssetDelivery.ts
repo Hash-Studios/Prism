@@ -12,7 +12,8 @@ const validId = (value: unknown): value is string => typeof value === "string" &
   /^[A-Za-z0-9_-]{1,200}$/.test(value);
 export const ownedAssetStorageEnabled = (): boolean => ["R2_ACCOUNT_ID", "R2_PRIVATE_BUCKET", "R2_PREVIEW_BUCKET",
   "R2_PREVIEW_BASE_URL"].some((key) => !!process.env[key]);
-class R2IntegrityError extends Error {}
+export class PermanentOwnedAssetError extends Error {}
+class R2IntegrityError extends PermanentOwnedAssetError {}
 /** Storage "repo" of Prism Studio walls: their source is the worker bucket, not a GitHub repository. */
 export const STUDIO_STORAGE_REPO = "prism-studio";
 export type UploadIdentity = {repo: string; path: string; sha: string; uid?: string; sourceKind?: "owned" | "studio";
@@ -45,9 +46,9 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   const registry = db.collection("r2ObjectRegistry").doc(objectId);
   const registryData = await db.runTransaction(async (tx) => {
     const current = await tx.get(registry);
-    if (current.exists && current.data()?.status === "tombstoned") throw new Error("Retained object was deleted");
+    if (current.exists && current.data()?.status === "tombstoned") throw new PermanentOwnedAssetError("Retained object was deleted");
     if (current.exists && (current.data()?.object !== object || current.data()?.uid !== input.uid ||
-      current.data()?.sha256 !== digest)) throw new Error("Retained object identity conflict");
+      current.data()?.sha256 !== digest)) throw new PermanentOwnedAssetError("Retained object identity conflict");
     if (!current.exists) {
       tx.create(registry, {status: "writing", bucket, object, objectId, sha256: digest, uid: input.uid,
         repo: input.repo, path: input.path, sha: input.sha, sourceKind: input.sourceKind ?? "github", uploadId: input.uploadId ?? "imported",
@@ -55,7 +56,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
     }
     return current.data();
   });
-  if (registryData?.status === "tombstoned") throw new Error("Retained object was deleted");
+  if (registryData?.status === "tombstoned") throw new PermanentOwnedAssetError("Retained object was deleted");
   const type = contentType(input.bytes);
   await client.put("private", object, input.bytes, {sha256: digest, uid: input.uid, objectid: objectId,
     repo64: Buffer.from(input.repo).toString("base64url"), path64: Buffer.from(input.path).toString("base64url"),
@@ -65,7 +66,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
     privateHead.repo !== input.repo || privateHead.path !== input.path || privateHead.gitSha !== input.sha ||
     privateHead.size !== input.bytes.length || privateHead.uploadId !== (input.uploadId ?? "imported") ||
     hash(await client.get("private", object)) !== digest) {
-    throw new Error("Retained upload mismatch");
+    throw new PermanentOwnedAssetError("Retained upload mismatch");
   }
   let previewObjectId: string | undefined;
   if (previewId(input)) {
@@ -74,7 +75,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
       {sha256: digest, objectid: objectId}, type);
     const preview = await client.head("preview", `previews/${objectId}.img`);
     if (!preview || preview.sha256 !== digest || preview.objectId !== objectId || preview.size !== input.bytes.length ||
-      hash(await client.get("preview", `previews/${objectId}.img`)) !== digest) throw new Error("Retained preview mismatch");
+      hash(await client.get("preview", `previews/${objectId}.img`)) !== digest) throw new PermanentOwnedAssetError("Retained preview mismatch");
   }
   const active = await db.runTransaction(async (tx) => {
     const current = await tx.get(registry);
@@ -86,7 +87,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   if (!active) {
     await client.delete("private", object);
     if (previewObjectId) await client.delete("preview", `previews/${previewObjectId}.img`);
-    throw new Error("Retained object was deleted during upload");
+    throw new PermanentOwnedAssetError("Retained object was deleted during upload");
   }
   return {repo: input.repo, path: input.path, sha: input.sha, uid: input.uid,
     ...(input.sourceKind ? {sourceKind: input.sourceKind} : {}),
@@ -280,7 +281,42 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   return {upload: retained, url: raw, kind: privateAsset ? "owned" : "github"};
 }
 
-export async function bindOwnedWall(wallId: string): Promise<void> {
+export type WallBindingExpectation = {canonicalPath: string; incarnation: number; incarnationNanos: number;
+  originalUrl: string; thumbUrl: string; originalPath: string; thumbPath: string; originalSha: string; thumbSha: string;
+  recordedSource?: {originalPath: unknown; thumbPath: unknown; originalSha: unknown; thumbSha: unknown};
+  studio?: {runId: string; candidateId: string; resolution: string}};
+
+function matchesExpectedWall(wall: FirebaseFirestore.QueryDocumentSnapshot, expected: WallBindingExpectation): boolean {
+  const data = wall.data();
+  return wall.ref.path === expected.canonicalPath && wall.createTime.toMillis() === expected.incarnation &&
+    wall.createTime.nanoseconds === expected.incarnationNanos && data.review === true &&
+    data.wallpaper_url === expected.originalUrl && data.wallpaper_thumb === expected.thumbUrl &&
+    [[data.wallpaper_path, expected.originalPath], [data.thumb_path, expected.thumbPath],
+      [data.wallpaper_sha, expected.originalSha], [data.thumb_sha, expected.thumbSha]]
+      .every(([actual, value]) => actual === undefined || actual === "" || actual === value) &&
+    (!expected.recordedSource || data.wallpaper_path === expected.recordedSource.originalPath &&
+      data.thumb_path === expected.recordedSource.thumbPath && data.wallpaper_sha === expected.recordedSource.originalSha &&
+      data.thumb_sha === expected.recordedSource.thumbSha) &&
+    (!expected.studio || data.origin === "studio" && data.email === STUDIO_ACCOUNT.email &&
+      data.studioRunId === expected.studio.runId && data.studioCandidateId === expected.studio.candidateId &&
+      data.resolution === expected.studio.resolution);
+}
+
+export async function dropAllowsBinding(data: FirebaseFirestore.DocumentData, tx?: FirebaseFirestore.Transaction,
+  firestore: FirebaseFirestore.Firestore = db): Promise<boolean> {
+  if (data.dropReserved === true) return false;
+  if (!data.dropWeek) return true;
+  if (typeof data.dropWeek !== "string" || !/^[A-Za-z0-9_-]{1,200}$/.test(data.dropWeek)) return false;
+  const ref = firestore.collection("drops").doc(data.dropWeek);
+  return (tx ? await tx.get(ref) : await ref.get()).data()?.released === true;
+}
+
+function releasedDropMarkers(data: FirebaseFirestore.DocumentData): FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData> {
+  return Object.fromEntries(["dropWeek", "dropReserved"].filter((key) => data[key] !== undefined)
+    .map((key) => [key, admin.firestore.FieldValue.delete()]));
+}
+
+export async function bindOwnedWall(wallId: string, expected?: WallBindingExpectation): Promise<void> {
   if (!validId(wallId) || !ownedAssetStorageEnabled()) return;
   await db.runTransaction(async (tx) => {
     const rows = await tx.get(db.collection("walls").where("id", "==", wallId).limit(2));
@@ -290,15 +326,24 @@ export async function bindOwnedWall(wallId: string): Promise<void> {
     const ref = db.collection("ownedAssets").doc(wallId);
     const existing = (await tx.get(ref)).data();
     if (!wall.createTime || existing?.status === "deleted") return;
+    if ((expected && !matchesExpectedWall(wall, expected)) || !await dropAllowsBinding(data, tx)) return;
     const incarnation = wall.createTime.toMillis();
     if (existing?.status === "ready") return;
-    const original = await proveAsset(data, "wallpaper", tx);
-    const thumb = await proveAsset(data, "thumb", tx);
+    const proofData = expected ? {...data, wallpaper_path: expected.originalPath, thumb_path: expected.thumbPath,
+      wallpaper_sha: expected.originalSha, thumb_sha: expected.thumbSha} : data;
+    const original = await proveAsset(proofData, "wallpaper", tx);
+    const thumb = await proveAsset(proofData, "thumb", tx);
     if (!original || !thumb || original.upload.uid !== thumb.upload.uid || original.kind !== thumb.kind) return;
     if (original.upload.previewObjectId || original.upload.path.split("/").pop()?.startsWith("thumb_") ||
       original.upload.path === thumb.upload.path || original.upload.object === thumb.upload.object || !thumb.upload.previewObjectId ||
       !thumb.upload.path.split("/").pop()?.startsWith("thumb_")) return;
-    const author = await admin.auth().getUser(original.upload.uid);
+    let author: admin.auth.UserRecord;
+    try {
+      author = await admin.auth().getUser(original.upload.uid);
+    } catch (error) {
+      if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return;
+      throw error;
+    }
     if (author.disabled || !author.email || author.email !== data.email) return;
     const thumbUrl = ownedThumbnailUrl(thumb.upload);
     tx.set(ref, {status: "ready", canonicalPath: wall.ref.path, incarnation,
@@ -307,7 +352,7 @@ export async function bindOwnedWall(wallId: string): Promise<void> {
       provenance: {kind: original.kind, uid: original.upload.uid}});
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: thumbUrl, originalProtected: true,
       wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
-      originalObjectId: original.upload.objectId});
+      originalObjectId: original.upload.objectId, ...releasedDropMarkers(data)});
   });
 }
 async function delivery(wallId: string) {
@@ -334,8 +379,9 @@ export type StudioBinding = {kind: "studio"; runId: string; candidateId: string}
  */
 export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath: string; incarnation: number;
   incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload; source?: StudioBinding}): Promise<void> {
-  const {source, ...binding} = input;
+  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload; source?: StudioBinding;
+  expected?: WallBindingExpectation}): Promise<void> {
+  const {source, expected, ...binding} = input;
   const kind = source ? "studio" : undefined;
   if (!validId(input.wallId) || !stored(input.original) || !stored(input.thumb) ||
     input.original.sourceKind !== kind || input.thumb.sourceKind !== kind) throw new Error("Invalid legacy binding");
@@ -367,13 +413,14 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
     const wall = rows.docs[0];
     if (rows.size !== 1 || !wall || wall.ref.path !== input.canonicalPath ||
       wall.createTime?.toMillis() !== input.incarnation || wall.createTime.nanoseconds !== input.incarnationNanos || wall.data().review !== true ||
-      wall.data().wallpaper_url !== input.originalUrl || wall.data().wallpaper_thumb !== input.thumbUrl || existing.exists) {
-      throw new Error("Legacy wall changed or already bound");
+      wall.data().wallpaper_url !== input.originalUrl || wall.data().wallpaper_thumb !== input.thumbUrl || existing.exists ||
+      (expected && !matchesExpectedWall(wall, expected)) || !await dropAllowsBinding(wall.data(), tx)) {
+      throw new PermanentOwnedAssetError("Legacy wall changed or already bound");
     }
     if (source) {
       const verified = await verifiedStudioSource(input.wallId, wall.data(), tx);
       if (verified?.runId !== source.runId || verified.candidateId !== source.candidateId) {
-        throw new Error("Studio wall changed or is not a Studio wall");
+        throw new PermanentOwnedAssetError("Studio wall changed or is not a Studio wall");
       }
     }
     await verifyStoredUploadRegistry(input.original, tx);
@@ -385,12 +432,9 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
     }
     tx.create(ref, {...binding, incarnationNanos: wall.createTime.nanoseconds, status: "ready",
       provenance: source ?? {kind: "legacy"}});
-    // A released Drop wall keeps its drop markers; original access refuses a wall that still carries them.
-    const released = Object.fromEntries(["dropWeek", "dropReserved"].filter((key) => wall.data()[key] !== undefined)
-      .map((key) => [key, admin.firestore.FieldValue.delete()]));
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: ownedThumbnailUrl(input.thumb),
       wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
-      originalProtected: true, originalObjectId: input.original.objectId, ...released});
+      originalProtected: true, originalObjectId: input.original.objectId, ...releasedDropMarkers(wall.data())});
   });
 }
 export async function signOriginalDelivery(wallId: string): Promise<{url: string; expiresAt: number; objectId: string}> {

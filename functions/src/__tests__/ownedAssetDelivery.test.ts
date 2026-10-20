@@ -181,6 +181,43 @@ test("wall binding accepts matching GitHub receipts and redacts source URLs", as
     } : undefined});
   });
   t.mock.method(admin.auth(), "getUser", async () => ({email: "owner@example.com", disabled: false}) as never);
+  const expectation = {canonicalPath: "walls/wall", incarnation: 2, incarnationNanos: 2000000,
+    originalUrl: records["walls/wall"].wallpaper_url, thumbUrl: records["walls/wall"].wallpaper_thumb,
+    originalPath: paths[0], thumbPath: paths[1], originalSha: sha, thumbSha: sha};
+  await (bindOwnedWall as (...args: unknown[]) => Promise<void>)("wall", expectation);
+  assert.equal(store.has("ownedAssets/wall"), false, "a stale converter cannot bind a recreated wall");
+  await (bindOwnedWall as (...args: unknown[]) => Promise<void>)("wall", {...expectation, incarnation: 1,
+    incarnationNanos: 1000000, originalUrl: "https://raw.githubusercontent.com/hash/walls/main/other.jpg"});
+  assert.equal(store.has("ownedAssets/wall"), false, "a converter cannot bind changed source URLs");
+  store.set("walls/wall", {...records["walls/wall"], review: false});
+  await (bindOwnedWall as (...args: unknown[]) => Promise<void>)("wall", {...expectation, incarnation: 1,
+    incarnationNanos: 1000000});
+  assert.equal(store.has("ownedAssets/wall"), false, "a converter cannot bind revoked approval");
+  store.set("walls/wall", {...records["walls/wall"], dropReserved: true});
+  await bindOwnedWall("wall");
+  assert.equal(store.has("ownedAssets/wall"), false, "native uploads cannot bind reserved Drop walls");
+  const removedSource = {...records["walls/wall"]};
+  delete removedSource.wallpaper_path;
+  store.set("walls/wall", removedSource);
+  const currentExpectation = {...expectation, incarnation: 1, incarnationNanos: 1000000};
+  await (bindOwnedWall as (...args: unknown[]) => Promise<void>)("wall", {...currentExpectation,
+    recordedSource: {originalPath: paths[0], thumbPath: paths[1], originalSha: sha, thumbSha: sha}});
+  assert.equal(store.has("ownedAssets/wall"), false, "a converter cannot bind source metadata removed since its snapshot");
+  await (bindOwnedWall as (...args: unknown[]) => Promise<void>)("wall", currentExpectation);
+  assert.equal(store.get("ownedAssets/wall")?.status, "ready", "without the snapshot, missing metadata is accepted as legacy");
+  store.delete("ownedAssets/wall");
+  store.set("walls/wall", records["walls/wall"]);
+  t.mock.method(admin.auth(), "getUser", async () => {
+    throw Object.assign(new Error("Uploader was deleted"), {code: "auth/user-not-found"});
+  });
+  await bindOwnedWall("wall");
+  assert.equal(store.has("ownedAssets/wall"), false, "a deleted uploader permanently prevents binding without a retry");
+  t.mock.method(admin.auth(), "getUser", async () => {
+    throw Object.assign(new Error("Auth temporarily unavailable"), {code: "auth/internal-error"});
+  });
+  await assert.rejects(bindOwnedWall("wall"), /Auth temporarily unavailable/);
+  assert.equal(store.has("ownedAssets/wall"), false);
+  t.mock.method(admin.auth(), "getUser", async () => ({email: "owner@example.com", disabled: false}) as never);
   await bindOwnedWall("wall");
   assert.equal(store.get("ownedAssets/wall")?.status, "ready");
   assert.equal(store.get("walls/wall")?.wallpaper_url, "");

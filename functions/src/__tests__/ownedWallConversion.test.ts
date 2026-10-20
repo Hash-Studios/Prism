@@ -5,8 +5,9 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {onOwnedWallWritten, STUDIO_STORAGE_REPO, stored} from "../ownedAssetDelivery";
-import {convertApprovedWall, convertWall, buildStudioRow, gitBlobSha, type MigrationDeps, type MigrationResult,
+import {convertApprovedWall, convertWall, conversionDeps, buildStudioRow, gitBlobSha, type MigrationDeps, type MigrationResult,
   type MigrationWall, type WallInventory} from "../ownedWallConversion";
+import {R2Storage} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
 
 type Doc = Record<string, unknown>;
@@ -135,6 +136,25 @@ test("a Studio image whose size differs from the wall record is refused", async 
   assert.equal(store.has("ownedAssets/w1"), false);
 });
 
+test("a corrupt Studio image is blocked without asking the trigger to retry", async (t) => {
+  configure(t);
+  const store = installFakeDb(t, studioSeed());
+  installNetwork(t, {[`${WORKER}/ai/studio/cand-1.jpg`]: Buffer.from("corrupt image"),
+    [`${WORKER}/ai/studio/thumb_cand-1.jpg`]: Buffer.from("corrupt thumbnail")});
+  assert.equal(await convertApprovedWall("w1"), "blocked");
+  assert.equal(store.has("ownedAssets/w1"), false);
+});
+
+for (const url of ["not a URL", `${RAW}/%zz.jpg`]) {
+  test(`a malformed source is blocked without asking the trigger to retry: ${url}`, async (t) => {
+    configure(t);
+    installFakeDb(t, {"walls/w2": legacyWall({wallpaper_url: url})});
+    const network = installNetwork(t, {});
+    assert.equal(await convertApprovedWall("w2"), "blocked");
+    assert.equal(network.fetched.length, 0);
+  });
+}
+
 test("a pending Studio wall is not converted", async (t) => {
   configure(t);
   installFakeDb(t, studioSeed(studioWall({review: false})));
@@ -160,6 +180,25 @@ test("a transient source failure throws so the trigger retries, then converts", 
   assert.equal(await convertApprovedWall("w1"), "converted");
   assert.ok(network.objects.size > 0);
 });
+
+for (const status of [302, 307]) {
+  test(`a source redirect (${status}) is permanently blocked without following its target`, async (t) => {
+    configure(t);
+    const store = installFakeDb(t, studioSeed());
+    const requested: string[] = [];
+    const redirects: Array<RequestRedirect | undefined> = [];
+    t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      requested.push(String(input));
+      redirects.push(init?.redirect);
+      return new Response(null, {status, headers: {location: "http://169.254.169.254/metadata"}});
+    });
+    assert.equal(await convertApprovedWall("w1"), "blocked");
+    assert.ok(requested.length > 0);
+    assert.ok(requested.every((url) => url.startsWith(`${WORKER}/ai/studio/`)));
+    assert.ok(redirects.every((mode) => mode === "manual"));
+    assert.equal(store.has("ownedAssets/w1"), false);
+  });
+}
 
 async function legacySources(path = "wall.jpg") {
   return {[`${RAW}/${path}`]: await image(40, 60, "green"), [`${RAW}/thumb_${path}`]: await image(20, 30, "yellow")};
@@ -197,26 +236,31 @@ function receipts(path: string, sha: string, url: string, uid: string): Record<s
       response: {content: {path, sha, download_url: url}}}};
 }
 
-test("a 3.7.0 upload with receipts keeps them and binds with GitHub provenance", async (t) => {
-  configure(t);
-  const sources = await legacySources("up.jpg");
-  const original = sources[`${RAW}/up.jpg`];
-  const thumb = sources[`${RAW}/thumb_up.jpg`];
-  const wall = legacyWall({id: "w3", wallpaper_url: `${RAW}/up.jpg`, wallpaper_thumb: `${RAW}/thumb_up.jpg`,
-    wallpaper_path: "up.jpg", thumb_path: "thumb_up.jpg", wallpaper_sha: gitBlobSha(original), thumb_sha: gitBlobSha(thumb)});
-  const store = installFakeDb(t, {"walls/w3": wall,
-    ...receipts("up.jpg", gitBlobSha(original), `${RAW}/up.jpg`, "creator-1"),
-    ...receipts("thumb_up.jpg", gitBlobSha(thumb), `${RAW}/thumb_up.jpg`, "creator-1")});
-  installNetwork(t, sources);
-  t.mock.method(admin.auth(), "getUser", async () => ({email: "creator@example.com", disabled: false}) as never);
-  assert.equal(await convertApprovedWall("w3"), "converted");
-  const manifest = store.get("ownedAssets/w3") as {provenance: Doc; original: Doc};
-  assert.deepEqual(manifest.provenance, {kind: "github", uid: "creator-1"});
-  assert.equal(manifest.original.uid, "creator-1");
-  const receipt = store.get(`githubUploads/file_${sha256(`walls\0up.jpg\0${gitBlobSha(original)}`)}`);
-  assert.deepEqual(receipt?.retainedAsset, manifest.original);
-  assert.equal(store.get("walls/w3")?.originalProtected, true);
-});
+for (const missingMetadata of [false, true]) {
+  test(`a 3.7.0 upload with receipts binds with GitHub provenance (missing metadata: ${missingMetadata})`, async (t) => {
+    configure(t);
+    const sources = await legacySources("up.jpg");
+    const original = sources[`${RAW}/up.jpg`];
+    const thumb = sources[`${RAW}/thumb_up.jpg`];
+    const wall = legacyWall({id: "w3", wallpaper_url: `${RAW}/up.jpg`, wallpaper_thumb: `${RAW}/thumb_up.jpg`,
+      wallpaper_path: "up.jpg", thumb_path: "thumb_up.jpg", wallpaper_sha: gitBlobSha(original), thumb_sha: gitBlobSha(thumb)});
+    if (missingMetadata) {
+      for (const key of ["wallpaper_path", "thumb_path", "wallpaper_sha", "thumb_sha"]) delete wall[key];
+    }
+    const store = installFakeDb(t, {"walls/w3": wall,
+      ...receipts("up.jpg", gitBlobSha(original), `${RAW}/up.jpg`, "creator-1"),
+      ...receipts("thumb_up.jpg", gitBlobSha(thumb), `${RAW}/thumb_up.jpg`, "creator-1")});
+    installNetwork(t, sources);
+    t.mock.method(admin.auth(), "getUser", async () => ({email: "creator@example.com", disabled: false}) as never);
+    assert.equal(await convertApprovedWall("w3"), "converted");
+    const manifest = store.get("ownedAssets/w3") as {provenance: Doc; original: Doc};
+    assert.deepEqual(manifest.provenance, {kind: "github", uid: "creator-1"});
+    assert.equal(manifest.original.uid, "creator-1");
+    const receipt = store.get(`githubUploads/file_${sha256(`walls\0up.jpg\0${gitBlobSha(original)}`)}`);
+    assert.deepEqual(receipt?.retainedAsset, manifest.original);
+    assert.equal(store.get("walls/w3")?.originalProtected, true);
+  });
+}
 
 test("partial provenance never falls back to the legacy identity", async (t) => {
   configure(t);
@@ -296,16 +340,157 @@ test("an approved wall of an unreleased Drop is skipped until the Drop is releas
   assert.equal(store.get("walls/w1")?.originalProtected, true);
 });
 
+test("an approved reserved Drop without a week remains unavailable", async (t) => {
+  configure(t);
+  const store = installFakeDb(t, studioSeed(studioWall({dropReserved: true})));
+  const network = installNetwork(t, await studioSources());
+  assert.equal(await convertApprovedWall("w1"), "skipped");
+  assert.equal(store.get("walls/w1")?.dropReserved, true);
+  assert.equal(store.has("ownedAssets/w1"), false);
+  assert.equal(network.fetched.length, 0);
+});
+
+test("bulk conversion refuses a pending modern wall before fetching or retaining bytes", async () => {
+  const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1000000,
+    data: studioWall({review: false})};
+  const row = buildStudioRow(wall) as WallInventory;
+  delete row.studio;
+  let fetched = 0;
+  const deps: MigrationDeps = {ready: async () => false, prove: async () => ({uid: "creator", legacyEligible: false}),
+    revalidate: async () => undefined, fetchBytes: async () => {
+      fetched++;
+      return Buffer.from("bytes");
+    }, retain: async () => {
+      throw new Error("Unexpected retention of pending wall");
+    }, verify: async () => undefined, attach: async () => undefined, bind: async () => undefined,
+    bindLegacy: async () => undefined};
+  const result: MigrationResult = {docPath: wall.docPath, wallId: "w1", status: "blocked", detail: "", publicGithubCopiesRemain: true};
+  await assert.rejects(convertWall(row, {apply: true, allowReviewedLegacy: false, owner: "hash", repo: "walls",
+    commit: "0".repeat(40)}, deps, result), /not approved/);
+  assert.equal(fetched, 0);
+});
+
+test("bulk conversion refuses an unreleased Drop before fetching or retaining bytes", async (t) => {
+  configure(t);
+  const data = studioWall({dropWeek: "2026-W42"});
+  const store = installFakeDb(t, {...studioSeed(data), "drops/2026-W42": {released: false}});
+  const network = installNetwork(t, await studioSources());
+  const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1000000, data};
+  const result: MigrationResult = {docPath: wall.docPath, wallId: "w1", status: "blocked", detail: "", publicGithubCopiesRemain: true};
+  await assert.rejects(convertWall(buildStudioRow(wall) as WallInventory, {apply: true, allowReviewedLegacy: false,
+    owner: "hash", repo: "walls", commit: "0".repeat(40)}, conversionDeps(true, new R2Storage()), result), /Drop/);
+  assert.equal(network.fetched.length, 0);
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has("ownedAssets/w1"), false);
+});
+
+test("a Drop that becomes unreleased during conversion cannot lose its access markers", async (t) => {
+  configure(t);
+  const wall = studioWall({dropWeek: "2026-W42"});
+  const store = installFakeDb(t, {...studioSeed(wall), "drops/2026-W42": {released: true}});
+  installNetwork(t, await studioSources());
+  const request = globalThis.fetch;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await request(input, init);
+    if (String(input).startsWith(WORKER)) store.set("drops/2026-W42", {released: false});
+    return response;
+  });
+  await convertApprovedWall("w1").catch(() => undefined);
+  assert.equal(store.get("walls/w1")?.dropWeek, "2026-W42");
+  assert.equal(store.has("ownedAssets/w1"), false);
+});
+
+for (const change of ["tombstone", "deleted wall", "Studio resolution", "Studio candidate"] as const) {
+  test(`a permanent change during retention blocks without trigger retries: ${change}`, async (t) => {
+    configure(t);
+    const store = installFakeDb(t, studioSeed());
+    installNetwork(t, await studioSources());
+    const request = globalThis.fetch;
+    let changed = false;
+    t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await request(input, init);
+      if (!changed && init?.method === "PUT") {
+        changed = true;
+        if (change === "tombstone") {
+          const id = new Headers(init.headers).get("x-amz-meta-objectid");
+          const key = `r2ObjectRegistry/${id}`;
+          store.set(key, {...store.get(key), status: "tombstoned"});
+        } else if (change === "deleted wall") {
+          store.delete("walls/w1");
+        } else {
+          store.set("walls/w1", {...store.get("walls/w1"),
+            ...(change === "Studio resolution" ? {resolution: "41x60"} : {studioCandidateId: "cand-2"})});
+        }
+      }
+      return response;
+    });
+    assert.equal(await convertApprovedWall("w1"), "blocked");
+    assert.equal(store.has("ownedAssets/w1"), false);
+    assert.notEqual(store.get("walls/w1")?.originalProtected, true);
+  });
+}
+
 test("two deliveries of the same approval converge on one manifest", async (t) => {
   configure(t);
   const store = installFakeDb(t, studioSeed());
   installNetwork(t, await studioSources());
   const results = await Promise.all([convertApprovedWall("w1"), convertApprovedWall("w1")]);
   assert.ok(results.includes("converted"));
+  assert.ok(results.every((result) => result === "converted" || result === "skipped"));
   const manifest = store.get("ownedAssets/w1") as {original: {objectId: string}};
   assert.equal(store.get("walls/w1")?.originalObjectId, manifest.original.objectId);
   assert.equal([...store.keys()].filter((key) => key.startsWith("ownedAssets/")).length, 1);
 });
+
+test("ready conversion requires the reviewed URL pair, paths, byte hashes and Studio identity", async (t) => {
+  configure(t);
+  const data = studioWall();
+  installFakeDb(t, studioSeed(data));
+  const sources: Record<string, Buffer> = await studioSources();
+  installNetwork(t, sources);
+  const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1000000, data};
+  const row = buildStudioRow(wall) as WallInventory;
+  if (!row.original || !row.thumb) throw new Error("Missing source assets");
+  const original = {...row.original, gitSha: gitBlobSha(sources[row.original.url])};
+  const thumb = {...row.thumb, gitSha: gitBlobSha(sources[row.thumb.url])};
+  assert.equal(await convertApprovedWall("w1"), "converted");
+  const deps = conversionDeps(false, null);
+  assert.equal(await deps.ready(wall, original, thumb), true);
+  for (const change of [{recordedUrl: `${WORKER}/ai/studio/other.jpg`}, {path: "ai/studio/other.jpg"},
+    {gitSha: "a".repeat(40)}]) {
+    assert.equal(await deps.ready(wall, {...original, ...change}, thumb), false);
+    assert.equal(await deps.ready(wall, original, {...thumb, ...change}), false);
+  }
+  for (const change of [{resolution: "41x60"}, {studioRunId: "run-2"}, {studioCandidateId: "cand-2"}]) {
+    assert.equal(await deps.ready({...wall, data: {...data, ...change}}, original, thumb), false);
+  }
+});
+
+for (const stage of ["before download", "after download"] as const) {
+  test(`a matching conversion that wins ${stage} counts as done without retention`, async (t) => {
+    configure(t);
+    const data = studioWall();
+    installFakeDb(t, studioSeed(data));
+    installNetwork(t, await studioSources());
+    const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1000000, data};
+    const deps = conversionDeps(true, new R2Storage());
+    const revalidate = deps.revalidate;
+    let checked = 0;
+    deps.revalidate = async (...args) => {
+      if (++checked === (stage === "before download" ? 1 : 2)) {
+        assert.equal(await convertApprovedWall("w1"), "converted");
+      }
+      return revalidate(...args);
+    };
+    deps.retain = async () => {
+      throw new Error("A matching winner must prevent losing retention");
+    };
+    const result: MigrationResult = {docPath: wall.docPath, wallId: "w1", status: "blocked", detail: "", publicGithubCopiesRemain: true};
+    await convertWall(buildStudioRow(wall) as WallInventory, {apply: true, allowReviewedLegacy: false, owner: "hash",
+      repo: "walls", commit: "0".repeat(40)}, deps, result);
+    assert.equal(result.status, "already-owned");
+  });
+}
 
 test("a loser of the bind race counts as converted when the manifest is ready", async () => {
   const wall: MigrationWall = {docPath: "walls/w1", incarnation: 1, incarnationNanos: 1, data: studioWall()};

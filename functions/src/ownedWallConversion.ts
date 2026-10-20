@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {db} from "./common";
 import * as delivery from "./ownedAssetDelivery";
-import type {StoredUpload, StudioBinding} from "./ownedAssetDelivery";
+import type {StoredUpload, StudioBinding, WallBindingExpectation} from "./ownedAssetDelivery";
 import {R2Storage} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {parseStudioSource, verifiedStudioSource} from "./studio/assetSource";
@@ -29,7 +29,8 @@ export type WallInventory = {wall: MigrationWall; wallId: string; original?: Git
 export type MigrationResult = {docPath: string; wallId: string; status: "would-migrate" | "in-progress" | "migrated" | "already-owned" | "blocked";
   detail: string; publicGithubCopiesRemain: true};
 export type LegacyBinding = {wallId: string; canonicalPath: string; incarnation: number; incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredMigrationAsset; thumb: StoredMigrationAsset; source?: StudioBinding};
+  originalUrl: string; thumbUrl: string; original: StoredMigrationAsset; thumb: StoredMigrationAsset; source?: StudioBinding;
+  expected?: WallBindingExpectation};
 export type OwnershipProof = {uid: string | null; legacyEligible: boolean; studio?: StudioBinding};
 export type MigrationDeps = {
   prove: (original: GithubAsset, thumb: GithubAsset, row: WallInventory) => Promise<OwnershipProof>;
@@ -38,9 +39,9 @@ export type MigrationDeps = {
   verify: (asset: StoredMigrationAsset, size: number) => Promise<void>;
   revalidate: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<void>;
   attach: (asset: StoredMigrationAsset) => Promise<void>;
-  bind: (wallId: string) => Promise<void>;
+  bind: (wallId: string, expected?: WallBindingExpectation) => Promise<void>;
   bindLegacy: (input: LegacyBinding) => Promise<void>;
-  ready: (wall: MigrationWall) => Promise<boolean>;
+  ready: (wall: MigrationWall, original?: GithubAsset, thumb?: GithubAsset) => Promise<boolean>;
   progress?: (results: MigrationResult[]) => Promise<void>;
 };
 export type R2ObjectClient = {get: (kind: "private" | "preview", object: string) => Promise<Buffer>};
@@ -57,8 +58,14 @@ export function parseGithubAsset(raw: unknown, path: unknown, options: Migration
   if (!options.owner || !options.repo || !/^[a-f0-9]{40}$/.test(options.commit) || typeof raw !== "string") {
     throw new PermanentConversionError("Missing configured GitHub source or pinned commit");
   }
-  const url = new URL(raw);
-  const parts = url.pathname.slice(1).split("/").map(decodeURIComponent);
+  let url: URL;
+  let parts: string[];
+  try {
+    url = new URL(raw);
+    parts = url.pathname.slice(1).split("/").map(decodeURIComponent);
+  } catch {
+    throw new PermanentConversionError("Malformed GitHub asset URL");
+  }
   if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.port || url.username ||
     url.password || url.search || url.hash || parts[0]?.toLowerCase() !== options.owner.toLowerCase() ||
     parts[1] !== options.repo || !parts[2] || parts.length < 4 ||
@@ -81,12 +88,12 @@ async function downloadImage(url: string, pin?: {size: number; gitSha: string}, 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url, {redirect: "error", signal: controller.signal,
+    const response = await fetch(url, {redirect: "manual", signal: controller.signal,
       headers: {"accept-encoding": "identity"}});
     if (!response.ok || !response.body) {
       const error = `Raw download failed: ${response.status}`;
-      // 404 and other 4xx will not change on retry; 429 and 5xx will.
-      throw response.status >= 400 && response.status < 500 && response.status !== 429 ?
+      // Request timeouts, rate limits and server failures can recover on retry.
+      throw response.status >= 300 && response.status < 500 && ![408, 429].includes(response.status) ?
         new PermanentConversionError(error) : new Error(error);
     }
     const declared = Number(response.headers.get("content-length"));
@@ -112,7 +119,12 @@ async function downloadImage(url: string, pin?: {size: number; gitSha: string}, 
     const bytes = Buffer.concat(chunks);
     if (pin && (bytes.length !== pin.size || gitBlobSha(bytes) !== pin.gitSha)) throw new PermanentConversionError("Git blob SHA mismatch");
     const sharp = (await import("sharp")).default;
-    const metadata = await sharp(bytes, {limitInputPixels: 100000000}).metadata();
+    let metadata: import("sharp").Metadata;
+    try {
+      metadata = await sharp(bytes, {limitInputPixels: 100000000}).metadata();
+    } catch {
+      throw new PermanentConversionError("Image cannot be decoded");
+    }
     if (!metadata.format || !["jpeg", "png", "webp", "gif"].includes(metadata.format) ||
       !metadata.width || !metadata.height) throw new PermanentConversionError("Unsupported image format");
     if (resolution && `${metadata.width}x${metadata.height}` !== resolution) {
@@ -136,12 +148,12 @@ export async function verifyR2MigrationCopy(asset: StoredMigrationAsset, size: n
   await verifyMetadata(asset, size);
   const privateBytes = await getObject("private", asset.object);
   if ((size !== undefined && privateBytes.length !== size) || digest(privateBytes) !== asset.sha256) {
-    throw new Error("R2 private readback mismatch");
+    throw new PermanentConversionError("R2 private readback mismatch");
   }
   if (asset.previewObjectId) {
     const previewBytes = await getObject("preview", `previews/${asset.previewObjectId}.img`);
     if ((size !== undefined && previewBytes.length !== size) || digest(previewBytes) !== asset.sha256) {
-      throw new Error("R2 preview readback mismatch");
+      throw new PermanentConversionError("R2 preview readback mismatch");
     }
   }
 }
@@ -196,21 +208,33 @@ export function buildStudioRow(wall: MigrationWall): WallInventory | null {
 /** Converts one planned row. Throws on failure; a `PermanentConversionError` means a retry cannot succeed. */
 export async function convertWall(row: WallInventory, options: MigrationOptions, deps: MigrationDeps,
   result: MigrationResult, progress: () => Promise<void> = async () => undefined): Promise<void> {
-  if (await deps.ready(row.wall)) {
+  let expectedOriginal = row.original;
+  let expectedThumb = row.thumb;
+  const ready = () => deps.ready(row.wall, expectedOriginal, expectedThumb);
+  if (await ready()) {
     result.status = "already-owned";
     result.detail = "R2 manifest is ready; public GitHub copies remain unchanged";
     return;
   }
   if (row.status !== "planned" || !row.original || !row.thumb) throw new PermanentConversionError(row.detail || "Invalid inventory row");
+  if (row.wall.data.review !== true) throw new PermanentConversionError("Wall is not approved yet; approval converts it");
+  if (row.wall.data.dropReserved === true) throw new PermanentConversionError("Wall is reserved for an unreleased Drop");
+  const revalidate = async (original: GithubAsset, thumb: GithubAsset): Promise<boolean> => {
+    try {
+      await deps.revalidate(row.wall, original, thumb);
+      return true;
+    } catch (error) {
+      if (!await ready()) throw error;
+      result.status = "already-owned";
+      return false;
+    }
+  };
   const proof = await deps.prove(row.original, row.thumb, row);
   const owner = proof.uid;
   const studio = proof.studio;
   const legacy = owner === null;
   if (legacy && (!proof.legacyEligible || !options.allowReviewedLegacy || row.wall.data.review !== true)) {
     throw new PermanentConversionError("Unproven or partial provenance: reviewed legacy policy requires explicit opt-in and no receipts");
-  }
-  if (studio && row.wall.data.review !== true) {
-    throw new PermanentConversionError("Studio wall is not approved yet; approval converts it");
   }
   result.detail = studio ? "Prism Studio provenance; no receipt or creator credit will be fabricated" : legacy ?
     "Reviewed legacy policy; no receipt or creator credit will be fabricated" :
@@ -221,9 +245,11 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
   }
   result.status = "in-progress";
   await progress();
-  await deps.revalidate(row.wall, row.original, row.thumb);
+  if (!await revalidate(row.original, row.thumb)) return;
   const [originalBytes, thumbBytes] = await Promise.all([deps.fetchBytes(row.original), deps.fetchBytes(row.thumb)]);
-  await deps.revalidate(row.wall, row.original, row.thumb);
+  expectedOriginal = {...row.original, gitSha: row.original.gitSha || gitBlobSha(originalBytes)};
+  expectedThumb = {...row.thumb, gitSha: row.thumb.gitSha || gitBlobSha(thumbBytes)};
+  if (!await revalidate(row.original, row.thumb)) return;
   const uid = studio ? STUDIO_ACCOUNT.id : owner ?? "legacy-migration";
   const extra = studio ? {sourceKind: "studio" as const, uploadId: studio.candidateId} : {};
   const [original, thumb] = await Promise.all([
@@ -233,22 +259,29 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
   if (original.objectId === thumb.objectId || original.previewObjectId || !thumb.previewObjectId ||
     thumb.previewObjectId !== thumb.objectId) throw new PermanentConversionError("R2 retained objects are not separated by privacy role");
   await Promise.all([deps.verify(original, originalBytes.length), deps.verify(thumb, thumbBytes.length)]);
+  const expected: WallBindingExpectation = {canonicalPath: row.wall.docPath, incarnation: row.wall.incarnation,
+    incarnationNanos: row.wall.incarnationNanos, originalUrl: row.original.recordedUrl, thumbUrl: row.thumb.recordedUrl,
+    originalPath: row.original.path, thumbPath: row.thumb.path, originalSha: row.original.gitSha, thumbSha: row.thumb.gitSha,
+    recordedSource: {originalPath: row.wall.data.wallpaper_path, thumbPath: row.wall.data.thumb_path,
+      originalSha: row.wall.data.wallpaper_sha, thumbSha: row.wall.data.thumb_sha},
+    ...(studio ? {studio: {runId: studio.runId, candidateId: studio.candidateId,
+      resolution: String(row.wall.data.resolution)}} : {})};
   try {
     if (studio || legacy) {
       await deps.bindLegacy({wallId: row.wallId, canonicalPath: row.wall.docPath,
         incarnation: row.wall.incarnation, incarnationNanos: row.wall.incarnationNanos,
         originalUrl: row.original.recordedUrl, thumbUrl: row.thumb.recordedUrl, original, thumb,
-        ...(studio ? {source: studio} : {})});
+        ...(studio ? {source: studio} : {}), expected});
     } else {
       await deps.attach(original);
       await deps.attach(thumb);
-      await deps.bind(row.wallId);
+      await deps.bind(row.wallId, expected);
     }
   } catch (error) {
     // Another delivery of the same trigger, or the bulk script, may have bound the wall first. That is success.
-    if (!await deps.ready(row.wall)) throw error;
+    if (!await ready()) throw error;
   }
-  if (!await deps.ready(row.wall)) {
+  if (!await ready()) {
     throw new PermanentConversionError("R2 binding not ready; wall changed or proof no longer valid; rerun safely");
   }
   result.status = "migrated";
@@ -284,9 +317,14 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
         current.createTime.nanoseconds !== wall.incarnationNanos || data?.id !== wall.data.id ||
         data.wallpaper_url !== wall.data.wallpaper_url || data.wallpaper_thumb !== wall.data.wallpaper_thumb ||
         data.wallpaper_path !== wall.data.wallpaper_path || data.thumb_path !== wall.data.thumb_path ||
+        ["review", "origin", "email", "resolution", "studioRunId", "studioCandidateId", "dropWeek", "dropReserved"]
+          .some((field) => data[field] !== wall.data[field]) ||
         (data.wallpaper_sha !== undefined && data.wallpaper_sha !== "" && data.wallpaper_sha !== original.gitSha) ||
         (data.thumb_sha !== undefined && data.thumb_sha !== "" && data.thumb_sha !== thumb.gitSha)) {
         throw new PermanentConversionError("Wall changed since inventory; rerun the pinned inventory");
+      }
+      if (data.review !== true || !await delivery.dropAllowsBinding(data, undefined, firestore)) {
+        throw new PermanentConversionError("Wall is not approved or belongs to an unreleased Drop");
       }
     },
     attach: async (asset) => {
@@ -294,13 +332,13 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
       await firestore.runTransaction(async (tx) => {
         const receipt = (await tx.get(ref)).data();
         if (!receipt || receipt.uid !== asset.uid || receipt.repo !== asset.repo || receipt.path !== asset.path ||
-          receipt.sha !== asset.sha) throw new Error("Receipt changed during migration");
+          receipt.sha !== asset.sha) throw new PermanentConversionError("Receipt changed during migration");
         tx.update(ref, {retainedAsset: asset});
       });
     },
     bind: delivery.bindOwnedWall,
     bindLegacy: delivery.bindLegacyOwnedWall,
-    ready: async (wall) => {
+    ready: async (wall, original, thumb) => {
       const manifest = (await firestore.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
       const current = await firestore.doc(wall.docPath).get();
       const data = current.data();
@@ -309,7 +347,23 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
         current.createTime?.toMillis() === wall.incarnation && current.createTime.nanoseconds === wall.incarnationNanos &&
         data?.originalProtected === true && data.wallpaper_url === "" &&
         data.originalObjectId === manifest.original?.objectId && data.wallpaper_thumb === delivery.ownedThumbnailUrl(manifest.thumb);
-      if (!ready || !apply) return ready;
+      if (!ready) return false;
+      if ((original || thumb) && (!original || !thumb)) return false;
+      if (original && thumb) {
+        const matches = (actual: StoredUpload, source: GithubAsset, url: unknown) =>
+          actual?.repo === source.repo && actual.path === source.path && url === source.recordedUrl &&
+          (!source.gitSha || actual.sha === source.gitSha);
+        if (wall.data.review !== true || data.review !== true || !matches(manifest.original, original, manifest.originalUrl) ||
+          !matches(manifest.thumb, thumb, manifest.thumbUrl)) return false;
+        if (original.repo === delivery.STUDIO_STORAGE_REPO) {
+          const studio = parseStudioSource(wall.data);
+          if (!studio || manifest.provenance?.kind !== "studio" || manifest.provenance.runId !== studio.runId ||
+            manifest.provenance.candidateId !== studio.candidateId ||
+            ["origin", "email", "studioRunId", "studioCandidateId", "resolution"]
+              .some((field) => data[field] !== wall.data[field])) return false;
+        }
+      }
+      if (!apply) return true;
       const owned = await delivery.getOwnedWallDelivery(String(wall.data.id));
       await Promise.all([delivery.verifyStoredUpload(owned.original), delivery.verifyStoredUpload(owned.thumb)]);
       await Promise.all([readback(owned.original, undefined, async () => undefined),
@@ -362,10 +416,7 @@ export async function convertApprovedWall(wallId: string): Promise<"converted" |
     if (rows.size > 1) logger.error("owned wall conversion: duplicate logical wall id", {wallId});
     return "skipped";
   }
-  if (typeof data.dropWeek === "string" && data.dropWeek) {
-    const drop = (await db.collection("drops").doc(data.dropWeek).get()).data();
-    if (drop?.released !== true) return "skipped";
-  }
+  if (!await delivery.dropAllowsBinding(data)) return "skipped";
   const wall: MigrationWall = {docPath: snap.ref.path, incarnation: snap.createTime.toMillis(),
     incarnationNanos: snap.createTime.nanoseconds, data};
   const result: MigrationResult = {docPath: wall.docPath, wallId, status: "blocked", detail: "", publicGithubCopiesRemain: true};
@@ -392,9 +443,7 @@ export async function convertApprovedWall(wallId: string): Promise<"converted" |
     logger.info("owned wall conversion", {wallId, status: result.status});
     return "converted";
   } catch (error) {
-    if (!(error instanceof PermanentConversionError)) throw error;
-    // Another delivery converted the wall while this one ran. That is success, not a block.
-    if (await deps.ready(wall).catch(() => false)) return "skipped";
+    if (!(error instanceof PermanentConversionError) && !(error instanceof delivery.PermanentOwnedAssetError)) throw error;
     logger.error("owned wall conversion blocked", {wallId, reason: error.message});
     return "blocked";
   }
