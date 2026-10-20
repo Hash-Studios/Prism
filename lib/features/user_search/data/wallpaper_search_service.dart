@@ -18,7 +18,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
-/// [prismResults] are Prism catalogue walls that match the query by tag or category. They are empty when nothing
+/// [prismResults] are Prism catalogue walls that match the query by search terms. They are empty when nothing
 /// matches or the Prism query fails.
 typedef WallpaperSearchPage = ({
   SearchProviderValue provider,

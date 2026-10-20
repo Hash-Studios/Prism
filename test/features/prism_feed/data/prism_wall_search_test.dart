@@ -14,48 +14,111 @@ void main() {
     search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
   });
 
-  List<Object?> valuesOf(String sourceTag) =>
-      firestore.querySpecs.firstWhere((spec) => spec.sourceTag == sourceTag).filters.last.value! as List<Object?>;
+  Map<String, dynamic> doc(String id, {String? tier, List<String> colors = const <String>[], Object? searchTerms}) =>
+      <String, dynamic>{
+        'id': id,
+        'wallpaper_url': 'https://prism/$id.jpg',
+        'wallpaper_provider': 'prism',
+        'review': true,
+        'colors': colors,
+        'depth': ?(tier == null ? null : <String, dynamic>{'tier': tier}),
+        'searchTerms': ?searchTerms,
+      };
 
-  test('a one word query keeps the three spellings it always had', () async {
-    await search.search('forest');
+  group('text', () {
+    test('sends the singular lowercase words of the query as one array-contains-any filter on searchTerms', () async {
+      await search.search('Boats at Sunset');
 
-    expect(valuesOf('PrismWallSearch.tags'), <String>['forest', 'Forest']);
-    expect(
-      firestore.querySpecs.firstWhere((spec) => spec.sourceTag == 'PrismWallSearch.tags').filters.last.op,
-      FirestoreFilterOp.arrayContainsAny,
-    );
-  });
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.terms');
+      expect(spec.collection, 'walls');
+      expect(spec.filters.map((f) => (f.field, f.op)), <(String, FirestoreFilterOp)>[
+        ('review', FirestoreFilterOp.isEqualTo),
+        ('searchTerms', FirestoreFilterOp.arrayContainsAny),
+      ]);
+      expect(spec.filters.last.value, <String>['boat', 'sunset']);
+      expect(spec.orderBy.single.field, 'createdAt');
+      expect(spec.orderBy.single.descending, isTrue);
+      expect(spec.limit, 12);
+    });
 
-  test('each word of a longer query is a tag, so "dark blue forest" can match a wall tagged "forest"', () async {
-    await search.search('dark blue forest');
+    test('a query of only stopwords sends no query and returns nothing', () async {
+      expect(await search.search('the'), isEmpty);
+      expect(firestore.querySpecs, isEmpty);
+    });
 
-    final List<Object?> tags = valuesOf('PrismWallSearch.tags');
-    expect(tags, containsAll(<String>['dark', 'Dark', 'blue', 'Blue', 'forest', 'Forest']));
-    expect(tags, contains('dark blue forest'));
-  });
+    test('a query of more than 10 words sends the first 10 terms', () async {
+      await search.search('alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima');
 
-  test('the tag filter never passes more than 30 values, and uses at most 10 words', () async {
-    await search.search(List<String>.generate(14, (i) => 'word$i').join(' '));
+      expect(firestore.querySpecs.single.filters.last.value, <String>[
+        'alpha',
+        'bravo',
+        'charlie',
+        'delta',
+        'echo',
+        'foxtrot',
+        'golf',
+        'hotel',
+        'india',
+        'juliet',
+      ]);
+    });
 
-    final List<Object?> tags = valuesOf('PrismWallSearch.tags');
-    expect(tags.length, lessThanOrEqualTo(30));
-    expect(tags, contains('word9'));
-    expect(tags, isNot(contains('word10')));
-  });
+    test('repeated words and extra spaces send each term once', () async {
+      await search.search('  neon   Neon  city ');
 
-  test('a category name inside a longer query matches the category field', () async {
-    await search.search('dark forest');
+      expect(firestore.querySpecs.single.filters.last.value, <String>['neon', 'city']);
+    });
 
-    expect(valuesOf('PrismWallSearch.category'), containsAll(<String>['Dark', 'Forest']));
-  });
+    test('a wall that matches more query terms comes before a newer wall that matches fewer', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'newest-one-term', data: doc('newest-one-term', searchTerms: <String>['boat', 'harbor'])),
+        (id: 'older-one-term', data: doc('older-one-term', searchTerms: <String>['sunset'])),
+        (id: 'oldest-two-terms', data: doc('oldest-two-terms', searchTerms: <String>['sunset', 'beach', 'boat'])),
+      ];
 
-  test('repeated and extra spaces never make an empty tag', () async {
-    await search.search('  neon   neon  city ');
+      final walls = await search.search('boats at sunset');
 
-    final List<Object?> tags = valuesOf('PrismWallSearch.tags');
-    expect(tags, isNot(contains('')));
-    expect(tags.where((tag) => tag == 'neon'), hasLength(1));
+      expect(walls.map((wall) => wall.id), <String>['oldest-two-terms', 'newest-one-term', 'older-one-term']);
+    });
+
+    test('walls with the same number of matched terms keep the order Firestore returned', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'a', data: doc('a', searchTerms: <String>['boat'])),
+        (id: 'b', data: doc('b', searchTerms: <String>['sunset'])),
+        (id: 'c', data: doc('c', searchTerms: <String>['boat', 'sunset'])),
+        (id: 'd', data: doc('d', searchTerms: <String>['sunset', 'boat'])),
+        (id: 'e', data: doc('e', searchTerms: <String>['boat'])),
+      ];
+
+      final walls = await search.search('boat sunset');
+
+      expect(walls.map((wall) => wall.id), <String>['c', 'd', 'a', 'b', 'e']);
+    });
+
+    test('a missing, non-list or non-string searchTerms scores no match but the wall is kept', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'missing', data: doc('missing')),
+        (id: 'text', data: doc('text', searchTerms: 'boat')),
+        (id: 'mixed', data: doc('mixed', searchTerms: <Object?>[42, null, 'boat'])),
+        (id: 'junk', data: doc('junk', searchTerms: <Object?>[42, null])),
+      ];
+
+      final walls = await search.search('boat');
+
+      expect(walls.map((wall) => wall.id), <String>['mixed', 'missing', 'text', 'junk']);
+    });
+
+    test('the limit applies after ranking', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'one', data: doc('one', searchTerms: <String>['boat'])),
+        (id: 'two', data: doc('two', searchTerms: <String>['boat', 'sunset'])),
+      ];
+
+      final walls = await search.search('boat sunset', limit: 1);
+
+      expect(walls.map((wall) => wall.id), <String>['two']);
+    });
   });
 
   group('colour', () {
@@ -80,22 +143,13 @@ void main() {
     test('with a query the colour is never a Firestore filter, because two array filters cannot be combined', () async {
       await search.search('forest', colorId: 'blue');
 
-      expect(firestore.querySpecs, hasLength(2));
+      expect(firestore.querySpecs, hasLength(1));
       expect(firestore.querySpecs.expand((spec) => spec.filters).map((f) => f.field), isNot(contains('colors')));
       expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
     });
   });
 
   group('depth', () {
-    Map<String, dynamic> doc(String id, {String? tier, List<String> colors = const <String>[]}) => <String, dynamic>{
-      'id': id,
-      'wallpaper_url': 'https://prism/$id.jpg',
-      'wallpaper_provider': 'prism',
-      'review': true,
-      'colors': colors,
-      'depth': ?(tier == null ? null : <String, dynamic>{'tier': tier}),
-    };
-
     test('with an empty query lists the auto and menu walls newest first, without text filters', () async {
       await search.search('', depthOnly: true);
 
@@ -114,7 +168,7 @@ void main() {
     });
 
     test('with a query the depth tier is checked on the matches, so the text indexes stay in use', () async {
-      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.terms'
           ? <FakeDocRow>[
               (id: 'a', data: doc('a', tier: 'auto')),
               (id: 'b', data: doc('b', tier: 'none')),
@@ -153,7 +207,7 @@ void main() {
     });
 
     test('without the depth filter the depth tier is ignored', () async {
-      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.terms'
           ? <FakeDocRow>[(id: 'a', data: doc('a', tier: 'none')), (id: 'c', data: doc('c'))]
           : const <FakeDocRow>[];
 
