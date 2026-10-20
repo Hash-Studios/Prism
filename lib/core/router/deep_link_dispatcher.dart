@@ -11,7 +11,6 @@ import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/widgets.dart';
 
 enum DeepLinkDispatchResult { navigated, failure, blocked, cancelled, deferred }
 
@@ -238,13 +237,13 @@ class DeepLinkDispatcher {
       if (route == null && resolution.isNetwork && action is ShortCodeIntent && !isRetry && onRetryNeeded != null) {
         _deferred.add((action, source));
         onRetryNeeded!(action, source);
-        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final l10n = await loadDeviceAppLocalizations();
         toasts.info(l10n.appLinkRetryWhenOnline);
         return DeepLinkDispatchResult.deferred;
       }
       if (route == null) {
         if (source == DeepLinkSourceValue.push && action.rawUri.trim().isNotEmpty) {
-          final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          final l10n = await loadDeviceAppLocalizations();
           toasts.error(l10n.coreContentNotAvailable);
         }
         await _navigate(

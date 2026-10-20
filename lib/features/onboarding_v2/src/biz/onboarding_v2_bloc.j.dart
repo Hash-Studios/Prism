@@ -27,6 +27,7 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -53,8 +54,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     this._settingsLocal, {
     @ignoreParam FirebaseRemoteConfig? remoteConfig,
     @ignoreParam AiGenerationRepositoryImpl? aiRepository,
+    @ignoreParam Future<AppLocalizations> Function()? loadLocalizations,
   }) : _aiRepositoryOverride = aiRepository,
        _remoteConfigOverride = remoteConfig,
+       _loadLocalizations = loadLocalizations ?? loadDeviceAppLocalizations,
        super(OnboardingV2State.initial()) {
     on<_Started>(_onStarted);
     on<_LoadRetried>(_onLoadRetried);
@@ -88,6 +91,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final OnboardingV2Repository _onboardingRepository;
   final SettingsLocalDataSource _settingsLocal;
   final FirebaseRemoteConfig? _remoteConfigOverride;
+  final Future<AppLocalizations> Function() _loadLocalizations;
   FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
   final AiGenerationRepositoryImpl? _aiRepositoryOverride;
 
@@ -350,11 +354,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     if (attemptId != _saveAttemptId) return;
 
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
+    final aiData = nextStep == OnboardingV2Step.aiGenerate
+        ? await _promptForInterests(selectedInterests)
+        : state.aiData;
+    if (attemptId != _saveAttemptId || isClosed) return;
     emit(
       state.copyWith(
         actionStatus: ActionStatus.success,
         step: nextStep,
-        aiData: nextStep == OnboardingV2Step.aiGenerate ? _promptForInterests(selectedInterests) : state.aiData,
+        aiData: aiData,
         wallpaperData: OnboardingWallpaperData(
           wallpaper: refreshedWallpaper ?? state.wallpaperData.wallpaper,
           status: FirstWallpaperStatus.idle,
@@ -370,14 +378,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       return;
     }
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
-    emit(
-      state.copyWith(
-        step: nextStep,
-        actionStatus: ActionStatus.idle,
-        aiData: nextStep == OnboardingV2Step.aiGenerate ? _promptForInterests(const <String>[]) : state.aiData,
-        navRequest: null,
-      ),
-    );
+    final attemptId = ++_saveAttemptId;
+    final aiData = nextStep == OnboardingV2Step.aiGenerate ? await _promptForInterests(const <String>[]) : state.aiData;
+    if (attemptId != _saveAttemptId || isClosed) return;
+    emit(state.copyWith(step: nextStep, actionStatus: ActionStatus.idle, aiData: aiData, navRequest: null));
   }
 
   void _onCreatorFollowToggled(_CreatorFollowToggled event, Emitter<OnboardingV2State> emit) {
@@ -430,7 +434,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
       }
     } else {
-      final aiData = _promptForInterests(state.interestsData.selected);
+      final attemptId = ++_saveAttemptId;
+      final aiData = await _promptForInterests(state.interestsData.selected);
+      if (attemptId != _saveAttemptId || isClosed) return;
       emit(state.copyWith(actionStatus: ActionStatus.success, step: OnboardingV2Step.aiGenerate, aiData: aiData));
     }
   }
@@ -718,7 +724,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   /// Picks a style and prompt based on the user's selected interest categories.
   /// Falls back to a random style from the curated pool if no keyword matches.
-  OnboardingAiData _promptForInterests(List<String> selectedInterests) {
+  Future<OnboardingAiData> _promptForInterests(List<String> selectedInterests) async {
     AiStylePreset? matchedStyle;
 
     outer:
@@ -734,8 +740,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
     const styles = OnboardingV2Config.aiOnboardingStyles;
     final style = matchedStyle ?? styles[_random.nextInt(styles.length)];
-    final prompts = OnboardingV2Config.aiOnboardingPromptPool[style] ?? <String>[];
-    final prompt = prompts.isNotEmpty ? prompts[_random.nextInt(prompts.length)] : 'a beautiful wallpaper';
+    final AppLocalizations l10n = await _loadLocalizations();
+    final prompts = OnboardingV2Config.aiOnboardingPrompts(l10n, style);
+    final prompt = prompts.isNotEmpty
+        ? prompts[_random.nextInt(prompts.length)]
+        : OnboardingV2Config.aiOnboardingPromptFallback(l10n);
     return OnboardingAiData(prompt: prompt, stylePreset: style, status: AiGenerateStatus.idle);
   }
 }

@@ -57,8 +57,7 @@ class PaywallOrchestrator {
         ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
         : PaywallResultValue.notPresented;
     if (_unavailableResults.contains(result)) {
-      final AppLocalizations localized =
-          messages ?? await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
       toasts.error(localized.premiumPagePlansUnavailable);
     }
     return result;
@@ -240,7 +239,7 @@ class PaywallOrchestrator {
       );
       if (!isCurrentAccount()) return PaywallResultValue.error;
       if (completed && !confirmedForCurrentAccount) {
-        final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final AppLocalizations l10n = await loadDeviceAppLocalizations();
         if (app_state.prismUser.premium) {
           toasts.info(l10n.premiumPurchasePending);
         } else {
