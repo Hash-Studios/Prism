@@ -491,6 +491,18 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
         if (!author || author.disabled || !author.email || author.email !== wall.data().email) {
           throw new PermanentOwnedAssetError("AI wall author no longer matches the generation owner");
         }
+      } else {
+        const history = (await tx.get(db.collection("aiGenerations").doc(source.generationId))).data();
+        if (history) {
+          const email = wall.data().email;
+          const author = typeof email === "string" && email ? await admin.auth().getUserByEmail(email).catch((error: unknown) => {
+            if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return null;
+            throw error;
+          }) : null;
+          if (!author || history.userId !== author.uid) {
+            throw new PermanentOwnedAssetError("AI generation history names another user than the wall author");
+          }
+        }
       }
     }
     await verifyStoredUploadRegistry(input.original, tx);

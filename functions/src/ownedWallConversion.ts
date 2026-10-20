@@ -2,8 +2,8 @@ import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {db} from "./common";
 import * as admin from "firebase-admin";
-import {AI_LEGACY_UID, AI_STORAGE_REPO, AiRecordError, aiRecordExpired, aiUploadId, parseAiSource,
-  readAiGenerationRecord} from "./aiWallSource";
+import {AI_LEGACY_UID, AI_RECORD_PROPAGATION_MS, AI_STORAGE_REPO, AiRecordError, aiRecordExpired, aiUploadId,
+  generationTimeMs, parseAiSource, readAiGenerationRecord} from "./aiWallSource";
 import * as delivery from "./ownedAssetDelivery";
 import type {AiBinding, StoredUpload, StudioBinding, WallBindingExpectation} from "./ownedAssetDelivery";
 import {R2Storage} from "./r2Storage";
@@ -248,16 +248,24 @@ export async function proveAiWall(row: WallInventory, allowReviewedAiLegacy: boo
   }
   const author = await admin.auth().getUserByEmail(email).catch((error: unknown) => {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return null;
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/invalid-email") {
+      throw new PermanentConversionError("AI wall author email is invalid");
+    }
     throw error;
   });
   if (record) {
     // `parseAiSource` already limits the original to these two keys of the same generation.
     if (record.watermarkedImageUrl !== source.thumbUrl ||
       record.imageUrl !== `${STUDIO_ASSET_BASE}/ai/original/${source.generationId}.png` || !author ||
-      author.uid !== record.userId || author.disabled || author.email !== email) {
+      author.uid !== record.userId || author.disabled || author.email !== email || record.userId === AI_LEGACY_UID ||
+      !/^[A-Za-z0-9_-]{1,200}$/.test(record.userId)) {
       throw new PermanentConversionError("AI generation record does not belong to the wall author");
     }
     return {uid: record.userId, legacyEligible: false, ai: {kind: "ai", generationId: source.generationId, uid: record.userId}};
+  }
+  const ageMs = Date.now() - generationTimeMs(source.generationId);
+  if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < AI_RECORD_PROPAGATION_MS) {
+    throw new Error("AI generation record is not yet visible at this Worker edge");
   }
   if (!allowReviewedAiLegacy || row.wall.data.review !== true) {
     throw new PermanentConversionError("AI generation record is unavailable: reviewed AI legacy policy requires explicit opt-in");
@@ -273,11 +281,18 @@ export async function proveAiWall(row: WallInventory, allowReviewedAiLegacy: boo
 }
 
 export async function verifyR2MigrationCopy(asset: StoredMigrationAsset, size: number | undefined,
-  getObject: R2ObjectClient["get"], verifyMetadata: (asset: StoredMigrationAsset, size?: number) => Promise<void>): Promise<void> {
-  await verifyMetadata(asset, size);
+  getObject: R2ObjectClient["get"], verifyMetadata: (asset: StoredMigrationAsset, size?: number) => Promise<void>,
+  reviewedFirebasePin?: {size: number; md5: string}): Promise<void> {
+  await verifyMetadata(asset, size ?? reviewedFirebasePin?.size);
   const privateBytes = await getObject("private", asset.object);
+  if (reviewedFirebasePin && privateBytes.length !== reviewedFirebasePin.size) {
+    throw new PermanentConversionError("Firebase Storage size mismatch on R2 readback");
+  }
   if ((size !== undefined && privateBytes.length !== size) || digest(privateBytes) !== asset.sha256) {
     throw new PermanentConversionError("R2 private readback mismatch");
+  }
+  if (reviewedFirebasePin && createHash("md5").update(privateBytes).digest("base64") !== reviewedFirebasePin.md5) {
+    throw new PermanentConversionError("Firebase Storage MD5 mismatch on R2 readback");
   }
   if (asset.previewObjectId) {
     const previewBytes = await getObject("preview", `previews/${asset.previewObjectId}.img`);
@@ -432,9 +447,10 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
 /** The Firestore and R2 backed dependencies of `convertWall`. `apply` also checks the R2 copies when it reads a wall as ready. */
 export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: FirebaseFirestore.Firestore = db,
   allowReviewedAiLegacy = false): MigrationDeps {
-  const readback = (asset: StoredMigrationAsset, size: number | undefined, verifyMetadata: Parameters<typeof verifyR2MigrationCopy>[3]) => {
+  const readback = (asset: StoredMigrationAsset, size: number | undefined,
+    verifyMetadata: Parameters<typeof verifyR2MigrationCopy>[3], reviewedFirebasePin?: {size: number; md5: string}) => {
     if (!r2) throw new Error("R2 storage is not configured");
-    return verifyR2MigrationCopy(asset, size, (kind, object) => r2.get(kind, object), verifyMetadata);
+    return verifyR2MigrationCopy(asset, size, (kind, object) => r2.get(kind, object), verifyMetadata, reviewedFirebasePin);
   };
   return {
     prove: async (original, thumb, row) => {
@@ -519,8 +535,10 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
       if (!apply) return true;
       const owned = await delivery.getOwnedWallDelivery(String(wall.data.id));
       await Promise.all([delivery.verifyStoredUpload(owned.original), delivery.verifyStoredUpload(owned.thumb)]);
-      await Promise.all([readback(owned.original, undefined, async () => undefined),
-        readback(owned.thumb, undefined, async () => undefined)]);
+      await Promise.all([readback(owned.original, undefined, async () => undefined,
+        original?.repo === delivery.FIREBASE_STORAGE_REPO && original.storagePin ?
+          {size: original.size, md5: original.storagePin.md5} : undefined),
+      readback(owned.thumb, undefined, async () => undefined)]);
       return true;
     },
   };

@@ -80,8 +80,9 @@ manifest incarnation and registry rows. It marks the manifest deleted and tombst
 so a delayed upload cannot republish it. It immediately deletes an unshared preview; the tombstone sweep
 reclaims the private original and thumbnail copies after the cleanup grace period. Shared assets remain
 active, and stale wall incarnations fail closed.
-Admin cleanup of a reviewed-legacy manifest uses its exact wall incarnation and registry identity without
-requiring a fabricated upload receipt or deleting the GitHub source. A shared ready preview stays available.
+Admin cleanup of reviewed-legacy, AI, and Firebase Storage manifests uses the exact wall incarnation and registry
+identity for R2-only cleanup. It needs no fabricated upload receipt and does not delete source files. A shared ready
+preview stays available.
 Uploads that never bind have no manifest for the wall-delete trigger to resolve. Use authorized path-mode
 cleanup with the uploader receipt for these abandoned uploads; do not infer ownership from a filename.
 Permanent registry tombstones prevent deleted identities from becoming active again. A daily cleanup scans
@@ -162,7 +163,11 @@ so the bytes are only decoded, not compared with it.
 The owner proof is the server-owned Worker record `ai:gen:{generationId}`. Functions read it through the
 secret-gated `GET /api/ai/studio/generation-records/{generationId}` route with `STUDIO_SECRET`. The route returns
 the owner fields and omits the prompt. The record user must be the Firebase Auth user whose email posted the wall,
-and that user must not be disabled. The manifest provenance is `{kind: "ai", generationId, uid}`.
+and that user must not be disabled. A missing KV key returns 404, a malformed record returns 422, and a KV failure
+returns 503 so transient storage errors cannot be mistaken for an expired record. The reviewed dry-run fingerprints
+the wall's author email, requested resolution and origin without storing the email itself; apply rejects a converted
+row if any of these fields changed. A missing record for a generation less than five minutes old is retried to allow
+for KV propagation; it is not treated as expired. The manifest provenance is `{kind: "ai", generationId, uid}`.
 `onOwnedWallWritten` applies this proof at approval, so it binds `STUDIO_SECRET`.
 
 Worker records expire after 90 days. Client-writable `aiGenerations` documents do not prove ownership. An expired
@@ -171,12 +176,13 @@ of these are true:
 
 - The wall is approved.
 - The Worker returns no record, and the time in the server-made generation id is more than 91 days ago.
-  A missing record for a younger generation blocks the wall.
+  After the initial five-minute retry window, a missing record for a younger generation blocks the wall.
 - The Worker still serves both images.
-- No `aiGenerations` document names a user other than the wall author.
+- A conflicting `aiGenerations` document blocks the conversion. This client-writable history is only a veto; it never
+  proves ownership, and the binding transaction checks it again.
 
 These walls use the reserved R2 owner `ai-legacy-migration` and the provenance `{kind: "ai-legacy", generationId}`.
-They claim no uid. The trigger never applies this policy.
+They claim no uid, upload receipt, creator credit or XP. The trigger never applies this policy.
 
 Neither AI provenance creates a GitHub receipt, creator credit or creator XP. Creator XP counts only `github` and
 `owned` provenance, so AI walls earn no XP after conversion, as before it.
@@ -185,7 +191,9 @@ Neither AI provenance creates a GitHub receipt, creator credit or creator XP. Cr
 
 An old wall can keep its original in the project bucket `prism-wallpapers.appspot.com` and its thumbnail on GitHub.
 The dry run reads the public object metadata (generation, MD5, size), not the bytes, and pins them in the report.
-Apply downloads the recorded URL and refuses bytes whose generation, MD5 or size differ. The original uses the
+Apply downloads the recorded URL and refuses bytes whose generation, MD5 or size differ. If an interrupted apply
+already bound the wall, the reviewed R2 original must still match the dry-run MD5 and size before it counts as done;
+the source generation may change later without invalidating identical retained bytes. The original uses the
 storage repo `firebase-storage` and the path `{bucket}/{object}`. The thumbnail comes from the pinned GitHub tree.
 Firebase Storage has no upload receipts, so the wall needs `--allow-reviewed-legacy` and gets `{kind: "legacy"}`
 provenance. The trigger does not convert these walls. The Firebase object stays unchanged.

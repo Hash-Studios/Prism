@@ -1505,6 +1505,49 @@ test('studio generation-record route returns the owner fields only behind the st
   assert.notEqual((await studioFetch(env, 'GET', '/api/ai/studio/generation-records/ai:gen:x')).status, 200);
 });
 
+test('studio generation-record route distinguishes corrupt records from expired records', async () => {
+  const generationId = 'gen_mlt7o22q_7a9688a037a47de6';
+  const path = `/api/ai/studio/generation-records/${generationId}`;
+  const validRecord = {
+    generationId,
+    userId: 'user-1',
+    createdAt: '2026-02-19T08:40:39.977Z',
+    width: 1179,
+    height: 2048,
+    imageUrl: `https://prismwalls.com/api/ai/assets/ai/original/${generationId}.png`,
+    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/ai/public/${generationId}.png`,
+  };
+  const records = [
+    ['malformed JSON', '{'],
+    ['empty stored value', ''],
+    ['null JSON', 'null'],
+    ['mismatched generation id', JSON.stringify({ generationId: 'gen_other_7a9688a037a47de6' })],
+    ['incomplete record', JSON.stringify({ generationId, userId: 'user-1' })],
+    ['empty owner id', JSON.stringify({ ...validRecord, userId: '' })],
+    ['non-positive width', JSON.stringify({ ...validRecord, width: 0 })],
+    ['wrong original role URL', JSON.stringify({ ...validRecord,
+      imageUrl: validRecord.watermarkedImageUrl })],
+  ];
+
+  for (const [label, raw] of records) {
+    const env = aiEnv(new MemoryKv([[`ai:gen:${generationId}`, raw]]),
+      new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET });
+    const invalid = await studioFetch(env, 'GET', path);
+    assert.equal(invalid.status, 422, label);
+    assert.equal((await invalid.json()).error, 'generation_record_invalid', label);
+  }
+
+  const missing = await studioFetch(aiEnv(new MemoryKv(),
+    new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET }), 'GET', path);
+  assert.equal(missing.status, 404);
+  assert.equal((await missing.json()).error, 'generation_not_found');
+
+  const unavailable = await studioFetch(aiEnv({ get: async () => { throw new Error('KV unavailable'); } },
+    new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET }), 'GET', path);
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).error, 'generation_record_unavailable');
+});
+
 test('studio generation refuses bad bodies and unknown models before any provider call', async () => {
   const stats = {};
   const env = studioEnv();

@@ -1,11 +1,11 @@
 import {createHash, randomUUID} from "node:crypto";
 import {mkdir, readFile, rename, unlink, writeFile} from "node:fs/promises";
 import {dirname} from "node:path";
-import {AI_LEGACY_UID} from "../aiWallSource";
+import {AI_LEGACY_UID, AI_STORAGE_REPO} from "../aiWallSource";
 import {FIREBASE_STORAGE_REPO, firebaseStoragePath} from "../ownedAssetDelivery";
 import {buildAiRow, buildFirebaseRow, buildStudioRow, convertWall, conversionDeps, isLegacyMigrationUid, parseGithubAsset,
   proveMigrationAsset, readFirebaseObjectMeta, verifyR2MigrationCopy, type FirebaseObjectMeta, type GithubAsset,
-  type MigrationDeps, type MigrationOptions, type MigrationResult, type MigrationWall,
+  type MigrationDeps, type MigrationOptions, type MigrationResult, type MigrationWall, type StoredMigrationAsset,
   type WallInventory} from "../ownedWallConversion";
 import {STUDIO_ACCOUNT} from "../studio/account";
 
@@ -135,6 +135,10 @@ export function createInventoryReport(inventory: GithubInventory) {
   const asset = (value: GithubAsset) => ({path: value.path, gitSha: value.gitSha, size: value.size, commit: value.commit,
     recordedUrlHash: digest(value.recordedUrl), ...(value.expectedResolution ? {expectedResolution: value.expectedResolution} : {}),
     ...(value.storagePin ? {storagePin: value.storagePin} : {})});
+  const aiFingerprint = (row: WallInventory) => row.ai && ({generationId: row.ai.generationId,
+    authorEmailHash: typeof row.wall.data.email === "string" ? digest(row.wall.data.email) : null,
+    resolution: typeof row.wall.data.resolution === "string" ? row.wall.data.resolution : null,
+    origin: typeof row.wall.data.origin === "string" ? row.wall.data.origin : null});
   return {sourceFingerprintVersion: 1, owner: inventory.owner, repo: inventory.repo, commit: inventory.commit, generatedAt: inventory.generatedAt,
     wallCount: inventory.wallCount, imageCount: inventory.imageCount, totalImageBytes: inventory.totalImageBytes,
     referencedImageCount: inventory.referencedImageCount, orphanImageCount: inventory.orphanImageCount,
@@ -142,7 +146,7 @@ export function createInventoryReport(inventory: GithubInventory) {
       docPath: row.wall.docPath, wallId: row.wallId, incarnation: row.wall.incarnation,
       incarnationNanos: row.wall.incarnationNanos, review: row.wall.data.review === true,
       original: row.original && asset(row.original), thumb: row.thumb && asset(row.thumb), status: row.status, detail: row.detail,
-      ...(row.studio ? {studio: row.studio} : {}), ...(row.ai ? {ai: row.ai} : {}),
+      ...(row.studio ? {studio: row.studio} : {}), ...(row.ai ? {ai: aiFingerprint(row)} : {}),
     }))};
 }
 
@@ -156,6 +160,14 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
+type ReviewedAiSource = {generationId?: unknown; authorEmailHash?: unknown; resolution?: unknown; origin?: unknown};
+function matchesReviewedAiSource(data: Record<string, unknown>, ai: ReviewedAiSource): boolean {
+  return data.isAiGenerated === true && data.aiGenerationId === ai.generationId &&
+    (typeof data.email === "string" ? digest(data.email) : null) === ai.authorEmailHash &&
+    (typeof data.resolution === "string" ? data.resolution : null) === ai.resolution &&
+    (typeof data.origin === "string" ? data.origin : null) === ai.origin;
+}
+
 /**
  * Checks the reviewed dry-run against the live inventory and returns the doc paths the apply may touch.
  * Walls added since the review are not in that set (the approval trigger converts them) and deleted walls are skipped.
@@ -163,7 +175,8 @@ function canonical(value: unknown): unknown {
  */
 export async function validateReviewedInventory(reviewed: unknown, inventory: GithubInventory, commit: string,
   allowReviewedLegacy: boolean,
-  verifyMigrated?: (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset) => Promise<boolean>,
+  verifyMigrated?: (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset,
+    ai?: ReviewedAiSource) => Promise<boolean>,
   allowReviewedAiLegacy = false): Promise<Set<string>> {
   if (!reviewed || typeof reviewed !== "object") throw new Error("Apply requires a reviewed dry-run inventory report");
   const report = reviewed as {mode?: unknown; inventory?: unknown;
@@ -204,7 +217,7 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
     const oldOriginal = old.original as ReportAsset | undefined;
     const oldThumb = old.thumb as ReportAsset | undefined;
     const studio = old.studio as {runId?: unknown; candidateId?: unknown} | undefined;
-    const ai = old.ai as {generationId?: unknown} | undefined;
+    const ai = old.ai as ReviewedAiSource | undefined;
     if (!verifyMigrated || !source || !oldOriginal || !oldThumb ||
       old.docPath !== source.wall.docPath || old.wallId !== source.wallId ||
       old.review !== row.review ||
@@ -213,13 +226,13 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
         source.wall.data.studioRunId !== studio.runId ||
         source.wall.data.studioCandidateId !== studio.candidateId ||
         source.wall.data.resolution !== oldOriginal.expectedResolution)) ||
-      (ai && (source.wall.data.isAiGenerated !== true || source.wall.data.aiGenerationId !== ai.generationId)) ||
+      (ai && !matchesReviewedAiSource(source.wall.data, ai)) ||
       !source.wall.data.originalProtected || source.wall.data.wallpaper_url !== "" ||
       typeof source.wall.data.originalObjectId !== "string" || source.wall.data.id !== old.wallId ||
       ![undefined, ""].includes(source.wall.data.wallpaper_path as string | undefined) ||
       ![undefined, ""].includes(source.wall.data.thumb_path as string | undefined) ||
       !assetByPath.has(oldOriginal.path) || !assetByPath.has(oldThumb.path) ||
-      !await verifyMigrated(source.wall, reviewedAsset(oldOriginal, previous), reviewedAsset(oldThumb, previous))) {
+      !await verifyMigrated(source.wall, reviewedAsset(oldOriginal, previous, ai), reviewedAsset(oldThumb, previous, ai), ai)) {
       throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
     }
   }
@@ -234,7 +247,7 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
 
 function reviewedAsset(value: ReportAsset, source: {
   owner?: unknown; repo?: unknown;
-}): ReviewedAsset {
+}, ai?: ReviewedAiSource): ReviewedAsset {
   if (typeof source.owner !== "string" || typeof source.repo !== "string" || typeof value.path !== "string" ||
     typeof value.gitSha !== "string" || typeof value.size !== "number" || typeof value.commit !== "string" ||
     typeof value.recordedUrlHash !== "string" || !/^[a-f0-9]{64}$/.test(value.recordedUrlHash)) {
@@ -243,13 +256,29 @@ function reviewedAsset(value: ReportAsset, source: {
   const encodedPath = value.path.split("/").map(encodeURIComponent).join("/");
   const url = `https://raw.githubusercontent.com/${source.owner}/${source.repo}/${value.commit}/${encodedPath}`;
   const pin = value.storagePin;
-  if (pin && (typeof pin.generation !== "string" || typeof pin.md5 !== "string")) {
+  if (pin && (typeof pin.generation !== "string" || typeof pin.md5 !== "string" ||
+    !Number.isSafeInteger(value.size) || (value.size as number) <= 0)) {
     throw new Error("Reviewed inventory asset is invalid; run dry-run again");
   }
-  return {repo: pin ? FIREBASE_STORAGE_REPO : source.repo, path: value.path, url, recordedUrl: url, sha: value.gitSha,
+  return {repo: pin ? FIREBASE_STORAGE_REPO : ai ? AI_STORAGE_REPO : source.repo, path: value.path, url, recordedUrl: url, sha: value.gitSha,
     gitSha: value.gitSha, size: value.size, commit: value.commit, recordedUrlHash: value.recordedUrlHash,
     ...(value.expectedResolution ? {expectedResolution: value.expectedResolution} : {}),
     ...(pin ? {storagePin: {generation: pin.generation as string, md5: pin.md5 as string}} : {})};
+}
+
+/** Verifies already-retained assets against their manifest and the source pins from the reviewed dry run. */
+export async function verifyReviewedR2Copies(original: StoredMigrationAsset, thumb: StoredMigrationAsset,
+  reviewedOriginal: ReviewedAsset, verifyStored: (asset: StoredMigrationAsset) => Promise<void>,
+  getObject: (kind: "private" | "preview", object: string) => Promise<Buffer>): Promise<void> {
+  await Promise.all([verifyStored(original), verifyStored(thumb)]);
+  let firebasePin: {size: number; md5: string} | undefined;
+  if (reviewedOriginal.storagePin) {
+    firebasePin = {size: reviewedOriginal.size, md5: reviewedOriginal.storagePin.md5};
+  }
+  await Promise.all([
+    verifyR2MigrationCopy(original, firebasePin?.size, getObject, async () => undefined, firebasePin),
+    verifyR2MigrationCopy(thumb, undefined, getObject, async () => undefined),
+  ]);
 }
 
 export function validateMigrationCommit(ref: string, apply: boolean): void {
@@ -334,7 +363,7 @@ async function main(): Promise<void> {
     } catch {
       throw new Error("Apply requires the existing private dry-run report at --report");
     }
-    const verifier = async (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset) => {
+    const verifier = async (wall: MigrationWall, original: ReviewedAsset, thumb: ReviewedAsset, reviewedAi?: ReviewedAiSource) => {
       const manifest = (await db.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
       if (!manifest || manifest.status !== "ready" || !manifest.original || !manifest.thumb ||
         manifest.original.path !== original.path || manifest.thumb.path !== thumb.path ||
@@ -349,7 +378,7 @@ async function main(): Promise<void> {
         manifest.thumb.sha !== thumb.gitSha)) return false;
       if (ai) {
         const {kind, generationId, uid} = manifest.provenance as {kind: string; generationId?: unknown; uid?: unknown};
-        if (typeof generationId !== "string" || wall.data.isAiGenerated !== true || wall.data.aiGenerationId !== generationId ||
+        if (typeof generationId !== "string" || !reviewedAi || !matchesReviewedAiSource(wall.data, reviewedAi) ||
           ![`ai/original/${generationId}.png`, `ai/public/${generationId}.png`].includes(original.path) ||
           thumb.path !== `ai/public/${generationId}.png` ||
           manifest.original.uid !== (kind === "ai" ? uid : AI_LEGACY_UID) || manifest.thumb.uid !== manifest.original.uid ||
@@ -388,11 +417,8 @@ async function main(): Promise<void> {
       if (!ready) return false;
       const r2 = new (await import("../r2Storage.js")).R2Storage();
       const owned = await delivery.getOwnedWallDelivery(String(wall.data.id));
-      await Promise.all([delivery.verifyStoredUpload(owned.original), delivery.verifyStoredUpload(owned.thumb)]);
-      await Promise.all([
-        verifyR2MigrationCopy(owned.original, undefined, (kind, object) => r2.get(kind, object), async () => undefined),
-        verifyR2MigrationCopy(owned.thumb, undefined, (kind, object) => r2.get(kind, object), async () => undefined),
-      ]);
+      await verifyReviewedR2Copies(owned.original, owned.thumb, original, delivery.verifyStoredUpload,
+        (kind, object) => r2.get(kind, object));
       return true;
     };
     authorized = await validateReviewedInventory(reviewed, inventory, resolved.commit, options.allowReviewedLegacy, verifier,

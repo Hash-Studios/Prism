@@ -4,6 +4,7 @@ import test, {type TestContext} from "node:test";
 import {db} from "../common";
 import * as ownedAssets from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
+import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId} from "../aiWallSource";
 
 import {
   canDeleteUpload,
@@ -189,7 +190,9 @@ test("manifest cleanup lets an admin remove an exact legacy original without a r
     authorize?: (tx: FirebaseFirestore.Transaction) => Promise<void>}) => {
     assert.ok(input.expected?.objectId === legacyOriginal.objectId || input.expected?.objectId === legacyThumb.objectId);
     assert.ok(input.authorize);
-    await db.runTransaction((tx) => input.authorize!(tx));
+    const authorize = input.authorize;
+    assert.ok(authorize);
+    await db.runTransaction(authorize);
   });
   const adminRemove = (uid = "boss", token = {admin: true}, assetRole = "wallpaper") => run(githubDeleteFile, {
     auth: {uid, token},
@@ -204,6 +207,120 @@ test("manifest cleanup lets an admin remove an exact legacy original without a r
     {code: "permission-denied"});
 });
 
+test("manifest cleanup deletes live AI R2 assets for their owner without GitHub receipts", async (t) => {
+  testGithubEnvironment(t);
+  const priorR2 = Object.fromEntries(["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_PRIVATE_BUCKET",
+    "R2_PREVIEW_BUCKET", "R2_PREVIEW_BASE_URL"].map((key) => [key, process.env[key]]));
+  Object.assign(process.env, {R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PRIVATE_BUCKET: "owned", R2_PREVIEW_BUCKET: "previews", R2_PREVIEW_BASE_URL: "https://images.example.com"});
+  t.after(() => {
+    for (const [key, value] of Object.entries(priorR2)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const generationId = "gen_abc123_0123456789abcdef";
+  const asset = (role: "original" | "thumb") => {
+    const path = role === "original" ? `ai/original/${generationId}.png` : `ai/public/${generationId}.png`;
+    const uploadId = aiUploadId(generationId, role);
+    const identity = {uid: "u", repo: AI_STORAGE_REPO, path, sha: "c".repeat(40), sourceKind: "ai" as const, uploadId};
+    const sha256 = "b".repeat(64);
+    const objectId = r2ObjectId(identity, sha256);
+    return {bucket: "owned", object: `ai-originals/${objectId}`, objectId, sha256, ...identity,
+      ...(role === "thumb" ? {previewObjectId: objectId} : {})};
+  };
+  const original = asset("original");
+  const thumb = asset("thumb");
+  const store = uploadStore(t, {"ownedAssets/wall": {status: "ready", canonicalPath: "walls/doc", incarnation: 1,
+    incarnationNanos: 1_000_000, original, thumb, provenance: {kind: "ai", uid: "u", generationId}},
+  "walls/doc": {id: "wall", review: false, originalProtected: true, originalObjectId: original.objectId,
+    __createTime: {toMillis: () => 1, nanoseconds: 1_000_000}},
+  });
+  const retained = t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {
+    expected?: Record<string, unknown>; authorize?: (tx: FirebaseFirestore.Transaction) => Promise<void>;
+  }) => {
+    assert.ok([original.objectId, thumb.objectId].includes(input.expected?.objectId as string));
+    assert.ok(input.authorize, "R2-only deletion revalidates the manifest during tombstoning");
+    const authorize = input.authorize;
+    assert.ok(authorize);
+    await db.runTransaction(authorize);
+  });
+  const github = t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+  await assert.rejects(() => run(githubDeleteFile, {auth: {uid: "stranger"}, data: {
+    wallId: "wall", originalObjectId: original.objectId, assetRole: "wallpaper",
+  }}), {code: "permission-denied"});
+  assert.equal(retained.mock.callCount(), 0, "a copied wall identity does not authorize R2 deletion");
+  assert.deepEqual(await run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    wallId: "wall", originalObjectId: original.objectId, assetRole: "wallpaper",
+  }}), {ok: true});
+  assert.deepEqual(await run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    wallId: "wall", originalObjectId: original.objectId, assetRole: "wallpaper",
+  }}), {ok: true}, "a repeated R2 deletion remains idempotent");
+  assert.deepEqual(await run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    wallId: "wall", originalObjectId: original.objectId, assetRole: "thumb",
+  }}), {ok: true});
+  assert.equal(retained.mock.callCount(), 3, "both R2 roles and a retry use the tombstone cleanup path");
+  store.set("walls/doc", {id: "wall", review: true, originalProtected: true, originalObjectId: original.objectId,
+    __createTime: {toMillis: () => 1, nanoseconds: 1_000_000}});
+  await assert.rejects(() => run(githubDeleteFile, {auth: {uid: "u"}, data: {
+    wallId: "wall", originalObjectId: original.objectId, assetRole: "wallpaper",
+  }}), {code: "failed-precondition"}, "an approved current wall cannot be deleted by its owner");
+  assert.equal(retained.mock.callCount(), 3);
+  assert.equal(github.mock.callCount(), 0);
+  assert.equal([...store.keys()].some((key) => key.startsWith("githubUploads/")), false);
+});
+
+test("manifest cleanup lets admins remove legacy AI and Firebase Storage R2 objects without GitHub calls", async (t) => {
+  testGithubEnvironment(t);
+  const priorR2 = Object.fromEntries(["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_PRIVATE_BUCKET",
+    "R2_PREVIEW_BUCKET", "R2_PREVIEW_BASE_URL"].map((key) => [key, process.env[key]]));
+  Object.assign(process.env, {R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PRIVATE_BUCKET: "owned", R2_PREVIEW_BUCKET: "previews", R2_PREVIEW_BASE_URL: "https://images.example.com"});
+  t.after(() => {
+    for (const [key, value] of Object.entries(priorR2)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const legacyAi = "gen_abc123_0123456789abcdef";
+  const asset = (uid: string, repo: string, path: string, sourceKind?: "ai", uploadId?: string, preview = false) => {
+    const identity = {uid, repo, path, sha: "c".repeat(40), ...(sourceKind ? {sourceKind, uploadId} : {})};
+    const sha256 = "b".repeat(64);
+    const objectId = r2ObjectId(identity, sha256);
+    return {bucket: "owned", object: `${sourceKind === "ai" ? "ai-originals" : "retained"}/${objectId}`,
+      objectId, sha256, ...identity, ...(preview ? {previewObjectId: objectId} : {})};
+  };
+  const aiOriginal = asset(AI_LEGACY_UID, AI_STORAGE_REPO, `ai/original/${legacyAi}.png`, "ai",
+    aiUploadId(legacyAi, "original"));
+  const aiThumb = asset(AI_LEGACY_UID, AI_STORAGE_REPO, `ai/public/${legacyAi}.png`, "ai",
+    aiUploadId(legacyAi, "thumb"), true);
+  const firebaseOriginal = asset("legacy-migration", "firebase-storage", "prism-wallpapers.appspot.com/old.jpg");
+  const firebaseThumb = asset("legacy-migration", "walls", "thumb_old.jpg", undefined, undefined, true);
+  const store = uploadStore(t, {
+    "admin_users/admin@example.com": {ok: true},
+    "ownedAssets/ai-wall": {status: "ready", canonicalPath: "walls/ai-wall", incarnation: 123, incarnationNanos: 42,
+      original: aiOriginal, thumb: aiThumb, provenance: {kind: "ai-legacy", generationId: legacyAi}},
+    "ownedAssets/firebase-wall": {status: "ready", canonicalPath: "walls/firebase-wall", incarnation: 123,
+      incarnationNanos: 42, original: firebaseOriginal, thumb: firebaseThumb, provenance: {kind: "legacy", uid: "legacy-migration"}},
+  });
+  const retained = t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {expected?: Record<string, unknown>;
+    authorize?: (tx: FirebaseFirestore.Transaction) => Promise<void>}) => {
+    assert.ok(input.authorize);
+    const authorize = input.authorize;
+    assert.ok(authorize);
+    await db.runTransaction(authorize);
+  });
+  const github = t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+  for (const [wallId, original, role] of [["ai-wall", aiOriginal, "wallpaper"], ["firebase-wall", firebaseOriginal, "wallpaper"]] as const) {
+    assert.deepEqual(await run(githubDeleteFile, {auth: {uid: "admin", token: {email: "admin@example.com", email_verified: true}},
+      data: {wallId, originalObjectId: original.objectId, assetRole: role}}), {ok: true});
+  }
+  assert.equal(retained.mock.callCount(), 2);
+  assert.equal(github.mock.callCount(), 0);
+  assert.deepEqual(store.get("ownedAssets/ai-wall")?.provenance,
+    {kind: "ai-legacy", generationId: legacyAi}, "legacy AI cleanup stays admin-only and preserves its no-owner claim");
+});
+
 test("manifest cleanup rechecks a legacy admin proof inside the tombstone transaction", async (t) => {
   const {docs, original, receiptKey, retained, github} = manifestCleanupFixture(t, false);
   docs.set("admin_users/boss@x.com", {ok: true});
@@ -213,7 +330,9 @@ test("manifest cleanup rechecks a legacy admin proof inside the tombstone transa
   docs.delete(receiptKey(original));
   retained.mock.mockImplementation(async (input: {authorize?: (tx: FirebaseFirestore.Transaction) => Promise<void>}) => {
     docs.set("ownedAssets/wall", {...docs.get("ownedAssets/wall"), provenance: {uid: "changed", kind: "changed"}});
-    await db.runTransaction((tx) => input.authorize!(tx));
+    const authorize = input.authorize;
+    assert.ok(authorize);
+    await db.runTransaction(authorize);
   });
   await assert.rejects(() => run(githubDeleteFile, {
     auth: {uid: "boss", token: {admin: true}},

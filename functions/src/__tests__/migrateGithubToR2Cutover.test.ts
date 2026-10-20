@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import {test} from "node:test";
 import {createHash} from "node:crypto";
 import {buildGithubInventory, createInventoryReport, gitBlobSha, migrateGithubInventory, type GithubTree,
-  type MigrationDeps, type MigrationOptions, type MigrationWall, validateReviewedInventory} from "../scripts/migrateGithubToR2";
+  type MigrationDeps, type MigrationOptions, type MigrationWall, validateReviewedInventory,
+  verifyReviewedR2Copies} from "../scripts/migrateGithubToR2";
 
 const bytes = Buffer.from("image bytes");
 const sha = gitBlobSha(bytes);
@@ -213,7 +214,9 @@ test("user AI walls are inventoried from their Worker URLs with their generation
     ["prism-ai", `ai/public/${GEN}.png`, `ai/public/${GEN}.png`]);
   assert.equal(row.original?.expectedResolution, undefined);
   const report = createInventoryReport(inventory) as {walls: Record<string, unknown>[]};
-  assert.deepEqual(report.walls[0].ai, {generationId: GEN});
+  assert.deepEqual(report.walls[0].ai, {generationId: GEN,
+    authorEmailHash: createHash("sha256").update("creator@example.com").digest("hex"),
+    resolution: "1179x2048", origin: null});
   assert.doesNotMatch(JSON.stringify(report), /prismwalls\.com/);
 });
 
@@ -281,10 +284,82 @@ test("a converted AI row counts as done only while it keeps its reviewed generat
   const converted = {originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
     wallpaper_thumb: "https://images.example.com/previews/x.img", wallpaper_path: "", thumb_path: ""};
   const live = buildGithubInventory([aiWall(converted)], tree, options);
-  assert.deepEqual([...await validateReviewedInventory(reviewed, live, options.commit, false, async () => true)], ["walls/ai"]);
+  const assets: string[][] = [];
+  assert.deepEqual([...await validateReviewedInventory(reviewed, live, options.commit, false, async (_wall, original, thumb) => {
+    assets.push([original.repo, original.path, thumb.repo, thumb.path]);
+    return true;
+  })], ["walls/ai"]);
+  assert.deepEqual(assets, [["prism-ai", `ai/public/${GEN}.png`, "prism-ai", `ai/public/${GEN}.png`]]);
   for (const changed of [{aiGenerationId: "gen_mqc4rojc_ebbaa0bef876eff2"}, {isAiGenerated: false}]) {
     const other = buildGithubInventory([aiWall({...converted, ...changed})], tree, options);
     await assert.rejects(validateReviewedInventory(reviewed, other, options.commit, false, async () => true),
       /changed since review/);
   }
+});
+
+test("AI review fingerprints the author email without storing it", async () => {
+  const reviewed = reviewedFor([aiWall()]);
+  const changed = buildGithubInventory([aiWall({email: "other@example.com"})], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, changed, options.commit, false), /changed since review/);
+  assert.doesNotMatch(JSON.stringify(reviewed), /creator@example\.com/);
+});
+
+test("AI review fingerprints requested resolution and origin", async (t) => {
+  const reviewed = reviewedFor([aiWall()]);
+  for (const changed of [{resolution: "1080x1920"}, {origin: "upload"}]) {
+    await t.test(JSON.stringify(changed), async () => {
+      const inventory = buildGithubInventory([aiWall(changed)], tree, options);
+      await assert.rejects(validateReviewedInventory(reviewed, inventory, options.commit, false), /changed since review/);
+    });
+  }
+});
+
+test("a converted AI row is rejected when its reviewed author email changes", async () => {
+  const reviewed = reviewedFor([aiWall()]);
+  const converted = {originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
+    wallpaper_thumb: "https://images.example.com/previews/x.img", wallpaper_path: "", thumb_path: ""};
+  const changed = buildGithubInventory([aiWall({...converted, email: "other@example.com"})], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, changed, options.commit, false, async () => true),
+    /changed since review/);
+});
+
+test("a converted AI row is rejected when reviewed resolution or origin changes", async (t) => {
+  const reviewed = reviewedFor([aiWall()]);
+  const converted = {originalProtected: true, originalObjectId: "1".repeat(64), wallpaper_url: "",
+    wallpaper_thumb: "https://images.example.com/previews/x.img", wallpaper_path: "", thumb_path: ""};
+  for (const changed of [{resolution: "1080x1920"}, {origin: "upload"}]) {
+    await t.test(JSON.stringify(changed), async () => {
+      const inventory = buildGithubInventory([aiWall({...converted, ...changed})], tree, options);
+      await assert.rejects(validateReviewedInventory(reviewed, inventory, options.commit, false, async () => true),
+        /changed since review/);
+    });
+  }
+});
+
+test("a converted Firebase original must match its reviewed MD5 and size in R2", async (t) => {
+  const source = Buffer.from("reviewed firebase image");
+  const otherSameSize = Buffer.from("reviewed firebase imAge");
+  assert.equal(source.length, otherSameSize.length);
+  const pin = {generation: "12345", md5: createHash("md5").update(source).digest("base64"), size: source.length};
+  const original = {repo: "firebase-storage", path: "bucket/image.jpg", sha: "a".repeat(40), uid: "legacy-migration",
+    bucket: "private", object: "originals/image", objectId: "b".repeat(64), sha256: createHash("sha256").update(source).digest("hex")};
+  const thumb = {...original, repo: "walls", path: "thumb_image.jpg", object: "previews/thumb", objectId: "c".repeat(64),
+    previewObjectId: "c".repeat(64)};
+  const reviewed = {repo: "firebase-storage", path: original.path, url: FIREBASE_URL, recordedUrl: FIREBASE_URL, sha: "", gitSha: "",
+    size: pin.size, commit: "", recordedUrlHash: createHash("sha256").update(FIREBASE_URL).digest("hex"),
+    storagePin: {generation: pin.generation, md5: pin.md5}};
+  const getObject = async () => source;
+  const verifyStored = async () => undefined;
+  await verifyReviewedR2Copies(original, thumb, reviewed, verifyStored, getObject);
+  await t.test("same-size different bytes", async () => {
+    const replaced = {...original, sha256: createHash("sha256").update(otherSameSize).digest("hex")};
+    await assert.rejects(verifyReviewedR2Copies(replaced, thumb, reviewed, verifyStored,
+      async (_kind, object) => object === replaced.object ? otherSameSize : source), /Firebase Storage MD5 mismatch/);
+  });
+  await t.test("size mismatch", async () => {
+    const larger = Buffer.concat([source, Buffer.from("x")]);
+    const replaced = {...original, sha256: createHash("sha256").update(larger).digest("hex")};
+    await assert.rejects(verifyReviewedR2Copies(replaced, thumb, reviewed, verifyStored,
+      async (_kind, object) => object === replaced.object ? larger : source), /Firebase Storage size mismatch/);
+  });
 });

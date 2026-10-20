@@ -8,6 +8,8 @@ export const AI_STORAGE_REPO = "prism-ai";
 export const AI_LEGACY_UID = "ai-legacy-migration";
 /** The Worker keeps `ai:gen:{id}` for 90 days. An absent record of a younger generation is not an expiry. */
 export const AI_RECORD_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+/** A recent generation may briefly be absent at a Worker edge while KV changes propagate. */
+export const AI_RECORD_PROPAGATION_MS = 5 * 60 * 1000;
 const RECORD_EXPIRY_MARGIN_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_WORKER_BASE = "https://prismwalls.com";
 // The Worker makes ids as `gen_{Date.now() base 36}_{16 hex}` (createId in infra/cloudflare/worker/src/ai.ts).
@@ -19,6 +21,15 @@ export class AiRecordError extends Error {}
 export type AiSource = {generationId: string; originalKey: string; thumbKey: string; originalUrl: string; thumbUrl: string};
 export type AiGenerationRecord = {generationId: string; userId: string; width: number; height: number;
   imageUrl: string; watermarkedImageUrl: string};
+
+async function readJsonBody(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new AiRecordError("AI generation record is invalid JSON");
+    throw error;
+  }
+}
 
 /** Port of `aiCommunityId` in lib/features/ai_wallpaper/views/ai_wallpaper_helpers.dart. */
 export function aiCommunityId(generationId: string): string {
@@ -81,16 +92,28 @@ export async function readAiGenerationRecord(generationId: string): Promise<AiGe
   try {
     const response = await fetch(`${base}/api/ai/studio/generation-records/${encodeURIComponent(generationId)}`,
       {redirect: "manual", signal: controller.signal, headers: {"x-studio-secret": secret}});
-    if (response.status === 404) return null;
+    if (response.status === 404) {
+      const error = await readJsonBody(response);
+      if (typeof error !== "object" || error === null || Array.isArray(error) ||
+        (error as {error?: unknown}).error !== "generation_not_found") {
+        throw new AiRecordError("AI generation record route returned an unexpected 404");
+      }
+      return null;
+    }
     if (!response.ok) {
       const error = `AI generation record read failed: ${response.status}`;
       // A bad secret or a redirect is configuration; timeouts, rate limits and server failures can recover.
       throw response.status >= 300 && response.status < 500 && ![408, 429].includes(response.status) ?
         new AiRecordError(error) : new Error(error);
     }
-    const record = await response.json() as Partial<AiGenerationRecord>;
-    if (record.generationId !== generationId || typeof record.userId !== "string" ||
-      !Number.isSafeInteger(record.width) || !Number.isSafeInteger(record.height) ||
+    const value = await readJsonBody(response);
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new AiRecordError("AI generation record is invalid");
+    }
+    const record = value as Partial<AiGenerationRecord>;
+    if (record.generationId !== generationId || typeof record.userId !== "string" || !record.userId ||
+      typeof record.width !== "number" || !Number.isSafeInteger(record.width) || record.width < 1 ||
+      typeof record.height !== "number" || !Number.isSafeInteger(record.height) || record.height < 1 ||
       typeof record.imageUrl !== "string" || typeof record.watermarkedImageUrl !== "string") {
       throw new AiRecordError("AI generation record is invalid");
     }
