@@ -7,8 +7,8 @@ export type AiReceiptBackfillCounts = {
   /** Walls that `parseAiSource` does not accept as user AI walls. */
   skipped: number;
   hadReceipt: number;
-  /** Receipts written, or with a dry run, receipts that apply would write. */
-  receiptWritten: number;
+  /** Receipts ensured by apply, or live records that a dry run would write. */
+  receiptReady: number;
   recordGone: number;
   failed: number;
 };
@@ -34,7 +34,7 @@ export async function backfillAiGenerationReceipts(
   log: (line: string) => void = console.log,
 ): Promise<AiReceiptBackfillCounts> {
   const counts: AiReceiptBackfillCounts =
-    {scanned: 0, skipped: 0, hadReceipt: 0, receiptWritten: 0, recordGone: 0, failed: 0};
+    {scanned: 0, skipped: 0, hadReceipt: 0, receiptReady: 0, recordGone: 0, failed: 0};
   let last: admin.firestore.QueryDocumentSnapshot | undefined;
   for (;;) {
     let query = db.collection("walls")
@@ -60,8 +60,16 @@ export async function backfillAiGenerationReceipts(
           continue;
         }
         const live = options.apply ? await saveAiGenerationReceipt(db, id, readRecord) : !!(await readRecord(id));
-        counts[live ? "receiptWritten" : "recordGone"] += 1;
-        log(`${doc.id} ${id} ${live ? "receipt-written" : "record-gone"}`);
+        if (live) {
+          counts.receiptReady += 1;
+          log(`${doc.id} ${id} ${options.apply ? "receipt-ready" : "would-write"}`);
+        } else if ((await db.collection(AI_RECEIPTS).doc(id).get()).exists) {
+          counts.hadReceipt += 1;
+          log(`${doc.id} ${id} had-receipt`);
+        } else {
+          counts.recordGone += 1;
+          log(`${doc.id} ${id} record-gone`);
+        }
       } catch (error) {
         counts.failed += 1;
         log(`${doc.id} ${id} failed ${error instanceof Error ? error.message : String(error)}`);
@@ -75,8 +83,12 @@ export async function backfillAiGenerationReceipts(
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
+  const unknownArgs = argv.filter((arg) => arg !== "--help" && arg !== "--apply");
   console.log(USAGE);
-  if (!argv.includes("--help")) {
+  if (unknownArgs.length > 0) {
+    console.error("Unknown argument(s). Use --help for usage.");
+    process.exitCode = 1;
+  } else if (!argv.includes("--help")) {
     if (!process.env.STUDIO_SECRET) {
       console.error("STUDIO_SECRET is required");
       process.exitCode = 1;
