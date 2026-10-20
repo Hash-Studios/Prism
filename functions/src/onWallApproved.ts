@@ -6,6 +6,7 @@ import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {getOwnedWallDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl} from "./ownedAssetDelivery";
 import {fileWallInCollection} from "./wallCollections";
 import {
   emailHash,
@@ -18,13 +19,13 @@ import {
 } from "./notificationHelper";
 
 /**
- * When a wall goes from review=false to review=true (approved), files it into the collection of its category and
- * notifies the artist, the artist's followers and the admins.
+ * Files approved walls into their category collection and announces them once their delivery is ready.
  */
 export const onWallApproved = onDocumentUpdated(
   {
     document: "walls/{wallId}",
     region: REGION,
+    retry: true,
   },
   async (event) => {
     const before = event.data?.before?.data();
@@ -36,31 +37,42 @@ export const onWallApproved = onDocumentUpdated(
 
     const wasApproved = before.review === true;
     const isApproved = after.review === true;
-    if (wasApproved || !isApproved) {
+    const owned = ownedAssetStorageEnabled();
+    const becameProtected = before.originalProtected !== true && after.originalProtected === true;
+    if (!isApproved || (wasApproved && !(owned && becameProtected))) {
       return;
     }
 
     const wallId = event.params.wallId;
+    const expected = event.data?.after;
+    if (!expected) return;
+    let current: admin.firestore.DocumentSnapshot;
+    try {
+      current = await expected.ref.get();
+    } catch (err) {
+      logger.warn("onWallApproved: could not read the current wall.", {wallId, err});
+      throw err;
+    }
+    if (!sameWallIncarnation(expected, current) || current.data()?.review !== true) return;
     // Approval sets collections to community, so the category collection is added after it.
-    await fileWallInCollection(event.data?.after.ref);
-    if (await isStudioWall(wallId, after)) {
+    if (!wasApproved) await fileWallInCollection(expected.ref);
+    if (await isStudioWall(wallId, current.data() ?? {})) {
       logger.info("onWallApproved: Prism Studio wall, no pushes.", {wallId});
       return;
     }
-    const artistEmail = str(after.email);
-    const artistName = str(after.by) || "An artist";
-    const wallTitle = str(after.title) || "Untitled";
-    const wallThumb = str(after.wallpaper_thumb);
+    if (!str(current.data()?.email)) return;
+    const announced = await claimApprovalNotice(expected, owned);
+    if (!announced) {
+      logger.info("onWallApproved: wall is unavailable or already announced, skipping.", {wallId});
+      return;
+    }
+    const artistEmail = str(announced.email);
+    const artistName = str(announced.by) || "An artist";
+    const wallTitle = str(announced.title) || "Untitled";
+    const wallThumb = str(announced.wallpaper_thumb);
 
     if (!artistEmail) {
       logger.warn("onWallApproved: wall has no artist email, skipping.", {
-        wallId,
-      });
-      return;
-    }
-
-    if (!(await claimApprovalNotice(event.data?.after.ref))) {
-      logger.info("onWallApproved: approval already announced, skipping.", {
         wallId,
       });
       return;
@@ -164,25 +176,45 @@ export function postsCollapseKey(artistEmail: string): string {
 
 /** Stamps the wall once, so a retried or repeated approval event sends no second set of pushes. */
 async function claimApprovalNotice(
-  ref: admin.firestore.DocumentReference | undefined,
-): Promise<boolean> {
-  if (!ref) return true;
+  expected: admin.firestore.DocumentSnapshot,
+  owned: boolean,
+): Promise<admin.firestore.DocumentData | null> {
   try {
+    const ready = owned ? await getOwnedWallDelivery(str(expected.data()?.id)) : undefined;
     return await db.runTransaction(async (tx) => {
-      const current = await tx.get(ref);
-      if (current.data()?.approvedNotifiedAt != null) return false;
-      tx.update(ref, {
+      const current = await tx.get(expected.ref);
+      const data = current.data();
+      if (!sameWallIncarnation(expected, current) || !current.createTime || data?.review !== true || !str(data.email) ||
+        data.approvedNotifiedAt != null) return null;
+      if (ready) {
+        const manifest = (await tx.get(db.collection("ownedAssets").doc(str(data.id)))).data();
+        if (manifest?.status !== "ready" || manifest.canonicalPath !== current.ref.path ||
+          manifest.incarnation !== current.createTime.toMillis() ||
+          manifest.incarnationNanos !== current.createTime.nanoseconds ||
+          manifest.original?.objectId !== ready.original.objectId || manifest.thumb?.objectId !== ready.thumb.objectId ||
+          data.originalProtected !== true || data.originalObjectId !== ready.original.objectId ||
+          data.wallpaper_url !== "" || data.wallpaper_path !== "" || data.wallpaper_sha !== "" ||
+          data.thumb_path !== "" || data.thumb_sha !== "" || data.wallpaper_thumb !== ownedThumbnailUrl(ready.thumb)) return null;
+      }
+      tx.update(expected.ref, {
         approvedNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      return true;
+      return data;
     });
   } catch (err) {
+    if (err instanceof Error && ["Owned wall unavailable", "Invalid wall identity"].includes(err.message)) return null;
     logger.warn(
-      "onWallApproved: could not stamp the approval, sending anyway.",
+      "onWallApproved: could not claim a ready approval notice, retrying.",
       {err},
     );
-    return true;
+    throw err;
   }
+}
+
+function sameWallIncarnation(expected: admin.firestore.DocumentSnapshot,
+  current: admin.firestore.DocumentSnapshot): boolean {
+  return Boolean(expected.createTime && current.createTime?.isEqual(expected.createTime) &&
+    expected.ref.path === current.ref.path && expected.data()?.id === current.data()?.id);
 }
 
 async function resolveUserByEmail(

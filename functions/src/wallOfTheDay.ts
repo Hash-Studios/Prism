@@ -5,6 +5,7 @@ import {logger} from "firebase-functions/v2";
 import {sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, utcDateString} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {getOwnedWallDelivery} from "./ownedAssetDelivery";
 
 const DEFAULT_PREMIUM_COLLECTIONS = [
   "space",
@@ -17,18 +18,43 @@ const BUCKET_STEP_MINUTES = 15;
 const PUSH_LOCAL_MINUTE = 9 * 60;
 const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
 
-/** Walls that a free user cannot open are never the free daily pick. */
+/** Approved walls with a private original: the only walls that 3.8.0 clients list and can set. */
+const protectedWalls = () =>
+  db
+    .collection("walls")
+    .where("review", "==", true)
+    .where("originalProtected", "==", true)
+    .where("wallpaper_url", "==", "")
+    .where("wallpaper_path", "==", "")
+    .where("wallpaper_sha", "==", "")
+    .where("thumb_path", "==", "")
+    .where("thumb_sha", "==", "");
+
+/** Walls that a free user cannot open are never the free daily pick. Unconverted walls cannot be set, so they are not either. */
 export function isWotdEligible(
   wall: admin.firestore.DocumentData,
   premiumCollections: string[],
 ): boolean {
-  if (wall.is_streak_exclusive === true) return false;
-  const collections: unknown[] = Array.isArray(wall.collections) ?
-    wall.collections :
-    [];
+  if (wall.originalProtected !== true || wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) return false;
+  if (!Array.isArray(wall.collections) || wall.collections.some((entry) => typeof entry !== "string")) return false;
+  const collections: string[] = wall.collections;
   return !collections.some((c) =>
     premiumCollections.includes(String(c).trim()),
   );
+}
+
+async function readyWall(wallId: string, premium: string[], data?: admin.firestore.DocumentData): Promise<boolean> {
+  if (!wallId || wallId.includes("/")) return false;
+  const wall = data ?? (await db.collection("walls").doc(wallId).get()).data();
+  if (!wall || wall.review !== true || !isWotdEligible(wall, premium)) return false;
+  try {
+    await getOwnedWallDelivery(typeof wall.id === "string" ? wall.id : wallId);
+    return true;
+  } catch (error) {
+    if (!(error instanceof Error) || !["Owned wall unavailable", "Invalid wall identity"].includes(error.message)) throw error;
+    logger.warn("wall_of_the_day: protected wall has no ready delivery.", {wallId});
+    return false;
+  }
 }
 
 /** Parses the app's Remote Config list format: `["a", "b"]` or `a, b`. */
@@ -105,7 +131,8 @@ function isSameUtcDay(date: unknown, now: Date): boolean {
  *   6. Sends the new wall to the bucket whose 09:00 local is in this 15 minute slot, because
  *      `sendWallOfTheDayBuckets` runs in the same slot and may have seen yesterday's pick.
  *
- * Any failure throws, so Cloud Scheduler retries the run. `sendWallOfTheDayBuckets` sends the 09:00 local push.
+ * Transient failures throw for Scheduler retries. An empty ready cohort is logged without a pick or push.
+ * `sendWallOfTheDayBuckets` sends the 09:00 local push.
  */
 export const wallOfTheDay = onSchedule(
   {
@@ -116,9 +143,10 @@ export const wallOfTheDay = onSchedule(
   },
   async (event) => {
     const slotMs = scheduledAtMs(event.scheduleTime);
+    const premium = await premiumCollections();
     const currentRef = db.collection("wall_of_the_day").doc("current");
     const data = (await currentRef.get()).data();
-    if (data && isSameUtcDay(data.date, new Date())) {
+    if (data && isSameUtcDay(data.date, new Date()) && await readyWall(String(data.wallId ?? ""), premium)) {
       if (data.pushedAt == null) {
         logger.info(
           "Today's wall of the day is set but not announced; announcing it.",
@@ -183,25 +211,18 @@ export const wallOfTheDay = onSchedule(
     //   c) If it was picked recently or is not eligible, retry with a fresh offset.
     //   d) If every retry hit an excluded wall, take the first non-excluded wall from the 100 newest.
     const MAX_RETRIES = 5;
-    const premium = await premiumCollections();
 
     let newWall: admin.firestore.DocumentData | null = null;
     let newWallId: string | null = null;
 
-    const countSnap = await db
-      .collection("walls")
-      .where("review", "==", true)
-      .count()
-      .get();
+    const countSnap = await protectedWalls().count().get();
     const totalCount = countSnap.data().count;
     logger.info(`Total approved walls: ${totalCount}`);
 
     if (totalCount > 0) {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const randomOffset = Math.floor(Math.random() * totalCount);
-        const snap = await db
-          .collection("walls")
-          .where("review", "==", true)
+        const snap = await protectedWalls()
           .orderBy(admin.firestore.FieldPath.documentId())
           .offset(randomOffset)
           .limit(1)
@@ -211,7 +232,7 @@ export const wallOfTheDay = onSchedule(
           const doc = snap.docs[0];
           if (
             !excludedWallIds.has(doc.id) &&
-            isWotdEligible(doc.data(), premium)
+            await readyWall(doc.id, premium, doc.data())
           ) {
             newWall = doc.data();
             newWallId = doc.id;
@@ -234,16 +255,15 @@ export const wallOfTheDay = onSchedule(
       logger.warn(
         `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
       );
-      const fallbackSnap = await db
-        .collection("walls")
-        .where("review", "==", true)
+      const fallbackSnap = await protectedWalls()
         .orderBy("createdAt", "desc")
         .limit(100)
         .get();
 
-      const eligible = fallbackSnap.docs.filter((doc) =>
-        isWotdEligible(doc.data(), premium),
-      );
+      const eligible = [];
+      for (const doc of fallbackSnap.docs) {
+        if (await readyWall(doc.id, premium, doc.data())) eligible.push(doc);
+      }
       const pick = eligible.find((doc) => !excludedWallIds.has(doc.id));
       if (pick) {
         newWall = pick.data();
@@ -262,7 +282,8 @@ export const wallOfTheDay = onSchedule(
     }
 
     if (!newWall || !newWallId) {
-      throw new Error("No eligible walls found for wall_of_the_day.");
+      logger.error("wall_of_the_day: no ready eligible wall; no pick or push sent.");
+      return;
     }
 
     const wotdDoc = {
@@ -281,7 +302,9 @@ export const wallOfTheDay = onSchedule(
 
 /** Sends the legacy global-topic push (with the in-app doc) and stamps `pushedAt`. Throws when the push fails. */
 async function announce(wallId: string): Promise<void> {
-  const {creatorEmail, ...payload} = await wotdPushPayload(wallId);
+  const ready = await wotdPushPayload(wallId);
+  if (!ready) return;
+  const {creatorEmail, ...payload} = ready;
   const delivered = await sendNotification({
     ...payload,
     modifier: "all",
@@ -346,8 +369,12 @@ async function wotdPushPayload(wallId: string): Promise<{
   imageUrl?: string;
   channelId: string;
   creatorEmail: string;
-}> {
+} | null> {
   const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
+  if (!await readyWall(wallId, await premiumCollections(), wall)) {
+    logger.warn("wall_of_the_day: current pick is unavailable; suppressing push.", {wallId});
+    return null;
+  }
   const wallTitle = (wall.title as string | undefined)?.trim() || "";
   const copy = notificationCopyPayload({kind: "wotdForAudience", wallTitle});
   const thumbnailUrl = String(wall.wallpaper_thumb ?? "");
@@ -493,6 +520,7 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
       let payload = payloads.get(claim.wallId);
       if (!payload) {
         payload = await wotdPushPayload(claim.wallId);
+        if (!payload) continue;
         payloads.set(claim.wallId, payload);
       }
       delivered = await sendNotification({

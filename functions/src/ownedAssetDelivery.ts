@@ -4,25 +4,34 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION} from "./common";
 import {R2Storage, r2ObjectId, r2Secrets} from "./r2Storage";
+import {STUDIO_ACCOUNT} from "./studio/account";
+import {STUDIO_ASSET_BASE, verifiedStudioSource} from "./studio/assetSource";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const validId = (value: unknown): value is string => typeof value === "string" &&
   /^[A-Za-z0-9_-]{1,200}$/.test(value);
 export const ownedAssetStorageEnabled = (): boolean => ["R2_ACCOUNT_ID", "R2_PRIVATE_BUCKET", "R2_PREVIEW_BUCKET",
   "R2_PREVIEW_BASE_URL"].some((key) => !!process.env[key]);
-class R2IntegrityError extends Error {}
-export type UploadIdentity = {repo: string; path: string; sha: string; uid?: string; sourceKind?: "owned"; uploadId?: string};
+export class PermanentOwnedAssetError extends Error {}
+class R2IntegrityError extends PermanentOwnedAssetError {}
+/** Storage "repo" of Prism Studio walls: their source is the worker bucket, not a GitHub repository. */
+export const STUDIO_STORAGE_REPO = "prism-studio";
+export type UploadIdentity = {repo: string; path: string; sha: string; uid?: string; sourceKind?: "owned" | "studio";
+  uploadId?: string};
+const objectPrefix = (kind?: "owned" | "studio") => kind === "owned" ? "private-originals" :
+  kind === "studio" ? "studio-originals" : "retained";
 export type StoredUpload = UploadIdentity & {
   bucket: string; object: string; objectId: string; sha256: string; uid: string; previewObjectId?: string; uploadId?: string;
 };
 function objectName(input: UploadIdentity & {uid: string; digest?: string}): string {
-  if (!input.repo || ![process.env.GH_REPO_WALLS, process.env.GH_REPO_SETUPS].includes(input.repo) || !/^[a-f0-9]{40}$/.test(input.sha) ||
+  const repos = input.sourceKind === "studio" ? [STUDIO_STORAGE_REPO] : [process.env.GH_REPO_WALLS, process.env.GH_REPO_SETUPS];
+  if (!input.repo || !repos.includes(input.repo) || !/^[a-f0-9]{40}$/.test(input.sha) ||
     !input.path || input.path.length > 1024 || input.path.startsWith("/") || input.path.includes("\\") ||
     input.path.split("/").some((part) => !part || part === "." || part === "..")) throw new Error("Invalid upload identity");
   if (!validId(input.uid)) throw new Error("Invalid upload identity");
   const digest = input.digest ?? "";
   const objectId = r2ObjectId(input, digest);
-  return `${input.sourceKind === "owned" ? "private-originals" : "retained"}/${objectId}`;
+  return `${objectPrefix(input.sourceKind)}/${objectId}`;
 }
 export async function retainUpload(input: UploadIdentity & {uid: string; bytes: Buffer}): Promise<StoredUpload> {
   if (!validId(input.uid) || !input.bytes.length) throw new Error("Invalid retained upload");
@@ -37,9 +46,9 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   const registry = db.collection("r2ObjectRegistry").doc(objectId);
   const registryData = await db.runTransaction(async (tx) => {
     const current = await tx.get(registry);
-    if (current.exists && current.data()?.status === "tombstoned") throw new Error("Retained object was deleted");
+    if (current.exists && current.data()?.status === "tombstoned") throw new PermanentOwnedAssetError("Retained object was deleted");
     if (current.exists && (current.data()?.object !== object || current.data()?.uid !== input.uid ||
-      current.data()?.sha256 !== digest)) throw new Error("Retained object identity conflict");
+      current.data()?.sha256 !== digest)) throw new PermanentOwnedAssetError("Retained object identity conflict");
     if (!current.exists) {
       tx.create(registry, {status: "writing", bucket, object, objectId, sha256: digest, uid: input.uid,
         repo: input.repo, path: input.path, sha: input.sha, sourceKind: input.sourceKind ?? "github", uploadId: input.uploadId ?? "imported",
@@ -47,7 +56,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
     }
     return current.data();
   });
-  if (registryData?.status === "tombstoned") throw new Error("Retained object was deleted");
+  if (registryData?.status === "tombstoned") throw new PermanentOwnedAssetError("Retained object was deleted");
   const type = contentType(input.bytes);
   await client.put("private", object, input.bytes, {sha256: digest, uid: input.uid, objectid: objectId,
     repo64: Buffer.from(input.repo).toString("base64url"), path64: Buffer.from(input.path).toString("base64url"),
@@ -57,16 +66,16 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
     privateHead.repo !== input.repo || privateHead.path !== input.path || privateHead.gitSha !== input.sha ||
     privateHead.size !== input.bytes.length || privateHead.uploadId !== (input.uploadId ?? "imported") ||
     hash(await client.get("private", object)) !== digest) {
-    throw new Error("Retained upload mismatch");
+    throw new PermanentOwnedAssetError("Retained upload mismatch");
   }
   let previewObjectId: string | undefined;
-  if (input.repo === process.env.GH_REPO_WALLS && input.path.split("/").pop()?.startsWith("thumb_")) {
+  if (previewId(input)) {
     previewObjectId = objectId;
     await client.put("preview", `previews/${objectId}.img`, input.bytes,
       {sha256: digest, objectid: objectId}, type);
     const preview = await client.head("preview", `previews/${objectId}.img`);
     if (!preview || preview.sha256 !== digest || preview.objectId !== objectId || preview.size !== input.bytes.length ||
-      hash(await client.get("preview", `previews/${objectId}.img`)) !== digest) throw new Error("Retained preview mismatch");
+      hash(await client.get("preview", `previews/${objectId}.img`)) !== digest) throw new PermanentOwnedAssetError("Retained preview mismatch");
   }
   const active = await db.runTransaction(async (tx) => {
     const current = await tx.get(registry);
@@ -78,10 +87,10 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   if (!active) {
     await client.delete("private", object);
     if (previewObjectId) await client.delete("preview", `previews/${previewObjectId}.img`);
-    throw new Error("Retained object was deleted during upload");
+    throw new PermanentOwnedAssetError("Retained object was deleted during upload");
   }
   return {repo: input.repo, path: input.path, sha: input.sha, uid: input.uid,
-    ...(input.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+    ...(input.sourceKind ? {sourceKind: input.sourceKind} : {}),
     bucket, object, objectId, sha256: digest, ...(input.uploadId ? {uploadId: input.uploadId} : {}),
     ...(previewObjectId ? {previewObjectId} : {})};
 }
@@ -146,35 +155,37 @@ export async function deleteRetainedUpload(input: UploadIdentity & {expected?: S
   if (expected.previewObjectId) await client.delete("preview", `previews/${expected.previewObjectId}.img`);
 }
 function previewId(input: UploadIdentity) {
-  return input.repo === process.env.GH_REPO_WALLS && input.path.split("/").pop()?.startsWith("thumb_");
+  return (input.sourceKind === "studio" ? input.repo === STUDIO_STORAGE_REPO : input.repo === process.env.GH_REPO_WALLS) &&
+    input.path.split("/").pop()?.startsWith("thumb_");
 }
 export function stored(value: unknown): value is StoredUpload {
   if (!value || typeof value !== "object") return false;
   const asset = value as Partial<StoredUpload>;
-  const prefix = asset.sourceKind === "owned" ? "private-originals" : "retained";
+  const kind = asset.sourceKind === "owned" || asset.sourceKind === "studio" ? asset.sourceKind : undefined;
+  const prefix = objectPrefix(kind);
   let expectedObject: string;
   try {
     expectedObject = objectName({repo: asset.repo as string, path: asset.path as string, sha: asset.sha as string,
-      uid: asset.uid as string, ...(asset.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+      uid: asset.uid as string, ...(kind ? {sourceKind: kind} : {}),
       ...(asset.uploadId ? {uploadId: asset.uploadId} : {}), digest: asset.sha256 as string});
   } catch {
     return false;
   }
   return "bucket" in value && value.bucket === process.env.R2_PRIVATE_BUCKET &&
     "object" in value && typeof value.object === "string" &&
-    (("sourceKind" in value && value.sourceKind === "owned" && /^private-originals\/[a-f0-9]{64}$/.test(value.object)) ||
+    ((kind !== undefined && asset.sourceKind === kind && new RegExp(`^${prefix}/[a-f0-9]{64}$`).test(value.object)) ||
       (!("sourceKind" in value) && /^retained\/[a-f0-9]{64}$/.test(value.object))) &&
     "objectId" in value && typeof value.objectId === "string" && /^[a-f0-9]{64}$/.test(value.objectId) &&
     "sha256" in value && typeof value.sha256 === "string" && /^[a-f0-9]{64}$/.test(value.sha256) &&
     "uid" in value && validId(value.uid) && "repo" in value && typeof value.repo === "string" &&
     "path" in value && typeof value.path === "string" && "sha" in value && typeof value.sha === "string" &&
     value.objectId === r2ObjectId({uid: value.uid as string, repo: value.repo as string, path: value.path as string,
-      sha: value.sha as string, ...(asset.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+      sha: value.sha as string, ...(kind ? {sourceKind: kind} : {}),
       ...(asset.uploadId ? {uploadId: asset.uploadId} : {})}, value.sha256 as string) &&
     value.object === `${prefix}/${value.objectId}` && value.object === expectedObject &&
     (!asset.uploadId || (typeof asset.uploadId === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(asset.uploadId))) &&
-    (!("previewObjectId" in value) || (value.previewObjectId === value.objectId && asset.repo === process.env.GH_REPO_WALLS &&
-      typeof asset.path === "string" && asset.path.split("/").pop()?.startsWith("thumb_") === true));
+    (!("previewObjectId" in value) || (value.previewObjectId === value.objectId && typeof asset.path === "string" &&
+      previewId({repo: asset.repo as string, path: asset.path, sha: asset.sha as string, ...(kind ? {sourceKind: kind} : {})}) === true));
 }
 function contentType(bytes: Buffer): string {
   return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png" :
@@ -270,7 +281,42 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   return {upload: retained, url: raw, kind: privateAsset ? "owned" : "github"};
 }
 
-export async function bindOwnedWall(wallId: string): Promise<void> {
+export type WallBindingExpectation = {canonicalPath: string; incarnation: number; incarnationNanos: number;
+  originalUrl: string; thumbUrl: string; originalPath: string; thumbPath: string; originalSha: string; thumbSha: string;
+  recordedSource?: {originalPath: unknown; thumbPath: unknown; originalSha: unknown; thumbSha: unknown};
+  studio?: {runId: string; candidateId: string; resolution: string}};
+
+function matchesExpectedWall(wall: FirebaseFirestore.QueryDocumentSnapshot, expected: WallBindingExpectation): boolean {
+  const data = wall.data();
+  return wall.ref.path === expected.canonicalPath && wall.createTime.toMillis() === expected.incarnation &&
+    wall.createTime.nanoseconds === expected.incarnationNanos && data.review === true &&
+    data.wallpaper_url === expected.originalUrl && data.wallpaper_thumb === expected.thumbUrl &&
+    [[data.wallpaper_path, expected.originalPath], [data.thumb_path, expected.thumbPath],
+      [data.wallpaper_sha, expected.originalSha], [data.thumb_sha, expected.thumbSha]]
+      .every(([actual, value]) => actual === undefined || actual === "" || actual === value) &&
+    (!expected.recordedSource || data.wallpaper_path === expected.recordedSource.originalPath &&
+      data.thumb_path === expected.recordedSource.thumbPath && data.wallpaper_sha === expected.recordedSource.originalSha &&
+      data.thumb_sha === expected.recordedSource.thumbSha) &&
+    (!expected.studio || data.origin === "studio" && data.email === STUDIO_ACCOUNT.email &&
+      data.studioRunId === expected.studio.runId && data.studioCandidateId === expected.studio.candidateId &&
+      data.resolution === expected.studio.resolution);
+}
+
+export async function dropAllowsBinding(data: FirebaseFirestore.DocumentData, tx?: FirebaseFirestore.Transaction,
+  firestore: FirebaseFirestore.Firestore = db): Promise<boolean> {
+  if (data.dropReserved === true) return false;
+  if (!data.dropWeek) return true;
+  if (typeof data.dropWeek !== "string" || !/^[A-Za-z0-9_-]{1,200}$/.test(data.dropWeek)) return false;
+  const ref = firestore.collection("drops").doc(data.dropWeek);
+  return (tx ? await tx.get(ref) : await ref.get()).data()?.released === true;
+}
+
+function releasedDropMarkers(data: FirebaseFirestore.DocumentData): FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData> {
+  return Object.fromEntries(["dropWeek", "dropReserved"].filter((key) => data[key] !== undefined)
+    .map((key) => [key, admin.firestore.FieldValue.delete()]));
+}
+
+export async function bindOwnedWall(wallId: string, expected?: WallBindingExpectation): Promise<void> {
   if (!validId(wallId) || !ownedAssetStorageEnabled()) return;
   await db.runTransaction(async (tx) => {
     const rows = await tx.get(db.collection("walls").where("id", "==", wallId).limit(2));
@@ -280,15 +326,24 @@ export async function bindOwnedWall(wallId: string): Promise<void> {
     const ref = db.collection("ownedAssets").doc(wallId);
     const existing = (await tx.get(ref)).data();
     if (!wall.createTime || existing?.status === "deleted") return;
+    if ((expected && !matchesExpectedWall(wall, expected)) || !await dropAllowsBinding(data, tx)) return;
     const incarnation = wall.createTime.toMillis();
     if (existing?.status === "ready") return;
-    const original = await proveAsset(data, "wallpaper", tx);
-    const thumb = await proveAsset(data, "thumb", tx);
+    const proofData = expected ? {...data, wallpaper_path: expected.originalPath, thumb_path: expected.thumbPath,
+      wallpaper_sha: expected.originalSha, thumb_sha: expected.thumbSha} : data;
+    const original = await proveAsset(proofData, "wallpaper", tx);
+    const thumb = await proveAsset(proofData, "thumb", tx);
     if (!original || !thumb || original.upload.uid !== thumb.upload.uid || original.kind !== thumb.kind) return;
     if (original.upload.previewObjectId || original.upload.path.split("/").pop()?.startsWith("thumb_") ||
       original.upload.path === thumb.upload.path || original.upload.object === thumb.upload.object || !thumb.upload.previewObjectId ||
       !thumb.upload.path.split("/").pop()?.startsWith("thumb_")) return;
-    const author = await admin.auth().getUser(original.upload.uid);
+    let author: admin.auth.UserRecord;
+    try {
+      author = await admin.auth().getUser(original.upload.uid);
+    } catch (error) {
+      if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return;
+      throw error;
+    }
     if (author.disabled || !author.email || author.email !== data.email) return;
     const thumbUrl = ownedThumbnailUrl(thumb.upload);
     tx.set(ref, {status: "ready", canonicalPath: wall.ref.path, incarnation,
@@ -297,7 +352,7 @@ export async function bindOwnedWall(wallId: string): Promise<void> {
       provenance: {kind: original.kind, uid: original.upload.uid}});
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: thumbUrl, originalProtected: true,
       wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
-      originalObjectId: original.upload.objectId});
+      originalObjectId: original.upload.objectId, ...releasedDropMarkers(data)});
   });
 }
 async function delivery(wallId: string) {
@@ -317,19 +372,39 @@ async function delivery(wallId: string) {
     thumbUrl: manifest.thumbUrl, provenance: manifest.provenance};
 }
 export const getOwnedWallDelivery = delivery;
+export type StudioBinding = {kind: "studio"; runId: string; candidateId: string};
+/**
+ * Binds a reviewed wall whose source has no upload receipts: a legacy GitHub wall, or a Prism Studio wall when `source`
+ * is set. Studio is checked against the server-owned candidate backlink and never gets a GitHub receipt or creator credit.
+ */
 export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath: string; incarnation: number;
   incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload}): Promise<void> {
+  originalUrl: string; thumbUrl: string; original: StoredUpload; thumb: StoredUpload; source?: StudioBinding;
+  expected?: WallBindingExpectation}): Promise<void> {
+  const {source, expected, ...binding} = input;
+  const kind = source ? "studio" : undefined;
   if (!validId(input.wallId) || !stored(input.original) || !stored(input.thumb) ||
-    input.original.sourceKind || input.thumb.sourceKind) throw new Error("Invalid legacy binding");
-  for (const [asset, raw] of [[input.original, input.originalUrl], [input.thumb, input.thumbUrl]] as const) {
-    const url = new URL(raw);
-    const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
-    if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.username || url.password ||
-      url.search || url.hash || url.port || parts[0].toLowerCase() !== process.env.GH_USERNAME?.toLowerCase() ||
-      parts[1] !== process.env.GH_REPO_WALLS || parts.slice(-asset.path.split("/").length).join("/") !== asset.path ||
-      asset.object !== objectName({...asset, digest: asset.sha256})) throw new Error("Invalid legacy origin");
-    await verifyStoredUpload(asset);
+    input.original.sourceKind !== kind || input.thumb.sourceKind !== kind) throw new Error("Invalid legacy binding");
+  if (source) {
+    const keys = [`ai/studio/${source.candidateId}.jpg`, `ai/studio/thumb_${source.candidateId}.jpg`];
+    const urls = [input.originalUrl, input.thumbUrl];
+    [input.original, input.thumb].forEach((asset, index) => {
+      if (asset.repo !== STUDIO_STORAGE_REPO || asset.path !== keys[index] || asset.uid !== STUDIO_ACCOUNT.id ||
+        asset.uploadId !== source.candidateId || urls[index] !== `${STUDIO_ASSET_BASE}/${keys[index]}`) {
+        throw new Error("Invalid Studio origin");
+      }
+    });
+    await Promise.all([verifyStoredUpload(input.original), verifyStoredUpload(input.thumb)]);
+  } else {
+    for (const [asset, raw] of [[input.original, input.originalUrl], [input.thumb, input.thumbUrl]] as const) {
+      const url = new URL(raw);
+      const parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
+      if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.username || url.password ||
+        url.search || url.hash || url.port || parts[0].toLowerCase() !== process.env.GH_USERNAME?.toLowerCase() ||
+        parts[1] !== process.env.GH_REPO_WALLS || parts.slice(-asset.path.split("/").length).join("/") !== asset.path ||
+        asset.object !== objectName({...asset, digest: asset.sha256})) throw new Error("Invalid legacy origin");
+      await verifyStoredUpload(asset);
+    }
   }
   await db.runTransaction(async (tx) => {
     const rows = await tx.get(db.collection("walls").where("id", "==", input.wallId).limit(2));
@@ -338,8 +413,15 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
     const wall = rows.docs[0];
     if (rows.size !== 1 || !wall || wall.ref.path !== input.canonicalPath ||
       wall.createTime?.toMillis() !== input.incarnation || wall.createTime.nanoseconds !== input.incarnationNanos || wall.data().review !== true ||
-      wall.data().wallpaper_url !== input.originalUrl || wall.data().wallpaper_thumb !== input.thumbUrl || existing.exists) {
-      throw new Error("Legacy wall changed or already bound");
+      wall.data().wallpaper_url !== input.originalUrl || wall.data().wallpaper_thumb !== input.thumbUrl || existing.exists ||
+      (expected && !matchesExpectedWall(wall, expected)) || !await dropAllowsBinding(wall.data(), tx)) {
+      throw new PermanentOwnedAssetError("Legacy wall changed or already bound");
+    }
+    if (source) {
+      const verified = await verifiedStudioSource(input.wallId, wall.data(), tx);
+      if (verified?.runId !== source.runId || verified.candidateId !== source.candidateId) {
+        throw new PermanentOwnedAssetError("Studio wall changed or is not a Studio wall");
+      }
     }
     await verifyStoredUploadRegistry(input.original, tx);
     await verifyStoredUploadRegistry(input.thumb, tx);
@@ -348,10 +430,11 @@ export async function bindLegacyOwnedWall(input: {wallId: string; canonicalPath:
       !input.thumb.path.split("/").pop()?.startsWith("thumb_") || input.original.object === input.thumb.object) {
       throw new Error("Legacy wall asset roles are invalid");
     }
-    tx.create(ref, {...input, incarnationNanos: wall.createTime.nanoseconds, status: "ready", provenance: {kind: "legacy"}});
+    tx.create(ref, {...binding, incarnationNanos: wall.createTime.nanoseconds, status: "ready",
+      provenance: source ?? {kind: "legacy"}});
     tx.update(wall.ref, {wallpaper_url: "", wallpaper_thumb: ownedThumbnailUrl(input.thumb),
       wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
-      originalProtected: true, originalObjectId: input.original.objectId});
+      originalProtected: true, originalObjectId: input.original.objectId, ...releasedDropMarkers(wall.data())});
   });
 }
 export async function signOriginalDelivery(wallId: string): Promise<{url: string; expiresAt: number; objectId: string}> {
@@ -361,12 +444,21 @@ export async function signOriginalDelivery(wallId: string): Promise<{url: string
   const url = new R2Storage().presignGet(original.object, new Date(expiresAt));
   return {url, expiresAt, objectId: original.objectId};
 }
-export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets}, async (event) => {
+export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true,
+  secrets: r2Secrets, memory: "512MiB", timeoutSeconds: 120}, async (event) => {
   const after = event.data?.after;
   const before = event.data?.before;
   if (after?.exists) {
-    const id = after.data()?.id;
-    if (validId(id)) await bindOwnedWall(id);
+    const data = after.data();
+    const id = data?.id;
+    if (validId(id)) {
+      await bindOwnedWall(id);
+      // Approval (admin, Studio, Drop release, old clients) is the moment an unprotected wall must be converted.
+      // A protected wall returns here, so the redacting write that conversion makes does not loop.
+      if (data?.review === true && data.originalProtected !== true) {
+        await (await import("./ownedWallConversion.js")).convertApprovedWall(id);
+      }
+    }
   } else if (before?.exists && validId(before.data()?.id)) {
     const id: string = before.data()?.id;
     await cleanupDeletedOwnedWall({wallId: id, canonicalPath: before.ref.path,
@@ -444,23 +536,24 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
       await stateRef.set({cursorId: row.id}, {merge: true});
       continue;
     }
-    const sourceKind = value.sourceKind === "owned" ? "owned" : value.sourceKind === "github" ? undefined : null;
+    const sourceKind = value.sourceKind === "owned" || value.sourceKind === "studio" ? value.sourceKind :
+      value.sourceKind === "github" ? undefined : null;
     if (sourceKind === null || typeof value.objectId !== "string" || !/^[a-f0-9]{64}$/.test(value.objectId) ||
       typeof value.uid !== "string" || !validId(value.uid) || typeof value.repo !== "string" ||
       typeof value.path !== "string" || typeof value.sha !== "string" || !/^[a-f0-9]{40}$/.test(value.sha) ||
       typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256) ||
       value.bucket !== process.env.R2_PRIVATE_BUCKET ||
-      value.object !== `${sourceKind === "owned" ? "private-originals" : "retained"}/${value.objectId}` ||
+      value.object !== `${objectPrefix(sourceKind)}/${value.objectId}` ||
       value.objectId !== r2ObjectId({uid: value.uid, repo: value.repo, path: value.path, sha: value.sha,
-        ...(sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
+        ...(sourceKind ? {sourceKind} : {}),
         ...(typeof value.uploadId === "string" && value.uploadId !== "imported" ? {uploadId: value.uploadId} : {})}, value.sha256)) {
       console.warn("Skipping invalid R2 tombstone identity", {registryId: row.id});
       await stateRef.set({cursorId: row.id}, {merge: true});
       continue;
     }
     const preview = value.previewObjectId;
-    if (preview !== undefined && (preview !== value.objectId || value.repo !== process.env.GH_REPO_WALLS ||
-      !value.path.split("/").pop()?.startsWith("thumb_"))) {
+    if (preview !== undefined && (preview !== value.objectId || !previewId({repo: value.repo, path: value.path,
+      sha: value.sha, ...(sourceKind ? {sourceKind} : {})}))) {
       console.warn("Skipping invalid R2 preview tombstone", {registryId: row.id});
       await stateRef.set({cursorId: row.id}, {merge: true});
       continue;

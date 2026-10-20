@@ -138,6 +138,6 @@ export class R2Storage {
   }
 }
 
-export const r2ObjectId = (identity: {uid: string; repo: string; path: string; sha: string; sourceKind?: "owned";
+export const r2ObjectId = (identity: {uid: string; repo: string; path: string; sha: string; sourceKind?: "owned" | "studio";
   uploadId?: string}, digest: string) =>
-  sha256(`${identity.sourceKind === "owned" ? "owned" : "github"}\0${identity.uid}\0${identity.repo}\0${identity.path}\0${identity.sha}\0${digest}\0${identity.uploadId ?? "imported"}`);
+  sha256(`${identity.sourceKind ?? "github"}\0${identity.uid}\0${identity.repo}\0${identity.path}\0${identity.sha}\0${digest}\0${identity.uploadId ?? "imported"}`);

@@ -270,7 +270,7 @@ test("downloader rejects invalid image bytes and mismatched source SHA", async (
   const source = parseGithubAsset(`https://raw.githubusercontent.com/hash/walls/${options.commit}/original.jpg`,
     "original.jpg", options);
   t.mock.method(globalThis, "fetch", async (_url: unknown, init?: RequestInit) => {
-    assert.equal(init?.redirect, "error");
+    assert.equal(init?.redirect, "manual");
     assert.equal(new Headers(init?.headers).get("accept-encoding"), "identity");
     return new Response(new Uint8Array(image), {headers: {"content-length": String(image.length)}});
   });

@@ -83,16 +83,16 @@ const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const cases = [
   ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
-  ['guest cannot read legacy reviewed original', () => req('GET', 'walls/w9'), 403],
-  ['guest cannot read falsely marked original', () => req('GET', 'walls/leaked'), 403],
+  ['guest reads a reviewed legacy wall (3.7.0 read rule restored)', () => req('GET', 'walls/w9'), 200],
+  ['guest reads a reviewed wall that only claims protection (read tightening ships later)', () => req('GET', 'walls/leaked'), 200],
   ...provenanceFields.flatMap((field) => [
-    [`guest cannot read leaked ${field}`, () => req('GET', `walls/leaked-${field}`), 403],
-    [`guest cannot read missing ${field}`, () => req('GET', `walls/missing-${field}`), 403],
+    [`guest reads reviewed wall with ${field} (read tightening ships later)`, () => req('GET', `walls/leaked-${field}`), 200],
+    [`guest reads reviewed wall missing ${field} (read tightening ships later)`, () => req('GET', `walls/missing-${field}`), 200],
     [`owner retains access to ${field} for cleanup`, () => req('GET', `walls/leaked-${field}`, null, Bu), 200],
   ]),
   ['owner reads pending provenance', () => req('GET', 'walls/approval-race', null, Bu), 200],
   ['admin approves before binder redaction', () => req('PATCH', 'walls/approval-race', { review: { booleanValue: true } }, ADM, ['review']), 200],
-  ['approval race stays private until binder redacts', () => req('GET', 'walls/approval-race'), 403],
+  ['approved wall is readable before the binder redacts it', () => req('GET', 'walls/approval-race'), 200],
   ['admin retains approval race access', () => req('GET', 'walls/approval-race', null, ADM), 200],
   ['binder redacts approval race provenance', () => req('PATCH', 'walls/approval-race', redactedProvenance, 'owner', provenanceFields), 200],
   ['guest reads approval only after binder redaction', () => req('GET', 'walls/approval-race'), 200],
@@ -105,14 +105,14 @@ const cases = [
   ['owner cannot read R2 object registry', () => req('GET', 'r2ObjectRegistry/object-id', null, Bu), 403],
   ['owner cannot write R2 object registry', () => req('PATCH', 'r2ObjectRegistry/object-id', { status: { stringValue: 'active' } }, Bu), 403],
   ['owner cannot delete R2 object registry', () => req('DELETE', 'r2ObjectRegistry/object-id', null, Bu), 403],
-  ['review-only public query cannot leak legacy originals', () => runQuery(A, [
+  ['review-only public query keeps 3.7.0 feeds working', () => runQuery(A, [
     { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
-  ], 'walls'), 403],
-  ['URL-only redaction query cannot leak provenance', () => runQuery(A, [
+  ], 'walls'), 200],
+  ['URL-only redaction query keeps working', () => runQuery(A, [
     { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
     { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
     { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
-  ], 'walls'), 403],
+  ], 'walls'), 200],
   ['redacted public query keeps feeds usable', () => runQuery(A, [
     { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
     { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
