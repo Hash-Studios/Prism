@@ -125,6 +125,23 @@ void main() {
     verify(() => prism.fetchCanonicalByDocumentId('document-id')).called(1);
   });
 
+  test('a feed entity whose ID came from its document resolves through the protected document lookup', () async {
+    const wallpaper = PrismWallpaper(
+      core: WallpaperCore(id: 'document-id', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      firestoreDocumentId: 'document-id',
+    );
+    when(() => prism.fetchCanonicalById('document-id')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    when(() => prism.fetchCanonicalByDocumentId('document-id')).thenAnswer((_) async => Result.success(wallpaper));
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'document-id', wallpaper: wallpaper),
+      ),
+    );
+    await waitForLookup();
+    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'document-id');
+    verify(() => prism.fetchCanonicalByDocumentId('document-id')).called(1);
+  });
+
   test('an arbitrary cached file does not bypass Prism canonical freshness', () async {
     when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
     bloc.add(

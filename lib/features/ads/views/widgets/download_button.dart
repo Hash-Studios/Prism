@@ -354,6 +354,11 @@ class _DownloadButtonState extends State<DownloadButton> {
               isValidNetworkUrl(tap.link));
       if (serverAccess) {
         _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
+        if (tap.isGuest && _authorizedSource == null) {
+          await _showGuestPremiumPrompt();
+          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
+          return;
+        }
         final result = await _gatedDownload(originalAccess: true, variant: variant);
         _trackGateResult(result);
         return;

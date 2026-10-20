@@ -132,6 +132,14 @@ class SetWallpaperFlow {
     Future<String> Function(String source)? prepareAuthorized,
   }) async {
     final String owner = app_state.prismUser.id;
+    final String? historyOriginalIdentity =
+        prepareAuthorized == null &&
+            wallpaperSource == WallpaperSource.prism &&
+            (wallpaperId?.isNotEmpty ?? false) &&
+            !url.startsWith('/') &&
+            !url.startsWith('file:')
+        ? 'prism:$wallpaperId'
+        : null;
     final AppLocalizations l10n = context.l10n;
     final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
     if (!context.mounted) return null;
@@ -162,18 +170,28 @@ class SetWallpaperFlow {
         prepareAuthorized: prepareAuthorized,
       );
     }
-    final authorized = await resolveOriginalWithConsent(
-      context,
-      url: url,
-      wallpaperId: wallpaperId,
-      wallpaperSource: wallpaperSource,
-      action: OriginalAccessAction.set,
-      requestId: requestId,
-      label: l10n.coreSetWallpaper,
-    );
-    if (authorized == null) return null;
-    url = authorized;
-    if (prepareAuthorized != null) url = await prepareAuthorized(url);
+    onBusy?.call(true);
+    try {
+      final authorized = await resolveOriginalWithConsent(
+        context,
+        url: url,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+        action: OriginalAccessAction.set,
+        requestId: requestId,
+        label: l10n.coreSetWallpaper,
+      );
+      if (authorized == null) return null;
+      url = authorized;
+      if (prepareAuthorized != null) {
+        final source = url;
+        final prepared = await runPrepareSource(() => prepareAuthorized(source), l10n: l10n);
+        if (prepared == null) return null;
+        url = prepared;
+      }
+    } finally {
+      onBusy?.call(false);
+    }
     if (!context.mounted || app_state.prismUser.id != owner) return null;
     switch (choice.kind) {
       case SetChoiceKind.adjust:
@@ -218,6 +236,7 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           requestId: requestId,
           usedDefault: usedDefault,
+          historyOriginalIdentity: historyOriginalIdentity,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
           wallpaperId: wallpaperId,
@@ -250,6 +269,7 @@ class SetWallpaperFlow {
     String? entryPoint,
     String? requestId,
     bool usedDefault = false,
+    String? historyOriginalIdentity,
     ScaffoldMessengerState? messenger,
     AppLocalizations? localizations,
     VoidCallback? onMatchAccent,
@@ -272,6 +292,7 @@ class SetWallpaperFlow {
         recordHistory: recordHistory,
         wallpaperId: wallpaperId,
         wallpaperSource: wallpaperSource,
+        historyOriginalIdentity: historyOriginalIdentity,
       );
     } finally {
       onBusy?.call(false);
@@ -318,6 +339,7 @@ class SetWallpaperFlow {
           onBusy: onBusy,
           entryPoint: entryPoint,
           usedDefault: usedDefault,
+          historyOriginalIdentity: historyOriginalIdentity,
           requestId: requestId,
           messenger: host,
           localizations: l10n,
@@ -447,7 +469,19 @@ class SetWallpaperFlow {
       if (owner != app_state.prismUser.id) {
         return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
       }
-      if (prepareAuthorized != null && homeDone == null) homeUrl = await prepareAuthorized(homeUrl);
+      final originalHomeFile = prepareAuthorized != null && homeDone == null
+          ? await WallpaperService.resolveToLocalFile(
+              homeUrl,
+              wallpaperId: wallpaperId,
+              wallpaperSource: wallpaperSource,
+            )
+          : null;
+      if (prepareAuthorized != null && homeDone == null) {
+        final source = homeUrl;
+        final prepared = await runPrepareSource(() => prepareAuthorized(source), l10n: l10n);
+        if (prepared == null) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+        homeUrl = prepared;
+      }
       if (owner != app_state.prismUser.id) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
       final homeFile = homeDone == null
           ? await WallpaperService.resolveToLocalFile(
@@ -474,7 +508,15 @@ class SetWallpaperFlow {
             recordHistory: recordHistory,
             wallpaperId: wallpaperId,
             wallpaperSource: wallpaperSource,
-            historySource: grants[wallpaperId] ?? url,
+            historySource: originalHomeFile?.path ?? url,
+            historyOriginalIdentity:
+                originalHomeFile != null &&
+                    wallpaperSource == WallpaperSource.prism &&
+                    (wallpaperId?.isNotEmpty ?? false) &&
+                    !url.startsWith('/') &&
+                    !url.startsWith('file:')
+                ? 'prism:$wallpaperId'
+                : null,
           );
       if (home.isSuccess && owner == app_state.prismUser.id) {
         lock = await WallpaperService.setWallpaper(
@@ -485,7 +527,7 @@ class SetWallpaperFlow {
           recordHistory: recordHistory,
           wallpaperId: pick.candidate.wallpaperId,
           wallpaperSource: pick.candidate.wallpaperSource,
-          historySource: lockUrl,
+          historySource: pick.candidate.fullUrl,
         );
       }
     } finally {

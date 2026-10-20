@@ -14,6 +14,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -33,6 +35,8 @@ import '../../../support/offline_asset_fixture.dart';
 final AppLocalizationsEn l10n = AppLocalizationsEn();
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _DownloadedWallIndex extends Mock implements DownloadedWallIndex {}
 
 class _Client implements WallpaperClient {
   _Client({this.capabilities = const aw.WallpaperCapabilities(), this.status = aw.WallpaperOperationStatus.applied});
@@ -120,6 +124,7 @@ void main() {
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
     Future<String> Function()? prepareSource,
+    Future<String> Function(String)? prepareAuthorized,
     bool primary = false,
     WallpaperSource? source,
     String? wallpaperId,
@@ -152,6 +157,7 @@ void main() {
               notes: notes,
               onMatchAccent: onMatchAccent,
               prepareSource: prepareSource,
+              prepareAuthorized: prepareAuthorized,
               primary: primary,
             ),
           ),
@@ -182,6 +188,46 @@ void main() {
     await tester.pumpAndSettle();
     expect(callableCount, 0);
     expect(client.requests, isEmpty);
+  });
+
+  testWidgets('catalogue Set deduplicates a retained original and a later downloaded copy', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'history-original-owner';
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (_) async => '${assets.directory.path}/scratch',
+    );
+    final client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    final store = WallpaperHistoryStore(settings);
+    getIt.registerSingleton<WallpaperHistoryStore>(store);
+    const url = 'https://example.com/original.jpg';
+    assets.mapSource(url, File(wallFilePath));
+    await WallpaperService.setWallpaper(
+      url,
+      WallpaperTarget.home,
+      wallpaperId: 'same-original',
+      wallpaperSource: WallpaperSource.prism,
+    );
+    expect(store.items().single.originalIdentity, 'prism:same-original');
+    final downloaded = assets.createImageSync('downloaded-original.png');
+    final index = _DownloadedWallIndex();
+    when(
+      () => index.localFileForIdentity(id: 'same-original', source: WallpaperSource.prism),
+    ).thenAnswer((_) async => downloaded);
+    when(
+      () => index.localFileFor(link: downloaded.path, id: 'same-original', source: WallpaperSource.prism),
+    ).thenAnswer((_) async => null);
+    getIt.registerSingleton<DownloadedWallIndex>(index);
+    await pumpButton(tester, url: url, source: WallpaperSource.prism, wallpaperId: 'same-original');
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(client.requests.last.source.filePath, downloaded.path);
+    expect(store.items(), hasLength(1));
+    expect(store.items().single.fullUrl, downloaded.path);
+    expect(store.items().single.originalIdentity, 'prism:same-original');
   });
 
   testWidgets('with the default ask, tapping Set opens the sheet and applies the chosen target', (tester) async {
@@ -754,6 +800,24 @@ void main() {
       expect(analytics.events.whereType<SetWallEvent>(), isEmpty);
     });
 
+    testWidgets('a rendered pair keeps the acquired original in history', (tester) async {
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final store = WallpaperHistoryStore(settings);
+      getIt.registerSingleton<WallpaperHistoryStore>(store);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => '${assets.directory.path}/scratch',
+      );
+      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => pick();
+      final renderedPath = assets.createImageSync('pair-rendered.png').path;
+      await pumpButton(tester, prepareAuthorized: (_) async => renderedPath);
+      await openPair(tester);
+      expect(client.requests.first.source.filePath, renderedPath);
+      expect(store.items().where((item) => item.target == 'home').single.fullUrl, wallFilePath);
+      expect(store.items().where((item) => item.target == 'lock').single.fullUrl, '/tmp/lock.png');
+    });
+
     testWidgets('the row is hidden when the device cannot set the lock screen', (tester) async {
       aw.AsyncWallpaper.debugSetClient(
         _Client(
@@ -896,6 +960,43 @@ void main() {
 
     bool toasted(String message) =>
         toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == message);
+
+    testWidgets('authorized rendering stays busy and reports edit errors without applying', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final ready = Completer<String>();
+      var preparations = 0;
+      await pumpButton(
+        tester,
+        prepareAuthorized: (source) {
+          preparations++;
+          return ready.future;
+        },
+      );
+      toasts.clear();
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        (call) async {
+          toasts.add(call);
+          return true;
+        },
+      );
+      final button = find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen));
+      await tester.tap(button);
+      await tester.pump();
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isTrue);
+      await tester.tap(button);
+      await tester.pump();
+      expect(preparations, 1);
+      ready.completeError(StateError('render failed'));
+      await tester.pumpAndSettle();
+      expect(client.requests, isEmpty);
+      expect(toasted(l10n.coreWallpaperEditApplyColorFailed), isTrue);
+      expect(toasted(l10n.coreWallpaperSaveFailed), isFalse);
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+    });
 
     testWidgets('a saved default target sets the prepared file, not the url', (tester) async {
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');

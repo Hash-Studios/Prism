@@ -8,6 +8,104 @@ import '../../support/in_memory_local_store.dart';
 
 void main() {
   final now = DateTime.utc(2026);
+  for (final pair in [false, true]) {
+    group(pair ? 'pair retry deadline' : 'single retry deadline', () {
+      late DateTime clock;
+      late SettingsLocalDataSource settings;
+      late List<Map<String, dynamic>> calls;
+      late OriginalAccessService service;
+
+      OriginalAccessService createService() => OriginalAccessService(
+        owner: () => 'alice',
+        now: () => clock,
+        call: (input) async {
+          calls.add(input);
+          if (input['mode'] == 'quote') return {'status': 'quoted', 'requiredCoins': 10, 'currentBalance': 40};
+          final grant = {
+            'url': 'https://signed.example/original',
+            'expiresAt': clock.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+          };
+          return {
+            'status': 'granted',
+            if (pair)
+              'grants': [
+                for (final id in ['home', 'lock']) {'assetId': id, ...grant},
+              ]
+            else
+              ...grant,
+          };
+        },
+      );
+      Future<OriginalAccessQuote> quote() => pair
+          ? service.quotePair(['home', 'lock'])
+          : service.quote(wallpaperId: 'wall', action: OriginalAccessAction.set);
+      Future<void> acquire() async {
+        if (pair) {
+          await service.resolvePair(['home', 'lock'], maxCoins: 10);
+        } else {
+          await service.resolve(
+            url: '',
+            wallpaperId: 'wall',
+            wallpaperSource: WallpaperSource.prism,
+            action: OriginalAccessAction.set,
+            maxCoins: 10,
+          );
+        }
+      }
+
+      setUp(() {
+        clock = now;
+        calls = [];
+        settings = SettingsLocalDataSource(InMemoryLocalStore());
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+        service = createService();
+      });
+      tearDown(getIt.reset);
+
+      test('consent delay preserves five minutes of acquisition retries across restart', () async {
+        await quote();
+        clock = now.add(const Duration(minutes: 3));
+        service = createService();
+        await acquire();
+        clock = now.add(const Duration(minutes: 5, seconds: 30));
+        service = createService();
+        await quote();
+        await acquire();
+        expect(calls.map((input) => input['requestId']).toSet(), hasLength(1));
+
+        clock = now.add(const Duration(minutes: 8));
+        service = createService();
+        await expectLater(acquire(), throwsStateError);
+        expect(calls, hasLength(4));
+      });
+
+      test('abandoned quote does not expire or start a persisted acquisition deadline', () async {
+        await quote();
+        final id = pair ? 'pair:home,lock' : 'wall';
+        expect(settings.get<int?>('originalAccess.alice.$id.set.until'), isNull);
+        clock = now.add(const Duration(minutes: 6));
+        service = createService();
+        await quote();
+        await acquire();
+        expect(calls.map((input) => input['requestId']).toSet(), hasLength(1));
+        expect(
+          settings.get<int?>('originalAccess.alice.$id.set.until'),
+          clock.add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        );
+      });
+
+      test('quoting after an expired acquisition starts a fresh consent operation', () async {
+        await acquire();
+        final expiredId = calls.single['requestId'];
+        clock = now.add(const Duration(minutes: 6));
+        service = createService();
+        await quote();
+        await acquire();
+        expect(calls[1]['requestId'], isNot(expiredId));
+        expect(calls[2]['requestId'], calls[1]['requestId']);
+      });
+    });
+  }
   for (final source in <WallpaperSource?>[null, WallpaperSource.unknown, WallpaperSource.downloaded]) {
     for (final url in ['https://untrusted.test/original', 'HTTPS://untrusted.test/original']) {
       test('remote $source fails closed for $url', () async {

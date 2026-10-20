@@ -128,6 +128,7 @@ class WallpaperService {
   /// With [useSystemCropper] the Android system cropper opens first and the user picks the crop.
   /// History keeps [historySource] and [historyThumbnail] when given. Callers that set a rendered copy of a wall pass
   /// the original here, so history can set the wall again.
+  /// [historyOriginalIdentity] keeps an acquired original's catalogue identity when applying a rendered copy.
   static Future<WallpaperSetResult> setWallpaper(
     String source,
     WallpaperTarget target, {
@@ -137,6 +138,7 @@ class WallpaperService {
     bool recordHistory = true,
     String? historySource,
     String? historyThumbnail,
+    String? historyOriginalIdentity,
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
@@ -178,7 +180,27 @@ class WallpaperService {
         : aw.WallpaperApplyStrategy.direct;
 
     try {
-      final String recordedSource = historySource ?? normalizedSource;
+      final String requestedHistorySource = historySource ?? normalizedSource;
+      final bool remoteOriginal =
+          wallpaperSource == WallpaperSource.prism &&
+          (wallpaperId?.isNotEmpty ?? false) &&
+          !requestedHistorySource.startsWith('/') &&
+          !requestedHistorySource.startsWith('file:');
+      final String recordedSource = remoteOriginal ? filePath : requestedHistorySource;
+      String? originalIdentity = remoteOriginal
+          ? '${wallpaperSource!.wireValue}:$wallpaperId'
+          : historyOriginalIdentity;
+      if (originalIdentity == null && getIt.isRegistered<WallpaperHistoryStore>()) {
+        for (final item in WallpaperHistoryStore.instance.items()) {
+          if (item.fullUrl == recordedSource &&
+              item.wallpaperId == wallpaperId &&
+              item.source == wallpaperSource?.wireValue &&
+              item.originalIdentity != null) {
+            originalIdentity = item.originalIdentity;
+            break;
+          }
+        }
+      }
       final bool canRecord = recordHistory && await _canRecord(recordedSource);
       final List<AppliedWallpaper?> previous = canRecord ? _previousFor(target) : const <AppliedWallpaper?>[];
       final aw.WallpaperSource platformSource = useSystemCropper
@@ -199,6 +221,7 @@ class WallpaperService {
         historyThumbnail ?? thumbnailUrl,
         wallpaperId: wallpaperId,
         wallpaperSource: wallpaperSource,
+        originalIdentity: originalIdentity,
       );
       if (id == null) return mapped;
       return mapped.withHistory(
@@ -348,6 +371,7 @@ class WallpaperService {
     String? thumbnailUrl, {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
+    String? originalIdentity,
   }) async {
     try {
       final DateTime now = DateTime.now();
@@ -356,6 +380,7 @@ class WallpaperService {
           id: '${now.microsecondsSinceEpoch}',
           source: wallpaperSource?.wireValue ?? _historySource(source),
           wallpaperId: wallpaperId,
+          originalIdentity: originalIdentity,
           thumbnailUrl: thumbnailUrl ?? source,
           fullUrl: source,
           target: target.name,

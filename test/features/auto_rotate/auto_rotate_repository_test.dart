@@ -250,6 +250,56 @@ void main() {
     expect(await repository.consumeBatteryTip(), isFalse);
   });
   group('sources', () {
+    test('protected category, WOTD and signed history resolve only acquired originals by identity', () async {
+      final directory = Directory.systemTemp.createTempSync('rotation-identity');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final file = File('${directory.path}/owned.jpg')..writeAsBytesSync([1]);
+      final index = DownloadedWallIndex(settings, ownerId: () => 'alice');
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      await index.remember(link: 'https://old.test/owned.jpg', id: 'canonical', source: WallpaperSource.prism);
+      const channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      messenger.setMockDecodedMessageHandler<Object?>(
+        channel,
+        (_) async => <Object?>[
+          DownloadItemsResult(success: true, items: [file.path]),
+        ],
+      );
+      addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+      const protected = PrismWallpaper(
+        core: WallpaperCore(id: 'canonical', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      );
+      const unacquired = PrismWallpaper(
+        core: WallpaperCore(id: 'unacquired', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      );
+      when(
+        () => walls.fetchByCategory('Space', limit: 40, sourceTag: 'auto_rotate.category'),
+      ).thenAnswer((_) async => Result.success([protected, unacquired]));
+      when(() => wotd.fetchRecent()).thenAnswer(
+        (_) async => Result.success([
+          WotdPastPick(date: DateTime.utc(2026), wallpaper: protected),
+          WotdPastPick(date: DateTime.utc(2025), wallpaper: unacquired),
+        ]),
+      );
+      await history.record(
+        AppliedWallpaper(
+          id: 'history',
+          wallpaperId: 'canonical',
+          source: 'prism',
+          thumbnailUrl: '',
+          fullUrl: 'https://signed.test/new-token',
+          target: 'home',
+          appliedAt: DateTime.utc(2026),
+        ),
+      );
+      expect(await repository.loadRemoteUrls(AutoRotateSource.category, category: 'Space'), [file.path]);
+      expect(await repository.loadRemoteUrls(AutoRotateSource.wallOfTheDay), [file.path]);
+      expect(await repository.loadRemoteUrls(AutoRotateSource.history), [file.path]);
+      expect(file.existsSync(), isTrue);
+    });
+
     test('only acquired native files and precise public provider hosts enter native rotation', () async {
       final directory = Directory.systemTemp.createTempSync('rotation-acquired');
       addTearDown(() => directory.deleteSync(recursive: true));

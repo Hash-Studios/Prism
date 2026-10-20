@@ -73,7 +73,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
           localFilePath: event.localFilePath,
         ),
         emit,
-        allowDocumentIdFallback: false,
+        allowDocumentIdFallback: switch (event.entity) {
+          PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
+          _ => false,
+        },
       );
       return;
     }
