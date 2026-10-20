@@ -8,6 +8,7 @@ import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
+import {STUDIO_ASSET_BASE} from "./assetSource";
 export {isStudioWall} from "./isStudioWall";
 
 export const studioSecret = defineSecret("STUDIO_SECRET");
@@ -23,7 +24,7 @@ export const STUDIO_THUMB_MIN_HEIGHT = 1080;
 export const STUDIO_THUMB_QUALITY = 85;
 
 const DEFAULT_WORKER_BASE = "https://prismwalls.com";
-const PUBLIC_ASSET_BASE = "https://prismwalls.com/api/ai/assets";
+const PUBLIC_ASSET_BASE = STUDIO_ASSET_BASE;
 const GENERATE_TIMEOUT_MS = 150_000;
 const TRANSFER_TIMEOUT_MS = 60_000;
 const RAW_ASSET_KEY = /^ai\/studio\/(raw\/)?[A-Za-z0-9_-]+\.(jpg|webp|png)$/;

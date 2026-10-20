@@ -215,7 +215,14 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
 
   t.mock.method(db, "collection", (name: string) => collection(name));
   t.mock.method(db, "doc", (path: string) => ref(path));
-  t.mock.method(db, "runTransaction", async (callback: (tx: unknown) => Promise<unknown>) => {
+  // The fake keeps one write buffer, so transactions run one at a time, like a Firestore with full contention.
+  let turn: Promise<unknown> = Promise.resolve();
+  t.mock.method(db, "runTransaction", (callback: (tx: unknown) => Promise<unknown>) => {
+    const run = turn.then(() => transaction(callback));
+    turn = run.catch(() => undefined);
+    return run;
+  });
+  const transaction = async (callback: (tx: unknown) => Promise<unknown>) => {
     pending = [];
     let wrote = false;
     let failure: unknown;
@@ -245,6 +252,6 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     } finally {
       pending = null;
     }
-  });
+  };
   return store;
 }

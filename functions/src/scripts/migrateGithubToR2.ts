@@ -1,89 +1,49 @@
 import {createHash, randomUUID} from "node:crypto";
 import {mkdir, readFile, rename, unlink, writeFile} from "node:fs/promises";
 import {dirname} from "node:path";
-import type {StoredUpload} from "../ownedAssetDelivery";
+import {buildStudioRow, convertWall, conversionDeps, isLegacyMigrationUid, parseGithubAsset, proveMigrationAsset,
+  verifyR2MigrationCopy, type GithubAsset, type MigrationDeps, type MigrationOptions, type MigrationResult,
+  type MigrationWall, type WallInventory} from "../ownedWallConversion";
+import {STUDIO_ACCOUNT} from "../studio/account";
 
-const MAX_BYTES = 15 * 1024 * 1024;
+export {buildStudioRow, convertWall, downloadGithubAsset, downloadStudioAsset, gitBlobSha, isLegacyMigrationUid, parseGithubAsset,
+  proveMigrationAsset, verifyR2MigrationCopy} from "../ownedWallConversion";
+export type {GithubAsset, LegacyBinding, MigrationDeps, MigrationOptions, MigrationResult, MigrationWall, OwnershipProof,
+  R2ObjectClient, StoredMigrationAsset, WallInventory} from "../ownedWallConversion";
+
 const IMAGE_PATH = /\.(?:jpe?g|png|webp|gif)$/i;
 const digest = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 
-export type MigrationOptions = {apply: boolean; allowReviewedLegacy: boolean; owner: string; repo: string; commit: string};
-export type MigrationWall = {docPath: string; incarnation: number; incarnationNanos: number; data: Record<string, unknown>};
 export type GithubTreeEntry = {path: string; sha: string; size: number; type: string};
 export type GithubTree = {truncated: boolean; entries: GithubTreeEntry[]};
-export type GithubAsset = {repo: string; path: string; url: string; recordedUrl: string; sha: string; gitSha: string;
-  size: number; commit: string};
-export type StoredMigrationAsset = StoredUpload;
-export type WallInventory = {wall: MigrationWall; wallId: string; original?: GithubAsset; thumb?: GithubAsset;
-  status: "planned" | "blocked"; detail: string};
 export type GithubInventory = {owner: string; repo: string; commit: string; generatedAt: string; wallCount: number;
   imageCount: number; totalImageBytes: number; referencedImageCount: number; orphanImageCount: number; assets: GithubAsset[];
   orphanImages: {path: string; sha: string; size: number}[]; treeHash: string; walls: WallInventory[]};
-export type MigrationResult = {docPath: string; wallId: string; status: "would-migrate" | "in-progress" | "migrated" | "already-owned" | "blocked";
-  detail: string; publicGithubCopiesRemain: true};
-export type LegacyBinding = {wallId: string; canonicalPath: string; incarnation: number; incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredMigrationAsset; thumb: StoredMigrationAsset};
-export type OwnershipProof = {uid: string | null; legacyEligible: boolean};
-export type MigrationDeps = {
-  prove: (original: GithubAsset, thumb: GithubAsset) => Promise<OwnershipProof>;
-  fetchBytes: (asset: GithubAsset) => Promise<Buffer>;
-  retain: (asset: GithubAsset & {uid: string; bytes: Buffer}) => Promise<StoredMigrationAsset>;
-  verify: (asset: StoredMigrationAsset, size: number) => Promise<void>;
-  revalidate: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<void>;
-  attach: (asset: StoredMigrationAsset) => Promise<void>;
-  bind: (wallId: string) => Promise<void>;
-  bindLegacy: (input: LegacyBinding) => Promise<void>;
-  ready: (wall: MigrationWall) => Promise<boolean>;
-  progress?: (results: MigrationResult[]) => Promise<void>;
-};
-export type R2ObjectClient = {get: (kind: "private" | "preview", object: string) => Promise<Buffer>};
-
-export function isLegacyMigrationUid(uid: unknown): boolean {
-  return uid === "legacy-migration";
-}
-
-export const gitBlobSha = (bytes: Buffer): string => createHash("sha1")
-  .update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
-
-/** Only a raw URL at the pinned commit in the configured public repository is accepted. */
-export function parseGithubAsset(raw: unknown, path: unknown, options: MigrationOptions): GithubAsset {
-  if (!options.owner || !options.repo || !/^[a-f0-9]{40}$/.test(options.commit) || typeof raw !== "string") {
-    throw new Error("Missing configured GitHub source or pinned commit");
-  }
-  const url = new URL(raw);
-  const parts = url.pathname.slice(1).split("/").map(decodeURIComponent);
-  if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || url.port || url.username ||
-    url.password || url.search || url.hash || parts[0]?.toLowerCase() !== options.owner.toLowerCase() ||
-    parts[1] !== options.repo || !parts[2] || parts.length < 4 ||
-    parts.some((part) => !part || part === "." || part === ".." || /[\\/]/.test(part) ||
-      Array.from(part).some((character) => character.charCodeAt(0) < 32))) {
-    throw new Error("Untrusted or unpinned GitHub asset URL");
-  }
-  const sourcePath = parts.slice(3).join("/");
-  if (path !== undefined && path !== "" && path !== sourcePath) throw new Error("GitHub URL path mismatch");
-  return {repo: options.repo, path: sourcePath, url: `https://raw.githubusercontent.com/${options.owner}/${options.repo}/${options.commit}/${
-    sourcePath.split("/").map(encodeURIComponent).join("/")}`, recordedUrl: raw, sha: "", commit: options.commit,
-  gitSha: "", size: 0};
-}
 
 export function buildGithubInventory(walls: MigrationWall[], tree: GithubTree, options: MigrationOptions): GithubInventory {
   if (tree.truncated) throw new Error("GitHub returned a truncated recursive tree; inventory is incomplete");
   const entries = new Map(tree.entries.filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry]));
   const references = new Set<string>();
   const wallRows: WallInventory[] = walls.map((wall) => {
+    // A Studio wall is read from the worker, not from the GitHub tree.
+    const studio = buildStudioRow(wall);
+    if (studio) return studio;
     const row: WallInventory = {wall, wallId: typeof wall.data.id === "string" ? wall.data.id : "", status: "blocked",
       detail: ""};
     try {
       if (!/^[A-Za-z0-9_-]{1,200}$/.test(row.wallId)) throw new Error("Invalid logical wall.id");
-      const originalPath = wall.data.wallpaper_path;
-      const thumbPath = wall.data.thumb_path;
-      if (typeof originalPath !== "string" || originalPath.split("/").pop()?.startsWith("thumb_") ||
-        typeof thumbPath !== "string" || !thumbPath.split("/").pop()?.startsWith("thumb_")) {
+      // A legacy wall has no stored paths; the path comes from the validated URL, and any stored path must match it.
+      const stored = [wall.data.wallpaper_path, wall.data.thumb_path];
+      if ((typeof stored[0] === "string" && stored[0] !== "" && stored[0].split("/").pop()?.startsWith("thumb_")) ||
+        (typeof stored[1] === "string" && stored[1] !== "" && !stored[1].split("/").pop()?.startsWith("thumb_"))) {
         throw new Error("Original and thumbnail paths must use explicit original and thumb_ roles");
       }
       row.original = assetForWall(wall, "wallpaper", options, entries);
-      references.add(row.original.path);
       row.thumb = assetForWall(wall, "thumb", options, entries);
+      if (row.original.path.split("/").pop()?.startsWith("thumb_") || !row.thumb.path.split("/").pop()?.startsWith("thumb_")) {
+        throw new Error("Original and thumbnail paths must use explicit original and thumb_ roles");
+      }
+      references.add(row.original.path);
       references.add(row.thumb.path);
       if (row.original.path === row.thumb.path) throw new Error("Original and thumbnail must be separate assets");
       row.status = "planned";
@@ -124,57 +84,6 @@ function assetForWall(wall: MigrationWall, prefix: "wallpaper" | "thumb", option
   return {...asset, sha: entry.sha, gitSha: entry.sha, size: entry.size};
 }
 
-/** Bounded download. GitHub credentials are not sent to raw-content requests. */
-export async function downloadGithubAsset(asset: GithubAsset): Promise<Buffer> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(asset.url, {redirect: "error", signal: controller.signal,
-      headers: {"accept-encoding": "identity"}});
-    if (!response.ok || !response.body) throw new Error(`Raw download failed: ${response.status}`);
-    const declared = Number(response.headers.get("content-length"));
-    if (declared > MAX_BYTES || declared !== asset.size) throw new Error("GitHub asset size differs from pinned tree");
-    const reader = response.body.getReader();
-    const chunks: Buffer[] = [];
-    let length = 0;
-    try {
-      while (true) {
-        const next = await reader.read();
-        if (next.done) break;
-        length += next.value.byteLength;
-        if (length > MAX_BYTES || length > asset.size) throw new Error("Image exceeds pinned size limit");
-        chunks.push(Buffer.from(next.value));
-      }
-    } finally {
-      await reader.cancel();
-    }
-    const bytes = Buffer.concat(chunks);
-    if (bytes.length !== asset.size || gitBlobSha(bytes) !== asset.gitSha) throw new Error("Git blob SHA mismatch");
-    const sharp = (await import("sharp")).default;
-    const metadata = await sharp(bytes, {limitInputPixels: 100000000}).metadata();
-    if (!metadata.format || !["jpeg", "png", "webp", "gif"].includes(metadata.format) ||
-      !metadata.width || !metadata.height) throw new Error("Unsupported image format");
-    return bytes;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-export async function verifyR2MigrationCopy(asset: StoredMigrationAsset, size: number | undefined,
-  getObject: R2ObjectClient["get"], verifyMetadata: (asset: StoredMigrationAsset, size?: number) => Promise<void>): Promise<void> {
-  await verifyMetadata(asset, size);
-  const privateBytes = await getObject("private", asset.object);
-  if ((size !== undefined && privateBytes.length !== size) || digest(privateBytes) !== asset.sha256) {
-    throw new Error("R2 private readback mismatch");
-  }
-  if (asset.previewObjectId) {
-    const previewBytes = await getObject("preview", `previews/${asset.previewObjectId}.img`);
-    if ((size !== undefined && previewBytes.length !== size) || digest(previewBytes) !== asset.sha256) {
-      throw new Error("R2 preview readback mismatch");
-    }
-  }
-}
-
 export async function migrateGithubInventory(inventory: GithubInventory, options: MigrationOptions,
   deps: MigrationDeps): Promise<MigrationResult[]> {
   const idCounts = new Map<string, number>();
@@ -186,48 +95,7 @@ export async function migrateGithubInventory(inventory: GithubInventory, options
     results.push(result);
     try {
       if (idCounts.get(row.wallId) !== 1) throw new Error("Duplicate logical wall.id");
-      if (await deps.ready(row.wall)) {
-        result.status = "already-owned";
-        result.detail = "R2 manifest is ready; public GitHub copies remain unchanged";
-        continue;
-      }
-      if (row.status !== "planned" || !row.original || !row.thumb) throw new Error(row.detail || "Invalid inventory row");
-      const proof = await deps.prove(row.original, row.thumb);
-      const owner = proof.uid;
-      const legacy = owner === null;
-      if (legacy && (!proof.legacyEligible || !options.allowReviewedLegacy || row.wall.data.review !== true)) {
-        throw new Error("Unproven or partial provenance: reviewed legacy policy requires explicit opt-in and no receipts");
-      }
-      result.detail = legacy ? "Reviewed legacy policy; no receipt or creator credit will be fabricated" :
-        "Modern upload receipts and completed intents verified";
-      if (!options.apply) {
-        result.status = "would-migrate";
-        continue;
-      }
-      result.status = "in-progress";
-      await deps.progress?.([...results]);
-      await deps.revalidate(row.wall, row.original, row.thumb);
-      const [originalBytes, thumbBytes] = await Promise.all([deps.fetchBytes(row.original), deps.fetchBytes(row.thumb)]);
-      await deps.revalidate(row.wall, row.original, row.thumb);
-      const uid = owner ?? "legacy-migration";
-      const [original, thumb] = await Promise.all([
-        deps.retain({...row.original, sha: row.original.gitSha, uid, bytes: originalBytes}),
-        deps.retain({...row.thumb, sha: row.thumb.gitSha, uid, bytes: thumbBytes}),
-      ]);
-      if (original.objectId === thumb.objectId || original.previewObjectId || !thumb.previewObjectId ||
-        thumb.previewObjectId !== thumb.objectId) throw new Error("R2 retained objects are not separated by privacy role");
-      await Promise.all([deps.verify(original, originalBytes.length), deps.verify(thumb, thumbBytes.length)]);
-      if (legacy) {
-        await deps.bindLegacy({wallId: row.wallId, canonicalPath: row.wall.docPath,
-          incarnation: row.wall.incarnation, incarnationNanos: row.wall.incarnationNanos,
-          originalUrl: row.original.recordedUrl, thumbUrl: row.thumb.recordedUrl, original, thumb});
-      } else {
-        await deps.attach(original);
-        await deps.attach(thumb);
-        await deps.bind(row.wallId);
-      }
-      if (!await deps.ready(row.wall)) throw new Error("R2 binding not ready; wall changed or proof no longer valid; rerun safely");
-      result.status = "migrated";
+      await convertWall(row, options, deps, result, async () => deps.progress?.([...results]));
     } catch (error) {
       result.detail = error instanceof Error ? error.message : "Migration failed";
       if (result.status === "in-progress") result.status = "blocked";
@@ -258,6 +126,7 @@ export function createInventoryReport(inventory: GithubInventory) {
       docPath: row.wall.docPath, wallId: row.wallId, incarnation: row.wall.incarnation,
       incarnationNanos: row.wall.incarnationNanos,
       original: row.original && asset(row.original), thumb: row.thumb && asset(row.thumb), status: row.status, detail: row.detail,
+      ...(row.studio ? {studio: row.studio} : {}),
     }))};
 }
 
@@ -271,9 +140,14 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
+/**
+ * Checks the reviewed dry-run against the live inventory and returns the doc paths the apply may touch.
+ * Walls added since the review are not in that set (the approval trigger converts them) and deleted walls are skipped.
+ * A reviewed wall that changed throws, unless it is now converted and its manifest still matches the review.
+ */
 export async function validateReviewedInventory(reviewed: unknown, inventory: GithubInventory, commit: string,
   allowReviewedLegacy: boolean,
-  verifyMigrated?: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<boolean>): Promise<void> {
+  verifyMigrated?: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<boolean>): Promise<Set<string>> {
   if (!reviewed || typeof reviewed !== "object") throw new Error("Apply requires a reviewed dry-run inventory report");
   const report = reviewed as {mode?: unknown; inventory?: unknown; policy?: {allowReviewedLegacy?: unknown}};
   if (!(["dry-run", "apply"].includes(String(report.mode))) || !report.inventory || typeof report.inventory !== "object") {
@@ -299,10 +173,12 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
   if (!Array.isArray(snapshotAssets)) throw new Error("Reviewed inventory snapshot is invalid");
   const assetByPath = new Map<string | undefined, unknown>(
     snapshotAssets.map((asset) => [(asset as {path?: string}).path, asset]));
+  const authorized = new Set<string>();
   for (const row of current.walls) {
     if (typeof row.docPath !== "string") throw new Error("Reviewed inventory snapshot is invalid");
     const old = oldByPath.get(row.docPath) as Record<string, unknown> | undefined;
-    if (!old) throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
+    if (!old) continue;
+    authorized.add(row.docPath);
     if (digest(JSON.stringify(canonical(old))) === digest(JSON.stringify(canonical(row)))) continue;
     const source = inventory.walls.find((candidate) => candidate.wall.docPath === row.docPath);
     const oldOriginal = old.original as {path?: string; gitSha?: string; size?: number; commit?: string} | undefined;
@@ -319,15 +195,13 @@ export async function validateReviewedInventory(reviewed: unknown, inventory: Gi
       throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
     }
   }
-  if (oldByPath.size !== current.walls.length) {
-    throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
-  }
   const currentReport = createInventoryReport(inventory) as Record<string, unknown>;
   const invariantKeys = ["owner", "repo", "commit", "imageCount", "totalImageBytes", "treeHash"];
   if (invariantKeys.some((key) => digest(JSON.stringify(canonical((snapshot as Record<string, unknown>)[key]))) !==
     digest(JSON.stringify(canonical(currentReport[key]))))) {
     throw new Error("GitHub or Firestore inventory changed since review; run dry-run again");
   }
+  return authorized;
 }
 
 function reviewedAsset(value: {path?: string; gitSha?: string; size?: number; commit?: string}, source: {
@@ -411,6 +285,7 @@ async function main(): Promise<void> {
     commit: resolved.commit};
   const inventory = buildGithubInventory(walls, resolved.tree, options);
   let reviewed: unknown;
+  let authorized: Set<string> | undefined;
   if (apply) {
     try {
       reviewed = JSON.parse(await readFile(reportPath, "utf8")) as unknown;
@@ -420,21 +295,32 @@ async function main(): Promise<void> {
     const verifier = async (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => {
       const manifest = (await db.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
       if (!manifest || manifest.status !== "ready" || !manifest.original || !manifest.thumb ||
-        manifest.original.path !== original.path || manifest.original.sha !== original.gitSha ||
-        manifest.thumb.path !== thumb.path || manifest.thumb.sha !== thumb.gitSha ||
+        manifest.original.path !== original.path || manifest.thumb.path !== thumb.path ||
         manifest.original.uid !== manifest.thumb.uid) return false;
-      const historicalOriginal = {...original, recordedUrl: manifest.originalUrl};
-      const historicalThumb = {...thumb, recordedUrl: manifest.thumbUrl};
-      const [originalProof, thumbProof] = await Promise.all([
-        proveMigrationAsset(historicalOriginal), proveMigrationAsset(historicalThumb),
-      ]);
-      const modern = Boolean(originalProof.uid && originalProof.uid === thumbProof.uid &&
-        manifest.provenance?.kind === "github" && manifest.provenance.uid === originalProof.uid &&
-        manifest.original.uid === originalProof.uid && manifest.thumb.uid === originalProof.uid);
-      const legacy = Boolean(originalProof.legacyEligible && thumbProof.legacyEligible &&
-        options.allowReviewedLegacy && wall.data.review === true && manifest.provenance?.kind === "legacy" &&
-        isLegacyMigrationUid(manifest.original.uid));
-      if (!modern && !legacy) return false;
+      // Studio assets are not pinned to a Git blob; the candidate backlink is their proof.
+      const studio = manifest.provenance?.kind === "studio";
+      if (!studio && (manifest.original.sha !== original.gitSha || manifest.thumb.sha !== thumb.gitSha)) return false;
+      if (studio) {
+        const {runId, candidateId} = manifest.provenance as {runId?: unknown; candidateId?: unknown};
+        if (typeof runId !== "string" || typeof candidateId !== "string" || manifest.original.uid !== STUDIO_ACCOUNT.id ||
+          wall.data.origin !== "studio" || wall.data.studioRunId !== runId || wall.data.studioCandidateId !== candidateId ||
+          original.path !== `ai/studio/${candidateId}.jpg` || thumb.path !== `ai/studio/thumb_${candidateId}.jpg` ||
+          (await db.collection("studioRuns").doc(runId).collection("candidates").doc(candidateId).get())
+            .data()?.wallId !== wall.data.id) return false;
+      } else {
+        const historicalOriginal = {...original, recordedUrl: manifest.originalUrl};
+        const historicalThumb = {...thumb, recordedUrl: manifest.thumbUrl};
+        const [originalProof, thumbProof] = await Promise.all([
+          proveMigrationAsset(historicalOriginal), proveMigrationAsset(historicalThumb),
+        ]);
+        const modern = Boolean(originalProof.uid && originalProof.uid === thumbProof.uid &&
+          manifest.provenance?.kind === "github" && manifest.provenance.uid === originalProof.uid &&
+          manifest.original.uid === originalProof.uid && manifest.thumb.uid === originalProof.uid);
+        const legacy = Boolean(originalProof.legacyEligible && thumbProof.legacyEligible &&
+          options.allowReviewedLegacy && wall.data.review === true && manifest.provenance?.kind === "legacy" &&
+          isLegacyMigrationUid(manifest.original.uid));
+        if (!modern && !legacy) return false;
+      }
       const current = await db.doc(wall.docPath).get();
       const data = current.data();
       if (!current.exists || !data || current.createTime?.toMillis() !== wall.incarnation ||
@@ -443,8 +329,6 @@ async function main(): Promise<void> {
       const delivery = await import("../ownedAssetDelivery.js");
       const ready = manifest?.status === "ready" && manifest.canonicalPath === wall.docPath &&
         manifest.incarnation === wall.incarnation && manifest.incarnationNanos === wall.incarnationNanos &&
-        manifest.original?.path === original.path && manifest.original?.sha === original.gitSha &&
-        manifest.thumb?.path === thumb.path && manifest.thumb?.sha === thumb.gitSha &&
         data.originalObjectId === manifest.original?.objectId &&
         data.wallpaper_thumb === delivery.ownedThumbnailUrl(manifest.thumb);
       if (!ready) return false;
@@ -457,7 +341,7 @@ async function main(): Promise<void> {
       ]);
       return true;
     };
-    await validateReviewedInventory(reviewed, inventory, resolved.commit, options.allowReviewedLegacy, verifier);
+    authorized = await validateReviewedInventory(reviewed, inventory, resolved.commit, options.allowReviewedLegacy, verifier);
   }
   const reviewedSnapshot = apply && reviewed && typeof reviewed === "object" &&
     "reviewedInventory" in reviewed ? (reviewed as {reviewedInventory: unknown}).reviewedInventory :
@@ -467,63 +351,11 @@ async function main(): Promise<void> {
     reviewedInventory: reviewedSnapshot, inventory: createInventoryReport(inventory), results: [] as MigrationResult[],
     warning: "GitHub assets remain public and unchanged. Removal requires a separate approved operation."};
   await writeInventoryReport(reportPath, report);
-  const [delivery, dbModule] = await Promise.all([import("../ownedAssetDelivery.js"), import("../common.js")]);
   const r2 = apply ? new (await import("../r2Storage.js")).R2Storage() : null;
-  const results = await migrateGithubInventory(inventory, options, {
-    prove: async (original, thumb) => {
-      const first = await proveMigrationAsset(original, dbModule.db);
-      const second = await proveMigrationAsset(thumb, dbModule.db);
-      if (first.uid && first.uid === second.uid) return {uid: first.uid, legacyEligible: false};
-      return {uid: null, legacyEligible: first.legacyEligible && second.legacyEligible};
-    },
-    fetchBytes: downloadGithubAsset,
-    retain: delivery.retainUpload,
-    verify: async (asset, size) => {
-      if (!r2) throw new Error("R2 storage is not configured");
-      return verifyR2MigrationCopy(asset, size, (kind, object) => r2.get(kind, object), delivery.verifyStoredUpload);
-    },
-    revalidate: async (wall, original, thumb) => {
-      const current = await dbModule.db.doc(wall.docPath).get();
-      const data = current.data();
-      if (!current.exists || !data || current.createTime?.toMillis() !== wall.incarnation ||
-        current.createTime.nanoseconds !== wall.incarnationNanos || data?.id !== wall.data.id ||
-        data.wallpaper_url !== wall.data.wallpaper_url || data.wallpaper_thumb !== wall.data.wallpaper_thumb ||
-        data.wallpaper_path !== wall.data.wallpaper_path || data.thumb_path !== wall.data.thumb_path ||
-        (data.wallpaper_sha !== undefined && data.wallpaper_sha !== "" && data.wallpaper_sha !== original.gitSha) ||
-        (data.thumb_sha !== undefined && data.thumb_sha !== "" && data.thumb_sha !== thumb.gitSha)) {
-        throw new Error("Wall changed since inventory; rerun the pinned inventory");
-      }
-    },
-    attach: async (asset) => {
-      const ref = dbModule.db.collection("githubUploads").doc(`file_${digest(`${asset.repo}\0${asset.path}\0${asset.sha}`)}`);
-      await dbModule.db.runTransaction(async (tx) => {
-        const receipt = (await tx.get(ref)).data();
-        if (!receipt || receipt.uid !== asset.uid || receipt.repo !== asset.repo || receipt.path !== asset.path ||
-          receipt.sha !== asset.sha) throw new Error("Receipt changed during migration");
-        tx.update(ref, {retainedAsset: asset});
-      });
-    },
-    bind: delivery.bindOwnedWall,
-    bindLegacy: delivery.bindLegacyOwnedWall,
-    ready: async (wall) => {
-      const manifest = (await dbModule.db.collection("ownedAssets").doc(String(wall.data.id)).get()).data();
-      const current = await dbModule.db.doc(wall.docPath).get();
-      const data = current.data();
-      const ready = manifest?.status === "ready" && manifest.canonicalPath === wall.docPath &&
-        manifest.incarnation === wall.incarnation && manifest.incarnationNanos === wall.incarnationNanos &&
-        current.createTime?.toMillis() === wall.incarnation && current.createTime.nanoseconds === wall.incarnationNanos &&
-        data?.originalProtected === true && data.wallpaper_url === "" &&
-        data.originalObjectId === manifest.original?.objectId && data.wallpaper_thumb === delivery.ownedThumbnailUrl(manifest.thumb);
-      if (!ready || !apply) return ready;
-      const owned = await delivery.getOwnedWallDelivery(String(wall.data.id));
-      if (!r2) throw new Error("R2 storage is not configured");
-      await Promise.all([delivery.verifyStoredUpload(owned.original), delivery.verifyStoredUpload(owned.thumb)]);
-      await Promise.all([
-        verifyR2MigrationCopy(owned.original, undefined, (kind, object) => r2.get(kind, object), async () => undefined),
-        verifyR2MigrationCopy(owned.thumb, undefined, (kind, object) => r2.get(kind, object), async () => undefined),
-      ]);
-      return true;
-    },
+  // Only reviewed walls are touched; walls added since the review are converted by the approval trigger.
+  const planned = authorized ? {...inventory, walls: inventory.walls.filter((row) => authorized!.has(row.wall.docPath))} : inventory;
+  const results = await migrateGithubInventory(planned, options, {
+    ...conversionDeps(apply, r2, db),
     progress: async (partial) => {
       report.results = partial; await writeInventoryReport(reportPath, report);
     },
@@ -533,35 +365,9 @@ async function main(): Promise<void> {
   process.stdout.write(`${JSON.stringify({mode: report.mode, commit: inventory.commit, wallCount: inventory.wallCount,
     imageCount: inventory.imageCount, totalImageBytes: inventory.totalImageBytes,
     referencedImageCount: inventory.referencedImageCount, orphanImageCount: inventory.orphanImageCount, results,
+    skippedUnreviewed: inventory.walls.length - planned.walls.length,
     report: reportPath, warning: report.warning}, null, 2)}\n`);
   if (results.some((row) => row.status === "blocked")) process.exitCode = 2;
-}
-
-export async function proveMigrationAsset(asset: GithubAsset, db?: FirebaseFirestore.Firestore): Promise<OwnershipProof> {
-  if (!asset.gitSha) return {uid: null, legacyEligible: false};
-  const firestore = db ?? (await import("../common.js")).db;
-  const query = firestore.collection("githubUploads").where("path", "==", asset.path).orderBy("__name__").limit(8);
-  const matching: FirebaseFirestore.QueryDocumentSnapshot[] = [];
-  let rows = await query.get();
-  while (true) {
-    matching.push(...rows.docs.filter((row) => row.data().repo === asset.repo && row.data().sourceKind !== "owned"));
-    if (matching.length >= 8) return {uid: null, legacyEligible: false};
-    if (rows.size < 8) break;
-    rows = await query.startAfter(rows.docs[rows.docs.length - 1]).get();
-  }
-  const receipt = matching.find((row) => row.id === `file_${digest(`${asset.repo}\0${asset.path}\0${asset.gitSha}`)}`)?.data();
-  const intent = (await firestore.collection("githubUploadIntents")
-    .doc(`path_${digest(`${asset.repo}\0${asset.path}`)}`).get()).data();
-  if (!receipt && matching.length === 0 && !intent) return {uid: null, legacyEligible: true};
-  if (!receipt || typeof receipt.uid !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(receipt.uid) ||
-    receipt.repo !== asset.repo || receipt.path !== asset.path || receipt.sha !== asset.gitSha ||
-    matching.some((row) => row.data().uid !== receipt.uid) || intent?.sourceKind === "owned" ||
-    intent?.status !== "complete" || intent.uid !== receipt.uid || intent.repo !== asset.repo ||
-    intent.path !== asset.path || intent.blobSha !== asset.gitSha || intent.response?.content?.sha !== asset.gitSha ||
-    intent.response?.content?.path !== asset.path || intent.response?.content?.download_url !== asset.recordedUrl) {
-    return {uid: null, legacyEligible: false};
-  }
-  return {uid: receipt.uid, legacyEligible: false};
 }
 
 if (require.main === module) {
