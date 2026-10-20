@@ -1531,11 +1531,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String adminModerationDuplicate(int percent) {
-    return 'Parece um papel de parede do Prism · $percent%';
+    return 'Parece ser um papel de parede do Prism · $percent%';
   }
 
   @override
-  String get adminModerationHint => 'Estas são apenas indicações. Verifique antes de rejeitar.';
+  String get adminModerationHint => 'Estas são apenas indicações. Confira antes de rejeitar.';
 
   @override
   String adminModerationLogo(String logo) {
@@ -1574,11 +1574,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String adminModerationUnsafe(String categories) {
-    return 'Conteúdo inseguro: $categories';
+    return 'Conteúdo impróprio: $categories';
   }
 
   @override
-  String get adminModerationUnsafeCategories => 'Categorias de conteúdo inseguro';
+  String get adminModerationUnsafeCategories => 'Categorias de conteúdo impróprio';
 
   @override
   String adminModerationWeb(String host) {
