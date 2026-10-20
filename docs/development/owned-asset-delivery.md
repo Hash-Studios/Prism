@@ -75,8 +75,11 @@ preview bucket. The public custom domain serves immutable preview objects withou
 Upload receipt ownership, delete leases, quota accounting and server-side access checks
 remain authoritative. A storage deletion must verify the expected object id and mark affected manifests
 before retrying a delete. It must not fall back to deleting the corresponding GitHub asset.
-The wall-delete trigger marks the matching manifest deleted and removes an unshared preview.
-It tombstones the thumbnail identity before object deletion so a delayed upload cannot republish it.
+The wall-delete trigger validates the original and thumbnail identities atomically against the matching
+manifest incarnation and registry rows. It marks the manifest deleted and tombstones each unshared asset
+so a delayed upload cannot republish it. It immediately deletes an unshared preview; the tombstone sweep
+reclaims the private original and thumbnail copies after the cleanup grace period. Shared assets remain
+active, and stale wall incarnations fail closed.
 Admin cleanup of a reviewed-legacy manifest uses its exact wall incarnation and registry identity without
 requiring a fabricated upload receipt or deleting the GitHub source. A shared ready preview stays available.
 Uploads that never bind have no manifest for the wall-delete trigger to resolve. Use authorized path-mode

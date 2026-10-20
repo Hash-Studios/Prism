@@ -190,26 +190,34 @@ test("wall binding accepts matching GitHub receipts and redacts source URLs", as
   assert.deepEqual(store.get("ownedAssets/wall")?.original, assets[0]);
 });
 
-test("deleted wall cleanup removes only an unshared preview and retries after marking deleted", async (t) => {
+test("deleted wall cleanup tombstones unshared original and thumb registries and retries safely", async (t) => {
   const previous = {...process.env};
   t.after(() => {
     process.env = previous;
   });
   configured();
-  const previewObjectId = "c".repeat(64);
-  const thumb: StoredUpload = {bucket: "private-assets", object: `retained/${previewObjectId}`, objectId: previewObjectId,
-    sha256: "d".repeat(64), uid: "owner", repo: "walls", path: "thumb_old.jpg", sha: "a".repeat(40),
-    previewObjectId};
-  thumb.objectId = r2ObjectId({uid: thumb.uid, repo: thumb.repo, path: thumb.path, sha: thumb.sha}, thumb.sha256);
-  thumb.object = `retained/${thumb.objectId}`;
-  thumb.previewObjectId = thumb.objectId;
+  const makeAsset = (path: string, digest: string, preview = false, owned = false): StoredUpload => {
+    const asset: StoredUpload = {bucket: "private-assets", object: "", objectId: "", sha256: digest.repeat(64),
+      uid: "owner", repo: "walls", path, sha: "a".repeat(40),
+      ...(owned ? {sourceKind: "owned" as const} : {}), ...(preview ? {previewObjectId: ""} : {})};
+    asset.objectId = r2ObjectId({uid: asset.uid, repo: asset.repo, path: asset.path, sha: asset.sha,
+      ...(owned ? {sourceKind: "owned" as const} : {})}, asset.sha256);
+    asset.object = `${owned ? "private-originals" : "retained"}/${asset.objectId}`;
+    if (preview) asset.previewObjectId = asset.objectId;
+    return asset;
+  };
+  const original = makeAsset("old.jpg", "b", false, true);
+  const thumb = makeAsset("thumb_old.jpg", "c", true);
   const manifest = {status: "ready", canonicalPath: "walls/old", incarnation: 10, incarnationNanos: 20,
     thumb};
-  const registry = {status: "active", uploadId: "imported", bucket: thumb.bucket, object: thumb.object,
-    objectId: thumb.objectId, sha256: thumb.sha256, uid: thumb.uid, repo: thumb.repo, path: thumb.path, sha: thumb.sha,
-    sourceKind: "github", previewObjectId: thumb.objectId};
-  const store = installFakeDb(t, {"ownedAssets/old": manifest,
-    "ownedAssets/shared": {status: "ready", thumb}, [`r2ObjectRegistry/${thumb.objectId}`]: registry});
+  const registry = (asset: StoredUpload) => ({status: "active", uploadId: "imported", bucket: asset.bucket,
+    object: asset.object, objectId: asset.objectId, sha256: asset.sha256, uid: asset.uid, repo: asset.repo,
+    path: asset.path, sha: asset.sha, sourceKind: asset.sourceKind ?? "github",
+    ...(asset.previewObjectId ? {previewObjectId: asset.objectId} : {})});
+  const store = installFakeDb(t, {"ownedAssets/old": {...manifest, original},
+    "ownedAssets/shared": {status: "ready", original, thumb},
+    [`r2ObjectRegistry/${original.objectId}`]: registry(original),
+    [`r2ObjectRegistry/${thumb.objectId}`]: registry(thumb)});
   const removed: string[] = [];
   t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     assert.equal(init?.method, "DELETE");
@@ -218,14 +226,111 @@ test("deleted wall cleanup removes only an unshared preview and retries after ma
   });
   await cleanupDeletedOwnedWall({wallId: "old", canonicalPath: "walls/old", incarnation: 10, incarnationNanos: 20});
   assert.equal(store.get("ownedAssets/old")?.status, "deleted");
+  assert.equal(store.get(`r2ObjectRegistry/${original.objectId}`)?.status, "active",
+    "a ready manifest still shares the original");
+  assert.equal(store.get(`r2ObjectRegistry/${thumb.objectId}`)?.status, "active",
+    "a ready manifest still shares the thumbnail");
   assert.equal(removed.length, 0, "a ready manifest still shares the preview");
-  store.set("ownedAssets/shared", {status: "deleted", thumb});
+  store.set("ownedAssets/shared", {status: "deleted", original, thumb});
   await cleanupDeletedOwnedWall({wallId: "old", canonicalPath: "walls/old", incarnation: 10, incarnationNanos: 20});
+  assert.equal(store.get(`r2ObjectRegistry/${original.objectId}`)?.status, "tombstoned");
+  assert.equal(store.get(`r2ObjectRegistry/${thumb.objectId}`)?.status, "tombstoned");
   assert.equal(removed.length, 1);
   await cleanupDeletedOwnedWall({wallId: "old", canonicalPath: "walls/old", incarnation: 10, incarnationNanos: 20});
   assert.equal(removed.length, 2, "retries safely repeat the idempotent object delete");
   await cleanupDeletedOwnedWall({wallId: "old", canonicalPath: "walls/old", incarnation: 9, incarnationNanos: 20});
   assert.equal(removed.length, 2, "stale incarnation cannot clean the current manifest");
+  await sweepR2Tombstones(Number.MAX_SAFE_INTEGER);
+  assert.ok(removed.some((url) => url.includes(`/private-originals/${original.objectId}`)),
+    "the tombstone sweeper reclaims the private original after direct wall deletion");
+});
+
+test("deleted wall cleanup rejects stale incarnations and malformed registry identities without writes", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  configured();
+  const makeAsset = (path: string, digest: string, preview = false): StoredUpload => {
+    const asset: StoredUpload = {bucket: "private-assets", object: "", objectId: "", sha256: digest.repeat(64),
+      uid: "owner", repo: "walls", path, sha: "a".repeat(40), ...(preview ? {previewObjectId: ""} : {})};
+    asset.objectId = r2ObjectId({uid: asset.uid, repo: asset.repo, path: asset.path, sha: asset.sha}, asset.sha256);
+    asset.object = `retained/${asset.objectId}`;
+    if (preview) asset.previewObjectId = asset.objectId;
+    return asset;
+  };
+  const asset = makeAsset("photo.jpg", "d");
+  const thumb = makeAsset("thumb_photo.jpg", "e", true);
+  const registry = (storedAsset: StoredUpload) => ({status: "active", uploadId: "imported", ...storedAsset,
+    sourceKind: storedAsset.sourceKind ?? "github",
+    ...(storedAsset.previewObjectId ? {previewObjectId: storedAsset.objectId} : {})});
+  const store = installFakeDb(t, {"ownedAssets/wall": {status: "ready", canonicalPath: "walls/wall", incarnation: 10,
+    incarnationNanos: 20, original: asset, thumb}, [`r2ObjectRegistry/${asset.objectId}`]: {...registry(asset),
+    object: "retained/wrong"}, [`r2ObjectRegistry/${thumb.objectId}`]: registry(thumb)});
+  let fetches = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    fetches++;
+    return new Response(null, {status: 204});
+  });
+  await cleanupDeletedOwnedWall({wallId: "wall", canonicalPath: "walls/wall", incarnation: 9, incarnationNanos: 20});
+  assert.equal(store.get("ownedAssets/wall")?.status, "ready");
+  assert.equal(store.get(`r2ObjectRegistry/${asset.objectId}`)?.status, "active");
+  assert.equal(store.get(`r2ObjectRegistry/${thumb.objectId}`)?.status, "active");
+  assert.equal(fetches, 0, "stale incarnation performs no object deletes");
+  await cleanupDeletedOwnedWall({wallId: "wall", canonicalPath: "walls/wall", incarnation: 10, incarnationNanos: 20});
+  assert.equal(store.get("ownedAssets/wall")?.status, "ready", "malformed registry identity fails closed");
+  assert.equal(store.get(`r2ObjectRegistry/${asset.objectId}`)?.status, "active");
+  assert.equal(store.get(`r2ObjectRegistry/${thumb.objectId}`)?.status, "active");
+  assert.equal(fetches, 0, "registry mismatch performs no object deletes");
+});
+
+test("deleted wall cleanup checks original and thumb sharing independently", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  configured();
+  const makeAsset = (path: string, digest: string, preview = false): StoredUpload => {
+    const asset: StoredUpload = {bucket: "private-assets", object: "", objectId: "", sha256: digest.repeat(64),
+      uid: "owner", repo: "walls", path, sha: "a".repeat(40), ...(preview ? {previewObjectId: ""} : {})};
+    asset.objectId = r2ObjectId({uid: asset.uid, repo: asset.repo, path: asset.path, sha: asset.sha}, asset.sha256);
+    asset.object = `retained/${asset.objectId}`;
+    if (preview) asset.previewObjectId = asset.objectId;
+    return asset;
+  };
+  const original = makeAsset("photo.jpg", "f");
+  const thumb = makeAsset("thumb_photo.jpg", "1", true);
+  const registry = (asset: StoredUpload) => ({status: "active", uploadId: "imported", ...asset,
+    sourceKind: asset.sourceKind ?? "github",
+    ...(asset.previewObjectId ? {previewObjectId: asset.objectId} : {})});
+  for (const shared of ["original", "thumb"] as const) {
+    const wallId = `old-${shared}`;
+    const otherManifest = shared === "original" ? {original} : {thumb};
+    const store = installFakeDb(t, {
+      [`ownedAssets/${wallId}`]: {status: "ready", canonicalPath: `walls/${wallId}`, incarnation: 10,
+        incarnationNanos: 20, original, thumb},
+      [`ownedAssets/shared-${shared}`]: {status: "ready", ...otherManifest},
+      [`r2ObjectRegistry/${original.objectId}`]: registry(original),
+      [`r2ObjectRegistry/${thumb.objectId}`]: registry(thumb),
+    });
+    const deleted: string[] = [];
+    t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      assert.equal(init?.method, "DELETE");
+      deleted.push(new URL(String(input)).pathname);
+      return new Response(null, {status: 204});
+    });
+    await cleanupDeletedOwnedWall({wallId, canonicalPath: `walls/${wallId}`, incarnation: 10, incarnationNanos: 20});
+    const sharedAsset = shared === "original" ? original : thumb;
+    const unsharedAsset = shared === "original" ? thumb : original;
+    assert.equal(store.get(`r2ObjectRegistry/${sharedAsset.objectId}`)?.status, "active",
+      `${shared} remains active while shared by another ready manifest`);
+    assert.equal(store.get(`r2ObjectRegistry/${unsharedAsset.objectId}`)?.status, "tombstoned",
+      `${shared === "original" ? "thumb" : "original"} is tombstoned when unshared`);
+    assert.equal(deleted.length, shared === "original" ? 1 : 0,
+      "only an unshared preview is directly deleted; original bytes are reclaimed by the tombstone sweep");
+    if (shared === "original") assert.ok(deleted[0]!.includes(unsharedAsset.objectId));
+    t.mock.restoreAll();
+  }
 });
 
 test("tombstone sweep removes a late PUT after a crashed delete retry", async (t) => {

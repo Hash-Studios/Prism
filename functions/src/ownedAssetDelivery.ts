@@ -383,27 +383,41 @@ export async function cleanupDeletedOwnedWall(input: {wallId: string; canonicalP
     if (manifest?.canonicalPath !== input.canonicalPath || manifest.incarnation !== input.incarnation ||
       manifest.incarnationNanos !== input.incarnationNanos) return undefined;
     if (manifest.status !== "ready" && manifest.status !== "deleted") return undefined;
+    const original = manifest.original;
     const thumb = manifest.thumb;
-    if (!stored(thumb) || !thumb.previewObjectId) return undefined;
-    const id = thumb.previewObjectId;
-    const shared = await tx.get(db.collection("ownedAssets").where("thumb.previewObjectId", "==", id));
-    if (shared.docs.some((doc) => doc.id !== input.wallId && doc.data().status === "ready")) {
-      if (manifest.status === "ready") tx.update(ref, {status: "deleted"});
-      return undefined;
-    }
-    const registryRef = db.collection("r2ObjectRegistry").doc(id);
-    const registry = (await tx.get(registryRef)).data();
-    if (!registry || !["active", "tombstoned"].includes(registry.status) || registry.objectId !== id ||
-      registry.object !== thumb.object || registry.sha256 !== thumb.sha256 || registry.uid !== thumb.uid ||
-      registry.repo !== thumb.repo || registry.path !== thumb.path || registry.sha !== thumb.sha ||
-      registry.bucket !== thumb.bucket || registry.sourceKind !== (thumb.sourceKind ?? "github") ||
-      registry.uploadId !== (thumb.uploadId ?? "imported") || registry.previewObjectId !== id) return undefined;
+    if (!stored(original) || !stored(thumb) || !thumb.previewObjectId) return undefined;
+    const assets = [original, thumb];
+    const sharedRows = await Promise.all(assets.map((asset) => Promise.all([
+      tx.get(db.collection("ownedAssets").where("original.objectId", "==", asset.objectId)),
+      tx.get(db.collection("ownedAssets").where("thumb.objectId", "==", asset.objectId)),
+    ])));
+    const refs = sharedRows.map((queries, index) => queries.flatMap((rows) => rows.docs).some((doc) => {
+      const data = doc.data();
+      return doc.id !== input.wallId && data.status === "ready" &&
+        [(data.original as StoredUpload | undefined)?.objectId, (data.thumb as StoredUpload | undefined)?.objectId]
+          .includes(assets[index].objectId);
+    }));
+    const registryRefs = assets.map((asset) => db.collection("r2ObjectRegistry").doc(asset.objectId));
+    const registries = await Promise.all(registryRefs.map((registryRef) => tx.get(registryRef)));
+    if (registries.some((snapshot, index) => {
+      const asset = assets[index];
+      const registry = snapshot.data();
+      return !registry || !["active", "tombstoned"].includes(registry.status) ||
+        registry.objectId !== asset.objectId || registry.object !== asset.object || registry.sha256 !== asset.sha256 ||
+        registry.uid !== asset.uid || registry.repo !== asset.repo || registry.path !== asset.path ||
+        registry.sha !== asset.sha || registry.bucket !== asset.bucket ||
+        registry.sourceKind !== (asset.sourceKind ?? "github") || registry.uploadId !== (asset.uploadId ?? "imported") ||
+        registry.previewObjectId !== asset.previewObjectId;
+    })) return undefined;
     if (manifest.status === "ready") tx.update(ref, {status: "deleted"});
-    if (registry.status === "active") {
-      tx.update(registryRef, {status: "tombstoned",
-        cleanupNotBeforeMs: Date.now() + 5 * 60_000, deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+    for (let index = 0; index < assets.length; index++) {
+      const registry = registries[index].data()!;
+      if (!refs[index] && registry.status === "active") {
+        tx.update(registryRefs[index], {status: "tombstoned",
+          cleanupNotBeforeMs: Date.now() + 5 * 60_000, deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+      }
     }
-    return id;
+    return !refs[1] ? thumb.previewObjectId : undefined;
   });
   if (previewObjectId) await new R2Storage().delete("preview", `previews/${previewObjectId}.img`);
 }
