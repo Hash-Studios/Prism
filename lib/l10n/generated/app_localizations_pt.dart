@@ -1531,11 +1531,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String adminModerationDuplicate(int percent) {
-    return 'Parece um papel de parede do Prism · $percent%';
+    return 'Parece ser um papel de parede do Prism · $percent%';
   }
 
   @override
-  String get adminModerationHint => 'São apenas pistas. Confira antes de rejeitar.';
+  String get adminModerationHint => 'Estas são apenas indicações. Confira antes de rejeitar.';
 
   @override
   String adminModerationLogo(String logo) {
@@ -1554,14 +1554,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get adminModerationSignals => 'Sinais de revisão';
+  String get adminModerationSignals => 'Sinais para análise';
 
   @override
-  String get adminModerationSimilarWall => 'Papel de parede do Prism parecido';
+  String get adminModerationSimilarWall => 'Papel de parede semelhante do Prism';
 
   @override
   String adminModerationSimilarity(int percent) {
-    return '$percent% parecido';
+    return '$percent% semelhante';
   }
 
   @override
@@ -1574,11 +1574,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String adminModerationUnsafe(String categories) {
-    return 'Impróprio: $categories';
+    return 'Conteúdo impróprio: $categories';
   }
 
   @override
-  String get adminModerationUnsafeCategories => 'Categorias impróprias';
+  String get adminModerationUnsafeCategories => 'Categorias de conteúdo impróprio';
 
   @override
   String adminModerationWeb(String host) {
@@ -11480,11 +11480,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String adminModerationDuplicate(int percent) {
-    return 'Parece um papel de parede do Prism · $percent%';
+    return 'Parece ser um papel de parede do Prism · $percent%';
   }
 
   @override
-  String get adminModerationHint => 'São apenas pistas. Confira antes de rejeitar.';
+  String get adminModerationHint => 'Estas são apenas indicações. Confira antes de rejeitar.';
 
   @override
   String adminModerationLogo(String logo) {
@@ -11503,14 +11503,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get adminModerationSignals => 'Sinais de revisão';
+  String get adminModerationSignals => 'Sinais para análise';
 
   @override
-  String get adminModerationSimilarWall => 'Papel de parede do Prism parecido';
+  String get adminModerationSimilarWall => 'Papel de parede semelhante do Prism';
 
   @override
   String adminModerationSimilarity(int percent) {
-    return '$percent% parecido';
+    return '$percent% semelhante';
   }
 
   @override
@@ -11523,11 +11523,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String adminModerationUnsafe(String categories) {
-    return 'Impróprio: $categories';
+    return 'Conteúdo impróprio: $categories';
   }
 
   @override
-  String get adminModerationUnsafeCategories => 'Categorias impróprias';
+  String get adminModerationUnsafeCategories => 'Categorias de conteúdo impróprio';
 
   @override
   String adminModerationWeb(String host) {

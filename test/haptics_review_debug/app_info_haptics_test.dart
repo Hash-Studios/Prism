@@ -1,10 +1,26 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+class _EnglishMessagesDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _EnglishMessagesDelegate();
+
+  @override
+  bool isSupported(Locale locale) => <String>{'en', 'id'}.contains(locale.languageCode);
+
+  @override
+  Future<AppLocalizations> load(Locale locale) =>
+      SynchronousFuture<AppLocalizations>(AppLocalizationsEn(locale.languageCode));
+
+  @override
+  bool shouldReload(_EnglishMessagesDelegate old) => false;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -83,5 +99,32 @@ void main() {
       expect(androidHaptics, isEmpty);
       await tester.pumpWidget(const SizedBox.shrink());
     }, variant: TargetPlatformVariant.only(platform));
+  }
+
+  for (final localeCase in const <({Locale locale, String expected})>[
+    (locale: Locale('en'), expected: '2.75'),
+    (locale: Locale('id'), expected: '2,75'),
+  ]) {
+    testWidgets('formats device pixel ratio with ${localeCase.locale.languageCode} decimal separator', (tester) async {
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: localeCase.locale,
+          supportedLocales: const <Locale>[Locale('en'), Locale('id')],
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            _EnglishMessagesDelegate(),
+            ...AppLocalizations.localizationsDelegates,
+          ],
+          home: const Scaffold(body: AppInfoPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text(localeCase.expected), 200);
+      expect(find.text(localeCase.expected), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 }
