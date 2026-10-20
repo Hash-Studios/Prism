@@ -4,7 +4,7 @@ import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
-import {deleteRetainedUpload, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
+import {deleteRetainedUpload, FIREBASE_STORAGE_REPO, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
   type StoredUpload} from "./ownedAssetDelivery";
 import {r2Secrets} from "./r2Storage";
 
@@ -709,6 +709,16 @@ export const githubDeleteFile = onCall(
         {wallId, originalObjectId, assetRole}));
     }
     const resolvedAsset = manifestProof?.asset;
+    if (manifestProof && resolvedAsset &&
+      (resolvedAsset.sourceKind === "ai" || resolvedAsset.repo === FIREBASE_STORAGE_REPO)) {
+      const proof = manifestProof;
+      await deleteRetainedUpload({repo: resolvedAsset.repo, path: resolvedAsset.path, sha: resolvedAsset.sha,
+        ...(resolvedAsset.sourceKind ? {sourceKind: resolvedAsset.sourceKind} : {}), expected: resolvedAsset,
+        authorize: async (tx) => {
+          await readManifestDeleteProof(tx, callerUid, isAdmin, proof);
+        }});
+      return {ok: true};
+    }
     const {repo, path, message} = validateCommon(resolvedAsset ? {
       repo: resolvedAsset.repo, path: resolvedAsset.path, message: resolvedAsset.path,
     } : data);

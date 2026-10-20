@@ -1,15 +1,19 @@
 import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {db} from "./common";
+import * as admin from "firebase-admin";
+import {AI_LEGACY_UID, AI_RECORD_PROPAGATION_MS, AI_STORAGE_REPO, AiRecordError, aiRecordExpired, aiUploadId,
+  generationTimeMs, parseAiSource, readAiGenerationRecord} from "./aiWallSource";
 import * as delivery from "./ownedAssetDelivery";
-import type {StoredUpload, StudioBinding, WallBindingExpectation} from "./ownedAssetDelivery";
+import type {AiBinding, StoredUpload, StudioBinding, WallBindingExpectation} from "./ownedAssetDelivery";
 import {R2Storage} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
-import {parseStudioSource, verifiedStudioSource} from "./studio/assetSource";
+import {parseStudioSource, STUDIO_ASSET_BASE, verifiedStudioSource} from "./studio/assetSource";
 
 /**
  * The per-wall converter shared by the bulk migration script and the `onOwnedWallWritten` trigger.
- * It moves one approved wall from public GitHub or worker URLs to the private R2 original and a public R2 preview.
+ * It moves one approved wall from public GitHub, Firebase Storage or Worker URLs to the private R2 original and a
+ * public R2 preview.
  */
 const MAX_BYTES = 15 * 1024 * 1024;
 const IMAGE_PATH = /\.(?:jpe?g|png|webp|gif)$/i;
@@ -19,23 +23,25 @@ const digest = (value: string | Buffer) => createHash("sha256").update(value).di
 /** A failure a retry cannot fix (bad URL, unproven owner, changed bytes). Every other error is treated as transient. */
 export class PermanentConversionError extends Error {}
 
-export type MigrationOptions = {apply: boolean; allowReviewedLegacy: boolean; owner: string; repo: string; commit: string};
+export type MigrationOptions = {apply: boolean; allowReviewedLegacy: boolean; owner: string; repo: string; commit: string;
+  allowReviewedAiLegacy?: boolean};
 export type MigrationWall = {docPath: string; incarnation: number; incarnationNanos: number; data: Record<string, unknown>};
 export type GithubAsset = {repo: string; path: string; url: string; recordedUrl: string; sha: string; gitSha: string;
-  size: number; commit: string; expectedResolution?: string};
+  size: number; commit: string; expectedResolution?: string; storagePin?: {generation: string; md5: string}};
 export type StoredMigrationAsset = StoredUpload;
 export type WallInventory = {wall: MigrationWall; wallId: string; original?: GithubAsset; thumb?: GithubAsset;
-  status: "planned" | "blocked"; detail: string; studio?: StudioBinding};
+  status: "planned" | "blocked"; detail: string; studio?: StudioBinding; ai?: {generationId: string}};
 export type MigrationResult = {docPath: string; wallId: string; status: "would-migrate" | "in-progress" | "migrated" | "already-owned" | "blocked";
   detail: string; publicGithubCopiesRemain: true};
 export type LegacyBinding = {wallId: string; canonicalPath: string; incarnation: number; incarnationNanos: number;
-  originalUrl: string; thumbUrl: string; original: StoredMigrationAsset; thumb: StoredMigrationAsset; source?: StudioBinding;
-  expected?: WallBindingExpectation};
-export type OwnershipProof = {uid: string | null; legacyEligible: boolean; studio?: StudioBinding};
+  originalUrl: string; thumbUrl: string; original: StoredMigrationAsset; thumb: StoredMigrationAsset;
+  source?: StudioBinding | AiBinding; expected?: WallBindingExpectation};
+export type OwnershipProof = {uid: string | null; legacyEligible: boolean; studio?: StudioBinding; ai?: AiBinding};
 export type MigrationDeps = {
   prove: (original: GithubAsset, thumb: GithubAsset, row: WallInventory) => Promise<OwnershipProof>;
   fetchBytes: (asset: GithubAsset) => Promise<Buffer>;
-  retain: (asset: GithubAsset & {uid: string; bytes: Buffer; sourceKind?: "studio"; uploadId?: string}) => Promise<StoredMigrationAsset>;
+  retain: (asset: GithubAsset & {uid: string; bytes: Buffer; sourceKind?: "studio" | "ai"; uploadId?: string}) =>
+    Promise<StoredMigrationAsset>;
   verify: (asset: StoredMigrationAsset, size: number) => Promise<void>;
   revalidate: (wall: MigrationWall, original: GithubAsset, thumb: GithubAsset) => Promise<void>;
   attach: (asset: StoredMigrationAsset) => Promise<void>;
@@ -82,9 +88,11 @@ export function parseGithubAsset(raw: unknown, path: unknown, options: Migration
 
 /**
  * Bounded download. GitHub credentials are not sent to raw-content requests. With `pin`, the declared and actual size and
- * the Git blob SHA must match the pinned tree entry. With `resolution`, the decoded image must have that size.
+ * the Git blob SHA (or the Firebase Storage generation and MD5) must match the pinned source. With `resolution`, the
+ * decoded image must have that size.
  */
-async function downloadImage(url: string, pin?: {size: number; gitSha: string}, resolution?: string): Promise<Buffer> {
+type DownloadPin = {size: number; gitSha?: string; generation?: string; md5?: string};
+async function downloadImage(url: string, pin?: DownloadPin, resolution?: string): Promise<Buffer> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
@@ -98,7 +106,10 @@ async function downloadImage(url: string, pin?: {size: number; gitSha: string}, 
     }
     const declared = Number(response.headers.get("content-length"));
     if (declared > MAX_BYTES || (pin && declared !== pin.size)) {
-      throw new PermanentConversionError(pin ? "GitHub asset size differs from pinned tree" : "Image is too large");
+      throw new PermanentConversionError(pin ? "Asset size differs from the pinned source" : "Image is too large");
+    }
+    if (pin?.generation && response.headers.get("x-goog-generation") !== pin.generation) {
+      throw new PermanentConversionError("Firebase Storage generation differs from the pinned source");
     }
     const reader = response.body.getReader();
     const chunks: Buffer[] = [];
@@ -117,7 +128,10 @@ async function downloadImage(url: string, pin?: {size: number; gitSha: string}, 
       await reader.cancel();
     }
     const bytes = Buffer.concat(chunks);
-    if (pin && (bytes.length !== pin.size || gitBlobSha(bytes) !== pin.gitSha)) throw new PermanentConversionError("Git blob SHA mismatch");
+    if (pin && (bytes.length !== pin.size || (pin.gitSha !== undefined && gitBlobSha(bytes) !== pin.gitSha) ||
+      (pin.md5 !== undefined && createHash("md5").update(bytes).digest("base64") !== pin.md5))) {
+      throw new PermanentConversionError(pin.gitSha !== undefined ? "Git blob SHA mismatch" : "Firebase Storage MD5 mismatch");
+    }
     const sharp = (await import("sharp")).default;
     let metadata: import("sharp").Metadata;
     try {
@@ -143,12 +157,142 @@ export const downloadGithubAsset = (asset: GithubAsset): Promise<Buffer> =>
 export const downloadStudioAsset = (asset: GithubAsset): Promise<Buffer> =>
   downloadImage(asset.url, undefined, asset.expectedResolution);
 
+/** A Firebase Storage original is pinned to the object generation, MD5 and size that the dry run reviewed. */
+export function downloadFirebaseAsset(asset: GithubAsset): Promise<Buffer> {
+  if (!asset.storagePin || !asset.size) throw new PermanentConversionError("Firebase Storage asset is not pinned");
+  return downloadImage(asset.url, {size: asset.size, ...asset.storagePin});
+}
+
+const fetchAsset = (asset: GithubAsset): Promise<Buffer> => asset.repo === delivery.FIREBASE_STORAGE_REPO ?
+  downloadFirebaseAsset(asset) : [delivery.STUDIO_STORAGE_REPO, AI_STORAGE_REPO].includes(asset.repo) ?
+    downloadStudioAsset(asset) : downloadGithubAsset(asset);
+
+export type FirebaseObjectMeta = {generation: string; md5Hash: string; size: number};
+
+/** Reads the public metadata of a legacy Firebase Storage object without its bytes. */
+export async function readFirebaseObjectMeta(path: string): Promise<FirebaseObjectMeta> {
+  const bucket = delivery.LEGACY_FIREBASE_BUCKET;
+  if (!path.startsWith(`${bucket}/`)) throw new PermanentConversionError("Firebase Storage object is outside the legacy bucket");
+  const response = await fetch(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${
+    encodeURIComponent(path.slice(bucket.length + 1))}`, {redirect: "manual"});
+  if (!response.ok) throw new Error(`Firebase Storage metadata failed: ${response.status}`);
+  const meta = await response.json() as {generation?: unknown; md5Hash?: unknown; size?: unknown};
+  const size = Number(meta.size);
+  if (typeof meta.generation !== "string" || !/^\d{1,20}$/.test(meta.generation) || typeof meta.md5Hash !== "string" ||
+    !/^[A-Za-z0-9+/]{22}==$/.test(meta.md5Hash) || !Number.isSafeInteger(size) || size <= 0 || size > MAX_BYTES) {
+    throw new PermanentConversionError("Firebase Storage metadata is invalid");
+  }
+  return {generation: meta.generation, md5Hash: meta.md5Hash, size};
+}
+
+/**
+ * A legacy wall whose original is in the project's Firebase Storage bucket and whose thumbnail is a GitHub file. The
+ * original is pinned to `meta`; `thumb` is the GitHub thumbnail as the caller resolved it.
+ */
+export function buildFirebaseRow(wall: MigrationWall, meta: FirebaseObjectMeta | undefined,
+  thumb: () => GithubAsset): WallInventory | null {
+  const path = delivery.firebaseStoragePath(wall.data.wallpaper_url);
+  if (path === null) return null;
+  const wallId = typeof wall.data.id === "string" ? wall.data.id : "";
+  const row: WallInventory = {wall, wallId, status: "blocked", detail: ""};
+  try {
+    if (!/^[A-Za-z0-9_-]{1,200}$/.test(wallId)) throw new Error("Invalid logical wall.id");
+    if (!meta) throw new Error("Firebase Storage metadata is missing");
+    if (!IMAGE_PATH.test(path) || path.split("/").pop()?.startsWith("thumb_") ||
+      ![undefined, ""].includes(wall.data.wallpaper_path as string | undefined) ||
+      ![undefined, ""].includes(wall.data.wallpaper_sha as string | undefined)) {
+      throw new Error("Firebase Storage original has an unsupported path or recorded GitHub fields");
+    }
+    row.original = {repo: delivery.FIREBASE_STORAGE_REPO, path, url: String(wall.data.wallpaper_url),
+      recordedUrl: String(wall.data.wallpaper_url), sha: "", gitSha: "", size: meta.size, commit: "",
+      storagePin: {generation: meta.generation, md5: meta.md5Hash}};
+    row.thumb = thumb();
+    if (!row.thumb.path.split("/").pop()?.startsWith("thumb_")) throw new Error("Thumbnail path must use the thumb_ role");
+    row.status = "planned";
+    row.detail = "Legacy Firebase Storage original pinned to its object generation; the source remains unchanged";
+  } catch (error) {
+    row.detail = error instanceof Error ? error.message : "Inventory validation failed";
+  }
+  return row;
+}
+
+/** A user AI wall row from its exact Worker URL pair. The owner is proven later, in `deps.prove`. */
+export function buildAiRow(wall: MigrationWall): WallInventory | null {
+  const source = parseAiSource(wall.data);
+  if (!source) return null;
+  const asset = (path: string, url: string): GithubAsset => ({repo: AI_STORAGE_REPO, path, url, recordedUrl: url, sha: "",
+    gitSha: "", size: 0, commit: ""});
+  // The recorded resolution is the requested size; providers return other sizes, so the bytes are only decoded.
+  return {wall, wallId: String(wall.data.id), status: "planned", ai: {generationId: source.generationId},
+    original: asset(source.originalKey, source.originalUrl), thumb: asset(source.thumbKey, source.thumbUrl),
+    detail: "User AI Worker assets; the Worker copies remain unchanged"};
+}
+
+/**
+ * Proves the owner of an AI wall. A live Worker record must name the Auth user who posted the wall. An absent record
+ * is accepted only under the reviewed AI legacy policy, only when the generation is older than the record TTL, and
+ * only when no client `aiGenerations` doc names another user. The legacy proof claims no uid.
+ */
+export async function proveAiWall(row: WallInventory, allowReviewedAiLegacy: boolean,
+  firestore: FirebaseFirestore.Firestore = db, readRecord = readAiGenerationRecord): Promise<OwnershipProof> {
+  const source = parseAiSource(row.wall.data);
+  if (!source || source.generationId !== row.ai?.generationId) throw new PermanentConversionError("AI wall source is invalid");
+  const email = row.wall.data.email;
+  if (typeof email !== "string" || !email) throw new PermanentConversionError("AI wall has no author email");
+  let record: Awaited<ReturnType<typeof readAiGenerationRecord>>;
+  try {
+    record = await readRecord(source.generationId);
+  } catch (error) {
+    if (error instanceof AiRecordError) throw new PermanentConversionError(error.message);
+    throw error;
+  }
+  const author = await admin.auth().getUserByEmail(email).catch((error: unknown) => {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/user-not-found") return null;
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "auth/invalid-email") {
+      throw new PermanentConversionError("AI wall author email is invalid");
+    }
+    throw error;
+  });
+  if (record) {
+    // `parseAiSource` already limits the original to these two keys of the same generation.
+    if (record.watermarkedImageUrl !== source.thumbUrl ||
+      record.imageUrl !== `${STUDIO_ASSET_BASE}/ai/original/${source.generationId}.png` || !author ||
+      author.uid !== record.userId || author.disabled || author.email !== email || record.userId === AI_LEGACY_UID ||
+      !/^[A-Za-z0-9_-]{1,200}$/.test(record.userId)) {
+      throw new PermanentConversionError("AI generation record does not belong to the wall author");
+    }
+    return {uid: record.userId, legacyEligible: false, ai: {kind: "ai", generationId: source.generationId, uid: record.userId}};
+  }
+  const ageMs = Date.now() - generationTimeMs(source.generationId);
+  if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < AI_RECORD_PROPAGATION_MS) {
+    throw new Error("AI generation record is not yet visible at this Worker edge");
+  }
+  if (!allowReviewedAiLegacy || row.wall.data.review !== true) {
+    throw new PermanentConversionError("AI generation record is unavailable: reviewed AI legacy policy requires explicit opt-in");
+  }
+  if (!aiRecordExpired(source.generationId)) {
+    throw new PermanentConversionError("AI generation record is missing before its expiry");
+  }
+  const claim = (await firestore.collection("aiGenerations").doc(source.generationId).get()).data();
+  if (claim && (!author || claim.userId !== author.uid)) {
+    throw new PermanentConversionError("AI generation history names another user");
+  }
+  return {uid: null, legacyEligible: false, ai: {kind: "ai-legacy", generationId: source.generationId}};
+}
+
 export async function verifyR2MigrationCopy(asset: StoredMigrationAsset, size: number | undefined,
-  getObject: R2ObjectClient["get"], verifyMetadata: (asset: StoredMigrationAsset, size?: number) => Promise<void>): Promise<void> {
-  await verifyMetadata(asset, size);
+  getObject: R2ObjectClient["get"], verifyMetadata: (asset: StoredMigrationAsset, size?: number) => Promise<void>,
+  reviewedFirebasePin?: {size: number; md5: string}): Promise<void> {
+  await verifyMetadata(asset, size ?? reviewedFirebasePin?.size);
   const privateBytes = await getObject("private", asset.object);
+  if (reviewedFirebasePin && privateBytes.length !== reviewedFirebasePin.size) {
+    throw new PermanentConversionError("Firebase Storage size mismatch on R2 readback");
+  }
   if ((size !== undefined && privateBytes.length !== size) || digest(privateBytes) !== asset.sha256) {
     throw new PermanentConversionError("R2 private readback mismatch");
+  }
+  if (reviewedFirebasePin && createHash("md5").update(privateBytes).digest("base64") !== reviewedFirebasePin.md5) {
+    throw new PermanentConversionError("Firebase Storage MD5 mismatch on R2 readback");
   }
   if (asset.previewObjectId) {
     const previewBytes = await getObject("preview", `previews/${asset.previewObjectId}.img`);
@@ -159,6 +303,8 @@ export async function verifyR2MigrationCopy(asset: StoredMigrationAsset, size: n
 }
 
 export async function proveMigrationAsset(asset: GithubAsset, firestore: FirebaseFirestore.Firestore = db): Promise<OwnershipProof> {
+  // Firebase Storage originals predate upload receipts; only the reviewed legacy policy can bind them.
+  if (asset.repo === delivery.FIREBASE_STORAGE_REPO) return {uid: null, legacyEligible: true};
   if (!asset.gitSha) return {uid: null, legacyEligible: false};
   const query = firestore.collection("githubUploads").where("path", "==", asset.path).orderBy("__name__").limit(8);
   const matching: FirebaseFirestore.QueryDocumentSnapshot[] = [];
@@ -232,13 +378,19 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
   const proof = await deps.prove(row.original, row.thumb, row);
   const owner = proof.uid;
   const studio = proof.studio;
-  const legacy = owner === null;
+  const ai = proof.ai;
+  if (!!row.ai !== !!ai || (ai && ai.generationId !== row.ai?.generationId)) {
+    throw new PermanentConversionError("AI provenance does not match the inventory row");
+  }
+  const legacy = owner === null && !ai;
   if (legacy && (!proof.legacyEligible || !options.allowReviewedLegacy || row.wall.data.review !== true)) {
     throw new PermanentConversionError("Unproven or partial provenance: reviewed legacy policy requires explicit opt-in and no receipts");
   }
-  result.detail = studio ? "Prism Studio provenance; no receipt or creator credit will be fabricated" : legacy ?
-    "Reviewed legacy policy; no receipt or creator credit will be fabricated" :
-    "Modern upload receipts and completed intents verified";
+  result.detail = studio ? "Prism Studio provenance; no receipt or creator credit will be fabricated" :
+    ai?.kind === "ai" ? "AI generation record verified; no receipt, creator credit or XP will be fabricated" :
+      ai ? "Reviewed AI legacy policy (generation record expired); no receipt, creator credit or XP will be fabricated" :
+        legacy ? "Reviewed legacy policy; no receipt or creator credit will be fabricated" :
+          "Modern upload receipts and completed intents verified";
   if (!options.apply) {
     result.status = "would-migrate";
     return;
@@ -250,11 +402,13 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
   expectedOriginal = {...row.original, gitSha: row.original.gitSha || gitBlobSha(originalBytes)};
   expectedThumb = {...row.thumb, gitSha: row.thumb.gitSha || gitBlobSha(thumbBytes)};
   if (!await revalidate(row.original, row.thumb)) return;
-  const uid = studio ? STUDIO_ACCOUNT.id : owner ?? "legacy-migration";
-  const extra = studio ? {sourceKind: "studio" as const, uploadId: studio.candidateId} : {};
+  const uid = studio ? STUDIO_ACCOUNT.id : ai?.kind === "ai" ? ai.uid : ai ? AI_LEGACY_UID : owner ?? "legacy-migration";
+  const extra = (role: "original" | "thumb") => studio ? {sourceKind: "studio" as const, uploadId: studio.candidateId} :
+    ai ? {sourceKind: "ai" as const, uploadId: aiUploadId(ai.generationId, role)} : {};
   const [original, thumb] = await Promise.all([
-    deps.retain({...row.original, ...extra, sha: row.original.gitSha || gitBlobSha(originalBytes), uid, bytes: originalBytes}),
-    deps.retain({...row.thumb, ...extra, sha: row.thumb.gitSha || gitBlobSha(thumbBytes), uid, bytes: thumbBytes}),
+    deps.retain({...row.original, ...extra("original"), sha: row.original.gitSha || gitBlobSha(originalBytes), uid,
+      bytes: originalBytes}),
+    deps.retain({...row.thumb, ...extra("thumb"), sha: row.thumb.gitSha || gitBlobSha(thumbBytes), uid, bytes: thumbBytes}),
   ]);
   if (original.objectId === thumb.objectId || original.previewObjectId || !thumb.previewObjectId ||
     thumb.previewObjectId !== thumb.objectId) throw new PermanentConversionError("R2 retained objects are not separated by privacy role");
@@ -265,13 +419,16 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
     recordedSource: {originalPath: row.wall.data.wallpaper_path, thumbPath: row.wall.data.thumb_path,
       originalSha: row.wall.data.wallpaper_sha, thumbSha: row.wall.data.thumb_sha},
     ...(studio ? {studio: {runId: studio.runId, candidateId: studio.candidateId,
-      resolution: String(row.wall.data.resolution)}} : {})};
+      resolution: String(row.wall.data.resolution)}} : {}),
+    ...(ai ? {ai: {generationId: ai.generationId, resolution: String(row.wall.data.resolution),
+      email: String(row.wall.data.email)}} : {})};
   try {
-    if (studio || legacy) {
+    if (studio || legacy || ai) {
+      const source = studio ?? ai;
       await deps.bindLegacy({wallId: row.wallId, canonicalPath: row.wall.docPath,
         incarnation: row.wall.incarnation, incarnationNanos: row.wall.incarnationNanos,
         originalUrl: row.original.recordedUrl, thumbUrl: row.thumb.recordedUrl, original, thumb,
-        ...(studio ? {source: studio} : {}), expected});
+        ...(source ? {source} : {}), expected});
     } else {
       await deps.attach(original);
       await deps.attach(thumb);
@@ -288,10 +445,12 @@ export async function convertWall(row: WallInventory, options: MigrationOptions,
 }
 
 /** The Firestore and R2 backed dependencies of `convertWall`. `apply` also checks the R2 copies when it reads a wall as ready. */
-export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: FirebaseFirestore.Firestore = db): MigrationDeps {
-  const readback = (asset: StoredMigrationAsset, size: number | undefined, verifyMetadata: Parameters<typeof verifyR2MigrationCopy>[3]) => {
+export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: FirebaseFirestore.Firestore = db,
+  allowReviewedAiLegacy = false): MigrationDeps {
+  const readback = (asset: StoredMigrationAsset, size: number | undefined,
+    verifyMetadata: Parameters<typeof verifyR2MigrationCopy>[3], reviewedFirebasePin?: {size: number; md5: string}) => {
     if (!r2) throw new Error("R2 storage is not configured");
-    return verifyR2MigrationCopy(asset, size, (kind, object) => r2.get(kind, object), verifyMetadata);
+    return verifyR2MigrationCopy(asset, size, (kind, object) => r2.get(kind, object), verifyMetadata, reviewedFirebasePin);
   };
   return {
     prove: async (original, thumb, row) => {
@@ -302,12 +461,13 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
         }
         return {uid: STUDIO_ACCOUNT.id, legacyEligible: false, studio: row.studio};
       }
+      if (row.ai) return proveAiWall(row, allowReviewedAiLegacy, firestore);
       const first = await proveMigrationAsset(original, firestore);
       const second = await proveMigrationAsset(thumb, firestore);
       if (first.uid && first.uid === second.uid) return {uid: first.uid, legacyEligible: false};
       return {uid: null, legacyEligible: first.legacyEligible && second.legacyEligible};
     },
-    fetchBytes: (asset) => asset.repo === delivery.STUDIO_STORAGE_REPO ? downloadStudioAsset(asset) : downloadGithubAsset(asset),
+    fetchBytes: fetchAsset,
     retain: delivery.retainUpload,
     verify: (asset, size) => readback(asset, size, delivery.verifyStoredUpload),
     revalidate: async (wall, original, thumb) => {
@@ -317,7 +477,8 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
         current.createTime.nanoseconds !== wall.incarnationNanos || data?.id !== wall.data.id ||
         data.wallpaper_url !== wall.data.wallpaper_url || data.wallpaper_thumb !== wall.data.wallpaper_thumb ||
         data.wallpaper_path !== wall.data.wallpaper_path || data.thumb_path !== wall.data.thumb_path ||
-        ["review", "origin", "email", "resolution", "studioRunId", "studioCandidateId", "dropWeek", "dropReserved"]
+        ["review", "origin", "email", "resolution", "studioRunId", "studioCandidateId", "dropWeek", "dropReserved",
+          "isAiGenerated", "aiGenerationId"]
           .some((field) => data[field] !== wall.data[field]) ||
         (data.wallpaper_sha !== undefined && data.wallpaper_sha !== "" && data.wallpaper_sha !== original.gitSha) ||
         (data.thumb_sha !== undefined && data.thumb_sha !== "" && data.thumb_sha !== thumb.gitSha)) {
@@ -362,12 +523,22 @@ export function conversionDeps(apply: boolean, r2: R2Storage | null, firestore: 
             ["origin", "email", "studioRunId", "studioCandidateId", "resolution"]
               .some((field) => data[field] !== wall.data[field])) return false;
         }
+        if (original.repo === AI_STORAGE_REPO) {
+          const source = parseAiSource(wall.data);
+          if (!source || !["ai", "ai-legacy"].includes(manifest.provenance?.kind) ||
+            manifest.provenance.generationId !== source.generationId ||
+            ["email", "isAiGenerated", "aiGenerationId", "resolution"].some((field) => data[field] !== wall.data[field])) {
+            return false;
+          }
+        }
       }
       if (!apply) return true;
       const owned = await delivery.getOwnedWallDelivery(String(wall.data.id));
       await Promise.all([delivery.verifyStoredUpload(owned.original), delivery.verifyStoredUpload(owned.thumb)]);
-      await Promise.all([readback(owned.original, undefined, async () => undefined),
-        readback(owned.thumb, undefined, async () => undefined)]);
+      await Promise.all([readback(owned.original, undefined, async () => undefined,
+        original?.repo === delivery.FIREBASE_STORAGE_REPO && original.storagePin ?
+          {size: original.size, md5: original.storagePin.md5} : undefined),
+      readback(owned.thumb, undefined, async () => undefined)]);
       return true;
     },
   };
@@ -422,10 +593,11 @@ export async function convertApprovedWall(wallId: string): Promise<"converted" |
   const result: MigrationResult = {docPath: wall.docPath, wallId, status: "blocked", detail: "", publicGithubCopiesRemain: true};
   const deps = conversionDeps(true, new R2Storage());
   try {
-    const studio = buildStudioRow(wall);
+    // Expired AI generation records need the reviewed policy of the bulk script; the trigger never applies it.
+    const worker = buildStudioRow(wall) ?? buildAiRow(wall);
     let row: WallInventory;
-    if (studio) {
-      row = studio;
+    if (worker) {
+      row = worker;
     } else {
       const owner = process.env.GH_USERNAME ?? "";
       const repo = process.env.GH_REPO_WALLS ?? "";

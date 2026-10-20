@@ -32,6 +32,8 @@ type AiErrorCode =
   | 'unsafe_prompt'
   | 'unsafe_output'
   | 'generation_not_found'
+  | 'generation_record_invalid'
+  | 'generation_record_unavailable'
   | 'service_disabled'
   | 'charge_required'
   | 'charge_invalid'
@@ -2055,6 +2057,10 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
   if (!(await isStudioSecretValid(request.headers.get('x-studio-secret'), env.STUDIO_SECRET))) {
     return aiError('unauthorized', 401, 'Missing or invalid studio secret');
   }
+  const recordMatch = /^\/api\/ai\/studio\/generation-records\/(gen_[a-z0-9]+_[a-f0-9]{16})$/.exec(pathname);
+  if (request.method === 'GET' && recordMatch != null) {
+    return handleGenerationRecordRead(recordMatch[1], env);
+  }
   if (env.AI_IMAGES == null) {
     return aiError('service_disabled', 503, 'Studio asset storage is not configured');
   }
@@ -2069,6 +2075,46 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
     return handleStudioAssetDelete(assetKey, env);
   }
   return aiError('invalid_request', 404, 'Unsupported studio endpoint');
+}
+
+// Functions prove the owner of a user AI wall from this server-owned record. It omits the prompt.
+async function handleGenerationRecordRead(generationId: string, env: AiEnvBindings): Promise<Response> {
+  let raw: string | null;
+  try {
+    raw = await env.AI_STATE_KV.get(`ai:gen:${generationId}`);
+  } catch {
+    return aiError('generation_record_unavailable', 503, 'Generation record storage is unavailable');
+  }
+  if (raw == null) {
+    return aiError('generation_not_found', 404, 'Generation not found');
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return aiError('generation_record_invalid', 422, 'Generation record is invalid');
+  }
+  if (typeof value !== 'object' || value == null || Array.isArray(value)) {
+    return aiError('generation_record_invalid', 422, 'Generation record is invalid');
+  }
+  const record = value as Partial<AiGenerationRecord>;
+  if (record.generationId !== generationId || typeof record.userId !== 'string' || record.userId.length === 0 ||
+    typeof record.createdAt !== 'string' || record.createdAt.length === 0 ||
+    typeof record.width !== 'number' || !Number.isSafeInteger(record.width) || record.width <= 0 ||
+    typeof record.height !== 'number' || !Number.isSafeInteger(record.height) || record.height <= 0 ||
+    record.imageUrl !== `https://prismwalls.com/api/ai/assets/ai/original/${generationId}.png` ||
+    record.watermarkedImageUrl !== `https://prismwalls.com/api/ai/assets/ai/public/${generationId}.png`) {
+    return aiError('generation_record_invalid', 422, 'Generation record is invalid');
+  }
+  return aiJson({
+    generationId: record.generationId,
+    userId: record.userId,
+    createdAt: record.createdAt,
+    width: record.width,
+    height: record.height,
+    imageUrl: record.imageUrl,
+    watermarkedImageUrl: record.watermarkedImageUrl,
+  });
 }
 
 // Studio can bill its own fal account. Without STUDIO_FAL_API_KEY it uses the consumer key.

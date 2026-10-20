@@ -1,10 +1,16 @@
+import "./offlineGuard";
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {beforeEach} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey} from "../economy";
 import {installFakeDb} from "./fakeDb";
 import {AI_SPEND_SETTLE_MS, BADGES, badgeIo, checkBadges, evaluateBadges, isProfileComplete, settledCount, type BadgeFacts} from "../badges";
+
+beforeEach((t) => {
+  if (!("mock" in t)) throw new Error("Badge test isolation requires a test context");
+  t.mock.method(badgeIo, "accountCreatedMs", async () => Date.now());
+});
 
 const NONE: BadgeFacts = {
   streakBest: 0, approvedWalls: 0, aiSpends: 0, accountAgeDays: 0, favourites: 0, following: 0, profileComplete: false,

@@ -4,9 +4,15 @@ import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
-import {onOwnedWallWritten, STUDIO_STORAGE_REPO, stored} from "../ownedAssetDelivery";
-import {convertApprovedWall, convertWall, conversionDeps, buildStudioRow, gitBlobSha, type MigrationDeps, type MigrationResult,
-  type MigrationWall, type WallInventory} from "../ownedWallConversion";
+import {AI_LEGACY_UID, aiCommunityId, aiRecordExpired} from "../aiWallSource";
+import {db} from "../common";
+import {verifiedUploadOwner} from "../creatorProgress";
+import {cleanupDeletedOwnedWall, onOwnedWallWritten, STUDIO_STORAGE_REPO, stored,
+  sweepR2Tombstones} from "../ownedAssetDelivery";
+import {buildAiRow, buildFirebaseRow, convertApprovedWall, convertWall, conversionDeps, buildStudioRow, gitBlobSha,
+  readFirebaseObjectMeta, verifyR2MigrationCopy,
+  type GithubAsset, type MigrationDeps, type MigrationResult, type MigrationWall,
+  type WallInventory} from "../ownedWallConversion";
 import {R2Storage} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
 
@@ -28,7 +34,7 @@ function configure(t: TestContext) {
 }
 
 /** An in-memory R2 plus the public GitHub and worker origins, behind one fetch mock. */
-function installNetwork(t: TestContext, sources: Record<string, Buffer>) {
+function installNetwork(t: TestContext, sources: Record<string, Buffer>, sourceHeaders: Record<string, Record<string, string>> = {}) {
   const objects = new Map<string, {bytes: Buffer; meta: Record<string, string>}>();
   const fetched: string[] = [];
   t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -55,8 +61,14 @@ function installNetwork(t: TestContext, sources: Record<string, Buffer>) {
     }
     fetched.push(url.href);
     const bytes = sources[url.href];
-    if (!bytes) return new Response(null, {status: 404});
-    return new Response(new Uint8Array(bytes), {status: 200, headers: {"content-length": String(bytes.length)}});
+    if (!bytes) {
+      if (url.href.startsWith(`${RECORDS}/`)) {
+        return new Response(JSON.stringify({error: "generation_not_found"}), {status: 404});
+      }
+      return new Response(null, {status: 404});
+    }
+    return new Response(new Uint8Array(bytes), {status: 200,
+      headers: {"content-length": String(bytes.length), ...sourceHeaders[url.href]}});
   });
   return {objects, fetched};
 }
@@ -522,4 +534,481 @@ test("a loser of the bind race counts as converted when the manifest is ready", 
   };
   await assert.rejects(convertWall(row, {apply: true, allowReviewedLegacy: false, owner: "hash", repo: "walls",
     commit: "0".repeat(40)}, deps, result), /already bound/);
+});
+
+// User AI community walls. The generation id embeds its creation time, like the Worker's createId.
+const genId = (madeAt: number, hex = "7a9688a037a47de6") => `gen_${madeAt.toString(36)}_${hex}`;
+const OLD_GEN = genId(Date.parse("2026-02-19T08:40:39Z"));
+const NEW_GEN = genId(Date.now() - 24 * 60 * 60 * 1000, "0bddcee964dce970");
+const RECENT_GEN = genId(Date.now() - 60 * 1000, "1bddcee964dce970");
+const FUTURE_GEN = genId(Date.now() + 60 * 1000, "2bddcee964dce970");
+const RECORDS = "https://prismwalls.com/api/ai/studio/generation-records";
+const aiWall = (gen: string, extra: Doc = {}): Doc => ({id: aiCommunityId(gen), email: "creator@example.com", review: true,
+  isAiGenerated: true, aiGenerationId: gen, resolution: "1179x2048", wallpaper_url: `${WORKER}/ai/original/${gen}.png`,
+  wallpaper_thumb: `${WORKER}/ai/public/${gen}.png`, ...extra});
+const aiRecord = (gen: string, userId = "creator-1") => Buffer.from(JSON.stringify({generationId: gen, userId, width: 1179,
+  height: 2048, imageUrl: `${WORKER}/ai/original/${gen}.png`, watermarkedImageUrl: `${WORKER}/ai/public/${gen}.png`}));
+async function aiSources(gen: string, record?: Buffer) {
+  // The provider returned 1024x1024 although the wall records the requested 1179x2048.
+  return {[`${WORKER}/ai/original/${gen}.png`]: await image(1024, 1024, "red"),
+    [`${WORKER}/ai/public/${gen}.png`]: await image(1024, 1024, "blue"), ...(record ? {[`${RECORDS}/${gen}`]: record} : {})};
+}
+function mockAuth(t: TestContext, users: Record<string, {email: string; disabled?: boolean}> = {
+  "creator-1": {email: "creator@example.com"}}) {
+  const missing = () => Object.assign(new Error("no user"), {code: "auth/user-not-found"});
+  t.mock.method(admin.auth(), "getUser", async (uid: string) => {
+    if (!users[uid]) throw missing();
+    return {uid, disabled: false, ...users[uid]} as never;
+  });
+  t.mock.method(admin.auth(), "getUserByEmail", async (email: string) => {
+    const entry = Object.entries(users).find(([, user]) => user.email === email);
+    if (!entry) throw missing();
+    return {uid: entry[0], disabled: false, ...entry[1]} as never;
+  });
+}
+
+test("the app's AI community id is derived from the generation id", () => {
+  assert.equal(aiCommunityId("gen_mlt7o22q_7a9688a037a47de6"), "AIGENMLT7O22");
+  assert.equal(aiCommunityId("gen_mqc4rojc_ebbaa0bef876eff2"), "AIGENMQC4ROJ");
+  assert.equal(aiRecordExpired(OLD_GEN), true);
+  assert.equal(aiRecordExpired(NEW_GEN), false);
+  assert.equal(aiRecordExpired("gen_nottime_xyz"), false);
+});
+
+for (const shape of ["unwatermarked original", "public image for both roles"]) {
+  test(`a live AI wall converts with its Worker record owner and no XP (${shape})`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const same = shape !== "unwatermarked original";
+    const wall = aiWall(NEW_GEN, same ? {wallpaper_url: `${WORKER}/ai/public/${NEW_GEN}.png`} : {});
+    const id = String(wall.id);
+    const store = installFakeDb(t, {[`walls/${id}`]: wall});
+    const network = installNetwork(t, await aiSources(NEW_GEN, aiRecord(NEW_GEN)));
+    mockAuth(t);
+    assert.equal(await convertApprovedWall(id), "converted");
+    const manifest = store.get(`ownedAssets/${id}`) as {original: Doc; thumb: Doc; provenance: Doc; originalUrl: string};
+    assert.deepEqual(manifest.provenance, {kind: "ai", generationId: NEW_GEN, uid: "creator-1"});
+    assert.equal(manifest.originalUrl, wall.wallpaper_url);
+    assert.deepEqual([manifest.original.sourceKind, manifest.original.uid, manifest.original.repo, manifest.original.uploadId],
+      ["ai", "creator-1", "prism-ai", NEW_GEN]);
+    assert.equal(manifest.thumb.uploadId, `thumb_${NEW_GEN}`);
+    assert.ok(stored(manifest.original) && stored(manifest.thumb));
+    assert.notEqual(manifest.original.objectId, manifest.thumb.objectId);
+    assert.equal(manifest.original.previewObjectId, undefined);
+    assert.ok(network.objects.has(`public-previews/previews/${manifest.thumb.objectId}.img`));
+    assert.ok(![...network.objects.keys()].some((key) => key.startsWith("public-previews/") &&
+      key.includes(String(manifest.original.objectId))), "the original is never in the preview bucket");
+    assert.equal(store.get(`walls/${id}`)?.originalProtected, true);
+    assert.ok(![...store.keys()].some((key) => key.startsWith("githubUploads/") || key.startsWith("creatorWallCredits/")));
+    assert.equal(await verifiedUploadOwner(await db.doc(`walls/${id}`).get()), null, "AI provenance earns no creator XP");
+    await cleanupDeletedOwnedWall({wallId: id, canonicalPath: `walls/${id}`, incarnation: 1, incarnationNanos: 1_000_000});
+    assert.equal((store.get(`ownedAssets/${id}`) as Doc).status, "deleted");
+    assert.equal(network.objects.has(`public-previews/previews/${manifest.thumb.objectId}.img`), false);
+    assert.equal(store.get(`r2ObjectRegistry/${manifest.original.objectId}`)?.status, "tombstoned");
+    assert.equal(await sweepR2Tombstones(Number.MAX_SAFE_INTEGER), 2);
+    assert.equal(network.objects.size, 0,
+      "the tombstone sweep removes the private original, private thumb, and preview");
+  });
+}
+
+const NOT_AI = /Untrusted or unpinned GitHub asset URL/;
+const NOT_OWNER = /does not belong to the wall author/;
+for (const [name, wall, record, users, reason] of [
+  ["a record of another user", aiWall(NEW_GEN), aiRecord(NEW_GEN, "someone-else"), undefined, NOT_OWNER],
+  ["an author whose email changed", aiWall(NEW_GEN), aiRecord(NEW_GEN), {"creator-1": {email: "other@example.com"}}, NOT_OWNER],
+  ["a disabled author", aiWall(NEW_GEN), aiRecord(NEW_GEN), {"creator-1": {email: "creator@example.com", disabled: true}},
+    NOT_OWNER],
+  ["a record for other image keys", aiWall(NEW_GEN), Buffer.from(JSON.stringify({...JSON.parse(String(aiRecord(NEW_GEN))),
+    watermarkedImageUrl: `${WORKER}/ai/public/other.png`})), undefined, NOT_OWNER],
+  ["a record for another generation", aiWall(NEW_GEN), aiRecord(OLD_GEN), undefined, /record is invalid/],
+  ["a wall id not derived from the generation", aiWall(NEW_GEN, {id: "AIGENOTHER1"}), aiRecord(NEW_GEN), undefined, NOT_AI],
+  ["a thumb on another generation", aiWall(NEW_GEN, {wallpaper_thumb: `${WORKER}/ai/public/${OLD_GEN}.png`}),
+    aiRecord(NEW_GEN), undefined, NOT_AI],
+  ["a Studio key", aiWall(NEW_GEN, {wallpaper_url: `${WORKER}/ai/studio/${NEW_GEN}.png`}), aiRecord(NEW_GEN), undefined,
+    NOT_AI],
+  ["a foreign host", aiWall(NEW_GEN, {wallpaper_url: `https://evil.example/api/ai/assets/ai/original/${NEW_GEN}.png`}),
+    aiRecord(NEW_GEN), undefined, NOT_AI],
+  ["a Studio author", aiWall(NEW_GEN, {email: STUDIO_EMAIL}), aiRecord(NEW_GEN), undefined, NOT_AI],
+  ["no record in the trigger, even when expired", aiWall(OLD_GEN), undefined, undefined, /requires explicit opt-in/],
+] as const) {
+  test(`AI provenance is refused: ${name}`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const gen = String(wall.aiGenerationId);
+    const id = String(wall.id);
+    const store = installFakeDb(t, {[`walls/${id}`]: wall});
+    const network = installNetwork(t, await aiSources(gen, record));
+    mockAuth(t, users);
+    assert.equal(await convertApprovedWall(id), "blocked");
+    const reasons = (logger.error as unknown as {mock: {calls: {arguments: unknown[]}[]}}).mock.calls
+      .map((call) => String((call.arguments[1] as {reason?: unknown})?.reason));
+    assert.ok(reasons.some((value) => reason.test(value)), reasons.join("; "));
+    assert.equal(network.objects.size, 0);
+    assert.equal(store.has(`ownedAssets/${id}`), false);
+    assert.equal(store.get(`walls/${id}`)?.originalProtected, undefined);
+  });
+}
+
+test("an AI wall is blocked without the Worker secret instead of retrying", async (t) => {
+  configure(t);
+  delete process.env.STUDIO_SECRET;
+  const wall = aiWall(NEW_GEN);
+  installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const network = installNetwork(t, await aiSources(NEW_GEN, aiRecord(NEW_GEN)));
+  mockAuth(t);
+  assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+  assert.equal(network.objects.size, 0);
+  assert.ok(!network.fetched.some((url) => url.startsWith(RECORDS)), "no record request without the secret");
+});
+
+/** The bulk path: one inventory row through the real Firestore and R2 dependencies. */
+async function bulkConvert(walls: Record<string, Doc>, options: {allowReviewedLegacy?: boolean; allowReviewedAiLegacy?: boolean},
+  inventory: (wall: MigrationWall) => WallInventory | null) {
+  const [docPath, data] = Object.entries(walls)[0];
+  const wall: MigrationWall = {docPath, incarnation: 1, incarnationNanos: 1_000_000, data};
+  const row = inventory(wall);
+  assert.ok(row);
+  const result: MigrationResult = {docPath, wallId: row.wallId, status: "blocked", detail: "", publicGithubCopiesRemain: true};
+  const run = {apply: true, allowReviewedLegacy: options.allowReviewedLegacy ?? false, owner: "hash", repo: "walls",
+    commit: "a".repeat(40), allowReviewedAiLegacy: options.allowReviewedAiLegacy ?? false};
+  try {
+    await convertWall(row, run, conversionDeps(true, new R2Storage(), db, run.allowReviewedAiLegacy), result);
+  } catch (error) {
+    result.detail = (error as Error).message;
+    if (result.status === "in-progress") result.status = "blocked";
+  }
+  return result;
+}
+
+test("an expired AI record converts only under the reviewed AI legacy policy, with no uid claim", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const id = String(wall.id);
+  const store = installFakeDb(t, {[`walls/${id}`]: wall, [`aiGenerations/${OLD_GEN}`]: {userId: "creator-1"}});
+  const network = installNetwork(t, await aiSources(OLD_GEN));
+  mockAuth(t);
+  const refused = await bulkConvert({[`walls/${id}`]: wall}, {allowReviewedLegacy: true}, buildAiRow);
+  assert.equal(refused.status, "blocked");
+  assert.match(refused.detail, /reviewed AI legacy policy requires explicit opt-in/);
+  assert.equal(network.objects.size, 0);
+  const done = await bulkConvert({[`walls/${id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+  assert.equal(done.status, "migrated", done.detail);
+  assert.match(done.detail, /no receipt, creator credit or XP/);
+  const manifest = store.get(`ownedAssets/${id}`) as {original: Doc; thumb: Doc; provenance: Doc};
+  assert.deepEqual(manifest.provenance, {kind: "ai-legacy", generationId: OLD_GEN});
+  assert.equal(manifest.original.uid, AI_LEGACY_UID);
+  assert.equal(manifest.thumb.uid, AI_LEGACY_UID);
+  assert.equal(await verifiedUploadOwner(await db.doc(`walls/${id}`).get()), null);
+});
+
+for (const [name, gen, seed, reason] of [
+  ["a young generation whose record is missing", NEW_GEN, {}, /missing before its expiry/],
+  ["client history that names another user", OLD_GEN, {[`aiGenerations/${OLD_GEN}`]: {userId: "someone-else"}},
+    /names another user/],
+] as const) {
+  test(`the reviewed AI legacy policy refuses ${name}`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(gen);
+    const store = installFakeDb(t, {[`walls/${wall.id}`]: wall, ...seed});
+    const network = installNetwork(t, await aiSources(gen));
+    mockAuth(t);
+    const result = await bulkConvert({[`walls/${wall.id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+    assert.equal(result.status, "blocked");
+    assert.match(result.detail, reason);
+    assert.equal(network.objects.size, 0);
+    assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+  });
+}
+
+const FIREBASE_URL = "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/" +
+  "Replacement%20Thumbnails%2Fimage_picker42%20(1).jpg?alt=media&token=abc";
+const firebaseWall = (extra: Doc = {}): Doc => ({id: "P4EM", email: "creator@example.com", review: true,
+  wallpaper_url: FIREBASE_URL, wallpaper_thumb: `${RAW}/thumb_image_picker42.jpg`, ...extra});
+async function firebaseFixture(t: TestContext, generationHeader = "1603700046807890") {
+  configure(t);
+  const original = await image(40, 60, "purple");
+  const thumb = await image(20, 30, "orange");
+  const store = installFakeDb(t, {"walls/fb": firebaseWall()});
+  const network = installNetwork(t, {[FIREBASE_URL]: original, [`${RAW}/thumb_image_picker42.jpg`]: thumb},
+    {[FIREBASE_URL]: {"x-goog-generation": generationHeader}});
+  const meta = {generation: "1603700046807890", md5Hash: createHash("md5").update(original).digest("base64"),
+    size: original.length};
+  const thumbAsset = (): GithubAsset => ({repo: "walls", path: "thumb_image_picker42.jpg", url: `${RAW}/thumb_image_picker42.jpg`,
+    recordedUrl: `${RAW}/thumb_image_picker42.jpg`, sha: gitBlobSha(thumb), gitSha: gitBlobSha(thumb), size: thumb.length,
+    commit: "a".repeat(40)});
+  return {store, network, row: (wall: MigrationWall) => buildFirebaseRow(wall, meta, thumbAsset)};
+}
+
+test("a legacy Firebase Storage original converts under the reviewed legacy policy, pinned to its generation", async (t) => {
+  const {store, network, row} = await firebaseFixture(t);
+  const refused = await bulkConvert({"walls/fb": firebaseWall()}, {}, row);
+  assert.match(refused.detail, /reviewed legacy policy requires explicit opt-in/);
+  assert.equal(network.objects.size, 0);
+  const done = await bulkConvert({"walls/fb": firebaseWall()}, {allowReviewedLegacy: true}, row);
+  assert.equal(done.status, "migrated", done.detail);
+  const manifest = store.get("ownedAssets/P4EM") as {original: Doc; thumb: Doc; provenance: Doc; originalUrl: string};
+  assert.deepEqual(manifest.provenance, {kind: "legacy"});
+  assert.deepEqual([manifest.original.repo, manifest.original.path, manifest.original.uid],
+    ["firebase-storage", "prism-wallpapers.appspot.com/Replacement Thumbnails/image_picker42 (1).jpg", "legacy-migration"]);
+  assert.equal(manifest.original.previewObjectId, undefined);
+  assert.equal(manifest.thumb.repo, "walls");
+  assert.ok(stored(manifest.original) && stored(manifest.thumb));
+  assert.equal(manifest.originalUrl, FIREBASE_URL);
+  assert.equal(store.get("walls/fb")?.wallpaper_url, "");
+});
+
+test("a concurrent Firebase conversion is not ready when retained bytes miss the reviewed source pin", async (t) => {
+  const sourceWall = firebaseWall();
+  const {store, row} = await firebaseFixture(t);
+  const result = await bulkConvert({"walls/fb": sourceWall}, {allowReviewedLegacy: true}, row);
+  assert.equal(result.status, "migrated", result.detail);
+  const snapshot: MigrationWall = {docPath: "walls/fb", incarnation: 1, incarnationNanos: 1_000_000, data: sourceWall};
+  const reviewed = row(snapshot);
+  assert.ok(reviewed);
+  const original = reviewed.original;
+  const thumb = reviewed.thumb;
+  assert.ok(original);
+  assert.ok(thumb);
+  original.storagePin = {generation: "1700000000000000", md5: "AAAAAAAAAAAAAAAAAAAAAA=="};
+  const deps = conversionDeps(true, new R2Storage(), db);
+  await assert.rejects(deps.ready(snapshot, original, thumb), /Firebase Storage MD5 mismatch/);
+  assert.equal((store.get("ownedAssets/P4EM") as Doc).status, "ready");
+});
+
+test("a Firebase Storage original whose generation changed after review is refused", async (t) => {
+  const {store, network, row} = await firebaseFixture(t, "1700000000000000");
+  const result = await bulkConvert({"walls/fb": firebaseWall()}, {allowReviewedLegacy: true}, row);
+  assert.equal(result.status, "blocked");
+  assert.match(result.detail, /generation differs/);
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has("ownedAssets/P4EM"), false);
+});
+
+test("Firebase Storage URLs outside the legacy bucket or with extra parameters are not a source", () => {
+  const wall = (url: string): MigrationWall => ({docPath: "walls/fb", incarnation: 1, incarnationNanos: 1, data: firebaseWall({
+    wallpaper_url: url})});
+  const thumb = (): GithubAsset => {
+    throw new Error("unused");
+  };
+  for (const url of [FIREBASE_URL.replace("prism-wallpapers.appspot.com", "evil.appspot.com"),
+    `${FIREBASE_URL}&x=1`, FIREBASE_URL.replace("alt=media", "alt=json"), FIREBASE_URL.replace("https:", "http:"),
+    FIREBASE_URL.replace("Replacement%20Thumbnails%2F", "..%2F")]) {
+    assert.equal(buildFirebaseRow(wall(url), {generation: "1", md5Hash: "x", size: 1}, thumb), null, url);
+  }
+});
+
+test("Worker record reads block on configuration errors and retry on server errors", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const sources = await aiSources(NEW_GEN);
+  let status = 401;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.startsWith(RECORDS)) return new Response(null, {status});
+    const bytes = sources[url];
+    return bytes ? new Response(new Uint8Array(bytes), {status: 200}) : new Response(null, {status: 404});
+  });
+  mockAuth(t);
+  assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+  status = 503;
+  await assert.rejects(convertApprovedWall(String(wall.id)), /record read failed: 503/);
+});
+
+for (const [name, body] of [
+  ["malformed JSON", "{"],
+  ["null JSON", "null"],
+  ["a record with missing fields", JSON.stringify({generationId: NEW_GEN})],
+] as const) {
+  test(`a successful Worker response with ${name} is blocked as a permanent record error`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(NEW_GEN);
+    installFakeDb(t, {[`walls/${wall.id}`]: wall});
+    t.mock.method(globalThis, "fetch", async () => new Response(body, {status: 200}));
+    mockAuth(t);
+    assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+  });
+}
+
+test("a Worker record body read failure remains transient", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const body = new ReadableStream<Uint8Array>({start(controller) {
+    controller.error(new TypeError("Worker response body read failed"));
+  }});
+  t.mock.method(globalThis, "fetch", async () => new Response(body, {status: 200}));
+  mockAuth(t);
+  await assert.rejects(convertApprovedWall(String(wall.id)), /Worker response body read failed/);
+});
+
+test("an invalid Auth email is a permanent AI provenance failure", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const record = aiRecord(NEW_GEN);
+  t.mock.method(globalThis, "fetch", async () => new Response(record, {status: 200}));
+  t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw Object.assign(new Error("invalid email"), {code: "auth/invalid-email"});
+  });
+  assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+});
+
+test("a live Auth account cannot use the reserved AI legacy UID", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const sources = await aiSources(NEW_GEN, aiRecord(NEW_GEN, AI_LEGACY_UID));
+  installNetwork(t, sources);
+  mockAuth(t, {[AI_LEGACY_UID]: {email: "creator@example.com"}});
+  assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+  assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+});
+
+test("a live Auth UID that cannot name an R2 object is permanently blocked before retention", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const sources = await aiSources(NEW_GEN, aiRecord(NEW_GEN, "custom/uid"));
+  const network = installNetwork(t, sources);
+  mockAuth(t, {"custom/uid": {email: "creator@example.com"}});
+  assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+});
+
+test("a recent missing Worker record retries, then converts when the KV record appears", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(RECENT_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const sources = await aiSources(RECENT_GEN, aiRecord(RECENT_GEN));
+  const network = installNetwork(t, sources);
+  mockAuth(t);
+  let present = false;
+  const realFetch = globalThis.fetch;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (String(input).startsWith(`${RECORDS}/${RECENT_GEN}`) && !present) {
+      return new Response(JSON.stringify({error: "generation_not_found"}), {status: 404});
+    }
+    return realFetch(input, init);
+  });
+  await assert.rejects(convertApprovedWall(String(wall.id)), /record is not yet visible/);
+  assert.equal(network.objects.size, 0);
+  present = true;
+  assert.equal(await convertApprovedWall(String(wall.id)), "converted");
+  assert.equal(store.get(`walls/${wall.id}`)?.originalProtected, true);
+});
+
+test("an AI legacy history claim added after proof prevents binding", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const sources = await aiSources(OLD_GEN);
+  const network = installNetwork(t, sources);
+  mockAuth(t);
+  const realFetch = globalThis.fetch;
+  let claimed = false;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await realFetch(input, init);
+    if (!claimed && String(input).startsWith(`${WORKER}/ai/`)) {
+      claimed = true;
+      store.set(`aiGenerations/${OLD_GEN}`, {userId: "someone-else"});
+    }
+    return response;
+  });
+  const result = await bulkConvert({[`walls/${wall.id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+  assert.equal(result.status, "blocked");
+  assert.match(result.detail, /history names another user/);
+  assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+  assert.ok(network.objects.size > 0, "only retained R2 copies may exist before transactional binding");
+});
+
+test("an expired AI wall cannot use legacy fallback for a Worker route 404", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const network = installNetwork(t, await aiSources(OLD_GEN));
+  mockAuth(t);
+  const realFetch = globalThis.fetch;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (String(input).startsWith(`${RECORDS}/${OLD_GEN}`)) {
+      return new Response(JSON.stringify({error: "invalid_request"}), {status: 404});
+    }
+    return realFetch(input, init);
+  });
+  const result = await bulkConvert({[`walls/${wall.id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+  assert.equal(result.status, "blocked");
+  assert.match(result.detail, /unexpected 404/);
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+});
+
+test("a bare Worker 404 cannot authorize expired AI legacy fallback", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+  const network = installNetwork(t, await aiSources(OLD_GEN));
+  mockAuth(t);
+  const realFetch = globalThis.fetch;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (String(input).startsWith(`${RECORDS}/${OLD_GEN}`)) return new Response("not json", {status: 404});
+    return realFetch(input, init);
+  });
+  const result = await bulkConvert({[`walls/${wall.id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+  assert.equal(result.status, "blocked");
+  assert.match(result.detail, /invalid JSON/);
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+});
+
+for (const [name, gen] of [["past the propagation window", genId(Date.now() - 6 * 60 * 1000)],
+  ["in the future", FUTURE_GEN]] as const) {
+  test(`a missing Worker record ${name} is permanently blocked`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(gen);
+    const store = installFakeDb(t, {[`walls/${wall.id}`]: wall});
+    installNetwork(t, await aiSources(gen));
+    mockAuth(t);
+    assert.equal(await convertApprovedWall(String(wall.id)), "blocked");
+    assert.equal(store.has(`ownedAssets/${wall.id}`), false);
+  });
+}
+
+test("Firebase Storage R2 readback checks the reviewed source MD5 and size", async () => {
+  const bytes = Buffer.from("firebase source bytes");
+  const asset = {sha256: sha256(bytes.toString()), object: "private/object", previewObjectId: undefined} as never;
+  await assert.rejects(verifyR2MigrationCopy(asset, undefined, async () => bytes, async () => undefined,
+    {size: bytes.length + 1, md5: createHash("md5").update(bytes).digest("base64")}), /Firebase Storage size mismatch/);
+  await assert.rejects(verifyR2MigrationCopy(asset, undefined, async () => bytes, async () => undefined,
+    {size: bytes.length, md5: "AAAAAAAAAAAAAAAAAAAAAA=="}), /Firebase Storage MD5 mismatch/);
+});
+
+test("legacy Firebase Storage metadata is read without bytes and validated", async (t) => {
+  const path = "prism-wallpapers.appspot.com/Replacement Thumbnails/picker (1).jpg";
+  const requested: string[] = [];
+  let body: Record<string, unknown> = {generation: "1603700046807890", md5Hash: "9cISxVqFwAg9FiaxrnwUJg==", size: "3253176"};
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
+    requested.push(String(input));
+    return new Response(JSON.stringify(body), {status: 200});
+  });
+  assert.deepEqual(await readFirebaseObjectMeta(path),
+    {generation: "1603700046807890", md5Hash: "9cISxVqFwAg9FiaxrnwUJg==", size: 3253176});
+  assert.deepEqual(requested, ["https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/" +
+    "Replacement%20Thumbnails%2Fpicker%20(1).jpg"]);
+  body = {...body, size: "99999999999"};
+  await assert.rejects(readFirebaseObjectMeta(path), /metadata is invalid/);
+  await assert.rejects(readFirebaseObjectMeta("other-bucket/x.jpg"), /outside the legacy bucket/);
 });
