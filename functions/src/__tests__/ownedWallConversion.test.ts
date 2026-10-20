@@ -14,6 +14,8 @@ import {buildAiRow, buildFirebaseRow, convertApprovedWall, convertWall, conversi
   type GithubAsset, type MigrationDeps, type MigrationResult, type MigrationWall,
   type WallInventory} from "../ownedWallConversion";
 import {R2Storage} from "../r2Storage";
+import {buildGithubInventory, createInventoryReport, validateReviewedInventory,
+  type GithubTree} from "../scripts/migrateGithubToR2";
 import {installFakeDb} from "./fakeDb";
 
 type Doc = Record<string, unknown>;
@@ -548,6 +550,12 @@ const aiWall = (gen: string, extra: Doc = {}): Doc => ({id: aiCommunityId(gen), 
   wallpaper_thumb: `${WORKER}/ai/public/${gen}.png`, ...extra});
 const aiRecord = (gen: string, userId = "creator-1") => Buffer.from(JSON.stringify({generationId: gen, userId, width: 1179,
   height: 2048, imageUrl: `${WORKER}/ai/original/${gen}.png`, watermarkedImageUrl: `${WORKER}/ai/public/${gen}.png`}));
+const aiReceipt = (gen: string, userId = "creator-1"): Doc => {
+  const receipt = JSON.parse(String(aiRecord(gen, userId))) as Doc;
+  delete receipt.width;
+  delete receipt.height;
+  return receipt;
+};
 async function aiSources(gen: string, record?: Buffer) {
   // The provider returned 1024x1024 although the wall records the requested 1179x2048.
   return {[`${WORKER}/ai/original/${gen}.png`]: await image(1024, 1024, "red"),
@@ -701,6 +709,104 @@ for (const [name, receipt, reason] of [
     assert.equal(store.has(`ownedAssets/${id}`), false);
   });
 }
+
+for (const [name, userId, user] of [
+  ["disabled author", "creator-1", {email: "creator@example.com", disabled: true}],
+  ["changed author email", "creator-1", {email: "other@example.com"}],
+  ["reserved legacy uid", AI_LEGACY_UID, {email: "creator@example.com"}],
+  ["invalid R2 uid", "creator/1", {email: "creator@example.com"}],
+] as const) {
+  test(`an expired AI wall rejects a receipt for a ${name}`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(OLD_GEN);
+    const id = String(wall.id);
+    const store = installFakeDb(t, {[`walls/${id}`]: wall, [`aiGenerationReceipts/${OLD_GEN}`]: aiReceipt(OLD_GEN, userId)});
+    const network = installNetwork(t, await aiSources(OLD_GEN));
+    mockAuth(t, {[userId]: user});
+    const result = await bulkConvert({[`walls/${id}`]: wall}, {}, buildAiRow);
+    assert.equal(result.status, "blocked");
+    assert.match(result.detail, NOT_OWNER);
+    assert.equal(network.objects.size, 0);
+    assert.equal(store.has(`ownedAssets/${id}`), false);
+  });
+}
+
+for (const [name, receipt, reason] of [
+  ["missing generation id", {...aiReceipt(OLD_GEN), generationId: ""}, /receipt is invalid/],
+  ["wrong image URL", {...aiReceipt(OLD_GEN), imageUrl: `${WORKER}/ai/original/other.png`}, NOT_OWNER],
+] as const) {
+  test(`a ${name} AI receipt blocks reviewed legacy fallback`, async (t) => {
+    configure(t);
+    process.env.STUDIO_SECRET = "studio-secret";
+    const wall = aiWall(OLD_GEN);
+    const id = String(wall.id);
+    const store = installFakeDb(t, {[`walls/${id}`]: wall, [`aiGenerationReceipts/${OLD_GEN}`]: receipt});
+    const network = installNetwork(t, await aiSources(OLD_GEN));
+    mockAuth(t);
+    const result = await bulkConvert({[`walls/${id}`]: wall}, {allowReviewedAiLegacy: true}, buildAiRow);
+    assert.equal(result.status, "blocked");
+    assert.match(result.detail, reason);
+    assert.equal(network.objects.size, 0);
+    assert.equal(store.has(`ownedAssets/${id}`), false);
+  });
+}
+
+test("an invalid live AI record cannot be replaced by a valid receipt", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const id = String(wall.id);
+  const store = installFakeDb(t, {[`walls/${id}`]: wall, [`aiGenerationReceipts/${OLD_GEN}`]: aiReceipt(OLD_GEN)});
+  const network = installNetwork(t, await aiSources(OLD_GEN, aiRecord(OLD_GEN, "someone-else")));
+  mockAuth(t);
+  const result = await bulkConvert({[`walls/${id}`]: wall}, {}, buildAiRow);
+  assert.equal(result.status, "blocked");
+  assert.match(result.detail, NOT_OWNER);
+  assert.ok(network.fetched.some((url) => url.startsWith(`${RECORDS}/${OLD_GEN}`)));
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has(`ownedAssets/${id}`), false);
+});
+
+test("bulk apply accepts a reviewed AI source and proves its expired owner from the receipt", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(OLD_GEN);
+  const id = String(wall.id);
+  const docPath = `walls/${id}`;
+  const migrationWall: MigrationWall = {docPath, incarnation: 1, incarnationNanos: 1_000_000, data: wall};
+  const tree: GithubTree = {truncated: false, entries: []};
+  const options = {apply: false, allowReviewedLegacy: false, owner: "hash", repo: "walls", commit: "a".repeat(40)};
+  const inventory = buildGithubInventory([migrationWall], tree, options);
+  const reviewed = {mode: "dry-run", policy: {allowReviewedLegacy: false, allowReviewedAiLegacy: false},
+    inventory: createInventoryReport(inventory)};
+  const authorized = await validateReviewedInventory(reviewed, inventory, options.commit, false, undefined, false);
+  assert.deepEqual([...authorized], [docPath]);
+
+  const store = installFakeDb(t, {[docPath]: wall, [`aiGenerationReceipts/${OLD_GEN}`]: aiReceipt(OLD_GEN)});
+  const network = installNetwork(t, await aiSources(OLD_GEN));
+  mockAuth(t);
+  const row = inventory.walls[0];
+  assert.ok(row);
+  const dryRunResult: MigrationResult = {docPath, wallId: row.wallId, status: "blocked", detail: "",
+    publicGithubCopiesRemain: true};
+  await convertWall(row, options, conversionDeps(false, null, db), dryRunResult);
+  assert.equal(dryRunResult.status, "would-migrate", dryRunResult.detail);
+  assert.equal(network.objects.size, 0);
+  assert.equal(store.has(`ownedAssets/${id}`), false);
+
+  const changedAuthor = buildGithubInventory([{...migrationWall, data: {...wall, email: "other@example.com"}}], tree, options);
+  await assert.rejects(validateReviewedInventory(reviewed, changedAuthor, options.commit, false, undefined, false),
+    /changed since review/);
+  const result: MigrationResult = {docPath, wallId: row.wallId, status: "blocked", detail: "",
+    publicGithubCopiesRemain: true};
+  await convertWall(row, {...options, apply: true}, conversionDeps(true, new R2Storage(), db), result);
+  assert.equal(result.status, "migrated", result.detail);
+  const manifest = store.get(`ownedAssets/${id}`) as {provenance: Doc; original: Doc};
+  assert.deepEqual(manifest.provenance, {kind: "ai", generationId: OLD_GEN, uid: "creator-1"});
+  assert.equal(manifest.original.uid, "creator-1");
+  assert.ok(network.objects.size > 0);
+});
 
 /** The bulk path: one inventory row through the real Firestore and R2 dependencies. */
 async function bulkConvert(walls: Record<string, Doc>, options: {allowReviewedLegacy?: boolean; allowReviewedAiLegacy?: boolean},
