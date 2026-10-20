@@ -177,6 +177,43 @@ void main() {
   group('links', () {
     Finder linkField() => find.widgetWithText(TextField, 'https://example.com');
 
+    Future<void> selectCoffee(WidgetTester tester) async {
+      await tester.tap(find.bySemanticsLabel('Link type, Custom link'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Buy Me a Coffee'));
+      await tester.tap(find.text('Buy Me a Coffee'));
+      await tester.pumpAndSettle();
+    }
+
+    for (final String host in <String>['buymeacoffee.com', 'buymeacoff.ee']) {
+      testWidgets('a $host link enables Save and is persisted under the stable coffee key', (tester) async {
+        await pumpPanel(tester);
+        await selectCoffee(tester);
+
+        await tester.enterText(find.widgetWithText(TextField, ''), 'https://$host/prism');
+        await tester.pump();
+
+        expect(find.text('Enter a valid Buy Me a Coffee link.'), findsNothing);
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save changes'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        expect((firestore.writes.single.data!['links'] as Map)['buymeacoffee'], 'https://$host/prism');
+      });
+    }
+
+    testWidgets('a coffee domain in an unrelated URL shows an error and blocks Save', (tester) async {
+      await pumpPanel(tester);
+      await selectCoffee(tester);
+
+      await tester.enterText(find.widgetWithText(TextField, ''), 'https://example.com/buymeacoff.ee');
+      await tester.pump();
+
+      expect(find.text('Enter a valid Buy Me a Coffee link.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+      expect(firestore.writes, isEmpty);
+    });
+
     testWidgets('a link with an unsafe scheme shows an inline error and blocks saving', (tester) async {
       await pumpPanel(tester);
 
