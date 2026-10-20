@@ -115,8 +115,8 @@ reach that step.
 | Android aab output | `build/app/outputs/bundle/release/app-release.aab` |
 | iOS ipa output | `build/ios/ipa/Prism.ipa` |
 | Functions region | `asia-south1` (all callables) |
-| Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_KEY` |
-| Functions plain env vars | `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS` |
+| Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
+| Functions plain env vars | `FUNCTIONS_ENV_KEYS` in `Makefile`: `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`, `R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL` |
 
 ## Flags
 
@@ -221,7 +221,8 @@ doppler secrets set <NAME> --project prism --config prd
   version V1** (`sk_...`). `syncSubscription` calls the v1 API.
 - `STUDIO_SECRET`: shared secret for the Prism Studio pipeline (`functions/src/studio/process.ts`).
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`: Studio review alerts (`functions/src/studio/telegram.ts`).
-- `FAL_KEY`: fal.ai key for the Depth Effect detector (`functions/src/wallDepth.ts`).
+- `FAL_API_KEY`: fal.ai key for the Depth Effect detector (`functions/src/wallDepth.ts`).
+- `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`: Cloudflare R2 S3 token for the private and preview wall buckets (`functions/src/r2Storage.ts`). The R2 routing names (`R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL`) are plain env vars: set them in Doppler `prd` too, because `make functions-env` ships them and a function with partial R2 config fails closed.
 
 Then the agent pipes them into Firebase after the human's go. Values are never printed:
 ```sh
