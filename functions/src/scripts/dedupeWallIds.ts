@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import {randomWallId, type Rng} from "../studio/ids";
 
 export type WallRow = {docId: string; id: string; review: boolean; createdAtMs: number; url: string; thumb: string};
-export type DedupeOptions = {apply: boolean; rng?: Rng};
+export type DedupeOptions = {apply: boolean};
 export type DedupeCounts = {groups: number; renamed: number; favouritesMoved: number; favouritesAmbiguous: number};
 
 const USER_CONCURRENCY = 50;
@@ -12,15 +12,32 @@ export const USAGE = `Usage: node lib/scripts/dedupeWallIds.js [--apply]
 
 Finds walls that share one logical id (old 4-character ids collided). In each group it keeps the approved,
 oldest wall and gives every other wall a new 10-character id. Favourites under usersv2/*/images/{oldId}
-whose url or thumb matches a renamed wall move to the new id. A dry run reads only and writes nothing.`;
+whose url or thumb matches a renamed wall move to the new id. A dry run reads only and writes nothing.
+New ids come from the wall's doc id, and favourites move before walls are renamed, so a stopped
+--apply run can be run again.`;
 
 const text = (value: unknown): string => typeof value === "string" ? value.trim() : "";
 
 function millis(value: unknown): number {
   if (value instanceof admin.firestore.Timestamp) return value.toMillis();
   if (value instanceof Date) return value.getTime();
-  if (typeof value === "string") return Date.parse(value) || Number.MAX_SAFE_INTEGER;
-  return Number.MAX_SAFE_INTEGER;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const parsed = typeof value === "string" ? Date.parse(value) : NaN;
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+}
+
+const iso = (ms: number): string => ms === Number.MAX_SAFE_INTEGER ? "unknown" : new Date(ms).toISOString();
+
+/** A seeded rng (FNV-1a then mulberry32), so one wall always gets the same new id. */
+export function seededRng(seed: string): Rng {
+  let state = 2166136261;
+  for (let i = 0; i < seed.length; i++) state = Math.imul(state ^ seed.charCodeAt(i), 16777619);
+  return () => {
+    state = state + 0x6d2b79f5 | 0;
+    let t = Math.imul(state ^ state >>> 15, 1 | state);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
 }
 
 export function toWallRow(docId: string, data: admin.firestore.DocumentData): WallRow {
@@ -65,27 +82,15 @@ export async function dedupeWallIds(
 
   for (const [keeper, ...others] of groups) {
     log(`id ${keeper.id}: keep walls/${keeper.docId} review=${keeper.review} ` +
-      `createdAt=${new Date(keeper.createdAtMs).toISOString()} url=${keeper.url || keeper.thumb}`);
+      `createdAt=${iso(keeper.createdAtMs)} url=${keeper.url || keeper.thumb}`);
     for (const wall of others) {
-      let next = randomWallId(options.rng);
-      while (taken.has(next)) next = randomWallId(options.rng);
+      const rng = seededRng(wall.docId);
+      let next = randomWallId(rng);
+      while (taken.has(next)) next = randomWallId(rng);
       taken.add(next);
       newIds.set(wall.docId, next);
       log(`id ${wall.id}: rename walls/${wall.docId} to ${next} review=${wall.review} ` +
-        `createdAt=${new Date(wall.createdAtMs).toISOString()} url=${wall.url || wall.thumb}`);
-      if (!options.apply) continue;
-      await db.runTransaction(async (tx) => {
-        const ref = db.collection("walls").doc(wall.docId);
-        const [current, clash] = await Promise.all([
-          tx.get(ref),
-          tx.get(db.collection("walls").where("id", "==", next).limit(1)),
-        ]);
-        if (text(current.data()?.id) !== wall.id || !clash.empty) {
-          throw new Error(`walls/${wall.docId} changed or ${next} is taken; run again`);
-        }
-        tx.update(ref, {id: next});
-      });
-      counts.renamed += 1;
+        `createdAt=${iso(wall.createdAtMs)} url=${wall.url || wall.thumb}`);
     }
   }
   if (groups.length === 0) {
@@ -93,6 +98,7 @@ export async function dedupeWallIds(
     return counts;
   }
 
+  // Favourites move first. A rerun after a stop still sees the groups and computes the same new ids.
   const users = (await db.collection("usersv2").select().get()).docs;
   log(`checking favourites of ${users.length} users`);
   for (let i = 0; i < users.length; i += USER_CONCURRENCY) {
@@ -121,6 +127,26 @@ export async function dedupeWallIds(
         });
       }
     }));
+  }
+
+  if (options.apply) {
+    for (const [, ...others] of groups) {
+      for (const wall of others) {
+        const next = newIds.get(wall.docId) as string;
+        await db.runTransaction(async (tx) => {
+          const ref = db.collection("walls").doc(wall.docId);
+          const [current, clash] = await Promise.all([
+            tx.get(ref),
+            tx.get(db.collection("walls").where("id", "==", next).limit(1)),
+          ]);
+          if (text(current.data()?.id) !== wall.id || !clash.empty) {
+            throw new Error(`walls/${wall.docId} changed or ${next} is taken; run again`);
+          }
+          tx.update(ref, {id: next});
+        });
+        counts.renamed += 1;
+      }
+    }
   }
 
   log(`done groups=${counts.groups} renamed=${counts.renamed} favouritesMoved=${counts.favouritesMoved} ` +
