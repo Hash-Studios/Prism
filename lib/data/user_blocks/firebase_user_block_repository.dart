@@ -466,6 +466,9 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     } finally {
       _retryingBlockUsers.remove(userId);
       if (identical(_retryCancellation[userId], cancellation)) _retryCancellation.remove(userId);
+      if (cancellation.isCompleted && !_disposed && _activeUserId == userId && _session.currentUser.id == userId) {
+        _startPendingBlockRetry(userId);
+      }
     }
   }
 

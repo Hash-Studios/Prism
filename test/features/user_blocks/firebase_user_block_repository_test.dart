@@ -27,7 +27,7 @@ class _MockSession extends Mock implements SessionRepository {}
 class _FakeFunctions extends FirebaseFunctionsPlatform {
   _FakeFunctions(this.onCall) : super(null, 'asia-south1');
 
-  final Future<dynamic> Function(String name, dynamic parameters) onCall;
+  Future<dynamic> Function(String name, dynamic parameters) onCall;
 
   @override
   FirebaseFunctionsPlatform delegateFor({FirebaseApp? app, required String region}) => this;
@@ -95,6 +95,14 @@ class _RetryFailingStore extends DurableJsonStore {
 FakeDocRow _blocked(String uid, String email, {Object? createdAt, String? username}) =>
     (id: uid, data: <String, dynamic>{'blockedEmail': email, 'blockedUsername': ?username, 'createdAt': ?createdAt});
 
+Future<void> _waitForWatchCount(_WatchingClient client, int count) async {
+  final DateTime deadline = DateTime.now().add(const Duration(seconds: 2));
+  while (client.watchSpecs.length < count && DateTime.now().isBefore(deadline)) {
+    await Future<void>.delayed(Duration.zero);
+  }
+  expect(client.watchSpecs.length, greaterThanOrEqualTo(count));
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory storeDirectory;
@@ -106,6 +114,7 @@ void main() {
   late StreamController<PrismUsersV2> sessionUsers;
   late _WatchingClient client;
   late FirebaseFunctionsPlatform previousFunctions;
+  late _FakeFunctions fakeFunctions;
   final Set<FirebaseUserBlockRepository> repositories = <FirebaseUserBlockRepository>{};
 
   FirebaseUserBlockRepository createRepository([DurableJsonStore? store]) {
@@ -118,6 +127,8 @@ void main() {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
     previousFunctions = FirebaseFunctionsPlatform.instance;
+    fakeFunctions = _FakeFunctions((name, parameters) async => <String, Object?>{'ok': true});
+    FirebaseFunctionsPlatform.instance = fakeFunctions;
   });
 
   setUp(() async {
@@ -127,6 +138,7 @@ void main() {
     client = _WatchingClient();
     when(() => session.watchCurrentUser()).thenAnswer((_) => sessionUsers.stream);
     when(() => session.currentUser).thenReturn(profileUser(id: 'me'));
+    fakeFunctions.onCall = (name, parameters) async => <String, Object?>{'ok': true};
   });
 
   tearDown(() async {
@@ -278,6 +290,96 @@ void main() {
         },
       ),
     );
+  });
+
+  test('restarts a cancelled owner retry when that owner becomes active again', () async {
+    const String owner = 'retry-owner';
+    final Completer<void> firstSendStarted = Completer<void>();
+    final Completer<void> releaseFirstSend = Completer<void>();
+    final Completer<void> replacementSendStarted = Completer<void>();
+    var sends = 0;
+    await DurableJsonStore('user_blocks').write('$owner::target', <String, Object?>{
+      'owner': owner,
+      'targetId': 'target',
+      'email': 'target@example.com',
+      'operationId': 'retry-owner:target:1',
+      'desired': true,
+      'status': 'pending',
+    });
+    fakeFunctions.onCall = (name, parameters) async {
+      sends++;
+      if (sends == 1) {
+        firstSendStarted.complete();
+        await releaseFirstSend.future;
+      } else {
+        replacementSendStarted.complete();
+      }
+      return <String, Object?>{'ok': true};
+    };
+    final repo = createRepository();
+
+    when(() => session.currentUser).thenReturn(profileUser(id: owner));
+    sessionUsers.add(profileUser(id: owner));
+    try {
+      await firstSendStarted.future.timeout(const Duration(seconds: 2));
+      when(() => session.currentUser).thenReturn(profileUser(id: 'other-owner'));
+      sessionUsers.add(profileUser(id: 'other-owner'));
+      await _waitForWatchCount(client, 2);
+      final Future<Set<String>> returnedOwnerSnapshot = repo.watchBlockedCreatorEmails().firstWhere(
+        (emails) => emails.contains('target@example.com'),
+      );
+      when(() => session.currentUser).thenReturn(profileUser(id: owner));
+      sessionUsers.add(profileUser(id: owner));
+      await _waitForWatchCount(client, 3);
+      await returnedOwnerSnapshot.timeout(const Duration(seconds: 2));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sends, 1);
+      releaseFirstSend.complete();
+      await replacementSendStarted.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => throw TimeoutException('replacement retry did not start after the original send completed'),
+      );
+      expect(sends, 2);
+    } finally {
+      if (!releaseFirstSend.isCompleted) releaseFirstSend.complete();
+      await repo.dispose();
+    }
+  });
+
+  test('dispose does not restart a cancelled retry after its send completes', () async {
+    const String owner = 'disposed-retry-owner';
+    final Completer<void> sendStarted = Completer<void>();
+    final Completer<void> releaseSend = Completer<void>();
+    var sends = 0;
+    await DurableJsonStore('user_blocks').write('$owner::target', <String, Object?>{
+      'owner': owner,
+      'targetId': 'target',
+      'operationId': 'disposed-retry-owner:target:1',
+      'desired': true,
+      'status': 'pending',
+    });
+    fakeFunctions.onCall = (name, parameters) async {
+      sends++;
+      sendStarted.complete();
+      await releaseSend.future;
+      return <String, Object?>{'ok': true};
+    };
+    final repo = createRepository();
+    when(() => session.currentUser).thenReturn(profileUser(id: owner));
+    sessionUsers.add(profileUser(id: owner));
+    try {
+      await sendStarted.future.timeout(const Duration(seconds: 2));
+      final Future<void> firstDispose = repo.dispose();
+      expect(identical(firstDispose, repo.dispose()), isTrue);
+      releaseSend.complete();
+      await firstDispose;
+      expect(sends, 1);
+    } finally {
+      if (!releaseSend.isCompleted) releaseSend.complete();
+      await repo.dispose();
+    }
   });
 
   test('clearForUser waits for prior block writes and prevents later snapshot writes', () async {
@@ -433,7 +535,7 @@ void main() {
     final Completer<void> releaseSend = Completer<void>();
     final Completer<void> newerSendStarted = Completer<void>();
     final Completer<void> releaseNewerSend = Completer<void>();
-    FirebaseFunctionsPlatform.instance = _FakeFunctions((name, parameters) async {
+    fakeFunctions.onCall = (name, parameters) async {
       if (name == 'blockUser') {
         sendStarted.complete();
         await releaseSend.future;
@@ -442,7 +544,7 @@ void main() {
         await releaseNewerSend.future;
       }
       return <String, Object?>{'ok': true};
-    });
+    };
     final repo = createRepository();
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
