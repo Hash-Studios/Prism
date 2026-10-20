@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -73,6 +75,28 @@ void main() {
     expect(find.text(AppLocalizationsEn().premiumPageTryAgain), findsOneWidget);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), hasLength(1));
     expect(analytics.events.whereType<PaywallResultEvent>(), hasLength(1));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a RevenueCat call that never settles stops loading and offers a retry', (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      purchasesChannel,
+      (_) => Completer<Object?>().future,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const PremiumPage(),
+      ),
+    );
+    await tester.tap(find.text(AppLocalizationsEn().premiumPageViewPlans));
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pump();
+
+    expect(find.text(AppLocalizationsEn().premiumPagePlansUnavailable), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().premiumPageTryAgain), findsOneWidget);
+    expect(analytics.events.whereType<PaywallResultEvent>().single.result, PaywallResultValue.rcError);
     await tester.pump(const Duration(seconds: 2));
   });
 }
