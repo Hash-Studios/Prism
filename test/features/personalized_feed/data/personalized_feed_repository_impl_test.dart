@@ -640,7 +640,6 @@ void main() {
       settings: settings,
       tasteSignals: signals,
     );
-    await repository.fetch(_firstPage);
     const wallhaven = WallhavenWallpaper(
       core: WallpaperCore(
         id: 'wh',
@@ -665,11 +664,8 @@ void main() {
         const PexelsFavouriteWall(id: 'px', wallpaper: pexels),
       ]),
     );
-    final seedDeadline = DateTime.now().add(const Duration(seconds: 2));
-    while (!signals.isSeeded && DateTime.now().isBefore(seedDeadline)) {
-      await Future<void>(() {});
-    }
-    expect(signals.isSeeded, isTrue, reason: 'Favourite signals should finish seeding within two seconds.');
+    await repository.fetch(_firstPage);
+    expect(signals.isSeeded, isTrue);
     expect(signals.read().map((signal) => signal.action), everyElement(TasteAction.favourite));
     expect(signals.read(), hasLength(2));
     const item = PexelsFeedItem(id: 'px', wallpaper: pexels);
