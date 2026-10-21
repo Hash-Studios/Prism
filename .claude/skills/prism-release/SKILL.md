@@ -39,13 +39,10 @@ Run these from the repo root.
    Compare against the keys in `lib/env/env.dart` (`GH_USERNAME`, `GH_REPO_WALLS`,
    `GH_REPO_SETUPS`, `RC_API_KEY`, `RC_ANDROID_API_KEY`, `RC_IOS_API_KEY`, `PEXELS_API_KEY`,
    `SENTRY_DSN`, `SENTRY_ENV`, `SENTRY_RELEASE`, `SENTRY_DIST`, `SENTRY_ENABLED`,
-   `MIXPANEL_TOKEN`, `MIXPANEL_ENABLED`). **Known gap, verified today:** `prd` does not have
-   `RC_API_KEY` / `RC_ANDROID_API_KEY` / `RC_IOS_API_KEY`. It only has
-   `REVENUECAT_ENTITLEMENT_ID`, `REVENUECAT_IOS_API_KEY`, `REVENUECAT_USE_IN_MEMORY`. A release
-   build with `DOPPLER_CONFIG=prd` will fail `make doppler-check` (which `build`, `build-aab`,
-   `build-ios`, and `build-ipa` all depend on) until this is fixed in Doppler. Stop and tell the
-   human; do not silently fall back to `dev` for a release build, and do not add the missing keys
-   to Doppler yourself (see "Secrets" below).
+   `MIXPANEL_TOKEN`, `MIXPANEL_ENABLED`). If a key is missing, `make doppler-check` (which `build`,
+   `build-aab`, `build-ios`, and `build-ipa` all depend on) fails. Stop and tell the human; do not
+   fall back to `dev` for a release build, and do not add the missing keys to Doppler yourself
+   (see "Secrets" below).
    `make doppler-check` runs this same comparison for the config in `DOPPLER_CONFIG` (default
    `dev`); `make secrets-print DOPPLER_CONFIG=<config>` prints the config with every value masked.
 
