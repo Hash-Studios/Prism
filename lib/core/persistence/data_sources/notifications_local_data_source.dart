@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
-import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:injectable/injectable.dart';
@@ -18,7 +17,7 @@ String buildInAppNotificationId({
 
 @lazySingleton
 class NotificationsLocalDataSource {
-  NotificationsLocalDataSource([@ignoreParam LocalStore? _]) : this._(DurableJsonStore('notification_inbox'));
+  NotificationsLocalDataSource() : this._(DurableJsonStore('notification_inbox'));
 
   NotificationsLocalDataSource.withStore(DurableJsonStore store) : this._(store);
 
@@ -157,24 +156,6 @@ class NotificationsLocalDataSource {
     });
   }
 
-  Future<void> clearLastFetchAtUtc() {
-    final String owner = _ownerId;
-    final int generation = _ownerGeneration;
-    final String key = _keyFor(owner);
-    return _serialize(() async {
-      if (!_isCurrent(owner, generation)) return;
-      final record = await _store.read(key);
-      if (!_isCurrent(owner, generation)) return;
-      if (record == null) return;
-      record.remove('lastFetchAtUtc');
-      if ((record['items'] as List?)?.isEmpty ?? true) {
-        await _store.delete(key);
-      } else {
-        await _store.write(key, record);
-      }
-    });
-  }
-
   bool _isCurrent(String owner, int generation) => owner == _ownerId && generation == _ownerGeneration;
 
   Future<void> _serialize(Future<void> Function() operation) {
@@ -224,6 +205,7 @@ class NotificationsLocalDataSource {
     'route': item.route,
     'wallId': item.wallId,
     'followerEmail': item.followerEmail,
+    'kind': item.kind?.name,
     'copyKind': item.copyKind,
     'copyArgs': item.copyArgs,
   };
@@ -252,6 +234,7 @@ class NotificationsLocalDataSource {
       route: map['route']?.toString(),
       wallId: map['wallId']?.toString(),
       followerEmail: map['followerEmail']?.toString(),
+      kind: InAppNotificationKind.values.where((kind) => kind.name == map['kind']).firstOrNull,
       copyKind: map['copyKind']?.toString(),
       copyArgs: toJsonMap(map['copyArgs']).cast<String, Object?>(),
     );

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
@@ -26,6 +27,46 @@ void main() {
         createdAt: createdAt,
         read: read,
       );
+
+  test('every structured kind survives a durable reopen without English copy heuristics', () async {
+    final store = DurableJsonStore('notification_kinds', directory: directory);
+    final local = NotificationsLocalDataSource.withStore(store)..setOwner('account-a');
+    await local.writeAll(<InAppNotificationEntity>[
+      for (final kind in InAppNotificationKind.values)
+        notification(kind.name, DateTime.utc(2026), body: '通知').copyWith(title: 'お知らせ', kind: kind),
+    ]);
+
+    final reopened = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notification_kinds', directory: directory),
+    )..setOwner('account-a');
+    expect(
+      <String, InAppNotificationKind?>{for (final item in await reopened.readAll()) item.id: item.kind},
+      <String, InAppNotificationKind>{for (final kind in InAppNotificationKind.values) kind.name: kind},
+    );
+  });
+
+  test('legacy missing and unknown kind values decode without inventing a kind', () async {
+    final store = DurableJsonStore('notification_legacy_kinds', directory: directory);
+    await store.write('owner:${base64Url.encode(utf8.encode('account-a'))}', <String, Object?>{
+      'items': <Map<String, Object?>>[
+        <String, Object?>{'id': 'missing'},
+        <String, Object?>{'id': 'unknown', 'kind': 'futureKind'},
+        <String, Object?>{'id': 'old-index', 'kind': 1},
+        <String, Object?>{'id': 'known', 'kind': 'wallApproved'},
+      ],
+    });
+    final local = NotificationsLocalDataSource.withStore(store)..setOwner('account-a');
+
+    expect(
+      <String, InAppNotificationKind?>{for (final item in await local.readAll()) item.id: item.kind},
+      <String, InAppNotificationKind?>{
+        'missing': null,
+        'unknown': null,
+        'old-index': null,
+        'known': InAppNotificationKind.wallApproved,
+      },
+    );
+  });
 
   test('notification records and fetch watermark remain isolated by account', () async {
     final store = DurableJsonStore('notifications-test', directory: directory);
@@ -56,7 +97,7 @@ void main() {
     expect((await afterRestart.readAll()).single.id, notification.id);
   });
 
-  test('inbox mutations preserve read state and clear the fetch watermark without losing items', () async {
+  test('inbox mutations preserve read state and clearAll resets items and the fetch watermark', () async {
     final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
       DurableJsonStore('notifications_mutations', directory: directory),
     )..setOwner('account-a');
@@ -73,14 +114,14 @@ void main() {
     await local.deleteByIds(<String>[]);
     await local.deleteByIds(<String>['second', 'missing']);
     await local.setLastFetchAtUtc(DateTime.utc(2026, 10, 21));
-    await local.clearLastFetchAtUtc();
-    expect(await local.lastFetchAtUtc(), isNull);
+    expect(await local.lastFetchAtUtc(), DateTime.utc(2026, 10, 21));
     expect((await local.readAll()).map((item) => item.id), <String>['first']);
 
     await local.removeWhere((item) => item.id == 'first');
     await local.setLastFetchAtUtc(DateTime.utc(2026, 10, 22));
-    await local.clearLastFetchAtUtc();
+    await local.clearAll();
     expect(await local.readAll(), isEmpty);
+    expect(await local.lastFetchAtUtc(), isNull);
   });
 
   test('clearForUser removes only the selected owner record', () async {
