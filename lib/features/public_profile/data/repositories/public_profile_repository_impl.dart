@@ -343,16 +343,35 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   List<String> _uniqueEmails(List<String> emails) =>
       emails.map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toSet().toList(growable: false);
 
-  /// The `email` values to query for [keys]. Firestore compares strings exactly and
-  /// legacy users keep their mixed-case address, so query each relation spelling as
-  /// well as the lowercase key, the same way `findUserByEmail` does on the server.
-  List<String> _lookupEmails(List<String> keys, List<String> allEmails) {
-    final Set<String> wanted = keys.toSet();
-    return <String>{
-      for (final email in allEmails.map((e) => e.trim()))
-        if (wanted.contains(email.toLowerCase())) email,
-      ...keys,
-    }.toList(growable: false);
+  /// The `email` spellings to query for each of [keys], best first: the spellings in
+  /// [allEmails] in list order, then the lowercase key. Firestore compares strings
+  /// exactly and legacy users keep their mixed-case address, so this matches
+  /// `findUserByEmail` on the server. A stored spelling that no relation entry
+  /// carries (`Alice@Example.com` behind only `alice@example.com`) is not found.
+  Map<String, List<String>> _spellingsByKey(List<String> keys, List<String> allEmails) {
+    final Map<String, List<String>> spellings = <String, List<String>>{for (final key in keys) key: <String>[]};
+    for (final email in allEmails.map((e) => e.trim())) {
+      final List<String>? list = spellings[email.toLowerCase()];
+      if (list != null && !list.contains(email)) list.add(email);
+    }
+    for (final MapEntry<String, List<String>> entry in spellings.entries) {
+      if (!entry.value.contains(entry.key)) entry.value.add(entry.key);
+    }
+    return spellings;
+  }
+
+  /// One row per key: the row whose email comes first in [spellings], whatever order Firestore used.
+  Map<String, _UserRow> _bestRowByKey(Iterable<_UserRow> rows, Map<String, List<String>> spellings) {
+    final Map<String, _UserRow> best = <String, _UserRow>{};
+    for (final row in rows) {
+      final String email = row.doc.email.trim();
+      final String key = email.toLowerCase();
+      final int rank = spellings[key]?.indexOf(email) ?? -1;
+      if (rank < 0) continue;
+      final _UserRow? current = best[key];
+      if (current == null || rank < spellings[key]!.indexOf(current.doc.email.trim())) best[key] = row;
+    }
+    return best;
   }
 
   UserSummaryEntity _toSummary(_UserRow row, Set<String> followingSet) {
@@ -387,7 +406,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       final String pageIdentity = sha256.convert(utf8.encode(pageEmails.join(','))).toString();
       final String cacheKey = '$owner::summaries:$page:$pageIdentity';
 
-      final lookupEmails = _lookupEmails(pageEmails, allEmails);
+      final Map<String, List<String>> spellings = _spellingsByKey(pageEmails, allEmails);
+      final List<String> lookupEmails = spellings.values.expand((e) => e).toList(growable: false);
       // Firestore whereIn is limited to 10 items per query, so chunk the page.
       final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
         for (int i = 0; i < lookupEmails.length; i += 10)
@@ -411,12 +431,13 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       ]);
 
       final followingSet = _currentUserFollowing();
-      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{};
-      for (final row in chunkedResults.expand((rows) => rows)) {
-        byEmail.putIfAbsent(row.doc.email.trim().toLowerCase(), () => _toSummary(row, followingSet));
-      }
+      final Map<String, _UserRow> byEmail = _bestRowByKey(chunkedResults.expand((rows) => rows), spellings);
       // Preserve the original ordering of the input email list.
-      final ordered = pageEmails.map((e) => byEmail[e]).whereType<UserSummaryEntity>().toList(growable: false);
+      final ordered = pageEmails
+          .map((e) => byEmail[e])
+          .whereType<_UserRow>()
+          .map((row) => _toSummary(row, followingSet))
+          .toList(growable: false);
       if (_snapshotOwner == owner) {
         try {
           await _writeSnapshot(
@@ -458,37 +479,71 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final List<String> unique = _lookupEmails(_uniqueEmails(scopeEmails), scopeEmails);
+      final Map<String, List<String>> spellings = _spellingsByKey(_uniqueEmails(scopeEmails), scopeEmails);
       final Set<String> followingSet = _currentUserFollowing();
 
-      // One scoped prefix query per 30 emails (the whereIn limit). Each chunk
-      // is ordered by usernameLower, so its top [_searchLimit] covers the overall top.
-      final List<List<_UserRow>> chunks = await Future.wait(<Future<List<_UserRow>>>[
-        for (int i = 0; i < unique.length; i += _searchChunkSize)
+      // One scoped prefix query per 30 emails (the whereIn limit). All spellings of a
+      // key share a chunk where they fit, and each extra spelling adds one to the
+      // limit, so case duplicates cannot crowd a member out of the chunk's top
+      // [_searchLimit]. Like the summaries limit, this assumes one user per email.
+      final List<List<String>> chunks = <List<String>>[];
+      for (final List<String> group in spellings.values) {
+        if (chunks.isEmpty || chunks.last.length + group.length > _searchChunkSize) chunks.add(<String>[]);
+        for (final email in group) {
+          if (chunks.last.length == _searchChunkSize) chunks.add(<String>[]);
+          chunks.last.add(email);
+        }
+      }
+      final List<List<_UserRow>> results = await Future.wait(<Future<List<_UserRow>>>[
+        for (final chunk in chunks)
           _firestoreClient.query<_UserRow>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.usersV2,
               sourceTag: 'public_profile.search_by_username',
               filters: <FirestoreFilter>[
-                FirestoreFilter(
-                  field: 'email',
-                  op: FirestoreFilterOp.whereIn,
-                  value: unique.sublist(i, math.min(i + _searchChunkSize, unique.length)),
-                ),
+                FirestoreFilter(field: 'email', op: FirestoreFilterOp.whereIn, value: chunk),
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: q),
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isLessThan, value: '$q\uf8ff'),
               ],
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'usernameLower')],
-              limit: _searchLimit,
+              limit: _searchLimit + chunk.length - chunk.map((e) => e.toLowerCase()).toSet().length,
             ),
             (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
           ),
       ]);
+      final Map<String, _UserRow> best = _bestRowByKey(results.expand((rows) => rows), spellings);
 
-      final Set<String> seen = <String>{};
-      final List<_UserRow> rows =
-          chunks.expand((rows) => rows).where((row) => seen.add(row.doc.email.trim().toLowerCase())).toList()
-            ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
+      // A key matched only through a lower spelling may have a better-spelled user
+      // who did not match the query or sorts below the top. Either way that user,
+      // not the stand-in, owns the key, so drop the key if such a user exists.
+      final List<String> better = <String>[
+        for (final MapEntry<String, _UserRow> entry in best.entries)
+          ...spellings[entry.key]!.takeWhile((email) => email != entry.value.doc.email.trim()),
+      ];
+      final List<List<_UserRow>> owners = await Future.wait(<Future<List<_UserRow>>>[
+        for (int i = 0; i < better.length; i += _searchChunkSize)
+          _firestoreClient.query<_UserRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.usersV2,
+              sourceTag: 'public_profile.search_by_username.exact_spelling',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(
+                  field: 'email',
+                  op: FirestoreFilterOp.whereIn,
+                  value: better.sublist(i, math.min(i + _searchChunkSize, better.length)),
+                ),
+              ],
+              limit: math.min(_searchChunkSize, better.length - i),
+            ),
+            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+          ),
+      ]);
+      for (final row in owners.expand((rows) => rows)) {
+        best.remove(row.doc.email.trim().toLowerCase());
+      }
+
+      final List<_UserRow> rows = best.values.toList()
+        ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
       return Result.success(
         rows.take(_searchLimit).map((row) => _toSummary(row, followingSet)).toList(growable: false),
       );
