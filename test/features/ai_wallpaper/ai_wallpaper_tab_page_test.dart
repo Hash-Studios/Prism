@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -28,6 +29,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_firestore_client.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
   _FakeConnectivityService({this.online = true});
@@ -118,12 +120,13 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
 }
 
 AiGenerationRecord _record({
+  String id = 'generation-1',
   String? submittedWallId,
   String userId = 'user-1',
   String imageUrl = '',
   String watermarkedImageUrl = '',
 }) => AiGenerationRecord(
-  id: 'generation-1',
+  id: id,
   userId: userId,
   createdAt: DateTime.utc(2026),
   prompt: 'A quiet mountain lake',
@@ -1066,6 +1069,55 @@ void main() {
     submission.complete(WallSubmissionResult.submitted);
     await tester.pump();
 
-    expect(repository.savedRecords.single.submittedWallId, 'AIGENERATION');
+    expect(repository.savedRecords.single.submittedWallId, 'AI26B598D3D55679CADFAA60FFA00EAAE58');
+  });
+
+  testWidgets('real AI submit writes the same full-generation identity as backend provenance', (tester) async {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    final firestore = FakeFirestoreClient();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..email = 'maker@example.com'
+      ..loggedIn = true
+      ..premium = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    const generation = 'gen_mlt7o22q_7a9688a037a47de6';
+    const previewUrl = 'https://prismwalls.com/api/ai/assets/ai/public/$generation.png';
+    final repository = _FakeAiGenerationRepository(
+      _record(id: generation, imageUrl: previewUrl, watermarkedImageUrl: previewUrl),
+      Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
+    await tester.pumpAndSettle();
+
+    final wall = firestore.writes.singleWhere((write) => write.collection == 'walls').data!;
+    expect(wall['id'], 'AI2B83C297CF7C420FF33FA03823705EA95');
+    expect(wall['aiGenerationId'], generation);
+    expect(wall['isAiGenerated'], true);
+    expect(wall['wallpaper_url'], previewUrl);
+    expect(wall['wallpaper_thumb'], previewUrl);
+    expect(repository.savedRecords.single.submittedWallId, 'AI2B83C297CF7C420FF33FA03823705EA95');
   });
 }
