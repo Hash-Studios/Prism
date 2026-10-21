@@ -290,11 +290,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
   );
-  gh.lazySingleton<_i312.PexelsWallpaperRepository>(
-    () => _i914.PexelsWallpaperRepositoryImpl(
-      gh<_i954.FeedCacheLocalDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i360.BadgeRepository>(() => _i700.BadgeRepositoryImpl());
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
   gh.lazySingleton<_i601.CacheMaintenanceService>(
@@ -391,6 +386,11 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i937.UpdateThemeUseCase>(
     () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
+  );
+  gh.lazySingleton<_i312.PexelsWallpaperRepository>(
+    () => _i914.PexelsWallpaperRepositoryImpl(
+      gh<_i954.FeedCacheLocalDataSource>(),
+    ),
   );
   gh.factory<_i693.ShopBloc>(
     () => _i693.ShopBloc(gh<_i1073.SettingsLocalDataSource>()),

@@ -31,6 +31,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
 
   String? _lastDocId;
   bool _hasMore = true;
+  int _feedGeneration = 0;
   static const int _pageSize = 24;
   static const int _feedTtlHours = 6;
   static const Duration _queryTimeout = Duration(seconds: 10);
@@ -41,12 +42,15 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   @override
   Future<Result<List<PrismWallpaper>>> fetchFeed({required bool refresh}) async {
     if (refresh) {
+      _feedGeneration++;
       _lastDocId = null;
       _hasMore = true;
     }
+    final int generation = _feedGeneration;
 
     try {
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      if (generation != _feedGeneration) return Result.success(const <PrismWallpaper>[]);
       final List<_PrismRow> traversedRows = <_PrismRow>[];
       final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
       String? nextCursor = refresh ? null : _lastDocId;
@@ -70,6 +74,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
               (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
             )
             .timeout(_queryTimeout);
+        if (generation != _feedGeneration) return Result.success(const <PrismWallpaper>[]);
         if (batch.isEmpty) {
           hasMoreSourceRows = false;
           break;
@@ -101,18 +106,24 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         hasMoreSourceRows = true;
       }
 
-      _lastDocId = traversedRows.isEmpty ? null : traversedRows.last.docId;
+      _lastDocId = nextCursor;
       _hasMore = hasMoreSourceRows;
       _remember(visibleWalls);
       try {
-        await _writeCache(rows: traversedRows, hasMore: _hasMore, lastDocId: _lastDocId, append: !refresh);
+        await _writeCache(
+          rows: traversedRows,
+          hasMore: _hasMore,
+          lastDocId: _lastDocId,
+          append: !refresh,
+          generation: generation,
+        );
       } catch (error) {
         logger.w('[PrismWallpaperRepository] feed cache write failed: $error');
       }
       logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': visibleWalls.length});
       return Result.success(visibleWalls);
     } catch (error, stackTrace) {
-      final cached = refresh ? await _readCached() : null;
+      final cached = refresh && generation == _feedGeneration ? await _readCached(generation: generation) : null;
       if (cached != null) {
         logger.w(
           '[PrismWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -348,8 +359,10 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     required bool hasMore,
     required String? lastDocId,
     required bool append,
+    required int generation,
   }) async {
     final FeedSnapshot? previous = append ? await _feedCacheLocal.read(source: 'prism', scope: 'main') : null;
+    if (generation != _feedGeneration) return;
     return _feedCacheLocal.write(
       source: 'prism',
       scope: 'main',
@@ -376,8 +389,9 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     }
   }
 
-  Future<List<PrismWallpaper>?> _readCached() async {
+  Future<List<PrismWallpaper>?> _readCached({required int generation}) async {
     final snapshot = await _feedCacheLocal.read(source: 'prism', scope: 'main');
+    if (generation != _feedGeneration) return null;
     final payload = toJsonMap(snapshot?.payload);
     final mappedRows = ((payload['rows'] as List?) ?? const <Object?>[])
         .map(toJsonMap)
@@ -396,13 +410,14 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       return null;
     }
 
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (generation != _feedGeneration) return null;
     _hasMore = payload['hasMore'] == true;
     final String? cachedLastDocId = payload['lastDocId']?.toString();
     if (cachedLastDocId != null && cachedLastDocId.isNotEmpty) {
       _lastDocId = cachedLastDocId;
     }
 
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     return mappedRows
         .map((row) => row.doc.toDomain(docId: row.docId))
         .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))

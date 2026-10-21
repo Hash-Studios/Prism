@@ -72,7 +72,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   static const int _cacheCap = 48;
   static const int _cachedPageSize = 24;
   static const int _popularLimit = 40;
-  static const int _creatorChunkLimitCap = 30;
+  static const int _recommendationCreatorChunkLimit = 30;
+  static const int _followingPageSize = 12;
   static const String _popularCollection = 'popular';
   static const String _wallStatsCollection = 'wallpaper_stats';
   static const Duration _poolTimeout = Duration(seconds: 6);
@@ -107,6 +108,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   List<PersonalizedInterest> _catalog = const <PersonalizedInterest>[];
   List<String> _interests = const <String>[];
   List<String> _following = const <String>[];
+  int _followingGeneration = 0;
+  String? _followingScope;
+  List<_CreatorChunk> _followingChunks = <_CreatorChunk>[];
 
   @override
   Future<void> lessLikeThis(FeedItemEntity item) async {
@@ -273,7 +277,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
         _pool(
           CandidatePool.following,
-          _fetchCreatorItems(following: _following, page: request.page).then((creators) => creators.items),
+          _fetchRecommendationCreatorItems(
+            following: _following,
+            page: request.page,
+          ).then((creators) => creators.items),
           onSuccess: _following.isEmpty ? null : () => successfulSources++,
           onFailure: () => failedSources++,
         ),
@@ -545,14 +552,15 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   List<String>? _followingFromSession() {
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) return null;
     final fromSession = app_state.prismUser.following.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    return fromSession.isEmpty ? null : fromSession;
+    return fromSession;
   }
 
   List<String> _resolveFollowing(Map<String, dynamic> userDoc) =>
       _followingFromSession() ?? _toStringList(userDoc['following']);
 
-  Future<({List<FeedItemEntity> items, bool hasMore})> _fetchCreatorItems({
+  Future<({List<FeedItemEntity> items, bool hasMore})> _fetchRecommendationCreatorItems({
     required List<String> following,
     required int page,
   }) async {
@@ -561,7 +569,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     }
 
     final chunks = following.toSet().slices(10).toList(growable: false);
-    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(10, _creatorChunkLimitCap);
+    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(10, _recommendationCreatorChunkLimit);
 
     final chunkedRows = await Future.wait(
       chunks.mapIndexed(
@@ -586,22 +594,82 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       ..sort((a, b) => (b.dto.createdAt ?? epoch).compareTo(a.dto.createdAt ?? epoch));
     return (
       items: _dedupeByCanonicalKey(allRows),
-      hasMore: perChunkLimit < _creatorChunkLimitCap && chunkedRows.any((rows) => rows.length >= perChunkLimit),
+      hasMore:
+          perChunkLimit < _recommendationCreatorChunkLimit && chunkedRows.any((rows) => rows.length >= perChunkLimit),
     );
   }
 
+  List<String> _followingForOwner(String owner) =>
+      (_followingFromSession() ?? (_bootstrapScope == owner && owner != 'guest' ? _following : const <String>[]))
+          .toSet()
+          .toList()
+        ..sort();
+
   @override
   Future<Result<PersonalizedFeedPage>> fetchFollowing({required int page}) async {
+    final String owner = _cacheScope;
+    final List<String> following = _followingForOwner(owner);
+    final String scope = '$owner:${following.join(',')}';
+    if (page == 1 || _followingScope != scope) {
+      _followingGeneration++;
+      _followingScope = scope;
+      _followingChunks = following.slices(10).map((emails) => _CreatorChunk(emails)).toList();
+    }
+    final int generation = _followingGeneration;
+    bool isCurrent() =>
+        generation == _followingGeneration &&
+        _cacheScope == owner &&
+        const ListEquality<String>().equals(_followingForOwner(owner), following);
+    final chunks = _followingChunks.map((chunk) => chunk.copy()).toList();
     try {
-      final creators = await _fetchCreatorItems(following: _followingFromSession() ?? _following, page: page);
+      final rows = <_WallRow>[];
+      while (rows.length < _followingPageSize) {
+        await Future.wait(
+          chunks.mapIndexed((index, chunk) async {
+            if (chunk.buffer.isNotEmpty || !chunk.hasMore) return;
+            final batch = await _firestoreClient.query<_WallRow>(
+              FirestoreQuerySpec(
+                collection: FirebaseCollections.walls,
+                sourceTag: 'personalized.creator_chunk_${index + 1}',
+                filters: <FirestoreFilter>[
+                  const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                  FirestoreFilter(field: 'email', op: FirestoreFilterOp.whereIn, value: chunk.emails),
+                ],
+                orderBy: const <FirestoreOrderBy>[
+                  FirestoreOrderBy(field: 'createdAt', descending: true),
+                  FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
+                ],
+                startAfterDocId: chunk.cursor,
+                limit: _followingPageSize,
+                cachePolicy: page == 1 ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+              ),
+              _toWallRow,
+            );
+            chunk.buffer.addAll(batch);
+            if (batch.isNotEmpty) chunk.cursor = batch.last.docId;
+            chunk.hasMore = batch.length == _followingPageSize;
+          }),
+        );
+        if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
+        final available = chunks.where((chunk) => chunk.buffer.isNotEmpty).toList();
+        if (available.isEmpty) break;
+        available.sort((a, b) {
+          final epoch = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+          final byDate = (b.buffer.first.dto.createdAt ?? epoch).compareTo(a.buffer.first.dto.createdAt ?? epoch);
+          return byDate != 0 ? byDate : b.buffer.first.docId.compareTo(a.buffer.first.docId);
+        });
+        rows.add(available.first.buffer.removeAt(0));
+      }
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
+      _followingChunks = chunks;
       return Result.success(
         PersonalizedFeedPage(
           items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(creators.items, blocked),
+            BlockedCreatorsFilter.filterFeedItems(_dedupeByCanonicalKey(rows), blocked),
             showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
           ),
-          hasMore: creators.hasMore,
+          hasMore: chunks.any((chunk) => chunk.buffer.isNotEmpty || chunk.hasMore),
         ),
       );
     } catch (error, stackTrace) {
@@ -928,6 +996,20 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 typedef _CachedFeed = ({DateTime cachedAt, List<FeedItemEntity> items});
 
 typedef _WallRow = ({String docId, PrismWallDocDto dto});
+
+class _CreatorChunk {
+  _CreatorChunk(this.emails);
+
+  final List<String> emails;
+  String? cursor;
+  bool hasMore = true;
+  final List<_WallRow> buffer = <_WallRow>[];
+
+  _CreatorChunk copy() => _CreatorChunk(emails)
+    ..cursor = cursor
+    ..hasMore = hasMore
+    ..buffer.addAll(buffer);
+}
 
 List<String> _toStringList(Object? value) {
   if (value is! List) {

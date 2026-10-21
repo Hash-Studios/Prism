@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
@@ -7,12 +8,41 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_feed_cache_local_data_source.dart';
 
 void main() {
+  test('an invalidated append cannot write or advance after its cache read completes', () async {
+    final local = _DelayedReadCache();
+    final old = PagedFeedCache(local, source: 'test');
+    await old.write('A', scope: 'A', payload: <String, dynamic>{'id': 1}, nextPage: 2, hasMore: true);
+    bool current = true;
+    local.hold = true;
+    final append = old.write(
+      'A',
+      scope: 'A',
+      payload: <String, dynamic>{'id': 2},
+      nextPage: 3,
+      hasMore: false,
+      append: true,
+      isCurrent: () => current,
+    );
+    await local.started.future;
+    current = false;
+    final fresh = PagedFeedCache(local, source: 'test');
+    await fresh.write('A', scope: 'A', payload: <String, dynamic>{'id': 10}, nextPage: 2, hasMore: true);
+    local.release.complete();
+    await append;
+    expect(old.pageFor('A'), 2);
+    expect(old.hasMore('A'), isTrue);
+    final snapshot = local.snapshots['test/A']!.payload! as Map;
+    expect(snapshot['pages'], <Object>[
+      <String, dynamic>{'id': 10},
+    ]);
+    expect(snapshot['nextPage'], 2);
+  });
   test('feedCacheSlug lower-cases and joins runs of other characters with one underscore', () {
     expect(feedCacheSlug('  Dark & Moody!! '), 'dark_moody_');
     expect(feedCacheSlug('color: ff0000'), 'color_ff0000');
   });
 
-  test('cursor starts at page 1 with more pages, and reset restores that', () async {
+  test('cursor starts at page 1 with more pages and a successful write advances it', () async {
     final cache = PagedFeedCache(FakeFeedCacheLocalDataSource(), source: 'test');
 
     expect(cache.pageFor('nature'), 1);
@@ -20,9 +50,6 @@ void main() {
 
     await cache.write('nature', scope: 'nature', payload: <String, dynamic>{'n': 1}, nextPage: 3, hasMore: false);
     expect((cache.pageFor('nature'), cache.hasMore('nature')), (3, false));
-
-    cache.reset('nature');
-    expect((cache.pageFor('nature'), cache.hasMore('nature')), (1, true));
   });
 
   test('advance moves the cursor without writing a snapshot', () {
@@ -163,7 +190,7 @@ void main() {
       nextPage: 5,
       hasMore: false,
     );
-    cache.reset('nature');
+    cache.advance('nature', nextPage: 2, hasMore: true);
 
     expect(
       await cache.read<int>(
@@ -173,6 +200,23 @@ void main() {
       ),
       isNull,
     );
-    expect((cache.pageFor('nature'), cache.hasMore('nature')), (1, true));
+    expect((cache.pageFor('nature'), cache.hasMore('nature')), (2, true));
   });
+}
+
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
 }

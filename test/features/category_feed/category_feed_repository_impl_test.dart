@@ -46,6 +46,23 @@ class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
   }) => Future<void>.error(StateError('cache unavailable'));
 }
 
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
+}
+
 const CategoryEntity _cyberpunk = CategoryEntity(
   name: 'Cyberpunk',
   source: WallpaperSource.wallhaven,
@@ -135,6 +152,35 @@ void main() {
     await repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
     expect(cache.snapshots, hasLength(1));
     expect(((cache.snapshots.values.single.payload! as Map)['items'] as List), hasLength(1));
+  });
+
+  test('an old category append cannot overwrite refresh after its cache read', () async {
+    final delayedCache = _DelayedReadCache();
+    final repo = CategoryFeedRepositoryImpl(
+      SettingsLocalDataSource(store),
+      delayedCache,
+      _MockPrism(),
+      wallhaven,
+      _MockPexels(),
+    );
+    int calls = 0;
+    when(
+      () => wallhaven.fetchFeed(
+        categoryName: any(named: 'categoryName'),
+        refresh: any(named: 'refresh'),
+        categories: any(named: 'categories'),
+        purity: any(named: 'purity'),
+      ),
+    ).thenAnswer((_) async => Result.success(<WallhavenWallpaper>[_wall('wall-${++calls}')]));
+    await repo.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+    delayedCache.hold = true;
+    final old = repo.fetchCategoryFeed(category: _cyberpunk, refresh: false);
+    await delayedCache.started.future;
+    await repo.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+    delayedCache.release.complete();
+    await old;
+    final items = (delayedCache.snapshots.values.single.payload! as Map)['items'] as List;
+    expect(items.map((item) => decodeFeedItem(Map<String, dynamic>.from(item as Map))!.id), <String>['wall-3']);
   });
 
   test('a successful provider page is returned when local cache persistence fails', () async {
