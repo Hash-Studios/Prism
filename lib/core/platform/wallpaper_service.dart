@@ -244,11 +244,6 @@ class WallpaperService {
     }
   }
 
-  /// Same as [setWallpaper] for callers that only need to know whether the wallpaper changed.
-  static Future<bool> setWallpaperFromSource(String source, WallpaperTarget target) async {
-    return (await setWallpaper(source, target)).isSuccess;
-  }
-
   static WallpaperSetResult mapStatus(aw.WallpaperOperationResult result) {
     return switch (result.status) {
       aw.WallpaperOperationStatus.applied => const WallpaperSetResult(WallpaperSetStatus.applied, appliedMessage),

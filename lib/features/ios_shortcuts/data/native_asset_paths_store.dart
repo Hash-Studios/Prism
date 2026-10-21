@@ -44,33 +44,6 @@ class NativeAssetPathsStore {
     });
   }
 
-  static Future<void> clearPrivate() {
-    _generation++;
-    return _enqueue(() async {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (!await prefs.setString('$preferenceKey.favourites', '{}') ||
-          !await prefs.setString('$preferenceKey.shortcuts', '{}')) {
-        throw StateError('Private native retained asset paths could not be cleared');
-      }
-      final Map<String, String> combined = <String, String>{};
-      for (final String group in const <String>['wotd', 'category']) {
-        try {
-          final Object? decoded = jsonDecode(prefs.getString('$preferenceKey.$group') ?? '{}');
-          if (decoded is Map) {
-            for (final entry in decoded.entries) {
-              if (entry.key is String && entry.value is String) combined[entry.key as String] = entry.value as String;
-            }
-          }
-        } on FormatException {
-          continue;
-        }
-      }
-      if (!await prefs.setString(preferenceKey, jsonEncode(combined))) {
-        throw StateError('Native retained asset paths could not be cleared');
-      }
-    });
-  }
-
   static Future<void> clearForUser(String userId) async {
     final String owner = userId.trim();
     if (owner.isEmpty || _otherOwnerIsActive(owner)) return;

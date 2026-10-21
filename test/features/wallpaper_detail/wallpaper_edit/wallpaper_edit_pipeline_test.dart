@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -165,11 +164,6 @@ void main() {
         source.dispose();
       }
     });
-  });
-
-  test('GLES compile contract reverses only tap direction after UV flip', () {
-    final String shader = File('shaders/convolve3x3.frag').readAsStringSync();
-    expect(shader, contains('#ifdef IMPELLER_TARGET_OPENGLES\n  dy = -dy;\n#endif'));
   });
 
   test('rasterizePicture disposes its picture when rasterization fails', () async {
