@@ -37,6 +37,13 @@ jobs:
       - name: Install dependencies
         run: make get CI=true
 
+      # This prerequisite is not provisioned by the workflow. It must be the
+      # actual Firebase plist for prism-wallpapers / com.hash.prism, never a stub.
+      - name: Prepare real iOS Firebase configuration
+        env:
+          IOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}
+        run: python3 tool/prepare_release_firebase.py ios --from-environment
+
       - name: Version sync guard
         run: python3 tool/sync_app_version.py --check
 
@@ -99,11 +106,8 @@ jobs:
           DOPPLER_CONFIG: prd
           BUILD_NUMBER: ${{ github.event.inputs.build_number }}
         run: |
-          DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
-          flutter build ipa --release \
-            --build-number="$BUILD_NUMBER" \
-            $DART_DEFINES \
-            --dart-define=SKIP_FIREBASE_INIT=true
+          python3 tool/flutter_with_doppler.py --release-platform ios -- \
+            flutter build ipa --release --build-number="$BUILD_NUMBER"
 
       - name: Install asc CLI
         run: brew install rudrankriyam/tap/asc

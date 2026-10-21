@@ -66,6 +66,7 @@ jobs:
       ios: ${{ steps.filter.outputs.ios }}
       app_size: ${{ steps.filter.outputs.app_size }}
       workflow: ${{ steps.filter.outputs.workflow }}
+      notification_contract: ${{ steps.filter.outputs.notification_contract }}
     steps:
       # Reads the PR file list from the API, so no checkout is needed.
       - uses: dorny/paths-filter@v4
@@ -76,8 +77,8 @@ jobs:
           predicate-quantifier: some-with-excludes
           filters: |
             flutter:
-              # Everything except trees that no Dart gate or test reads. Tests
-              # read android/ and ios/ files, so those stay in.
+              # Native files stay in. The backend notification-channel input
+              # is handled by the small notification_contract job below.
               - '**'
               - '!functions/**'
               - '!web/**'
@@ -92,6 +93,15 @@ jobs:
               - '!firestore.indexes.json'
             functions:
               - 'functions/**'
+            notification_contract:
+              - 'functions/src/*.ts'
+              - 'lib/core/startup/notification_channels.dart'
+              - 'test/core/startup/notification_channels_test.dart'
+              - 'tool/notification_contract_fixture_test.py'
+              - 'lib/l10n/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - '.fvmrc'
             web:
               - 'web/**'
             rules:
@@ -164,6 +174,29 @@ jobs:
 
       - name: Run local CI gate
         run: make ci CI=true
+
+  notification_contract:
+    name: Notification-channel contract
+    needs: changes
+    if: needs.changes.outputs.notification_contract == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - name: Check notification-channel contract
+        run: flutter test test/core/startup/notification_channels_test.dart
+      - name: Exercise missing-channel regression fixture
+        run: FLUTTER=flutter python3 tool/notification_contract_fixture_test.py
 
   android:
     name: Android native verify
@@ -560,7 +593,7 @@ jobs:
 
   ci:
     name: ci
-    needs: [changes, flutter, android, ios, functions, web, rules, repo_assets]
+    needs: [changes, flutter, notification_contract, android, ios, functions, web, rules, repo_assets]
     # `always()` so a cancelled or failed job reports red. A skipped required
     # check counts as passed, so `ci` must never skip on a non-draft PR.
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
@@ -569,9 +602,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.notification_contract.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
         run: |
-          echo "changes flutter android ios functions web rules repo_assets: $RESULTS"
+          echo "changes flutter notification_contract android ios functions web rules repo_assets: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in
