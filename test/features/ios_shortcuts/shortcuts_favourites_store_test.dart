@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -152,14 +153,26 @@ void main() {
       final _GatedFirstWriteStore store = _GatedFirstWriteStore.withData(<String, Object>{
         'flutter.${NativeAssetPathsStore.privateOwnerKey}': 'owner-a',
         'flutter.${NativeAssetPathsStore.preferenceKey}.wotd': '{"today":"assets/today.asset"}',
+        'flutter.${QuickTileConfigService.wotdRetainedKey}': '{"documentId":"today"}',
         'flutter.${NativeAssetPathsStore.preferenceKey}.category': '{"space":"assets/space.asset"}',
       });
       SharedPreferencesStorePlatform.instance = store;
       SharedPreferences.resetStatic();
 
-      final Future<void> oldMirror = NativeAssetPathsStore.replaceGroup('shortcuts', const <String, String>{
-        'https://example.com/private.jpg': 'assets/private.asset',
-      });
+      var metadataWritten = false;
+      final Future<void> oldMirror = NativeAssetPathsStore.replaceGroup(
+        'wotd',
+        const <String, String>{'wotd:today': 'assets/private.asset'},
+        afterReplace: () async {
+          metadataWritten = true;
+          await QuickTileConfigService.pushWotdUrl(
+            '',
+            wallDocumentId: 'today',
+            featuredDayUtc: DateTime.utc(2026, 8, 24),
+            retainedAssetKey: 'wotd:today',
+          );
+        },
+      );
       await store.firstWriteStarted.future;
       final Future<void> clear = NativeAssetPathsStore.clearForUser('owner-a');
       store.firstWriteGate.complete();
@@ -168,11 +181,12 @@ void main() {
       SharedPreferences.resetStatic();
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       expect(jsonDecode(prefs.getString(NativeAssetPathsStore.preferenceKey)!), <String, Object?>{
-        'today': 'assets/today.asset',
         'space': 'assets/space.asset',
       });
       expect(jsonDecode(prefs.getString('${NativeAssetPathsStore.preferenceKey}.shortcuts')!), isEmpty);
       expect(jsonDecode(prefs.getString('${NativeAssetPathsStore.preferenceKey}.favourites')!), isEmpty);
+      expect(prefs.getString(QuickTileConfigService.wotdRetainedKey), isNull);
+      expect(metadataWritten, isFalse);
     });
 
     test('save writes the raw string under the shared contract key', () async {

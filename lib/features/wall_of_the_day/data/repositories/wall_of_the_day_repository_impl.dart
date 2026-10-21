@@ -61,12 +61,12 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         sourceTag: 'wotd.fetchToday.pointer',
       );
 
-      if (pointer == null || pointer.wallDocumentId.isEmpty) {
+      if (pointer == null || pointer.wallDocumentId.isEmpty || pointer.featuredAt == null) {
         await _invalidateToday();
         return Result.success(null);
       }
 
-      final DateTime featuredUtc = pointer.featuredAt.toUtc();
+      final DateTime featuredUtc = pointer.featuredAt!.toUtc();
       final cached = _cached;
       if (cached != null &&
           cached.wallDocumentId == pointer.wallDocumentId &&
@@ -84,7 +84,11 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
             await _invalidateToday();
             return Result.success(null);
           }
-          final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(wallpaper);
+          final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(
+            wallpaper,
+            wallDocumentId: pointer.wallDocumentId,
+            featuredAt: featuredUtc,
+          );
           _cached = _CachedPick(
             entity: entity,
             wallDocumentId: pointer.wallDocumentId,
@@ -300,7 +304,13 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       if (wallDocumentId != null && payload['documentId'] != wallDocumentId) return null;
       final FeedItemEntity? item = decodeFeedItem(toJsonMap(payload['item']));
       if (item is! PrismFeedItem || !hasPrismPreview(item.wallpaper) || item.wallpaper.review != true) return null;
-      final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(item.wallpaper);
+      final String documentId = payload['documentId']?.toString() ?? '';
+      if (documentId.isEmpty) return null;
+      final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(
+        item.wallpaper,
+        wallDocumentId: documentId,
+        featuredAt: featuredAt,
+      );
       return _visibleForCaller(
         entity,
         item.wallpaper.core.authorEmail,

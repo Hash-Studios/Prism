@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,12 +14,19 @@ class NativeAssetPathsStore {
   static Future<void> _tail = Future<void>.value();
   static int _generation = 0;
 
-  static Future<void> replaceGroup(String group, Map<String, String> paths) {
+  static Future<void> replaceGroup(
+    String group,
+    Map<String, String> paths, {
+    bool Function()? isCurrent,
+    Future<void> Function()? afterReplace,
+  }) {
     if (!_groups.contains(group)) throw ArgumentError.value(group, 'group');
     final int generation = _generation;
     return _enqueue(() async {
-      if (generation != _generation) return;
+      bool current() => generation == _generation && isCurrent?.call() != false;
+      if (!current()) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!current()) return;
       final Map<String, String> combined = <String, String>{};
       for (final String name in _groups) {
         final String raw = name == group ? jsonEncode(paths) : prefs.getString('$preferenceKey.$name') ?? '{}';
@@ -33,14 +41,19 @@ class NativeAssetPathsStore {
           continue;
         }
       }
-      if (generation != _generation) return;
-      if (!await prefs.setString('$preferenceKey.$group', jsonEncode(paths)) ||
-          !await prefs.setString(preferenceKey, jsonEncode(combined))) {
+      if (!current()) return;
+      if (!await prefs.setString('$preferenceKey.$group', jsonEncode(paths))) {
         throw StateError('Native retained asset paths could not be persisted');
       }
-      if ((group == 'favourites' || group == 'shortcuts') && app_state.prismUser.loggedIn) {
+      if (!current()) return;
+      if (!await prefs.setString(preferenceKey, jsonEncode(combined))) {
+        throw StateError('Native retained asset paths could not be persisted');
+      }
+      if (!current()) return;
+      if ((group == 'favourites' || group == 'shortcuts' || group == 'wotd') && app_state.prismUser.loggedIn) {
         await prefs.setString(privateOwnerKey, app_state.prismUser.id.trim());
       }
+      if (current()) await afterReplace?.call();
     });
   }
 
@@ -53,12 +66,14 @@ class NativeAssetPathsStore {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       if (_otherOwnerIsActive(owner) || _otherPrivateOwnerIsActive(prefs, owner)) return;
       if (!await prefs.setString('$preferenceKey.favourites', '{}') ||
-          !await prefs.setString('$preferenceKey.shortcuts', '{}')) {
+          !await prefs.setString('$preferenceKey.shortcuts', '{}') ||
+          !await prefs.setString('$preferenceKey.wotd', '{}') ||
+          !await prefs.remove(QuickTileConfigService.wotdRetainedKey)) {
         throw StateError('Private native retained asset paths could not be cleared');
       }
       if (_otherOwnerIsActive(owner) || _otherPrivateOwnerIsActive(prefs, owner)) return;
       final Map<String, String> combined = <String, String>{};
-      for (final String group in const <String>['wotd', 'category']) {
+      for (final String group in const <String>['category']) {
         try {
           final Object? decoded = jsonDecode(prefs.getString('$preferenceKey.$group') ?? '{}');
           if (decoded is Map) {
