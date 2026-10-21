@@ -246,15 +246,18 @@ class OriginalAccessService {
     return result.data;
   }
 
-  /// True when [url] is the full url `unlockDrop` gave this account for Drop wall [id]. That wall stays unreviewed and
-  /// unprotected until its Drop is released, so neither the canonical lookup nor a grant can serve it.
-  static bool isUnlockedDropUrl(String url, String? id) =>
-      id != null && url.isNotEmpty && CoinsService.instance.dropsUnlockedNotifier.value[id]?.url == url;
+  /// True when [url] is the full url `unlockDrop` gave this account for Prism Drop wall [id]. That wall stays
+  /// unreviewed and unprotected until its Drop is released, so neither the canonical lookup nor a grant can serve it.
+  static bool isUnlockedDropUrl(String url, String? id, WallpaperSource? source) =>
+      source == WallpaperSource.prism &&
+      id != null &&
+      url.isNotEmpty &&
+      CoinsService.instance.currentDropUnlocks[id]?.url == url;
 
   static bool requiresGrant(String url, String? id, WallpaperSource? source) =>
       source == WallpaperSource.prism &&
       !(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
-      !isUnlockedDropUrl(url, id);
+      !isUnlockedDropUrl(url, id, source);
 
   Future<String> resolve({
     required String url,

@@ -3,9 +3,11 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -124,10 +126,16 @@ void main() {
     // An unreleased Drop wall is unreviewed, so the canonical lookup never finds it.
     setUp(() {
       when(() => prism.fetchCanonicalById(any())).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
-      CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'alice'
+        ..loggedIn = true;
+      CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
         'abc': DropUnlock(wallId: 'abc', weekKey: '2026-W43', url: 'https://example.com/abc.jpg'),
-      };
-      addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+      });
+      addTearDown(() {
+        CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{};
+        app_state.prismUser = app_constants.createGuestPrismUser();
+      });
     });
 
     test('an unlocked Drop wall opens with the url its unlock gave this account', () async {

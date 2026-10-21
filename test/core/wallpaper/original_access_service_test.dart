@@ -1,6 +1,8 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -319,10 +321,16 @@ void main() {
   });
 
   test('an unlocked Drop wall uses its unlock url without a grant', () async {
-    CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'alice'
+      ..loggedIn = true;
+    CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
       'drop': DropUnlock(wallId: 'drop', weekKey: '2026-W43', url: 'https://example.com/drop.jpg'),
-    };
-    addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+    });
+    addTearDown(() {
+      CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{};
+      app_state.prismUser = app_constants.createGuestPrismUser();
+    });
     final calls = <Map<String, dynamic>>[];
     final service = OriginalAccessService(
       owner: () => 'alice',
@@ -343,6 +351,28 @@ void main() {
     expect(calls, isEmpty);
     expect(OriginalAccessService.requiresGrant('https://example.com/other.jpg', 'drop', WallpaperSource.prism), isTrue);
     expect(OriginalAccessService.requiresGrant('https://example.com/drop.jpg', 'other', WallpaperSource.prism), isTrue);
+    expect(
+      OriginalAccessService.isUnlockedDropUrl('https://example.com/drop.jpg', 'drop', WallpaperSource.wallhaven),
+      isFalse,
+    );
+  });
+
+  test("another account cannot use the previous account's Drop unlock", () {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'alice'
+      ..loggedIn = true;
+    CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
+      'drop': DropUnlock(wallId: 'drop', weekKey: '2026-W43', url: 'https://example.com/drop.jpg'),
+    });
+    addTearDown(() {
+      CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{};
+      app_state.prismUser = app_constants.createGuestPrismUser();
+    });
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'bob'
+      ..loggedIn = true;
+
+    expect(OriginalAccessService.requiresGrant('https://example.com/drop.jpg', 'drop', WallpaperSource.prism), isTrue);
   });
 
   test('two protected pair assets share one quote, aggregate consent and acquisition request', () async {

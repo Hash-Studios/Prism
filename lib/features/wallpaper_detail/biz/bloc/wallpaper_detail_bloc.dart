@@ -67,7 +67,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
     if (event.entity.source == WallpaperSource.prism &&
         !BundledWallpapers.isStarter(event.entity) &&
-        !OriginalAccessService.isUnlockedDropUrl(event.entity.fullUrl, event.entity.id)) {
+        !OriginalAccessService.isUnlockedDropUrl(event.entity.fullUrl, event.entity.id, event.entity.source)) {
       await _onLoadFromId(
         LoadFromId(
           wallId: event.entity.id,

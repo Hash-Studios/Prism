@@ -251,7 +251,11 @@ class _DownloadButtonState extends State<DownloadButton> {
     } else if (_isGuest) {
       text = label;
       semantics = label;
-    } else if (OriginalAccessService.isUnlockedDropUrl(widget.link?.trim() ?? '', widget.contentId)) {
+    } else if (OriginalAccessService.isUnlockedDropUrl(
+      widget.link?.trim() ?? '',
+      widget.contentId,
+      widget.wallpaperSource,
+    )) {
       text = context.l10n.economyDownloadFreeFor(label);
       semantics = context.l10n.economyDownloadFreeOwnedSemantics(label);
     } else if (_downloadIsFree(widget.isPremiumContent)) {
@@ -445,7 +449,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         return;
       }
       // The Drop unlock already paid for this wall.
-      if (OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId)) {
+      if (OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId, tap.wallpaperSource)) {
         final bool saved = await _performDownload();
         _track(
           DownloadResultEvent(
@@ -528,7 +532,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         app_state.prismUser.premium ||
         _isGuest ||
         _downloadIsFree(tap.isPremiumContent) ||
-        OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId);
+        OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId, tap.wallpaperSource);
     final int cost = _tapSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
