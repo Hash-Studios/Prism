@@ -627,6 +627,59 @@ void main() {
     expect(favourites.calls, 1);
   });
 
+  test('external favourites seed taste for both providers and pexels feedback can be undone', () async {
+    final previousUser = app_state.prismUser;
+    addTearDown(() => app_state.prismUser = previousUser);
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final signals = TasteSignalStore(settings);
+    final favourites = _PendingFavourites();
+    app_state.prismUser = _signedInUser();
+    final repository = _repository(
+      favourites: favourites,
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      tasteSignals: signals,
+    );
+    await repository.fetch(_firstPage);
+    const wallhaven = WallhavenWallpaper(
+      core: WallpaperCore(
+        id: 'wh',
+        source: WallpaperSource.wallhaven,
+        fullUrl: 'https://example.com/wh.jpg',
+        thumbnailUrl: '',
+        category: 'Space',
+      ),
+    );
+    const pexels = PexelsWallpaper(
+      core: WallpaperCore(
+        id: 'px',
+        source: WallpaperSource.pexels,
+        fullUrl: 'https://example.com/px.jpg',
+        thumbnailUrl: '',
+        category: 'Nature',
+      ),
+    );
+    favourites.completer.complete(
+      Result.success(<FavouriteWallEntity>[
+        const WallhavenFavouriteWall(id: 'wh', wallpaper: wallhaven),
+        const PexelsFavouriteWall(id: 'px', wallpaper: pexels),
+      ]),
+    );
+    while (!signals.isSeeded) {
+      await Future<void>(() {});
+    }
+    expect(signals.isSeeded, isTrue);
+    expect(signals.read().map((signal) => signal.action), everyElement(TasteAction.favourite));
+    expect(signals.read(), hasLength(2));
+    const item = PexelsFeedItem(id: 'px', wallpaper: pexels);
+    await repository.lessLikeThis(item);
+    expect(signals.read().last.action, TasteAction.lessLikeThis);
+    final impressions = FeedImpressionStore(settings);
+    expect(impressions.recentShows(DateTime.now().toUtc())['https://example.com/px.jpg'], 99);
+    await repository.undoLessLikeThis(item);
+    expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
+  });
+
   test('late favourite seeding does not restore taste after clear', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     final TasteSignalStore signals = TasteSignalStore(settings);

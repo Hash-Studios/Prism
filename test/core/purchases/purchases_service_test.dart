@@ -793,6 +793,62 @@ void main() {
     });
   });
 
+  test('store offering failures return no offering and blank placements never reach the SDK', () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('purchases_flutter'),
+      (call) {
+        calls.add(call);
+        return Future<Object?>.error(PlatformException(code: 'offline', message: 'Store unavailable'));
+      },
+    );
+    final service = buildService();
+
+    expect(await service.getCurrentOfferingForPlacement('   '), isNull);
+    expect(calls, isEmpty);
+    expect(await service.getOfferings(), isNull);
+    expect(await service.getCurrentOfferingForPlacement('  main_upsell  '), isNull);
+    expect(calls.map((call) => call.method), <String>['getOfferings', 'getCurrentOfferingForPlacement']);
+    expect(calls.last.arguments, <String, Object?>{'placementIdentifier': 'main_upsell'});
+  });
+
+  test('logout avoids the native SDK before setup, tolerates anonymous users and propagates store failures', () async {
+    final calls = <String>[];
+    var anonymous = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('purchases_flutter'),
+      (call) async {
+        calls.add(call.method);
+        if (call.method == 'setLogLevel') return null;
+        throw PlatformException(code: anonymous ? '22' : 'offline', message: 'Store error');
+      },
+    );
+    final service = buildService();
+
+    await service.logOut();
+    expect(calls, isEmpty);
+    await service.ensureConfigured('u1');
+    await service.logOut();
+    anonymous = false;
+    await expectLater(service.logOut(), throwsA(isA<PlatformException>().having((e) => e.code, 'code', 'offline')));
+    expect(calls.where((method) => method == 'logOut'), hasLength(2));
+  });
+
+  test('restore propagates store failure rather than reporting no purchases', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('purchases_flutter'),
+      (call) async {
+        if (call.method == 'setLogLevel') return null;
+        throw PlatformException(code: 'offline', message: 'Store unavailable');
+      },
+    );
+    final service = buildService();
+
+    await expectLater(service.restore(), throwsA(isA<PlatformException>().having((e) => e.code, 'code', 'offline')));
+    expect(syncCalls, 0);
+    expect(app_state.prismUser.premium, isTrue);
+  });
+
   group('subscription conversion event', () {
     late FakeAppAnalytics fakeAnalytics;
 

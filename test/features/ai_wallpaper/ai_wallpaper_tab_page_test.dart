@@ -9,6 +9,7 @@ import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
@@ -18,9 +19,10 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,8 +30,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
+  _FakeConnectivityService({this.online = true});
+  final bool online;
   @override
-  Future<bool> hasConnection() async => true;
+  Future<bool> hasConnection() async => online;
 
   @override
   Stream<bool> get onConnectionChange => const Stream<bool>.empty();
@@ -63,13 +67,27 @@ class _FailingResolveOfflineAssetStore extends OfflineAssetStore {
   }
 }
 
+class _LocalAiAssetStore extends OfflineAssetStore {
+  _LocalAiAssetStore(this.file) : super(directory: file.parent);
+  final File file;
+  final List<String> retained = <String>[];
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) async => file;
+  @override
+  Future<File> retain(String source, {File? file}) async {
+    retained.add(source);
+    return this.file;
+  }
+}
+
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, this.metadata, {this.history, this.savedPrompt});
+  _FakeAiGenerationRepository(this.record, this.metadata, {this.history, this.savedPrompt, this.local = const []});
 
   final AiGenerationRecord record;
   final Completer<AiSubmissionMetadata> metadata;
   final Future<List<AiGenerationRecord>> Function()? history;
   final String? savedPrompt;
+  final List<AiGenerationRecord> local;
   final List<AiGenerationRecord> savedRecords = <AiGenerationRecord>[];
   bool failHistorySave = false;
 
@@ -78,8 +96,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
       history?.call() ?? Future<List<AiGenerationRecord>>.value(<AiGenerationRecord>[record]);
 
   @override
-  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
-      const <AiGenerationRecord>[];
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async => local;
 
   @override
   Future<String?> loadPrompt({required String userId}) async => savedPrompt;
@@ -169,6 +186,105 @@ class _LocaleTestAppState extends State<_LocaleTestApp> {
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('offline history uses retained records without fetching remote history', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService(online: false));
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var remoteCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(),
+            Completer<AiSubmissionMetadata>(),
+            local: [_record()],
+            history: () async {
+              remoteCalls++;
+              return [];
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(remoteCalls, 0);
+    expect(find.text('Save'), findsOneWidget);
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final success in <bool>[true, false]) {
+    testWidgets('AI save ${success ? 'retains the saved image' : 'reports native failure without retaining'}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+      addTearDown(getIt.reset);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-1'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+      final directory = Directory.systemTemp.createTempSync('ai_native_save_');
+      final file = File('${directory.path}/saved.png')..writeAsBytesSync([1]);
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final assets = _LocalAiAssetStore(file);
+      const imageUrl = 'https://cdn.prism.test/ai/generated-original.png';
+      const watermarkedUrl = 'https://cdn.prism.test/ai/generated-watermarked.png';
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      const channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      final requests = <DownloadRequest>[];
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+        requests.add((message! as List<Object?>).single! as DownloadRequest);
+        return <Object?>[OperationResult(success: success)];
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null));
+      final messages = <String>[];
+      const toast = MethodChannel('PonnamKarthik/fluttertoast');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toast, (call) async {
+        if (call.method == 'showToast') messages.add((call.arguments as Map)['msg'] as String);
+        return true;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toast, null));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AiWallpaperTabPage(
+            repository: _FakeAiGenerationRepository(
+              _record(imageUrl: imageUrl, watermarkedImageUrl: watermarkedUrl),
+              Completer<AiSubmissionMetadata>(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(requests, hasLength(1));
+      expect(requests.single.link, file.path);
+      expect(requests.single.isLocalFile, isTrue);
+      expect(assets.retained, success ? <String>[watermarkedUrl] : isEmpty);
+      expect(messages, <String>[
+        if (success) 'Wall downloaded in Pictures/Prism!' else AppLocalizationsEn().economyAiDownloadFailed,
+      ]);
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
 
   testWidgets('locale changes preserve restored and explicitly generated prompts', (tester) async {
     const String savedPrompt = 'A saved prompt that should stay untouched';

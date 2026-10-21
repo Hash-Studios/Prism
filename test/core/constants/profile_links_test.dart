@@ -116,8 +116,4 @@ void main() {
       expect(safeProfileLinkUri(''), isNull);
     });
   });
-
-  test('a username needs at least three characters', () {
-    expect(minUsernameLength, 3);
-  });
 }

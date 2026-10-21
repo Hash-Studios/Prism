@@ -1,7 +1,7 @@
 #!/bin/sh
 # Downloads the photos the home render test shows: 24 portrait walls (w01..w24), 2 landscape (l01, l02), 1 avatar.
 # Safe to rerun: files that exist are skipped. Usage: sh test/qa_render/fetch_home_photos.sh [dir]
-# Then render: fvm flutter test test/qa_render/home_render_test.dart --dart-define=QA_RENDER=1 (PNGs in /tmp/prism-qa/home-renders).
+# Then render: fvm flutter test test/qa_render/home_render.dart --dart-define=QA_RENDER=1 (PNGs in /tmp/prism-qa/home-renders).
 dir="${1:-/tmp/prism-qa/home-photos}"
 mkdir -p "$dir"
 i=1

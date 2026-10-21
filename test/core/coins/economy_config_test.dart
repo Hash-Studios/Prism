@@ -4,31 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'spin_wheel_test_helpers.dart';
 
 void main() {
-  test('defaults mirror the server defaults', () {
-    const EconomyConfig c = EconomyConfig.defaults;
-    expect(c.version, 2);
-    expect(c.spend.wallpaperDownload, 10);
-    expect(c.spend.premiumWallpaperDownload, 25);
-    expect(c.spend.giftPremiumPass, 50);
-    expect(c.award.rewardedAdFirstOfDay, 20);
-    expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
-    expect(c.award.weeklyQuestCoins, 30);
-    expect(c.award.proSpin.map((SpinSegment s) => s.coins), <int>[20, 30, 50, 75, 100]);
-    expect(c.spend.spinWheel, 10);
-    expect(c.award.spinWheelMaxPerDay, 5);
-    expect(describeWheel(c.award.spinWheel), defaultWheelLines);
-    expect(c.spend.dailyChest, 8);
-    expect(describeWheel(c.award.dailyChest), defaultChestLines);
-    expect(c.xp.ranks.map((RankDef r) => r.id), <String>['bronze', 'silver', 'gold', 'prism']);
-    expect(c.flags.drawEnabled, isFalse);
-    expect(c.flags.legacyPricingUntil, '2027-01-31T00:00:00Z');
-    expect(c.proBypassActions, contains('wallpaperDownload'));
-    expect(c.proDiscountActions, <String>['aiGeneration', 'dropWall', 'dropPack']);
-  });
-
-  test('null or empty docs give the defaults', () {
-    expect(EconomyConfig.fromMap(null).spend.dropPack, 150);
-    expect(EconomyConfig.fromMap(<String, dynamic>{}).award.referral, 100);
+  test('missing remote configuration preserves shipped prices and rewards', () {
+    for (final Map<String, dynamic>? input in <Map<String, dynamic>?>[null, <String, dynamic>{}]) {
+      final EconomyConfig c = EconomyConfig.fromMap(input);
+      expect(c.version, 2);
+      expect(c.spend.wallpaperDownload, 10);
+      expect(c.spend.premiumWallpaperDownload, 25);
+      expect(c.spend.giftPremiumPass, 50);
+      expect(c.award.rewardedAdFirstOfDay, 20);
+      expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
+      expect(c.award.weeklyQuestCoins, 30);
+      expect(c.award.proSpin.map((SpinSegment s) => s.coins), <int>[20, 30, 50, 75, 100]);
+      expect(c.spend.spinWheel, 10);
+      expect(c.award.spinWheelMaxPerDay, 5);
+      expect(describeWheel(c.award.spinWheel), defaultWheelLines);
+      expect(c.spend.dailyChest, 8);
+      expect(describeWheel(c.award.dailyChest), defaultChestLines);
+      expect(c.xp.ranks.map((RankDef r) => r.id), <String>['bronze', 'silver', 'gold', 'prism']);
+      expect(c.flags.drawEnabled, isFalse);
+      expect(c.flags.legacyPricingUntil, '2027-01-31T00:00:00Z');
+      expect(c.proBypassActions, contains('wallpaperDownload'));
+      expect(c.proDiscountActions, <String>['aiGeneration', 'dropWall', 'dropPack']);
+      expect(c.spend.dropPack, 150);
+      expect(c.award.referral, 100);
+    }
   });
 
   test('partial overrides keep every other field', () {

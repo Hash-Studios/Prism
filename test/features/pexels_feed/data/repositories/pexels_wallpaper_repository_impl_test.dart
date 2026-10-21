@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show SocketException;
+import 'dart:io' show HandshakeException, SocketException;
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -23,6 +23,49 @@ class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
 }
 
 void main() {
+  test('single lookup returns the photo and retains transport failure categories', () async {
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
+    final found = await http.runWithClient(
+      () => repository.fetchById('7'),
+      () => MockClient((request) async {
+        expect(request.url.path, '/v1/photos/7');
+        return http.Response(
+          '{"id":7,"src":{"original":"https://example.com/full","portrait":"https://example.com/thumb"}}',
+          200,
+        );
+      }),
+    );
+    expect(found.data!.id, '7');
+    expect(found.data!.core.fullUrl, 'https://example.com/full');
+    expect(found.data!.core.thumbnailUrl, 'https://example.com/thumb');
+    for (final entry in <(Object, String)>[
+      (const HandshakeException('tls'), 'tls_error'),
+      (TimeoutException('slow'), 'timeout'),
+      (http.ClientException('closed'), 'http_client_error'),
+      (const FormatException('bad payload'), 'FormatException'),
+    ]) {
+      final result = await http.runWithClient(
+        () => repository.fetchById('7'),
+        () => MockClient((_) async => throw entry.$1),
+      );
+      expect(result.failure!.code, entry.$2);
+      expect(result.failure, entry.$1 is FormatException ? isA<ServerFailure>() : isA<NetworkFailure>());
+    }
+  });
+
+  test('a transport failure restores cached feed data on refresh only', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    final repository = PexelsWallpaperRepositoryImpl(cache);
+    await http.runWithClient(
+      () => repository.fetchFeed(categoryName: 'forest', refresh: true),
+      () => MockClient((_) async => _page(1)),
+    );
+    await http.runWithClient(() async {
+      expect((await repository.fetchFeed(categoryName: 'forest', refresh: true)).data!.single.id, '1');
+      expect((await repository.fetchFeed(categoryName: 'forest', refresh: false)).failure, isA<ServerFailure>());
+    }, () => MockClient((_) async => throw const SocketException('offline')));
+  });
+
   group('fetchById failures', () {
     Future<Result<PexelsWallpaper?>> fetchWith(http.Client client) {
       final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());

@@ -173,4 +173,19 @@ void main() {
     expect(find.text('Tile not added. You can add it any time.'), findsOneWidget);
     expect(analytics.events.whereType<QuickTileAddRequestedEvent>().single.result, 'notAdded');
   });
+
+  testWidgets('failed config loading offers retry and recovers when settings become available', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await getIt.unregister<SettingsLocalDataSource>();
+    await pumpScreen(tester, settle: false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Try again'), findsOneWidget);
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shuffle wallpaper tile'), findsOneWidget);
+    expect(find.text('Wall of the Day tile'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+  });
 }

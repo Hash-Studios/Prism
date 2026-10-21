@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../features/quests/fake_quests_repository.dart';
-import 'coin_economy_render_test.dart' show allDone, registerRewardsDeps;
+import 'coin_economy_render.dart' show allDone, registerRewardsDeps;
 import 'qa_harness.dart';
 
 const double _boardHeight = 1300;

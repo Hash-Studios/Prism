@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -9,6 +12,7 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -58,6 +62,51 @@ void main() {
     myTickets: myTickets,
     lastWinner: lastWinner,
   );
+
+  testWidgets('purchase outcomes show the matching reason once while unrelated updates remain silent', (tester) async {
+    final messages = <String>[];
+    const channel = MethodChannel('PonnamKarthik/fluttertoast');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'showToast') messages.add((call.arguments as Map)['msg'] as String);
+      return true;
+    });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null),
+    );
+    final states = StreamController<DrawState>.broadcast();
+    addTearDown(states.close);
+    var current = loaded();
+    whenListen(bloc, states.stream, initialState: current);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<DrawBloc>.value(value: bloc, child: const DrawPage()),
+      ),
+    );
+    final l10n = AppLocalizationsEn();
+    final expected = <DrawTicketOutcome, String>{
+      DrawTicketOutcome.bought: l10n.economyDrawTicketBought(3, 5),
+      DrawTicketOutcome.limit: l10n.economyDrawAllTicketsHeld(5),
+      DrawTicketOutcome.disabled: l10n.economyDrawNotOpen,
+      DrawTicketOutcome.closed: l10n.economyDrawClosed,
+      DrawTicketOutcome.proNotEligible: l10n.economyDrawProNotEligible,
+      DrawTicketOutcome.insufficient: l10n.economyDrawNotEnoughCoins,
+      DrawTicketOutcome.failed: l10n.economyDrawPurchaseFailed,
+    };
+    for (final entry in expected.entries) {
+      current = current.copyWith(purchase: DrawTicketResult(entry.key, tickets: 3));
+      states.add(current);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(messages.last, entry.value);
+      final count = messages.length;
+      states.add(current.copyWith(myTickets: current.myTickets + 1));
+      await tester.pump();
+      expect(messages, hasLength(count));
+    }
+    expect(messages, hasLength(expected.length));
+  });
 
   testWidgets('is hidden while the draw flag is off', (tester) async {
     EconomyConfig.current = EconomyConfig.defaults;

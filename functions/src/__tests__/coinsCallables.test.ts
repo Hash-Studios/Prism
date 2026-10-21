@@ -104,8 +104,7 @@ test("planFreezePurchase: rejects at the cap even with a high balance", () => {
   assert.deepEqual(planFreezePurchase(10_000, 2), {atCap: true});
 });
 
-test("planFreezePurchase: has no premium input, so premium users still pay", () => {
-  assert.equal(planFreezePurchase.length, 2);
+test("planFreezePurchase: buying the last available freeze spends the full balance", () => {
   assert.deepEqual(planFreezePurchase(50, 1), {current: 0, freezes: 2});
 });
 

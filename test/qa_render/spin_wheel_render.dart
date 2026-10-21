@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../features/quests/fake_quests_repository.dart';
-import 'coin_economy_render_test.dart' show registerRewardsDeps;
+import 'coin_economy_render.dart' show registerRewardsDeps;
 import 'qa_harness.dart';
 
 const SpinWheelStatus _freeStatus = SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 5, price: 10);
