@@ -87,8 +87,8 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         val manager = WallpaperManager.getInstance(context)
         if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
         val url = shownUrl?.takeIf { it.isNotBlank() }
-            ?: widgetPrefs(context).getString(PREF_URL, null)?.takeIf { it.isNotBlank() }
-            ?: attempt("fetch for wallpaper") { fetchWall(context, minOf(deadline, monotonicMillis() + SET_FETCH_BUDGET_MS)) }?.url
+            ?: widgetPrefs(context).getString(PREF_ORIGINAL_URL, null)?.takeIf { it.isNotBlank() }
+            ?: attempt("fetch for wallpaper") { fetchWall(context, minOf(deadline, monotonicMillis() + SET_FETCH_BUDGET_MS)) }?.originalUrl?.takeIf { it.isNotBlank() }
             ?: storedWall(context)?.url
             ?: throw IllegalStateException("No wallpaper to set")
         val file = File.createTempFile("prism-widget-wall-", ".tmp", context.cacheDir)
@@ -130,7 +130,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
             if (bitmap != null) return Shown(wall, bitmap)
         }
         val lastUrl = prefs.getString(PREF_URL, null) ?: return null
-        val last = WotdWall(prefs.getString(PREF_ID, null).orEmpty(), lastUrl)
+        val last = WotdWall(prefs.getString(PREF_ID, null).orEmpty(), lastUrl, prefs.getString(PREF_ORIGINAL_URL, null) ?: lastUrl)
         val bitmap = BitmapFactory.decodeFile(cacheFile(context).path) ?: return null
         return Shown(last, bitmap)
     }
@@ -255,7 +255,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         } finally {
             temp.delete()
         }
-        prefs.edit().putString(PREF_KEY, wall.key).putString(PREF_ID, wall.id).putString(PREF_URL, wall.url).commit()
+        prefs.edit().putString(PREF_KEY, wall.key).putString(PREF_ID, wall.id).putString(PREF_URL, wall.url).putString(PREF_ORIGINAL_URL, wall.originalUrl).commit()
     }
 
     private fun widgetPrefs(context: Context): SharedPreferences = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
@@ -284,8 +284,13 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
         setOnClickPendingIntent(R.id.wotd_root, PendingIntent.getActivity(context, widgetId, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         val set = Intent(context, WotdWidgetProvider::class.java).setAction(ACTION_SET_WALLPAPER)
-        shown?.let { set.setData(Uri.parse(it.wall.url)).putExtra(EXTRA_WALL_URL, it.wall.url) }
-        setOnClickPendingIntent(R.id.wotd_set, PendingIntent.getBroadcast(context, widgetId, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        shown?.let { set.setData(Uri.parse(it.wall.originalUrl)).putExtra(EXTRA_WALL_URL, it.wall.originalUrl) }
+        val setAction = if (shown != null && shown.wall.originalUrl.isEmpty()) {
+            PendingIntent.getActivity(context, widgetId, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        } else {
+            PendingIntent.getBroadcast(context, widgetId, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+        setOnClickPendingIntent(R.id.wotd_set, setAction)
     }
 
     companion object {
@@ -296,6 +301,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         private const val PREF_KEY = "key"
         private const val PREF_ID = "id"
         private const val PREF_URL = "url"
+        private const val PREF_ORIGINAL_URL = "original_url"
         private const val UPDATE_BUDGET_MS = 8_500L
         private const val SET_FETCH_BUDGET_MS = 5_000L
         private const val SET_BUDGET_MS = 40_000L

@@ -26,6 +26,7 @@ internal class PrismNativeInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            verifyWotdWidgetDocuments()
             verifyOfflineTileAssets()
             verifyMediaContract()
             result.putString(OUTPUT_STREAM, "Prism native offline tile and media checks passed\n")
@@ -34,6 +35,15 @@ internal class PrismNativeInstrumentation : Instrumentation() {
             result.putString(OUTPUT_STREAM, error.stackTraceToString())
             finish(Activity.RESULT_CANCELED, result)
         }
+    }
+
+    private fun verifyWotdWidgetDocuments() {
+        val document = """{"fields":{"wallpaper_url":{"stringValue":""},"wallpaper_thumb":{"stringValue":"https://cdn.example/preview.jpg"}}}"""
+        val wall = wotdWallFromDocument("today", document)
+        check(wall == WotdWall("today", "https://cdn.example/preview.jpg", "")) {
+            "Protected Wall of the Day must display its preview without treating it as the original"
+        }
+        check(wotdWallFromDocument("missing", """{"fields":{}}""") == null)
     }
 
     private fun verifyOfflineTileAssets() {
