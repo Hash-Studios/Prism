@@ -4855,6 +4855,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label। मुफ़्त, यह वॉलपेपर आपका है';
+  }
+
+  @override
   String economyDownloadFreeWithPassSemantics(String label) {
     return '$label। आपके पास से मुफ़्त';
   }

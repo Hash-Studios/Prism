@@ -4823,6 +4823,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Gratis, wallpaper ini milik Anda';
+  }
+
+  @override
   String economyDownloadFreeWithPassSemantics(String label) {
     return '$label. Gratis dengan akses Anda';
   }

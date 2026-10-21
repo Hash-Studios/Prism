@@ -7955,6 +7955,12 @@ abstract class AppLocalizations {
   /// **'{label} · Free · {count} left'**
   String economyDownloadFreeLeftFor(String label, int count);
 
+  /// No description provided for @economyDownloadFreeOwnedSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}. Free, you own this wallpaper'**
+  String economyDownloadFreeOwnedSemantics(String label);
+
   /// No description provided for @economyDownloadFreeWithPassSemantics.
   ///
   /// In en, this message translates to:

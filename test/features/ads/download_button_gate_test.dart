@@ -447,6 +447,50 @@ void main() {
     });
   });
 
+  group('an unlocked Drop wall', () {
+    setUp(() {
+      CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
+        'wall-1': DropUnlock(wallId: 'wall-1', weekKey: '2026-W43', url: _link),
+      });
+      addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+    });
+
+    testWidgets('reads free because the unlock already paid for it', (tester) async {
+      await pump(tester, source: WallpaperSource.prism);
+
+      expect(find.text('Save · Free'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Save. Free, you own this wallpaper');
+    });
+
+    testWidgets('saves the unlock url without a coin spend or an original grant', (tester) async {
+      final List<String> calls = <String>[];
+      backend.onCall = (name, parameters) async {
+        calls.add(name);
+        return _spent;
+      };
+      await pump(tester, source: WallpaperSource.prism);
+      await tapSave(tester);
+
+      expect(calls, isNot(contains('spendCoins')));
+      expect(calls, isNot(contains('resolveOriginalAccess')));
+      expect(enqueued, hasLength(1));
+      expect((enqueued.single! as DownloadRequest).link, _link);
+      expect(results().single.result, 'success');
+    });
+
+    testWidgets('another url for the same wall id keeps the normal price', (tester) async {
+      await pump(tester, source: WallpaperSource.prism, link: 'https://example.com/walls/other.jpg');
+
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+    });
+
+    testWidgets('a wallpaper from another source keeps its normal price', (tester) async {
+      await pump(tester);
+
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+    });
+  });
+
   group('saving with enough coins', () {
     testWidgets('a bundled starter saves its local original without coins or server download stats', (tester) async {
       final _RecordingStats stats = _RecordingStats();
@@ -751,6 +795,20 @@ void main() {
       downloadsOnDisk = <String>[await fileOnDisk()];
       CoinsService.instance.isLinkDownloaded = (link) => link == _link;
       await pump(tester);
+      await tapSave(tester);
+
+      expect(find.text('Download again'), findsOneWidget);
+      expect(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'), findsNothing);
+    });
+
+    testWidgets('an unlocked Drop wall repeat shows free', (tester) async {
+      CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
+        'wall-1': DropUnlock(wallId: 'wall-1', weekKey: '2026-W43', url: _link),
+      });
+      addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+      downloadsOnDisk = <String>[await fileOnDisk()];
+      CoinsService.instance.isLinkDownloaded = (link) => link == _link;
+      await pump(tester, source: WallpaperSource.prism);
       await tapSave(tester);
 
       expect(find.text('Download again'), findsOneWidget);

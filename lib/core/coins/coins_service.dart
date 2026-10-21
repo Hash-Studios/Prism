@@ -476,6 +476,10 @@ class CoinsService with WidgetsBindingObserver {
   /// The signed-in user's passes. Empty while the cached passes belong to someone else.
   Passes get currentPasses => _ownsEconomyState ? passesNotifier.value : Passes.empty;
 
+  /// The signed-in user's unlocked Drop walls. Empty while the cached unlocks belong to someone else.
+  Map<String, DropUnlock> get currentDropUnlocks =>
+      _ownsEconomyState ? dropsUnlockedNotifier.value : const <String, DropUnlock>{};
+
   /// Premium collections and premium walls are open: Pro or an active premium pass.
   bool get premiumContentUnlocked => app_state.prismUser.premium || currentPasses.premiumPassActive(DateTime.now());
 
@@ -501,6 +505,13 @@ class CoinsService with WidgetsBindingObserver {
   void setPassesForTest(Passes passes) {
     _ensureEconomyUser(app_state.prismUser.id);
     passesNotifier.value = passes;
+  }
+
+  /// Sets the Drop unlocks as the signed-in user's own, as a sync from the server would.
+  @visibleForTesting
+  void setDropUnlocksForTest(Map<String, DropUnlock> unlocks) {
+    _ensureEconomyUser(app_state.prismUser.id);
+    dropsUnlockedNotifier.value = unlocks;
   }
 
   /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.

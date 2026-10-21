@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -117,6 +120,55 @@ void main() {
     );
     verifyNever(() => palette.generatePalette(any()));
     verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
+
+  group('Drop walls', () {
+    // An unreleased Drop wall is unreviewed, so the canonical lookup never finds it.
+    setUp(() {
+      when(() => prism.fetchCanonicalById(any())).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'alice'
+        ..loggedIn = true;
+      CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
+        'abc': DropUnlock(wallId: 'abc', weekKey: '2026-W43', url: 'https://example.com/abc.jpg'),
+      });
+      addTearDown(() {
+        CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{};
+        app_state.prismUser = app_constants.createGuestPrismUser();
+      });
+    });
+
+    test('an unlocked Drop wall opens with the url its unlock gave this account', () async {
+      bloc.add(
+        const LoadFromEntity(
+          entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+        ),
+      );
+      await waitForLookup();
+      expect(bloc.state, isA<WallpaperDetailLoaded>());
+      expect((bloc.state as WallpaperDetailLoaded).entity.fullUrl, 'https://example.com/abc.jpg');
+      verifyNever(() => prism.fetchCanonicalById(any()));
+    });
+
+    test('a Prism entity with another url still needs the canonical wall', () async {
+      bloc.add(
+        const LoadFromEntity(
+          entity: PrismFeedItem(
+            id: 'abc',
+            wallpaper: PrismWallpaper(
+              core: WallpaperCore(
+                id: 'abc',
+                source: WallpaperSource.prism,
+                fullUrl: 'https://example.com/other.jpg',
+                thumbnailUrl: 'https://example.com/abc-thumb.jpg',
+              ),
+            ),
+          ),
+        ),
+      );
+      await waitForLookup();
+      expect(bloc.state, isA<WallpaperDetailError>());
+    });
   });
 
   test('a saved favourite with only an author name opens with the canonical creator email', () async {
