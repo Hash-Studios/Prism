@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/account/username_service.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -16,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../support/fake_app_analytics.dart';
 import '../support/fake_firestore_client.dart';
 import '../support/in_memory_local_store.dart';
 import '../support/profile_user_fixture.dart';
@@ -25,6 +28,8 @@ class _DelayedWriteFirestore extends FakeFirestoreClient {
   final Completer<void> writeGate = Completer<void>();
   bool _blockedOnce = false;
   final List<String> readTags = <String>[];
+  Completer<void>? readGate;
+  final Completer<void> readStarted = Completer<void>();
 
   @override
   Future<T?> getById<T>(
@@ -33,8 +38,10 @@ class _DelayedWriteFirestore extends FakeFirestoreClient {
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
     bool preferCacheFirst = false,
-  }) {
+  }) async {
     readTags.add(sourceTag);
+    if (!readStarted.isCompleted) readStarted.complete();
+    await readGate?.future;
     return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
   }
 
@@ -66,10 +73,12 @@ class _DelayedWriteFirestore extends FakeFirestoreClient {
 }
 
 class _User extends Fake implements User {
-  _User({this.displayName = 'User', this.photoURL});
+  _User({this.uid = 'u1', this.displayName = 'User', this.photoURL});
 
   @override
-  String get uid => 'u1';
+  final String uid;
+  Completer<void>? nameGate;
+  final nameStarted = Completer<void>();
   @override
   String? get email => 'user@example.com';
   @override
@@ -79,7 +88,12 @@ class _User extends Fake implements User {
   @override
   bool get isAnonymous => false;
   @override
-  Future<void> updateDisplayName(String? displayName) async => this.displayName = displayName;
+  Future<void> updateDisplayName(String? displayName) async {
+    nameStarted.complete();
+    await nameGate?.future;
+    this.displayName = displayName;
+  }
+
   @override
   Future<void> updatePhotoURL(String? photoURL) async => this.photoURL = photoURL;
 }
@@ -94,15 +108,18 @@ class _Credential extends Fake implements UserCredential {
 class _Auth extends Fake implements FirebaseAuth {
   _Auth([_User? user]) : user = user ?? _User();
 
-  final _User user;
+  _User? user;
   final List<String> calls = <String>[];
 
   @override
   User? get currentUser => user;
   @override
-  Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential(user);
+  Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential(user!);
   @override
-  Future<void> signOut() async => calls.add('auth.signOut');
+  Future<void> signOut() async {
+    calls.add('auth.signOut');
+    user = null;
+  }
 }
 
 // ignore: avoid_implementing_value_types
@@ -121,16 +138,23 @@ class _GoogleSignIn extends Fake implements GoogleSignIn {
   _GoogleSignIn([_Account? account]) : account = account ?? _Account();
 
   final _Account account;
+  Completer<GoogleSignInAccount>? authenticationGate;
+  final authenticationStarted = Completer<void>();
 
   @override
   Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {}
   @override
-  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async => account;
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async {
+    authenticationStarted.complete();
+    return authenticationGate?.future ?? account;
+  }
+
   @override
   Future<void> signOut() async {}
 }
 
 class _Messaging extends Fake implements FirebaseMessaging {
+  final List<String> topics = <String>[];
   @override
   Future<String?> getAPNSToken() async => 'apns';
   @override
@@ -138,9 +162,21 @@ class _Messaging extends Fake implements FirebaseMessaging {
   @override
   Stream<String> get onTokenRefresh => const Stream<String>.empty();
   @override
-  Future<void> subscribeToTopic(String topic) async {}
+  Future<void> subscribeToTopic(String topic) async => topics.add(topic);
   @override
   Future<void> unsubscribeFromTopic(String topic) async {}
+}
+
+class _DelayedAnalytics extends FakeAppAnalytics {
+  final started = Completer<void>();
+  final gate = Completer<void>();
+
+  @override
+  Future<void> setUserId(String? userId) async {
+    await super.setUserId(userId);
+    started.complete();
+    await gate.future;
+  }
 }
 
 void main() {
@@ -152,6 +188,7 @@ void main() {
   late Completer<Map<String, Object?>> customerInfoGate;
 
   setUp(() async {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
     await getIt.reset();
     firestore = _DelayedWriteFirestore();
     firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{'u1': profileUser().toJson()};
@@ -180,6 +217,7 @@ void main() {
     await FcmTokenService.instance.cancelAndWait();
     app_state.prismUser = profileUser(id: '', loggedIn: false);
     await getIt.reset();
+    AnalyticsRuntime.reset();
     UsernameService.instance = UsernameService();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null);
   });
@@ -313,6 +351,200 @@ void main() {
     expect(original.username, isEmpty);
     expect(app_state.prismUser.username, 'Other');
     expect(app_state.prismUser.loggedIn, isTrue);
+  });
+
+  for (final bool existing in <bool>[false, true]) {
+    test('Google delayed ${existing ? 'update' : 'create'} cannot roll back or initialize a replacement', () async {
+      if (!existing) firestore.docs.clear();
+      if (existing) firestore.docs[FirebaseCollections.usersV2]!['u1']!['username'] = '';
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      final claims = <Object?>[];
+      UsernameService.instance = UsernameService(
+        request: (data) async {
+          claims.add(data);
+          return <String, Object?>{'username': 'Wrong'};
+        },
+      );
+      final firebase = _Auth();
+      final pending = GoogleAuth(
+        auth: firebase,
+        googleSignIn: _GoogleSignIn(),
+        messaging: _Messaging(),
+      ).signInWithGoogle();
+      final rejected = expectLater(pending, throwsStateError);
+      await firestore.writeStarted.future;
+      final replacement = profileUser(id: 'other');
+      app_state.prismUser = replacement;
+      firebase.user = _User(uid: 'other');
+      firestore.writeGate.complete();
+      await rejected;
+      expect(firebase.calls, isEmpty);
+      expect(firebase.currentUser?.uid, 'other');
+      expect(app_state.prismUser, same(replacement));
+      expect(claims, isEmpty);
+      expect(customerInfoStarted.isCompleted, isFalse);
+      expect(analytics.events, isEmpty);
+    });
+
+    test('delayed ${existing ? 'update' : 'create'} cannot name or bootstrap a replacement session', () async {
+      if (!existing) firestore.docs.clear();
+      if (existing) firestore.docs[FirebaseCollections.usersV2]!['u1']!['username'] = '';
+      final List<Object?> claims = <Object?>[];
+      UsernameService.instance = UsernameService(
+        request: (data) async {
+          claims.add(data);
+          return <String, Object?>{'username': 'Wrong'};
+        },
+      );
+      final Future<void> signIn = completeSignIn(
+        user: _User(),
+        displayName: 'User',
+        email: 'user@example.com',
+        photoUrl: '',
+        sourceTagPrefix: 'test',
+        messaging: _Messaging(),
+      );
+      final Future<void> rejected = expectLater(signIn, throwsStateError);
+      await firestore.writeStarted.future;
+      final replacement = profileUser(id: 'other');
+      app_state.prismUser = replacement;
+      firestore.writeGate.complete();
+      await rejected;
+      await waitForSignInBootstraps();
+      expect(claims, isEmpty);
+      expect(app_state.prismUser, same(replacement));
+      expect(replacement.username, isEmpty);
+      expect(customerInfoStarted.isCompleted, isFalse);
+      expect(firestore.readTags.where((tag) => tag.startsWith('coins.')), isEmpty);
+    });
+  }
+
+  test('Google profile await stops photo writes and success analytics after a Firebase-only switch', () async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    firestore.writeGate.complete();
+    final user = _User(displayName: 'Old', photoURL: 'old')..nameGate = Completer<void>();
+    final firebase = _Auth(user);
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _GoogleSignIn(_Account(displayName: 'New', photoUrl: 'new')),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+    final rejected = expectLater(pending, throwsStateError);
+    await user.nameStarted.future;
+    firebase.user = _User(uid: 'other');
+    user.nameGate!.complete();
+    await rejected;
+    expect(user.photoURL, 'old');
+    expect(firebase.calls, isEmpty);
+    expect(firebase.currentUser?.uid, 'other');
+    expect(analytics.events, isEmpty);
+  });
+
+  test('a new Google attempt invalidates an old write even before the new credential is accepted', () async {
+    final firebase = _Auth();
+    final oldPending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _GoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+    final oldRejected = expectLater(oldPending, throwsStateError);
+    await firestore.writeStarted.future;
+    final owner = app_state.prismUser;
+    final newGoogle = _GoogleSignIn()..authenticationGate = Completer<GoogleSignInAccount>();
+    final newPending = GoogleAuth(auth: firebase, googleSignIn: newGoogle, messaging: _Messaging()).signInWithGoogle();
+    await newGoogle.authenticationStarted.future;
+    firestore.writeGate.complete();
+    await oldRejected;
+    expect(firebase.calls, isEmpty);
+    expect(app_state.prismUser, same(owner));
+    expect(customerInfoStarted.isCompleted, isFalse);
+    newGoogle.authenticationGate!.completeError(const GoogleSignInException(code: GoogleSignInExceptionCode.canceled));
+    expect(await newPending, SignInOutcome.cancelled);
+  });
+
+  test('an account switch during the first remote read cannot publish the old sign-in profile', () async {
+    firestore.readGate = Completer<void>();
+    final pending = completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    );
+    final rejected = expectLater(pending, throwsStateError);
+    await firestore.readStarted.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    firestore.readGate!.complete();
+    await rejected;
+    expect(app_state.prismUser, same(replacement));
+    expect(firestore.writeStarted.isCompleted, isFalse);
+  });
+
+  test('an analytics await cannot continue into replacement-session topics or bootstrap', () async {
+    firestore.writeGate.complete();
+    final analytics = _DelayedAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final messaging = _Messaging();
+    final pending = completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: messaging,
+    );
+    final rejected = expectLater(pending, throwsStateError);
+    await analytics.started.future;
+    app_state.prismUser = profileUser(id: 'other');
+    analytics.gate.complete();
+    await rejected;
+    expect(analytics.userProperties, isEmpty);
+    expect(messaging.topics, isEmpty);
+    expect(customerInfoStarted.isCompleted, isFalse);
+  });
+
+  test('returning to the same profile after a session reset still invalidates an old write', () async {
+    final pending = completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    );
+    final rejected = expectLater(pending, throwsStateError);
+    await firestore.writeStarted.future;
+    final original = app_state.prismUser;
+    app_state.prismUser = profileUser(id: 'other');
+    CoinsService.instance.resetSession();
+    app_state.prismUser = original;
+    firestore.writeGate.complete();
+    await rejected;
+    expect(customerInfoStarted.isCompleted, isFalse);
+  });
+
+  test('a purchase bootstrap completing after a switch cannot bootstrap replacement coins', () async {
+    delayCustomerInfo = true;
+    firestore.writeGate.complete();
+    await completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    );
+    await customerInfoStarted.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    customerInfoGate.complete(_customerInfo());
+    await waitForSignInBootstraps();
+    expect(app_state.prismUser, same(replacement));
+    expect(firestore.readTags.where((tag) => tag.startsWith('coins.')), isEmpty);
   });
 
   for (final Object? storedId in <Object?>['', null, 'another-user', 'u1 ']) {

@@ -263,7 +263,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       _confirmedFollowing[operationKey] = event.follow;
       await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
       if (!ownsSession()) return;
-      await _syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow);
+      await _syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow, isCurrent: ownsSession);
       if (!ownsSession() || !identical(_followIntents[targetKey], intent)) return;
       emit(state.copyWith(followOutcome: outcome.copyWith(id: (state.followOutcome?.id ?? 0) + 1)));
     } finally {
@@ -274,7 +274,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   /// Posts pushes for the creator follow the follow state.
-  Future<void> _syncPostsTopic(String email, String targetUserId, {required bool follow}) async {
+  Future<void> _syncPostsTopic(
+    String email,
+    String targetUserId, {
+    required bool follow,
+    required bool Function() isCurrent,
+  }) async {
     try {
       if (follow && !creatorPostsAlertsEnabled) return;
       await setCreatorPostsTopics(
@@ -283,6 +288,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         subscribed: follow,
         sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
         knownUids: targetUserId.trim().isEmpty ? const <String, String>{} : <String, String>{email: targetUserId},
+        isCurrent: isCurrent,
       );
     } catch (error, stackTrace) {
       logger.w('Could not sync the posts topic.', error: error, stackTrace: stackTrace);

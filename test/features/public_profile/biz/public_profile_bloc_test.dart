@@ -42,6 +42,7 @@ class _Messaging {
   final List<(bool, String)> calls = <(bool, String)>[];
   final Set<String> subscriptions = <String>{};
   Completer<void>? subscribeGate;
+  Completer<void>? subscribeStarted;
 
   Future<Object?> handle(MethodCall call) async {
     final arguments = call.arguments as Map<Object?, Object?>;
@@ -49,6 +50,7 @@ class _Messaging {
     switch (call.method) {
       case 'Messaging#subscribeToTopic':
         calls.add((true, topic));
+        if (!(subscribeStarted?.isCompleted ?? true)) subscribeStarted!.complete();
         await subscribeGate?.future;
         subscriptions.add(topic);
       case 'Messaging#unsubscribeFromTopic':
@@ -122,6 +124,7 @@ void main() {
     messaging.calls.clear();
     messaging.subscriptions.clear();
     messaging.subscribeGate = null;
+    messaging.subscribeStarted = null;
   });
 
   tearDown(() async {
@@ -655,6 +658,41 @@ void main() {
   });
 
   for (final bool closeInstead in <bool>[false, true]) {
+    test(
+      'invalidation during first native topic call prevents subsequent dispatch/outcome; close=$closeInstead',
+      () async {
+        final gate = Completer<void>();
+        messaging.subscribeGate = gate;
+        messaging.subscribeStarted = Completer<void>();
+        when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+        final bloc = buildBloc();
+        bloc.add(followEvent);
+        await messaging.subscribeStarted!.future;
+        // Both branches dispatch concurrently; drain their platform-channel delivery while held.
+        await pumpEventQueue();
+        final dispatched = List<(bool, String)>.of(messaging.calls);
+        expect(dispatched, unorderedEquals(<(bool, String)>[(true, 'A_posts_loc_v1'), (true, 'posts_a-id_loc_v1')]));
+        Future<void>? closing;
+        if (closeInstead) {
+          closing = bloc.close();
+        } else {
+          app_state.prismUser = profileUser(id: 'other');
+          CoinsService.instance.resetSession();
+        }
+        gate.complete();
+        await pumpEventQueue();
+        if (closing != null) {
+          await closing;
+        } else {
+          await bloc.close();
+          expect(app_state.prismUser.following, isEmpty);
+        }
+        // Native calls dispatched while the old owner was current cannot be cancelled.
+        expect(messaging.calls, dispatched);
+        expect(bloc.state.followOutcome, isNull);
+      },
+    );
+
     test('invalidation during session persistence suppresses topic/outcome; close=$closeInstead', () async {
       final session = _MockSession();
       var current = profileUser(id: 'me')..email = 'me@x.com';

@@ -74,7 +74,9 @@ Future<({Map<String, String> uids, bool complete})> _creatorUids(
   required Map<String, String> knownUids,
   required SettingsLocalDataSource? settings,
   required CreatorUidResolver? resolver,
+  bool Function()? isCurrent,
 }) async {
+  if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
   final Map<String, String> cache = _readCreatorUidCache(settings)..addAll(knownUids);
   final Map<String, String> uids = <String, String>{};
   final List<String> missing = <String>[];
@@ -91,11 +93,14 @@ Future<({Map<String, String> uids, bool complete})> _creatorUids(
       resolver ?? (getIt.isRegistered<PublicProfileRepository>() ? _resolveCreatorUidFromProfile : null);
   if (resolve != null) {
     for (int start = 0; start < missing.length; start += _creatorUidResolveBatch) {
+      if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
       final List<String> batch = missing.skip(start).take(_creatorUidResolveBatch).toList();
       await Future.wait(
         batch.map((String email) async {
           try {
+            if (!(isCurrent?.call() ?? true)) return;
             final String? uid = await resolve(email);
+            if (!(isCurrent?.call() ?? true)) return;
             if (uid != null && uid.isNotEmpty) uids[email] = uid;
           } catch (error, stackTrace) {
             complete = false;
@@ -110,6 +115,7 @@ Future<({Map<String, String> uids, bool complete})> _creatorUids(
       );
     }
   }
+  if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
   final Map<String, String> learned = <String, String>{
     for (final MapEntry<String, String> entry in uids.entries)
       if (cache[entry.key] != entry.value) entry.key: entry.value,
@@ -122,6 +128,7 @@ Future<({Map<String, String> uids, bool complete})> _creatorUids(
 
 /// Subscribes to or leaves the posts topics of [creatorEmails]: the legacy `<local>_posts` topic and `posts_<uid>`.
 /// Returns false when a topic call or a uid read failed. Pass [knownUids] (email to uid) when the caller has them.
+/// [isCurrent] stops subsequent work after ownership changes; dispatched native calls cannot be cancelled.
 Future<bool> _changeCreatorPostsTopics(
   FirebaseMessaging messaging,
   Iterable<String> creatorEmails, {
@@ -130,7 +137,9 @@ Future<bool> _changeCreatorPostsTopics(
   Map<String, String> knownUids = const <String, String>{},
   SettingsLocalDataSource? settings,
   CreatorUidResolver? resolver,
+  bool Function()? isCurrent,
 }) async {
+  if (!(isCurrent?.call() ?? true)) return false;
   final Map<String, String> emailByKey = <String, String>{
     for (final String email in creatorEmails)
       if (email.trim().isNotEmpty) email.trim().toLowerCase(): email.trim(),
@@ -139,7 +148,7 @@ Future<bool> _changeCreatorPostsTopics(
       settings ?? (getIt.isRegistered<SettingsLocalDataSource>() ? getIt<SettingsLocalDataSource>() : null);
   Future<bool> change(String? topic) => topic == null
       ? Future<bool>.value(true)
-      : _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag);
+      : _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag, isCurrent: isCurrent);
   final List<bool> results = await Future.wait(<Future<bool>>[
     ...emailByKey.values.map((String email) => change(_creatorPostsTopicFromEmail(email))),
     _creatorUids(
@@ -149,7 +158,9 @@ Future<bool> _changeCreatorPostsTopics(
       },
       settings: store,
       resolver: resolver,
+      isCurrent: isCurrent,
     ).then((({Map<String, String> uids, bool complete}) found) async {
+      if (!(isCurrent?.call() ?? true)) return false;
       final List<bool> changed = await Future.wait(
         found.uids.values.map((String uid) => change(creatorPostsTopicFromUid(uid))),
       );
@@ -166,6 +177,7 @@ Future<void> setCreatorPostsTopics(
   required bool subscribed,
   required String sourceTag,
   Map<String, String> knownUids = const <String, String>{},
+  bool Function()? isCurrent,
 }) async {
   await _changeCreatorPostsTopics(
     messaging,
@@ -173,6 +185,7 @@ Future<void> setCreatorPostsTopics(
     subscribed: subscribed,
     sourceTag: sourceTag,
     knownUids: knownUids,
+    isCurrent: isCurrent,
   );
 }
 
@@ -322,12 +335,22 @@ Future<void> syncPushTopics(
   if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);
 }
 
-Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) {
-  return _changeTopic(messaging, topic, subscribe: true, sourceTag: sourceTag);
+Future<bool> subscribeToTopicSafely(
+  FirebaseMessaging messaging,
+  String topic, {
+  required String sourceTag,
+  bool Function()? isCurrent,
+}) {
+  return _changeTopic(messaging, topic, subscribe: true, sourceTag: sourceTag, isCurrent: isCurrent);
 }
 
-Future<void> unsubscribeFromTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) {
-  return _changeTopic(messaging, topic, subscribe: false, sourceTag: sourceTag);
+Future<void> unsubscribeFromTopicSafely(
+  FirebaseMessaging messaging,
+  String topic, {
+  required String sourceTag,
+  bool Function()? isCurrent,
+}) {
+  return _changeTopic(messaging, topic, subscribe: false, sourceTag: sourceTag, isCurrent: isCurrent);
 }
 
 /// Subscribes to or unsubscribes from [topic]; returns whether the call went through.
@@ -336,7 +359,9 @@ Future<bool> _changeTopic(
   String topic, {
   required bool subscribe,
   required String sourceTag,
+  bool Function()? isCurrent,
 }) async {
+  if (!(isCurrent?.call() ?? true)) return false;
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
     return false;
@@ -351,18 +376,21 @@ Future<bool> _changeTopic(
     'sourceTag': sourceTag,
   };
   try {
-    final bool canProceed = await _canProceedWithTopicCall(messaging);
+    final bool canProceed = await _canProceedWithTopicCall(messaging, isCurrent: isCurrent);
+    if (!(isCurrent?.call() ?? true)) return false;
     if (!canProceed) {
       logger.w('Skipping topic $noun until APNS token is available.', tag: 'Push', fields: fields);
       return false;
     }
     if (subscribe) {
       await messaging.subscribeToTopic(localizationTopic);
+      if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
         await messaging.unsubscribeFromTopic(legacyTopic);
       }
     } else {
       await messaging.unsubscribeFromTopic(legacyTopic);
+      if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
         await messaging.unsubscribeFromTopic(localizationTopic);
       }
@@ -390,12 +418,14 @@ Future<bool> _changeTopic(
   }
 }
 
-Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging) async {
+Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging, {bool Function()? isCurrent}) async {
   if (!(Platform.isIOS || Platform.isMacOS)) {
     return true;
   }
   for (int attempt = 0; attempt < 3; attempt++) {
+    if (!(isCurrent?.call() ?? true)) return false;
     final String? token = await messaging.getAPNSToken();
+    if (!(isCurrent?.call() ?? true)) return false;
     if (token != null && token.trim().isNotEmpty) {
       return true;
     }
