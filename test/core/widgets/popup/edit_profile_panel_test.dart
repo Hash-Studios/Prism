@@ -293,6 +293,25 @@ void main() {
         expect(find.text('Remove photo'), findsNothing);
       });
     }
+
+    testWidgets('keeps the custom photo when the write fails', (tester) async {
+      await getIt.reset();
+      getIt.registerSingleton<FirestoreClient>(_FailingWriteFirestore());
+      signedInAccountPhoto = () => googlePhoto;
+      app_state.prismUser.profilePhoto = customPhoto;
+      await pumpPanel(tester);
+
+      await tester.tap(find.text('Remove photo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(app_state.prismUser.profilePhoto, customPhoto);
+      expect(find.text('Remove photo'), findsOneWidget);
+      // The error toast runs a timer.
+      await tester.pump(const Duration(seconds: 5));
+    });
   });
 
   testWidgets('the link type opens a sheet that marks the current type', (tester) async {
@@ -339,4 +358,10 @@ void main() {
     expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Edit profile'), findsNothing);
   });
+}
+
+class _FailingWriteFirestore extends FakeFirestoreClient {
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
+      Future<void>.error(StateError('offline'));
 }

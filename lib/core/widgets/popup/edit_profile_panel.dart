@@ -133,11 +133,20 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   /// Puts back the Google account photo, or the placeholder when there is none. Later Google sign-ins keep it current.
+  /// The custom photo stays when the write fails.
   Future<void> _removePhoto() async {
+    final AppLocalizations l10n = context.l10n;
     final String photo = photoOrPlaceholder(signedInAccountPhoto());
-    setState(() => app_state.prismUser.profilePhoto = photo);
+    try {
+      await _updateCurrentUser(<String, dynamic>{'profilePhoto': photo}, 'profile.edit.removePhoto');
+    } catch (e) {
+      logger.d(e.toString());
+      toasts.error(l10n.coreProfileSaveFailed);
+      return;
+    }
+    app_state.prismUser.profilePhoto = photo;
     app_state.persistPrismUser();
-    await _updateCurrentUser(<String, dynamic>{'profilePhoto': photo}, 'profile.edit.removePhoto');
+    if (mounted) setState(() {});
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
