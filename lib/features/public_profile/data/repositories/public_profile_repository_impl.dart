@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:crypto/crypto.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
@@ -14,14 +14,13 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/wallpaper/wall_depth.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/public_profile_snapshot_codec.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:crypto/crypto.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PublicProfileRepository)
@@ -34,6 +33,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   final Map<String, Future<void>> _snapshotWriteTails = <String, Future<void>>{};
   final Set<String> _clearingSnapshotOwners = <String>{};
   final Map<String, String> _wallCursorByEmail = <String, String>{};
+  final Map<String, int> _wallGenerationByEmail = <String, int>{};
+  int? _wallSession;
   static const int _profileReadDedupeMs = 30000;
   static const int _searchChunkSize = 30;
   static const int _summariesPageSize = 20;
@@ -199,10 +200,24 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required bool refresh,
   }) async {
     final String owner = _snapshotOwner;
+    final int session = CoinsService.instance.economySession;
+    if (_wallSession != session) {
+      _wallSession = session;
+      _wallCursorByEmail.clear();
+      _wallGenerationByEmail.clear();
+    }
+    final String cursorKey = '$owner::${email.trim().toLowerCase()}';
+    final int generation = (_wallGenerationByEmail[cursorKey] ?? 0) + (refresh ? 1 : 0);
+    _wallGenerationByEmail[cursorKey] = generation;
+    if (refresh) _wallCursorByEmail.remove(cursorKey);
+    bool isCurrent() =>
+        _snapshotOwner == owner &&
+        CoinsService.instance.economySession == session &&
+        _wallGenerationByEmail[cursorKey] == generation;
     final String snapshotKey = '$owner::walls:${email.trim().toLowerCase()}';
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    if (_snapshotOwner != owner) {
-      return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+    if (!isCurrent()) {
+      return Result.error(const ServerFailure('Profile wall request was superseded.'));
     }
     if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success((items: const <PublicProfileWallEntity>[], hasMore: false));
@@ -218,53 +233,56 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           ],
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
           limit: 12,
-          startAfterDocId: refresh ? null : _wallCursorByEmail[email],
+          startAfterDocId: refresh ? null : _wallCursorByEmail[cursorKey],
           cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
           dedupeWindowMs: refresh ? 0 : _profileReadDedupeMs,
         ),
         (data, docId) => _WallRow(docId: docId, doc: WallDocDto.fromJson(data)),
       );
-      if (_snapshotOwner != owner) {
-        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
-      }
-      if (rows.isNotEmpty) {
-        _wallCursorByEmail[email] = rows.last.docId;
+      if (!isCurrent()) {
+        return Result.error(const ServerFailure('Profile wall request was superseded.'));
       }
 
-      final items = rows.map((row) => _mapWall(row.doc, row.docId)).toList(growable: false);
-      Map<String, Object?>? previous;
-      if (!refresh) {
-        try {
-          previous = await _profileSnapshots.read(snapshotKey);
-        } catch (_) {}
-      }
-      final Map<String, WallDocDto> uniqueRows = <String, WallDocDto>{
-        if (previous != null)
-          for (final row in PublicProfileSnapshotCodec.decodeWalls(previous)) row.id: row,
-        for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): row.doc,
-      };
+      final items = rows
+          .map((row) => PublicProfileSnapshotCodec.wallFromDto(row.doc, row.docId))
+          .toList(growable: false);
       try {
-        await _writeSnapshot(
-          owner,
-          snapshotKey,
-          PublicProfileSnapshotCodec.encodeWalls(
-            uniqueRows.entries.map(
-              (entry) => entry.value.id.isEmpty ? entry.value.copyWith(id: entry.key) : entry.value,
+        await _serializeSnapshotWrite(owner, () async {
+          if (!isCurrent()) return;
+          Map<String, Object?>? previous;
+          if (!refresh) {
+            try {
+              previous = await _profileSnapshots.read(snapshotKey);
+            } catch (_) {}
+          }
+          if (!isCurrent()) return;
+          final Map<String, WallDocDto> uniqueRows = <String, WallDocDto>{
+            if (previous != null)
+              for (final row in PublicProfileSnapshotCodec.decodeWalls(previous)) row.id: row,
+            for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): row.doc,
+          };
+          await _profileSnapshots.write(
+            snapshotKey,
+            PublicProfileSnapshotCodec.encodeWalls(
+              uniqueRows.entries.map(
+                (entry) => entry.value.id.isEmpty ? entry.value.copyWith(id: entry.key) : entry.value,
+              ),
+              hasMore: rows.length == 12,
             ),
-            hasMore: rows.length == 12,
-          ),
-        );
+          );
+        });
       } catch (_) {}
-      if (_snapshotOwner != owner) {
-        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+      if (!isCurrent()) {
+        return Result.error(const ServerFailure('Profile wall request was superseded.'));
       }
+      if (rows.isNotEmpty) _wallCursorByEmail[cursorKey] = rows.last.docId;
 
       return Result.success((items: items, hasMore: rows.length == 12));
     } catch (error) {
-      if (_snapshotOwner == owner) {
+      if (isCurrent()) {
         try {
           final cached = await _profileSnapshots.read(snapshotKey);
-          if (cached != null && _snapshotOwner == owner) {
+          if (cached != null && isCurrent()) {
             final List<WallDocDto> docs = PublicProfileSnapshotCodec.decodeWalls(cached);
             final items = docs
                 .map((doc) => PublicProfileSnapshotCodec.wallFromDto(doc, doc.id))
@@ -559,24 +577,6 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     } catch (error) {
       return Result.error(ServerFailure('Unable to search users: $error'));
     }
-  }
-
-  PublicProfileWallEntity _mapWall(WallDocDto dto, String docId) {
-    return PublicProfileWallEntity(
-      id: dto.id.isNotEmpty ? dto.id : docId,
-      by: dto.by,
-      desc: dto.desc,
-      size: dto.size,
-      resolution: dto.resolution,
-      email: dto.email,
-      source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
-      wallpaperThumb: dto.wallpaperThumb,
-      wallpaperUrl: dto.wallpaperUrl,
-      collections: dto.collections,
-      createdAt: dto.createdAt,
-      review: dto.review,
-      depthTier: WallDepthTier.parse(dto.depth['tier']),
-    );
   }
 }
 

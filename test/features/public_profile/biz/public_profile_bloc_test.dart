@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -11,11 +14,16 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_wal
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
 
 class _MockWalls extends Mock implements FetchPublicProfileWallsUseCase {}
@@ -27,6 +35,31 @@ class _MockUnfollow extends Mock implements UnfollowUserUseCase {}
 class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
 
 class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
+
+class _MockSession extends Mock implements SessionRepository {}
+
+class _Messaging {
+  final List<(bool, String)> calls = <(bool, String)>[];
+  final Set<String> subscriptions = <String>{};
+  Completer<void>? subscribeGate;
+
+  Future<Object?> handle(MethodCall call) async {
+    final arguments = call.arguments as Map<Object?, Object?>;
+    final topic = arguments['topic']! as String;
+    switch (call.method) {
+      case 'Messaging#subscribeToTopic':
+        calls.add((true, topic));
+        await subscribeGate?.future;
+        subscriptions.add(topic);
+      case 'Messaging#unsubscribeFromTopic':
+        calls.add((false, topic));
+        subscriptions.remove(topic);
+      default:
+        throw StateError('Unexpected messaging call: ${call.method}');
+    }
+    return <String, Object?>{};
+  }
+}
 
 PublicProfileWallEntity _wall(String id) => PublicProfileWallEntity(id: id, wallpaperUrl: 'https://x/$id');
 
@@ -43,7 +76,16 @@ typedef _Summaries = ({List<UserSummaryEntity> items, bool hasMore});
 typedef _Walls = ({List<PublicProfileWallEntity> items, bool hasMore});
 
 void main() {
-  setUpAll(() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final messaging = _Messaging();
+  setUpAll(() async {
+    await CoinsTestBackend().install();
+    await getIt.reset();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/firebase_messaging'),
+      messaging.handle,
+    );
+    registerFallbackValue(profileUser());
     registerFallbackValue(const FetchPublicProfileWallsParams(email: '', refresh: false));
     registerFallbackValue(const FetchUserSummariesPageParams(allEmails: <String>[], page: 0));
     registerFallbackValue(const SearchUsersByUsernameParams(query: '', scopeEmails: <String>[]));
@@ -52,6 +94,13 @@ void main() {
     );
     registerFallbackValue(
       const FollowUserParams(currentUserId: '', currentUserEmail: '', targetUserId: '', targetUserEmail: ''),
+    );
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/firebase_messaging'),
+      null,
     );
   });
 
@@ -68,13 +117,99 @@ void main() {
     unfollow = _MockUnfollow();
     summaries = _MockSummaries();
     search = _MockSearch();
+    app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com';
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    messaging.calls.clear();
+    messaging.subscriptions.clear();
+    messaging.subscribeGate = null;
   });
 
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() async {
+    AnalyticsRuntime.reset();
+    await getIt.reset();
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+  });
 
   PublicProfileBloc buildBloc() => PublicProfileBloc(walls, follow, unfollow, summaries, search);
 
   final loading = PublicProfileState.initial().copyWith(email: 'a@x.com', status: LoadStatus.loading);
+
+  for (final bool failOld in <bool>[false, true]) {
+    test('A → B → A ignores the old load ${failOld ? 'failure' : 'success'}', () async {
+      final requests = <Completer<Result<_Walls>>>[];
+      when(() => walls(any())).thenAnswer((_) {
+        final request = Completer<Result<_Walls>>();
+        requests.add(request);
+        return request.future;
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      for (final email in <String>['a@x.com', 'b@x.com', 'a@x.com']) {
+        bloc.add(PublicProfileEvent.started(email: email));
+        await pumpEventQueue();
+      }
+      requests[2].complete(Result.success<_Walls>((items: [_wall('new-a')], hasMore: true)));
+      await pumpEventQueue();
+      requests[1].complete(Result.success<_Walls>((items: [_wall('old-b')], hasMore: false)));
+      requests[0].complete(
+        failOld
+            ? Result.error<_Walls>(const ServerFailure('old failure'))
+            : Result.success<_Walls>((items: [_wall('old-a')], hasMore: false)),
+      );
+      await pumpEventQueue();
+      expect(bloc.state.email, 'a@x.com');
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.walls.map((w) => w.id), ['new-a']);
+      expect(bloc.state.hasMoreWalls, isTrue);
+    });
+  }
+
+  test('refresh rejects paging while loading and invalidates an older page', () async {
+    final page = Completer<Result<_Walls>>();
+    final refreshed = Completer<Result<_Walls>>();
+    var calls = 0;
+    when(() => walls(any())).thenAnswer((_) {
+      calls++;
+      return switch (calls) {
+        1 => Future.value(Result.success<_Walls>((items: [_wall('first')], hasMore: true))),
+        2 => page.future,
+        _ => refreshed.future,
+      };
+    });
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+    await pumpEventQueue();
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    await pumpEventQueue();
+    bloc.add(const PublicProfileEvent.refreshRequested());
+    await pumpEventQueue();
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    await pumpEventQueue();
+    expect(calls, 3);
+    refreshed.complete(Result.success<_Walls>((items: [_wall('fresh')], hasMore: true)));
+    await pumpEventQueue();
+    page.complete(Result.success<_Walls>((items: [_wall('stale-page')], hasMore: false)));
+    await pumpEventQueue();
+    expect(bloc.state.walls.map((w) => w.id), ['fresh']);
+    expect(bloc.state.hasMoreWalls, isTrue);
+    expect(bloc.state.isFetchingMoreWalls, isFalse);
+  });
+
+  test('fetch more cannot duplicate a pending first page', () async {
+    final initial = Completer<Result<_Walls>>();
+    when(() => walls(any())).thenAnswer((_) => initial.future);
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+    await pumpEventQueue();
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    await pumpEventQueue();
+    verify(() => walls(any())).called(1);
+    initial.complete(Result.success<_Walls>((items: [_wall('first')], hasMore: true)));
+    await pumpEventQueue();
+    expect(bloc.state.walls.map((w) => w.id), ['first']);
+  });
 
   blocTest<PublicProfileBloc, PublicProfileState>(
     'started clears the grid, then shows the first page of walls',
@@ -314,9 +449,275 @@ void main() {
     targetName: 'Ann',
   );
 
+  const unfollowEvent = PublicProfileEvent.followChangeRequested(
+    follow: false,
+    currentUserId: 'me',
+    currentUserEmail: 'me@x.com',
+    targetUserId: 'a-id',
+    targetUserEmail: 'A@x.com',
+  );
+
+  for (final bool failFirst in <bool>[false, true]) {
+    for (final bool failLast in <bool>[false, true]) {
+      test('follow then unfollow are ordered; first fails=$failFirst, last fails=$failLast', () async {
+        final first = Completer<Result<void>>();
+        final last = Completer<Result<void>>();
+        when(() => follow(any())).thenAnswer((_) => first.future);
+        when(() => unfollow(any())).thenAnswer((_) => last.future);
+        when(
+          () => summaries(any()),
+        ).thenAnswer((_) async => Result.success<_Summaries>((items: [_user('a@x.com')], hasMore: false)));
+        final bloc = buildBloc();
+        addTearDown(bloc.close);
+        bloc.add(
+          const PublicProfileEvent.relationPageRequested(
+            kind: UserRelationKind.followers,
+            allEmails: ['a@x.com'],
+            page: 0,
+          ),
+        );
+        await pumpEventQueue();
+        bloc.add(followEvent);
+        await pumpEventQueue();
+        bloc.add(unfollowEvent);
+        await pumpEventQueue();
+        expect(bloc.state.followOverrides['a@x.com'], isFalse);
+        verifyNever(() => unfollow(any()));
+        first.complete(failFirst ? Result.error<void>(const ServerFailure('first')) : Result.success<void>(null));
+        await pumpEventQueue();
+        verify(() => unfollow(any())).called(1);
+        expect(bloc.state.followOverrides['a@x.com'], isFalse);
+        expect(bloc.state.followOutcome, isNull);
+        last.complete(failLast ? Result.error<void>(const ServerFailure('last')) : Result.success<void>(null));
+        await pumpEventQueue();
+        final bool expectedFollow = failLast && !failFirst;
+        expect(app_state.prismUser.following.contains('A@x.com'), expectedFollow);
+        expect(bloc.state.followOverrides['a@x.com'] ?? false, expectedFollow);
+        expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
+        expect(bloc.state.followOutcome?.follow, isFalse);
+        expect(bloc.state.followOutcome?.success, !failLast);
+        expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), expectedFollow);
+        expect(messaging.subscriptions.contains('A_posts_loc_v1'), expectedFollow);
+      });
+    }
+  }
+
+  for (final bool returnToA in <bool>[false, true]) {
+    test('follow completion cannot mutate a replacement session; return to A=$returnToA', () async {
+      final pending = Completer<Result<void>>();
+      when(() => follow(any())).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      bloc.add(followEvent);
+      await pumpEventQueue();
+      bloc.add(unfollowEvent);
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: 'other');
+      CoinsService.instance.resetSession();
+      if (returnToA) {
+        app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com';
+        CoinsService.instance.resetSession();
+      }
+      pending.complete(Result.success<void>(null));
+      await pumpEventQueue();
+      expect(app_state.prismUser.following, isEmpty);
+      expect(bloc.state.followOutcome, isNull);
+      expect(messaging.calls, isEmpty);
+      verifyNever(() => unfollow(any()));
+    });
+  }
+
+  for (final bool failFirst in <bool>[false, true]) {
+    for (final bool failLast in <bool>[false, true]) {
+      test('unfollow then follow are ordered; first fails=$failFirst, last fails=$failLast', () async {
+        app_state.prismUser.following = ['A@x.com'];
+        final first = Completer<Result<void>>();
+        final last = Completer<Result<void>>();
+        when(() => unfollow(any())).thenAnswer((_) => first.future);
+        when(() => follow(any())).thenAnswer((_) => last.future);
+        when(() => summaries(any())).thenAnswer(
+          (_) async => Result.success<_Summaries>((items: [_user('a@x.com', followed: true)], hasMore: false)),
+        );
+        final bloc = buildBloc();
+        addTearDown(bloc.close);
+        bloc.add(
+          const PublicProfileEvent.relationPageRequested(
+            kind: UserRelationKind.followers,
+            allEmails: ['a@x.com'],
+            page: 0,
+          ),
+        );
+        await pumpEventQueue();
+        bloc.add(unfollowEvent);
+        await pumpEventQueue();
+        bloc.add(followEvent);
+        await pumpEventQueue();
+        verifyNever(() => follow(any()));
+        first.complete(failFirst ? Result.error<void>(const ServerFailure('first')) : Result.success<void>(null));
+        await pumpEventQueue();
+        expect(bloc.state.followOverrides['a@x.com'], isTrue);
+        expect(bloc.state.followOutcome, isNull);
+        last.complete(failLast ? Result.error<void>(const ServerFailure('last')) : Result.success<void>(null));
+        await pumpEventQueue();
+        final bool expectedFollow = !failLast || failFirst;
+        expect(app_state.prismUser.following.contains('A@x.com'), expectedFollow);
+        expect(bloc.state.followOverrides['a@x.com'] ?? expectedFollow, expectedFollow);
+        expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
+        expect(bloc.state.followOutcome?.follow, isTrue);
+        expect(bloc.state.followOutcome?.success, !failLast);
+      });
+    }
+  }
+
+  test('a rejected duplicate follow restores the actual followed state, not the inverse intent', () async {
+    app_state.prismUser.following = ['A@x.com'];
+    when(() => follow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    expect(app_state.prismUser.following, ['A@x.com']);
+    expect(bloc.state.followOutcome?.success, isFalse);
+    expect(bloc.state.followOverrides, isEmpty);
+    expect(messaging.calls, isEmpty);
+  });
+
+  test('closing with a follow pending suppresses late local effects and queued transactions', () async {
+    final pending = Completer<Result<void>>();
+    when(() => follow(any())).thenAnswer((_) => pending.future);
+    when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
+    final bloc = buildBloc();
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    bloc.add(unfollowEvent);
+    await pumpEventQueue();
+    final closing = bloc.close();
+    await pumpEventQueue();
+    pending.complete(Result.success<void>(null));
+    await closing;
+    await pumpEventQueue();
+    expect(app_state.prismUser.following, isEmpty);
+    verifyNever(() => unfollow(any()));
+    expect(messaging.calls, isEmpty);
+  });
+
+  test('returning to A keeps new intent ordered behind its earlier transaction', () async {
+    final pending = Completer<Result<void>>();
+    final calls = <String>[];
+    when(() => follow(any())).thenAnswer((_) {
+      calls.add('follow');
+      return pending.future;
+    });
+    when(() => unfollow(any())).thenAnswer((_) async {
+      calls.add('unfollow');
+      return Result.success<void>(null);
+    });
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    app_state.prismUser = profileUser(id: 'other');
+    CoinsService.instance.resetSession();
+    app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com';
+    CoinsService.instance.resetSession();
+    bloc.add(unfollowEvent);
+    await pumpEventQueue();
+    final bool wasQueued = calls.length == 1;
+    pending.complete(Result.success<void>(null));
+    await pumpEventQueue();
+    expect(wasQueued, isTrue);
+    expect(calls, ['follow', 'unfollow']);
+    expect(app_state.prismUser.following, isEmpty);
+    expect(bloc.state.followOutcome?.follow, isFalse);
+    expect(messaging.subscriptions, isEmpty);
+  });
+
+  test('a pending topic change finishes before the next same-target transaction starts', () async {
+    final gate = Completer<void>();
+    messaging.subscribeGate = gate;
+    when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+    when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    expect(messaging.calls.any((call) => call.$1), isTrue);
+    bloc.add(unfollowEvent);
+    await pumpEventQueue();
+    verifyNever(() => unfollow(any()));
+    gate.complete();
+    await pumpEventQueue();
+    verify(() => unfollow(any())).called(1);
+    expect(messaging.subscriptions, isEmpty);
+    expect(app_state.prismUser.following, isEmpty);
+    expect(bloc.state.followOverrides['a@x.com'], isFalse);
+    expect(bloc.state.followOutcome?.follow, isFalse);
+  });
+
+  for (final bool closeInstead in <bool>[false, true]) {
+    test('invalidation during session persistence suppresses topic/outcome; close=$closeInstead', () async {
+      final session = _MockSession();
+      var current = profileUser(id: 'me')..email = 'me@x.com';
+      when(() => session.currentUser).thenAnswer((_) => current);
+      final persisted = Completer<Result<SessionEntity>>();
+      when(() => session.replaceCurrentUser(any())).thenAnswer((_) => persisted.future);
+      getIt.registerSingleton<SessionRepository>(session);
+      when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+      final bloc = buildBloc();
+      bloc.add(followEvent);
+      await pumpEventQueue();
+      expect(current.following, ['A@x.com']);
+      expect(messaging.calls, isEmpty);
+      Future<void>? closing;
+      if (closeInstead) {
+        closing = bloc.close();
+      } else {
+        current = profileUser(id: 'other');
+        CoinsService.instance.resetSession();
+      }
+      persisted.complete(Result.success(SessionEntity.guest));
+      await pumpEventQueue();
+      if (closing != null) {
+        await closing;
+      } else {
+        await bloc.close();
+        expect(current.following, isEmpty);
+      }
+      expect(messaging.calls, isEmpty);
+      expect(bloc.state.followOutcome, isNull);
+    });
+  }
+
+  test('different targets do not block one another', () async {
+    final first = Completer<Result<void>>();
+    when(() => follow(any())).thenAnswer((invocation) {
+      final params = invocation.positionalArguments.single as FollowUserParams;
+      return params.targetUserId == 'a-id' ? first.future : Future.value(Result.success<void>(null));
+    });
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    bloc.add(
+      const PublicProfileEvent.followChangeRequested(
+        follow: true,
+        currentUserId: 'me',
+        currentUserEmail: 'me@x.com',
+        targetUserId: 'b-id',
+        targetUserEmail: 'b@x.com',
+      ),
+    );
+    await pumpEventQueue();
+    expect(app_state.prismUser.following, ['b@x.com']);
+    first.complete(Result.success<void>(null));
+    await pumpEventQueue();
+    expect(app_state.prismUser.following, ['b@x.com', 'A@x.com']);
+    expect(bloc.state.followOutcome?.id, 2);
+  });
+
   blocTest<PublicProfileBloc, PublicProfileState>(
     'follow flips the button first, then reports success and records it on the session',
-    setUp: () => app_state.prismUser = profileUser(),
+    setUp: () => app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com',
     build: () {
       when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
       return buildBloc();
@@ -348,7 +749,9 @@ void main() {
 
   blocTest<PublicProfileBloc, PublicProfileState>(
     'unfollow removes the creator from the session whatever the email case',
-    setUp: () => app_state.prismUser = profileUser()..following = <String>['a@X.com', 'b@x.com'],
+    setUp: () => app_state.prismUser = profileUser(id: 'me')
+      ..email = 'me@x.com'
+      ..following = <String>['a@X.com', 'b@x.com'],
     build: () {
       when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
       return buildBloc();
@@ -370,7 +773,7 @@ void main() {
 
   blocTest<PublicProfileBloc, PublicProfileState>(
     'a failed follow rolls the button back, keeps the session as it was and reports the failure',
-    setUp: () => app_state.prismUser = profileUser(),
+    setUp: () => app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com',
     build: () {
       when(() => follow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
       return buildBloc();
@@ -397,7 +800,7 @@ void main() {
     setUp(() {
       recorder = FakeAppAnalytics();
       AnalyticsRuntime.instance = recorder;
-      app_state.prismUser = profileUser();
+      app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com';
     });
 
     List<(String, String)> results() =>

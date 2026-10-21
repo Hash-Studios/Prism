@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -9,8 +10,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
@@ -19,6 +21,16 @@ import '../../../support/profile_user_fixture.dart';
 const Duration _profileSnapshotDiskObservationTimeout = Duration(seconds: 10);
 
 class _WatchingClient extends FakeFirestoreClient {
+  Future<List<FakeDocRow>> Function(FirestoreQuerySpec)? delayedQuery;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    final delayed = delayedQuery;
+    if (delayed == null) return super.query(spec, map);
+    querySpecs.add(spec);
+    return (await delayed(spec)).map((row) => map(row.data, row.id)).toList();
+  }
+
   final StreamController<List<FakeDocRow>> rows = StreamController<List<FakeDocRow>>.broadcast();
   final StreamController<int> _watchChanges = StreamController<int>.broadcast();
   final List<FirestoreQuerySpec> watchSpecs = <FirestoreQuerySpec>[];
@@ -117,9 +129,11 @@ void main() {
     client = _WatchingClient();
     blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     repo = PublicProfileRepositoryImpl(client, blocks);
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
   tearDown(() async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     await client.rows.close();
     await client._watchChanges.close();
     await client._cancellationChanges.close();
@@ -530,6 +544,106 @@ void main() {
   });
 
   group('fetchWalls', () {
+    List<FakeDocRow> wallRows(String prefix, {int count = 12}) => <FakeDocRow>[
+      for (int i = 0; i < count; i++) (id: '$prefix-$i', data: <String, dynamic>{'wallpaper_url': '$prefix/$i'}),
+    ];
+
+    test('an old page cannot replace a refreshed cursor or durable snapshot', () async {
+      client.onQuery = (_) => wallRows('initial');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldPage = repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      await pumpEventQueue();
+      client.delayedQuery = null;
+      client.onQuery = (_) => wallRows('fresh');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      await oldPage;
+      client.onQuery = (_) => wallRows('next', count: 1);
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, 'fresh-11');
+      final offline = PublicProfileRepositoryImpl(_WatchingClient()..queryError = StateError('offline'), blocks);
+      final restored = await offline.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect(restored.data!.items.map((w) => w.id), [...List.generate(12, (i) => 'fresh-$i'), 'next-0']);
+    });
+
+    test('overlapping refreshes discard the earlier response and an empty refresh clears the cursor', () async {
+      client.onQuery = (_) => wallRows('initial');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldRefresh = repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      await pumpEventQueue();
+      client.delayedQuery = null;
+      client.onQuery = (_) => <FakeDocRow>[];
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      await oldRefresh;
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, isNull);
+    });
+
+    test('returning to the same account cannot commit an earlier session cursor or snapshot', () async {
+      app_state.prismUser = profileUser(id: 'owner');
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldRefresh = repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: 'other');
+      CoinsService.instance.resetSession();
+      app_state.prismUser = profileUser(id: 'owner');
+      CoinsService.instance.resetSession();
+      client.delayedQuery = null;
+      client.onQuery = (_) => wallRows('fresh');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      expect((await oldRefresh).isFailure, isTrue);
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, 'fresh-11');
+    });
+
+    test('category, not description, reaches detail before and after durable cache restore', () async {
+      client.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'lake',
+          data: <String, dynamic>{
+            'category': 'Nature',
+            'desc': 'A lake at dawn',
+            'wallpaper_url': 'https://example.test/lake.jpg',
+          },
+        ),
+      ];
+      final fresh = await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((fresh.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, 'Nature');
+      expect(fresh.data!.items.single.desc, 'A lake at dawn');
+      final offline = PublicProfileRepositoryImpl(_WatchingClient()..queryError = StateError('offline'), blocks);
+      final restored = await offline.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((restored.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, 'Nature');
+      expect(restored.data!.items.single.desc, 'A lake at dawn');
+      final similarClient = FakeFirestoreClient();
+      final similar = SimilarWallpapersLoader(
+        firestore: () => similarClient,
+        blocks: () => blocks,
+        search: () => throw StateError('Prism category lookup does not use text search'),
+      );
+      for (final result in [fresh, restored]) {
+        await similar.load(result.data!.items.single.toFeedItem());
+        expect(similarClient.querySpecs.last.filters.map((f) => (f.field, f.value)), contains(('category', 'Nature')));
+      }
+    });
+
+    test('legacy snapshots without category do not classify description as category', () async {
+      await DurableJsonStore('public_profiles').write('__guest::walls:creator@x.com', <String, Object?>{
+        'itemsJson': '[{"id":"old","desc":"A lake at dawn","wallpaper_url":"https://x/old"}]',
+        'hasMore': false,
+      });
+      client.queryError = StateError('offline');
+      final restored = await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((restored.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, isNull);
+      expect(restored.data!.items.single.desc, 'A lake at dawn');
+    });
+
     test('hides walls of a blocked creator without querying', () async {
       blocks.completeInitial(<String>{'blocked@x.com'});
 
