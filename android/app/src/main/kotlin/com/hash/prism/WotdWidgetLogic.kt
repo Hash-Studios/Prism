@@ -7,8 +7,8 @@ import java.net.URLEncoder
 import java.security.MessageDigest
 import org.json.JSONObject
 
-internal data class WotdWall(val id: String, val url: String) {
-    val key: String get() = id.ifEmpty { url }
+internal data class WotdWall(val id: String, val url: String, val originalUrl: String = url) {
+    val key: String get() = "${id}|${url}|${originalUrl}"
 }
 
 internal fun monotonicMillis(): Long = System.nanoTime() / 1_000_000L
@@ -54,7 +54,8 @@ internal fun certificateFingerprint(certificate: ByteArray): String =
     MessageDigest.getInstance("SHA-1").digest(certificate).joinToString("") { "%02X".format(it) }
 
 internal fun wotdShareLink(wall: WotdWall): String? =
-    if (wall.id.isEmpty()) null else "prism://share?id=${encodePart(wall.id)}&source=prism&url=${encodePart(wall.url)}"
+    if (wall.id.isEmpty()) null else "prism://share?id=${encodePart(wall.id)}&source=prism&url=${encodePart(wall.originalUrl)}" +
+        if (wall.url != wall.originalUrl) "&thumb=${encodePart(wall.url)}" else ""
 
 internal fun firestoreStringField(document: String, name: String): String? = runCatching {
     JSONObject(document).optJSONObject("fields")?.optJSONObject(name)?.optString("stringValue", "")?.trim()?.ifEmpty { null }
@@ -63,4 +64,10 @@ internal fun firestoreStringField(document: String, name: String): String? = run
 internal fun wotdWallIdFromPointer(document: String): String? = firestoreStringField(document, "wallId")
 
 internal fun wotdWallFromDocument(id: String, document: String): WotdWall? =
-    firestoreStringField(document, "wallpaper_url")?.let { WotdWall(id, it) }
+    wotdWallFromUrls(id, firestoreStringField(document, "wallpaper_url"), firestoreStringField(document, "wallpaper_thumb"))
+
+internal fun wotdWallFromUrls(id: String, original: String?, preview: String?): WotdWall? {
+    val originalUrl = original.orEmpty().trim()
+    val displayUrl = preview.orEmpty().trim().ifEmpty { originalUrl }
+    return displayUrl.takeIf { it.isNotEmpty() }?.let { WotdWall(id, it, originalUrl) }
+}

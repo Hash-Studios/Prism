@@ -7,6 +7,22 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 internal class WotdWidgetLogicTest {
+    @Test internal fun protectedWallUsesItsPublicPreview() {
+        val wall = wotdWallFromUrls("today", "", "https://cdn.example/preview.jpg")
+        assertNotNull(wall)
+        assertEquals("https://cdn.example/preview.jpg", wall?.url)
+        assertEquals("", wall?.originalUrl)
+        assertEquals("prism://share?id=today&source=prism&url=&thumb=https%3A%2F%2Fcdn.example%2Fpreview.jpg", wotdShareLink(wall!!))
+    }
+
+    @Test internal fun previewDoesNotReplaceTheOriginalForSettingWallpaper() {
+        val wall = wotdWallFromUrls("today", "https://cdn.example/full.jpg", "https://cdn.example/thumb.jpg")!!
+        assertEquals("https://cdn.example/thumb.jpg", wall.url)
+        assertEquals("https://cdn.example/full.jpg", wall.originalUrl)
+        assertEquals("https://cdn.example/full.jpg", wotdWallFromUrls("old", wall.originalUrl, null)?.url)
+        assertNull(wotdWallFromUrls("missing", " ", null))
+    }
+
     @Test internal fun documentUrlEncodesEveryPart() {
         assertEquals(
             "https://firestore.googleapis.com/v1/projects/prism-wallpapers/databases/(default)/documents/walls/abc?key=AIza-key_1",
@@ -24,9 +40,9 @@ internal class WotdWidgetLogicTest {
         assertNull(wotdShareLink(WotdWall("", "https://cdn.example/a.jpg")))
     }
 
-    @Test internal fun wallKeyFallsBackToTheUrl() {
-        assertEquals("wall-1", WotdWall("wall-1", "https://a/b.jpg").key)
-        assertEquals("https://a/b.jpg", WotdWall("", "https://a/b.jpg").key)
+    @Test internal fun wallKeyChangesWhenThePreviewChanges() {
+        assertNotEquals(WotdWall("wall-1", "https://a/old.jpg").key, WotdWall("wall-1", "https://a/b.jpg").key)
+        assertNotEquals(WotdWall("wall-1", "https://a/b.jpg").key, WotdWall("wall-1", "https://a/b.jpg", "").key)
     }
 
     @Test internal fun wallpaperSampleSizeKeepsAtLeastTheScreenSize() {
