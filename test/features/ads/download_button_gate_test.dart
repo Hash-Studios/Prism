@@ -20,6 +20,7 @@ import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
@@ -36,6 +37,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
+import '../../support/wait_for_real_io.dart';
 
 class _OrderedAnalytics extends FakeAppAnalytics {
   _OrderedAnalytics(this.onTrack);
@@ -493,28 +495,38 @@ void main() {
 
   group('saving with enough coins', () {
     testWidgets('a bundled starter saves its local original without coins or server download stats', (tester) async {
+      const String original = '/starter-sunset.jpg';
+      final File starter = (await tester.runAsync<File?>(
+        () => BundledWallpapers.localFileForStarter('starter-sunset', WallpaperSource.prism),
+      ))!;
+      final OfflineAssetStore assets = OfflineAssetStore.instance;
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
       final _RecordingStats stats = _RecordingStats();
       getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
       addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
       await pump(
         tester,
         contentId: 'starter-sunset',
-        link: '/starter-sunset.jpg',
+        link: original,
         requestId: 'browse-request',
         source: WallpaperSource.prism,
       );
 
-      await tapSave(tester);
-      await pumpUntil(tester, () => results().isNotEmpty);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await waitForRealIo(tester, () => results().isNotEmpty, reason: 'bundled original save and durable retention');
       await settle(tester);
 
       expect(spendCalls, isEmpty);
       expect(enqueued, hasLength(1));
       final DownloadRequest request = enqueued.single! as DownloadRequest;
       expect(request.isLocalFile, isTrue);
+      expect(request.link, starter.path);
       expect(request.filenameWithoutExtension, 'starter-sunset');
       final DownloadAttemptEvent attempt = fakeAnalytics.events.whereType<DownloadAttemptEvent>().single;
       final DownloadResultEvent result = results().single;
+      expect(result.result, 'success');
       final DownloadWallpaperEvent saved = fakeAnalytics.events.whereType<DownloadWallpaperEvent>().single;
       expect(attempt.operationId, isNotEmpty);
       expect(result.operationId, attempt.operationId);
@@ -527,6 +539,13 @@ void main() {
       expect(fakeAnalytics.events.indexOf(attempt), lessThan(fakeAnalytics.events.indexOf(saved)));
       expect(stats.actions, isEmpty);
       expect(ledger(), isEmpty);
+      final Map<String, String> retained = (await tester.runAsync(assets.localPaths))!;
+      expect(retained, contains(original));
+      expect(
+        await tester.runAsync(() => File(retained[original]!).readAsBytes()),
+        await tester.runAsync(starter.readAsBytes),
+      );
+      expect(index.hasAcquired(link: original, id: 'starter-sunset', source: WallpaperSource.prism), isFalse);
     });
 
     testWidgets('a bundled starter variant saves the prepared file under its variant identity without coins', (
