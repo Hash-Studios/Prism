@@ -180,12 +180,24 @@ test("invalid R2 preview base config does not break legacy allowlisted images", 
     seen.push(url);
     return replyOf(new Uint8Array([1]));
   };
-  for (const base of ["", "not-a-url"]) {
+  const ownedPreview = `https://images.example.com/previews/${"a".repeat(64)}.img`;
+  for (const base of ["", "not-a-url", " \n", "https://images. example.com", "https://images.example.com/\u0001"]) {
     process.env.R2_PREVIEW_BASE_URL = base;
     assert.deepEqual([...await fetchImageBuffer(GOOD, ok)], [1]);
     await assert.rejects(fetchImageBuffer("https://unknown.example/a.png", ok), /host is not allowed/);
+    await assert.rejects(fetchImageBuffer(ownedPreview, ok), /host is not allowed/);
   }
-  assert.deepEqual(seen, [GOOD, GOOD]);
+  assert.deepEqual(seen, [GOOD, GOOD, GOOD, GOOD, GOOD]);
+});
+
+test("wallColorsFor reads a legacy image when the optional R2 preview base is malformed", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env.R2_PREVIEW_BASE_URL = "https://images. example.com";
+  const image = await bandsPng([["cc0000", SIZE]]);
+  assert.deepEqual(await wallColorsFor("w1", {wallpaper_url: GOOD}, async () => replyOf(image)), ["red"]);
 });
 
 test("fetchImageBuffer refuses a bad url before any request", async () => {
