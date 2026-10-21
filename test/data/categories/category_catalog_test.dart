@@ -45,13 +45,16 @@ void main() {
   {"name":"No image","source":"pexels"},
   {"name":"Prism","source":"prism","imageUrl":"https://img/x.jpg"},
   {"name":"Unknown","source":"unsplash","imageUrl":"https://img/x.jpg"},
-  {"name":"Halloween","source":"wallhaven","imageUrl":"https://img/h.jpg"},
+  {"name":42,"source":"pexels","imageUrl":"https://img/x.jpg"},
+  {"name":"Map image","source":"pexels","imageUrl":{"url":"https://img/x.jpg"}},
+  {"name":"Halloween","source":"wallhaven","imageUrl":"https://img/h.jpg","secondaryImageUrl":7},
   {"name":"halloween","source":"pexels","imageUrl":"https://img/h2.jpg"}
 ]
 ''')!;
 
       expect(categories.map((category) => category.name), <String>['Halloween']);
       expect(categories.single.source, WallpaperSource.wallhaven);
+      expect(categories.single.secondaryImageUrl, 'https://img/h.jpg');
     });
 
     test('returns null when nothing is usable', () {

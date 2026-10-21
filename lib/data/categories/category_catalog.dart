@@ -29,7 +29,7 @@ class CategoryCatalog {
   }
 
   /// Reads `[{"name", "source": "pexels" | "wallhaven", "imageUrl", "secondaryImageUrl"?}]` in display order. The
-  /// name is also the search query. Entries without a name or image, with another source, or with a name already
+  /// name is also the search query. Entries without a text name or image, with another source, or with a name already
   /// listed are skipped. Null when no entry is left.
   @visibleForTesting
   static List<CategoryDefinition>? decode(String raw) {
@@ -44,10 +44,13 @@ class CategoryCatalog {
     final List<CategoryDefinition> categories = <CategoryDefinition>[];
     for (final Object? item in decoded) {
       if (item is! Map) continue;
-      final String name = item['name']?.toString().trim() ?? '';
+      final Object? rawName = item['name'];
+      final Object? rawImageUrl = item['imageUrl'];
+      final Object? rawSecondaryImageUrl = item['secondaryImageUrl'];
+      final String name = rawName is String ? rawName.trim() : '';
       final WallpaperSource source = WallpaperSourceX.fromWire(item['source']);
-      final String imageUrl = item['imageUrl']?.toString().trim() ?? '';
-      final String secondaryImageUrl = item['secondaryImageUrl']?.toString().trim() ?? '';
+      final String imageUrl = rawImageUrl is String ? rawImageUrl.trim() : '';
+      final String secondaryImageUrl = rawSecondaryImageUrl is String ? rawSecondaryImageUrl.trim() : '';
       if (name.isEmpty || imageUrl.isEmpty) continue;
       if (source != WallpaperSource.pexels && source != WallpaperSource.wallhaven) continue;
       if (!names.add(name.toLowerCase())) continue;

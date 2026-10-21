@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -133,6 +134,27 @@ void main() {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(PersistenceKeys.quickTileCategoryTarget), isNotNull);
     expect(prefs.getString(PersistenceKeys.quickTileWotdTarget), isNotNull);
+  });
+
+  testWidgets('keeps a saved category that the category list no longer has', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.quickTileCategoryName: 'Diwali',
+      PersistenceKeys.quickTileCategorySource: 'pexels',
+      PersistenceKeys.quickTileCategoryTarget: 'both',
+    });
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester);
+
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Diwali')).selected, isTrue);
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Nature')).selected, isFalse);
+  });
+
+  testWidgets('adds no extra chip for a category the list has', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester);
+
+    expect(find.widgetWithText(PrismChip, 'AI Art'), findsOneWidget);
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'AI Art')).selected, isTrue);
   });
 
   testWidgets('shows one add button per tile on Android 13 and up', (tester) async {

@@ -185,6 +185,9 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
             spacing: PrismSpace.xs,
             runSpacing: PrismSpace.xs,
             children: <Widget>[
+              // The tile keeps a saved category that the remote list dropped, so the picker keeps showing it.
+              if (!CategoryCatalog.current.any((cat) => cat.name == _selectedCategoryName))
+                PrismChip(label: categoryDisplayName(_selectedCategoryName, context.l10n), selected: true),
               for (final cat in CategoryCatalog.current)
                 PrismChip(
                   label: categoryDisplayName(cat.name, context.l10n),
