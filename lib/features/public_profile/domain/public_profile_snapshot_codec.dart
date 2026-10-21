@@ -58,15 +58,24 @@ class PublicProfileSnapshotCodec {
     final List<WallDocDto> docs = (jsonDecode(record['itemsJson']! as String) as List<Object?>)
         .map((value) => WallDocDto.fromJson(Map<String, dynamic>.from(value as Map)))
         .toList(growable: false);
-    final String? documentIdsJson = record['documentIdsJson'] as String?;
-    final List<Object?> documentIds = documentIdsJson == null
-        ? const <Object?>[]
-        : jsonDecode(documentIdsJson) as List<Object?>;
+    final List<Object?>? documentIds = _decodeDocumentIds(record['documentIdsJson'], docs.length);
     return <PublicProfileSnapshotWall>[
-      for (int i = 0; i < docs.length; i++)
-        (doc: docs[i], documentId: documentIds.length == docs.length ? documentIds[i] as String? : null),
+      for (int i = 0; i < docs.length; i++) (doc: docs[i], documentId: _documentIdOrNull(documentIds?[i])),
     ];
   }
+
+  /// The document ids are optional metadata. An unreadable list leaves every id unknown, not the walls unreadable.
+  static List<Object?>? _decodeDocumentIds(Object? value, int length) {
+    if (value is! String) return null;
+    try {
+      final Object? decoded = jsonDecode(value);
+      return decoded is List<Object?> && decoded.length == length ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static String? _documentIdOrNull(Object? value) => value is String && value.isNotEmpty ? value : null;
 
   static PublicProfileWallEntity wallFromDto(WallDocDto dto, String id, {String? firestoreDocumentId}) =>
       PublicProfileWallEntity(
