@@ -90,20 +90,25 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       logger.w('Favourite toggle failed', error: error, stackTrace: stackTrace);
     }
     if (success) {
-      // The write already landed. A failing follow-up must not hide that or leave the spinner on.
-      try {
-        analytics.track(
+      // The write already landed. Each follow-up runs on its own, so one failure does not skip the others,
+      // hide the save, or leave the spinner on.
+      _followUp(
+        () => analytics.track(
           FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString, isFavourite: desired),
-        );
-        if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
-          widget.onFavourited?.call();
+        ),
+      );
+      if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
+        _followUp(() => widget.onFavourited?.call());
+      }
+      if (desired) {
+        if (mounted) _followUp(() => showGlintToast(context, mood: GlintMood.love));
+        if (app_state.prismUser.id.isEmpty) {
+          try {
+            await _noteGuestSave(l10n);
+          } catch (error, stackTrace) {
+            logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
+          }
         }
-        if (desired) {
-          if (mounted) showGlintToast(context, mood: GlintMood.love);
-          if (app_state.prismUser.id.isEmpty) await _noteGuestSave(l10n);
-        }
-      } catch (error, stackTrace) {
-        logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
       }
     } else {
       toasts.error(l10n.coreCouldNotUpdateFavourites);
@@ -118,8 +123,16 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     return success;
   }
 
+  void _followUp(VoidCallback step) {
+    try {
+      step();
+    } catch (error, stackTrace) {
+      logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _noteGuestSave(AppLocalizations l10n) async {
-    analytics.track(const FavouriteSavedAsGuestEvent());
+    _followUp(() => analytics.track(const FavouriteSavedAsGuestEvent()));
     final int saved = (await getIt<GuestFavouritesStore>().readAll()).length;
     if (saved == 3) toasts.info(l10n.coreSignInToSyncFavourites);
   }

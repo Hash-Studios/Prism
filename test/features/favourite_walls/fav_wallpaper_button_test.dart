@@ -361,6 +361,23 @@ void main() {
       expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
     });
 
+    testWidgets('a throwing onFavourited callback still shows the third-save nudge', (tester) async {
+      final guests = memoryGuestStore();
+      getIt.registerSingleton<GuestFavouritesStore>(guests);
+      await guests.put('a', <String, dynamic>{'id': 'a'});
+      await guests.put('b', <String, dynamic>{'id': 'b'});
+      await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      addTearDown(bloc.close);
+
+      await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
+
+      expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
+      expect(recordingAnalytics.events.whereType<FavouriteSavedAsGuestEvent>(), hasLength(1));
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+      expect(favorites.isWallFavourite('', 'wall_1'), isTrue);
+    });
+
     testWidgets('the second guest save shows no nudge', (tester) async {
       final guests = memoryGuestStore();
       getIt.registerSingleton<GuestFavouritesStore>(guests);
