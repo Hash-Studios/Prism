@@ -27,6 +27,7 @@ const bool defaultUseRcPaywalls = true;
 const bool defaultOnboardingV2Enabled = true;
 const String defaultOnboardingStarterPack = '[]';
 
+const String categoriesRemoteConfigKey = 'categories_v1';
 const String personalizedInterestsRemoteConfigKey = 'personalized_interests_v1';
 const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v1';
 const String personalizedFeedMixLocalKey = 'personalized_feed_mix';
