@@ -222,8 +222,8 @@ type AiQuotaRpcOp =
   | 'provider_budget_commit'
   | 'charge_claim'
   | 'charge_status'
+  | 'charge_cancel'
   | 'charge_finish'
-  | 'charge_release'
   | 'rate_limit_bump'
   | 'studio_claim'
   | 'studio_finish'
@@ -270,13 +270,16 @@ interface AiQuotaProviderBudgetMutationRequest extends AiQuotaRpcBaseRequest {
 }
 
 interface AiQuotaChargeRequest extends AiQuotaRpcBaseRequest {
-  op: 'charge_claim' | 'charge_status' | 'charge_release';
+  op: 'charge_claim' | 'charge_status' | 'charge_cancel';
   txId: string;
+  userId?: string;
+  createdAtMs?: number;
 }
 
 interface AiQuotaChargeFinishRequest extends AiQuotaRpcBaseRequest {
   op: 'charge_finish';
   txId: string;
+  userId: string;
   outcome: 'succeeded' | 'failed';
   response?: string;
 }
@@ -353,8 +356,8 @@ interface AiQuotaProviderBudgetCommitResponse {
   committed: boolean;
 }
 
-type AiChargeClaimStatus = 'new' | 'in_progress' | 'done' | 'failed';
-type AiChargeEvidenceStatus = 'not_started' | 'in_progress' | 'succeeded' | 'failed';
+type AiChargeClaimStatus = 'new' | 'in_progress' | 'done' | 'failed' | 'cancelled';
+type AiChargeEvidenceStatus = 'not_started' | 'in_progress' | 'succeeded' | 'failed' | 'cancelled';
 
 interface AiQuotaChargeClaimResponse {
   ok: true;
@@ -370,6 +373,7 @@ interface AiQuotaChargeStatusResponse {
 
 interface AiQuotaChargeMutationResponse {
   ok: true;
+  committed?: true;
 }
 
 interface AiQuotaRateLimitResponse {
@@ -379,7 +383,8 @@ interface AiQuotaRateLimitResponse {
 }
 
 interface AiChargeRecord {
-  state: 'in_progress' | 'succeeded' | 'failed';
+  state: 'in_progress' | 'succeeded' | 'failed' | 'cancelled';
+  userId?: string;
   at: number;
   expiresAt: number;
   response?: string;
@@ -448,13 +453,10 @@ export class AiQuotaCoordinator {
         case 'provider_budget_commit':
           return this.handleProviderBudgetCommit(body);
         case 'charge_claim':
-          return this.handleChargeClaim(body);
         case 'charge_status':
-          return this.handleChargeStatus(body);
         case 'charge_finish':
-          return this.handleChargeFinish(body);
-        case 'charge_release':
-          return this.handleChargeRelease(body);
+        case 'charge_cancel':
+          return await this.handleCharge(body);
         case 'rate_limit_bump':
           return this.handleRateLimitBump(body);
         case 'studio_claim':
@@ -599,68 +601,75 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed });
   }
 
-  private async handleChargeClaim(request: AiQuotaChargeRequest): Promise<Response> {
+  // Cancellation, claim and finish share one storage transaction. A status lookup is not refund authority.
+  private async handleCharge(request: AiQuotaChargeRequest | AiQuotaChargeFinishRequest): Promise<Response> {
     const txId = chargeTxIdOrNull(request.txId);
     if (txId == null) {
       return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
     }
-    const record = await this.readChargeRecord(txId);
-    if (record == null) {
+    return this.state.storage.transaction(async (storage) => {
+      const record = await this.readChargeRecord(txId, storage);
+      if (request.op === 'charge_status') {
+        return quotaJson<AiQuotaChargeStatusResponse>({
+          ok: true, status: record == null ? 'not_started' : effectiveChargeState(record),
+        });
+      }
+      if (!isNonEmptyString(request.userId)) {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+      }
+      // Never adopt an ownerless legacy record. An old in-flight worker cannot be fenced by this protocol.
+      if (record != null && record.userId !== request.userId) {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'charge_owner_unverified' }, 409);
+      }
       const now = Date.now();
-      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
-        state: 'in_progress',
-        at: now,
-        expiresAt: now + CHARGE_RECORD_TTL_MS,
-      });
-      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
-    }
-    const state = effectiveChargeState(record);
-    if (state === 'succeeded') {
-      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record.response ?? '' });
-    }
-    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: state });
-  }
-
-  private async handleChargeStatus(request: AiQuotaChargeRequest): Promise<Response> {
-    const txId = chargeTxIdOrNull(request.txId);
-    if (txId == null) {
-      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
-    }
-    const record = await this.readChargeRecord(txId);
-    return quotaJson<AiQuotaChargeStatusResponse>({
-      ok: true,
-      status: record == null ? 'not_started' : effectiveChargeState(record),
+      const state = record == null ? 'not_started' : effectiveChargeState(record);
+      if (request.op === 'charge_cancel') {
+        const ageMs = now - (request.createdAtMs ?? Number.NaN);
+        if (!Number.isFinite(ageMs) || ageMs < -CHARGE_CLOCK_SKEW_MS || ageMs > CHARGE_RECORD_TTL_MS) {
+          return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'charge_expired' }, 409);
+        }
+        if (state === 'in_progress' || state === 'succeeded') {
+          return quotaJson<AiQuotaChargeStatusResponse>({ ok: true, status: state });
+        }
+        // Once this expires, receipt-age guards reject both new claims and further refund requests.
+        await storage.put<AiChargeRecord>(this.chargeKey(txId), {
+          state: 'cancelled', userId: request.userId, at: now,
+          expiresAt: now - ageMs + CHARGE_RECORD_TTL_MS + CHARGE_CLOCK_SKEW_MS,
+        });
+        return quotaJson<AiQuotaChargeStatusResponse>({ ok: true, status: 'cancelled' });
+      }
+      if (request.op === 'charge_claim') {
+        if (record == null) {
+          const ageMs = now - (request.createdAtMs ?? Number.NaN);
+          if (!Number.isFinite(ageMs) || ageMs < -CHARGE_CLOCK_SKEW_MS || ageMs > CHARGE_MAX_AGE_MS) {
+            return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'failed' });
+          }
+          await storage.put<AiChargeRecord>(this.chargeKey(txId), {
+            state: 'in_progress', userId: request.userId, at: now, expiresAt: now + CHARGE_RECORD_TTL_MS,
+          });
+          return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+        }
+        const claimState = effectiveChargeState(record);
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true, status: claimState === 'succeeded' ? 'done' : claimState,
+          ...(claimState === 'succeeded' ? { response: record.response ?? '' } : {}),
+        });
+      }
+      // A stale worker must not overwrite cancellation, failed state, or a completed result.
+      if (record == null || state !== 'in_progress') {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'charge_not_in_progress' }, 409);
+      }
+      if (request.op === 'charge_finish' &&
+        (request.outcome === 'failed' || (request.outcome === 'succeeded' && isNonEmptyString(request.response)))) {
+        await storage.put<AiChargeRecord>(this.chargeKey(txId), {
+          state: request.outcome, userId: request.userId, at: now, expiresAt: now + CHARGE_RECORD_TTL_MS,
+          ...(request.outcome === 'succeeded' ? { response: request.response } : {}),
+        });
+      } else {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+      }
+      return quotaJson<AiQuotaChargeMutationResponse>({ ok: true, committed: true });
     });
-  }
-
-  private async handleChargeFinish(request: AiQuotaChargeFinishRequest): Promise<Response> {
-    const txId = chargeTxIdOrNull(request.txId);
-    if (txId == null || (request.outcome !== 'succeeded' && request.outcome !== 'failed')) {
-      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
-    }
-    const record = await this.readChargeRecord(txId);
-    if (record != null && record.state === 'in_progress') {
-      const now = Date.now();
-      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
-        state: request.outcome,
-        at: now,
-        expiresAt: now + CHARGE_RECORD_TTL_MS,
-        response: request.outcome === 'succeeded' ? asString(request.response) : undefined,
-      });
-    }
-    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
-  }
-
-  private async handleChargeRelease(request: AiQuotaChargeRequest): Promise<Response> {
-    const txId = chargeTxIdOrNull(request.txId);
-    if (txId == null) {
-      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
-    }
-    const record = await this.readChargeRecord(txId);
-    if (record != null && record.state === 'in_progress') {
-      await this.state.storage.delete(this.chargeKey(txId));
-    }
-    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
   }
 
   private async handleRateLimitBump(request: AiQuotaRateLimitRequest): Promise<Response> {
@@ -758,14 +767,14 @@ export class AiQuotaCoordinator {
     return `studio:${id}`;
   }
 
-  private async readChargeRecord(txId: string): Promise<AiChargeRecord | null> {
+  private async readChargeRecord(txId: string, storage: DurableObjectTransaction): Promise<AiChargeRecord | null> {
     const key = this.chargeKey(txId);
-    const record = await this.state.storage.get<AiChargeRecord>(key);
+    const record = await storage.get<AiChargeRecord>(key);
     if (record == null) {
       return null;
     }
     if (record.expiresAt <= Date.now()) {
-      await this.state.storage.delete(key);
+      await storage.delete(key);
       return null;
     }
     return record;
@@ -833,6 +842,11 @@ export async function handleAiApiRequest(
   const chargeMatch = /^\/api\/ai\/charges\/([^/]+)$/.exec(url.pathname);
   if (request.method === 'GET' && chargeMatch != null) {
     return handleChargeEvidence(chargeMatch[1], env);
+  }
+
+  const cancelMatch = /^\/api\/ai\/charges\/([^/]+)\/cancel$/.exec(url.pathname);
+  if (request.method === 'POST' && cancelMatch != null) {
+    return handleChargeCancellation(request, cancelMatch[1], env);
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
@@ -937,6 +951,32 @@ async function handleChargeEvidence(rawTxId: string, env: AiEnvBindings): Promis
   }
 }
 
+async function handleChargeCancellation(request: Request, rawTxId: string, env: AiEnvBindings): Promise<Response> {
+  const auth = await parseAuth(request, env);
+  if (auth == null) return aiError('unauthorized', 401, 'Missing or invalid bearer token');
+  const txId = chargeTxIdOrNull(rawTxId);
+  if (txId == null) return aiError('invalid_request', 400, 'Invalid chargeTxId');
+  // Verify ledger ownership before touching the coordinator, including when no claim exists yet.
+  const receipt = await verifyCharge(txId, undefined, auth, env);
+  if (typeof receipt === 'string') {
+    return receipt === 'invalid'
+      ? aiError('charge_invalid', 402, 'Charge could not be verified')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
+  if (Date.now() - receipt.createdAtMs > CHARGE_RECORD_TTL_MS) {
+    return aiError('charge_invalid', 402, 'Refund window expired');
+  }
+  try {
+    const result = await sendQuotaRequest<AiQuotaChargeStatusResponse>(env, {
+      op: 'charge_cancel', txId, userId: auth.userId, createdAtMs: receipt.createdAtMs,
+    });
+    return aiJson({ status: result.status });
+  } catch (error) {
+    console.error('[ai] charge_cancel_failed', { txId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Charge cancellation unavailable');
+  }
+}
+
 async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Response> {
   if (await parseAuth(request, env) == null) {
     return aiJson({ ok: true });
@@ -1028,6 +1068,12 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  if (!isJsonObject(body) || (body.variationPrompt !== undefined && typeof body.variationPrompt !== 'string') ||
+    (body.strength !== undefined && (typeof body.strength !== 'number' || !Number.isFinite(body.strength) ||
+      body.strength < 0.1 || body.strength > 1))) {
+    return aiError('invalid_request', 400, 'Invalid variation payload');
+  }
+
   const charge = readChargeTxId(body.chargeTxId, env);
   if (charge instanceof Response) {
     return charge;
@@ -1106,7 +1152,7 @@ function chargeTxIdOrNull(value: unknown): string | null {
   return typeof value === 'string' && CHARGE_TX_ID_REGEX.test(value) ? value : null;
 }
 
-function effectiveChargeState(record: AiChargeRecord): 'in_progress' | 'succeeded' | 'failed' {
+function effectiveChargeState(record: AiChargeRecord): AiChargeRecord['state'] {
   if (record.state === 'in_progress' && Date.now() - record.at > CHARGE_STALE_IN_PROGRESS_MS) {
     return 'failed';
   }
@@ -1129,14 +1175,31 @@ async function executeGeneration(params: ExecuteGenerationParams): Promise<Respo
     return runQuotaGatedGeneration(params);
   }
 
+  // Validate owner and price before claim/replay: a foreign request must not poison a victim's charge.
+  const receipt = await verifyCharge(txId, params.qualityTier, params.auth, params.env);
+  if (typeof receipt === 'string') {
+    return receipt === 'invalid'
+      ? aiError('charge_invalid', 402, 'Charge could not be verified')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
+  const userId = params.auth.userId;
+
   let claim: AiQuotaChargeClaimResponse;
   try {
-    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, { op: 'charge_claim', txId });
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, {
+      op: 'charge_claim', txId, userId, createdAtMs: receipt.createdAtMs,
+    });
   } catch (error) {
     console.error('[ai] charge_claim_failed', { userId: params.auth.userId, error: `${error ?? ''}` });
     return aiError('provider_error', 502, 'Quota coordinator unavailable');
   }
   if (claim.status === 'done') {
+    try {
+      await publishChargedGeneration(claim.response ?? '', txId, params.auth.userId, params.env);
+    } catch (error) {
+      console.error('[ai] charge_publication_failed', { txId, error: `${error ?? ''}` });
+      return aiError('provider_error', 502, 'Generation publication unavailable');
+    }
     return new Response(claim.response ?? '', {
       status: 200,
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
@@ -1145,48 +1208,46 @@ async function executeGeneration(params: ExecuteGenerationParams): Promise<Respo
   if (claim.status === 'in_progress') {
     return aiError('charge_in_progress', 409, 'This charge is already being processed');
   }
-  if (claim.status === 'failed') {
+  if (claim.status === 'failed' || claim.status === 'cancelled') {
     return aiError('charge_invalid', 402, 'This charge already failed. Request a refund.');
   }
+  if (claim.status !== 'new') return aiError('provider_error', 502, 'Invalid charge coordinator response');
 
-  const verdict = await verifyCharge(txId, params.qualityTier, params.auth, params.env);
-  if (verdict !== 'ok') {
-    await sendChargeMutation(params.env, { op: 'charge_release', txId });
-    return verdict === 'invalid'
-      ? aiError('charge_invalid', 402, 'Charge could not be verified')
-      : aiError('provider_error', 502, 'Charge verification unavailable');
-  }
-
-  let response: Response;
   try {
-    response = await runQuotaGatedGeneration(params);
+    let response: Response;
+    try {
+      response = await runQuotaGatedGeneration(params);
+    } catch (error) {
+      await sendChargeMutation(params.env, { op: 'charge_finish', txId, userId, outcome: 'failed' });
+      throw error;
+    }
+    await sendChargeMutation(
+      params.env,
+      response.ok
+        ? { op: 'charge_finish', txId, userId, outcome: 'succeeded', response: await response.clone().text() }
+        : { op: 'charge_finish', txId, userId, outcome: 'failed' },
+    );
+    if (response.ok) {
+      await publishChargedGeneration(await response.clone().text(), txId, userId, params.env);
+    }
+    return response;
   } catch (error) {
-    await sendChargeMutation(params.env, { op: 'charge_finish', txId, outcome: 'failed' });
-    throw error;
+    console.error('[ai] charge_generation_commit_failed', { txId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Generation could not be committed');
   }
-  await sendChargeMutation(
-    params.env,
-    response.ok
-      ? { op: 'charge_finish', txId, outcome: 'succeeded', response: await response.clone().text() }
-      : { op: 'charge_finish', txId, outcome: 'failed' },
-  );
-  return response;
 }
 
-async function sendChargeMutation(env: AiEnvBindings, body: AiQuotaChargeRequest | AiQuotaChargeFinishRequest): Promise<void> {
-  try {
-    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
-  } catch (error) {
-    console.error('[ai] charge_update_failed', { op: body.op, txId: body.txId, error: `${error ?? ''}` });
-  }
+async function sendChargeMutation(env: AiEnvBindings, body: AiQuotaChargeFinishRequest): Promise<void> {
+  const result = await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  if (result.committed !== true) throw new Error('charge_mutation_not_committed');
 }
 
 async function verifyCharge(
   txId: string,
-  qualityTier: AiQualityTier,
+  qualityTier: AiQualityTier | undefined,
   auth: AuthContext,
   env: AiEnvBindings,
-): Promise<'ok' | 'invalid' | 'unavailable'> {
+): Promise<{ createdAtMs: number } | 'invalid' | 'unavailable'> {
   if (!isNonEmptyString(env.FIREBASE_PROJECT_ID)) {
     console.error('[ai] charge_verify_missing_project_id');
     return 'unavailable';
@@ -1223,22 +1284,22 @@ async function verifyCharge(
   // Receipts from economy v2 carry the tier and its config price; older receipts are checked against the fixed table.
   const basePrice = firestoreNumber(fields.basePrice);
   const v2Receipt = fields.qualityTier != null || basePrice != null;
-  const cost = v2Receipt ? basePrice : AI_COIN_COST_BY_TIER[qualityTier];
+  const cost = v2Receipt ? basePrice : qualityTier == null ? null : AI_COIN_COST_BY_TIER[qualityTier];
+  const priceMatches = qualityTier == null || (
+    (!v2Receipt || fields.qualityTier?.stringValue === qualityTier) &&
+    cost != null && Number.isInteger(cost) && cost > 0 && delta != null &&
+    (-delta === cost || -delta === Math.ceil(cost / 2))
+  );
   // Pro members pay half, rounded up (functions/src/economy.ts proPrice).
   const matches = fields.userId?.stringValue === auth.userId
     && fields.action?.stringValue === 'aiGeneration'
     && fields.type?.stringValue === 'debit'
     && fields.status?.stringValue === 'completed'
-    && (!v2Receipt || fields.qualityTier?.stringValue === qualityTier)
-    && cost != null
-    && Number.isInteger(cost)
-    && cost > 0
-    && delta != null
-    && (-delta === cost || -delta === Math.ceil(cost / 2))
+    && priceMatches
     && Number.isFinite(ageMs)
-    && ageMs >= -CHARGE_CLOCK_SKEW_MS
-    && ageMs <= CHARGE_MAX_AGE_MS;
-  return matches ? 'ok' : 'invalid';
+    && ageMs >= -CHARGE_CLOCK_SKEW_MS;
+  // Age is checked atomically on new claims. Existing successful records remain replayable by their owner.
+  return matches ? { createdAtMs } : 'invalid';
 }
 
 function firestoreNumber(field: Record<string, unknown> | undefined): number | null {
@@ -1407,14 +1468,7 @@ async function runGenerationAttempts(
       }
 
       const generationId = createId('gen');
-      const persisted = await persistGenerationArtifacts(
-        generationId,
-        result.imageBytes,
-        result.contentType,
-        result.width,
-        result.height,
-        params.env,
-      );
+      const urls = generationUrls(generationId);
       const latencyMs = Date.now() - startedAt;
 
       const record: AiGenerationRecord = {
@@ -1430,8 +1484,8 @@ async function runGenerationAttempts(
         seed: result.seed,
         width: result.width,
         height: result.height,
-        imageUrl: persisted.imageUrl,
-        watermarkedImageUrl: persisted.watermarkedImageUrl,
+        imageUrl: urls.imageUrl,
+        watermarkedImageUrl: urls.watermarkedImageUrl,
         safety: {
           promptSafe: true,
           outputSafe: true,
@@ -1440,7 +1494,19 @@ async function runGenerationAttempts(
         latencyMs,
       };
 
-      await saveGenerationRecord(record, params.env);
+      if (params.chargeTxId != null) {
+        // Private staging has no asset/history route. Promote only after a confirmed successful charge commit.
+        const pending: PendingChargedGeneration = {
+          txId: params.chargeTxId, record, contentType: result.contentType, imageBase64: toBase64(result.imageBytes),
+        };
+        await params.env.AI_STATE_KV.put(pendingGenerationKey(generationId), JSON.stringify(pending), {
+          expirationTtl: CHARGE_RECORD_TTL_MS / 1000,
+        });
+      } else {
+        await persistGenerationArtifacts(generationId, result.imageBytes, result.contentType,
+          result.width, result.height, params.env);
+        await saveGenerationRecord(record, params.env);
+      }
 
       console.info('[ai] generation_success', {
         generationId: record.generationId,
@@ -1512,8 +1578,12 @@ async function runGenerationAttempts(
   return aiError(lastErrorCode, lastErrorCode === 'budget_exhausted' ? 429 : 502, lastErrorMessage);
 }
 
-function normalizeGenerateRequest(body: AiGenerateRequest): AiGenerateRequest | null {
-  if (!isNonEmptyString(body.prompt)) {
+function normalizeGenerateRequest(body: AiGenerateRequest): (AiGenerateRequest & { seed: number }) | null {
+  if (!isJsonObject(body) || !isNonEmptyString(body.prompt) ||
+    (body.stylePreset !== undefined && typeof body.stylePreset !== 'string') ||
+    (body.targetSize !== undefined && (typeof body.targetSize !== 'string' ||
+      !/^\d{2,5}x\d{2,5}$/i.test(body.targetSize.trim()))) ||
+    (body.seed !== undefined && (typeof body.seed !== 'number' || !Number.isSafeInteger(body.seed) || body.seed < 0))) {
     return null;
   }
   const qualityTier = normalizeQualityTier(body.qualityTier);
@@ -1527,6 +1597,10 @@ function normalizeGenerateRequest(body: AiGenerateRequest): AiGenerateRequest | 
     targetSize: normalizeTargetSize(body.targetSize),
     seed: Number.isInteger(body.seed) ? Number(body.seed) : randomSeed(),
   };
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function normalizeQualityTier(value: unknown): AiQualityTier | null {
@@ -1572,15 +1646,14 @@ async function readRoutingConfig(env: AiEnvBindings): Promise<AiRoutingConfig> {
 }
 
 function mergeRoutingConfig(raw: Partial<AiRoutingConfig>): AiRoutingConfig {
-  const providers = raw.providers ?? {};
   return {
     enabled: typeof raw.enabled === 'boolean' ? raw.enabled : AI_DEFAULT_CONFIG.enabled,
     version: asString(raw.version) || AI_DEFAULT_CONFIG.version,
     hardUserDailyCap: Math.round(clampNumber(raw.hardUserDailyCap ?? AI_DEFAULT_CONFIG.hardUserDailyCap, 1, 500)),
     fallbackOrder: normalizeFallbackOrder(raw.fallbackOrder),
     providers: {
-      fal: mergeProviderConfig('fal', providers.fal, AI_DEFAULT_CONFIG.providers.fal),
-      gemini: mergeProviderConfig('gemini', providers.gemini, AI_DEFAULT_CONFIG.providers.gemini),
+      fal: mergeProviderConfig('fal', raw.providers?.fal, AI_DEFAULT_CONFIG.providers.fal),
+      gemini: mergeProviderConfig('gemini', raw.providers?.gemini, AI_DEFAULT_CONFIG.providers.gemini),
     },
   };
 }
@@ -2453,10 +2526,51 @@ async function persistGenerationArtifacts(
     console.warn('[ai] watermark_deferred', { generationId });
   }
 
+  return generationUrls(generationId);
+}
+
+function generationUrls(generationId: string): { imageUrl: string; watermarkedImageUrl: string } {
   return {
-    imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
-    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
+    imageUrl: `https://prismwalls.com/api/ai/assets/ai/original/${generationId}.png`,
+    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/ai/public/${generationId}.png`,
   };
+}
+
+interface PendingChargedGeneration {
+  txId: string;
+  record: AiGenerationRecord;
+  imageBase64: string;
+  contentType: string;
+}
+
+function pendingGenerationKey(generationId: string): string {
+  return `ai:charge-pending:${generationId}`;
+}
+
+// Call only after charge_finish committed, or an owner-bound claim replay confirmed success.
+async function publishChargedGeneration(response: string, txId: string, userId: string, env: AiEnvBindings): Promise<void> {
+  const payload: unknown = JSON.parse(response);
+  if (!isJsonObject(payload) || typeof payload.generationId !== 'string' ||
+    !/^gen_[a-z0-9]+_[a-f0-9]{16}$/.test(payload.generationId)) {
+    throw new Error('invalid_committed_generation');
+  }
+  const generationId = payload.generationId;
+  const existing = await readGenerationRecord(generationId, env);
+  if (existing != null) {
+    if (existing.userId !== userId) throw new Error('generation_owner_mismatch');
+    return;
+  }
+  const raw = await env.AI_STATE_KV.get(pendingGenerationKey(generationId));
+  if (raw == null) throw new Error('generation_staging_unavailable');
+  const pending = JSON.parse(raw) as PendingChargedGeneration;
+  if (pending?.txId !== txId || pending.record?.generationId !== generationId || pending.record.userId !== userId ||
+    !isNonEmptyString(pending.imageBase64) || !isNonEmptyString(pending.contentType)) {
+    throw new Error('invalid_generation_staging');
+  }
+  await persistGenerationArtifacts(generationId, fromBase64(pending.imageBase64), pending.contentType,
+    pending.record.width, pending.record.height, env);
+  await saveGenerationRecord(pending.record, env);
+  // Keep private staging until TTL for safe retries across KV propagation delay; it is never publicly served.
 }
 
 function watermarkPendingKey(generationId: string): string {

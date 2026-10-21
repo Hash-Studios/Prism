@@ -453,9 +453,10 @@ test("spendCoins: without a label the description is the reason; a blank label c
   mockSpendTransactions(t, harness);
   await spendCoins.run(spendRequest({reason: "content_abc"}));
   await spendCoins.run(spendRequest({reason: "content_def", label: "   "}));
-  await spendCoins.run(spendRequest({reason: "content_ghi", label: 42}));
+  await assert.rejects(() => spendCoins.run(spendRequest({reason: "content_ghi", label: 42})),
+    {code: "invalid-argument"});
   assert.deepEqual([...harness.ledger.values()].map((entry) => entry.description),
-    ["content_abc", "content_def", "content_ghi"]);
+    ["content_abc", "content_def"]);
 });
 
 type Store = Map<string, Record<string, unknown>>;
@@ -650,7 +651,10 @@ const aiDebit = (ageMs: number, overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const refundRequest = () => awardRequest({action: "refund", transactionId: "ctx_aiGeneration_1"});
+const refundRequest = () => ({
+  ...awardRequest({action: "refund", transactionId: "ctx_aiGeneration_1"}),
+  rawRequest: {headers: {authorization: "Bearer verified-caller-token"}},
+} as unknown as Parameters<typeof awardCoins.run>[0]);
 
 /** Stands in for the AI worker; returns the URLs that were asked. */
 function mockWorker(t: test.TestContext, answer: () => Promise<Response>): string[] {
@@ -674,31 +678,28 @@ test("awardCoins refund: an AI debit is refused when the worker says the image w
   assert.equal(store.get("usersv2/user-1")?.coins, 25);
   assert.equal(store.get("coinTransactions/ctx_aiGeneration_1")?.status, "completed");
   assert.equal(asked.length, 1);
-  assert.equal(asked[0], "https://prismwalls.com/api/ai/charges/ctx_aiGeneration_1");
+  assert.equal(asked[0], "https://prismwalls.com/api/ai/charges/ctx_aiGeneration_1/cancel");
 });
 
-test("awardCoins refund: an AI debit 2 hours old is refunded when the worker says failed or not_started", async (t) => {
-  for (const status of ["failed", "not_started"]) {
-    t.mock.reset();
-    const store = refundStore(aiDebit(7_200_000));
-    mockStore(t, store);
-    mockWorker(t, async () => jsonResponse({status}));
-    const result = await awardCoins.run(refundRequest());
-    assert.equal(result.success, true, status);
-    assert.equal(result.delta, 75);
-    assert.equal(store.get("usersv2/user-1")?.coins, 100);
-    assert.equal(store.get("coinTransactions/ctx_aiGeneration_1")?.status, "refunded");
-  }
+test("awardCoins refund: an AI debit 2 hours old is refunded only after atomic cancellation", async (t) => {
+  const store = refundStore(aiDebit(7_200_000));
+  mockStore(t, store);
+  mockWorker(t, async () => jsonResponse({status: "cancelled"}));
+  const result = await awardCoins.run(refundRequest());
+  assert.equal(result.success, true);
+  assert.equal(result.delta, 75);
+  assert.equal(store.get("usersv2/user-1")?.coins, 100);
+  assert.equal(store.get("coinTransactions/ctx_aiGeneration_1")?.status, "refunded");
 });
 
 test("awardCoins refund: the 24 hour window ends after 24 hours", async (t) => {
   const store = refundStore(aiDebit(86_400_000 + 60_000));
   mockStore(t, store);
-  mockWorker(t, async () => jsonResponse({status: "failed"}));
+  mockWorker(t, async () => jsonResponse({status: "cancelled"}));
   await assert.rejects(() => awardCoins.run(refundRequest()), {code: "failed-precondition"});
 });
 
-test("awardCoins refund: when the worker cannot be reached the 10 minute rule holds", async (t) => {
+test("awardCoins refund: unknown, pending and read-only evidence fail closed even for a young debit", async (t) => {
   const answers: Array<() => Promise<Response>> = [
     async () => {
       throw new Error("network down");
@@ -706,20 +707,24 @@ test("awardCoins refund: when the worker cannot be reached the 10 minute rule ho
     async () => jsonResponse({}, false),
     async () => jsonResponse({status: "teapot"}),
     async () => jsonResponse(null),
+    async () => jsonResponse({status: "in_progress"}),
+    async () => jsonResponse({status: "not_started"}),
+    async () => jsonResponse({status: "failed"}),
   ];
   for (const answer of answers) {
     t.mock.reset();
     mockStore(t, refundStore(aiDebit(7_200_000)));
     mockWorker(t, answer);
-    await assert.rejects(() => awardCoins.run(refundRequest()), {code: "failed-precondition"});
+    assert.equal((await awardCoins.run(refundRequest())).success, false);
 
     t.mock.reset();
     const store = refundStore(aiDebit(60_000));
     mockStore(t, store);
     mockWorker(t, answer);
     const result = await awardCoins.run(refundRequest());
-    assert.equal(result.success, true);
-    assert.equal(store.get("usersv2/user-1")?.coins, 100);
+    assert.equal(result.success, false);
+    assert.equal(store.get("usersv2/user-1")?.coins, 25);
+    assert.equal(store.get("coinTransactions/ctx_aiGeneration_1")?.status, "completed");
   }
 });
 
@@ -731,9 +736,9 @@ test("awardCoins refund: AI_WORKER_BASE_URL overrides the worker address", async
     else process.env.AI_WORKER_BASE_URL = original;
   });
   mockStore(t, refundStore(aiDebit(60_000)));
-  const asked = mockWorker(t, async () => jsonResponse({status: "failed"}));
+  const asked = mockWorker(t, async () => jsonResponse({status: "cancelled"}));
   await awardCoins.run(refundRequest());
-  assert.equal(asked[0], "https://worker.example/api/ai/charges/ctx_aiGeneration_1");
+  assert.equal(asked[0], "https://worker.example/api/ai/charges/ctx_aiGeneration_1/cancel");
 });
 
 test("awardCoins refund: a download debit never asks the worker", async (t) => {
@@ -747,6 +752,57 @@ test("awardCoins refund: a download debit never asks the worker", async (t) => {
   assert.equal(result.success, true);
   assert.equal(result.delta, 5);
   assert.equal(asked.length, 0);
+});
+
+test("AI refunds forward authenticated cancellation and retry safely after a Firestore abort", async (t) => {
+  const store = refundStore(aiDebit(60_000));
+  mockStore(t, store);
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async (_url: string, init: RequestInit) => {
+    calls++;
+    assert.equal(init.method, "POST");
+    assert.equal(new Headers(init.headers).get("authorization"), "Bearer verified-caller-token");
+    return jsonResponse({status: "cancelled"});
+  });
+  const run = db.runTransaction.bind(db);
+  let abort = true;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    if (abort) {
+      abort = false;
+      await run(async (tx) => {
+        const shadow = {get: tx.get.bind(tx), set: () => undefined, update: () => undefined};
+        await callback(shadow as unknown as admin.firestore.Transaction);
+      });
+      throw new Error("Firestore commit aborted");
+    }
+    return run(callback);
+  });
+  await assert.rejects(() => awardCoins.run(refundRequest()), /Firestore commit aborted/);
+  assert.equal(store.get("usersv2/user-1")?.coins, 25);
+  assert.equal((await awardCoins.run(refundRequest())).success, true);
+  assert.equal(store.get("usersv2/user-1")?.coins, 100);
+  await assert.rejects(() => awardCoins.run(refundRequest()), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/user-1")?.coins, 100);
+  assert.equal(calls, 2);
+});
+
+test("optional callable fields reject malformed values before Firestore access", async (t) => {
+  t.mock.method(db, "runTransaction", () => { throw new Error("must not read Firestore"); });
+  for (const data of [{reason: {}}, {label: []}, {amount: 10.5}, {amount: "10"},
+    {pricingVersion: "2"}, {allowPremiumBypass: "true"}]) {
+    await assert.rejects(() => spendCoins.run(spendRequest(data)), {code: "invalid-argument"});
+  }
+  await assert.rejects(() => awardCoins.run(awardRequest({reason: []})), {code: "invalid-argument"});
+});
+
+test("AI refunds without a forwardable caller token fail closed without contacting the worker", async (t) => {
+  const store = refundStore(aiDebit(60_000));
+  mockStore(t, store);
+  const calls = mockWorker(t, async () => { throw new Error("must not contact worker"); });
+  const result = await awardCoins.run(awardRequest({action: "refund", transactionId: "ctx_aiGeneration_1"}));
+  assert.equal(result.success, false);
+  assert.equal(store.get("usersv2/user-1")?.coins, 25);
+  assert.deepEqual(calls, []);
 });
 
 test("awardCoins refund: a premium-bypassed spend left no ledger doc, so there is nothing to refund", async (t) => {

@@ -10,11 +10,6 @@ export interface VerifiedFirebaseAuth {
   claims: Record<string, unknown>;
 }
 
-interface FirebaseJwtHeader {
-  alg?: string;
-  kid?: string;
-}
-
 interface FirebaseJwk {
   kty?: string;
   alg?: string;
@@ -68,8 +63,8 @@ export async function verifyFirebaseIdTokenFromRequest(
     return null;
   }
 
-  const header = tryParseJson<FirebaseJwtHeader>(decodeBase64UrlToString(parts[0]));
-  const claims = tryParseJson<Record<string, unknown>>(decodeBase64UrlToString(parts[1]));
+  const header = tryDecodeJwtObject(parts[0]);
+  const claims = tryDecodeJwtObject(parts[1]);
   if (header == null || claims == null) {
     debugAuth(env, 'jwt_decode_failed');
     return null;
@@ -324,9 +319,13 @@ function decodeBase64UrlToBytes(value: string): Uint8Array {
   return out;
 }
 
-function tryParseJson<T>(raw: string): T | null {
+function tryDecodeJwtObject(segment: string): Record<string, unknown> | null {
   try {
-    return JSON.parse(raw) as T;
+    if (!/^[A-Za-z0-9_-]+$/.test(segment)) return null;
+    const parsed: unknown = JSON.parse(decodeBase64UrlToString(segment));
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
   } catch {
     return null;
   }
