@@ -10,8 +10,10 @@ initialization hits do not count toward the suite's coverage numerator.
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
+import shlex
 import sys
 import subprocess
 
@@ -144,8 +146,11 @@ def main():
                     for name, lines in records(path, root).items() if lines}
         missing = [name for name in inventory(root) if name not in observed]
         if missing:
-            process = subprocess.run(['fvm', 'dart', str(root / 'tool/test_coverage_declarations.dart'),
+            process = subprocess.run([*shlex.split(os.environ.get('DART', 'fvm dart')),
+                                      str(Path(__file__).with_name('test_coverage_declarations.dart').resolve()),
                                       *missing], cwd=root, check=True, capture_output=True, text=True)
+            if process.stderr:
+                print(process.stderr, file=sys.stderr, end='')
             declarations = json.loads(process.stdout)
     result = report(root, args.lcov, args.minimum, declarations, args.inventory)
     print(json.dumps(result, indent=2, sort_keys=True))

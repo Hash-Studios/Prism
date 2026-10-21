@@ -369,10 +369,10 @@ find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
 
 .PHONY: test-coverage test-functions-coverage test-coverage-tool
 test-coverage: ensure-fvm
-	@bash tool/flutter_coverage.sh
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" bash tool/flutter_coverage.sh
 
 test-functions-coverage:
 	@bash tool/functions_coverage.sh
 
 test-coverage-tool: ensure-fvm
-	@python3 -m unittest discover -s tool -p 'test_coverage*test.py'
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" python3 -m unittest discover -s tool -p 'test_coverage*test.py'

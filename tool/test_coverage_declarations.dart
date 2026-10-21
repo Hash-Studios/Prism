@@ -31,7 +31,10 @@ void main(List<String> paths) {
   final List<String> declarations = <String>[];
   for (final String path in paths) {
     final result = parseString(content: File(path).readAsStringSync(), throwIfDiagnostics: false);
-    if (result.errors.isNotEmpty) continue;
+    if (result.errors.isNotEmpty) {
+      stderr.writeln('Skipping declaration classification for $path: ${result.errors.join('; ')}');
+      continue;
+    }
     final visitor = _ExecutableSource();
     result.unit.accept(visitor);
     if (!visitor.found) declarations.add(path);

@@ -27,7 +27,8 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 cd "$root"
-fvm flutter test --coverage --coverage-path="$full_lcov"
+read -r -a flutter_command <<< "${FLUTTER:-fvm flutter}"
+"${flutter_command[@]}" test --coverage --coverage-path="$full_lcov"
 
 suffix=0
 while :; do
@@ -36,7 +37,7 @@ while :; do
   suffix=$((suffix + 1))
 done
 python3 tool/test_coverage.py imports "$helper"
-fvm flutter test "$helper" --coverage --coverage-path="$inventory_lcov"
+"${flutter_command[@]}" test "$helper" --coverage --coverage-path="$inventory_lcov"
 python3 tool/test_coverage.py report "$full_lcov" \
   --inventory "$inventory_lcov" \
   --verify-declarations \

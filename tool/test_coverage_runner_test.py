@@ -18,11 +18,12 @@ class CoverageRunnerTest(unittest.TestCase):
         mock = '''#!/usr/bin/env bash
 set -eu
 printf '%s %s\\n' "${0##*/}" "$*" >> "$RUNNER_LOG"
-if [[ "${0##*/}" == fvm ]]; then
-  if [[ "$3" == --coverage ]]; then
+if [[ "${0##*/}" == fvm || "${0##*/}" == flutter ]]; then
+  [[ "${0##*/}" != fvm ]] || shift
+  if [[ "$2" == --coverage ]]; then
     [[ "${FAIL_STAGE:-}" != suite ]] || exit 21
   else
-    [[ -f "$3" ]]
+    [[ -f "$2" ]]
     [[ "${FAIL_STAGE:-}" != probe ]] || exit 22
   fi
   for arg in "$@"; do
@@ -37,12 +38,12 @@ else
   [[ "$(< "$3")" == fresh ]]
 fi
 '''
-        for name in ('fvm', 'python3'):
+        for name in ('fvm', 'flutter', 'python3'):
             path = self.root / 'bin' / name
             path.write_text(mock)
             path.chmod(0o755)
         self.env = dict(os.environ, PATH=str(self.root / 'bin') + ':' + os.environ['PATH'],
-                        RUNNER_LOG=str(self.root / 'calls'))
+                        RUNNER_LOG=str(self.root / 'calls'), FLUTTER='fvm flutter')
 
     def run_runner(self, failure=''):
         result = subprocess.run(['bash', str(self.root / 'tool/flutter_coverage.sh'), 'coverage'],
@@ -66,6 +67,15 @@ fi
         self.assertEqual(self.run_runner('suite').returncode, 21)
         self.assertEqual(len((self.root / 'calls').read_text().splitlines()), 1)
         self.assertEqual(list((self.root / 'coverage').iterdir()), [])
+
+    def test_plain_flutter_configuration(self):
+        self.env['FLUTTER'] = 'flutter'
+        self.env['DART'] = 'dart'
+        result = self.run_runner()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = (self.root / 'calls').read_text().splitlines()
+        self.assertTrue(calls[0].startswith('flutter test --coverage '))
+        self.assertTrue(calls[2].startswith('flutter test '))
 
     def test_probe_failure_removes_helper_and_skips_report(self):
         self.assertEqual(self.run_runner('probe').returncode, 22)

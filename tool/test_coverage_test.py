@@ -1,6 +1,9 @@
 """Run with python3 -m unittest discover -s tool -p test_coverage_test.py."""
 from pathlib import Path
 import json
+import os
+import shlex
+import sys
 import tempfile
 import unittest
 import subprocess
@@ -81,10 +84,14 @@ class CoverageReportTest(unittest.TestCase):
                          'SF:lib/empty.dart\nend_of_record\n')
         with patch('sys.argv', ['test_coverage.py', '--root', str(self.root), 'report', str(lcov),
                                 '--verify-declarations']), \
-                patch('test_coverage.subprocess.run') as run, patch('builtins.print'):
+                patch.dict(os.environ, DART='dart'), \
+                patch('test_coverage.subprocess.run') as run, patch('builtins.print') as output:
             run.return_value.stdout = '[]'
+            run.return_value.stderr = 'Skipping malformed.dart\n'
             self.assertEqual(main(), 1)
-        self.assertEqual(run.call_args.args[0][3:], ['lib/absent.dart', 'lib/empty.dart'])
+        self.assertEqual(run.call_args.args[0][0], 'dart')
+        self.assertEqual(run.call_args.args[0][-2:], ['lib/absent.dart', 'lib/empty.dart'])
+        output.assert_any_call('Skipping malformed.dart\n', file=sys.stderr, end='')
 
     def test_duplicate_records_merge_by_line_and_complete_inventory_can_pass(self):
         self.source('app.dart')
@@ -114,16 +121,20 @@ class CoverageReportTest(unittest.TestCase):
             'expression.dart': 'int f() => 42;',
             'method.dart': 'abstract class A { void f() {} }',
             'initializer.dart': 'final x = compute();',
+            'malformed.dart': 'abstract class {',
         }
         paths = []
         for name, source in fixtures.items():
             path = self.root / name
             path.write_text(source)
             paths.append(str(path))
-        process = subprocess.run(['fvm', 'dart', 'tool/test_coverage_declarations.dart', *paths],
-                                 check=True, capture_output=True, text=True)
+        process = subprocess.run([*shlex.split(os.environ.get('DART', 'fvm dart')),
+                                  str(Path(__file__).with_name('test_coverage_declarations.dart').resolve()), *paths],
+                                 cwd=self.root, check=True, capture_output=True, text=True)
         self.assertEqual([Path(p).name for p in json.loads(process.stdout)],
                          ['barrel.dart', 'abstract.dart', 'redirect.dart'])
+        self.assertIn('malformed.dart', process.stderr)
+        self.assertIn('Skipping declaration classification', process.stderr)
 
 
 if __name__ == '__main__':
