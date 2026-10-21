@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:e2e": "playwright test",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.15.21",
     "@types/qrcode": "^1.5.5",

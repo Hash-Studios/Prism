@@ -56,19 +56,16 @@ export function MarketingAnalytics() {
       if (link?.href === PLAY_STORE_URL) track("web_store_clicked", { store: "google_play" });
       if (link?.href === APP_STORE_URL) track("web_store_clicked", { store: "app_store" });
     };
-    let qrVisible = false;
     const qr = (event: Event) => {
       if (!(event.target instanceof Element)) return;
       if (!event.target.closest("[data-analytics-qr]")) return;
-      if (qrVisible) return;
-      qrVisible = true;
       track("web_qr_viewed", { store: "google_play" });
     };
     document.addEventListener("click", click);
-    document.addEventListener("mouseover", qr);
+    document.addEventListener("prism:qr-revealed", qr);
     return () => {
       document.removeEventListener("click", click);
-      document.removeEventListener("mouseover", qr);
+      document.removeEventListener("prism:qr-revealed", qr);
     };
   }, [pathname]);
   return null;
