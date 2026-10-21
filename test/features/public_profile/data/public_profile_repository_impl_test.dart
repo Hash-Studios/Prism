@@ -415,7 +415,60 @@ void main() {
       final result = await repo.fetchUserSummariesPage(allEmails: <String>[' A@x.com', 'a@x.com', ' '], page: 0);
 
       expect(result.data!.items.map((u) => u.email), <String>['a@x.com']);
-      expect(client.querySpecs.single.filters.single.value, <String>['a@x.com']);
+      expect(client.querySpecs.single.filters.single.value, <String>['A@x.com', 'a@x.com']);
+    });
+
+    // Firestore whereIn compares strings exactly, so the fake must not fold case.
+    List<FakeDocRow> exactEmailMatch(FirestoreQuerySpec spec, List<FakeDocRow> stored) {
+      final wanted = spec.filters.single.value! as List<Object?>;
+      return stored.where((row) => wanted.contains(row.data['email'])).toList();
+    }
+
+    test('a user stored with a mixed-case email is found through the relation spelling (#541)', () async {
+      final stored = <FakeDocRow>[_user('Alice@Example.com', name: 'Alice'), _user('bob@example.com', name: 'Bob')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(
+        allEmails: <String>['Alice@Example.com', 'bob@example.com'],
+        page: 0,
+      );
+
+      expect(result.data!.items.map((u) => u.name), <String>['Alice', 'Bob']);
+      expect(result.data!.items.first.email, 'Alice@Example.com');
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('a mixed-case relation entry still finds a user stored in lowercase', () async {
+      final stored = <FakeDocRow>[_user('carol@example.com', name: 'Carol')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(allEmails: <String>['Carol@Example.com'], page: 0);
+
+      expect(result.data!.items.map((u) => u.name), <String>['Carol']);
+    });
+
+    test('two spellings of one address give one summary and one pagination slot', () async {
+      final stored = <FakeDocRow>[_user('Dana@Example.com', name: 'Dana')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+      final emails = <String>['Dana@Example.com', 'dana@example.com', for (int i = 0; i < 19; i++) 'u$i@x.com'];
+
+      final first = (await repo.fetchUserSummariesPage(allEmails: emails, page: 0)).data!;
+      final second = (await repo.fetchUserSummariesPage(allEmails: emails, page: 1)).data!;
+
+      expect(first.items.map((u) => u.name), <String>['Dana']);
+      expect(first.hasMore, isFalse);
+      expect(second.items, isEmpty);
+    });
+
+    test('mixed-case lookups stay within ten values per whereIn query', () async {
+      final emails = <String>[for (int i = 0; i < 20; i++) 'User$i@X.com'];
+      client.onQuery = (_) => <FakeDocRow>[];
+
+      await repo.fetchUserSummariesPage(allEmails: emails, page: 0);
+
+      final queried = <Object?>[for (final spec in client.querySpecs) ...(spec.filters.single.value! as List<Object?>)];
+      expect(client.querySpecs.every((s) => (s.filters.single.value! as List<Object?>).length <= 10), isTrue);
+      expect(queried.toSet(), <Object?>{...emails, ...emails.map((e) => e.toLowerCase())});
     });
   });
 

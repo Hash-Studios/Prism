@@ -66,6 +66,13 @@ void main() {
     expect(names, <String>['kev00', 'kev01', 'kev02', 'kev03', 'kev04']);
   });
 
+  test('search finds a member stored with a mixed-case email once (#541)', () async {
+    final alice = <String, dynamic>{'email': 'Alice@Example.com', 'username': 'Alice', 'usernameLower': 'alice'};
+    final client = _fakeUsers(<Map<String, dynamic>>[alice]);
+
+    expect(await _search(client, 'ali', <String>['Alice@Example.com', 'alice@example.com']), <String>['Alice']);
+  });
+
   test('a blank query does not hit Firestore', () async {
     final client = _fakeUsers(<Map<String, dynamic>>[_user('KevinDoran')]);
 

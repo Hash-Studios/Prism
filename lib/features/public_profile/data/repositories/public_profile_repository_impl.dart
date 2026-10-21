@@ -343,6 +343,18 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   List<String> _uniqueEmails(List<String> emails) =>
       emails.map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toSet().toList(growable: false);
 
+  /// The `email` values to query for [keys]. Firestore compares strings exactly and
+  /// legacy users keep their mixed-case address, so query each relation spelling as
+  /// well as the lowercase key, the same way `findUserByEmail` does on the server.
+  List<String> _lookupEmails(List<String> keys, List<String> allEmails) {
+    final Set<String> wanted = keys.toSet();
+    return <String>{
+      for (final email in allEmails.map((e) => e.trim()))
+        if (wanted.contains(email.toLowerCase())) email,
+      ...keys,
+    }.toList(growable: false);
+  }
+
   UserSummaryEntity _toSummary(_UserRow row, Set<String> followingSet) {
     final doc = row.doc;
     final email = doc.email.trim();
@@ -375,9 +387,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       final String pageIdentity = sha256.convert(utf8.encode(pageEmails.join(','))).toString();
       final String cacheKey = '$owner::summaries:$page:$pageIdentity';
 
+      final lookupEmails = _lookupEmails(pageEmails, allEmails);
       // Firestore whereIn is limited to 10 items per query, so chunk the page.
       final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
-        for (int i = 0; i < pageEmails.length; i += 10)
+        for (int i = 0; i < lookupEmails.length; i += 10)
           _firestoreClient.query<_UserRow>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.usersV2,
@@ -386,10 +399,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
                 FirestoreFilter(
                   field: 'email',
                   op: FirestoreFilterOp.whereIn,
-                  value: pageEmails.sublist(i, math.min(i + 10, pageEmails.length)),
+                  value: lookupEmails.sublist(i, math.min(i + 10, lookupEmails.length)),
                 ),
               ],
-              limit: math.min(10, pageEmails.length - i),
+              limit: math.min(10, lookupEmails.length - i),
               cachePolicy: FirestoreCachePolicy.memoryFirst,
               dedupeWindowMs: _profileReadDedupeMs,
             ),
@@ -398,10 +411,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       ]);
 
       final followingSet = _currentUserFollowing();
-      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{
-        for (final row in chunkedResults.expand((rows) => rows))
-          row.doc.email.trim().toLowerCase(): _toSummary(row, followingSet),
-      };
+      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{};
+      for (final row in chunkedResults.expand((rows) => rows)) {
+        byEmail.putIfAbsent(row.doc.email.trim().toLowerCase(), () => _toSummary(row, followingSet));
+      }
       // Preserve the original ordering of the input email list.
       final ordered = pageEmails.map((e) => byEmail[e]).whereType<UserSummaryEntity>().toList(growable: false);
       if (_snapshotOwner == owner) {
@@ -445,7 +458,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final List<String> unique = _uniqueEmails(scopeEmails);
+      final List<String> unique = _lookupEmails(_uniqueEmails(scopeEmails), scopeEmails);
       final Set<String> followingSet = _currentUserFollowing();
 
       // One scoped prefix query per 30 emails (the whereIn limit). Each chunk
@@ -472,8 +485,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           ),
       ]);
 
-      final List<_UserRow> rows = chunks.expand((rows) => rows).toList()
-        ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
+      final Set<String> seen = <String>{};
+      final List<_UserRow> rows =
+          chunks.expand((rows) => rows).where((row) => seen.add(row.doc.email.trim().toLowerCase())).toList()
+            ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
       return Result.success(
         rows.take(_searchLimit).map((row) => _toSummary(row, followingSet)).toList(growable: false),
       );
