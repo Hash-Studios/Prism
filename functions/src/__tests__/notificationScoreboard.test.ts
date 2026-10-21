@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import {logger} from "firebase-functions/v2";
 import {db, utcDateString} from "../common";
+import {installFakeDb} from "./fakeDb";
 import {
   applyScore,
   NOTIFICATION_KINDS,
@@ -87,7 +88,7 @@ test("signal plan dedupes taps, returns, and permission by UTC day", () => {
   assert.equal(planNotificationSignal("u1", {type: "other"}, "2026-10-17").ok, false);
 });
 
-test("a live scoreboard ref counts the attempt and a get-only stub does not", async (t) => {
+test("scoreboard refs count attempts, accepts and failures without requiring a firestore marker", async (t) => {
   const days = new Map<string, Record<string, unknown>>();
   const originalDoc = db.doc.bind(db);
   const originalTx = db.runTransaction.bind(db);
@@ -98,7 +99,6 @@ test("a live scoreboard ref counts the attempt and a get-only stub does not", as
   t.mock.method(db, "doc", (path: string) => {
     if (!path.includes("notificationScoreboard")) return {get: async () => ({data: () => ({})})};
     return {
-      firestore: db,
       path,
       async get() {
         return {data: () => days.get(path)};
@@ -123,24 +123,46 @@ test("a live scoreboard ref counts the attempt and a get-only stub does not", as
     await recordPushOutcome("win_back", "sends", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("win_back", "accepts", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("wotd", "sends", new Date("2026-10-17T12:00:00Z"));
+    await recordPushOutcome("wotd", "fails", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("nope", "fails", new Date("2026-10-17T12:00:00Z"));
     const first = "metrics/notificationScoreboard/days/2026-10-17_00";
-    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}});
+    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}, fails: {wotd: 1}});
     Math.random = () => 0.5;
     await recordPushOutcome("follower", "sends", new Date("2026-10-17T12:00:00Z"));
-    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}});
+    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}, fails: {wotd: 1}});
     assert.deepEqual(days.get("metrics/notificationScoreboard/days/2026-10-17_16"), {sends: {follower: 1}});
     assert.equal(days.has("metrics/notificationScoreboard/days/2026-10-17"), false);
-    const before = transactions;
-    t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
-    await recordPushOutcome("win_back", "sends", new Date("2026-10-17T12:00:00Z"));
-    assert.equal(transactions, before);
+    assert.equal(transactions, 5);
   } finally {
     Math.random = originalRandom;
     t.mock.method(db, "doc", originalDoc);
     t.mock.method(db, "runTransaction", originalTx);
     if (warn) Object.defineProperty(logger, "warn", warn);
   }
+});
+
+test("real push outcomes accumulate through the shared database fake and unknown kinds write nothing", async (t) => {
+  const store = installFakeDb(t);
+  t.mock.method(Math, "random", () => 0);
+  const at = new Date("2026-10-17T12:00:00Z");
+  for (const outcome of ["sends", "accepts", "fails"] as const) {
+    await recordPushOutcome("follower", outcome, at);
+    await recordPushOutcome("follower", outcome, at);
+  }
+  await recordPushOutcome("unknown", "sends", at);
+  assert.deepEqual(store.get("metrics/notificationScoreboard/days/2026-10-17_00"), {
+    sends: {follower: 2}, accepts: {follower: 2}, fails: {follower: 2},
+  });
+  assert.equal(store.size, 1);
+});
+
+test("push outcome database failures are logged and remain fail-open", async (t) => {
+  installFakeDb(t);
+  const warn = t.mock.method(logger, "warn", () => undefined);
+  t.mock.method(db, "runTransaction", async () => {throw new Error("unavailable");});
+  await assert.doesNotReject(() => recordPushOutcome("wotd", "sends"));
+  assert.equal(warn.mock.callCount(), 1);
+  assert.equal(warn.mock.calls[0].arguments[0], "notification scoreboard write failed");
 });
 
 test("push retry reuses the shard selected before the transaction", async (t) => {
