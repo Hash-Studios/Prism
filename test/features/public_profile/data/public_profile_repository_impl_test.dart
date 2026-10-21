@@ -501,6 +501,56 @@ void main() {
       ]);
     });
 
+    test('cached walls still restore offline when their document id metadata is corrupt', () async {
+      app_state.prismUser = profileUser(id: 'walls-corrupt-ids-owner');
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-a', data: <String, dynamic>{'id': 'WALLA', 'wallpaper_url': 'https://example.test/a.jpg'}),
+      ];
+      await repo.fetchWalls(email: 'creator@prism.test', refresh: true);
+      final DurableJsonStore snapshots = DurableJsonStore('public_profiles');
+      const String key = 'walls-corrupt-ids-owner::walls:creator@prism.test';
+      await snapshots.write(key, <String, Object?>{...?await snapshots.read(key), 'documentIdsJson': '{'});
+
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restored = await PublicProfileRepositoryImpl(
+        offlineClient,
+        blocks,
+      ).fetchWalls(email: 'creator@prism.test', refresh: true);
+
+      expect(restored.isSuccess, isTrue);
+      final walls = restored.data!.items.map((wall) => (wall.toFeedItem() as PrismFeedItem).wallpaper);
+      expect(walls.map((wall) => (wall.id, wall.firestoreDocumentId)), <(String, String?)>[('WALLA', null)]);
+    });
+
+    test('a fetched next page is kept when the cached document id metadata is corrupt', () async {
+      app_state.prismUser = profileUser(id: 'walls-corrupt-append-owner');
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-a', data: <String, dynamic>{'id': 'WALLA', 'wallpaper_url': 'https://example.test/a.jpg'}),
+      ];
+      await repo.fetchWalls(email: 'creator@prism.test', refresh: true);
+      final DurableJsonStore snapshots = DurableJsonStore('public_profiles');
+      const String key = 'walls-corrupt-append-owner::walls:creator@prism.test';
+      await snapshots.write(key, <String, Object?>{...?await snapshots.read(key), 'documentIdsJson': '[7]'});
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-b', data: <String, dynamic>{'wallpaper_url': 'https://example.test/b.jpg'}),
+      ];
+
+      final page = await repo.fetchWalls(email: 'creator@prism.test', refresh: false);
+
+      expect(page.isSuccess, isTrue);
+      expect(page.data!.items.map((wall) => wall.id), <String>['doc-b']);
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restored = await PublicProfileRepositoryImpl(
+        offlineClient,
+        blocks,
+      ).fetchWalls(email: 'creator@prism.test', refresh: true);
+      final walls = restored.data!.items.map((wall) => (wall.toFeedItem() as PrismFeedItem).wallpaper);
+      expect(walls.map((wall) => (wall.id, wall.firestoreDocumentId)), <(String, String?)>[
+        ('WALLA', null),
+        ('doc-b', 'doc-b'),
+      ]);
+    });
+
     test('a wall keeps its Depth Effect tier on the feed item, also after a restart while offline', () async {
       const String owner = 'walls-depth-owner';
       app_state.prismUser = profileUser(id: owner);
