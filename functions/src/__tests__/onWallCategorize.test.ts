@@ -19,7 +19,7 @@ const ADMIN = {tier: "auto", kind: null, top: null, v: 1, by: "admin"};
 beforeEach((t) => {
   assert.ok("mock" in t);
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
-    premiumCollections: {defaultValue: {value: '["premium"]'}},
+    premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));
 });
 

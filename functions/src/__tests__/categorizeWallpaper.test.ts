@@ -11,7 +11,7 @@ import {categorizeWallpaper, parseWallId} from "../categorizeWallpaper";
 beforeEach((t) => {
   assert.ok("mock" in t);
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
-    premiumCollections: {defaultValue: {value: '["premium"]'}},
+    premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));
 });
 

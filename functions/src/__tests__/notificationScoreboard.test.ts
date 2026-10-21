@@ -159,7 +159,9 @@ test("real push outcomes accumulate through the shared database fake and unknown
 test("push outcome database failures are logged and remain fail-open", async (t) => {
   installFakeDb(t);
   const warn = t.mock.method(logger, "warn", () => undefined);
-  t.mock.method(db, "runTransaction", async () => {throw new Error("unavailable");});
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("unavailable");
+  });
   await assert.doesNotReject(() => recordPushOutcome("wotd", "sends"));
   assert.equal(warn.mock.callCount(), 1);
   assert.equal(warn.mock.calls[0].arguments[0], "notification scoreboard write failed");

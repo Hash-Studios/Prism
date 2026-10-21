@@ -351,7 +351,9 @@ test("SV-S12 failed reservation cleanup preserves the profile and can be retried
   const empty = {where: () => empty, get: async () => ({docs: []})};
   t.mock.method(db, "collectionGroup", () => empty);
   const runTransaction = db.runTransaction.bind(db);
-  t.mock.method(db, "runTransaction", async () => { throw new Error("reservation unavailable"); });
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("reservation unavailable");
+  });
   await assert.rejects(call, /reservation unavailable/);
   assert.equal(store.get("usersv2/u1")?.username, "OldName");
   assert.equal(log.includes("auth"), false);

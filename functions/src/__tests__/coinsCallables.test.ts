@@ -787,7 +787,9 @@ test("AI refunds forward authenticated cancellation and retry safely after a Fir
 });
 
 test("optional callable fields reject malformed values before Firestore access", async (t) => {
-  t.mock.method(db, "runTransaction", () => { throw new Error("must not read Firestore"); });
+  t.mock.method(db, "runTransaction", () => {
+    throw new Error("must not read Firestore");
+  });
   for (const data of [{reason: {}}, {label: []}, {amount: 10.5}, {amount: "10"},
     {pricingVersion: "2"}, {allowPremiumBypass: "true"}]) {
     await assert.rejects(() => spendCoins.run(spendRequest(data)), {code: "invalid-argument"});
@@ -798,7 +800,9 @@ test("optional callable fields reject malformed values before Firestore access",
 test("AI refunds without a forwardable caller token fail closed without contacting the worker", async (t) => {
   const store = refundStore(aiDebit(60_000));
   mockStore(t, store);
-  const calls = mockWorker(t, async () => { throw new Error("must not contact worker"); });
+  const calls = mockWorker(t, async () => {
+    throw new Error("must not contact worker");
+  });
   const result = await awardCoins.run(awardRequest({action: "refund", transactionId: "ctx_aiGeneration_1"}));
   assert.equal(result.success, false);
   assert.equal(store.get("usersv2/user-1")?.coins, 25);
