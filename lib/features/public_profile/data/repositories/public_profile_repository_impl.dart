@@ -485,6 +485,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   PublicProfileWallEntity _mapWall(WallDocDto dto, String docId) {
     return PublicProfileWallEntity(
       id: dto.id.isNotEmpty ? dto.id : docId,
+      firestoreDocumentId: docId,
       by: dto.by,
       desc: dto.desc,
       size: dto.size,

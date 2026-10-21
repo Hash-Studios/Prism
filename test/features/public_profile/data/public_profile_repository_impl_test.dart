@@ -441,6 +441,21 @@ void main() {
       expect(result.data!.hasMore, isTrue);
     });
 
+    test('a wall keeps its Firestore document id next to its own id', () async {
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-a', data: <String, dynamic>{'id': 'WALLA', 'wallpaper_url': 'https://example.test/a.jpg'}),
+        (id: 'doc-b', data: <String, dynamic>{'wallpaper_url': 'https://example.test/b.jpg'}),
+      ];
+
+      final result = await repo.fetchWalls(email: 'a@x.com', refresh: true);
+
+      final walls = result.data!.items.map((wall) => (wall.toFeedItem() as PrismFeedItem).wallpaper);
+      expect(walls.map((wall) => (wall.id, wall.firestoreDocumentId)), <(String, String?)>[
+        ('WALLA', 'doc-a'),
+        ('doc-b', 'doc-b'),
+      ]);
+    });
+
     test('profile walls restore from a real durable snapshot after restart while offline', () async {
       const String owner = 'walls-restart-owner';
       app_state.prismUser = profileUser(id: owner);
