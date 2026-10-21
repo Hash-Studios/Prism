@@ -4905,6 +4905,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Grátis, este papel de parede é seu';
+  }
+
+  @override
   String economyDownloadFreeWithPassSemantics(String label) {
     return '$label. Grátis com seu passe';
   }
@@ -14851,6 +14856,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Grátis · $countString restantes';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Grátis, este papel de parede é seu';
   }
 
   @override

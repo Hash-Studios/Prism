@@ -4,6 +4,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -64,7 +65,9 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   }
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
-    if (event.entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(event.entity)) {
+    if (event.entity.source == WallpaperSource.prism &&
+        !BundledWallpapers.isStarter(event.entity) &&
+        !OriginalAccessService.isUnlockedDropUrl(event.entity.fullUrl, event.entity.id)) {
       await _onLoadFromId(
         LoadFromId(
           wallId: event.entity.id,

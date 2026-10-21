@@ -4847,6 +4847,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Gratis, este fondo de pantalla es tuyo';
+  }
+
+  @override
   String economyDownloadFreeWithPassSemantics(String label) {
     return '$label. Gratis con tu pase';
   }

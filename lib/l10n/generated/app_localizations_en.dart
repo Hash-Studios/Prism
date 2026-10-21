@@ -4805,6 +4805,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Free, you own this wallpaper';
+  }
+
+  @override
   String economyDownloadFreeWithPassSemantics(String label) {
     return '$label. Free with your pass';
   }

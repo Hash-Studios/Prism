@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
@@ -315,6 +316,33 @@ void main() {
       ),
       throwsA(isA<OriginalAccessInsufficientBalance>()),
     );
+  });
+
+  test('an unlocked Drop wall uses its unlock url without a grant', () async {
+    CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{
+      'drop': DropUnlock(wallId: 'drop', weekKey: '2026-W43', url: 'https://example.com/drop.jpg'),
+    };
+    addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+    final calls = <Map<String, dynamic>>[];
+    final service = OriginalAccessService(
+      owner: () => 'alice',
+      call: (input) async {
+        calls.add(input);
+        return {'status': 'insufficient_balance', 'requiredCoins': 10, 'currentBalance': 0};
+      },
+    );
+    expect(
+      await service.resolve(
+        url: 'https://example.com/drop.jpg',
+        wallpaperId: 'drop',
+        wallpaperSource: WallpaperSource.prism,
+        action: OriginalAccessAction.download,
+      ),
+      'https://example.com/drop.jpg',
+    );
+    expect(calls, isEmpty);
+    expect(OriginalAccessService.requiresGrant('https://example.com/other.jpg', 'drop', WallpaperSource.prism), isTrue);
+    expect(OriginalAccessService.requiresGrant('https://example.com/drop.jpg', 'other', WallpaperSource.prism), isTrue);
   });
 
   test('two protected pair assets share one quote, aggregate consent and acquisition request', () async {

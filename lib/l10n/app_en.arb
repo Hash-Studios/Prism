@@ -4080,6 +4080,14 @@
       }
     }
   },
+  "economyDownloadFreeOwnedSemantics": "{label}. Free, you own this wallpaper",
+  "@economyDownloadFreeOwnedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "economyDownloadFreeWithPassSemantics": "{label}. Free with your pass",
   "@economyDownloadFreeWithPassSemantics": {
     "placeholders": {

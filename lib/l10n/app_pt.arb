@@ -1307,6 +1307,7 @@
   "economyDownloadFreeDownloadsLeftSemantics": "{label}. Grátis, {count, plural, =0{{count} downloads grátis restantes} one{1 download grátis restante} other{{count} downloads grátis restantes}}",
   "economyDownloadFreeFor": "{label} · Grátis",
   "economyDownloadFreeLeftFor": "{label} · Grátis · {count} restantes",
+  "economyDownloadFreeOwnedSemantics": "{label}. Grátis, este papel de parede é seu",
   "economyDownloadFreeWithPassSemantics": "{label}. Grátis com seu passe",
   "economyDownloadFreeWithPro": "Grátis com o Pro",
   "economyDownloadFreeWithProSemantics": "{label}. Grátis com o Pro",

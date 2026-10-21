@@ -4068,6 +4068,14 @@
       }
     }
   },
+  "economyDownloadFreeOwnedSemantics": "{label}। मुफ़्त, यह वॉलपेपर आपका है",
+  "@economyDownloadFreeOwnedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "economyDownloadFreeWithPassSemantics": "{label}। आपके पास से मुफ़्त",
   "@economyDownloadFreeWithPassSemantics": {
     "placeholders": {

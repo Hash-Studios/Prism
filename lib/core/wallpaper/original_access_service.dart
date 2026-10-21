@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_correlation.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -245,8 +246,15 @@ class OriginalAccessService {
     return result.data;
   }
 
+  /// True when [url] is the full url `unlockDrop` gave this account for Drop wall [id]. That wall stays unreviewed and
+  /// unprotected until its Drop is released, so neither the canonical lookup nor a grant can serve it.
+  static bool isUnlockedDropUrl(String url, String? id) =>
+      id != null && url.isNotEmpty && CoinsService.instance.dropsUnlockedNotifier.value[id]?.url == url;
+
   static bool requiresGrant(String url, String? id, WallpaperSource? source) =>
-      source == WallpaperSource.prism && !(id != null && BundledWallpapers.isStarterIdentity(id, source!));
+      source == WallpaperSource.prism &&
+      !(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
+      !isUnlockedDropUrl(url, id);
 
   Future<String> resolve({
     required String url,

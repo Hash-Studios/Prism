@@ -1397,6 +1397,7 @@
   "economyDownloadFreeDownloadsLeftSemantics": "{label}. Gratis, {count, plural, one{queda 1 descarga gratis} other{quedan {count} descargas gratis}}",
   "economyDownloadFreeFor": "{label} · Gratis",
   "economyDownloadFreeLeftFor": "{label} · Gratis · quedan {count}",
+  "economyDownloadFreeOwnedSemantics": "{label}. Gratis, este fondo de pantalla es tuyo",
   "economyDownloadFreeWithPassSemantics": "{label}. Gratis con tu pase",
   "economyDownloadFreeWithPro": "Gratis con Pro",
   "economyDownloadFreeWithProSemantics": "{label}. Gratis con Pro",
