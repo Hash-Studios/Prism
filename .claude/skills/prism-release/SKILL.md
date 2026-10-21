@@ -331,8 +331,7 @@ make build-aab DOPPLER_CONFIG=prd
 This runs `flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols`
 with dart-defines pulled from Doppler `prd`, then (because `SENTRY_UPLOAD` defaults to `true`)
 uploads debug symbols via `tool/sentry_upload.sh` using Doppler `prd` Sentry credentials
-(`SENTRY_DOPPLER_CONFIG` defaults to `prd` already, no need to pass it). **Blocked today**: see the
-`prd`-missing-`RC_*`-keys gap in Preconditions step 2. Fix that in Doppler before this succeeds.
+(`SENTRY_DOPPLER_CONFIG` defaults to `prd` already, no need to pass it).
 
 If it fails with `Keystore file not found` or `Failed to read key`, stop and ask the human. Do
 not regenerate the keystore (that breaks Play updates for every existing install).
