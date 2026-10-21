@@ -18,7 +18,8 @@ The Collections tab lists collections and categories. A category shows a grid of
 
 | Path | Role |
 |---|---|
-| `lib/data/categories/categories.dart` | The 21 category tiles. |
+| `lib/data/categories/categories.dart` | The 21 built-in category tiles. |
+| `lib/data/categories/category_catalog.dart` | `CategoryCatalog.current`: the Remote Config list, else the built-in tiles. |
 | `lib/data/categories/category_definition.dart` | `CategoryDefinition` and `hasPrismWalls`. |
 | `lib/features/category_feed/data/repositories/category_feed_repository_impl.dart` | Loads a category page. Puts Prism walls first. |
 | `lib/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart` | `fetchByCategory`. |
@@ -27,6 +28,22 @@ The Collections tab lists collections and categories. A category shows a grid of
 | `lib/features/category_feed/views/widgets/source_feed_grid.dart` | The grid. |
 | `lib/features/category_feed/views/widgets/wallpaper_tile.dart` | One tile. |
 | `lib/features/category_feed/views/widgets/wallpaper_quick_actions.dart` | The long-press sheet. |
+
+### Remote category list
+
+- The Remote Config key `categories_v1` can replace the built-in list. Then a new category needs no app update.
+- The value is a JSON array in display order:
+
+  ```json
+  [{"name": "Diwali", "source": "pexels", "imageUrl": "https://...", "secondaryImageUrl": "https://..."}]
+  ```
+
+- `source` is `pexels` or `wallhaven`. The name is also the search query. `secondaryImageUrl` is optional. The search row shows it when the first picture fails to load.
+- The app skips an entry without a name or `imageUrl`, an entry with another source, and a second entry with the same name. If no entry is left, or the key is empty, the app shows the built-in list.
+- The value replaces the full list. To add one category, copy the built-in list, add the entry, and publish. To go back, delete the key or set it to an empty string.
+- The Collections tab, the search "Browse by Category" row and the quick tile picker use the list. The upload category picker and the quick tile default stay on the built-in list. The upload picker lists the names that the server classifier writes.
+- The first read with Remote Config ready stays for the session. A value that the app fetches later shows on the next launch. Release builds fetch at app start, at most once an hour. A user sees a change after one or two cold starts.
+- A category name the app does not translate shows as it is, in all languages.
 
 ### Prism walls first
 
@@ -68,6 +85,7 @@ A long press on a tile opens one sheet in these grids: home and category grids, 
 
 ## Limits
 
+- A remote category gets Prism walls first only when its name is one of the 18 classifier names. A new classifier name needs a functions change and an app update.
 - The heart badge shows only on home and category tiles. Search, colour and collection tiles do not show it.
 - The badge reads the local favourites list. It can be late until the favourites load after sign-in.
 - The long-press menu has no analytics event.
@@ -84,10 +102,13 @@ A long press on a tile opens one sheet in these grids: home and category grids, 
 5. Tap **Favourite**. Make sure the tile shows a small heart. Long press again. Make sure the row reads **Unfavourite**.
 6. Long press a tile on the home feed. Make sure **Show less like this** shows.
 7. Pull down on the Collections tab with airplane mode on. Make sure the collection tiles stay.
+8. In a debug build, set `categories_v1` in Remote Config to the built-in list plus one new entry. Cold start the app two times. Make sure the new tile shows in Collections and in the search "Browse by Category" row, and that it loads walls.
 
 Automated tests:
 
+- `test/data/categories/category_catalog_test.dart`
 - `test/features/category_feed/category_feed_repository_impl_test.dart`
+- `test/features/user_search/search_discovery_semantics_test.dart`
 - `test/features/category_feed/category_feed_bloc_test.dart`
 - `test/features/category_feed/collection_view_screen_test.dart`
 - `test/features/category_feed/source_feed_grid_test.dart`
@@ -100,5 +121,5 @@ Automated tests:
 Command:
 
 ```sh
-fvm flutter test --no-pub test/features/category_feed test/data/collections test/features/prism_feed
+fvm flutter test --no-pub test/data/categories test/features/category_feed test/data/collections test/features/prism_feed
 ```

@@ -6,7 +6,8 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
@@ -127,19 +128,20 @@ class CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<CategoryDefinition> categories = CategoryCatalog.current;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         PrismSectionHeader(title: context.l10n.accountBrowseByCategory, padding: _sectionHeaderPadding),
         _hRow(
           height: _categoryHeight,
-          count: categoryDefinitions.length,
+          count: categories.length,
           builder: (context, index) {
-            final String name = categoryDefinitions[index].name;
+            final String name = categories[index].name;
             return _CategoryCard(
               name: name,
-              image: categoryDefinitions[index].imageUrl,
-              fallbackImage: categoryDefinitions[index].secondaryImageUrl,
+              image: categories[index].imageUrl,
+              fallbackImage: categories[index].secondaryImageUrl,
               onTap: () {
                 PrismHaptics.tap();
                 context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}'));

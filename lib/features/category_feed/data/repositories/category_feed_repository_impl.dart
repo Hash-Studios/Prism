@@ -11,7 +11,7 @@ import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
@@ -46,7 +46,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
 
   @override
   Future<Result<List<CategoryEntity>>> getCategories() async {
-    final categories = category_data.categoryDefinitions
+    final categories = CategoryCatalog.current
         .map(
           (def) => CategoryEntity(
             name: def.name,

@@ -12,6 +12,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -184,7 +185,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
             spacing: PrismSpace.xs,
             runSpacing: PrismSpace.xs,
             children: <Widget>[
-              for (final cat in categoryDefinitions)
+              for (final cat in CategoryCatalog.current)
                 PrismChip(
                   label: categoryDisplayName(cat.name, context.l10n),
                   selected: cat.name == _selectedCategoryName,

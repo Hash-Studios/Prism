@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/data/repositories/category_feed_repository_impl.dart';
@@ -18,6 +20,7 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -30,6 +33,8 @@ class _MockPrism extends Mock implements PrismWallpaperRepository {}
 class _MockWallhaven extends Mock implements WallhavenWallpaperRepository {}
 
 class _MockPexels extends Mock implements PexelsWallpaperRepository {}
+
+class _MockRemoteConfig extends Mock implements FirebaseRemoteConfig {}
 
 class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
   @override
@@ -359,6 +364,24 @@ void main() {
       final amoled = categories.singleWhere((category) => category.name == 'AMOLED');
       expect(amoled.source, WallpaperSource.wallhaven);
       expect(amoled.image, startsWith('https://images.pexels.com/photos/'));
+    });
+
+    test('getCategories serves the Remote Config list', () async {
+      final remoteConfig = _MockRemoteConfig();
+      when(() => remoteConfig.getString(categoriesRemoteConfigKey)).thenReturn(
+        '[{"name":"Diwali","source":"pexels","imageUrl":"https://img/d.jpg"},'
+        '{"name":"Nature","source":"wallhaven","imageUrl":"https://img/n.jpg"}]',
+      );
+      CategoryCatalog.resolve(remoteConfig);
+      addTearDown(CategoryCatalog.debugReset);
+
+      final categories = (await repository.getCategories()).data!;
+
+      expect(categories.map((category) => category.name), <String>['Diwali', 'Nature']);
+      expect(categories.first.source, WallpaperSource.pexels);
+      expect(categories.first.image2, 'https://img/d.jpg');
+      expect(categories.first.hasPrismWalls, isFalse);
+      expect(categories.last.hasPrismWalls, isTrue);
     });
   });
 }
