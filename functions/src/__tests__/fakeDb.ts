@@ -100,10 +100,14 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
   let incarnation = 1;
   const set = store.set.bind(store);
-  store.set = (path, data) => {
-    if (!store.has(path)) incarnations.set(path, incarnations.has(path) ? ++incarnation : 1);
-    return set(path, data);
-  };
+  Object.defineProperty(store, "set", {
+    configurable: true,
+    writable: true,
+    value: (path: string, data: Doc) => {
+      if (!store.has(path)) incarnations.set(path, incarnations.has(path) ? ++incarnation : 1);
+      return set(path, data);
+    },
+  });
   const versions = new Map<string, number>();
   let auto = 0;
   const FieldValue = admin.firestore.FieldValue;
@@ -168,24 +172,27 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     offsetBy: number;
     startAt?: unknown;
     startAfter?: string;
+    group?: string;
   };
 
   function query(path: string, state: QueryState) {
     const rows = (): Snap[] => {
       const depth = path.split("/").length + 1;
       let docs = [...store.keys()]
-        .filter((p) => p.startsWith(`${path}/`) && p.split("/").length === depth)
+        .filter((p) => state.group ? p.split("/").slice(-2, -1)[0] === state.group :
+          p.startsWith(`${path}/`) && p.split("/").length === depth)
         .map(snap)
         .filter((d) => state.filters.every(([field, op, value]) =>
           matches(fieldValue(d.data() as Doc, field), op, value)));
       for (const [field, dir] of [...state.orders].reverse()) {
         const key = (d: Snap) =>
-          field === "__name__" ? d.id : comparable(fieldValue(d.data() as Doc, field as string)) as never;
+          field === "__name__" ? (state.group ? d.ref.path : d.id) :
+            comparable(fieldValue(d.data() as Doc, field as string)) as never;
         docs = docs.sort((x, y) => (key(x) < key(y) ? -1 : key(x) > key(y) ? 1 : 0) * (dir === "desc" ? -1 : 1));
       }
       if (state.startAt !== undefined) docs = docs.filter((d) => d.id >= (state.startAt as string));
       const startAfter = state.startAfter;
-      if (startAfter !== undefined) docs = docs.filter((d) => d.id > startAfter);
+      if (startAfter !== undefined) docs = docs.filter((d) => (state.group ? d.ref.path : d.id) > startAfter);
       docs = docs.slice(state.offsetBy);
       return state.limitTo === undefined ? docs : docs.slice(0, state.limitTo);
     };
@@ -197,7 +204,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       limit: (n: number) => next({limitTo: n}),
       offset: (n: number) => next({offsetBy: n}),
       startAt: (value: unknown) => next({startAt: value}),
-      startAfter: (value: {id: string}) => next({startAfter: value.id}),
+      startAfter: (value: {id: string; path?: string}) => next({startAfter: state.group ? value.path : value.id}),
       select: () => q,
       count: () => ({get: async () => ({data: () => ({count: rows().length})})}),
       get: async () => {
@@ -221,6 +228,8 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
   }
 
   t.mock.method(db, "collection", (name: string) => collection(name));
+  t.mock.method(db, "collectionGroup", (name: string) =>
+    query("", {filters: [], orders: [], offsetBy: 0, group: name}));
   t.mock.method(db, "doc", (path: string) => ref(path));
   // The fake keeps one write buffer, so transactions run one at a time, like a Firestore with full contention.
   let turn: Promise<unknown> = Promise.resolve();

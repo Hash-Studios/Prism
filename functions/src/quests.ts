@@ -51,7 +51,8 @@ interface ProgressQuestRequest { event?: unknown; eventId?: unknown; requestId?:
 interface Awarded { id: string; coins: number; xp: number }
 
 /** `event` null means sync only; `ignoredReason` is then the reply reason. */
-async function runProgress(uid: string, event: QuestEvent | null, eventId: string | null, ignoredReason: string, nowMs: number) {
+async function runProgress(uid: string, event: QuestEvent | null, eventId: string | null, ignoredReason: string, nowMs: number,
+  pendingFavourite?: admin.firestore.DocumentReference) {
   const config = await loadEconomy();
   const today = dayKey(nowMs);
   const userRef = db.collection(USERS).doc(uid);
@@ -59,11 +60,32 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
   const rateRef = event ? db.collection(EVENT_RATE).doc(`${uid}_${today}_${event}`) : null;
 
   return db.runTransaction(async (tx) => {
+    if (pendingFavourite) {
+      const pending = await tx.get(pendingFavourite);
+      if (!pending.exists) return null;
+      // Order recovery against account deletion before it can recreate private state.
+      const deletion = await tx.get(db.collection("creatorDeletionState").doc(uid));
+      if (deletion.data()?.closed === true) {
+        tx.delete(pendingFavourite);
+        return null;
+      }
+      const acceptedAt = pending.data()?.acceptedAt;
+      // Favourite quests are daily only. Never rewind the user's current state to recover yesterday's work.
+      if (!(acceptedAt instanceof admin.firestore.Timestamp) || dayKey(acceptedAt.toMillis()) !== today ||
+          dayKey(Date.now()) !== today) {
+        tx.delete(pendingFavourite);
+        return null;
+      }
+    }
     const [userSnap, privateSnap, rateSnap] = await Promise.all([
       tx.get(userRef),
       tx.get(privateRef),
       rateRef ? tx.get(rateRef) : null,
     ]);
+    if (pendingFavourite && (!userSnap.exists || userSnap.data()?.deleted === true)) {
+      tx.delete(pendingFavourite);
+      return null;
+    }
     if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
 
     const userData = userSnap.data() as admin.firestore.DocumentData;
@@ -133,6 +155,8 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
       }
     }
 
+    // Consuming the durable work and paying the quest share a commit, including duplicate/rate-limited no-ops.
+    if (pendingFavourite) tx.delete(pendingFavourite);
     return {
       success: true,
       changed: awarded.length > 0,
@@ -174,13 +198,18 @@ export const progressQuest = onCall(
 
 /**
  * Counts one event for `uid` from a function that already saw it. `eventId` names the source event, so a retried
- * trigger or callable counts once. Never throws: quests must not break the caller.
+ * trigger or callable counts once. Never throws: quests must not break action/view callers. A false result lets
+ * a retryable trigger keep durable work pending. `pendingFavourite` is consumed atomically with quest progress.
  */
-export async function progressQuestForUser(uid: string, event: QuestEvent, eventId: string, nowMs = Date.now()): Promise<void> {
+export async function progressQuestForUser(uid: string, event: QuestEvent, eventId: string, nowMs = Date.now(),
+  pendingFavourite?: admin.firestore.DocumentReference): Promise<boolean> {
   try {
-    await runProgress(uid, event, eventId, "quest_synced", nowMs);
+    if (pendingFavourite && event !== "favourite") throw new Error("Only favourite events have durable pending work.");
+    await runProgress(uid, event, eventId, "quest_synced", nowMs, pendingFavourite);
+    return true;
   } catch (err) {
     logger.warn("Could not record the quest event.", {event, err});
+    return false;
   }
 }
 
