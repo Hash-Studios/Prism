@@ -635,13 +635,17 @@ void main() {
       status: 'success',
     );
 
-    final Future<void> historyWrite = repository.saveHistoryRecord(record);
+    bool historyWriteCompleted = false;
+    final Future<void> historyWrite = repository.saveHistoryRecord(record).whenComplete(() {
+      historyWriteCompleted = true;
+    });
     await firestore.writeStarted.future;
-    await repository.savePrompt(userId: 'user-1', prompt: 'still locally writable').timeout(const Duration(seconds: 1));
+    await repository.savePrompt(userId: 'user-1', prompt: 'still locally writable');
     expect(await repository.loadPrompt(userId: 'user-1'), 'still locally writable');
-    await repository.clearForUser('user-1').timeout(const Duration(seconds: 1));
+    await repository.clearForUser('user-1');
     expect(await repository.loadPrompt(userId: 'user-1'), isNull);
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
+    expect(historyWriteCompleted, isFalse);
     firestore.writeGate.complete();
     await historyWrite;
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);

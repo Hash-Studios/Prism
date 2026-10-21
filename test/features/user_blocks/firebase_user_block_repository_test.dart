@@ -8,9 +8,11 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/data/content_reports/firebase_content_report_repository.dart';
 import 'package:Prism/data/user_blocks/firebase_user_block_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -526,6 +528,148 @@ void main() {
     expect((await repo.blockUser(targetUserId: ' ')).failure, isA<ValidationFailure>());
     expect((await repo.unblockUser(targetUserId: '')).failure, isA<ValidationFailure>());
   });
+
+  test('content reports validate before sending and preserve server and transport errors', () async {
+    final repository = FirebaseContentReportRepository();
+    final calls = <Object?>[];
+    fakeFunctions.onCall = (name, parameters) async {
+      expect(name, 'submitContentReport');
+      calls.add(parameters);
+      return <String, Object?>{'ok': true};
+    };
+    expect(
+      (await repository.submitReport(contentType: ' ', targetFirestoreDocId: 'wall', reason: 'spam')).isFailure,
+      isTrue,
+    );
+    expect(calls, isEmpty);
+    expect(
+      (await repository.submitReport(
+        contentType: ' wall ',
+        targetFirestoreDocId: ' id ',
+        reason: ' spam ',
+        details: ' detail ',
+        appVersion: ' 1.0 ',
+      )).isSuccess,
+      isTrue,
+    );
+    expect(calls.single, <String, String>{
+      'contentType': 'wall',
+      'targetFirestoreDocId': 'id',
+      'reason': 'spam',
+      'details': 'detail',
+      'appVersion': '1.0',
+    });
+    fakeFunctions.onCall = (_, _) async =>
+        throw cf.FirebaseFunctionsException(code: 'permission-denied', message: 'Report denied');
+    expect(
+      (await repository.submitReport(contentType: 'wall', targetFirestoreDocId: 'id', reason: 'spam')).failure!.message,
+      'Report denied',
+    );
+    fakeFunctions.onCall = (_, _) async => throw StateError('offline');
+    expect(
+      (await repository.submitReport(contentType: 'wall', targetFirestoreDocId: 'id', reason: 'spam')).failure!.message,
+      contains('Failed to submit report:'),
+    );
+  });
+
+  for (final bool block in <bool>[true, false]) {
+    for (final Object error in <Object>[
+      cf.FirebaseFunctionsException(code: 'permission-denied', message: 'Target denied'),
+      cf.FirebaseFunctionsException(code: 'unavailable', message: 'Try later'),
+      StateError('offline'),
+    ]) {
+      test('${block ? 'block' : 'unblock'} keeps local intent with correct sync status after $error', () async {
+        final repo = createRepository();
+        sessionUsers.add(profileUser(id: 'me'));
+        await client.watchStarted.future;
+        client.snapshots.add(<FakeDocRow>[]);
+        await repo.getBlockedCreatorEmails(waitForInitialLoad: true);
+        final calls = <String>[];
+        fakeFunctions.onCall = (name, parameters) {
+          calls.add(name);
+          expect(parameters, <String, String>{'targetUserId': 'target'});
+          return Future<dynamic>.error(error);
+        };
+        final result = block
+            ? await repo.blockUser(targetUserId: ' target ', targetEmail: ' Target@Example.com ')
+            : await repo.unblockUser(targetUserId: ' target ');
+        final permanent = error is cf.FirebaseFunctionsException && error.code == 'permission-denied';
+        expect(result.failure!.message, permanent ? 'Target denied' : startsWith('Pending sync:'));
+        await repo.dispose();
+        final record = await DurableJsonStore('user_blocks').read('me::target');
+        expect(record!['desired'], block);
+        expect(record['status'], permanent ? 'rejected' : 'pending');
+        expect(calls, everyElement(block ? 'blockUser' : 'unblockUser'));
+        expect(calls, isNotEmpty);
+        if (block) expect(record['email'], 'target@example.com');
+      });
+    }
+  }
+
+  test('pending unblocks remove server rows while rejected blocks retain their explanation offline', () async {
+    final store = DurableJsonStore('user_blocks');
+    await store.write('me::remove', <String, Object?>{
+      'owner': 'me',
+      'targetId': 'remove',
+      'desired': false,
+      'status': 'pending',
+    });
+    await store.write('me::add', <String, Object?>{
+      'owner': 'me',
+      'targetId': 'add',
+      'email': 'add@example.com',
+      'username': 'Added',
+      'desired': true,
+      'status': 'rejected',
+    });
+    client.onQuery = (_) => <FakeDocRow>[
+      _blocked('remove', 'remove@example.com'),
+      _blocked('keep', 'keep@example.com'),
+    ];
+    final repo = createRepository();
+    final online = (await repo.fetchBlockedUsersList()).data!;
+    expect(online.map((row) => row.blockedUid), <String>['keep', 'add']);
+    expect(online.last.syncStatus, 'rejected');
+    expect(online.last.blockedUsername, 'Added');
+    client.queryError = StateError('offline');
+    final offline = (await repo.fetchBlockedUsersList()).data!;
+    expect(offline.map((row) => row.blockedUid), <String>['keep', 'add']);
+    expect(offline.last.syncStatus, 'rejected');
+    expect(offline.last.blockedEmail, 'add@example.com');
+  });
+
+  for (final Object retryError in <Object>[
+    cf.FirebaseFunctionsException(code: 'invalid-argument', message: 'Invalid target'),
+    cf.FirebaseFunctionsException(code: 'unavailable', message: 'Retry later'),
+    StateError('connection lost'),
+  ]) {
+    test('restored pending intent records retry failure $retryError durably', () async {
+      final store = DurableJsonStore('user_blocks');
+      await store.write('me::target', <String, Object?>{
+        'owner': 'me',
+        'targetId': 'target',
+        'operationId': 'me:target:1',
+        'desired': false,
+        'status': 'pending',
+      });
+      final attempted = Completer<void>();
+      fakeFunctions.onCall = (name, parameters) {
+        expect(name, 'unblockUser');
+        expect(parameters, <String, String>{'targetUserId': 'target'});
+        attempted.complete();
+        return Future<dynamic>.error(retryError);
+      };
+      final repo = createRepository();
+      sessionUsers.add(profileUser(id: 'me'));
+      await attempted.future;
+      await repo.dispose();
+      final record = (await store.read('me::target'))!;
+      final rejected = retryError is cf.FirebaseFunctionsException && retryError.code == 'invalid-argument';
+      expect(record['status'], rejected ? 'rejected' : 'pending');
+      expect(record['error'], retryError is cf.FirebaseFunctionsException ? retryError.message : retryError.toString());
+      if (!rejected) expect(record['attempts'], 1);
+    });
+  }
 
   test('a stalled block send does not block local reads or newer intent writes', () async {
     const String owner = 'stalled-block-owner';

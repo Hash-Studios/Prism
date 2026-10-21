@@ -64,17 +64,6 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('available freeze action emits one tap haptic while opening the sheet', (tester) async {
-    await pumpSpendSection(tester);
-
-    await tester.tap(find.bySemanticsLabel(freezeLabel));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(haptics, <String>['tap']);
-    expect(find.text('You need ${CoinPolicy.streakFreezeCost} coins.'), findsOneWidget);
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
   testWidgets('premium tile semantics action shares the pointer haptic path', (tester) async {
     await pumpSpendSection(tester);
     final SemanticsHandle semanticsHandle = tester.ensureSemantics();

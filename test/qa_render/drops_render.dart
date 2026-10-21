@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../support/coins_test_backend.dart';
-import 'coin_economy_render_test.dart' show registerRewardsDeps;
+import 'coin_economy_render.dart' show registerRewardsDeps;
 import 'qa_harness.dart';
 import 'qa_images.dart';
 

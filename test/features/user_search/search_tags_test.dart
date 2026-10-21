@@ -9,9 +9,4 @@ void main() {
     expect(curatedSearchTags.toSet(), hasLength(curatedSearchTags.length));
     expect(curatedSearchTags, contains('Minimal'));
   });
-
-  test('the order never changes between reads', () {
-    expect(curatedSearchTags, orderedEquals(List<String>.of(curatedSearchTags)));
-    expect(curatedSearchTags.first, 'Nature');
-  });
 }

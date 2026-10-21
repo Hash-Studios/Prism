@@ -324,6 +324,48 @@ void main() {
     expect(sink.events.single.resultCount, 0);
   });
 
+  test('getById returns a cache-first hit without making a network read', () async {
+    final _MockSnapshot snapshot = _MockSnapshot();
+    when(() => snapshot.exists).thenReturn(true);
+    when(() => snapshot.data()).thenReturn(<String, dynamic>{'name': 'cached'});
+    when(() => snapshot.id).thenReturn('a');
+    when(() => doc.get(const GetOptions(source: Source.cache))).thenAnswer((_) async => snapshot);
+
+    final String? name = await client.getById<String>(
+      'walls',
+      'a',
+      (data, id) => '${data['name']}:$id',
+      sourceTag: 'test.cache-hit',
+      preferCacheFirst: true,
+    );
+
+    expect(name, 'cached:a');
+    expect(sink.events.single.success, isTrue);
+    verify(() => doc.get(const GetOptions(source: Source.cache))).called(1);
+    verifyNever(() => doc.get());
+  });
+
+  test('getById falls back to the network when the local cache is unavailable', () async {
+    final _MockSnapshot snapshot = _MockSnapshot();
+    when(() => doc.get(const GetOptions(source: Source.cache))).thenThrow(StateError('cache unavailable'));
+    when(() => snapshot.exists).thenReturn(true);
+    when(() => snapshot.data()).thenReturn(<String, dynamic>{'name': 'server'});
+    when(() => snapshot.id).thenReturn('a');
+    when(() => doc.get()).thenAnswer((_) async => snapshot);
+
+    final String? name = await client.getById<String>(
+      'walls',
+      'a',
+      (data, id) => '${data['name']}:$id',
+      sourceTag: 'test.cache-fallback',
+      preferCacheFirst: true,
+    );
+
+    expect(name, 'server:a');
+    expect(sink.events.single.success, isTrue);
+    verify(() => doc.get()).called(1);
+  });
+
   test('query adapts document-ID filters to FieldPath.documentId', () async {
     final _MockQuery query = _MockQuery();
     final _MockQuerySnapshot snapshot = _MockQuerySnapshot();

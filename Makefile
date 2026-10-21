@@ -2,6 +2,8 @@
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
+QA_RENDER_TARGET ?= $(wildcard test/qa_render/*_render.dart)
+QA_RENDER_FLAGS ?=
 DEVICE ?=
 RUN_ARGS ?=
 BUILD_ARGS ?=
@@ -347,6 +349,10 @@ test: ensure-fvm
 		echo "No test files found, skipping."; \
 	fi
 
+.PHONY: test-qa-render
+test-qa-render: ensure-fvm
+	@$(FLUTTER) test $(QA_RENDER_TARGET) --dart-define=QA_RENDER=true $(QA_RENDER_FLAGS)
+
 cloudflare-worker-check:
 	@sh ./tool/cloudflare-worker-check.sh
 
@@ -360,3 +366,13 @@ find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
 	@report=$$(mktemp) && trap 'rm -f "$$report"' EXIT && \
 		$(DART) run tool/find_unused_code.dart --json > "$$report" && \
 		$(DART) run tool/validate_find_unused_allowlist.dart "$$report" tool/find_unused_allowlist.json
+
+.PHONY: test-coverage test-functions-coverage test-coverage-tool
+test-coverage: ensure-fvm
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" bash tool/flutter_coverage.sh
+
+test-functions-coverage:
+	@bash tool/functions_coverage.sh
+
+test-coverage-tool: ensure-fvm
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" python3 -m unittest discover -s tool -p 'test_coverage*test.py'

@@ -76,6 +76,22 @@ void main() {
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previous);
 
   group('recordWallpaperView', () {
+    test('invalid ids never call the backend and a server rejection can be retried', () async {
+      expect((await repository.recordWallpaperView(' ')).isFailure, isTrue);
+      expect((await repository.fetchWallpaperSetCount(' ')).isFailure, isTrue);
+      expect(calls, isEmpty);
+      failure = FirebaseFunctionsException(code: 'permission-denied', message: 'Denied');
+      expect((await repository.recordWallpaperView('abc')).failure!.message, contains('Denied'));
+      failure = null;
+      response = <String, Object?>{'views': 8};
+      expect((await repository.recordWallpaperView('abc')).data, '8');
+      for (final entry in <(Object, String)>[(4.9, '4'), ('12k', '12k'), (false, '0')]) {
+        response = <String, Object?>{'views': entry.$1};
+        expect((await repository.recordWallpaperView('abc-${entry.$2}')).data, entry.$2);
+      }
+      expect(calls, hasLength(5));
+    });
+
     test('a different signed-in account records the same wall again', () async {
       final String previousId = app_state.prismUser.id;
       final bool previousLoggedIn = app_state.prismUser.loggedIn;

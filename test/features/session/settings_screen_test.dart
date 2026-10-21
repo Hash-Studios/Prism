@@ -27,6 +27,7 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app_main;
@@ -48,6 +49,8 @@ import '../../support/wait_for_real_io.dart';
 class _MockCacheMaintenanceService extends Mock implements CacheMaintenanceService {}
 
 class _MockSessionRepository extends Mock implements SessionRepository {}
+
+class _MockDownloadedWallIndex extends Mock implements DownloadedWallIndex {}
 
 class _RecordingUrlLauncher extends UrlLauncherPlatform {
   _RecordingUrlLauncher({required this.opens});
@@ -725,6 +728,27 @@ void main() {
   });
 
   group('guest', () {
+    for (final platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      testWidgets('Manage subscription opens the ${platform.name} store and reports launch failure', (tester) async {
+        signInAs(premium: true);
+        final launcher = _RecordingUrlLauncher(opens: false);
+        final previous = UrlLauncherPlatform.instance;
+        UrlLauncherPlatform.instance = launcher;
+        addTearDown(() => UrlLauncherPlatform.instance = previous);
+        await pumpSettings(tester);
+        await tester.tap(find.text('Manage subscription'));
+        await tester.pumpAndSettle();
+        expect(launcher.urls, <String>[
+          if (platform == TargetPlatform.iOS)
+            'https://apps.apple.com/account/subscriptions'
+          else
+            'https://play.google.com/store/account/subscriptions?package=com.hash.prism',
+        ]);
+        expect(messages, <String>[AppLocalizationsEn().accountCouldNotOpenStore]);
+        await tester.pump(const Duration(seconds: 1));
+      }, variant: TargetPlatformVariant.only(platform));
+    }
+
     testWidgets('the sign in row names what an account keeps, and Restore purchases stays visible', (tester) async {
       signInAs(loggedIn: false);
       await pumpSettings(tester);
@@ -916,6 +940,44 @@ void main() {
   });
 
   group('storage', () {
+    for (final outcome in <String>['success', 'empty', 'failure', 'exception']) {
+      testWidgets('deleting downloads reports $outcome and clears the index only after native success', (tester) async {
+        const channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads',
+          PrismMediaHostApi.pigeonChannelCodec,
+        );
+        final index = _MockDownloadedWallIndex();
+        when(index.clear).thenAnswer((_) async {});
+        getIt.registerSingleton<DownloadedWallIndex>(index);
+        var calls = 0;
+        messenger.setMockDecodedMessageHandler<Object?>(channel, (_) async {
+          calls++;
+          if (outcome == 'exception') return <Object?>['native-error', 'unavailable', null];
+          return <Object?>[
+            OperationResult(success: outcome == 'success', errorCode: outcome == 'empty' ? 'NO_DOWNLOADS' : null),
+          ];
+        });
+        addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+        await pumpSettings(tester);
+        await tester.tap(find.text('Clear all downloads'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(PrismButton, 'Delete all'));
+        await tester.pumpAndSettle();
+
+        expect(calls, 1);
+        if (outcome == 'success') {
+          verify(index.clear).called(1);
+          expect(messages, <String>['Deleted all downloads.']);
+        } else {
+          verifyNever(index.clear);
+          expect(messages, <String>[
+            if (outcome == 'empty') 'You have no downloads to remove.' else "Couldn't delete downloads. Try again.",
+          ]);
+        }
+        await tester.pump(const Duration(seconds: 1));
+      });
+    }
+
     Future<void> openSavedOfflineDialog(WidgetTester tester) async {
       final Finder savedOffline = find.text('Saved offline');
       await tester.scrollUntilVisible(savedOffline, 300, scrollable: find.byType(Scrollable).first);

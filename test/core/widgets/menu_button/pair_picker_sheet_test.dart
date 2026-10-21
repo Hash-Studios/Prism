@@ -103,4 +103,17 @@ void main() {
 
     expect(find.text('No downloads yet.'), findsOneWidget);
   });
+
+  testWidgets('selecting a remote thumbnail returns its full wallpaper URL', (tester) async {
+    final PairPick? pick = await open(
+      tester,
+      favourites: const <PairCandidate>[
+        PairCandidate(fullUrl: 'https://images.example/wall.jpg', thumbnailUrl: 'https://images.example/thumb.jpg'),
+      ],
+      act: () => tester.tap(find.bySemanticsLabel('Use this wallpaper for the lock screen')),
+    );
+
+    expect(pick?.source, PairSource.favourites);
+    expect(pick?.candidate.fullUrl, 'https://images.example/wall.jpg');
+  });
 }

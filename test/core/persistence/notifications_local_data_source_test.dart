@@ -56,6 +56,33 @@ void main() {
     expect((await afterRestart.readAll()).single.id, notification.id);
   });
 
+  test('inbox mutations preserve read state and clear the fetch watermark without losing items', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_mutations', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    await local.upsertAll(<InAppNotificationEntity>[
+      notification('first', now),
+      notification('second', now.add(const Duration(minutes: 1))),
+    ]);
+    await local.markAsRead('first');
+    await local.upsertAll(<InAppNotificationEntity>[notification('first', now, body: 'updated')]);
+    expect((await local.readAll()).last.read, isTrue);
+    expect((await local.readAll()).last.body, 'updated');
+
+    await local.deleteByIds(<String>[]);
+    await local.deleteByIds(<String>['second', 'missing']);
+    await local.setLastFetchAtUtc(DateTime.utc(2026, 10, 21));
+    await local.clearLastFetchAtUtc();
+    expect(await local.lastFetchAtUtc(), isNull);
+    expect((await local.readAll()).map((item) => item.id), <String>['first']);
+
+    await local.removeWhere((item) => item.id == 'first');
+    await local.setLastFetchAtUtc(DateTime.utc(2026, 10, 22));
+    await local.clearLastFetchAtUtc();
+    expect(await local.readAll(), isEmpty);
+  });
+
   test('clearForUser removes only the selected owner record', () async {
     final store = DurableJsonStore('notifications_clear_user', directory: directory);
     final local = NotificationsLocalDataSource.withStore(store)..setOwner('account-a');
