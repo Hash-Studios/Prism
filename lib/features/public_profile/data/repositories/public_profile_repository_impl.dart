@@ -485,7 +485,9 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       // One scoped prefix query per 30 emails (the whereIn limit). All spellings of a
       // key share a chunk where they fit, and each extra spelling adds one to the
       // limit, so case duplicates cannot crowd a member out of the chunk's top
-      // [_searchLimit]. Like the summaries limit, this assumes one user per email.
+      // [_searchLimit]. A group too big for one chunk is split, so its owner can sit in
+      // another chunk; every spelling of a split group adds one. Like the summaries
+      // limit, this assumes one user per email.
       final List<List<String>> chunks = <List<String>>[];
       for (final List<String> group in spellings.values) {
         if (chunks.isEmpty || chunks.last.length + group.length > _searchChunkSize) chunks.add(<String>[]);
@@ -506,7 +508,14 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isLessThan, value: '$q\uf8ff'),
               ],
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'usernameLower')],
-              limit: _searchLimit + chunk.length - chunk.map((e) => e.toLowerCase()).toSet().length,
+              limit:
+                  _searchLimit +
+                  chunk.length -
+                  chunk
+                      .map((e) => e.toLowerCase())
+                      .toSet()
+                      .where((key) => spellings[key]!.length <= _searchChunkSize)
+                      .length,
             ),
             (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
           ),

@@ -154,6 +154,23 @@ void main() {
     expect(await _search(client, 'm_', scope), <String>['m_exact']);
   });
 
+  test('a spelling group split across chunks does not hide a fifth member', () async {
+    // 31 casings of abcdef@x.com: casing n uppercases letter i when bit i of n is set.
+    final variants = <String>[
+      for (int n = 0; n <= 30; n++)
+        '${String.fromCharCodes(<int>[for (int i = 0; i < 6; i++) 'abcdef'.codeUnitAt(i) - ((n >> i & 1) * 32)])}@x.com',
+    ];
+    final members = <String>[for (int i = 0; i < 5; i++) 'u$i@x.com'];
+    final client = _fakeUsers(<Map<String, dynamic>>[
+      stored(variants.first, 'zed'),
+      stored(variants.last, 'aa0'),
+      for (int i = 0; i < 5; i++) stored(members[i], 'ab$i'),
+    ]);
+
+    expect(variants.last, 'aBCDEf@x.com');
+    expect(await _search(client, 'a', <String>[...variants, ...members]), <String>['ab0', 'ab1', 'ab2', 'ab3', 'ab4']);
+  });
+
   test('a blank query does not hit Firestore', () async {
     final client = _fakeUsers(<Map<String, dynamic>>[_user('KevinDoran')]);
 
