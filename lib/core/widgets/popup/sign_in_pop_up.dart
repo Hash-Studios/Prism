@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -25,7 +26,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
     loaderVisible = false;
   }
 
-  void runSignIn(Future<SignInOutcome> Function() signIn) {
+  void runSignIn(Future<SignInOutcome> Function() signIn, {String Function(Object)? errorMessage}) {
     navigator.pop();
     loaderVisible = true;
     showPrismSheet<void>(
@@ -66,7 +67,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           logger.d(e.toString());
           closeLoaderIfVisible();
-          toasts.error(l10n.coreSomethingWentWrong);
+          toasts.error(errorMessage?.call(e) ?? l10n.coreSomethingWentWrong);
         });
   }
 
@@ -86,7 +87,10 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           icon: JamIcons.google,
           variant: PrismButtonVariant.tonal,
           expand: true,
-          onPressed: () => runSignIn(globalGoogleAuth.signInWithGoogle),
+          onPressed: () => runSignIn(
+            globalGoogleAuth.signInWithGoogle,
+            errorMessage: (error) => googleSignInErrorMessage(error, l10n),
+          ),
         ),
         PrismButton(
           label: l10n.coreCancelSignIn,
