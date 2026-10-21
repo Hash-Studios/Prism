@@ -392,7 +392,6 @@
   "adminBackToReviewList": "Voltar à lista de análise",
   "adminBatchActionFailed": "Não foi possível concluir esta ação de análise. Tente novamente.",
   "adminBatchComplete": "Lote concluído",
-  "adminBatchCompleteLoading": "Lote concluído. Carregando o próximo lote.",
   "adminBodyLabel": "Corpo",
   "adminBodyRequired": "O corpo é obrigatório",
   "adminBy": "Por",
