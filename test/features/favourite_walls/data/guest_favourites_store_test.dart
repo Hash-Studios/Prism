@@ -22,15 +22,27 @@ void main() {
 
   test('the 201st favourite drops the oldest one', () async {
     final GuestFavouritesStore store = tempGuestStore();
+    await seedGuestFavouritesSnapshot(<String, Map<String, Object?>>{
+      for (int i = 0; i < GuestFavouritesStore.maxItems; i++) 'w$i': <String, Object?>{'id': 'w$i'},
+    });
 
-    for (int i = 0; i < GuestFavouritesStore.maxItems + 1; i++) {
-      await store.put('w$i', <String, dynamic>{'id': 'w$i'});
-    }
+    final int count = await store.put('w200', <String, dynamic>{'id': 'w200'});
 
     final Map<String, Map<String, Object?>> all = await store.readAll();
+    final List<String> expectedIds = <String>[for (int i = 1; i <= GuestFavouritesStore.maxItems; i++) 'w$i'];
+    expect(count, GuestFavouritesStore.maxItems);
     expect(all, hasLength(GuestFavouritesStore.maxItems));
+    expect(all.keys, expectedIds);
     expect(all.containsKey('w0'), isFalse);
     expect(all.containsKey('w200'), isTrue);
+
+    final GuestFavouritesStore reopened = GuestFavouritesStore(
+      durableStore: DurableJsonStore('guest_favourites'),
+      legacyCache: LazyFileCache('guest_favourites'),
+    );
+    final Map<String, Map<String, Object?>> persisted = await reopened.readAll();
+    expect(persisted, all);
+    expect(persisted.keys, expectedIds);
   });
 
   test('remove drops the given ids and clear empties the store', () async {
