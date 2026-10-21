@@ -25,9 +25,10 @@ class SharedPrefsStoreAdapter implements LocalStore {
 
   @override
   Object? get(String key) {
-    final raw = _requirePrefs.getString(key);
-    if (raw == null) {
-      return null;
+    final raw = _requirePrefs.get(key);
+    // A value that a different writer saved without the codec (a bool or int) is returned as it is, so startup does not throw.
+    if (raw is! String) {
+      return raw;
     }
     return StoreValueCodec.decode(raw);
   }
