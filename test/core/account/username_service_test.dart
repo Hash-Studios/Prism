@@ -53,6 +53,37 @@ void main() {
     expect(await UsernameService().isAvailable('Deleted', 'gone'), isTrue);
   });
 
+  test('historical deleted profile reservations are available but active and unknown owners are not', () async {
+    firestore.docs['usernames'] = <String, Map<String, dynamic>>{
+      'reuse': <String, dynamic>{'uid': 'gone'},
+    };
+    firestore.docs['usersv2'] = <String, Map<String, dynamic>>{
+      'gone': <String, dynamic>{'deleted': true, 'usernameLower': 'reuse'},
+    };
+    firestore.onQuery = (spec) => <FakeDocRow>[(id: 'gone', data: firestore.docs['usersv2']!['gone']!)];
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isTrue);
+    firestore.docs['usersv2']!['gone'] = <String, dynamic>{'deleted': false};
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isFalse);
+    firestore.docs['usersv2']!.remove('gone');
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isFalse);
+    firestore.docs['usernames']!['reuse'] = <String, dynamic>{};
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isFalse);
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('availability rereads a historical reservation whose ownership changed', () async {
+    firestore.docs['usernames'] = <String, Map<String, dynamic>>{
+      'reuse': <String, dynamic>{'uid': 'gone'},
+    };
+    firestore.docs['usersv2'] = <String, Map<String, dynamic>>{
+      'gone': <String, dynamic>{'deleted': true},
+      'newOwner': <String, dynamic>{'deleted': false},
+    };
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isTrue);
+    firestore.docs['usernames']!['reuse'] = <String, dynamic>{'uid': 'newOwner'};
+    expect(await UsernameService().isAvailable('Reuse', 'me'), isFalse);
+  });
+
   test('the transport calls claimUsername without writing profiles', () async {
     final backend = CoinsTestBackend();
     await backend.install();

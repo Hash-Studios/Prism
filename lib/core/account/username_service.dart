@@ -25,12 +25,21 @@ class UsernameService {
     final String? owner = await firestoreClient.getById<String>(
       'usernames',
       username.toLowerCase(),
-      (data, _) => data['uid'] as String? ?? '',
+      (data, _) => data['uid'] is String ? data['uid'] as String : '',
       sourceTag: 'profile.edit.usernameReservation',
     );
-    if (owner != null && owner != uid) return false;
+    if (owner != null && owner != uid) {
+      if (owner.isEmpty) return false;
+      final bool? deleted = await firestoreClient.getById<bool>(
+        FirebaseCollections.usersV2,
+        owner,
+        (data, _) => data['deleted'] == true,
+        sourceTag: 'profile.edit.usernameReservationOwner',
+      );
+      if (deleted != true) return false;
+    }
     for (final String field in <String>['username', 'usernameLower']) {
-      final List<String> holders = await firestoreClient.query<String>(
+      final List<bool> conflicts = await firestoreClient.query<bool>(
         FirestoreQuerySpec(
           collection: FirebaseCollections.usersV2,
           sourceTag: 'profile.edit.usernameAvailability.$field',
@@ -41,11 +50,10 @@ class UsernameService {
               value: field == 'username' ? username : username.toLowerCase(),
             ),
           ],
-          limit: 2,
         ),
-        (data, docId) => docId,
+        (data, docId) => docId != uid && data['deleted'] != true,
       );
-      if (holders.any((id) => id != uid)) return false;
+      if (conflicts.any((conflict) => conflict)) return false;
     }
     return true;
   }

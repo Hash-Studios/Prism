@@ -41,14 +41,19 @@ export async function reserveUsername(uid: string, username: string, initial = f
     const oldRef = oldLower && oldLower !== lower ? db.collection(USERNAMES).doc(oldLower) : null;
     const [nameSnap, holders, oldSnap] = await Promise.all([
       tx.get(nameRef),
-      tx.get(db.collection(USERS_V2).where("usernameLower", "==", lower).limit(2)),
+      tx.get(db.collection(USERS_V2).where("usernameLower", "==", lower)),
       oldRef ? tx.get(oldRef) : Promise.resolve(null),
     ]);
     // A callable may beat the creation trigger, or this may be a retried creation event.
     if (initial && oldLower && (oldRef ? oldSnap : nameSnap)?.data()?.uid === uid) {
       return {username: oldUsername, usernameLower: oldLower};
     }
-    if ((nameSnap.exists && nameSnap.data()?.uid !== uid) || holders.docs.some((doc) => doc.id !== uid)) {
+    const owner = nameSnap.data()?.uid;
+    // Only a server-owned deletion tombstone releases a historical reservation. Missing profiles are unknown.
+    const ownerSnap = nameSnap.exists && owner !== uid && typeof owner === "string" && owner.length > 0 ?
+      await tx.get(db.collection(USERS_V2).doc(owner)) : null;
+    const reservedByOther = nameSnap.exists && owner !== uid && ownerSnap?.data()?.deleted !== true;
+    if (reservedByOther || holders.docs.some((doc) => doc.id !== uid && doc.data().deleted !== true)) {
       throw new HttpsError("already-exists", "That username is taken.");
     }
     tx.set(nameRef, {uid, claimedAt: admin.firestore.FieldValue.serverTimestamp()});

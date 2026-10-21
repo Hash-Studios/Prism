@@ -93,3 +93,37 @@ test("initial claim inputs must still supply a string candidate", async (t) => {
   await assert.rejects(() => claimUsername.run({auth: {uid: "u1"}, data: {initial: true, username: {name: "Bad"}}} as unknown as
     Parameters<typeof claimUsername.run>[0]), {code: "invalid-argument"});
 });
+
+test("historical reservations owned by a deleted profile can be reclaimed on demand", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {}, "usersv2/gone": {deleted: true,
+    usernameLower: "reusedname"}, "usernames/reusedname": {uid: "gone"}});
+  await claim("ReusedName");
+  assert.equal(store.get("usernames/reusedname")?.uid, "u1");
+});
+
+test("missing, unknown and active reservation owners cannot be reclaimed", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {}, "usersv2/active": {deleted: false}});
+  for (const owner of [undefined, "", 7, "missing", "active"]) {
+    store.set("usernames/blocked", {uid: owner});
+    await assert.rejects(() => claim("Blocked"), {code: "already-exists"});
+    assert.equal(store.get("usernames/blocked")?.uid, owner);
+  }
+});
+
+test("two concurrent historical reclaims have exactly one winner", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {}, "usersv2/u2": {}, "usersv2/gone": {deleted: true},
+    "usernames/reuse": {uid: "gone"}});
+  const results = await Promise.allSettled([claim("Reuse", "u1"), claim("REUSE", "u2")]);
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(results.filter((r) => r.status === "rejected").length, 1);
+  const owner = store.get("usernames/reuse")?.uid;
+  assert.equal(store.get(`usersv2/${owner}`)?.usernameLower, "reuse");
+});
+
+test("a reservation transferred to an active owner cannot be reclaimed again", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {}, "usersv2/u2": {}, "usersv2/gone": {deleted: true},
+    "usernames/reuse": {uid: "gone"}});
+  await claim("Reuse", "u2");
+  await assert.rejects(() => claim("Reuse", "u1"), {code: "already-exists"});
+  assert.equal(store.get("usernames/reuse")?.uid, "u2");
+});
