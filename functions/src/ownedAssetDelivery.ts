@@ -529,8 +529,9 @@ export async function signOriginalDelivery(wallId: string): Promise<{url: string
 }
 // Reads the Worker AI generation record at approval. The Studio function binds the same secret.
 const studioSecret = defineSecret("STUDIO_SECRET");
+// One conversion per instance: each holds and decodes full-size images, and 50 at once ran out of 512 MiB.
 export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true,
-  secrets: [...r2Secrets, studioSecret], memory: "512MiB", timeoutSeconds: 120}, async (event) => {
+  secrets: [...r2Secrets, studioSecret], memory: "1GiB", concurrency: 1, timeoutSeconds: 120}, async (event) => {
   const after = event.data?.after;
   const before = event.data?.before;
   if (after?.exists) {

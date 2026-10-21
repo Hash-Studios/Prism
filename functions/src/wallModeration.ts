@@ -229,7 +229,7 @@ export async function moderateWall(
 }
 
 export const onWallModerate = onDocumentCreated(
-  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 120, memory: "512MiB"},
+  {document: "walls/{wallId}", region: REGION, timeoutSeconds: 120, memory: "512MiB", concurrency: 1},
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
