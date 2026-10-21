@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -11,6 +12,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -114,6 +117,42 @@ void main() {
     );
     verifyNever(() => palette.generatePalette(any()));
     verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
+
+  test('a saved favourite with only an author name opens with the canonical creator email', () async {
+    // Saved favourites keep only `photographer`. The profile link needs the email (#540).
+    final FavouriteWallEntity saved = mapFavouriteWallDoc(
+      FavouriteWallDocDto.fromJson(const <String, dynamic>{
+        'id': 'abc',
+        'provider': 'Prism',
+        'url': 'https://example.com/abc.jpg',
+        'thumb': 'https://example.com/abc-thumb.jpg',
+        'photographer': 'Display Name',
+      }),
+      'favourite-doc',
+    );
+    final FeedItemEntity fromFavourites = saved.toFeedItem();
+    expect((fromFavourites as PrismFeedItem).wallpaper.core.authorEmail, isNull);
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer(
+      (_) async => Result.success<PrismWallpaper?>(
+        const PrismWallpaper(
+          core: WallpaperCore(
+            id: 'abc',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.com/abc.jpg',
+            thumbnailUrl: 'https://example.com/abc-thumb.jpg',
+            authorName: 'Display Name',
+            authorEmail: 'creator@example.com',
+          ),
+        ),
+      ),
+    );
+
+    bloc.add(LoadFromEntity(entity: fromFavourites));
+    await waitForLookup();
+
+    final FeedItemEntity loaded = (bloc.state as WallpaperDetailLoaded).entity;
+    expect((loaded as PrismFeedItem).wallpaper.core.authorEmail, 'creator@example.com');
   });
 
   test('an explicit document-ID deep link resolves to a fresh canonical wallpaper', () async {
