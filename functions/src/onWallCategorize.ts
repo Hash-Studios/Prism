@@ -12,6 +12,7 @@ export const onWallCategorize = onDocumentCreated(
     document: "walls/{wallId}",
     region: REGION,
     timeoutSeconds: 120,
+    concurrency: 1,
     secrets: [falKey],
   },
   async (event) => {
