@@ -75,3 +75,40 @@ test("partial R2 config fails closed", (t) => {
   process.env.R2_ACCESS_KEY_ID = "partial";
   assert.throws(() => new R2Storage(), /incomplete/);
 });
+
+test("R2 trims a trailing newline from secret-store values before signing", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  configure();
+  for (const key of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_PRIVATE_BUCKET",
+    "R2_PREVIEW_BUCKET", "R2_PREVIEW_BASE_URL"]) process.env[key] = `${process.env[key]}\n`;
+  const headers: Headers[] = [];
+  // new Headers() throws "invalid header value" for a newline, like fetch does in the migration script.
+  const storage = new R2Storage(async (_input, init) => {
+    headers.push(new Headers(init?.headers));
+    return new Response(null, {status: 404});
+  }, () => new Date("2025-01-02T03:04:05.000Z"));
+  assert.equal(await storage.head("private", "retained/abc"), null);
+  assert.match(headers[0].get("authorization") ?? "", /^AWS4-HMAC-SHA256 Credential=test-access\/20250102\/auto\/s3\/aws4_request, /);
+  assert.match(storage.presignGet("private-originals/abc", new Date("2025-01-02T03:06:05.000Z")),
+    /^https:\/\/a{32}\.r2\.cloudflarestorage\.com\/private-assets\/.*X-Amz-Signature=9f50131a199b46d6588a53da9d5ce622d02ad84a53a4e428d044e8100d68cc71$/);
+});
+
+test("blank or inner-whitespace R2 values fail closed without echoing the value", (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  configure();
+  process.env.R2_SECRET_ACCESS_KEY = " \n";
+  assert.throws(() => new R2Storage(), /R2_SECRET_ACCESS_KEY is empty/);
+  configure();
+  process.env.R2_ACCESS_KEY_ID = "test-\naccess";
+  assert.throws(() => new R2Storage(), (error: Error) =>
+    /R2_ACCESS_KEY_ID contains whitespace or control characters/.test(error.message) && !error.message.includes("test-"));
+  configure();
+  process.env.R2_PRIVATE_BUCKET = "private\tassets";
+  assert.throws(() => new R2Storage(), /R2_PRIVATE_BUCKET contains whitespace/);
+});

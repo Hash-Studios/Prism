@@ -37,6 +37,11 @@ test("R2 opt-in is absent by default and preview URLs use the immutable .img key
   thumb.previewObjectId = thumb.objectId;
   assert.equal(ownedThumbnailUrl(thumb),
     `https://images.example.com/previews/${thumb.objectId}.img`);
+  assert.ok(stored(thumb));
+  process.env.R2_PRIVATE_BUCKET = "private-assets\n";
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com\n";
+  assert.ok(stored(thumb), "a trailing newline from the secret store does not orphan stored receipts");
+  assert.equal(ownedThumbnailUrl(thumb), `https://images.example.com/previews/${thumb.objectId}.img`);
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com:8443";
   assert.throws(() => ownedThumbnailUrl(thumb), /Invalid/);
 });
