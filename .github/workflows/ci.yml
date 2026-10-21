@@ -264,7 +264,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.functions == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: functions
@@ -283,6 +283,22 @@ jobs:
           npm run build
           npm run lint
           node --test lib/__tests__/*.test.js
+      - name: Setup Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify real Firestore transactions
+        working-directory: .
+        timeout-minutes: 5
+        run: >-
+          timeout 240s npx --yes firebase-tools@15.15.0 emulators:exec
+          --only firestore --project demo-prism-functions
+          "node --test --test-timeout=120000
+          functions/lib/__tests__/favouriteTransactionsEmulator.test.js
+          functions/lib/__tests__/onUserCreated.test.js
+          functions/lib/__tests__/claimUsername.test.js
+          functions/lib/__tests__/deleteAccount.test.js"
 
   web:
     name: Web verify
