@@ -69,3 +69,27 @@ test("the previous registry doc of another user is not released", async (t) => {
   await claim("NewName");
   assert.equal(store.get("usernames/oldname")?.uid, "u2");
 });
+
+test("SV-S12 a name released by deletion can be claimed by a new account", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/deleted": {name: "Deleted Account", deleted: true},
+    "usersv2/u1": {username: "NewUser"},
+  });
+  await claim("ReusedName");
+  assert.equal(store.get("usernames/reusedname")?.uid, "u1");
+  assert.equal(store.get("usersv2/u1")?.username, "ReusedName");
+});
+
+test("an account whose deletion has started cannot reserve more names", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {username: "OldName"}, "creatorDeletionState/u1": {closed: true},
+  });
+  await assert.rejects(() => claim("NewName"), {code: "failed-precondition"});
+  assert.equal(store.has("usernames/newname"), false);
+});
+
+test("initial claim inputs must still supply a string candidate", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {username: ""}});
+  await assert.rejects(() => claimUsername.run({auth: {uid: "u1"}, data: {initial: true, username: {name: "Bad"}}} as unknown as
+    Parameters<typeof claimUsername.run>[0]), {code: "invalid-argument"});
+});

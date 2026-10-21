@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/account/username_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -156,6 +157,9 @@ void main() {
     firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{'u1': profileUser().toJson()};
     getIt.registerSingleton<FirestoreClient>(firestore);
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    UsernameService.instance = UsernameService(
+      request: (data) async => <String, Object?>{'username': data['username']},
+    );
     delayCustomerInfo = false;
     customerInfoStarted = Completer<void>();
     customerInfoGate = Completer<Map<String, Object?>>();
@@ -176,6 +180,7 @@ void main() {
     await FcmTokenService.instance.cancelAndWait();
     app_state.prismUser = profileUser(id: '', loggedIn: false);
     await getIt.reset();
+    UsernameService.instance = UsernameService();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null);
   });
 
@@ -224,6 +229,90 @@ void main() {
     firestore.writeGate.complete();
     await signIn;
     expect(completed, isTrue);
+    final Map<String, dynamic> created = firestore.docs[FirebaseCollections.usersV2]!['u1']!;
+    expect(created['username'], '');
+    expect(created['usernameCandidate'], 'User');
+    expect(app_state.prismUser.username, 'User');
+  });
+
+  test('initial naming waits for the server winner and does not publish a provisional candidate', () async {
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    final Completer<Object?> reservation = Completer<Object?>();
+    final Completer<void> started = Completer<void>();
+    UsernameService.instance = UsernameService(
+      request: (data) {
+        expect(data, <String, Object?>{'username': 'User', 'initial': true});
+        started.complete();
+        return reservation.future;
+      },
+    );
+    bool completed = false;
+    final Future<void> signIn = completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'wrong@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    ).then((_) => completed = true);
+    await started.future;
+    expect(completed, isFalse);
+    expect(app_state.prismUser.username, isEmpty);
+    expect(firestore.docs[FirebaseCollections.usersV2]!['u1']!['email'], 'user@example.com');
+    reservation.complete(<String, Object?>{'username': 'User_u1'});
+    await signIn;
+    expect(app_state.prismUser.username, 'User_u1');
+  });
+
+  test('failed initial claim remains unnamed and the next sign-in can retry', () async {
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    UsernameService.instance = UsernameService(request: (_) async => throw StateError('offline'));
+    Future<void> signIn() => completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    );
+    await expectLater(signIn(), throwsStateError);
+    expect(app_state.prismUser.username, isEmpty);
+    expect(app_state.prismUser.loggedIn, isFalse);
+    UsernameService.instance = UsernameService(request: (_) async => <String, Object?>{'username': 'User_u1'});
+    await signIn();
+    expect(app_state.prismUser.username, 'User_u1');
+  });
+
+  test('an initial claim completed after account switch cannot mutate or persist the new session', () async {
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    final Completer<Object?> reservation = Completer<Object?>();
+    final Completer<void> started = Completer<void>();
+    UsernameService.instance = UsernameService(
+      request: (_) {
+        started.complete();
+        return reservation.future;
+      },
+    );
+    final Future<void> signIn = completeSignIn(
+      user: _User(),
+      displayName: 'User',
+      email: 'user@example.com',
+      photoUrl: '',
+      sourceTagPrefix: 'test',
+      messaging: _Messaging(),
+    );
+    final Future<void> rejected = expectLater(signIn, throwsStateError);
+    await started.future;
+    final original = app_state.prismUser;
+    app_state.prismUser = profileUser(id: 'other', username: 'Other');
+    reservation.complete(<String, Object?>{'username': 'User_u1'});
+    await rejected;
+    expect(original.username, isEmpty);
+    expect(app_state.prismUser.username, 'Other');
+    expect(app_state.prismUser.loggedIn, isTrue);
   });
 
   for (final Object? storedId in <Object?>['', null, 'another-user', 'u1 ']) {

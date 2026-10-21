@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/account/username_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -72,8 +73,8 @@ Future<void> completeSignIn({
       name: displayName,
       bio: '',
       createdAt: now,
-      email: email,
-      username: sanitizeUsername(displayName),
+      email: user.email ?? '',
+      username: '',
       followers: [],
       following: [],
       id: user.uid,
@@ -88,12 +89,25 @@ Future<void> completeSignIn({
       transactions: [],
       coverPhoto: '',
     );
-    await firestoreClient.setDoc(
-      FirebaseCollections.usersV2,
-      app_state.prismUser.id,
-      app_state.prismUser.toJson(),
-      sourceTag: '$sourceTagPrefix.create_user',
-    );
+    await firestoreClient.setDoc(FirebaseCollections.usersV2, app_state.prismUser.id, <String, dynamic>{
+      ...app_state.prismUser.toJson(),
+      'usernameCandidate': sanitizeUsername(displayName),
+    }, sourceTag: '$sourceTagPrefix.create_user');
+  }
+
+  // Retry unfinished initial naming on the next sign-in too. A creation trigger may already have won.
+  if (app_state.prismUser.username.isEmpty) {
+    final PrismUsersV2 profile = app_state.prismUser;
+    try {
+      final String claimed = await UsernameService.instance.claim(sanitizeUsername(displayName), initial: true);
+      if (!identical(app_state.prismUser, profile) || profile.id != user.uid) {
+        throw StateError('The sign-in session changed while claiming a username.');
+      }
+      profile.username = claimed;
+    } catch (_) {
+      if (identical(app_state.prismUser, profile)) profile.loggedIn = false;
+      rethrow;
+    }
   }
 
   await app_state.persistPrismUser();
