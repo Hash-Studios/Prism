@@ -97,6 +97,13 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  */
 export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
   const store = new Map<string, Doc>(Object.entries(seed));
+  const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
+  let incarnation = 1;
+  const set = store.set.bind(store);
+  store.set = (path, data) => {
+    if (!store.has(path)) incarnations.set(path, incarnations.has(path) ? ++incarnation : 1);
+    return set(path, data);
+  };
   const versions = new Map<string, number>();
   let auto = 0;
   const FieldValue = admin.firestore.FieldValue;
@@ -119,7 +126,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       exists: data !== undefined,
       data: () => data === undefined ? undefined : clone(data) as Doc,
       updateTime: data === undefined ? undefined : {version: versions.get(path) ?? 0},
-      createTime: data === undefined ? undefined : admin.firestore.Timestamp.fromMillis(1),
+      createTime: data === undefined ? undefined : admin.firestore.Timestamp.fromMillis(incarnations.get(path) ?? 1),
     };
   };
 
