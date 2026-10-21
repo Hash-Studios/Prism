@@ -415,7 +415,117 @@ void main() {
       final result = await repo.fetchUserSummariesPage(allEmails: <String>[' A@x.com', 'a@x.com', ' '], page: 0);
 
       expect(result.data!.items.map((u) => u.email), <String>['a@x.com']);
-      expect(client.querySpecs.single.filters.single.value, <String>['a@x.com']);
+      expect(client.querySpecs.single.filters.single.value, <String>['A@x.com', 'a@x.com']);
+    });
+
+    // Firestore whereIn compares strings exactly, so the fake must not fold case. Without an
+    // orderBy, Firestore returns documents by document ID, then applies the limit.
+    List<FakeDocRow> exactEmailMatch(FirestoreQuerySpec spec, List<FakeDocRow> stored) {
+      final wanted = spec.filters.single.value! as List<Object?>;
+      final rows = stored.where((row) => wanted.contains(row.data['email'])).toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
+      return rows.take(spec.limit ?? rows.length).toList();
+    }
+
+    FakeDocRow storedAs(String id, String email, String name) =>
+        (id: id, data: <String, dynamic>{'email': email, 'name': name, 'username': name});
+
+    test('a user stored with a mixed-case email is found through the relation spelling (#541)', () async {
+      final stored = <FakeDocRow>[_user('Alice@Example.com', name: 'Alice'), _user('bob@example.com', name: 'Bob')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(
+        allEmails: <String>['Alice@Example.com', 'bob@example.com'],
+        page: 0,
+      );
+
+      expect(result.data!.items.map((u) => u.name), <String>['Alice', 'Bob']);
+      expect(result.data!.items.first.email, 'Alice@Example.com');
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('a mixed-case relation entry still finds a user stored in lowercase', () async {
+      final stored = <FakeDocRow>[_user('carol@example.com', name: 'Carol')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(allEmails: <String>['Carol@Example.com'], page: 0);
+
+      expect(result.data!.items.map((u) => u.name), <String>['Carol']);
+    });
+
+    test('two spellings of one address give one summary and one pagination slot', () async {
+      final stored = <FakeDocRow>[_user('Dana@Example.com', name: 'Dana')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+      final emails = <String>['Dana@Example.com', 'dana@example.com', for (int i = 0; i < 19; i++) 'u$i@x.com'];
+
+      final first = (await repo.fetchUserSummariesPage(allEmails: emails, page: 0)).data!;
+      final second = (await repo.fetchUserSummariesPage(allEmails: emails, page: 1)).data!;
+
+      expect(first.items.map((u) => u.name), <String>['Dana']);
+      expect(first.hasMore, isFalse);
+      expect(second.items, isEmpty);
+    });
+
+    test('the relation spelling wins over a lowercase duplicate that Firestore returns first', () async {
+      final stored = <FakeDocRow>[
+        storedAs('a_lower', 'alice@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Alice@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final exact = await repo.fetchUserSummariesPage(allEmails: <String>['Alice@Example.com'], page: 0);
+      final lower = await repo.fetchUserSummariesPage(allEmails: <String>['alice@example.com'], page: 0);
+
+      expect(exact.data!.items.map((u) => u.name), <String>['exact account']);
+      expect(lower.data!.items.map((u) => u.name), <String>['lowercase account']);
+      // A lowercase relation does not invent a mixed-case variant to query.
+      expect(client.querySpecs.last.filters.single.value, <String>['alice@example.com']);
+    });
+
+    test('the first relation spelling wins when the list holds two spellings', () async {
+      final stored = <FakeDocRow>[
+        storedAs('a_lower', 'alice@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Alice@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(
+        allEmails: <String>['Alice@Example.com', 'alice@example.com'],
+        page: 0,
+      );
+
+      expect(result.data!.items.map((u) => u.name), <String>['exact account']);
+    });
+
+    test('a mixed-case duplicate on the second page across a ten-value chunk keeps the relation spelling', () async {
+      final stored = <FakeDocRow>[
+        for (int i = 0; i < 29; i++) storedAs('id_u$i', 'u$i@x.com', 'u$i'),
+        storedAs('a_lower', 'eve@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Eve@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+      // Page 1 holds u20..u28 then Eve, so her two spellings are values 10 and 11 of the lookup.
+      final emails = <String>[for (int i = 0; i < 29; i++) 'u$i@x.com', 'Eve@Example.com'];
+
+      final second = (await repo.fetchUserSummariesPage(allEmails: emails, page: 1)).data!;
+
+      expect(second.items.map((u) => u.name), <String>[for (int i = 20; i < 29; i++) 'u$i', 'exact account']);
+      expect(second.hasMore, isFalse);
+      expect(client.querySpecs.map((s) => s.filters.single.value), <Object?>[
+        <String>[for (int i = 20; i < 29; i++) 'u$i@x.com', 'Eve@Example.com'],
+        <String>['eve@example.com'],
+      ]);
+    });
+
+    test('mixed-case lookups stay within ten values per whereIn query', () async {
+      final emails = <String>[for (int i = 0; i < 20; i++) 'User$i@X.com'];
+      client.onQuery = (_) => <FakeDocRow>[];
+
+      await repo.fetchUserSummariesPage(allEmails: emails, page: 0);
+
+      final queried = <Object?>[for (final spec in client.querySpecs) ...(spec.filters.single.value! as List<Object?>)];
+      expect(client.querySpecs.every((s) => (s.filters.single.value! as List<Object?>).length <= 10), isTrue);
+      expect(queried.toSet(), <Object?>{...emails, ...emails.map((e) => e.toLowerCase())});
     });
   });
 
