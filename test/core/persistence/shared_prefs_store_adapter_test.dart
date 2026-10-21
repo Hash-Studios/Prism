@@ -63,4 +63,14 @@ void main() {
     await store.delete('saved');
     expect(store.get('saved'), isNull);
   });
+
+  test('a value saved without the codec reads back as it is', () async {
+    disk.addAll(<String, Object>{'flutter.legacyFlag': true, 'flutter.legacyCount': 3});
+    SharedPreferences.resetStatic();
+    final reopened = SharedPrefsStoreAdapter();
+    await reopened.init();
+    expect(reopened.get('legacyFlag'), isTrue);
+    expect(reopened.get('legacyCount'), 3);
+    expect(reopened.get('saved'), 'old');
+  });
 }
