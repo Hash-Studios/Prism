@@ -987,6 +987,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountRemoveLink => 'Hapus tautan';
 
   @override
+  String get accountRemovePhoto => 'Hapus foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Hapus yang disimpan offline';
 
   @override
@@ -2568,6 +2571,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Buang';
+
+  @override
+  String get corePopupProfilePhoto => 'foto profil';
 
   @override
   String get corePopupWhatsNew => 'Yang baru';

@@ -999,6 +999,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountRemoveLink => 'Remover link';
 
   @override
+  String get accountRemovePhoto => 'Remover foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Remover itens salvos off-line';
 
   @override
@@ -2588,6 +2591,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Descartar';
+
+  @override
+  String get corePopupProfilePhoto => 'foto do perfil';
 
   @override
   String get corePopupWhatsNew => 'Novidades';
@@ -10942,6 +10948,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountRemoveLink => 'Remover link';
 
   @override
+  String get accountRemovePhoto => 'Remover foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Remover itens salvos off-line';
 
   @override
@@ -12531,6 +12540,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get corePopupDiscard => 'Descartar';
+
+  @override
+  String get corePopupProfilePhoto => 'foto do perfil';
 
   @override
   String get corePopupWhatsNew => 'Novidades';

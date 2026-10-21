@@ -989,6 +989,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountRemoveLink => 'Remove link';
 
   @override
+  String get accountRemovePhoto => 'Remove photo';
+
+  @override
   String get accountRemoveSavedOffline => 'Remove saved offline';
 
   @override
@@ -2563,6 +2566,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Discard';
+
+  @override
+  String get corePopupProfilePhoto => 'profile photo';
 
   @override
   String get corePopupWhatsNew => 'What\'s new';

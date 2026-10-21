@@ -984,6 +984,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountRemoveLink => 'लिंक हटाएँ';
 
   @override
+  String get accountRemovePhoto => 'फ़ोटो हटाएँ';
+
+  @override
   String get accountRemoveSavedOffline => 'ऑफ़लाइन सेव की गई चीज़ें हटाएँ';
 
   @override
@@ -2565,6 +2568,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'छोड़ें';
+
+  @override
+  String get corePopupProfilePhoto => 'प्रोफ़ाइल फ़ोटो';
 
   @override
   String get corePopupWhatsNew => 'नया क्या है';

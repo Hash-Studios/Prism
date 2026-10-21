@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/auth/google_profile_sync.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
@@ -20,6 +21,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -30,6 +32,10 @@ import 'package:path/path.dart' as path;
 @visibleForTesting
 String uploadFileName(String uid, String basename, {int? epochMs}) =>
     '${uid}_${epochMs ?? DateTime.now().millisecondsSinceEpoch}_$basename';
+
+/// The photo on the signed-in Firebase user. Google sign-in keeps it equal to the Google account photo.
+@visibleForTesting
+String? Function() signedInAccountPhoto = () => FirebaseAuth.instance.currentUser?.photoURL;
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -124,6 +130,14 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       destructive: true,
     );
     if (ok && mounted) await remove();
+  }
+
+  /// Puts back the Google account photo, or the placeholder when there is none. Later Google sign-ins keep it current.
+  Future<void> _removePhoto() async {
+    final String photo = photoOrPlaceholder(signedInAccountPhoto());
+    setState(() => app_state.prismUser.profilePhoto = photo);
+    app_state.persistPrismUser();
+    await _updateCurrentUser(<String, dynamic>{'profilePhoto': photo}, 'profile.edit.removePhoto');
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
@@ -377,6 +391,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   _pfp = file;
                   pfpEdit = true;
                 }),
+                onRemovePhoto: _pfp == null && isCustomProfilePhoto(app_state.prismUser.profilePhoto)
+                    ? () => _confirmRemove(_removePhoto, l10n.corePopupProfilePhoto)
+                    : null,
               ),
               const SizedBox(height: fieldGap),
               Padding(

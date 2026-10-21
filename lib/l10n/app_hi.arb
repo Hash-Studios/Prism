@@ -1300,6 +1300,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "फ़ोटो हटाएँ",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "ऑफ़लाइन सेव की गई चीज़ें हटाएँ",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -2505,6 +2509,10 @@
   "corePopupDiscard": "छोड़ें",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "प्रोफ़ाइल फ़ोटो",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "नया क्या है",
   "@corePopupWhatsNew": {

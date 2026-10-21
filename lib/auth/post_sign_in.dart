@@ -39,12 +39,15 @@ Future<void> waitForSignInBootstraps() async {
 /// Runs the steps every provider shares once Firebase has accepted the credential:
 /// upsert the user document, publish the user to analytics, subscribe to topics,
 /// sync the FCM token and start the coins and purchases bootstrap.
+///
+/// [syncProfile] gets a stored profile and returns the fields to copy into it from the provider.
 Future<void> completeSignIn({
   required User user,
   required String displayName,
   required String email,
   required String photoUrl,
   required String sourceTagPrefix,
+  Map<String, String> Function(PrismUsersV2 profile)? syncProfile,
   FirebaseMessaging? messaging,
 }) async {
   final Map<String, dynamic>? existing = await firestoreClient.getById<Map<String, dynamic>>(
@@ -55,11 +58,14 @@ Future<void> completeSignIn({
   );
   final String now = DateTime.now().toUtc().toIso8601String();
   if (existing != null) {
-    app_state.prismUser = PrismUsersV2.fromMapWithUser(existing, user);
+    final Map<String, String> synced =
+        syncProfile?.call(PrismUsersV2.fromMapWithUser(existing, user)) ?? const <String, String>{};
+    app_state.prismUser = PrismUsersV2.fromMapWithUser(<String, dynamic>{...existing, ...synced}, user);
     await firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
       'id': user.uid,
       'lastLoginAt': now,
       'loggedIn': true,
+      ...synced,
     }, sourceTag: '$sourceTagPrefix.update_last_login');
   } else {
     app_state.prismUser = PrismUsersV2(
