@@ -118,9 +118,9 @@ const MAX_REDIRECTS = 3;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 function isOwnedThumbnailUrl(url: URL): boolean {
-  const base = r2Env("R2_PREVIEW_BASE_URL");
-  if (!base) return false;
   try {
+    const base = r2Env("R2_PREVIEW_BASE_URL");
+    if (!base) return false;
     const endpoint = new URL(base);
     if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
       endpoint.search || endpoint.hash) return false;
@@ -134,9 +134,9 @@ function isOwnedThumbnailUrl(url: URL): boolean {
 }
 
 function configuredPreviewHost(): string | undefined {
-  const base = r2Env("R2_PREVIEW_BASE_URL");
-  if (!base) return undefined;
   try {
+    const base = r2Env("R2_PREVIEW_BASE_URL");
+    if (!base) return undefined;
     const endpoint = new URL(base);
     if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.port ||
       endpoint.search || endpoint.hash) return undefined;

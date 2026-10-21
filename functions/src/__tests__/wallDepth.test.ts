@@ -249,6 +249,17 @@ test("wallDepthFor refuses a wall URL outside the image host allowlist before an
   }
 });
 
+test("wallDepthFor reads a legacy image when the optional R2 preview base is malformed", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env.R2_PREVIEW_BASE_URL = " ";
+  const {deps, annotated} = await fakeDeps();
+  assert.deepEqual(await wallDepthFor("w1", {url: WALL_URL}, deps), detector("auto", "person", 0));
+  assert.deepEqual(annotated, [{url: WALL_URL}]);
+});
+
 function fakeWalls(t: test.TestContext, updates: Array<Record<string, unknown>>) {
   t.mock.method(db, "collection", () => ({
     doc: () => ({

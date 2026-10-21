@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {R2Storage, r2ObjectId} from "../r2Storage";
+import {R2Storage, r2Env, r2ObjectId} from "../r2Storage";
 
 function configure() {
   process.env.R2_ACCOUNT_ID = "a".repeat(32);
@@ -74,6 +74,38 @@ test("partial R2 config fails closed", (t) => {
   delete process.env.R2_ACCOUNT_ID;
   process.env.R2_ACCESS_KEY_ID = "partial";
   assert.throws(() => new R2Storage(), /incomplete/);
+});
+
+test("r2Env normalizes and rejects unsafe values for every R2 setting", (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env = {...process.env};
+  const names = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_PRIVATE_BUCKET",
+    "R2_PREVIEW_BUCKET", "R2_PREVIEW_BASE_URL"] as const;
+
+  for (const name of names) {
+    delete process.env[name];
+    assert.equal(r2Env(name), undefined, `${name} should be undefined when unset`);
+    process.env[name] = "";
+    assert.equal(r2Env(name), undefined, `${name} should be undefined when explicitly empty`);
+
+    process.env[name] = " \tsetting-value\n ";
+    assert.equal(r2Env(name), "setting-value", `${name} should trim surrounding whitespace`);
+
+    process.env[name] = " \t\n ";
+    assert.throws(() => r2Env(name), {
+      message: `R2 storage configuration is invalid: ${name} is empty`,
+    });
+
+    for (const value of ["setting value", "setting\0value", "setting\u007fvalue"]) {
+      process.env[name] = value;
+      assert.throws(() => r2Env(name), {
+        message: `R2 storage configuration is invalid: ${name} contains whitespace or control characters`,
+      });
+    }
+  }
 });
 
 test("R2 trims a trailing newline from secret-store values before signing", async (t) => {

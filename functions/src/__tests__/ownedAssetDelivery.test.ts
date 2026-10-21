@@ -38,6 +38,16 @@ test("R2 opt-in is absent by default and preview URLs use the immutable .img key
   assert.equal(ownedThumbnailUrl(thumb),
     `https://images.example.com/previews/${thumb.objectId}.img`);
   assert.ok(stored(thumb));
+  process.env.R2_PRIVATE_BUCKET = "private assets";
+  assert.throws(() => stored(thumb), /R2 storage configuration is invalid: R2_PRIVATE_BUCKET/,
+    "a valid receipt reports unsafe configuration instead of looking corrupt");
+  delete process.env.R2_ACCOUNT_ID;
+  assert.throws(() => ownedAssetStorageEnabled(), /R2 storage configuration is invalid: R2_PRIVATE_BUCKET/,
+    "an invalid non-secret setting fails the opt-in gate closed");
+  process.env.R2_ACCOUNT_ID = "a".repeat(32);
+  process.env.R2_PRIVATE_BUCKET = " private-assets ";
+  assert.equal(ownedAssetStorageEnabled(), true, "valid surrounding whitespace is normalized");
+  assert.ok(stored(thumb));
   process.env.R2_PRIVATE_BUCKET = "private-assets\n";
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com\n";
   assert.ok(stored(thumb), "a trailing newline from the secret store does not orphan stored receipts");
@@ -403,4 +413,48 @@ test("tombstone sweep removes a late PUT after a crashed delete retry", async (t
   assert.equal(store.get(`r2ObjectRegistry/${objectId}`)?.status, "tombstoned");
   assert.equal(await sweepR2Tombstones(10), 1);
   assert.equal(removed.length, 4, "the periodic sweep rechecks tombstones for a late Put after process crash");
+});
+
+test("tombstone sweep preserves objects and cursor on malformed config, then recovers", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  configured();
+  const sha = "a".repeat(40);
+  const digest = "b".repeat(64);
+  const identity = {uid: "owner", repo: "walls", path: "thumb_wall.jpg", sha, sourceKind: "owned" as const};
+  const objectId = r2ObjectId(identity, digest);
+  const cursorId = "0-existing-cursor";
+  const cursor = {status: "active"};
+  const tombstone = {status: "tombstoned", cleanupPending: true, cleanupNotBeforeMs: 1, bucket: "private-assets",
+    objectId, object: `private-originals/${objectId}`, sha256: digest, uid: identity.uid, repo: identity.repo,
+    path: identity.path, sha, sourceKind: "owned", uploadId: "imported", previewObjectId: objectId};
+  const store = installFakeDb(t, {
+    [`r2ObjectRegistry/${cursorId}`]: cursor,
+    [`r2ObjectRegistry/${objectId}`]: tombstone,
+    "r2ObjectRegistryState/tombstoneSweep": {cursorId},
+  });
+  const removed: string[] = [];
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(init?.method, "DELETE");
+    removed.push(String(input));
+    return new Response(null, {status: 204});
+  });
+
+  process.env.R2_PRIVATE_BUCKET = "private assets";
+  await assert.rejects(sweepR2Tombstones(10), /R2 storage configuration is invalid: R2_PRIVATE_BUCKET/);
+  assert.deepEqual(removed, [], "invalid configuration prevents object deletion");
+  assert.deepEqual(store.get("r2ObjectRegistryState/tombstoneSweep"), {cursorId},
+    "invalid configuration does not advance or reset the saved cursor");
+  assert.deepEqual(store.get(`r2ObjectRegistry/${objectId}`), tombstone);
+
+  process.env.R2_PRIVATE_BUCKET = " private-assets ";
+  assert.equal(await sweepR2Tombstones(10), 1);
+  assert.deepEqual(removed.map((url) => new URL(url).pathname).sort(), [
+    `/private-assets/private-originals/${objectId}`,
+    `/public-previews/previews/${objectId}.img`,
+  ], "the corrected configuration removes the intended original and preview");
+  assert.deepEqual(store.get("r2ObjectRegistryState/tombstoneSweep"), {cursorId: ""},
+    "the recovered sweep completes and resets its cursor");
 });
