@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
@@ -74,8 +75,20 @@ void main() {
     return result.data!.items.single.toFeedItem();
   }
 
+  Future<FeedItemEntity> restoredProfileEntry() async {
+    final client = FakeFirestoreClient()..queryError = StateError('offline after restart');
+    final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final result = await PublicProfileRepositoryImpl(
+      client,
+      blocks,
+    ).fetchWalls(email: 'creator@prism.test', refresh: true);
+    return result.data!.items.single.toFeedItem();
+  }
+
+  late _Prism prism;
+
   Future<WallpaperDetailState> openDetail(FeedItemEntity entity, PrismWallpaper stored, {required bool hasRawId}) {
-    final prism = _Prism();
+    prism = _Prism();
     when(() => prism.fetchCanonicalById(any())).thenAnswer(
       (invocation) async => Result.success<PrismWallpaper?>(
         hasRawId && invocation.positionalArguments.single == stored.id ? stored : null,
@@ -127,4 +140,60 @@ void main() {
       }
     });
   }
+
+  Map<String, dynamic> wallData(String rawId) => <String, dynamic>{
+    if (rawId.isNotEmpty) 'id': rawId,
+    'wallpaper_url': fullUrl,
+    'wallpaper_thumb': 'https://example.test/thumb.jpg',
+    'email': 'creator@prism.test',
+    'review': true,
+  };
+
+  for (final String rawId in <String>['WALL7', '']) {
+    final String label = rawId.isEmpty ? 'without a raw id' : 'with raw id $rawId';
+
+    test('a wall $label still opens from the creator profile after a restart restores it from the cache', () async {
+      final Map<String, dynamic> data = wallData(rawId);
+      final PrismWallpaper stored = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+      await profileEntry(data);
+
+      final FeedItemEntity restored = await restoredProfileEntry();
+
+      expect(restored.id, stored.id);
+      final WallpaperDetailState state = await openDetail(restored, stored, hasRawId: rawId.isNotEmpty);
+      expect(state, isA<WallpaperDetailLoaded>());
+      expect((state as WallpaperDetailLoaded).entity.fullUrl, fullUrl);
+    });
+  }
+
+  test('a restored wall with its own raw id does not fall back to its document id', () async {
+    final Map<String, dynamic> data = wallData('WALL7');
+    final PrismWallpaper stored = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+    await profileEntry(data);
+
+    final FeedItemEntity restored = await restoredProfileEntry();
+    final WallpaperDetailState state = await openDetail(restored, stored, hasRawId: false);
+
+    expect(state, isA<WallpaperDetailError>());
+    verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
+
+  test('a wall from a cache written before document ids were stored still restores and opens by its id', () async {
+    final Map<String, dynamic> data = wallData('');
+    final PrismWallpaper stored = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+    await DurableJsonStore('public_profiles').write('viewer::walls:creator@prism.test', <String, Object?>{
+      'itemsJson': jsonEncode(<Object?>[
+        <String, dynamic>{...data, 'id': documentId},
+      ]),
+      'hasMore': false,
+    });
+
+    final FeedItemEntity restored = await restoredProfileEntry();
+
+    expect(restored.id, documentId);
+    expect((restored as PrismFeedItem).wallpaper.firestoreDocumentId, isNull);
+    final WallpaperDetailState state = await openDetail(restored, stored, hasRawId: true);
+    expect(state, isA<WallpaperDetailLoaded>());
+    verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
 }

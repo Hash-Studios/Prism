@@ -477,6 +477,30 @@ void main() {
       expect(restored.data!.items.single.wallpaperUrl, 'https://example.test/wall.jpg');
     });
 
+    test('a wall keeps its Firestore document id after a restart restores it from the cache', () async {
+      app_state.prismUser = profileUser(id: 'walls-document-id-owner');
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-a', data: <String, dynamic>{'id': 'WALLA', 'wallpaper_url': 'https://example.test/a.jpg'}),
+      ];
+      await repo.fetchWalls(email: 'creator@prism.test', refresh: true);
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'doc-b', data: <String, dynamic>{'wallpaper_url': 'https://example.test/b.jpg'}),
+      ];
+      await repo.fetchWalls(email: 'creator@prism.test', refresh: false);
+
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restored = await PublicProfileRepositoryImpl(
+        offlineClient,
+        blocks,
+      ).fetchWalls(email: 'creator@prism.test', refresh: true);
+
+      final walls = restored.data!.items.map((wall) => (wall.toFeedItem() as PrismFeedItem).wallpaper);
+      expect(walls.map((wall) => (wall.id, wall.firestoreDocumentId)), <(String, String?)>[
+        ('WALLA', 'doc-a'),
+        ('doc-b', 'doc-b'),
+      ]);
+    });
+
     test('a wall keeps its Depth Effect tier on the feed item, also after a restart while offline', () async {
       const String owner = 'walls-depth-owner';
       app_state.prismUser = profileUser(id: owner);
