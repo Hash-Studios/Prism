@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -64,45 +65,66 @@ class _DelayedWriteFirestore extends FakeFirestoreClient {
 }
 
 class _User extends Fake implements User {
+  _User({this.displayName = 'User', this.photoURL});
+
   @override
   String get uid => 'u1';
   @override
   String? get email => 'user@example.com';
   @override
-  String? get displayName => 'User';
+  String? displayName;
   @override
-  String? get photoURL => null;
+  String? photoURL;
   @override
   bool get isAnonymous => false;
+  @override
+  Future<void> updateDisplayName(String? displayName) async => this.displayName = displayName;
+  @override
+  Future<void> updatePhotoURL(String? photoURL) async => this.photoURL = photoURL;
 }
 
 class _Credential extends Fake implements UserCredential {
+  _Credential(this.user);
+
   @override
-  User? get user => _User();
+  final User user;
 }
 
 class _Auth extends Fake implements FirebaseAuth {
+  _Auth([_User? user]) : user = user ?? _User();
+
+  final _User user;
   final List<String> calls = <String>[];
 
   @override
-  User? get currentUser => _User();
+  User? get currentUser => user;
   @override
-  Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential();
+  Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential(user);
   @override
   Future<void> signOut() async => calls.add('auth.signOut');
 }
 
 // ignore: avoid_implementing_value_types
 class _Account extends Fake implements GoogleSignInAccount {
+  _Account({this.displayName = 'User', this.photoUrl});
+
+  @override
+  final String? displayName;
+  @override
+  final String? photoUrl;
   @override
   GoogleSignInAuthentication get authentication => const GoogleSignInAuthentication(idToken: 'id-token');
 }
 
 class _GoogleSignIn extends Fake implements GoogleSignIn {
+  _GoogleSignIn([_Account? account]) : account = account ?? _Account();
+
+  final _Account account;
+
   @override
   Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {}
   @override
-  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async => _Account();
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async => account;
   @override
   Future<void> signOut() async {}
 }
@@ -219,6 +241,70 @@ void main() {
       expect(firestore.docs[FirebaseCollections.usersV2]!['u1']!['loggedIn'], isTrue);
     });
   }
+
+  group('Google name and photo', () {
+    const String oldPhoto = 'https://lh3.googleusercontent.com/a/old=s96-c';
+    const String newPhoto = 'https://lh3.googleusercontent.com/a/new=s1337';
+    const String sizedNewPhoto = 'https://lh3.googleusercontent.com/a/new=s400-c';
+    const String customPhoto = 'https://raw.githubusercontent.com/Hash-Studios/walls/main/u1_1_me.jpg';
+
+    Future<_User> signIn({required String name, required String photo}) async {
+      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+        'u1': (profileUser(profilePhoto: photo)..name = name).toJson(),
+      };
+      firestore.writeGate.complete();
+      final _User user = _User(displayName: 'Old Name', photoURL: oldPhoto);
+      final GoogleAuth auth = GoogleAuth(
+        auth: _Auth(user),
+        googleSignIn: _GoogleSignIn(_Account(displayName: 'New Name', photoUrl: newPhoto)),
+        messaging: _Messaging(),
+      );
+      await auth.signInWithGoogle();
+      return user;
+    }
+
+    test('a name and photo from Google follow a change on Google at the next sign-in', () async {
+      final _User user = await signIn(name: 'Old Name', photo: oldPhoto);
+
+      final Map<String, dynamic> doc = firestore.docs[FirebaseCollections.usersV2]!['u1']!;
+      expect(doc['name'], 'New Name');
+      expect(doc['profilePhoto'], sizedNewPhoto);
+      expect(app_state.prismUser.name, 'New Name');
+      expect(app_state.prismUser.profilePhoto, sizedNewPhoto);
+      expect(user.displayName, 'New Name');
+      expect(user.photoURL, sizedNewPhoto);
+    });
+
+    test('a name and photo set in Prism stay, and Firebase still saves the new Google ones', () async {
+      final _User user = await signIn(name: 'My Prism Name', photo: customPhoto);
+
+      final Map<String, dynamic> doc = firestore.docs[FirebaseCollections.usersV2]!['u1']!;
+      expect(doc['name'], 'My Prism Name');
+      expect(doc['profilePhoto'], customPhoto);
+      expect(app_state.prismUser.name, 'My Prism Name');
+      expect(app_state.prismUser.profilePhoto, customPhoto);
+      expect(user.displayName, 'New Name');
+      expect(user.photoURL, sizedNewPhoto);
+    });
+
+    for (final String? googlePhoto in <String?>[null, newPhoto]) {
+      test('a new account takes ${googlePhoto == null ? 'no photo' : 'the Google photo'}', () async {
+        firestore.docs.clear();
+        firestore.writeGate.complete();
+        final GoogleAuth auth = GoogleAuth(
+          auth: _Auth(_User(displayName: 'New Name')),
+          googleSignIn: _GoogleSignIn(_Account(displayName: 'New Name', photoUrl: googlePhoto)),
+          messaging: _Messaging(),
+        );
+
+        await auth.signInWithGoogle();
+
+        final Map<String, dynamic> doc = firestore.docs[FirebaseCollections.usersV2]!['u1']!;
+        expect(doc['name'], 'New Name');
+        expect(doc['profilePhoto'], googlePhoto == null ? defaultProfilePhotoUrl : sizedNewPhoto);
+      });
+    }
+  });
 
   test('a Firebase user with a blank stored profile does not count as signed in', () async {
     final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());

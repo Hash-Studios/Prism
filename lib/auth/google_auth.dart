@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_profile_sync.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -93,9 +94,12 @@ class GoogleAuth {
       if (user == null) {
         throw StateError('Firebase user missing after Google sign-in.');
       }
-      final String resolvedDisplayName = _resolvedDisplayName(user);
+      // Firebase keeps the Google name of account creation; only [_rememberGoogleProfile] changes it.
+      final String? lastGoogleName = user.displayName;
+      final String resolvedDisplayName = _resolvedDisplayName(googleSignInAccount, user);
       final String resolvedEmail = _resolvedEmail(user);
-      final String resolvedPhotoUrl = _resolvedPhotoUrl(user);
+      final String? googlePhotoUrl = sizedGooglePhoto(googleSignInAccount.photoUrl);
+      final String resolvedPhotoUrl = photoOrPlaceholder(googlePhotoUrl);
       if (resolvedEmail.isEmpty) {
         throw StateError('Google sign-in returned user without email.');
       }
@@ -105,8 +109,15 @@ class GoogleAuth {
         email: resolvedEmail,
         photoUrl: resolvedPhotoUrl,
         sourceTagPrefix: 'auth.signin',
+        syncProfile: (PrismUsersV2 profile) => googleProfileUpdates(
+          profile,
+          lastGoogleName: lastGoogleName,
+          googleName: resolvedDisplayName,
+          googlePhotoUrl: resolvedPhotoUrl,
+        ),
         messaging: _messaging,
       );
+      await _rememberGoogleProfile(user, name: resolvedDisplayName, photoUrl: googlePhotoUrl);
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.google,
@@ -410,7 +421,31 @@ class GoogleAuth {
     }
   }
 
-  String _resolvedDisplayName(User user) {
+  /// Saves the Google name and photo on the Firebase user. The next sign-in compares the Prism name with this name to
+  /// see if the user changed it, and removing a custom photo in Edit Profile brings back this photo.
+  Future<void> _rememberGoogleProfile(User user, {required String name, required String? photoUrl}) async {
+    try {
+      if (name != user.displayName) {
+        await user.updateDisplayName(name);
+      }
+      if (!isSamePhoto(photoUrl, user.photoURL)) {
+        await user.updatePhotoURL(photoUrl);
+      }
+    } catch (error, stackTrace) {
+      logger.w(
+        'Google name and photo not saved on the Firebase user.',
+        tag: 'GoogleAuth',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  String _resolvedDisplayName(GoogleSignInAccount account, User user) {
+    final String fromGoogle = (account.displayName ?? '').trim();
+    if (fromGoogle.isNotEmpty) {
+      return fromGoogle;
+    }
     final String fromDisplayName = (user.displayName ?? '').trim();
     if (fromDisplayName.isNotEmpty) {
       return fromDisplayName;
@@ -423,12 +458,4 @@ class GoogleAuth {
   }
 
   String _resolvedEmail(User user) => (user.email ?? '').trim();
-
-  String _resolvedPhotoUrl(User user) {
-    final String candidate = (user.photoURL ?? '').trim();
-    if (candidate.isNotEmpty) {
-      return candidate;
-    }
-    return app_state.defaultProfilePhotoUrl;
-  }
 }

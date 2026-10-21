@@ -1407,6 +1407,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "Hapus foto",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "Hapus yang disimpan offline",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -2612,6 +2616,10 @@
   "corePopupDiscard": "Buang",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "foto profil",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "Yang baru",
   "@corePopupWhatsNew": {

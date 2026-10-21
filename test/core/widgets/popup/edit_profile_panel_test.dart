@@ -1,5 +1,7 @@
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -256,6 +258,62 @@ void main() {
     expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
   });
 
+  group('Remove photo', () {
+    const String googlePhoto = 'https://lh3.googleusercontent.com/a/me=s96-c';
+    const String customPhoto = 'https://raw.githubusercontent.com/Hash-Studios/walls/main/me_1_me.jpg';
+
+    tearDown(() => signedInAccountPhoto = () => null);
+
+    for (final String photo in <String>[defaultProfilePhotoUrl, googlePhoto]) {
+      testWidgets('is not offered for ${photo == googlePhoto ? 'the Google photo' : 'no photo'}', (tester) async {
+        app_state.prismUser.profilePhoto = photo;
+        await pumpPanel(tester);
+
+        expect(find.text('Remove photo'), findsNothing);
+      });
+    }
+
+    for (final String? accountPhoto in <String?>[googlePhoto, null]) {
+      testWidgets('asks first, then puts back ${accountPhoto == null ? 'no photo' : 'the Google photo'}', (
+        tester,
+      ) async {
+        signedInAccountPhoto = () => accountPhoto;
+        app_state.prismUser.profilePhoto = customPhoto;
+        await pumpPanel(tester);
+
+        await tester.tap(find.text('Remove photo'));
+        await tester.pumpAndSettle();
+        expect(find.text('Remove profile photo?'), findsOneWidget);
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        final String expected = accountPhoto ?? defaultProfilePhotoUrl;
+        expect(app_state.prismUser.profilePhoto, expected);
+        expect(firestore.docs[FirebaseCollections.usersV2]!['me']!['profilePhoto'], expected);
+        expect(find.text('Remove photo'), findsNothing);
+      });
+    }
+
+    testWidgets('keeps the custom photo when the write fails', (tester) async {
+      await getIt.reset();
+      getIt.registerSingleton<FirestoreClient>(_FailingWriteFirestore());
+      signedInAccountPhoto = () => googlePhoto;
+      app_state.prismUser.profilePhoto = customPhoto;
+      await pumpPanel(tester);
+
+      await tester.tap(find.text('Remove photo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(app_state.prismUser.profilePhoto, customPhoto);
+      expect(find.text('Remove photo'), findsOneWidget);
+      // The error toast runs a timer.
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
   testWidgets('the link type opens a sheet that marks the current type', (tester) async {
     await pumpPanel(tester);
 
@@ -300,4 +358,10 @@ void main() {
     expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Edit profile'), findsNothing);
   });
+}
+
+class _FailingWriteFirestore extends FakeFirestoreClient {
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
+      Future<void>.error(StateError('offline'));
 }

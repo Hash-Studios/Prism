@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -7,13 +8,17 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   int coverTaps = 0;
   int removeTaps = 0;
+  int photoTaps = 0;
+  int removePhotoTaps = 0;
 
   setUp(() {
     coverTaps = 0;
     removeTaps = 0;
+    photoTaps = 0;
+    removePhotoTaps = 0;
   });
 
-  Future<void> pumpHeader(WidgetTester tester, {String? coverUrl}) async {
+  Future<void> pumpHeader(WidgetTester tester, {String? coverUrl, bool canRemovePhoto = false}) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -29,7 +34,8 @@ void main() {
               name: 'Ana Rivera',
               onChangeCover: () => coverTaps++,
               onRemoveCover: () => removeTaps++,
-              onChangePhoto: () {},
+              onChangePhoto: () => photoTaps++,
+              onRemovePhoto: canRemovePhoto ? () => removePhotoTaps++ : null,
             ),
           ),
         ),
@@ -86,5 +92,26 @@ void main() {
     await tester.tap(find.byTooltip('Remove cover photo'));
     expect(removeTaps, 1);
     expect(coverTaps, 0);
+  });
+
+  testWidgets('"Remove photo" shows only when the photo can be removed', (tester) async {
+    await pumpHeader(tester);
+    expect(find.text('Remove photo'), findsNothing);
+
+    await pumpHeader(tester, canRemovePhoto: true);
+    expect(find.text('Remove photo'), findsOneWidget);
+  });
+
+  testWidgets('"Remove photo" sits next to the avatar and does not open the picker', (tester) async {
+    await pumpHeader(tester, canRemovePhoto: true);
+
+    final Rect avatar = tester.getRect(find.bySemanticsLabel('Change photo'));
+    final Rect cover = tester.getRect(find.byKey(EditProfileHeader.changeCoverKey));
+    expect(tester.getRect(find.widgetWithText(PrismButton, 'Remove photo')).left, greaterThan(avatar.right));
+    expect(tester.getRect(find.text('Remove photo')).top, greaterThan(cover.bottom));
+
+    await tester.tap(find.text('Remove photo'));
+    expect(removePhotoTaps, 1);
+    expect(photoTaps, 0);
   });
 }

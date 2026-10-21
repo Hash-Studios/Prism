@@ -12,6 +12,7 @@ const double _avatarRing = 3;
 const double _coverScrimHeight = 52;
 
 /// The cover preview and avatar of the profile editor. Both open the image picker.
+/// A "Remove photo" button sits next to the avatar while [onRemovePhoto] is set.
 class EditProfileHeader extends StatelessWidget {
   const EditProfileHeader({
     super.key,
@@ -23,6 +24,7 @@ class EditProfileHeader extends StatelessWidget {
     required this.onChangeCover,
     required this.onRemoveCover,
     required this.onChangePhoto,
+    this.onRemovePhoto,
   });
 
   final String? coverUrl;
@@ -33,6 +35,7 @@ class EditProfileHeader extends StatelessWidget {
   final VoidCallback onChangeCover;
   final VoidCallback onRemoveCover;
   final VoidCallback onChangePhoto;
+  final VoidCallback? onRemovePhoto;
 
   /// Key of the tap target that opens the cover picker. It is the whole cover.
   static const Key changeCoverKey = ValueKey<String>('edit_profile_change_cover');
@@ -136,6 +139,18 @@ class EditProfileHeader extends StatelessWidget {
             ),
           ),
         ),
+        if (onRemovePhoto != null)
+          Positioned(
+            left: PrismSpace.page + PrismSpace.md + avatarFull + PrismSpace.xs,
+            bottom: 0,
+            child: PrismButton(
+              label: context.l10n.accountRemovePhoto,
+              icon: Icons.delete_outline_rounded,
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              onPressed: onRemovePhoto,
+            ),
+          ),
       ],
     );
   }

@@ -1278,6 +1278,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "Foto entfernen",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "Offline gespeicherte Inhalte entfernen",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -2483,6 +2487,10 @@
   "corePopupDiscard": "Verwerfen",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "Profilbild",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "Neuigkeiten",
   "@corePopupWhatsNew": {

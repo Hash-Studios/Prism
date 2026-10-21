@@ -1725,6 +1725,12 @@ abstract class AppLocalizations {
   /// **'Remove link'**
   String get accountRemoveLink;
 
+  /// Button that removes a custom profile photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get accountRemovePhoto;
+
   /// Action label for removing saved offline wallpapers.
   ///
   /// In en, this message translates to:
@@ -4562,6 +4568,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get corePopupDiscard;
+
+  /// Item name in the profile photo removal confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'profile photo'**
+  String get corePopupProfilePhoto;
 
   /// Title for the app changelog sheet.
   ///

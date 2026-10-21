@@ -104,6 +104,10 @@ class _FakeAuth extends Fake implements FirebaseAuth {
 // ignore: avoid_implementing_value_types
 class _FakeAccount extends Fake implements GoogleSignInAccount {
   @override
+  String? get displayName => 'User';
+  @override
+  String? get photoUrl => null;
+  @override
   GoogleSignInAuthentication get authentication => const GoogleSignInAuthentication(idToken: 'id-token');
 }
 
