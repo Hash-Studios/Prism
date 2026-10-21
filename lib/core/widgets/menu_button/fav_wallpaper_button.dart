@@ -90,15 +90,20 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       logger.w('Favourite toggle failed', error: error, stackTrace: stackTrace);
     }
     if (success) {
-      analytics.track(
-        FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString, isFavourite: desired),
-      );
-      if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
-        widget.onFavourited?.call();
-      }
-      if (desired) {
-        if (mounted) showGlintToast(context, mood: GlintMood.love);
-        if (app_state.prismUser.id.isEmpty) await _noteGuestSave(l10n);
+      // The write already landed. A failing follow-up must not hide that or leave the spinner on.
+      try {
+        analytics.track(
+          FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString, isFavourite: desired),
+        );
+        if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
+          widget.onFavourited?.call();
+        }
+        if (desired) {
+          if (mounted) showGlintToast(context, mood: GlintMood.love);
+          if (app_state.prismUser.id.isEmpty) await _noteGuestSave(l10n);
+        }
+      } catch (error, stackTrace) {
+        logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
       }
     } else {
       toasts.error(l10n.coreCouldNotUpdateFavourites);
