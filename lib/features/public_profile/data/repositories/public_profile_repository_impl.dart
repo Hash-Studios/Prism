@@ -238,10 +238,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           previous = await _profileSnapshots.read(snapshotKey);
         } catch (_) {}
       }
-      final Map<String, WallDocDto> uniqueRows = <String, WallDocDto>{
+      final Map<String, PublicProfileSnapshotWall> uniqueRows = <String, PublicProfileSnapshotWall>{
         if (previous != null)
-          for (final row in PublicProfileSnapshotCodec.decodeWalls(previous)) row.id: row,
-        for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): row.doc,
+          for (final wall in PublicProfileSnapshotCodec.decodeWalls(previous)) wall.doc.id: wall,
+        for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): (doc: row.doc, documentId: row.docId),
       };
       try {
         await _writeSnapshot(
@@ -249,7 +249,9 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           snapshotKey,
           PublicProfileSnapshotCodec.encodeWalls(
             uniqueRows.entries.map(
-              (entry) => entry.value.id.isEmpty ? entry.value.copyWith(id: entry.key) : entry.value,
+              (entry) => entry.value.doc.id.isEmpty
+                  ? (doc: entry.value.doc.copyWith(id: entry.key), documentId: entry.value.documentId)
+                  : entry.value,
             ),
             hasMore: rows.length == 12,
           ),
@@ -265,9 +267,14 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         try {
           final cached = await _profileSnapshots.read(snapshotKey);
           if (cached != null && _snapshotOwner == owner) {
-            final List<WallDocDto> docs = PublicProfileSnapshotCodec.decodeWalls(cached);
-            final items = docs
-                .map((doc) => PublicProfileSnapshotCodec.wallFromDto(doc, doc.id))
+            final items = PublicProfileSnapshotCodec.decodeWalls(cached)
+                .map(
+                  (wall) => PublicProfileSnapshotCodec.wallFromDto(
+                    wall.doc,
+                    wall.doc.id,
+                    firestoreDocumentId: wall.documentId,
+                  ),
+                )
                 .toList(growable: false);
             return Result.success((items: items, hasMore: cached['hasMore'] as bool? ?? false));
           }
