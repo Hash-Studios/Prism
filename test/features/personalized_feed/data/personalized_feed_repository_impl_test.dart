@@ -668,8 +668,13 @@ void main() {
     expect(signals.isSeeded, isTrue);
     expect(signals.read().map((signal) => signal.action), everyElement(TasteAction.favourite));
     expect(signals.read(), hasLength(2));
-    expect(signals.read().where((signal) => signal.terms.contains('space')), hasLength(1));
-    expect(signals.read().where((signal) => signal.terms.contains('nature')), hasLength(1));
+    expect(
+      signals.read().map((signal) => signal.terms),
+      unorderedEquals(<List<String>>[
+        <String>['space'],
+        <String>['nature'],
+      ]),
+    );
     const item = PexelsFeedItem(id: 'px', wallpaper: pexels);
     await repository.lessLikeThis(item);
     expect(signals.read().last.action, TasteAction.lessLikeThis);
