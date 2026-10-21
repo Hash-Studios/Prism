@@ -215,6 +215,7 @@ class OriginalAccessService {
       );
     }
     final grants = reply['grants'];
+    final balance = _grantBalance(reply);
     if (reply['status'] != 'granted' || grants is! List || grants.length != assetIds.length) {
       throw StateError('Original access unavailable');
     }
@@ -232,7 +233,16 @@ class OriginalAccessService {
       result[grant['assetId'] as String] = grant['url'] as String;
     }
     if (result.length != assetIds.length) throw StateError('Original access unavailable');
+    CoinsService.instance.applyServerBalance(balance, ownerId: owner);
     return {...local, ...result};
+  }
+
+  int _grantBalance(Map<String, dynamic> reply) {
+    final balance = reply['currentBalance'];
+    if (balance is! num || !balance.isFinite || balance < 0 || balance != balance.truncate()) {
+      throw StateError('Original access unavailable');
+    }
+    return balance.toInt();
   }
 
   Future<void> completePair(List<String> assetIds, {String? owner}) async {
@@ -303,6 +313,7 @@ class OriginalAccessService {
       );
     }
     final grantedUrl = reply['url'];
+    final balance = _grantBalance(reply);
     final expiresAt = reply['expiresAt'];
     final uri = grantedUrl is String ? Uri.tryParse(grantedUrl) : null;
     if (_owner() != owner ||
@@ -314,6 +325,7 @@ class OriginalAccessService {
         expiresAt <= _now().millisecondsSinceEpoch) {
       throw StateError('Original access unavailable');
     }
+    CoinsService.instance.applyServerBalance(balance, ownerId: owner);
     return grantedUrl as String;
   }
 }

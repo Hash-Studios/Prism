@@ -1712,6 +1712,8 @@ void main() {
       expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'wall-1');
       expect(backend.originalDebits, 1);
       expect(backend.originalBalance, 80);
+      expect(CoinsService.instance.balanceNotifier.value, 80);
+      expect(app_state.prismUser.coins, 80);
       expect(spendCalls, isEmpty);
     });
 
@@ -1784,6 +1786,8 @@ void main() {
       expect(enqueued, hasLength(2));
       expect(backend.originalDebits, 1);
       final acquisitions = backend.originalCalls.where((call) => call['mode'] != 'quote').toList();
+      expect(CoinsService.instance.balanceNotifier.value, 80);
+      expect(app_state.prismUser.coins, 80);
       expect(acquisitions[0]['requestId'], acquisitions[1]['requestId']);
       expect(spendCalls, isEmpty);
     });
