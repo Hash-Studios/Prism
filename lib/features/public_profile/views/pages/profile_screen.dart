@@ -483,17 +483,24 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
+    final Widget defaultPhoto = SizedBox(
+      width: 78,
+      height: 78,
+      child: ColoredBox(
+        color: cs.surface,
+        child: Icon(JamIcons.user, color: cs.primary, size: 30),
+      ),
+    );
     final Widget photo = ClipOval(
       child: hasUserPhoto
-          ? CachedNetworkImage(imageUrl: safeUserPhoto, width: 78, height: 78, fit: BoxFit.cover)
-          : SizedBox(
+          ? CachedNetworkImage(
+              imageUrl: safeUserPhoto,
               width: 78,
               height: 78,
-              child: ColoredBox(
-                color: cs.surface,
-                child: Icon(JamIcons.user, color: cs.primary, size: 30),
-              ),
-            ),
+              fit: BoxFit.cover,
+              errorWidget: (_, _, _) => defaultPhoto,
+            )
+          : defaultPhoto,
     );
 
     return Scaffold(

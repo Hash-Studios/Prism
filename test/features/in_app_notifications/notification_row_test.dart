@@ -3,6 +3,7 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -99,13 +100,10 @@ void main() {
     await waitForRealIo(
       tester,
       () => find
-          .descendant(
-            of: find.byType(CachedNetworkImage),
-            matching: find.byWidgetPredicate((widget) => widget is SizedBox && widget.width == 0 && widget.height == 0),
-          )
+          .descendant(of: find.byType(CachedNetworkImage), matching: find.byIcon(JamIcons.picture))
           .evaluate()
           .isNotEmpty,
-      reason: 'failed attachment to render its empty fallback',
+      reason: 'failed attachment to render its fallback',
     );
     expect(find.text('A new wallpaper is ready'), findsOneWidget);
     await pump(tester, NotificationRow(notification: notice(image: 'not a URL')));
