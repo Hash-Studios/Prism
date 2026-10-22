@@ -97,10 +97,11 @@ class _ShareButtonState extends State<ShareButton> {
       String link = canonicalLink;
       if (!isBundledStarter) {
         try {
+          // Allow the short-link service its full six-second request budget.
           link =
               await (createLink?.call(itemId, source, url, thumbUrl) ??
                       createDynamicLink(itemId, source, url, thumbUrl, l10n: l10n))
-                  .timeout(const Duration(milliseconds: 750)) ??
+                  .timeout(const Duration(seconds: 6)) ??
               canonicalLink;
         } on TimeoutException catch (error, stackTrace) {
           logger.w('Short link timed out; sharing canonical wallpaper URL.', error: error, stackTrace: stackTrace);
