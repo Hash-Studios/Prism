@@ -27,19 +27,6 @@ class AppIconChannel {
     }
   }
 
-  /// The shop id of the active alternate icon, or null for the default icon.
-  static Future<String?> currentIcon() async {
-    try {
-      final String? native = await api.currentAppIcon();
-      for (final MapEntry<String, String> entry in nativeNames.entries) {
-        if (entry.value == native) return entry.key;
-      }
-    } on PlatformException {
-      return null;
-    }
-    return null;
-  }
-
   static Future<bool> supported() async {
     try {
       return await api.supportsAlternateIcons();

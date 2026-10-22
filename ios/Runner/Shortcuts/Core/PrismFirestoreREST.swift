@@ -23,10 +23,18 @@ enum PrismFirestoreREST {
   }
 
   static func stringField(_ name: String, in data: Data) -> String? {
+    valueField(name, kind: "stringValue", in: data)
+  }
+
+  static func timestampField(_ name: String, in data: Data) -> String? {
+    valueField(name, kind: "timestampValue", in: data)
+  }
+
+  private static func valueField(_ name: String, kind: String, in data: Data) -> String? {
     guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
       let fields = root["fields"] as? [String: Any],
       let field = fields[name] as? [String: Any],
-      let value = field["stringValue"] as? String, !value.isEmpty
+      let value = field[kind] as? String, !value.isEmpty
     else {
       return nil
     }

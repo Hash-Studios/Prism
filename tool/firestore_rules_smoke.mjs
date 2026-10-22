@@ -12,6 +12,16 @@ async function req(method, path, fields, auth, mask) {
   const r = await fetch(`${B}/${path}${q}`, { method, headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' }, body: fields ? JSON.stringify({ fields }) : undefined });
   return r.status;
 }
+async function transformFollowers(uid, operation, emails, auth) {
+  const r = await fetch(`${B}:commit`, {
+    method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ writes: [{ transform: {
+      document: `projects/${P}/databases/(default)/documents/usersv2/${uid}`,
+      fieldTransforms: [{ fieldPath: 'followers', [operation]: arr(emails).arrayValue }],
+    } }] }),
+  });
+  return r.status;
+}
 const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = '') => {
   const r = await fetch(`${B}${parent ? `/${parent}` : ''}:runQuery`, {
     method: 'POST',
@@ -43,6 +53,10 @@ const publicWall = {
   originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, ...redactedProvenance,
 };
 const seed = () => Promise.all([
+  req('PATCH', 'usersv2/multi', { followers: arr(['v1@x.com', 'v2@x.com']) }, 'owner'),
+  req('PATCH', 'usersv2/removal', { followers: arr(['b@x.com', 'v1@x.com', 'v2@x.com']) }, 'owner'),
+  req('PATCH', 'usersv2/duplicates', { followers: arr(['b@x.com', 'b@x.com', 'v1@x.com', 'v1@x.com']) }, 'owner'),
+  req('PATCH', 'usersv2/b/images/legacy-alias', { id: { stringValue: 'target' }, provider: { stringValue: 'Unknown' } }, 'owner'),
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
@@ -87,6 +101,64 @@ const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const cases = [
+  ['foreign profile email rejected', () => req('PATCH', 'usersv2/forger', {
+    id: { stringValue: 'forger' }, email: { stringValue: 'victim@x.com' },
+  }, tok('forger', 'forger@x.com')), 403],
+  ['email-less identity can create an email-less profile', () => req('PATCH', 'usersv2/no-email', {
+    id: { stringValue: 'no-email' }, email: { stringValue: '' },
+  }, tok('no-email', undefined)), 200],
+  ['trusted mixed-case profile email allowed', () => req('PATCH', 'usersv2/mixed', {
+    id: { stringValue: 'mixed' }, email: { stringValue: 'Mixed@X.com' }, username: { stringValue: '' },
+    usernameCandidate: { stringValue: 'Mixed' },
+  }, tok('mixed', 'Mixed@X.com')), 200],
+  ['initial canonical username bypass rejected', () => req('PATCH', 'usersv2/canonical', {
+    id: { stringValue: 'canonical' }, username: { stringValue: 'SamK' },
+  }, tok('canonical', 'canonical@x.com')), 403],
+  ['initial canonical lowercase bypass rejected', () => req('PATCH', 'usersv2/lower', {
+    id: { stringValue: 'lower' }, usernameLower: { stringValue: 'samk' },
+  }, tok('lower', 'lower@x.com')), 403],
+  ['direct owner rename rejected', () => req('PATCH', 'usersv2/b', { username: { stringValue: 'SamK' } }, Bu, ['username']), 403],
+  ['unverified email cannot follow as another identity', () => transformFollowers('multi', 'appendMissingElements', ['b@x.com'], tok('impostor', 'b@x.com', false)), 403],
+  ['unverified email cannot edit another identity upload', () => req('PATCH', 'walls/w8', {
+    by: { stringValue: 'Impostor' },
+  }, tok('impostor', 'b@x.com', false), ['by']), 403],
+  ['foreign follower replacement on add rejected', () => req('PATCH', 'usersv2/multi', {
+    followers: arr(['b@x.com', 'fake1@x.com', 'fake2@x.com']),
+  }, Bu, ['followers']), 403],
+  ['foreign follower replacement on removal rejected', () => req('PATCH', 'usersv2/removal', {
+    followers: arr(['fake1@x.com', 'fake2@x.com']),
+  }, Bu, ['followers']), 403],
+  ['foreign follower duplicate substitution rejected', () => req('PATCH', 'usersv2/multi', {
+    followers: arr(['b@x.com', 'v1@x.com', 'v1@x.com']),
+  }, Bu, ['followers']), 403],
+  ['foreign follower reorder rejected', () => req('PATCH', 'usersv2/multi', {
+    followers: arr(['v2@x.com', 'v1@x.com']),
+  }, Bu, ['followers']), 403],
+  ['arrayUnion preserves other followers', () => transformFollowers('multi', 'appendMissingElements', ['b@x.com'], Bu), 200],
+  ['arrayUnion no-op allowed', () => transformFollowers('multi', 'appendMissingElements', ['b@x.com'], Bu), 200],
+  ['arrayRemove preserves other followers', () => transformFollowers('multi', 'removeAllFromArray', ['b@x.com'], Bu), 200],
+  ['arrayRemove no-op allowed', () => transformFollowers('multi', 'removeAllFromArray', ['b@x.com'], Bu), 200],
+  ['arrayRemove can remove historical caller duplicates only', () => transformFollowers('duplicates', 'removeAllFromArray', ['b@x.com'], Bu), 200],
+  ['favourite alias rejected', () => req('PATCH', 'usersv2/b/images/alias', {
+    id: { stringValue: 'target' }, provider: { stringValue: 'Prism' },
+  }, Bu), 403],
+  ['unsupported favourite provider rejected', () => req('PATCH', 'usersv2/b/images/unknown', {
+    id: { stringValue: 'unknown' }, provider: { stringValue: 'Unknown' },
+  }, Bu), 403],
+  ['favourite missing stored id rejected', () => req('PATCH', 'usersv2/b/images/no-id', {
+    provider: { stringValue: 'Prism' },
+  }, Bu), 403],
+  ['favourite numeric stored id rejected', () => req('PATCH', 'usersv2/b/images/123', {
+    id: { integerValue: '123' }, provider: { stringValue: 'Pexels' },
+  }, Bu), 403],
+  ['owner may delete malformed legacy favourites', () => req('DELETE', 'usersv2/b/images/legacy-alias', null, Bu), 200],
+  ...['Prism', 'wall_of_the_day', 'WallOfTheDay', 'WallHaven', 'Pexels'].flatMap((provider) => [
+    [`valid ${provider} favourite allowed`, () => req('PATCH', `usersv2/b/images/${provider}`, {
+      id: { stringValue: provider }, provider: { stringValue: provider }, url: { stringValue: 'https://example.com/w.jpg' },
+      thumb: { stringValue: 'https://example.com/t.jpg' }, favouritedAt: { timestampValue: new Date().toISOString() },
+    }, Bu), 200],
+    [`${provider} favourite delete allowed`, () => req('DELETE', `usersv2/b/images/${provider}`, null, Bu), 200],
+  ]),
   ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
   ['guest reads a reviewed legacy wall (3.7.0 read rule restored)', () => req('GET', 'walls/w9'), 200],
   ['guest reads a reviewed wall that only claims protection (read tightening ships later)', () => req('GET', 'walls/leaked'), 200],

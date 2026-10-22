@@ -7,8 +7,11 @@ import {onContentReportCreated} from "../onContentReportCreated";
 import {onFollowCreated} from "../onFollowCreated";
 import {onWallApproved} from "../onWallApproved";
 import {onWallSubmitted} from "../onWallSubmitted";
+import {installFakeDb} from "./fakeDb";
 
 function setup(t: TestContext, users: Record<string, Record<string, unknown>>, adminEmails = ["admin@example.com"]) {
+  installFakeDb(t);
+  const document = db.doc.bind(db);
   const inbox: unknown[] = [];
   const topics: string[] = [];
   let userLookups = 0;
@@ -35,7 +38,7 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
     if (name === "walls") return {doc: () => ({get: async () => ({data: () => ({})})})};
     throw new Error(`Unexpected collection ${name}`);
   });
-  t.mock.method(db, "doc", (path: string) => ({
+  t.mock.method(db, "doc", (path: string) => path.startsWith("metrics/") ? document(path) : ({
     get: async () => ({data: () => path === "usersv2/artist-1" ? {loggedIn: false} : {}}),
   }));
   t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
@@ -156,9 +159,14 @@ test("signed-out artist and admins keep inbox entries while artist followers sti
   const wall: Record<string, unknown> = {id: "w1", review: true, email: "artist@example.com", by: "Artist", title: "Dunes"};
   const ref: {path: string; get: () => Promise<unknown>} = {path: "walls/w1", get: async () => snapshot};
   const snapshot = {ref, createTime: admin.firestore.Timestamp.fromMillis(1), data: () => wall};
+  const transaction = db.runTransaction.bind(db);
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
-    callback({get: async () => snapshot, update: (_ref: unknown, data: Record<string, unknown>) => Object.assign(wall, data),
-    } as unknown as admin.firestore.Transaction));
+    transaction(async (tx) => callback({
+      get: async (target: admin.firestore.DocumentReference) => target.path === ref.path ? snapshot : tx.get(target),
+      update: (target: admin.firestore.DocumentReference, data: Record<string, unknown>) =>
+        target.path === ref.path ? Object.assign(wall, data) : tx.update(target, data),
+      set: tx.set.bind(tx),
+    } as unknown as admin.firestore.Transaction)));
   await onWallApproved.run({
     params: {wallId: "w1"},
     data: {

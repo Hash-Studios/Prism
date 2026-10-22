@@ -1,14 +1,16 @@
 import * as admin from "firebase-admin";
+import {isDeepStrictEqual} from "node:util";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, REGION, CALLABLE_REGIONS} from "./common";
+import {db, REGION, CALLABLE_REGIONS, utcDateString} from "./common";
 import {
   bumpDaily,
   claimRateDoc,
   normalizeId,
   RATE_DOC_TTL_MS,
   WALLPAPER_STATS,
+  WALLPAPER_STATS_DAILY,
 } from "./viewStats";
 import {progressQuestForUser} from "./quests";
 import {dayKey} from "./economy";
@@ -17,6 +19,7 @@ const ACTION_FIELDS = {download: "downloads", set: "sets", share: "shares"} as c
 type WallAction = keyof typeof ACTION_FIELDS;
 
 const WALL_ACTION_RATE = "wallActionRate";
+export const FAVOURITE_AGGREGATION_GATE = "maintenance/favouriteAggregation";
 /** `usersv2/*\/images` also holds wallhaven and pexels favourites, which are not Prism walls. */
 const PRISM_PROVIDERS = new Set(["prism", "wall_of_the_day", "walloftheday"]);
 
@@ -75,47 +78,90 @@ export const recordWallpaperAction = onCall(
   },
 );
 
-/** `+1` for a new favourite and `-1` for a removed one. Updates of an existing favourite change nothing. */
-export function favouriteDelta(
-  before: admin.firestore.DocumentData | undefined,
-  after: admin.firestore.DocumentData | undefined,
-): number {
-  if (!before === !after) return 0;
-  return after ? 1 : -1;
+export function isPrismFavourite(pathId: string, data: admin.firestore.DocumentData | undefined): boolean {
+  return data?.id === pathId && typeof data.provider === "string" && PRISM_PROVIDERS.has(data.provider.toLowerCase());
 }
 
-/** Keeps `wallpaper_stats.favs` equal to the number of users that favourited the wallpaper. */
+/** Reconciles live unique membership. Existing aggregate drift is not repaired without a separate migration. */
 export const onFavouriteWritten = onDocumentWritten(
   {
     document: "usersv2/{uid}/images/{wallId}",
     region: REGION,
+    retry: true,
   },
   async (event) => {
-    const before = event.data?.before?.data();
-    const after = event.data?.after?.data();
-    const delta = favouriteDelta(before, after);
-    if (delta === 0) return;
-    const provider = String((after ?? before)?.provider ?? "").trim().toLowerCase();
-    if (!PRISM_PROVIDERS.has(provider)) return;
-
+    const before = isPrismFavourite(event.params.wallId, event.data?.before.data());
+    const after = isPrismFavourite(event.params.wallId, event.data?.after.data());
+    if (!before && !after) return;
     let wallId: string;
     try {
-      wallId = normalizeId(String((after ?? before)?.id ?? event.params.wallId));
+      wallId = normalizeId(event.params.wallId);
     } catch {
       return;
     }
 
     const statsRef = db.collection(WALLPAPER_STATS).doc(wallId);
+    const contributionRef = statsRef.collection("favouriteContributions").doc(event.params.uid);
+    const pendingQuests = contributionRef.collection("pendingQuests");
+    const now = Date.now();
+    const day = utcDateString(new Date(now)).replace(/-/g, "");
     await db.runTransaction(async (tx) => {
-      const favs = (await tx.get(statsRef)).data()?.favs;
-      const current = typeof favs === "number" && Number.isFinite(favs) ? favs : 0;
-      tx.set(statsRef, {favs: Math.max(0, current + delta)}, {merge: true});
-    });
-    if (delta > 0) {
-      await bumpDaily(wallId, "favs", Date.now()).catch((err: unknown) => {
-        logger.warn("Could not record the daily favourite.", {err});
+      const gate = (await tx.get(db.doc(FAVOURITE_AGGREGATION_GATE))).data();
+      if (gate?.phase !== "ready" || typeof gate.epoch !== "string" || !gate.epoch) {
+        throw new Error("Favourite contribution backfill must finish before aggregation can run.");
+      }
+      // A full membership query includes every case alias and conflicts with concurrent favourite writes.
+      const [images, contribution, stats] = await Promise.all([
+        tx.get(db.collection("usersv2").doc(event.params.uid).collection("images")),
+        tx.get(contributionRef), tx.get(statsRef),
+      ]);
+      const active = images.docs.some((doc) => {
+        try {
+          return normalizeId(doc.id) === wallId && isPrismFavourite(doc.id, doc.data());
+        } catch {
+          return false;
+        }
       });
-      await progressQuestForUser(event.params.uid, "favourite", event.id);
+      const previous = contribution.data();
+      const changed = active !== (previous?.epoch === gate.epoch && previous?.active === true);
+      const previousSequence = previous?.sequence;
+      const sequence = (Number.isSafeInteger(previousSequence) ? previousSequence : 0) + (changed ? 1 : 0);
+      const acceptedAt = changed ? admin.firestore.Timestamp.fromMillis(now) : previous?.acceptedAt;
+      const source = images.docs.find((doc) => doc.id === event.params.wallId);
+      const sourceMs = Date.parse(event.time);
+      const acceptQuest = active && previous?.questSequence !== sequence && !before && after &&
+        acceptedAt instanceof admin.firestore.Timestamp && dayKey(acceptedAt.toMillis()) === dayKey(now) &&
+        Number.isFinite(sourceMs) && dayKey(sourceMs) === dayKey(now) &&
+        source && isPrismFavourite(source.id, source.data()) && source.createTime && event.data?.after.createTime &&
+        source.createTime.isEqual(event.data.after.createTime) &&
+        isDeepStrictEqual(source.updateTime, event.data.after.updateTime);
+      if (!changed && !acceptQuest) return;
+      tx.set(contributionRef, {active, sequence, epoch: gate.epoch,
+        ...(active ? {acceptedAt} : {}), ...(acceptQuest ? {questSequence: sequence} : {}),
+      }, {merge: true});
+      if (changed) {
+        const favs = stats.data()?.favs;
+        const current = typeof favs === "number" && Number.isFinite(favs) ? favs : 0;
+        tx.set(statsRef, {favs: Math.max(0, current + (active ? 1 : -1))}, {merge: true});
+        if (active) {
+          tx.set(db.collection(WALLPAPER_STATS_DAILY).doc(`${day}_${wallId}`), {
+            wallId, day, favs: admin.firestore.FieldValue.increment(1),
+            expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
+          }, {merge: true});
+        }
+      }
+      if (acceptQuest) tx.set(pendingQuests.doc(String(sequence)), {acceptedAt});
+    });
+    // Read again even when membership did not change: a previous invocation may have committed only the stats.
+    const pending = await pendingQuests.limit(25).get();
+    for (const quest of pending.docs) {
+      if (!await progressQuestForUser(event.params.uid, "favourite",
+        `${event.params.uid}_${wallId}_${quest.id}`, Date.now(), quest.ref)) {
+        throw new Error("Could not recover the accepted favourite quest event.");
+      }
+    }
+    if (pending.size === 25 && !(await pendingQuests.limit(1).get()).empty) {
+      throw new Error("Accepted favourite quest recovery has more pending work to retry.");
     }
   },
 );

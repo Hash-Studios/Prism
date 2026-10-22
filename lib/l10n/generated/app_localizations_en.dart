@@ -1394,9 +1394,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminBatchComplete => 'Batch complete';
 
   @override
-  String get adminBatchCompleteLoading => 'Batch complete. Loading the next batch.';
-
-  @override
   String get adminBodyLabel => 'Body';
 
   @override

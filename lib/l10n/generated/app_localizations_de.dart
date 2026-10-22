@@ -1406,9 +1406,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminBatchComplete => 'Stapel abgeschlossen';
 
   @override
-  String get adminBatchCompleteLoading => 'Stapel abgeschlossen. Der nächste Stapel wird geladen.';
-
-  @override
   String get adminBodyLabel => 'Text';
 
   @override

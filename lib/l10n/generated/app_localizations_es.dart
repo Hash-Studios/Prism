@@ -1402,9 +1402,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get adminBatchComplete => 'Lote completado';
 
   @override
-  String get adminBatchCompleteLoading => 'Lote completado. Cargando el siguiente lote.';
-
-  @override
   String get adminBodyLabel => 'Cuerpo';
 
   @override

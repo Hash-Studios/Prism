@@ -32,6 +32,14 @@ const reader = (reads: string[]) => async (id: string) => {
   return id === gen(3) ? null : record(id);
 };
 
+test("receipt backfill keeps old-format AI wall provenance", async (t) => {
+  const generation = "gen_mlt7o22q_7a9688a037a47de6";
+  const store = installFakeDb(t, {"walls/legacy": aiWall(generation, {id: "AIGENMLT7O22"})});
+  const counts = await backfillAiGenerationReceipts(db, {apply: true}, async () => record(generation), () => undefined);
+  assert.equal(counts.receiptReady, 1);
+  assert.equal(store.get(`aiGenerationReceipts/${generation}`)?.userId, "maker");
+});
+
 test("the AI receipt backfill is a dry run by default and reads only pending walls without a receipt", async (t) => {
   const store = installFakeDb(t, SEED);
   const before = JSON.stringify([...store.entries()]);

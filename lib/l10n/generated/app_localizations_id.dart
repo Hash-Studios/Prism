@@ -1392,9 +1392,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get adminBatchComplete => 'Tinjauan batch selesai';
 
   @override
-  String get adminBatchCompleteLoading => 'Batch selesai. Memuat batch berikutnya.';
-
-  @override
   String get adminBodyLabel => 'Isi';
 
   @override

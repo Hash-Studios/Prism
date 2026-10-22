@@ -9,6 +9,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favourite_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -227,6 +228,23 @@ void main() {
     expect(callbackCount, 1);
   });
 
+  testWidgets('a throwing onFavourited callback still ends loading and keeps the saved favourite', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async {
+      await favorites.setWallFavourite('user_1', 'wall_1', true);
+      return Result.success(true);
+    });
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+
+    await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
+
+    expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+    expect(favorites.isWallFavourite('user_1', 'wall_1'), isTrue);
+    expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>().single.isFavourite, isTrue);
+    final shown = toasts.where((call) => call.method == 'showToast').map((call) => (call.arguments as Map)['msg']);
+    expect(shown, isNot(contains("Couldn't update favourites. Try again.")));
+  });
+
   Future<void> pumpOnTop(WidgetTester tester, FavouriteWallsBloc bloc, {required bool trash}) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -341,6 +359,23 @@ void main() {
       await tapFavourite(tester, bloc);
 
       expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
+    });
+
+    testWidgets('a throwing onFavourited callback still shows the third-save nudge', (tester) async {
+      final guests = memoryGuestStore();
+      getIt.registerSingleton<GuestFavouritesStore>(guests);
+      await guests.put('a', <String, dynamic>{'id': 'a'});
+      await guests.put('b', <String, dynamic>{'id': 'b'});
+      await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      addTearDown(bloc.close);
+
+      await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
+
+      expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
+      expect(recordingAnalytics.events.whereType<FavouriteSavedAsGuestEvent>(), hasLength(1));
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+      expect(favorites.isWallFavourite('', 'wall_1'), isTrue);
     });
 
     testWidgets('the second guest save shows no nudge', (tester) async {

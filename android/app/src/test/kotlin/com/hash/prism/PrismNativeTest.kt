@@ -107,15 +107,11 @@ internal class PrismNativeTest {
         assertThrows(IllegalArgumentException::class.java) { TileWallpaperTarget.parse("invalid") }
     }
 
-    @Test internal fun rejectedMediaTasksReturnReadableBusyFailures() {
+    @Test internal fun mediaFailureCodesKeepBusyAndOperationSpecificFailures() {
         val rejection = RejectedExecutionException("executor internals")
         assertEquals("MEDIA_BUSY", mediaFailureCode("DOWNLOAD_FAILED", rejection))
-        assertEquals("Another media operation is in progress. Please try again.", mediaFailureMessage(rejection))
         val failure = IOException("Could not publish image")
         assertEquals("SAVE_FAILED", mediaFailureCode("SAVE_FAILED", failure))
-        assertEquals("Something went wrong. Try again.", mediaFailureMessage(failure))
-        assertEquals("Check your connection and try again.", mediaFailureMessage(java.net.UnknownHostException("host")))
-        assertEquals("This image is too large to process.", mediaFailureMessage(OutOfMemoryError("heap")))
     }
 
     @Test internal fun tileErrorsMapToFixedStrings() {

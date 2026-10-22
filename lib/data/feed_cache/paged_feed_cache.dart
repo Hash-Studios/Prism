@@ -26,11 +26,6 @@ class PagedFeedCache {
 
   bool hasMore(String key) => _hasMoreMap[key] ?? true;
 
-  void reset(String key) {
-    _pageNumbers[key] = 1;
-    _hasMoreMap[key] = true;
-  }
-
   /// Moves the cursor without touching the on-disk snapshot. Used for pages after the first.
   void advance(String key, {required int nextPage, required bool hasMore}) {
     _pageNumbers[key] = nextPage;
@@ -38,6 +33,7 @@ class PagedFeedCache {
   }
 
   /// Advances the cursor and stores [payload] (a DTO's `toJson()`) under [scope].
+  /// [isCurrent] rejects invalidated requests after an append's cache read and before committing the cursor.
   Future<void> write(
     String key, {
     required String scope,
@@ -45,24 +41,7 @@ class PagedFeedCache {
     required int nextPage,
     required bool hasMore,
     bool append = false,
-  }) {
-    return _writeSnapshot(
-      key: key,
-      scope: scope,
-      payload: payload,
-      nextPage: nextPage,
-      hasMore: hasMore,
-      append: append,
-    );
-  }
-
-  Future<void> _writeSnapshot({
-    required String key,
-    required String scope,
-    required Map<String, dynamic> payload,
-    required int nextPage,
-    required bool hasMore,
-    required bool append,
+    bool Function()? isCurrent,
   }) async {
     final List<Object?> pages = <Object?>[];
     if (append) {
@@ -75,6 +54,7 @@ class PagedFeedCache {
         pages.add(cached['payload']);
       }
     }
+    if (isCurrent != null && !isCurrent()) return;
     pages.add(jsonDecode(jsonEncode(payload)));
     while (pages.length > _maxPages ||
         _itemCount(pages) > _maxItems ||
@@ -95,7 +75,7 @@ class PagedFeedCache {
       ttlHours: ttlHours,
       payload: <String, Object?>{'pages': pages, 'nextPage': nextPage, 'hasMore': hasMore},
     );
-    advance(key, nextPage: nextPage, hasMore: hasMore);
+    if (isCurrent == null || isCurrent()) advance(key, nextPage: nextPage, hasMore: hasMore);
   }
 
   int _snapshotBytes(List<Object?> pages, int nextPage, bool hasMore) => utf8

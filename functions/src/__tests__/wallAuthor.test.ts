@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
+import * as admin from "firebase-admin";
 import {db} from "../common";
 import {onFollowCreated} from "../onFollowCreated";
 import {backfillWallAuthors} from "../scripts/backfillWallAuthors";
@@ -44,6 +45,7 @@ test("the username fills in for an empty name, and an empty name or photo is not
 });
 
 test("a profile edit writes the new name and photo to every wall and setup of the user", async (t) => {
+  t.mock.method(admin.auth(), "getUser", async () => ({uid: "sam", email: "Sam@Example.com", emailVerified: true}));
   const store = installFakeDb(t, {
     "walls/typed": upload("Sam@Example.com"),
     "walls/lower": upload("sam@example.com"),
@@ -57,6 +59,31 @@ test("a profile edit writes the new name and photo to every wall and setup of th
     assert.equal(store.get(path)?.userPhoto, NEW.profilePhoto, path);
   }
   assert.equal(store.get("walls/other")?.by, OLD.name);
+});
+
+test("a legacy forged profile cannot propagate its author onto a victim's uploads", async (t) => {
+  const store = installFakeDb(t, {
+    "walls/victim": upload("victim@example.com"),
+    "walls/own": upload("Sam@Example.com"),
+  });
+  t.mock.method(admin.auth(), "getUser", async () => ({uid: "sam", email: "Sam@Example.com", emailVerified: true}));
+  installBulkWriter(t);
+  await onFollowCreated.run(profileEvent({email: "victim@example.com", ...OLD}, {email: "victim@example.com", ...NEW}));
+  assert.equal(store.get("walls/victim")?.by, OLD.name);
+  assert.equal(store.get("walls/own")?.by, NEW.name);
+});
+
+test("unverified and missing auth identities never propagate author fields", async (t) => {
+  const store = installFakeDb(t, {"walls/victim": upload("victim@example.com")});
+  installBulkWriter(t);
+  t.mock.method(admin.auth(), "getUser", async () => ({uid: "sam", email: "victim@example.com", emailVerified: false}));
+  await onFollowCreated.run(profileEvent(OLD, {email: "victim@example.com", ...NEW}));
+  assert.equal(store.get("walls/victim")?.by, OLD.name);
+  t.mock.method(admin.auth(), "getUser", async () => {
+    throw Object.assign(new Error("gone"), {code: "auth/user-not-found"});
+  });
+  await onFollowCreated.run(profileEvent(OLD, {email: "victim@example.com", ...NEW}));
+  assert.equal(store.get("walls/victim")?.by, OLD.name);
 });
 
 test("a profile update that keeps the name and photo writes no walls", async (t) => {

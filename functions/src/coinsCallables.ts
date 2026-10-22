@@ -74,10 +74,16 @@ function requiredText(value: unknown, field: string): string {
 }
 
 function optionalReason(value: unknown, fallback: string): string {
+  if (value !== undefined && typeof value !== "string") {
+    throw new HttpsError("invalid-argument", "reason must be text.");
+  }
   return typeof value === "string" ? value.trim().slice(0, 200) : fallback;
 }
 
 export function optionalLabel(value: unknown): string | undefined {
+  if (value !== undefined && typeof value !== "string") {
+    throw new HttpsError("invalid-argument", "label must be text.");
+  }
   const label = typeof value === "string" ? value.trim().slice(0, 60) : "";
   return label === "" ? undefined : label;
 }
@@ -166,21 +172,24 @@ export function refundableDelta(
   return Number.isFinite(delta) ? Math.abs(Math.trunc(delta)) : null;
 }
 
-type AiChargeStatus = "succeeded" | "failed" | "not_started";
+type AiChargeStatus = "succeeded" | "in_progress" | "cancelled";
 
 /**
- * Asks the AI worker whether the charge `txId` produced an image. Null when the worker cannot say: network
- * error, timeout, a non-200 answer or an answer in an unknown shape.
+ * Atomically cancels the charge before crediting coins. Read-only status evidence cannot authorize a refund.
+ * A lost response or Firestore abort leaves cancellation intact; repeating cancellation is safe.
  */
-async function fetchAiChargeStatus(txId: string): Promise<AiChargeStatus | null> {
+async function cancelAiCharge(txId: string, authorization: string | undefined): Promise<AiChargeStatus | null> {
+  if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) return null;
   const base = (process.env.AI_WORKER_BASE_URL ?? "").trim().replace(/\/+$/, "") || AI_WORKER_DEFAULT_BASE;
   try {
-    const response = await fetch(`${base}/api/ai/charges/${encodeURIComponent(txId)}`, {
+    const response = await fetch(`${base}/api/ai/charges/${encodeURIComponent(txId)}/cancel`, {
+      method: "POST",
+      headers: {authorization},
       signal: AbortSignal.timeout(AI_WORKER_TIMEOUT_MS),
     });
     if (!response.ok) return null;
     const status = ((await response.json()) as {status?: unknown} | null)?.status;
-    return status === "succeeded" || status === "failed" || status === "not_started" ? status : null;
+    return status === "succeeded" || status === "in_progress" || status === "cancelled" ? status : null;
   } catch {
     return null;
   }
@@ -487,15 +496,20 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const debit = debitSnap?.data();
     if (action === "refund" && debit?.action === "aiGeneration" && debit.userId === callerUid &&
       aiChargeStatus === undefined) {
-      aiChargeStatus = await fetchAiChargeStatus(refundTxId);
+      if (refundableDelta(debit, callerUid, nowMs, AI_REFUND_EVIDENCE_WINDOW_MS) === null) {
+        throw new HttpsError("failed-precondition", "No refundable spend.");
+      }
+      aiChargeStatus = await cancelAiCharge(refundTxId, request.rawRequest?.headers.authorization);
     }
     if (aiChargeStatus === "succeeded") {
       skip("refund_denied_generation_succeeded");
       return;
     }
-    // An AI debit is refunded for up to 24 hours once the worker says no image was made. Without an answer the
-    // 10 minute rule holds.
-    const refundWindowMs = aiChargeStatus === "failed" || aiChargeStatus === "not_started" ?
+    if (action === "refund" && debit?.action === "aiGeneration" && aiChargeStatus !== "cancelled") {
+      skip(aiChargeStatus === "in_progress" ? "refund_denied_generation_in_progress" : "refund_evidence_unavailable");
+      return;
+    }
+    const refundWindowMs = aiChargeStatus === "cancelled" ?
       AI_REFUND_EVIDENCE_WINDOW_MS :
       REFUND_WINDOW_MS;
     if (action === "proDailyBonus" && data.premium !== true) {
@@ -871,6 +885,16 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
   const label = optionalLabel(request.data?.label);
+  for (const field of ["amount", "pricingVersion"] as const) {
+    const value = request.data?.[field];
+    if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 ||
+      (field === "pricingVersion" && value === 0))) {
+      throw new HttpsError("invalid-argument", `${field} is invalid.`);
+    }
+  }
+  if (request.data?.allowPremiumBypass !== undefined && typeof request.data.allowPremiumBypass !== "boolean") {
+    throw new HttpsError("invalid-argument", "allowPremiumBypass must be boolean.");
+  }
   const rawRequestId = request.data?.requestId;
   if (rawRequestId != null && !isValidRequestId(rawRequestId)) {
     throw new HttpsError("invalid-argument", "requestId is invalid.");

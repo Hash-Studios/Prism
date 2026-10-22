@@ -1,11 +1,10 @@
-import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
-import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
+import {DEFAULT_CATEGORY, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, CALLABLE_REGIONS} from "./common";
 import {wallColorsFor} from "./wallColors";
-import {fileWallInCollection} from "./wallCollections";
+import {writeWallCategorization} from "./wallCategorizationWrite";
 
 /** A wall doc id: a non-empty string without a slash, at most 128 characters. */
 export function parseWallId(raw: unknown): string {
@@ -43,7 +42,7 @@ export const categorizeWallpaper = onCall(
     const callerEmail = (request.auth.token.email ?? "").toString().trim().toLowerCase();
     const wallEmail = (data.email ?? "").toString().trim().toLowerCase();
     const isAdmin = await isAdminCaller(request.auth);
-    if (!isAdmin && callerEmail !== wallEmail) {
+    if (!isAdmin && (!callerEmail || request.auth.token.email_verified !== true || callerEmail !== wallEmail)) {
       throw new HttpsError("permission-denied", "You cannot categorize this wallpaper.");
     }
     if (data.aiCategorized === true && !isAdmin) {
@@ -60,18 +59,11 @@ export const categorizeWallpaper = onCall(
     const category = mapLabelsToCategory(labels);
     const colors = await wallColorsFor(wallId, data);
 
-    await db.collection("walls").doc(wallId).update({
-      category: category,
-      collections: [DEFAULT_COLLECTION],
-      categorizedAt: admin.firestore.FieldValue.serverTimestamp(),
-      aiCategorized: true,
-      visionLabels: labels,
-      ...(colors ? {colors} : {}),
-    });
-
-    await fileWallInCollection(db.collection("walls").doc(wallId));
+    const written = await writeWallCategorization({wallId, initial: wallDoc, category, colors, labels,
+      replaceClassification: isAdmin});
+    if (!written) throw new HttpsError("failed-precondition", "Wallpaper changed during categorization. Retry.");
     logger.info("categorizeWallpaper: categorized", {wallId, category, labels: labels.slice(0, 5)});
 
-    return {success: true, category, labels: labels.slice(0, 5)};
+    return {success: true, category: written.category, labels: labels.slice(0, 5)};
   },
 );

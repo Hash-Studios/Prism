@@ -29,7 +29,6 @@ class AdsRepositoryImpl implements AdsRepository {
 
   AdsEntity _state = AdsEntity.empty;
   RewardedAd? _rewardedAd;
-  int _numRewardedLoadAttempts = 0;
 
   @override
   Future<Result<AdsEntity>> createRewardedAd() async {
@@ -39,92 +38,108 @@ class AdsRepositoryImpl implements AdsRepository {
 
     _state = _state.copyWith(loadingAd: true, adLoaded: false, adFailed: false);
     final completer = Completer<Result<AdsEntity>>();
+    int failedAttempts = 0;
+    Timer? retry;
+    late final Timer timeout;
 
-    void loadWithRetry() {
-      RewardedAd.load(
-        adUnitId: kReleaseMode ? _prodAdUnitId : (Platform.isAndroid ? _testAndroidAdUnitId : _testIosAdUnitId),
-        request: _request,
-        rewardedAdLoadCallback: RewardedAdLoadCallback(
-          onAdLoaded: (RewardedAd ad) {
-            logger.d('$ad loaded.');
-            ad.onPaidEvent = (Ad unusedAd, double valueMicros, PrecisionType unusedPrecision, String currency) {
-              final double amount = valueMicros / 1e6;
-              if (amount > 0) {
-                unawaited(
-                  analytics.track(
-                    RevenueRecordedEvent(
-                      amountUsd: currency == 'USD' ? amount : null,
-                      amount: amount,
-                      currency: currency,
-                      source: 'admob',
-                    ),
-                  ),
-                );
-              }
-            };
-            _rewardedAd = ad;
-            _numRewardedLoadAttempts = 0;
-            _state = _state.copyWith(loadingAd: false, adLoaded: true, adFailed: false);
-            unawaited(analytics.track(const AdLoadResultEvent(result: 'loaded')));
-            if (!completer.isCompleted) {
-              completer.complete(Result.success(_state));
-            }
-          },
-          onAdFailedToLoad: (LoadAdError error) {
-            logger.d('RewardedAd failed to load: $error');
-            _rewardedAd = null;
-            _numRewardedLoadAttempts += 1;
-
-            if (_numRewardedLoadAttempts <= _maxFailedLoadAttempts) {
-              Future<void>.delayed(_loadRetryDelay, loadWithRetry);
-              return;
-            }
-
-            final AdFailureReason reason = _loadFailureReason(error);
-            _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true, failureReason: reason);
-            unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: reason.name)));
-            if (!completer.isCompleted) {
-              completer.complete(Result.success(_state));
-            }
-          },
-        ),
+    void fail(AdFailureReason reason, {bool timedOut = false}) {
+      if (completer.isCompleted) return;
+      retry?.cancel();
+      timeout.cancel();
+      _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true, failureReason: reason);
+      unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: reason.name)));
+      completer.complete(
+        timedOut ? Result.error(const NetworkFailure('Timed out while loading rewarded ad')) : Result.success(_state),
       );
     }
 
-    unawaited(
-      AdConsent.instance.ensure().then((bool canRequestAds) {
+    timeout = Timer(_loadTimeout, () => fail(AdFailureReason.timeout, timedOut: true));
+
+    Future<void> loadWithRetry() async {
+      if (completer.isCompleted) return;
+      try {
+        await RewardedAd.load(
+          adUnitId: kReleaseMode ? _prodAdUnitId : (Platform.isAndroid ? _testAndroidAdUnitId : _testIosAdUnitId),
+          request: _request,
+          rewardedAdLoadCallback: RewardedAdLoadCallback(
+            onAdLoaded: (RewardedAd ad) {
+              if (completer.isCompleted) {
+                unawaited(ad.dispose());
+                return;
+              }
+              retry?.cancel();
+              timeout.cancel();
+              logger.d('$ad loaded.');
+              ad.onPaidEvent = (Ad unusedAd, double valueMicros, PrecisionType unusedPrecision, String currency) {
+                final double amount = valueMicros / 1e6;
+                if (amount > 0) {
+                  unawaited(
+                    analytics.track(
+                      RevenueRecordedEvent(
+                        amountUsd: currency == 'USD' ? amount : null,
+                        amount: amount,
+                        currency: currency,
+                        source: 'admob',
+                      ),
+                    ),
+                  );
+                }
+              };
+              _rewardedAd = ad;
+              _state = _state.copyWith(loadingAd: false, adLoaded: true, adFailed: false);
+              unawaited(analytics.track(const AdLoadResultEvent(result: 'loaded')));
+              if (!completer.isCompleted) {
+                completer.complete(Result.success(_state));
+              }
+            },
+            onAdFailedToLoad: (LoadAdError error) {
+              if (completer.isCompleted) return;
+              logger.d('RewardedAd failed to load: $error');
+              _rewardedAd = null;
+              failedAttempts += 1;
+
+              if (failedAttempts <= _maxFailedLoadAttempts) {
+                retry = Timer(_loadRetryDelay, () => unawaited(loadWithRetry()));
+                return;
+              }
+
+              fail(_loadFailureReason(error));
+            },
+          ),
+        );
+      } catch (error, stackTrace) {
+        logger.w('Rewarded ad load failed.', tag: 'Ads', error: error, stackTrace: stackTrace);
+        fail(AdFailureReason.other);
+      }
+    }
+
+    Future<void> request() async {
+      try {
+        final bool canRequestAds = await AdConsent.instance.ensure();
+        if (completer.isCompleted) return;
         if (!canRequestAds) {
           logger.d('Ad consent not granted; skipping rewarded ad load.');
-          _state = _state.copyWith(
-            loadingAd: false,
-            adLoaded: false,
-            adFailed: true,
-            failureReason: AdFailureReason.consent,
-          );
-          unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: AdFailureReason.consent.name)));
-          if (!completer.isCompleted) {
-            completer.complete(Result.success(_state));
-          }
+          fail(AdFailureReason.consent);
           return;
         }
-        unawaited(MobileAds.instance.initialize());
-        loadWithRetry();
-      }),
-    );
-
-    return completer.future.timeout(
-      _loadTimeout,
-      onTimeout: () {
-        _state = _state.copyWith(
-          loadingAd: false,
-          adLoaded: false,
-          adFailed: true,
-          failureReason: AdFailureReason.timeout,
+        unawaited(
+          MobileAds.instance.initialize().then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stackTrace) {
+              logger.w('Mobile ads initialization failed.', tag: 'Ads', error: error, stackTrace: stackTrace);
+              fail(AdFailureReason.other);
+            },
+          ),
         );
-        unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: AdFailureReason.timeout.name)));
-        return Result.error(const NetworkFailure('Timed out while loading rewarded ad'));
-      },
-    );
+        await loadWithRetry();
+      } catch (error, stackTrace) {
+        logger.w('Ad consent failed.', tag: 'Ads', error: error, stackTrace: stackTrace);
+        fail(AdFailureReason.consent);
+      }
+    }
+
+    unawaited(request());
+    return completer.future;
   }
 
   @override

@@ -21,9 +21,17 @@ import 'package:injectable/injectable.dart';
 @LazySingleton(as: WallhavenWallpaperRepository)
 class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   WallhavenWallpaperRepositoryImpl(FeedCacheLocalDataSource feedCacheLocal)
-    : _cache = PagedFeedCache(feedCacheLocal, source: 'wallhaven');
+    : _local = feedCacheLocal,
+      _cache = PagedFeedCache(feedCacheLocal, source: 'wallhaven');
 
   final PagedFeedCache _cache;
+  final FeedCacheLocalDataSource _local;
+  final Map<String, PagedFeedCache> _feedCaches = <String, PagedFeedCache>{};
+
+  PagedFeedCache _cacheFor(String key, {bool refresh = false}) {
+    if (!refresh && _feedCaches.containsKey(key)) return _feedCaches[key]!;
+    return _feedCaches[key] = PagedFeedCache(_local, source: 'wallhaven');
+  }
 
   static const String _host = 'wallhaven.cc';
   static const String _searchPath = '/api/v1/search';
@@ -33,7 +41,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
-      _cache.hasMore(paginationKey ?? categoryName);
+      _cacheFor(paginationKey ?? categoryName).hasMore(paginationKey ?? categoryName);
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -49,9 +57,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     String? colors,
   }) async {
     final String pageKey = paginationKey ?? categoryName;
-    if (refresh) {
-      _cache.reset(pageKey);
-    }
+    final PagedFeedCache cache = _cacheFor(pageKey, refresh: refresh);
 
     final String scope = _scope(
       categoryName: categoryName,
@@ -63,7 +69,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       sorting: sorting,
       colors: colors,
     );
-    final int page = refresh ? startPage : _cache.pageFor(pageKey);
+    final int page = refresh ? startPage : cache.pageFor(pageKey);
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
       if (categoryName.isNotEmpty) 'q': categoryName,
       'page': page.toString(),
@@ -87,6 +93,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
         return await _cachedOrFailure(
           refresh: refresh,
           pageKey: pageKey,
+          cache: cache,
           scope: scope,
           failure: ServerFailure(
             'WallHaven feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
@@ -101,20 +108,24 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       final bool hasMore = currentPage < lastPage;
 
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+      if (!identical(_feedCaches[pageKey], cache)) return Result.success(walls);
       _remember(walls);
 
       try {
-        await _cache.write(
+        await cache.write(
           pageKey,
           scope: scope,
           payload: payload.toJson(),
           nextPage: currentPage + 1,
           hasMore: hasMore,
           append: !refresh,
+          isCurrent: () => identical(_feedCaches[pageKey], cache),
         );
       } catch (error) {
         logger.w('[WallhavenWallpaperRepository] feed cache write failed: $error');
-        _cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
+        if (identical(_feedCaches[pageKey], cache)) {
+          cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
+        }
       }
 
       logger.i(
@@ -123,7 +134,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
+      final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope, cache: cache) : null;
       if (cached != null) {
         logger.w(
           '[WallhavenWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -254,12 +265,13 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   };
 
   Future<Result<List<WallhavenWallpaper>>> _cachedOrFailure({
+    required PagedFeedCache cache,
     required bool refresh,
     required String pageKey,
     required String scope,
     required Failure failure,
   }) async {
-    final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
+    final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope, cache: cache) : null;
     if (cached != null) {
       logger.w(
         '[WallhavenWallpaperRepository] remote status failed; returning cached snapshot',
@@ -270,8 +282,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<List<WallhavenWallpaper>?> _readCached({required String pageKey, required String scope}) =>
-      _cache.read(pageKey, scope: scope, decode: _decodeWalls);
+  Future<List<WallhavenWallpaper>?> _readCached({
+    required String pageKey,
+    required String scope,
+    required PagedFeedCache cache,
+  }) => cache.read(pageKey, scope: scope, decode: _decodeWalls);
 
   List<WallhavenWallpaper> _decodeWalls(Map<String, dynamic> payload) =>
       WallhavenSearchResponseDto.fromJson(payload).data.map((item) => item.toDomain()).toList(growable: false);

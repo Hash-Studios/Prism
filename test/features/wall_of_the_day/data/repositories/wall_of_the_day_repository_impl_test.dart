@@ -177,6 +177,57 @@ void main() {
     prismRepository = _MockPrismWallpaperRepository();
   });
 
+  test('protected current pick keeps the pointer document and UTC day online and from cache', () async {
+    final day = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': day,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', url: '', documentId: 'wall-doc-1')));
+    final cache = FakeFeedCacheLocalDataSource();
+    final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks, feedCacheLocal: cache);
+    final online = (await repo.fetchToday()).data!;
+    expect(online.url, '');
+    expect(online.wallDocumentId, 'wall-doc-1');
+    expect(online.featuredDayUtc, DateTime.utc(day.year, day.month, day.day));
+    final offline = WallOfTheDayRepositoryImpl(
+      _OfflinePointerFirestoreClient(),
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    );
+    final retained = await offline.readCachedToday();
+    expect(retained?.wallDocumentId, 'wall-doc-1');
+    expect(retained?.featuredDayUtc, online.featuredDayUtc);
+    final fetched = (await offline.fetchToday()).data;
+    expect(fetched?.wallDocumentId, 'wall-doc-1');
+    expect(fetched?.featuredDayUtc, online.featuredDayUtc);
+  });
+
+  test('a cached yesterday pointer retains yesterday and a missing date never becomes today', () async {
+    final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': yesterday,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', url: '')));
+    final cache = FakeFeedCacheLocalDataSource();
+    final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks, feedCacheLocal: cache);
+    expect(
+      (await repo.fetchToday()).data?.featuredDayUtc,
+      DateTime.utc(yesterday.year, yesterday.month, yesterday.day),
+    );
+    expect(await repo.readCachedToday(), isNull);
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{'wallId': 'wall-doc-1'};
+    expect((await repo.fetchToday()).data, isNull);
+  });
+
   test('hides a cached pick once its creator becomes blocked, without a refetch', () async {
     when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer(
       (_) async => Result.success(

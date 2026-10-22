@@ -7,6 +7,7 @@ import {categorizeWallpaper} from "../categorizeWallpaper";
 import {onWallCategorize} from "../onWallCategorize";
 import * as wallCategory from "../wallCategory";
 import * as wallDepth from "../wallDepth";
+import {installFakeDb, type Doc} from "./fakeDb";
 import {backfillWallColors, parseBackfillArgs} from "../scripts/backfillWallColors";
 import {
   ColorFetch,
@@ -355,109 +356,103 @@ test("wallColorsFor falls back only for unprotected walls when the thumbnail can
   assert.deepEqual(urls, [thumb]);
 });
 
-function fakeWallsCollection(t: test.TestContext, updates: Array<Record<string, unknown>>, wall?: Record<string, unknown>) {
-  t.mock.method(db, "collection", () => ({
-    doc: () => ({
-      get: async () => ({exists: true, data: () => wall}),
-      update: async (data: Record<string, unknown>) => {
-        updates.push(data);
-      },
-    }),
+function fakeWall(t: test.TestContext, wall: Doc) {
+  const store = installFakeDb(t, {"walls/w1": wall});
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({
+    parameters: {premiumCollections: {defaultValue: {value: "[\"premium\"]"}}},
   }));
+  return store;
 }
 
 function fakeFetch(t: test.TestContext, reply: () => Promise<Response>): void {
   t.mock.method(globalThis, "fetch", reply);
 }
 
-const created = (data: Record<string, unknown>) => ({
+const created = async () => ({
   params: {wallId: "w1"},
-  data: {data: () => data},
+  data: await db.doc("walls/w1").get(),
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
 test("a new wall gets its colours in the same update as its category", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates);
+  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"};
+  const store = fakeWall(t, wall);
   const png = await bandsPng([["0066cc", 36], ["ffffff", 12]]);
   fakeFetch(t, async () => replyOf(png));
   t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
-  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
-  assert.equal(updates.length, 1);
-  assert.equal(updates[0].category, "Nature");
-  assert.deepEqual(updates[0].colors, ["blue", "white"]);
+  await onWallCategorize.run(await created());
+  const saved = store.get("walls/w1");
+  assert.equal(saved?.category, "Nature");
+  assert.equal(saved?.aiCategorized, true);
+  assert.ok(saved?.categorizedAt instanceof admin.firestore.Timestamp);
+  assert.deepEqual(saved?.colors, ["blue", "white"]);
+  assert.deepEqual(saved?.visionLabels, ["Mountain"]);
+  assert.equal(saved?.wallpaper_url, wall.wallpaper_url);
 });
 
 test("a colour failure does not stop categorization", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates);
+  const store = fakeWall(t, {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
   fakeFetch(t, async () => {
     throw new Error("offline");
   });
   t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
-  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
-  assert.equal(updates.length, 1);
-  assert.equal(updates[0].category, "Nature");
-  assert.equal("colors" in updates[0], false);
+  await onWallCategorize.run(await created());
+  const saved = store.get("walls/w1");
+  assert.ok(saved);
+  assert.equal(saved.category, "Nature");
+  assert.equal("colors" in saved, false);
 });
 
 test("a label failure still saves the colours with the default category", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates);
+  const store = fakeWall(t, {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
   t.mock.method(wallCategory, "detectLabels", async () => {
     throw new Error("vision down");
   });
-  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
-  assert.equal(updates[0].category, "General");
-  assert.deepEqual(updates[0].colors, ["red"]);
+  await onWallCategorize.run(await created());
+  assert.equal(store.get("walls/w1")?.category, "General");
+  assert.deepEqual(store.get("walls/w1")?.colors, ["red"]);
 });
 
 test("a wall that already has a category still gets colours, once", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates);
+  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space"};
+  const store = fakeWall(t, wall);
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
   t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
-  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space"}));
-  assert.deepEqual(updates, [{colors: ["red"], visionLabels: ["Space"]}]);
-  updates.length = 0;
-  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors: ["blue"]}));
-  assert.deepEqual(updates, [{visionLabels: ["Space"]}]);
+  const event = await created();
+  await onWallCategorize.run(event);
+  assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["red"], visionLabels: ["Space"]});
+  store.set("walls/w1", {...wall, colors: ["blue"]});
+  await onWallCategorize.run(event);
+  assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["blue"], visionLabels: ["Space"]});
 });
 
 test("a wall with an empty or invalid colours list gets its colours again", async (t) => {
   t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
+  const store = fakeWall(t, {});
   for (const colors of [[], ["nope"], ["blue", "nope"], "blue", [1]]) {
-    const updates: Array<Record<string, unknown>> = [];
-    fakeWallsCollection(t, updates);
+    const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors};
+    store.set("walls/w1", wall);
     const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
-    await onWallCategorize.run(created({
-      wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png",
-      category: "Space",
-      colors,
-    }));
+    await onWallCategorize.run(await created());
     assert.equal(fetchMock.mock.callCount(), 1, JSON.stringify(colors));
-    assert.deepEqual(updates, [{colors: ["red"], visionLabels: ["Space"]}], JSON.stringify(colors));
+    assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["red"], visionLabels: ["Space"]}, JSON.stringify(colors));
     fetchMock.mock.restore();
   }
 });
 
 test("a wall with a category and colours makes no request", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates);
+  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors: ["blue"]};
+  const store = fakeWall(t, wall);
   const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
   t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
-  await onWallCategorize.run(created({
-    wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png",
-    category: "Space",
-    colors: ["blue"],
-  }));
+  await onWallCategorize.run(await created());
   assert.equal(fetchMock.mock.callCount(), 0);
-  assert.deepEqual(updates, [{visionLabels: ["Space"]}]);
+  assert.deepEqual(store.get("walls/w1"), {...wall, visionLabels: ["Space"]});
 });
 
 test("the categorize callable writes colours with the category", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates, {email: "a@example.com", wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
+  const wall = {email: "a@example.com", wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"};
+  const store = fakeWall(t, wall);
   fakeFetch(t, async () => replyOf(await bandsPng([["000000", 24], ["ffffff", 24]])));
   t.mock.method(wallCategory, "detectLabels", async () => ["Night"]);
   const result = await categorizeWallpaper.run({
@@ -465,8 +460,9 @@ test("the categorize callable writes colours with the category", async (t) => {
     data: {wallId: "w1"},
   } as unknown as Parameters<typeof categorizeWallpaper.run>[0]);
   assert.equal(result.success, true);
-  assert.equal(updates.length, 1);
-  assert.deepEqual(updates[0].colors, ["black", "white"]);
+  assert.deepEqual(store.get("walls/w1")?.colors, ["black", "white"]);
+  assert.equal(store.get("walls/w1")?.category, result.category);
+  assert.equal(store.get("walls/w1")?.aiCategorized, true);
 });
 
 type FakeWall = {id: string; data: Record<string, unknown>};

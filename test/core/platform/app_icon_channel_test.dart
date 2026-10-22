@@ -8,7 +8,6 @@ void main() {
 
   final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   late List<Object?> setCalls;
-  late String? current;
   late bool setResult;
   late bool supports;
 
@@ -22,7 +21,6 @@ void main() {
 
   setUp(() {
     setCalls = <Object?>[];
-    current = null;
     setResult = true;
     supports = true;
     AppIconChannel.api = PrismAppIconHostApi();
@@ -30,12 +28,11 @@ void main() {
       setCalls.add(args.first);
       return setResult;
     });
-    mock('currentAppIcon', (_) => current);
     mock('supportsAlternateIcons', (_) => supports);
   });
 
   tearDown(() {
-    for (final String method in <String>['setAppIcon', 'currentAppIcon', 'supportsAlternateIcons']) {
+    for (final String method in <String>['setAppIcon', 'supportsAlternateIcons']) {
       messenger.setMockMessageHandler('dev.flutter.pigeon.Prism.PrismAppIconHostApi.$method', null);
     }
   });
@@ -66,15 +63,6 @@ void main() {
   test('returns false when the platform refuses', () async {
     setResult = false;
     expect(await AppIconChannel.setIcon('icon_noir'), isFalse);
-  });
-
-  test('currentIcon maps the native name back to the catalog id', () async {
-    current = 'AppIconSunset';
-    expect(await AppIconChannel.currentIcon(), 'icon_sunset');
-    current = null;
-    expect(await AppIconChannel.currentIcon(), isNull);
-    current = 'SomethingElse';
-    expect(await AppIconChannel.currentIcon(), isNull);
   });
 
   test('supported follows the platform', () async {

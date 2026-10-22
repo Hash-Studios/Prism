@@ -9,29 +9,66 @@ import Testing
 #endif
 
 struct PrismShortcutsTests {
-  @Test func wallOfTheDayPrefersFreshRemoteURLWhenAvailable() throws {
-    let cached = URL(string: "https://example.com/retained.jpg")!
-    let fresh = URL(string: "https://example.com/current.jpg")!
+  private let today = Date(timeIntervalSince1970: 1_787_529_600)
 
-    let result = try PrismShortcutWallpaperFallback.resolve(fresh: .success(fresh), retained: cached)
-
-    #expect(result == fresh)
+  private func retained(_ document: String = "doc-today", day: String = "2026-08-24T00:00:00.000Z") -> Data {
+    Data("""
+      {"documentId":"\(document)","featuredDayUtc":"\(day)","assetKey":"wotd:\(document)"}
+      """.utf8)
   }
 
-  @Test func wallOfTheDayUsesRetainedURLWhenRemoteLookupFails() throws {
-    let cached = URL(string: "https://example.com/retained.jpg")!
-
-    let result = try PrismShortcutWallpaperFallback.resolve(fresh: .failure(TestFailure.remote), retained: cached)
-
-    #expect(result == cached)
+  @Test func protectedCurrentWallUsesOnlyItsRetainedOriginal() throws {
+    let pointer = Data(#"{"fields":{"wallId":{"stringValue":"doc-today"},"date":{"timestampValue":"2026-08-24T00:00:00Z"}}}"#.utf8)
+    // Protected walls deliberately have no public original. The pointer, not wallpaper_url, is authoritative.
+    let current = try PrismShortcutWotdIdentity.pointer(pointer)
+    let result = try PrismShortcutWallpaperFallback.resolve(
+      current: .success(current), retained: retained(), today: today
+    )
+    #expect(result == "wotd:doc-today")
   }
 
-  @Test func wallOfTheDayPropagatesRemoteFailureWithoutRetainedURL() {
-    do {
-      _ = try PrismShortcutWallpaperFallback.resolve(fresh: .failure(TestFailure.remote), retained: nil)
-      Issue.record("Expected remote lookup failure")
-    } catch {
-      #expect(error as? TestFailure == .remote)
+  @Test func offlineTodayRetainsBytesIndependentOfExpiredSignedURL() throws {
+    #expect(try PrismShortcutWallpaperFallback.resolve(
+      current: .failure(TestFailure.remote), retained: retained(), today: today
+    ) == "wotd:doc-today")
+  }
+
+  @Test func yesterdayOrMismatchedRetainedOriginalRequiresOpeningPrism() throws {
+    let current = PrismShortcutWotdIdentity(documentId: "doc-today", day: "2026-08-24")
+    for cached in [nil, retained("doc-yesterday", day: "2026-08-23T00:00:00Z"), retained("another-doc")] {
+      #expect(throws: PrismShortcutWotdError.openPrism) {
+        try PrismShortcutWallpaperFallback.resolve(current: .success(current), retained: cached, today: today)
+      }
+    }
+    #expect(throws: PrismShortcutWotdError.openPrism) {
+      try PrismShortcutWallpaperFallback.resolve(
+        current: .failure(TestFailure.remote), retained: retained(day: "2026-08-23T00:00:00Z"), today: today
+      )
+    }
+  }
+
+  @Test func staleOrMalformedPointerCannotRelabelRetainedBytesAsToday() {
+    #expect(throws: PrismShortcutWotdError.openPrism) {
+      try PrismShortcutWallpaperFallback.resolve(
+        current: .success(PrismShortcutWotdIdentity(documentId: "doc-today", day: "2026-08-23")),
+        retained: retained(), today: today
+      )
+    }
+    #expect(throws: PrismShortcutWotdError.openPrism) {
+      try PrismShortcutWotdIdentity.pointer(Data(#"{"fields":{"wallId":{"stringValue":"doc-today"}}}"#.utf8))
+    }
+  }
+
+  @Test func explicitAcquisitionFailureAndCancellationNeverUseRetainedFallback() {
+    #expect(throws: PrismShortcutWotdError.openPrism) {
+      try PrismShortcutWallpaperFallback.resolve(
+        current: .failure(PrismShortcutWotdError.openPrism), retained: retained(), today: today
+      )
+    }
+    #expect(throws: CancellationError.self) {
+      try PrismShortcutWallpaperFallback.resolve(
+        current: .failure(CancellationError()), retained: retained(), today: today
+      )
     }
   }
 

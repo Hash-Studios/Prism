@@ -2457,12 +2457,6 @@ abstract class AppLocalizations {
   /// **'Batch complete'**
   String get adminBatchComplete;
 
-  /// No description provided for @adminBatchCompleteLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Batch complete. Loading the next batch.'**
-  String get adminBatchCompleteLoading;
-
   /// No description provided for @adminBodyLabel.
   ///
   /// In en, this message translates to:

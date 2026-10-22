@@ -48,6 +48,28 @@ test('Firebase verifier accepts a valid signed token and rejects tampering', asy
   assert.equal(await verifyFirebaseIdTokenFromRequest(tampered, env), null);
 });
 
+test('malformed JWT segments and non-object claims return unauthorized without outbound calls', async () => {
+  const signed = (await makeToken({ sub: 'alice' })).split('.');
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not fetch keys or providers'); };
+  try {
+    for (const token of [
+      '!!!!!!!!!!!!!!!!!!!!.e30.signature',
+      'eyJhbGciOiJSUzI1NiJ9.!!!!!!!!!.signature',
+      `${base64Url(JSON.stringify({ alg: 'RS256', kid: 'test-key' }))}.${base64Url('null')}.signature`,
+      `${base64Url('null')}.${base64Url('{}')}.signature`,
+      `${base64Url('not json')}.${base64Url('{}')}.signature`,
+      `${base64Url('[]')}.${base64Url('{}')}.signature`,
+      `${signed[0]}.${signed[1]}.!!!!!!!!!!!!`,
+    ]) {
+      const response = await postGeneration(workerEnv(), {}, token);
+      assert.equal(response.status, 401, token);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('Firebase verifier rejects missing or invalid project claims before key lookup', async () => {
   const env = {
     FIREBASE_PROJECT_ID: projectId,
@@ -728,6 +750,295 @@ function chargeDoc(overrides = {}) {
 const TX_ID = 'spend_alice_req12345';
 const chargedEnv = (kv, coordinator) => aiEnv(kv, coordinator, { AI_REQUIRE_CHARGE: 'true' });
 
+async function cancelCharge(env, txId = TX_ID, token = undefined) {
+  return worker.fetch(new Request(`https://prismwalls.com/api/ai/charges/${txId}/cancel`, {
+    method: 'POST', headers: { authorization: `Bearer ${token ?? await makeToken({ sub: 'alice' })}` },
+  }), env, { waitUntil() {} });
+}
+
+test('invalid optional generation and variation inputs are rejected before charge or quota work', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:gen:parent', JSON.stringify({ userId: 'alice', prompt: 'A lake', qualityTier: 'fast' }));
+  const env = chargedEnv(kv, { fetch: async () => { throw new Error('must not claim'); } });
+  const token = await makeToken({ sub: 'alice' });
+  for (const invalid of [42, {}, [], null]) {
+    for (const field of ['stylePreset', 'targetSize', 'seed']) {
+      const value = field === 'seed' && invalid === 42 ? '42' : invalid;
+      assert.equal((await postGeneration(env, { chargeTxId: TX_ID, [field]: value }, token)).status, 400);
+    }
+    for (const field of ['variationPrompt', 'strength']) {
+      const value = field === 'strength' && invalid === 42 ? '0.5' : invalid;
+      const response = await worker.fetch(new Request('https://prismwalls.com/api/ai/generations/parent/variations', {
+        method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ chargeTxId: TX_ID, [field]: value }),
+      }), env, { waitUntil() {} });
+      assert.equal(response.status, 400);
+    }
+  }
+});
+
+test('a foreign caller cannot replay or poison a victim charge before the owner claims it', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const alice = await makeToken({ sub: 'alice' });
+  const bob = await makeToken({ sub: 'bob' });
+  const restore = mockFal({ stats, firestore: () => chargeDoc() });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, bob)).status, 402);
+    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'not_started');
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, alice)).status, 200);
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, bob)).status, 402);
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, alice)).status, 200);
+    assert.equal(stats.fal, 1);
+  } finally { restore(); }
+});
+
+test('an attacker paused in receipt verification never holds the victim charge', async () => {
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const bob = await makeToken({ sub: 'bob' });
+  let resume;
+  let entered;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const paused = new Promise((resolve) => { resume = resolve; });
+  const restore = mockFal({ firestore: async (_url, init) => {
+    if (new Headers(init.headers).get('authorization') === `Bearer ${bob}`) { entered(); await paused; }
+    return chargeDoc();
+  } });
+  try {
+    const attack = postGeneration(env, { chargeTxId: TX_ID }, bob);
+    await started;
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 200);
+    resume();
+    assert.equal((await attack).status, 402);
+  } finally { resume(); restore(); }
+});
+
+test('cancellation before claim is durable and idempotent; a foreign caller cannot cancel', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ stats, firestore: () => chargeDoc() });
+  try {
+    assert.equal((await worker.fetch(new Request(`https://prismwalls.com/api/ai/charges/${TX_ID}/cancel`, {
+      method: 'POST',
+    }), env, { waitUntil() {} })).status, 401);
+    assert.equal((await cancelCharge(env, TX_ID, await makeToken({ sub: 'bob' }))).status, 402);
+    for (let i = 0; i < 2; i++) {
+      assert.deepEqual(await (await cancelCharge(env)).json(), { status: 'cancelled' });
+    }
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 402);
+    assert.equal(stats.fal ?? 0, 0);
+  } finally { restore(); }
+});
+
+test('a paused generation denies cancellation and final success denies later refunds', async () => {
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const token = await makeToken({ sub: 'alice' });
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  const delegate = globalThis.fetch;
+  let resume;
+  let entered;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const paused = new Promise((resolve) => { resume = resolve; });
+  globalThis.fetch = async (url, init) => {
+    if (String(url).startsWith('https://fal.run/')) { entered(); await paused; }
+    return delegate(url, init);
+  };
+  try {
+    const generation = postGeneration(env, { chargeTxId: TX_ID }, token);
+    await started;
+    assert.deepEqual(await (await cancelCharge(env, TX_ID, token)).json(), { status: 'in_progress' });
+    resume();
+    assert.equal((await generation).status, 200);
+    assert.deepEqual(await (await cancelCharge(env, TX_ID, token)).json(), { status: 'succeeded' });
+  } finally { resume(); restore(); }
+});
+
+test('failed final coordinator writes never return a usable generated response', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  let stagedResponse;
+  const env = chargedEnv(aiKv(5), { fetch: async (request) => {
+    const body = await request.clone().json();
+    if (body.op === 'charge_finish') {
+      stagedResponse = JSON.parse(body.response);
+      return new Response('down', { status: 503 });
+    }
+    return coordinator.fetch(request);
+  } });
+  env.AI_IMAGES = new MemoryR2();
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  try {
+    const response = await postGeneration(env, { chargeTxId: TX_ID });
+    assert.equal(response.status, 502);
+    assert.equal((await response.json()).imageUrl, undefined);
+    await assertUnpublished(env, stagedResponse);
+    assert.equal(env.AI_IMAGES.objects.size, 0);
+  } finally { restore(); }
+});
+
+async function assertUnpublished(env, result) {
+  assert.ok(result?.generationId, 'provider generated a result');
+  assert.equal(await env.AI_STATE_KV.get(`ai:gen:${result.generationId}`), null, 'no published history record');
+  const token = await makeToken({ sub: 'alice' });
+  const history = await worker.fetch(new Request('https://prismwalls.com/api/ai/metadata/prefill', {
+    method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ generationId: result.generationId }),
+  }), env, { waitUntil() {} });
+  assert.equal(history.status, 404, 'history/metadata cannot discover an uncommitted image');
+  for (const url of Object.values(result.imageUrls)) {
+    assert.equal((await worker.fetch(new Request(url), env, { waitUntil() {} })).status, 404);
+  }
+}
+
+test('cancellation of a stale provider fences final response, history and usable assets', async () => {
+  const storage = new MemoryStorage();
+  const coordinator = new AiQuotaCoordinator({ storage });
+  let stagedResponse;
+  const env = chargedEnv(aiKv(5), { fetch: async (request) => {
+    const body = await request.clone().json();
+    if (body.op === 'charge_finish' && body.outcome === 'succeeded') {
+      stagedResponse = JSON.parse(body.response);
+      const record = await storage.get(`charge:${TX_ID}`);
+      await storage.put(`charge:${TX_ID}`, { ...record, at: Date.now() - 6 * 60 * 1000 });
+      assert.deepEqual(await (await cancelCharge(env)).json(), { status: 'cancelled' });
+    }
+    return coordinator.fetch(request);
+  } });
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 502);
+    await assertUnpublished(env, stagedResponse);
+  } finally { restore(); }
+});
+
+test('a lost success acknowledgement stays unpublished until owner replay confirms the commit', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  let stagedResponse;
+  let dropAck = true;
+  const env = chargedEnv(aiKv(5), { fetch: async (request) => {
+    const body = await request.clone().json();
+    const response = await coordinator.fetch(request);
+    if (body.op === 'charge_finish' && dropAck) {
+      dropAck = false;
+      stagedResponse = JSON.parse(body.response);
+      return new Response('lost acknowledgement', { status: 503 });
+    }
+    return response;
+  } });
+  const stats = {};
+  const restore = mockFal({ stats, firestore: () => chargeDoc() });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 502);
+    await assertUnpublished(env, stagedResponse);
+    assert.deepEqual(await (await cancelCharge(env)).json(), { status: 'succeeded' });
+    const replay = await postGeneration(env, { chargeTxId: TX_ID });
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), stagedResponse);
+    assert.ok(await env.AI_STATE_KV.get(`ai:gen:${stagedResponse.generationId}`));
+    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl), env, { waitUntil() {} })).status, 200);
+    assert.equal(stats.fal, 1);
+  } finally { restore(); }
+});
+
+test('an ambiguous final mutation acknowledgement is not treated as a committed image', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  let stagedResponse;
+  const env = chargedEnv(aiKv(5), { fetch: async (request) => {
+    const body = await request.clone().json();
+    if (body.op === 'charge_finish') {
+      stagedResponse = JSON.parse(body.response);
+      return Response.json({ ok: true });
+    }
+    return coordinator.fetch(request);
+  } });
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  try {
+    const response = await postGeneration(env, { chargeTxId: TX_ID });
+    assert.equal(response.status, 502);
+    assert.equal((await response.json()).imageUrl, undefined);
+    await assertUnpublished(env, stagedResponse);
+  } finally { restore(); }
+});
+
+test('claim and cancellation serialize, and cancellation fences a late finish', async () => {
+  for (const cancelFirst of [true, false]) {
+    const storage = new MemoryStorage();
+    const coordinator = new AiQuotaCoordinator({ storage });
+    const send = async (body) => (await coordinator.fetch(quotaRequest({
+      txId: TX_ID, userId: 'alice', createdAtMs: Date.now(), ...body,
+    }))).json();
+    const ops = [{ op: 'charge_cancel' }, { op: 'charge_claim' }];
+    if (!cancelFirst) ops.reverse();
+    const outcomes = await Promise.all(ops.map(send));
+    const cancellation = outcomes[cancelFirst ? 0 : 1];
+    const claim = outcomes[cancelFirst ? 1 : 0];
+    assert.equal(cancellation.status === 'cancelled' && claim.status === 'new', false);
+    if (claim.status === 'new') {
+      const record = await storage.get(`charge:${TX_ID}`);
+      await storage.put(`charge:${TX_ID}`, { ...record, at: Date.now() - 6 * 60 * 1000 });
+      assert.equal((await send({ op: 'charge_cancel' })).status, 'cancelled');
+    }
+    assert.equal((await send({ op: 'charge_finish', outcome: 'succeeded', response: '{"imageUrl":"usable"}' })).ok, false);
+    assert.equal((await send({ op: 'charge_claim' })).status, 'cancelled');
+  }
+});
+
+test('cancellation tombstones expire only after both claim and refund receipt windows close', async () => {
+  const storage = new MemoryStorage();
+  const coordinator = new AiQuotaCoordinator({ storage });
+  const receiptAt = Date.now();
+  const send = async (op) => (await coordinator.fetch(quotaRequest({
+    op, txId: TX_ID, userId: 'alice', createdAtMs: receiptAt,
+  }))).json();
+  assert.equal((await send('charge_cancel')).status, 'cancelled');
+  const tombstone = await storage.get(`charge:${TX_ID}`);
+  assert.equal(tombstone.expiresAt, receiptAt + 86_400_000 + 60_000);
+  const realNow = Date.now;
+  try {
+    Date.now = () => tombstone.expiresAt + 1;
+    assert.equal((await send('charge_claim')).status, 'failed');
+    assert.equal((await send('charge_cancel')).ok, false);
+    assert.equal(await storage.get(`charge:${TX_ID}`), undefined);
+  } finally { Date.now = realNow; }
+});
+
+test('an owner can replay an expired-for-new-claims receipt but cannot generate a second image after expiry', async () => {
+  const receiptAt = Date.now();
+  const kv = aiKv(5);
+  await kv.put('ai:firebase:jwks:v1', JSON.stringify({
+    ...JSON.parse(jwksCache), expiresAtMs: receiptAt + 2 * 86_400_000,
+  }));
+  const env = chargedEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const token = await makeToken({ sub: 'alice' });
+  const stats = {};
+  const restore = mockFal({ stats, firestore: () => chargeDoc({ createdAt: new Date(receiptAt).toISOString() }) });
+  const realNow = Date.now;
+  try {
+    const result = await (await postGeneration(env, { chargeTxId: TX_ID }, token)).json();
+    Date.now = () => receiptAt + 16 * 60_000;
+    const replay = await postGeneration(env, { chargeTxId: TX_ID }, token);
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), result);
+    Date.now = () => receiptAt + 86_400_000 + 1000;
+    const freshToken = await makeToken({ sub: 'alice' });
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, freshToken)).status, 402);
+    assert.equal(stats.fal, 1);
+  } finally { Date.now = realNow; restore(); }
+});
+
+test('legacy ownerless records fail closed for replay and cancellation', async () => {
+  const storage = new MemoryStorage();
+  await storage.put(`charge:${TX_ID}`, {
+    state: 'succeeded', at: Date.now(), expiresAt: Date.now() + 86_400_000,
+    response: '{"imageUrl":"legacy"}',
+  });
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage }));
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 502);
+    assert.equal((await cancelCharge(env)).status, 502);
+  } finally { restore(); }
+});
+
 async function getChargeEvidence(env, txId) {
   const response = await worker.fetch(
     new Request(`https://prismwalls.com/api/ai/charges/${txId}`),
@@ -788,7 +1099,7 @@ test('a valid charge succeeds once and a replay returns the stored image without
     restore();
   }
   assert.equal(stats.fal, 1);
-  assert.equal(stats.firestore, 1);
+  assert.equal(stats.firestore, 2);
   assert.equal(
     seen.url,
     `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`,
@@ -843,7 +1154,9 @@ test('a Firestore outage gives 502 without a charge_invalid verdict and frees th
 test('a charge that is still running gets 409 and a failed provider call marks the charge failed', async () => {
   const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
   const env = chargedEnv(aiKv(5), coordinator);
-  const claim = await coordinator.fetch(quotaRequest({ op: 'charge_claim', txId: TX_ID }));
+  const claim = await coordinator.fetch(quotaRequest({
+    op: 'charge_claim', txId: TX_ID, userId: 'alice', createdAtMs: Date.now(),
+  }));
   assert.equal((await responseJson(claim)).status, 'new');
 
   const restore = mockFal({ providerStatus: 500, firestore: () => chargeDoc() });
@@ -969,7 +1282,9 @@ test('a variation request is charged at the stored tier of its parent', async ()
 
 test('charge records expire after 24 hours and a stuck claim reads as failed', async () => {
   const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
-  const send = async (body) => responseJson(await coordinator.fetch(quotaRequest(body)));
+  const send = async (body) => responseJson(await coordinator.fetch(quotaRequest({
+    userId: 'alice', createdAtMs: Date.now(), ...body,
+  })));
   const realNow = Date.now;
   try {
     assert.equal((await send({ op: 'charge_claim', txId: TX_ID })).status, 'new');
@@ -2033,6 +2348,23 @@ class MemoryR2 {
 
 class MemoryStorage {
   #values = new Map();
+  #transactionTail = Promise.resolve();
+
+  async transaction(callback) {
+    const previous = this.#transactionTail;
+    let release;
+    this.#transactionTail = new Promise((resolve) => { release = resolve; });
+    await previous;
+    const before = new Map(this.#values);
+    try {
+      return await callback(this);
+    } catch (error) {
+      this.#values = before;
+      throw error;
+    } finally {
+      release();
+    }
+  }
 
   async get(key) {
     return this.#values.get(key);

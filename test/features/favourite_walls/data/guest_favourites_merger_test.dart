@@ -57,15 +57,20 @@ void main() {
   });
 
   test('a full guest list of 200 goes in one batch', () async {
-    for (int i = 0; i < GuestFavouritesStore.maxItems; i++) {
-      await store.put('w$i', <String, dynamic>{'id': 'w$i'});
-    }
+    final Map<String, Map<String, Object?>> items = <String, Map<String, Object?>>{
+      for (int i = 0; i < GuestFavouritesStore.maxItems; i++) 'w$i': <String, Object?>{'id': 'w$i'},
+    };
+    await seedGuestFavouritesSnapshot(items);
     final firestore = MergeFirestore();
 
     final int merged = await GuestFavouritesMerger(firestore, store, local).mergeInto('uid');
 
     expect(merged, 200);
     expect(firestore.batches.map((batch) => batch.sets.length), <int>[200]);
+    expect(firestore.batches.single.sets.map((set) => set.id), items.keys);
+    expect(firestore.batches.single.sets.map((set) => set.collection), everyElement('usersv2/uid/images'));
+    expect(firestore.batches.single.sets.map((set) => set.data), items.values);
+    expect(await store.readAll(), isEmpty);
   });
 
   test('a failed write keeps the guest list for the next try and tracks nothing', () async {

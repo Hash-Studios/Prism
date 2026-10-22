@@ -83,6 +83,7 @@ class PublicProfileSnapshotCodec {
         firestoreDocumentId: firestoreDocumentId,
         by: dto.by,
         desc: dto.desc,
+        category: dto.category,
         size: dto.size,
         resolution: dto.resolution,
         email: dto.email,

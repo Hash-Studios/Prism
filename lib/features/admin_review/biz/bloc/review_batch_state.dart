@@ -1,6 +1,6 @@
 part of 'review_batch_bloc.dart';
 
-enum ReviewBatchStatus { initial, loading, loaded, batchComplete, error }
+enum ReviewBatchStatus { initial, loading, loaded, error }
 
 class ReviewBatchState extends Equatable {
   final ReviewBatchStatus status;
@@ -10,6 +10,7 @@ class ReviewBatchState extends Equatable {
   final int totalPending;
   final int undoCount;
   final String? errorMessage;
+  final bool isBusy;
 
   const ReviewBatchState({
     this.status = ReviewBatchStatus.initial,
@@ -19,6 +20,7 @@ class ReviewBatchState extends Equatable {
     this.totalPending = 0,
     this.undoCount = 0,
     this.errorMessage,
+    this.isBusy = false,
   });
 
   bool get canUndo => undoStack.isNotEmpty;
@@ -34,6 +36,7 @@ class ReviewBatchState extends Equatable {
     int? undoCount,
     String? errorMessage,
     bool clearErrorMessage = false,
+    bool? isBusy,
   }) {
     return ReviewBatchState(
       status: status ?? this.status,
@@ -43,9 +46,10 @@ class ReviewBatchState extends Equatable {
       totalPending: totalPending ?? this.totalPending,
       undoCount: undoCount ?? this.undoCount,
       errorMessage: clearErrorMessage ? null : errorMessage ?? this.errorMessage,
+      isBusy: isBusy ?? this.isBusy,
     );
   }
 
   @override
-  List<Object?> get props => [status, walls, undoStack, currentIndex, totalPending, undoCount, errorMessage];
+  List<Object?> get props => [status, walls, undoStack, currentIndex, totalPending, undoCount, errorMessage, isBusy];
 }

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:crypto/crypto.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
@@ -14,14 +14,13 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/wallpaper/wall_depth.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/public_profile_snapshot_codec.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:crypto/crypto.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PublicProfileRepository)
@@ -34,6 +33,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   final Map<String, Future<void>> _snapshotWriteTails = <String, Future<void>>{};
   final Set<String> _clearingSnapshotOwners = <String>{};
   final Map<String, String> _wallCursorByEmail = <String, String>{};
+  final Map<String, int> _wallGenerationByEmail = <String, int>{};
+  int? _wallSession;
   static const int _profileReadDedupeMs = 30000;
   static const int _searchChunkSize = 30;
   static const int _summariesPageSize = 20;
@@ -199,10 +200,24 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required bool refresh,
   }) async {
     final String owner = _snapshotOwner;
+    final int session = CoinsService.instance.economySession;
+    if (_wallSession != session) {
+      _wallSession = session;
+      _wallCursorByEmail.clear();
+      _wallGenerationByEmail.clear();
+    }
+    final String cursorKey = '$owner::${email.trim().toLowerCase()}';
+    final int generation = (_wallGenerationByEmail[cursorKey] ?? 0) + (refresh ? 1 : 0);
+    _wallGenerationByEmail[cursorKey] = generation;
+    if (refresh) _wallCursorByEmail.remove(cursorKey);
+    bool isCurrent() =>
+        _snapshotOwner == owner &&
+        CoinsService.instance.economySession == session &&
+        _wallGenerationByEmail[cursorKey] == generation;
     final String snapshotKey = '$owner::walls:${email.trim().toLowerCase()}';
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    if (_snapshotOwner != owner) {
-      return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+    if (!isCurrent()) {
+      return Result.error(const ServerFailure('Profile wall request was superseded.'));
     }
     if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success((items: const <PublicProfileWallEntity>[], hasMore: false));
@@ -218,55 +233,59 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           ],
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
           limit: 12,
-          startAfterDocId: refresh ? null : _wallCursorByEmail[email],
+          startAfterDocId: refresh ? null : _wallCursorByEmail[cursorKey],
           cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
           dedupeWindowMs: refresh ? 0 : _profileReadDedupeMs,
         ),
         (data, docId) => _WallRow(docId: docId, doc: WallDocDto.fromJson(data)),
       );
-      if (_snapshotOwner != owner) {
-        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
-      }
-      if (rows.isNotEmpty) {
-        _wallCursorByEmail[email] = rows.last.docId;
+      if (!isCurrent()) {
+        return Result.error(const ServerFailure('Profile wall request was superseded.'));
       }
 
-      final items = rows.map((row) => _mapWall(row.doc, row.docId)).toList(growable: false);
-      Map<String, Object?>? previous;
-      if (!refresh) {
-        try {
-          previous = await _profileSnapshots.read(snapshotKey);
-        } catch (_) {}
-      }
-      final Map<String, PublicProfileSnapshotWall> uniqueRows = <String, PublicProfileSnapshotWall>{
-        if (previous != null)
-          for (final wall in PublicProfileSnapshotCodec.decodeWalls(previous)) wall.doc.id: wall,
-        for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): (doc: row.doc, documentId: row.docId),
-      };
+      final items = rows
+          .map((row) => PublicProfileSnapshotCodec.wallFromDto(row.doc, row.docId, firestoreDocumentId: row.docId))
+          .toList(growable: false);
       try {
-        await _writeSnapshot(
-          owner,
-          snapshotKey,
-          PublicProfileSnapshotCodec.encodeWalls(
-            uniqueRows.entries.map(
-              (entry) => entry.value.doc.id.isEmpty
-                  ? (doc: entry.value.doc.copyWith(id: entry.key), documentId: entry.value.documentId)
-                  : entry.value,
+        await _serializeSnapshotWrite(owner, () async {
+          if (!isCurrent()) return;
+          Map<String, Object?>? previous;
+          if (!refresh) {
+            try {
+              previous = await _profileSnapshots.read(snapshotKey);
+            } catch (_) {}
+          }
+          if (!isCurrent()) return;
+          final Map<String, PublicProfileSnapshotWall> uniqueRows = <String, PublicProfileSnapshotWall>{
+            if (previous != null)
+              for (final wall in PublicProfileSnapshotCodec.decodeWalls(previous)) wall.doc.id: wall,
+            for (final row in rows)
+              (row.doc.id.isNotEmpty ? row.doc.id : row.docId): (doc: row.doc, documentId: row.docId),
+          };
+          await _profileSnapshots.write(
+            snapshotKey,
+            PublicProfileSnapshotCodec.encodeWalls(
+              uniqueRows.entries.map(
+                (entry) => entry.value.doc.id.isEmpty
+                    ? (doc: entry.value.doc.copyWith(id: entry.key), documentId: entry.value.documentId)
+                    : entry.value,
+              ),
+              hasMore: rows.length == 12,
             ),
-            hasMore: rows.length == 12,
-          ),
-        );
+          );
+        });
       } catch (_) {}
-      if (_snapshotOwner != owner) {
-        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+      if (!isCurrent()) {
+        return Result.error(const ServerFailure('Profile wall request was superseded.'));
       }
+      if (rows.isNotEmpty) _wallCursorByEmail[cursorKey] = rows.last.docId;
 
       return Result.success((items: items, hasMore: rows.length == 12));
     } catch (error) {
-      if (_snapshotOwner == owner) {
+      if (isCurrent()) {
         try {
           final cached = await _profileSnapshots.read(snapshotKey);
-          if (cached != null && _snapshotOwner == owner) {
+          if (cached != null && isCurrent()) {
             final items = PublicProfileSnapshotCodec.decodeWalls(cached)
                 .map(
                   (wall) => PublicProfileSnapshotCodec.wallFromDto(
@@ -350,6 +369,37 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   List<String> _uniqueEmails(List<String> emails) =>
       emails.map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toSet().toList(growable: false);
 
+  /// The `email` spellings to query for each of [keys], best first: the spellings in
+  /// [allEmails] in list order, then the lowercase key. Firestore compares strings
+  /// exactly and legacy users keep their mixed-case address, so this matches
+  /// `findUserByEmail` on the server. A stored spelling that no relation entry
+  /// carries (`Alice@Example.com` behind only `alice@example.com`) is not found.
+  Map<String, List<String>> _spellingsByKey(List<String> keys, List<String> allEmails) {
+    final Map<String, List<String>> spellings = <String, List<String>>{for (final key in keys) key: <String>[]};
+    for (final email in allEmails.map((e) => e.trim())) {
+      final List<String>? list = spellings[email.toLowerCase()];
+      if (list != null && !list.contains(email)) list.add(email);
+    }
+    for (final MapEntry<String, List<String>> entry in spellings.entries) {
+      if (!entry.value.contains(entry.key)) entry.value.add(entry.key);
+    }
+    return spellings;
+  }
+
+  /// One row per key: the row whose email comes first in [spellings], whatever order Firestore used.
+  Map<String, _UserRow> _bestRowByKey(Iterable<_UserRow> rows, Map<String, List<String>> spellings) {
+    final Map<String, _UserRow> best = <String, _UserRow>{};
+    for (final row in rows) {
+      final String email = row.doc.email.trim();
+      final String key = email.toLowerCase();
+      final int rank = spellings[key]?.indexOf(email) ?? -1;
+      if (rank < 0) continue;
+      final _UserRow? current = best[key];
+      if (current == null || rank < spellings[key]!.indexOf(current.doc.email.trim())) best[key] = row;
+    }
+    return best;
+  }
+
   UserSummaryEntity _toSummary(_UserRow row, Set<String> followingSet) {
     final doc = row.doc;
     final email = doc.email.trim();
@@ -382,9 +432,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       final String pageIdentity = sha256.convert(utf8.encode(pageEmails.join(','))).toString();
       final String cacheKey = '$owner::summaries:$page:$pageIdentity';
 
+      final Map<String, List<String>> spellings = _spellingsByKey(pageEmails, allEmails);
+      final List<String> lookupEmails = spellings.values.expand((e) => e).toList(growable: false);
       // Firestore whereIn is limited to 10 items per query, so chunk the page.
       final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
-        for (int i = 0; i < pageEmails.length; i += 10)
+        for (int i = 0; i < lookupEmails.length; i += 10)
           _firestoreClient.query<_UserRow>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.usersV2,
@@ -393,10 +445,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
                 FirestoreFilter(
                   field: 'email',
                   op: FirestoreFilterOp.whereIn,
-                  value: pageEmails.sublist(i, math.min(i + 10, pageEmails.length)),
+                  value: lookupEmails.sublist(i, math.min(i + 10, lookupEmails.length)),
                 ),
               ],
-              limit: math.min(10, pageEmails.length - i),
+              limit: math.min(10, lookupEmails.length - i),
               cachePolicy: FirestoreCachePolicy.memoryFirst,
               dedupeWindowMs: _profileReadDedupeMs,
             ),
@@ -405,12 +457,13 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       ]);
 
       final followingSet = _currentUserFollowing();
-      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{
-        for (final row in chunkedResults.expand((rows) => rows))
-          row.doc.email.trim().toLowerCase(): _toSummary(row, followingSet),
-      };
+      final Map<String, _UserRow> byEmail = _bestRowByKey(chunkedResults.expand((rows) => rows), spellings);
       // Preserve the original ordering of the input email list.
-      final ordered = pageEmails.map((e) => byEmail[e]).whereType<UserSummaryEntity>().toList(growable: false);
+      final ordered = pageEmails
+          .map((e) => byEmail[e])
+          .whereType<_UserRow>()
+          .map((row) => _toSummary(row, followingSet))
+          .toList(growable: false);
       if (_snapshotOwner == owner) {
         try {
           await _writeSnapshot(
@@ -452,34 +505,79 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final List<String> unique = _uniqueEmails(scopeEmails);
+      final Map<String, List<String>> spellings = _spellingsByKey(_uniqueEmails(scopeEmails), scopeEmails);
       final Set<String> followingSet = _currentUserFollowing();
 
-      // One scoped prefix query per 30 emails (the whereIn limit). Each chunk
-      // is ordered by usernameLower, so its top [_searchLimit] covers the overall top.
-      final List<List<_UserRow>> chunks = await Future.wait(<Future<List<_UserRow>>>[
-        for (int i = 0; i < unique.length; i += _searchChunkSize)
+      // One scoped prefix query per 30 emails (the whereIn limit). All spellings of a
+      // key share a chunk where they fit, and each extra spelling adds one to the
+      // limit, so case duplicates cannot crowd a member out of the chunk's top
+      // [_searchLimit]. A group too big for one chunk is split, so its owner can sit in
+      // another chunk; every spelling of a split group adds one. Like the summaries
+      // limit, this assumes one user per email.
+      final List<List<String>> chunks = <List<String>>[];
+      for (final List<String> group in spellings.values) {
+        if (chunks.isEmpty || chunks.last.length + group.length > _searchChunkSize) chunks.add(<String>[]);
+        for (final email in group) {
+          if (chunks.last.length == _searchChunkSize) chunks.add(<String>[]);
+          chunks.last.add(email);
+        }
+      }
+      final List<List<_UserRow>> results = await Future.wait(<Future<List<_UserRow>>>[
+        for (final chunk in chunks)
           _firestoreClient.query<_UserRow>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.usersV2,
               sourceTag: 'public_profile.search_by_username',
               filters: <FirestoreFilter>[
-                FirestoreFilter(
-                  field: 'email',
-                  op: FirestoreFilterOp.whereIn,
-                  value: unique.sublist(i, math.min(i + _searchChunkSize, unique.length)),
-                ),
+                FirestoreFilter(field: 'email', op: FirestoreFilterOp.whereIn, value: chunk),
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: q),
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isLessThan, value: '$q\uf8ff'),
               ],
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'usernameLower')],
-              limit: _searchLimit,
+              limit:
+                  _searchLimit +
+                  chunk.length -
+                  chunk
+                      .map((e) => e.toLowerCase())
+                      .toSet()
+                      .where((key) => spellings[key]!.length <= _searchChunkSize)
+                      .length,
             ),
             (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
           ),
       ]);
+      final Map<String, _UserRow> best = _bestRowByKey(results.expand((rows) => rows), spellings);
 
-      final List<_UserRow> rows = chunks.expand((rows) => rows).toList()
+      // A key matched only through a lower spelling may have a better-spelled user
+      // who did not match the query or sorts below the top. Either way that user,
+      // not the stand-in, owns the key, so drop the key if such a user exists.
+      final List<String> better = <String>[
+        for (final MapEntry<String, _UserRow> entry in best.entries)
+          ...spellings[entry.key]!.takeWhile((email) => email != entry.value.doc.email.trim()),
+      ];
+      final List<List<_UserRow>> owners = await Future.wait(<Future<List<_UserRow>>>[
+        for (int i = 0; i < better.length; i += _searchChunkSize)
+          _firestoreClient.query<_UserRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.usersV2,
+              sourceTag: 'public_profile.search_by_username.exact_spelling',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(
+                  field: 'email',
+                  op: FirestoreFilterOp.whereIn,
+                  value: better.sublist(i, math.min(i + _searchChunkSize, better.length)),
+                ),
+              ],
+              limit: math.min(_searchChunkSize, better.length - i),
+            ),
+            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+          ),
+      ]);
+      for (final row in owners.expand((rows) => rows)) {
+        best.remove(row.doc.email.trim().toLowerCase());
+      }
+
+      final List<_UserRow> rows = best.values.toList()
         ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
       return Result.success(
         rows.take(_searchLimit).map((row) => _toSummary(row, followingSet)).toList(growable: false),
@@ -487,25 +585,6 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     } catch (error) {
       return Result.error(ServerFailure('Unable to search users: $error'));
     }
-  }
-
-  PublicProfileWallEntity _mapWall(WallDocDto dto, String docId) {
-    return PublicProfileWallEntity(
-      id: dto.id.isNotEmpty ? dto.id : docId,
-      firestoreDocumentId: docId,
-      by: dto.by,
-      desc: dto.desc,
-      size: dto.size,
-      resolution: dto.resolution,
-      email: dto.email,
-      source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
-      wallpaperThumb: dto.wallpaperThumb,
-      wallpaperUrl: dto.wallpaperUrl,
-      collections: dto.collections,
-      createdAt: dto.createdAt,
-      review: dto.review,
-      depthTier: WallDepthTier.parse(dto.depth['tier']),
-    );
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
@@ -19,6 +21,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   List<String> _allKeys = [];
   bool _loading = true;
   bool _failed = false;
+  int _loadGeneration = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -42,6 +45,8 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   }
 
   Future<void> _loadKeys() async {
+    if (!mounted) return;
+    final int generation = ++_loadGeneration;
     setState(() {
       _loading = true;
       _failed = false;
@@ -56,6 +61,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
         return;
       }
       final keys = await store.keys();
+      if (!mounted || generation != _loadGeneration) return;
       keys.sort();
       setState(() {
         _allKeys = keys;
@@ -63,6 +69,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
       });
     } catch (e, st) {
       logger.w('Failed to load storage keys', tag: 'DebugPanel', error: e, stackTrace: st);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _loading = false;
         _failed = true;
@@ -77,6 +84,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   }
 
   Future<void> _deleteKey(String key) async {
+    final store = _store;
     final bool ok = await showPrismConfirm(
       context,
       title: context.l10n.debugDeleteKeyTitle,
@@ -84,12 +92,13 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
       confirmLabel: context.l10n.debugDeleteKey,
       destructive: true,
     );
-    if (!ok) return;
-    await _store?.delete(key);
+    if (!ok || !mounted || !identical(store, _store)) return;
+    await store?.delete(key);
     await _loadKeys();
   }
 
   Future<void> _clearAll() async {
+    final store = _store;
     final bool ok = await showPrismConfirm(
       context,
       title: context.l10n.debugClearAllStorageTitle,
@@ -97,23 +106,37 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
       confirmLabel: context.l10n.debugClearAll,
       destructive: true,
     );
-    if (!ok) return;
-    await _store?.clearAll();
+    if (!ok || !mounted || !identical(store, _store)) return;
+    await store?.clearAll();
     await _loadKeys();
     if (mounted) showDebugSnackBar(context, context.l10n.debugStorageCleared);
   }
 
   Future<void> _showEditSheet(String key) async {
-    final raw = _store?.get(key);
+    final store = _store;
+    final raw = store?.get(key);
     await showPrismSheet<void>(
       context,
       dismissKeyboardOnDrag: true,
       builder: (_) => _EditValueSheet(
         storageKey: key,
         type: '${raw?.runtimeType ?? 'null'}',
-        initial: raw?.toString() ?? '',
+        initial: raw is String ? raw : jsonEncode(raw),
         onSave: (String value) async {
-          await _store?.set(key, value);
+          if (!mounted || store == null || !identical(store, _store)) return;
+          final Object? parsed = raw is String ? value : jsonDecode(value);
+          final bool valid = switch (raw) {
+            null => parsed == null,
+            bool() => parsed is bool,
+            int() => parsed is int,
+            double() => parsed is num && parsed.isFinite,
+            String() => parsed is String,
+            List() => parsed is List,
+            Map() => parsed is Map,
+            _ => false,
+          };
+          if (!valid) throw const FormatException('The value must keep its stored type.');
+          await store.set(key, raw is double && parsed is num ? parsed.toDouble() : parsed);
           await _loadKeys();
         },
       ),
@@ -299,6 +322,7 @@ class _EditValueSheetState extends State<_EditValueSheet> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     setState(() => _saving = true);
     try {
       await widget.onSave(_ctrl.text);
@@ -340,7 +364,6 @@ class _EditValueSheetState extends State<_EditValueSheet> {
           PrismTextField(
             controller: _ctrl,
             label: context.l10n.debugValue,
-            helper: context.l10n.debugSaveValueAsText,
             minLines: 3,
             maxLines: 6,
             autocorrect: false,

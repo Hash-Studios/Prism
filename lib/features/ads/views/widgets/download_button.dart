@@ -739,7 +739,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       serverRequiredCoins = quote.requiredCoins;
       serverBalance = quote.currentBalance;
       if (!mounted || !_ownerStillMatches(_tap)) return CoinGateResult.cancelled;
-      CoinsService.instance.balanceNotifier.value = quote.currentBalance;
+      CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: _tap.ownerId);
     }
     return CoinGate.forContext(context).run(
       CoinGateSpec(
@@ -762,10 +762,11 @@ class _DownloadButtonState extends State<DownloadButton> {
                   );
                   return CoinMutationResult(
                     success: true,
+                    // Original-access receipts do not use CoinGate's spend/refund ledger.
                     changed: false,
                     previousBalance: balance,
-                    currentBalance: balance,
-                    delta: 0,
+                    currentBalance: CoinsService.instance.balanceNotifier.value,
+                    delta: CoinsService.instance.balanceNotifier.value - balance,
                   );
                 } on OriginalAccessInsufficientBalance catch (error) {
                   serverRequiredCoins = error.requiredCoins;

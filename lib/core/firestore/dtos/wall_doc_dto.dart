@@ -10,6 +10,7 @@ abstract class WallDocDto with _$WallDocDto {
     @FirestoreStringConverter() @Default('') String id,
     @FirestoreStringConverter() @Default('') String by,
     @FirestoreStringConverter() @Default('') String desc,
+    @FirestoreStringConverter() @Default('') String category,
     @FirestoreStringConverter() @Default('') String size,
     @FirestoreStringConverter() @Default('') String resolution,
     @FirestoreStringConverter() @Default('') String email,

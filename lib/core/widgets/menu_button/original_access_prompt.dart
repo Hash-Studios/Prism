@@ -26,7 +26,7 @@ Future<OriginalAccessQuote?> quoteOriginalWithConsent(
   while (context.mounted && owner == app_state.prismUser.id) {
     final quote = await (quoteProvider?.call() ?? service.quote(wallpaperId: wallpaperId!, action: action));
     if (!context.mounted || owner != app_state.prismUser.id) return null;
-    CoinsService.instance.balanceNotifier.value = quote.currentBalance;
+    CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: owner);
     if (quote.requiredCoins > 0) {
       final l10n = context.l10n;
       final enough = quote.currentBalance >= quote.requiredCoins;

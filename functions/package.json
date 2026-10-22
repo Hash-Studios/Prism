@@ -11,6 +11,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "migrate:username-lower": "npm run build && node lib/scripts/backfillUsernameLower.js",
+    "migrate:favourite-contributions": "npm run build && node lib/backfillFavouriteContributions.js",
     "migrate:view-stats": "npm run build && node lib/scripts/migrateGithubViewStats.js",
     "migrate:wall-collections": "npm run build && node lib/scripts/backfillWallCollections.js",
     "migrate:wall-search-terms": "npm run build && node lib/scripts/backfillWallSearchTerms.js",

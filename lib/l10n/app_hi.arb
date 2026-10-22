@@ -1834,7 +1834,6 @@
   "adminBackToReviewList": "समीक्षा सूची पर वापस जाएँ",
   "adminBatchActionFailed": "समीक्षा की यह कार्रवाई पूरी नहीं हो सकी। फिर कोशिश करें।",
   "adminBatchComplete": "बैच पूरा हुआ",
-  "adminBatchCompleteLoading": "बैच पूरा हुआ। अगला बैच लोड हो रहा है।",
   "adminBodyLabel": "मुख्य पाठ",
   "adminBodyRequired": "मुख्य पाठ ज़रूरी है",
   "adminBy": "द्वारा",

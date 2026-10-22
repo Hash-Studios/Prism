@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test, {type TestContext} from "node:test";
+import test, {beforeEach, type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db} from "../common";
@@ -8,14 +8,24 @@ import * as wallCategory from "../wallCategory";
 import * as wallColors from "../wallColors";
 import * as wallDepth from "../wallDepth";
 import {type Doc, installFakeDb} from "./fakeDb";
+import {resolveOriginalAccess} from "../originalAccess";
+import {DEFAULT_ECONOMY, resetEconomyCache} from "../economy";
+import {r2ObjectId} from "../r2Storage";
 
 const WALL_URL = "https://raw.githubusercontent.com/o/r/main/a.jpg";
 const DETECTED = {tier: "menu", kind: "person", top: 0.15, v: 1, by: "detector"};
 const ADMIN = {tier: "auto", kind: null, top: null, v: 1, by: "admin"};
 
+beforeEach((t) => {
+  assert.ok("mock" in t);
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
+  }}));
+});
+
 const created = (data: Doc) => ({
   params: {wallId: "w1"},
-  data: {data: () => data},
+  data: {data: () => data, createTime: admin.firestore.Timestamp.fromMillis(1)},
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
 function setup(
@@ -71,22 +81,96 @@ test("a failed depth check writes no depth and keeps the colours and category", 
   assert.equal(wall?.category, "Nature");
 });
 
-test("a failed depth write logs a warning and keeps the colours and category", async (t) => {
+test("a failed categorization transaction writes none of the image fields", async (t) => {
   const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => DETECTED);
   t.mock.method(db, "runTransaction", async () => {
     throw new Error("contention");
   });
   const warn = t.mock.method(logger, "warn", () => undefined);
-  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  await assert.rejects(() => onWallCategorize.run(created({wallpaper_url: WALL_URL})), /contention/);
   const wall = store.get("walls/w1");
   assert.equal("depth" in (wall ?? {}), false);
-  assert.deepEqual(wall?.colors, ["blue"]);
-  assert.equal(wall?.category, "Nature");
-  assert.deepEqual(warn.mock.calls[0].arguments, [
-    "onWallCategorize: could not save depth",
-    {wallId: "w1", error: "contention"},
-  ]);
+  assert.equal(wall?.colors, undefined);
+  assert.equal(wall?.category, undefined);
+  assert.equal(warn.mock.callCount(), 0);
 });
+
+test("slow categorization preserves intervening admin category, premium collections, colors and depth", async (t) => {
+  const initial = {wallpaper_url: WALL_URL, collections: ["community"]};
+  const edited = {...initial, review: true, category: "Space", collections: ["premium"], colors: ["red"], depth: ADMIN};
+  const {store} = setup(t, initial, async (walls) => {
+    walls.set("walls/w1", edited);
+    return DETECTED;
+  });
+  await onWallCategorize.run(created(initial));
+  assert.deepEqual(store.get("walls/w1"), {...edited, visionLabels: ["Mountain"]});
+});
+
+test("original access still quotes the premium price after an admin classifies during analysis", async (t) => {
+  const previous = {...process.env};
+  Object.assign(process.env, {R2_PREVIEW_BASE_URL: "https://images.example.com", R2_PRIVATE_BUCKET: "private",
+    GH_REPO_WALLS: "walls"});
+  t.after(() => {
+    process.env = previous;
+  });
+  resetEconomyCache();
+  const object = (path: string, digest: string) => {
+    const source = {uid: "owner", repo: "walls", path, sha: "c".repeat(40), sourceKind: "owned" as const};
+    const objectId = r2ObjectId(source, digest);
+    return {...source, bucket: "private", object: `private-originals/${objectId}`, objectId, sha256: digest};
+  };
+  const original = object("original/path", "b".repeat(64));
+  const thumbnail = object("thumb_path", "d".repeat(64));
+  const thumb = {...thumbnail, previewObjectId: thumbnail.objectId};
+  const wall = {id: "asset", wallpaper_url: "", wallpaper_thumb: `https://images.example.com/previews/${thumb.objectId}.img`,
+    wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "", originalProtected: true,
+    originalObjectId: original.objectId, collections: ["community"]};
+  const {store} = setup(t, wall, async (walls) => {
+    walls.set("walls/w1", {...wall, review: true, category: "Space", collections: ["premium"]});
+    return DETECTED;
+  });
+  store.set("usersv2/viewer", {coins: 100});
+  store.set("usersv2/viewer/private/economy", {graceDownloadsUsed: 100});
+  store.set("ownedAssets/asset", {status: "ready", canonicalPath: "walls/w1", incarnation: 1,
+    incarnationNanos: 1_000_000, original, thumb});
+  for (const stored of [original, thumb]) {
+    store.set(`r2ObjectRegistry/${stored.objectId}`, {...stored, status: "active", uploadId: "imported"});
+  }
+  await onWallCategorize.run(created(wall));
+  const quote = await resolveOriginalAccess.run({auth: {uid: "viewer", token: {}}, data: {
+    assetId: "asset", action: "download", requestId: "request_quote", mode: "quote",
+  }} as unknown as Parameters<typeof resolveOriginalAccess.run>[0]);
+  assert.equal(quote.status, "quoted");
+  assert.equal("requiredCoins" in quote && quote.requiredCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
+});
+
+test("no-label fallback does not reset admin collections or a custom category", async (t) => {
+  const initial = {wallpaper_url: WALL_URL};
+  const {store} = setup(t, initial, async (walls) => {
+    walls.set("walls/w1", {...initial, category: "Custom", collections: ["premium"]});
+    return undefined;
+  }, async () => []);
+  await onWallCategorize.run(created(initial));
+  assert.equal(store.get("walls/w1")?.category, "Custom");
+  assert.deepEqual(store.get("walls/w1")?.collections, ["premium"]);
+});
+
+for (const change of ["source", "recreate", "delete"] as const) {
+  test(`categorization discards all stale results after ${change}`, async (t) => {
+    const initial = {wallpaper_url: WALL_URL};
+    const {store} = setup(t, initial, async (walls) => {
+      if (change === "source") walls.set("walls/w1", {wallpaper_url: `${WALL_URL}?new`});
+      else {
+        walls.delete("walls/w1");
+        if (change === "recreate") walls.set("walls/w1", {...initial});
+      }
+      return DETECTED;
+    });
+    await onWallCategorize.run(created(initial));
+    assert.deepEqual(store.get("walls/w1"), change === "delete" ? undefined :
+      {wallpaper_url: change === "source" ? `${WALL_URL}?new` : WALL_URL});
+  });
+}
 
 test("a wall approved before its check ends is filed into the collection of its new category", async (t) => {
   const wall = {wallpaper_url: WALL_URL, review: true, collections: ["community"]};

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -9,8 +10,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
@@ -19,6 +21,16 @@ import '../../../support/profile_user_fixture.dart';
 const Duration _profileSnapshotDiskObservationTimeout = Duration(seconds: 10);
 
 class _WatchingClient extends FakeFirestoreClient {
+  Future<List<FakeDocRow>> Function(FirestoreQuerySpec)? delayedQuery;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    final delayed = delayedQuery;
+    if (delayed == null) return super.query(spec, map);
+    querySpecs.add(spec);
+    return (await delayed(spec)).map((row) => map(row.data, row.id)).toList();
+  }
+
   final StreamController<List<FakeDocRow>> rows = StreamController<List<FakeDocRow>>.broadcast();
   final StreamController<int> _watchChanges = StreamController<int>.broadcast();
   final List<FirestoreQuerySpec> watchSpecs = <FirestoreQuerySpec>[];
@@ -117,9 +129,11 @@ void main() {
     client = _WatchingClient();
     blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     repo = PublicProfileRepositoryImpl(client, blocks);
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
   tearDown(() async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     await client.rows.close();
     await client._watchChanges.close();
     await client._cancellationChanges.close();
@@ -415,11 +429,221 @@ void main() {
       final result = await repo.fetchUserSummariesPage(allEmails: <String>[' A@x.com', 'a@x.com', ' '], page: 0);
 
       expect(result.data!.items.map((u) => u.email), <String>['a@x.com']);
-      expect(client.querySpecs.single.filters.single.value, <String>['a@x.com']);
+      expect(client.querySpecs.single.filters.single.value, <String>['A@x.com', 'a@x.com']);
+    });
+
+    // Firestore whereIn compares strings exactly, so the fake must not fold case. Without an
+    // orderBy, Firestore returns documents by document ID, then applies the limit.
+    List<FakeDocRow> exactEmailMatch(FirestoreQuerySpec spec, List<FakeDocRow> stored) {
+      final wanted = spec.filters.single.value! as List<Object?>;
+      final rows = stored.where((row) => wanted.contains(row.data['email'])).toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
+      return rows.take(spec.limit ?? rows.length).toList();
+    }
+
+    FakeDocRow storedAs(String id, String email, String name) =>
+        (id: id, data: <String, dynamic>{'email': email, 'name': name, 'username': name});
+
+    test('a user stored with a mixed-case email is found through the relation spelling (#541)', () async {
+      final stored = <FakeDocRow>[_user('Alice@Example.com', name: 'Alice'), _user('bob@example.com', name: 'Bob')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(
+        allEmails: <String>['Alice@Example.com', 'bob@example.com'],
+        page: 0,
+      );
+
+      expect(result.data!.items.map((u) => u.name), <String>['Alice', 'Bob']);
+      expect(result.data!.items.first.email, 'Alice@Example.com');
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('a mixed-case relation entry still finds a user stored in lowercase', () async {
+      final stored = <FakeDocRow>[_user('carol@example.com', name: 'Carol')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(allEmails: <String>['Carol@Example.com'], page: 0);
+
+      expect(result.data!.items.map((u) => u.name), <String>['Carol']);
+    });
+
+    test('two spellings of one address give one summary and one pagination slot', () async {
+      final stored = <FakeDocRow>[_user('Dana@Example.com', name: 'Dana')];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+      final emails = <String>['Dana@Example.com', 'dana@example.com', for (int i = 0; i < 19; i++) 'u$i@x.com'];
+
+      final first = (await repo.fetchUserSummariesPage(allEmails: emails, page: 0)).data!;
+      final second = (await repo.fetchUserSummariesPage(allEmails: emails, page: 1)).data!;
+
+      expect(first.items.map((u) => u.name), <String>['Dana']);
+      expect(first.hasMore, isFalse);
+      expect(second.items, isEmpty);
+    });
+
+    test('the relation spelling wins over a lowercase duplicate that Firestore returns first', () async {
+      final stored = <FakeDocRow>[
+        storedAs('a_lower', 'alice@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Alice@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final exact = await repo.fetchUserSummariesPage(allEmails: <String>['Alice@Example.com'], page: 0);
+      final lower = await repo.fetchUserSummariesPage(allEmails: <String>['alice@example.com'], page: 0);
+
+      expect(exact.data!.items.map((u) => u.name), <String>['exact account']);
+      expect(lower.data!.items.map((u) => u.name), <String>['lowercase account']);
+      // A lowercase relation does not invent a mixed-case variant to query.
+      expect(client.querySpecs.last.filters.single.value, <String>['alice@example.com']);
+    });
+
+    test('the first relation spelling wins when the list holds two spellings', () async {
+      final stored = <FakeDocRow>[
+        storedAs('a_lower', 'alice@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Alice@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+
+      final result = await repo.fetchUserSummariesPage(
+        allEmails: <String>['Alice@Example.com', 'alice@example.com'],
+        page: 0,
+      );
+
+      expect(result.data!.items.map((u) => u.name), <String>['exact account']);
+    });
+
+    test('a mixed-case duplicate on the second page across a ten-value chunk keeps the relation spelling', () async {
+      final stored = <FakeDocRow>[
+        for (int i = 0; i < 29; i++) storedAs('id_u$i', 'u$i@x.com', 'u$i'),
+        storedAs('a_lower', 'eve@example.com', 'lowercase account'),
+        storedAs('b_exact', 'Eve@Example.com', 'exact account'),
+      ];
+      client.onQuery = (spec) => exactEmailMatch(spec, stored);
+      // Page 1 holds u20..u28 then Eve, so her two spellings are values 10 and 11 of the lookup.
+      final emails = <String>[for (int i = 0; i < 29; i++) 'u$i@x.com', 'Eve@Example.com'];
+
+      final second = (await repo.fetchUserSummariesPage(allEmails: emails, page: 1)).data!;
+
+      expect(second.items.map((u) => u.name), <String>[for (int i = 20; i < 29; i++) 'u$i', 'exact account']);
+      expect(second.hasMore, isFalse);
+      expect(client.querySpecs.map((s) => s.filters.single.value), <Object?>[
+        <String>[for (int i = 20; i < 29; i++) 'u$i@x.com', 'Eve@Example.com'],
+        <String>['eve@example.com'],
+      ]);
+    });
+
+    test('mixed-case lookups stay within ten values per whereIn query', () async {
+      final emails = <String>[for (int i = 0; i < 20; i++) 'User$i@X.com'];
+      client.onQuery = (_) => <FakeDocRow>[];
+
+      await repo.fetchUserSummariesPage(allEmails: emails, page: 0);
+
+      final queried = <Object?>[for (final spec in client.querySpecs) ...(spec.filters.single.value! as List<Object?>)];
+      expect(client.querySpecs.every((s) => (s.filters.single.value! as List<Object?>).length <= 10), isTrue);
+      expect(queried.toSet(), <Object?>{...emails, ...emails.map((e) => e.toLowerCase())});
     });
   });
 
   group('fetchWalls', () {
+    List<FakeDocRow> wallRows(String prefix, {int count = 12}) => <FakeDocRow>[
+      for (int i = 0; i < count; i++) (id: '$prefix-$i', data: <String, dynamic>{'wallpaper_url': '$prefix/$i'}),
+    ];
+
+    test('an old page cannot replace a refreshed cursor or durable snapshot', () async {
+      client.onQuery = (_) => wallRows('initial');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldPage = repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      await pumpEventQueue();
+      client.delayedQuery = null;
+      client.onQuery = (_) => wallRows('fresh');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      await oldPage;
+      client.onQuery = (_) => wallRows('next', count: 1);
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, 'fresh-11');
+      final offline = PublicProfileRepositoryImpl(_WatchingClient()..queryError = StateError('offline'), blocks);
+      final restored = await offline.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect(restored.data!.items.map((w) => w.id), [...List.generate(12, (i) => 'fresh-$i'), 'next-0']);
+    });
+
+    test('overlapping refreshes discard the earlier response and an empty refresh clears the cursor', () async {
+      client.onQuery = (_) => wallRows('initial');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldRefresh = repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      await pumpEventQueue();
+      client.delayedQuery = null;
+      client.onQuery = (_) => <FakeDocRow>[];
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      await oldRefresh;
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, isNull);
+    });
+
+    test('returning to the same account cannot commit an earlier session cursor or snapshot', () async {
+      app_state.prismUser = profileUser(id: 'owner');
+      final stale = Completer<List<FakeDocRow>>();
+      client.delayedQuery = (_) => stale.future;
+      final oldRefresh = repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: 'other');
+      CoinsService.instance.resetSession();
+      app_state.prismUser = profileUser(id: 'owner');
+      CoinsService.instance.resetSession();
+      client.delayedQuery = null;
+      client.onQuery = (_) => wallRows('fresh');
+      await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      stale.complete(wallRows('stale'));
+      expect((await oldRefresh).isFailure, isTrue);
+      await repo.fetchWalls(email: 'creator@x.com', refresh: false);
+      expect(client.querySpecs.last.startAfterDocId, 'fresh-11');
+    });
+
+    test('category, not description, reaches detail before and after durable cache restore', () async {
+      client.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'lake',
+          data: <String, dynamic>{
+            'category': 'Nature',
+            'desc': 'A lake at dawn',
+            'wallpaper_url': 'https://example.test/lake.jpg',
+          },
+        ),
+      ];
+      final fresh = await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((fresh.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, 'Nature');
+      expect(fresh.data!.items.single.desc, 'A lake at dawn');
+      final offline = PublicProfileRepositoryImpl(_WatchingClient()..queryError = StateError('offline'), blocks);
+      final restored = await offline.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((restored.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, 'Nature');
+      expect(restored.data!.items.single.desc, 'A lake at dawn');
+      final similarClient = FakeFirestoreClient();
+      final similar = SimilarWallpapersLoader(
+        firestore: () => similarClient,
+        blocks: () => blocks,
+        search: () => throw StateError('Prism category lookup does not use text search'),
+      );
+      for (final result in [fresh, restored]) {
+        await similar.load(result.data!.items.single.toFeedItem());
+        expect(similarClient.querySpecs.last.filters.map((f) => (f.field, f.value)), contains(('category', 'Nature')));
+      }
+    });
+
+    test('legacy snapshots without category do not classify description as category', () async {
+      await DurableJsonStore('public_profiles').write('__guest::walls:creator@x.com', <String, Object?>{
+        'itemsJson': '[{"id":"old","desc":"A lake at dawn","wallpaper_url":"https://x/old"}]',
+        'hasMore': false,
+      });
+      client.queryError = StateError('offline');
+      final restored = await repo.fetchWalls(email: 'creator@x.com', refresh: true);
+      expect((restored.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, isNull);
+      expect(restored.data!.items.single.desc, 'A lake at dawn');
+    });
+
     test('hides walls of a blocked creator without querying', () async {
       blocks.completeInitial(<String>{'blocked@x.com'});
 

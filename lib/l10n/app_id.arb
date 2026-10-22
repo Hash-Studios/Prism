@@ -1941,7 +1941,6 @@
   "adminBackToReviewList": "Kembali ke daftar tinjauan",
   "adminBatchActionFailed": "Tindakan tinjauan ini tidak dapat diselesaikan. Coba lagi.",
   "adminBatchComplete": "Tinjauan batch selesai",
-  "adminBatchCompleteLoading": "Batch selesai. Memuat batch berikutnya.",
   "adminBodyLabel": "Isi",
   "adminBodyRequired": "Isi wajib diisi",
   "adminBy": "Oleh",

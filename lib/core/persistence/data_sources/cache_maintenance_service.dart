@@ -33,8 +33,6 @@ class CacheMaintenanceService {
 
   Future<int> retainedAssetBytes() => (_offlineAssetStore ?? OfflineAssetStore.instance).storedBytes;
 
-  Future<Map<String, String>> retainedAssetPaths() => (_offlineAssetStore ?? OfflineAssetStore.instance).localPaths();
-
   Future<void> clearRetainedAssets() => (_offlineAssetStore ?? OfflineAssetStore.instance).clearRetained();
 
   Future<void> clearTransientCache() async {

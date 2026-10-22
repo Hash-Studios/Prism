@@ -79,12 +79,10 @@ class CircularMenuButton extends StatelessWidget {
     );
     final Widget circle = SizedBox.square(
       dimension: size,
-      child: flat
-          ? face
-          : DecoratedBox(
-              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-              child: face,
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: face,
+      ),
     );
     final Widget content = caption == null
         ? circle

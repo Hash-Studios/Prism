@@ -12,12 +12,12 @@ else
   }
 fi
 
-if ! has_match "ENV_DART_DEFINES[[:space:]]*\\?=[[:space:]]*\\$\\(shell .*dart_defines_from_doppler.sh\\)" Makefile; then
-  echo "doppler_guard failed: Makefile is not wired to dart_defines_from_doppler.sh."
+if ! has_match '^DOPPLER_FLUTTER = python3 tool/flutter_with_doppler.py$' Makefile; then
+  echo "doppler_guard failed: Makefile is not wired to the argv-safe Doppler runner."
   exit 1
 fi
 
-for target in run build build-ios build-ipa; do
+for target in run build build-aab build-ios build-ipa; do
   if ! has_match "^$target:.*doppler-check" Makefile; then
     echo "doppler_guard failed: target '$target' does not depend on doppler-check."
     exit 1

@@ -1,7 +1,34 @@
+import 'dart:async';
+
 import 'package:Prism/notifications/topic_subscription.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class _DelayedMessaging extends Fake implements FirebaseMessaging {
+  final calls = <String>[];
+  final started = Completer<void>();
+  final gate = Completer<void>();
+
+  @override
+  Future<void> unsubscribeFromTopic(String topic) async {
+    calls.add(topic);
+    started.complete();
+    await gate.future;
+  }
+}
+
 void main() {
+  test('a delayed legacy unsubscribe cannot dispatch its localized counterpart after ownership changes', () async {
+    final messaging = _DelayedMessaging();
+    bool current = true;
+    final pending = unsubscribeFromTopicSafely(messaging, 'u_old', sourceTag: 'test', isCurrent: () => current);
+    await messaging.started.future;
+    current = false;
+    messaging.gate.complete();
+    await pending;
+    expect(messaging.calls, <String>['u_old']);
+  });
+
   group('followersTopicFromEmail', () {
     test('returns null when email local part is empty', () {
       expect(followersTopicFromEmail('   @example.com'), isNull);

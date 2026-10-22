@@ -1,8 +1,29 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
-import {favouriteDelta, onFavouriteWritten, recordWallpaperAction} from "../wallStats";
-import {installFakeDb} from "./fakeDb";
+import {db} from "../common";
+import {onFavouriteWritten, recordWallpaperAction} from "../wallStats";
+import {installFakeDb as installDb, type Doc} from "./fakeDb";
+
+const GATE = "maintenance/favouriteAggregation";
+const installFakeDb = (t: TestContext, seed: Record<string, Doc> = {}) => installDb(t, {
+  [GATE]: {phase: "ready", epoch: "test-v1"}, "usersv2/u1": {coins: 0}, ...seed,
+});
+
+function failQuestWrites(t: TestContext) {
+  const failure = {active: true};
+  const run = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    run(async (tx) => {
+      const set = tx.set.bind(tx);
+      tx.set = ((ref: admin.firestore.DocumentReference, ...args: unknown[]) => {
+        if (failure.active && ref.path === "usersv2/u1/private/economy") throw new Error("quest storage unavailable");
+        return Reflect.apply(set, tx, [ref, ...args]);
+      }) as typeof tx.set;
+      return callback(tx);
+    }));
+  return failure;
+}
 
 const DAY = "20260102";
 const NOW = new Date("2026-01-02T10:00:00Z");
@@ -70,44 +91,47 @@ test("two concurrent calls of one user count once", async (t) => {
   assert.equal(store.get("wallpaper_stats/W1")?.shares, 1);
 });
 
-test("favouriteDelta is +1 on create, -1 on delete and 0 on update", () => {
-  assert.equal(favouriteDelta(undefined, {id: "a"}), 1);
-  assert.equal(favouriteDelta({id: "a"}, undefined), -1);
-  assert.equal(favouriteDelta({id: "a"}, {id: "a", x: 1}), 0);
-  assert.equal(favouriteDelta(undefined, undefined), 0);
-});
-
-const favEvent = (before: unknown, after: unknown, wallId = "w1", id = `event_${wallId}_${Math.random()}`) =>
-  onFavouriteWritten.run({
+const favEvent = async (before: unknown, after: unknown, wallId = "w1", id = `event_${wallId}_${Math.random()}`,
+  source = db.doc(`usersv2/u1/images/${wallId}`).get(), time = new Date().toISOString()) => {
+  const snapshot = await source;
+  return onFavouriteWritten.run({
     id,
+    time,
     params: {uid: "u1", wallId},
-    data: {before: {data: () => before}, after: {data: () => after}},
+    data: {before: {data: () => before}, after: {
+      data: () => after, createTime: snapshot.createTime, updateTime: snapshot.updateTime,
+    }},
   } as unknown as Parameters<typeof onFavouriteWritten.run>[0]);
+};
 
 test("favourites add to favs, never take it below 0, and ignore other providers", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: NOW});
   const store = installFakeDb(t, {"wallpaper_stats/W1": {favs: 1}});
   const fav = {id: "w1", provider: "Prism"};
+  store.set("usersv2/u1/images/w1", fav);
   await favEvent(undefined, fav);
   assert.equal(store.get("wallpaper_stats/W1")?.favs, 2);
   assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
 
+  store.delete("usersv2/u1/images/w1");
   await favEvent(fav, undefined);
   await favEvent(fav, undefined);
   await favEvent(fav, undefined);
-  assert.equal(store.get("wallpaper_stats/W1")?.favs, 0);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
 
   await favEvent(undefined, {id: "w1", provider: "WallHaven"});
   await favEvent(fav, {...fav, thumb: "x"});
-  assert.equal(store.get("wallpaper_stats/W1")?.favs, 0);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
 });
 
 test("a favourite for a wall with no stats doc starts the counter, and a delete for it stays at 0", async (t) => {
   const store = installFakeDb(t);
-  await favEvent(undefined, {id: "new1", provider: "Prism"});
+  const fav = {id: "new1", provider: "Prism"};
+  store.set("usersv2/u1/images/new1", fav);
+  await favEvent(undefined, fav, "new1");
   assert.equal(store.get("wallpaper_stats/NEW1")?.favs, 1);
   await favEvent({provider: "Prism"}, undefined, "other9");
-  assert.equal(store.get("wallpaper_stats/OTHER9")?.favs, 0);
+  assert.equal(store.get("wallpaper_stats/OTHER9"), undefined);
 });
 
 const quests = (store: Map<string, Record<string, unknown>>) =>
@@ -140,9 +164,11 @@ test("a retried favourite trigger counts the quest once", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: NOW});
   const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
   const fav = {id: "w1", provider: "Prism"};
+  store.set("usersv2/u1/images/w1", fav);
   await favEvent(undefined, fav, "w1", "event_retry_1");
   await favEvent(undefined, fav, "w1", "event_retry_1");
   assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+  store.set("usersv2/u1/images/w2", {id: "w2", provider: "Prism"});
   await favEvent(undefined, {id: "w2", provider: "Prism"}, "w2", "event_retry_2");
   assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 2);
 });
@@ -157,7 +183,8 @@ test("a counted share feeds the share quest only", async (t) => {
 
 test("a quest failure does not fail the action", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: NOW});
-  installFakeDb(t);
+  const store = installFakeDb(t);
+  store.delete("usersv2/u1");
   assert.deepEqual(await call({wallId: "w1", action: "set"}), {counted: true});
 });
 
@@ -167,8 +194,195 @@ test("adding a favourite feeds the favourite quest, removing one does not", asyn
   const fav = {id: "w1", provider: "Prism"};
   await favEvent(fav, undefined);
   assert.equal(store.get("questEventRate/u1_2026-01-02_favourite"), undefined);
+  store.set("usersv2/u1/images/w1", fav);
   await favEvent(undefined, fav);
   assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
   await favEvent(undefined, {id: "w1", provider: "WallHaven"});
   assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+});
+
+test("favourite identity comes from the path and requires a scalar Prism provider and matching id", async (t) => {
+  const store = installFakeDb(t);
+  for (const fav of [{id: "target", provider: "Prism"}, {id: "w1", provider: ["Prism"]},
+    {id: "w1", provider: "Wallhaven"}, {provider: "Prism"}]) {
+    store.set("usersv2/u1/images/w1", fav);
+    await favEvent(undefined, fav);
+  }
+  assert.equal(store.has("wallpaper_stats/TARGET"), false);
+  assert.equal(store.has("wallpaper_stats/W1"), false);
+});
+
+test("unrelated favourite events never read membership, but provider flips still reconcile", async (t) => {
+  const fav = {id: "w1", provider: "Prism"};
+  const external = {...fav, provider: "Pexels"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": external});
+  const run = db.runTransaction.bind(db);
+  const transactions = t.mock.method(db, "runTransaction", run);
+  await favEvent(undefined, external);
+  await favEvent(undefined, {id: "target", provider: "Prism"});
+  assert.equal(transactions.mock.callCount(), 0);
+  store.set("usersv2/u1/images/w1", fav);
+  await favEvent(external, fav);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  store.set("usersv2/u1/images/w1", external);
+  await favEvent(fav, external);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 0);
+});
+
+test("case aliases and concurrent event retries contribute once and deleting one keeps the surviving alias", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const lower = {id: "w1", provider: "Prism"};
+  const upper = {id: "W1", provider: "wall_of_the_day"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": lower, "usersv2/u1/images/W1": upper});
+  await Promise.all([favEvent(undefined, lower, "w1", "retry"), favEvent(undefined, upper, "W1"),
+    favEvent(undefined, lower, "w1", "retry")]);
+  store.delete("usersv2/u1/images/w1");
+  await favEvent(lower, undefined);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+  store.delete("usersv2/u1/images/W1");
+  await favEvent(upper, undefined, "W1");
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 0);
+});
+
+test("delayed create/delete/create deliveries converge to actual current membership", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t);
+  await favEvent(fav, undefined, "w1", "delete-before-create");
+  await favEvent(undefined, fav, "w1", "stale-create");
+  assert.equal(store.get("wallpaper_stats/W1"), undefined);
+  store.set("usersv2/u1/images/w1", fav);
+  await favEvent(undefined, fav, "w1", "second-create");
+  await favEvent(fav, undefined, "w1", "delayed-delete");
+  await favEvent(undefined, fav, "w1", "stale-create");
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+  store.delete("usersv2/u1/images/w1");
+  await favEvent(undefined, fav, "w1", "late-second-create");
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 0);
+});
+
+test("failure staging the daily favourite rolls back aggregate and contribution, then retry counts once", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": fav});
+  const runTransaction = db.runTransaction.bind(db);
+  let fail = true;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    runTransaction(async (tx) => {
+      const set = tx.set.bind(tx);
+      tx.set = ((ref: admin.firestore.DocumentReference, ...args: unknown[]) => {
+        if (fail && ref.path.startsWith("wallpaper_stats_daily/")) throw new Error("daily unavailable");
+        return Reflect.apply(set, tx, [ref, ...args]);
+      }) as typeof tx.set;
+      return callback(tx);
+    }));
+  await assert.rejects(() => favEvent(undefined, fav), /daily unavailable/);
+  assert.equal(store.has("wallpaper_stats/W1"), false);
+  assert.equal(store.has("wallpaper_stats/W1/favouriteContributions/u1"), false);
+  fail = false;
+  await favEvent(undefined, fav);
+  await favEvent(undefined, fav);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+});
+
+test("a failed favourite quest is durable and retried without recounting membership or daily activity", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": fav});
+  const failure = failQuestWrites(t);
+  await assert.rejects(() => favEvent(undefined, fav, "w1", "failed-quest"), /quest/i);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+
+  failure.active = false;
+  await Promise.all([favEvent(undefined, fav, "w1", "failed-quest"),
+    favEvent(undefined, fav, "w1", "failed-quest")]);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+});
+
+test("pending favourite quests survive unlike and re-favourite without overwriting each other", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": fav});
+  const failure = failQuestWrites(t);
+  await assert.rejects(() => favEvent(undefined, fav), /quest/i);
+  store.delete("usersv2/u1/images/w1");
+  await assert.rejects(() => favEvent(fav, undefined), /quest/i);
+  store.set("usersv2/u1/images/w1", fav);
+  await assert.rejects(() => favEvent(undefined, fav), /quest/i);
+
+  failure.active = false;
+  await Promise.all([favEvent(undefined, fav), favEvent(fav, undefined), favEvent(undefined, fav)]);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 2);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 2);
+});
+
+test("expired pending favourites do not award tomorrow's quests or rewind current progress", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": fav});
+  const failure = failQuestWrites(t);
+  await assert.rejects(() => favEvent(undefined, fav), /quest/i);
+  t.mock.timers.setTime(NOW.getTime() + 86_400_000);
+  failure.active = false;
+  await call({wallId: "w2", action: "set"});
+  const currentQuests = store.get("usersv2/u1/private/economy");
+  await favEvent(undefined, fav);
+  assert.deepEqual(store.get("usersv2/u1/private/economy"), currentQuests);
+  assert.equal(store.has("questEventRate/u1_2026-01-02_favourite"), false);
+  assert.equal(store.has("questEventRate/u1_2026-01-03_favourite"), false);
+  assert.equal(store.get("usersv2/u1")?.coins, 0);
+});
+
+test("stale deletion and metadata updates may reconcile membership but never earn favourite quests", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}, "usersv2/u1/images/w1": fav});
+  await favEvent(fav, undefined);
+  await favEvent(fav, {...fav, thumb: "changed"});
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.has("questEventRate/u1_2026-01-02_favourite"), false);
+  // The later genuine create can claim this accepted positive transition, without counting it twice.
+  await favEvent(undefined, fav);
+  await favEvent(undefined, fav);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.favs, 1);
+});
+
+test("a create from an old favourite incarnation cannot reward the current recreated favourite", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}, "usersv2/u1/images/w1": fav});
+  const source = await db.doc("usersv2/u1/images/w1").get();
+  store.delete("usersv2/u1/images/w1");
+  store.set("usersv2/u1/images/w1", fav);
+  await favEvent(undefined, fav, "w1", "stale-incarnation", Promise.resolve(source));
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.has("questEventRate/u1_2026-01-02_favourite"), false);
+});
+
+test("legacy counts with no contribution ledger are gated, not doubled or silently left high on deletion", async (t) => {
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"wallpaper_stats/W1": {favs: 1}, "usersv2/u1/images/w1": fav});
+  store.delete(GATE);
+  await assert.rejects(() => favEvent(fav, fav), /backfill/i);
+  store.delete("usersv2/u1/images/w1");
+  await assert.rejects(() => favEvent(fav, undefined), /backfill/i);
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.has("wallpaper_stats/W1/favouriteContributions/u1"), false);
+});
+
+test("a previous-day create that is still live cannot earn today's favourite quest", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const fav = {id: "w1", provider: "Prism"};
+  const store = installFakeDb(t, {"usersv2/u1/images/w1": fav});
+  await favEvent(undefined, fav, "w1", "old-live-create", undefined, "2026-01-01T23:59:00Z");
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
+  assert.equal(store.has("questEventRate/u1_2026-01-02_favourite"), false);
 });

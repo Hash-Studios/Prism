@@ -36,6 +36,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   final FetchCategoryFeedUseCase _fetchCategoryFeedUseCase;
   final UserBlockRepository _userBlockRepository;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  int _generation = 0;
 
   void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<CategoryFeedState> emit) {
     if (event.blocked.isEmpty) return;
@@ -58,6 +59,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   }
 
   Future<void> _onCategorySelected(_CategorySelected event, Emitter<CategoryFeedState> emit) async {
+    final int generation = ++_generation;
     final CategoryEntity? previous = state.selectedCategory;
     final bool sameCategory =
         previous != null && previous.name == event.category.name && previous.source == event.category.source;
@@ -74,7 +76,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
 
     final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: event.category, refresh: true));
-    if (!_isSelected(event.category)) return;
+    if (generation != _generation || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) => emit(
@@ -98,20 +100,20 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
   }
 
-  bool _isSelected(CategoryEntity category) =>
-      state.selectedCategory?.name == category.name && state.selectedCategory?.source == category.source;
-
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<CategoryFeedState> emit) async {
-    if (state.isFetchingMore || !state.hasMore || state.selectedCategory == null) {
+    if (state.isFetchingMore ||
+        state.status == LoadStatus.loading ||
+        !state.hasMore ||
+        state.selectedCategory == null) {
       return;
     }
 
     final CategoryEntity selected = state.selectedCategory!;
+    final int generation = _generation;
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
 
     final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: selected, refresh: false));
-    // The user opened another category while this page loaded. Its items must not join the new list.
-    if (!_isSelected(selected)) return;
+    if (generation != _generation || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) {
@@ -136,11 +138,11 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
   }
 
-  void _onRefreshRequested(_RefreshRequested event, Emitter<CategoryFeedState> emit) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<CategoryFeedState> emit) async {
     final selected = state.selectedCategory;
     if (selected == null) {
       return;
     }
-    add(CategoryFeedEvent.categorySelected(category: selected));
+    await _onCategorySelected(_CategorySelected(category: selected), emit);
   }
 }
