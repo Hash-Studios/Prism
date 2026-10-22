@@ -43,6 +43,38 @@ class _FailingHttpClient implements HttpClient {
 }
 
 void main() {
+  testWidgets('a refresh failing after disposal does not read localization from the old context', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _DelayedRefreshFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await getCollectionWithName('empty').catchError((Object _) {});
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+
+    final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    expect(firestore.refreshStarted.isCompleted, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    firestore.release.complete();
+
+    await expectLater(refresh, completes);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('protected collection preview keeps the original empty', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -370,6 +402,20 @@ void main() {
 }
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _DelayedRefreshFirestore extends _FailingFirestore {
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag == 'collections.refreshCollectionWithName') {
+      refreshStarted.complete();
+      await release.future;
+      throw StateError('offline after disposal');
+    }
+    return super.query(spec, map);
+  }
+}
 
 /// Fails every query, like a device that lost its connection.
 class _FailingFirestore extends Fake implements FirestoreClient {

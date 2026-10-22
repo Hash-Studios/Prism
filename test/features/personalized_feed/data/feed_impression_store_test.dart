@@ -20,6 +20,28 @@ void main() {
     expect(store.recentShows(now.add(const Duration(minutes: 2))), <String, int>{'a': 2});
   });
 
+  test('corrupt impression and hidden JSON recover on the next write', () async {
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    store = FeedImpressionStore(settings);
+    for (final raw in <String>['{broken', '[]']) {
+      await settings.set('personalized_feed_impressions_v1', raw);
+      await settings.set('personalized_feed_hidden_v1', '{broken');
+      expect(store.recentShows(now), isEmpty);
+      await store.recordShown(<String>['restored'], now);
+      await store.hide('hidden', now);
+      expect(store.recentShows(now), <String, int>{'restored': 1, 'hidden': 99});
+    }
+  });
+
+  test('undoing a missing hide preserves impressions and the existing hidden set', () async {
+    await store.recordShown(<String>['shown'], now);
+    await store.hide('hidden', now);
+    await store.unhide('absent');
+    expect(store.recentShows(now), <String, int>{'shown': 1, 'hidden': 99});
+    await store.unhide('hidden');
+    expect(store.recentShows(now), <String, int>{'shown': 1});
+  });
+
   test('shows older than 14 days are dropped', () async {
     await store.recordShown(<String>['a'], now);
 

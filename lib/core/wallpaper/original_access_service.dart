@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_correlation.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -214,6 +215,7 @@ class OriginalAccessService {
       );
     }
     final grants = reply['grants'];
+    final balance = _grantBalance(reply);
     if (reply['status'] != 'granted' || grants is! List || grants.length != assetIds.length) {
       throw StateError('Original access unavailable');
     }
@@ -231,7 +233,16 @@ class OriginalAccessService {
       result[grant['assetId'] as String] = grant['url'] as String;
     }
     if (result.length != assetIds.length) throw StateError('Original access unavailable');
+    CoinsService.instance.applyServerBalance(balance, ownerId: owner);
     return {...local, ...result};
+  }
+
+  int _grantBalance(Map<String, dynamic> reply) {
+    final balance = reply['currentBalance'];
+    if (balance is! num || !balance.isFinite || balance < 0 || balance != balance.truncate()) {
+      throw StateError('Original access unavailable');
+    }
+    return balance.toInt();
   }
 
   Future<void> completePair(List<String> assetIds, {String? owner}) async {
@@ -245,8 +256,18 @@ class OriginalAccessService {
     return result.data;
   }
 
+  /// True when [url] is the full url `unlockDrop` gave this account for Prism Drop wall [id]. That wall stays
+  /// unreviewed and unprotected until its Drop is released, so neither the canonical lookup nor a grant can serve it.
+  static bool isUnlockedDropUrl(String url, String? id, WallpaperSource? source) =>
+      source == WallpaperSource.prism &&
+      id != null &&
+      url.isNotEmpty &&
+      CoinsService.instance.currentDropUnlocks[id]?.url == url;
+
   static bool requiresGrant(String url, String? id, WallpaperSource? source) =>
-      source == WallpaperSource.prism && !(id != null && BundledWallpapers.isStarterIdentity(id, source!));
+      source == WallpaperSource.prism &&
+      !(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
+      !isUnlockedDropUrl(url, id, source);
 
   Future<String> resolve({
     required String url,
@@ -292,6 +313,7 @@ class OriginalAccessService {
       );
     }
     final grantedUrl = reply['url'];
+    final balance = _grantBalance(reply);
     final expiresAt = reply['expiresAt'];
     final uri = grantedUrl is String ? Uri.tryParse(grantedUrl) : null;
     if (_owner() != owner ||
@@ -303,6 +325,7 @@ class OriginalAccessService {
         expiresAt <= _now().millisecondsSinceEpoch) {
       throw StateError('Original access unavailable');
     }
+    CoinsService.instance.applyServerBalance(balance, ownerId: owner);
     return grantedUrl as String;
   }
 }

@@ -984,6 +984,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountRemoveLink => 'लिंक हटाएँ';
 
   @override
+  String get accountRemovePhoto => 'फ़ोटो हटाएँ';
+
+  @override
   String get accountRemoveSavedOffline => 'ऑफ़लाइन सेव की गई चीज़ें हटाएँ';
 
   @override
@@ -1385,9 +1388,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'बैच पूरा हुआ';
-
-  @override
-  String get adminBatchCompleteLoading => 'बैच पूरा हुआ। अगला बैच लोड हो रहा है।';
 
   @override
   String get adminBodyLabel => 'मुख्य पाठ';
@@ -2565,6 +2565,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'छोड़ें';
+
+  @override
+  String get corePopupProfilePhoto => 'प्रोफ़ाइल फ़ोटो';
 
   @override
   String get corePopupWhatsNew => 'नया क्या है';
@@ -4846,6 +4849,11 @@ class AppLocalizationsHi extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · मुफ़्त · $countString बाकी';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label। मुफ़्त, यह वॉलपेपर आपका है';
   }
 
   @override

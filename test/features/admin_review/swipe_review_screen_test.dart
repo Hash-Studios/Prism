@@ -113,6 +113,30 @@ void main() {
     verifyNever(() => bloc.add(any(that: isA<ReviewBatchUndoRequested>())));
   });
 
+  testWidgets('busy moderation disables skip undo reserve and swipe input', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final wall = _wall('a', 'Sunset', origin: 'studio');
+    await pump(
+      tester,
+      ReviewBatchState(
+        status: ReviewBatchStatus.loaded,
+        walls: <FirestoreDocument>[wall],
+        isBusy: true,
+        undoStack: <UndoableAction>[UndoableAction(wall: wall, action: ReviewAction.approve)],
+      ),
+    );
+    for (final label in <String>['Skip', 'Undo', 'Reserve for Drop']) {
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(label)).getSemanticsData().hasAction(SemanticsAction.tap),
+        isFalse,
+      );
+    }
+    await tester.drag(find.text('Sunset'), const Offset(300, 0), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    verifyNever(() => bloc.add(any(that: isA<ReviewBatchSwipeApproved>())));
+    semantics.dispose();
+  });
+
   testWidgets('bottom bar actions expose tap semantics only while enabled', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     await pump(

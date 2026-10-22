@@ -259,6 +259,94 @@ void main() {
     }
   });
 
+  test('relation links fail closed when profile data is missing or unavailable', () async {
+    final PageLinkIntent followers = parser.parse(Uri.parse('/user/alice/followers')) as PageLinkIntent;
+    final PageLinkIntent following = parser.parse(Uri.parse('/user/alice/following')) as PageLinkIntent;
+
+    expect(await routeForPageLink(followers, profileLookup: (_) async => null), isNull);
+    expect(await routeForPageLink(followers, profileLookup: (_) async => throw StateError('offline')), isNull);
+    expect(await routeForPageLink(following, profileLookup: (_) async => throw StateError('offline')), isNull);
+  });
+
+  test('external download links fail closed when acquisition fails or returns no file', () async {
+    const FeedItemEntity wallpaper = WallhavenFeedItem(
+      id: 'wh-wall',
+      wallpaper: WallhavenWallpaper(
+        core: WallpaperCore(
+          id: 'wh-wall',
+          source: WallpaperSource.wallhaven,
+          fullUrl: 'https://w.wallhaven.cc/full/ab/wall.jpg',
+          thumbnailUrl: 'https://th.wallhaven.cc/small/ab/thumb.jpg',
+        ),
+      ),
+    );
+    final PageLinkIntent intent =
+        parser.parse(Uri.parse('/download-wallpaper?wallpaperId=wh-wall&provider=wallhaven')) as PageLinkIntent;
+
+    expect(
+      await routeForPageLink(
+        intent,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => wallpaper,
+        localFileResolver:
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+                throw StateError('download failed'),
+      ),
+      isNull,
+    );
+
+    final Directory directory = await Directory.systemTemp.createTemp('deep-link-download-');
+    addTearDown(() => directory.delete(recursive: true));
+    final File image = File('${directory.path}/wall.jpg')..writeAsBytesSync(<int>[1]);
+    final PageRouteInfo? downloaded = await routeForPageLink(
+      intent,
+      wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => wallpaper,
+      localFileResolver: ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+          image,
+    );
+    expect(downloaded, isA<DownloadWallpaperRoute>());
+    expect((downloaded!.args! as DownloadWallpaperRouteArgs).source, WallpaperSource.wallhaven);
+    expect(
+      await routeForPageLink(
+        intent,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => wallpaper,
+        localFileResolver:
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+                File('/path/that/does/not/exist'),
+      ),
+      isNull,
+    );
+  });
+
+  test('provider-backed image actions reject missing lookups and untrusted provider URLs', () async {
+    final PageLinkIntent position =
+        parser.parse(Uri.parse('/wallpaper-position?wallpaperId=wall1&provider=wallhaven')) as PageLinkIntent;
+    final PageLinkIntent preview =
+        parser.parse(Uri.parse('/photo-preview?wallpaperId=wall1&provider=wallhaven')) as PageLinkIntent;
+
+    expect(
+      await routeForPageLink(
+        position,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => null,
+      ),
+      isNull,
+    );
+    expect(
+      await routeForPageLink(
+        preview,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
+            _wallhavenWallpaper('https://evil.example/wall.jpg'),
+      ),
+      isNull,
+    );
+    final PageRouteInfo? trustedPosition = await routeForPageLink(
+      position,
+      wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
+          _wallhavenWallpaper('https://w.wallhaven.cc/full/ab/wall.jpg'),
+    );
+    expect(trustedPosition, isA<WallpaperPositionRoute>());
+    expect((trustedPosition!.args! as WallpaperPositionRouteArgs).entryPoint, 'deep_link');
+  });
+
   test('non-canonical Prism thumbnails are not trusted', () async {
     const endpoint = 'https://images.example.com/private/wall1';
     for (final url in [
@@ -300,6 +388,18 @@ FeedItemEntity _wallpaper(String url) => PrismFeedItem(
   id: 'wall1',
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: 'wall1', source: WallpaperSource.prism, fullUrl: url, thumbnailUrl: url),
+  ),
+);
+
+FeedItemEntity _wallhavenWallpaper(String url) => WallhavenFeedItem(
+  id: 'wall1',
+  wallpaper: WallhavenWallpaper(
+    core: WallpaperCore(
+      id: 'wall1',
+      source: WallpaperSource.wallhaven,
+      fullUrl: url,
+      thumbnailUrl: 'https://th.wallhaven.cc/small/ab/thumb.jpg',
+    ),
   ),
 );
 

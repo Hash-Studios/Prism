@@ -85,9 +85,12 @@ dependencies:
   url_launcher: ^6.3.2
 
 dev_dependencies:
+  analyzer: ^10.0.1
   auto_route_generator: ^10.4.0
   bloc_test: ^9.1.7
   build_runner: ^2.4.14
+  firebase_core_platform_interface: ^8.1.1
+  firebase_remote_config_platform_interface: ^3.0.7
   flutter_launcher_icons: ^0.11.0
   flutter_test:
     sdk: flutter

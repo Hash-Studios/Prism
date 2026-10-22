@@ -94,11 +94,11 @@ test("a follow by a user who is not blocked stays in both arrays", async (t) => 
   assert.deepEqual(store.get("usersv2/kim")?.following, ["sam@example.com"]);
 });
 
-test("the trigger keeps usernameLower and nameLower in sync in one write", async (t) => {
+test("the trigger syncs nameLower but cannot publish an unreserved username", async (t) => {
   installFakeDb(t);
   const {event, updates} = followEvent({email: "sam@example.com", username: "SamK", name: "Sam K", followers: []});
   await onFollowCreated.run(event);
-  assert.deepEqual(updates, [{usernameLower: "samk", nameLower: "sam k"}]);
+  assert.deepEqual(updates, [{nameLower: "sam k"}]);
 
   const synced = followEvent({
     email: "sam@example.com", username: "SamK", usernameLower: "samk", name: "Sam K", nameLower: "sam k", followers: [],

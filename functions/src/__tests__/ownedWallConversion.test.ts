@@ -575,12 +575,35 @@ function mockAuth(t: TestContext, users: Record<string, {email: string; disabled
   });
 }
 
-test("the app's AI community id is derived from the generation id", () => {
-  assert.equal(aiCommunityId("gen_mlt7o22q_7a9688a037a47de6"), "AIGENMLT7O22");
-  assert.equal(aiCommunityId("gen_mqc4rojc_ebbaa0bef876eff2"), "AIGENMQC4ROJ");
+test("AI2 identity retains the random suffix and adjacent milliseconds and is stable on replay", () => {
+  const generation = "gen_mlt7o22q_7a9688a037a47de6";
+  assert.equal(aiCommunityId(generation), "AI2B83C297CF7C420FF33FA03823705EA95");
+  assert.equal(aiCommunityId("gen_mlt7o22q_7a9688a037a47de7"), "AI22E20D7B46808AF6BEAD11C9F882793C6");
+  assert.equal(aiCommunityId("gen_mlt7o22r_7a9688a037a47de6"), "AI24018382BFB4145D280FAE86BEE02B71A");
+  assert.equal(aiCommunityId(generation), "AI2B83C297CF7C420FF33FA03823705EA95");
+});
+
+test("generation expiry uses the full Worker timestamp", () => {
   assert.equal(aiRecordExpired(OLD_GEN), true);
   assert.equal(aiRecordExpired(NEW_GEN), false);
   assert.equal(aiRecordExpired("gen_nottime_xyz"), false);
+});
+
+test("an old-format AI wall still proves, converts and replays with its generation receipt", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const generation = "gen_mlt7o22q_7a9688a037a47de6";
+  const id = "AIGENMLT7O22";
+  const wall = aiWall(generation, {id});
+  const store = installFakeDb(t, {[`walls/${id}`]: wall,
+    [`aiGenerationReceipts/${generation}`]: aiReceipt(generation)});
+  installNetwork(t, await aiSources(generation));
+  mockAuth(t);
+  assert.equal(await convertApprovedWall(id), "converted");
+  assert.deepEqual((store.get(`ownedAssets/${id}`) as Doc).provenance,
+    {kind: "ai", generationId: generation, uid: "creator-1"});
+  assert.equal(store.get(`walls/${id}`)?.originalProtected, true);
+  assert.equal(await convertApprovedWall(id), "skipped");
 });
 
 for (const shape of ["unwatermarked original", "public image for both roles"]) {

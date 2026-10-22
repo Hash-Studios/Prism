@@ -1283,3 +1283,18 @@ test("githubDeleteFile refuses an unverified admin_users email and a plain user"
     }), {code: "permission-denied"});
   }
 });
+
+test("githubDeleteFile denies an unverified notification recipient before touching GitHub", async (t) => {
+  testGithubEnvironment(t);
+  uploadStore(t, {"config/adminNotifications": {emails: ["boss@x.com"]}});
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    requests++;
+    return {ok: true, json: async () => ({})};
+  });
+  await assert.rejects(() => run(githubDeleteFile, {
+    auth: {uid: "impostor", token: {email: "boss@x.com", email_verified: false}},
+    data: {repo: "walls", path: "thumb_a.jpg", message: "delete", sha: "sha"},
+  }), {code: "permission-denied"});
+  assert.equal(requests, 0);
+});

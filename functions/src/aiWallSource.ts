@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {STUDIO_ASSET_BASE} from "./studio/assetSource";
 
@@ -35,8 +36,13 @@ async function readJsonBody(response: Response): Promise<unknown> {
   }
 }
 
-/** Port of `aiCommunityId` in lib/features/ai_wallpaper/views/ai_wallpaper_helpers.dart. */
+/** AI2 + first 128 SHA-256 bits of the full UTF-8 generation id, uppercase hex. Shared with Dart's aiCommunityId. */
 export function aiCommunityId(generationId: string): string {
+  return `AI2${createHash("sha256").update(generationId, "utf8").digest("hex").slice(0, 32).toUpperCase()}`;
+}
+
+/** Read compatibility only. Old app builds discarded the random suffix; never use this to create new ids. */
+function legacyAiCommunityId(generationId: string): string {
   const sanitized = generationId.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   return `AI${sanitized ? sanitized.slice(0, 10) : "GEN"}`;
 }
@@ -61,7 +67,8 @@ export function aiRecordExpired(generationId: string, nowMs = Date.now()): boole
 export function parseAiSource(data: admin.firestore.DocumentData): AiSource | null {
   if (data.isAiGenerated !== true || data.origin === "studio" || data.email === STUDIO_ACCOUNT.email) return null;
   const generationId = data.aiGenerationId;
-  if (typeof generationId !== "string" || !GENERATION_ID.test(generationId) || data.id !== aiCommunityId(generationId)) {
+  if (typeof generationId !== "string" || !GENERATION_ID.test(generationId) ||
+    (data.id !== aiCommunityId(generationId) && data.id !== legacyAiCommunityId(generationId))) {
     return null;
   }
   const thumbKey = `ai/public/${generationId}.png`;

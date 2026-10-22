@@ -222,7 +222,8 @@ void main() {
       ];
     });
 
-    expect(await WallpaperService.setWallpaperFromSource(source, WallpaperTarget.home), isTrue);
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(source, WallpaperTarget.home);
+    expect(result.status, WallpaperSetStatus.applied);
     expect(request?.source?.filePath, expectedPath);
     expect(request?.source?.kind, wallpaper_api.WallpaperSourceKindData.filePath);
     expect(request?.target, wallpaper_api.WallpaperTargetData.home);
@@ -246,7 +247,8 @@ void main() {
       ];
     });
 
-    expect(await WallpaperService.setWallpaperFromSource(source, WallpaperTarget.home), isTrue);
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(source, WallpaperTarget.home);
+    expect(result.status, WallpaperSetStatus.applied);
     expect(request?.source?.filePath, expectedPath);
     expect(request?.source?.kind, wallpaper_api.WallpaperSourceKindData.filePath);
     expect(request?.target, wallpaper_api.WallpaperTargetData.home);

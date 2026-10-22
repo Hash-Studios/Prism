@@ -47,7 +47,16 @@ void main() {
     expect(wallpaper.isUnlockedFor(StreakStatus.empty, 99), isFalse);
   });
 
-  test('a missing streak requirement counts as met even when the coin price is not', () {
-    expect(_wallpaper(cost: 100).isUnlockedFor(StreakStatus.empty, 0), isTrue);
+  test('a coin-only requirement needs the full balance', () {
+    expect(_wallpaper(cost: 100).isUnlockedFor(StreakStatus.empty, 0), isFalse);
+    expect(_wallpaper(cost: 100).isUnlockedFor(StreakStatus.empty, 99), isFalse);
+    expect(_wallpaper(cost: 100).isUnlockedFor(StreakStatus.empty, 100), isTrue);
+  });
+
+  test('a days-only requirement needs an active qualifying streak', () {
+    expect(_wallpaper(days: 5).isUnlockedFor(StreakStatus.empty, 1000), isFalse);
+    expect(_wallpaper(days: 5).isUnlockedFor(_streak(active: false, day: 5), 0), isFalse);
+    expect(_wallpaper(days: 5).isUnlockedFor(_streak(active: true, day: 4), 0), isFalse);
+    expect(_wallpaper(days: 5).isUnlockedFor(_streak(active: true, day: 5), 0), isTrue);
   });
 }

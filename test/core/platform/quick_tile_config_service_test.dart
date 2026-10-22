@@ -1,12 +1,53 @@
+import 'dart:async';
+
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('a session change while preferences load prevents stale WOTD metadata and URL writes', () async {
+    const channel = MethodChannel('plugins.flutter.io/shared_preferences');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final started = Completer<void>();
+    final release = Completer<void>();
+    final calls = <String>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call.method);
+      if (call.method == 'getAll') {
+        started.complete();
+        await release.future;
+        return <String, Object>{};
+      }
+      return true;
+    });
+    SharedPreferences.resetStatic();
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+    });
+    var current = true;
+    final pending = QuickTileConfigService.pushWotdUrl(
+      '',
+      wallDocumentId: 'old-owner-doc',
+      featuredDayUtc: DateTime.utc(2026, 8, 24),
+      retainedAssetKey: 'wotd:old-owner-doc',
+      isCurrent: () => current,
+    );
+    await started.future;
+    current = false;
+    release.complete();
+    await pending;
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(QuickTileConfigService.wotdRetainedKey), isNull);
+    expect(prefs.getString(PersistenceKeys.quickTileWotdUrl), isNull);
+    expect(calls, <String>['getAll']);
+  });
 
   test('invalid native targets do not become both home and lock', () async {
     for (final target in <String>['', 'invalid', 'HOME']) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_error.dart';
@@ -9,6 +10,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -74,13 +76,9 @@ bool isAiAspectRatioMismatch({required AiGenerationRecord generated, required St
   return (generated.width / generated.height - tw / th).abs() > 0.08;
 }
 
-String aiCommunityId(String generationId) {
-  final String sanitized = generationId.replaceAll(RegExp('[^A-Za-z0-9]'), '').toUpperCase();
-  final String suffix = sanitized.isEmpty
-      ? 'GEN'
-      : sanitized.substring(0, sanitized.length < 10 ? sanitized.length : 10);
-  return 'AI$suffix';
-}
+/// AI2 + first 128 SHA-256 bits of the full UTF-8 generation id, uppercase hex. Shared with functions/aiWallSource.
+String aiCommunityId(String generationId) =>
+    'AI2${sha256.convert(utf8.encode(generationId)).toString().substring(0, 32).toUpperCase()}';
 
 Future<File> aiDownloadToTempFile(String url) async {
   final File source = await OfflineAssetStore.instance.resolve(url).timeout(aiAssetTransferTimeout);

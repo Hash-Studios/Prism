@@ -1278,6 +1278,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "Foto entfernen",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "Offline gespeicherte Inhalte entfernen",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -1808,7 +1812,6 @@
   "adminBackToReviewList": "Zurück zur Prüfliste",
   "adminBatchActionFailed": "Diese Prüfaktion konnte nicht abgeschlossen werden. Versuch es erneut.",
   "adminBatchComplete": "Stapel abgeschlossen",
-  "adminBatchCompleteLoading": "Stapel abgeschlossen. Der nächste Stapel wird geladen.",
   "adminBodyLabel": "Text",
   "adminBodyRequired": "Der Text ist erforderlich",
   "adminBy": "Von",
@@ -2483,6 +2486,10 @@
   "corePopupDiscard": "Verwerfen",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "Profilbild",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "Neuigkeiten",
   "@corePopupWhatsNew": {
@@ -4061,6 +4068,14 @@
       "count": {
         "type": "int",
         "format": "decimalPattern"
+      }
+    }
+  },
+  "economyDownloadFreeOwnedSemantics": "{label}. Kostenlos, dieses Hintergrundbild gehört dir",
+  "@economyDownloadFreeOwnedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
       }
     }
   },

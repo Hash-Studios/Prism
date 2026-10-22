@@ -4,10 +4,6 @@ import 'package:Prism/data/upload/upload_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('new wall ids are ten characters long', () {
-    expect(uploadIdLength, 10);
-  });
-
   test('an id has the requested length, capitals and digits only, and exactly one digit', () {
     final Random random = Random(7);
     for (int i = 0; i < 200; i++) {

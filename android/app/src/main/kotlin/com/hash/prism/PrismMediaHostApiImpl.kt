@@ -24,8 +24,6 @@ import com.hash.prism.pigeon.SaveMediaRequest
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import java.util.UUID
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.RejectedExecutionException
@@ -326,14 +324,6 @@ private fun copyFromUri(context: Context, uri: Uri, file: File) {
 
 internal fun mediaFailureCode(fallback: String, error: Throwable): String =
     if (error is RejectedExecutionException) "MEDIA_BUSY" else fallback
-
-internal fun mediaFailureMessage(error: Throwable): String = when {
-    error is RejectedExecutionException -> "Another media operation is in progress. Please try again."
-    error is IllegalStateException && error.message == ENGINE_DETACHED_MESSAGE -> ENGINE_DETACHED_MESSAGE
-    error is UnknownHostException || error is SocketTimeoutException -> "Check your connection and try again."
-    error is OutOfMemoryError -> "This image is too large to process."
-    else -> "Something went wrong. Try again."
-}
 
 private fun operationError(code: String, error: Throwable) =
     OperationResult(success = false, errorCode = mediaFailureCode(code, error))

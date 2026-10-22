@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test, {beforeEach} from "node:test";
+import * as admin from "firebase-admin";
+import {db} from "../common";
 import {DEFAULT_ECONOMY, dayKey, resetEconomyCache, weekKey} from "../economy";
 import {
   applyQuestEvent,
@@ -146,7 +148,131 @@ test("progressQuestForUser counts a repeated eventId once", async (t) => {
 
 test("progressQuestForUser never throws", async (t) => {
   installFakeDb(t);
-  await progressQuestForUser("missing-user", "share", "share_1", NOW);
+  assert.equal(await progressQuestForUser("missing-user", "share", "share_1", NOW), false);
+});
+
+test("durable favourite consumption and quest payment roll back together and concurrent recovery pays once", async (t) => {
+  t.mock.method(Date, "now", () => NOW);
+  const pendingPath = "wallpaper_stats/W1/favouriteContributions/user-1/pendingQuests/1";
+  const state = seedState({items: [
+    {id: "fav_3", event: "favourite", target: 3, progress: 2, claimed: false},
+    ...seedState().items.filter((item) => item.event !== "favourite").slice(0, 2),
+  ]});
+  const store = installFakeDb(t, {
+    [USER]: userDoc(), [PRIVATE]: {rev: 1, quests: state},
+    [pendingPath]: {acceptedAt: admin.firestore.Timestamp.fromMillis(NOW)},
+  });
+  const pending = db.doc(pendingPath);
+  const run = db.runTransaction.bind(db);
+  let fail = true;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    run(async (tx) => {
+      const remove = tx.delete.bind(tx);
+      tx.delete = ((ref: admin.firestore.DocumentReference) => {
+        if (fail && ref.path === pendingPath) throw new Error("pending consumption unavailable");
+        return remove(ref);
+      }) as typeof tx.delete;
+      return callback(tx);
+    }));
+  assert.equal(await progressQuestForUser(UID, "favourite", "accepted-1", NOW, pending), false);
+  assert.equal(store.get(USER)?.coins, 100);
+  assert.equal(store.has(`questEventRate/${UID}_${dayKey(NOW)}_favourite`), false);
+  assert.deepEqual(store.get(PRIVATE)?.quests, state);
+  assert.equal(store.has(pendingPath), true);
+  fail = false;
+  assert.deepEqual(await Promise.all([
+    progressQuestForUser(UID, "favourite", "accepted-1", NOW, pending),
+    progressQuestForUser(UID, "favourite", "accepted-1", NOW, pending),
+  ]), [true, true]);
+  assert.equal(store.has(pendingPath), false);
+  assert.equal(store.get(USER)?.coins, 100 + DEFAULT_ECONOMY.award.questCoins);
+  assert.equal(store.get(USER)?.xp, DEFAULT_ECONOMY.award.questXp);
+  assert.equal(store.get(`questEventRate/${UID}_${dayKey(NOW)}_favourite`)?.count, 1);
+});
+
+for (const deleted of [false, true]) {
+  test(`durable favourite work is consumed without credit or private-state recreation for ${deleted ? "deleted" : "missing"} profiles`, async (t) => {
+    t.mock.method(Date, "now", () => NOW);
+    const pendingPath = `wallpaper_stats/W1/favouriteContributions/${UID}/pendingQuests/1`;
+    const store = installFakeDb(t, {
+      ...(deleted ? {[USER]: userDoc({deleted: true})} : {}),
+      [pendingPath]: {acceptedAt: admin.firestore.Timestamp.fromMillis(NOW)},
+    });
+    const originalUser = store.get(USER);
+    assert.equal(await progressQuestForUser(UID, "favourite", "deleted-favourite", NOW, db.doc(pendingPath)), true);
+    assert.equal(store.has(pendingPath), false);
+    assert.deepEqual(store.get(USER), originalUser);
+    assert.equal(store.has(PRIVATE), false);
+    assert.equal(store.has(`questEventRate/${UID}_${dayKey(NOW)}_favourite`), false);
+    assert.equal([...store.keys()].some((path) => path.startsWith("coinTransactions/")), false);
+  });
+}
+
+test("durable favourite recovery cannot recreate private state after the deletion barrier closes", async (t) => {
+  t.mock.method(Date, "now", () => NOW);
+  const pendingPath = `wallpaper_stats/W1/favouriteContributions/${UID}/pendingQuests/1`;
+  const originalUser = userDoc({xp: 250});
+  const store = installFakeDb(t, {
+    [USER]: originalUser,
+    [`creatorDeletionState/${UID}`]: {closed: true},
+    [pendingPath]: {acceptedAt: admin.firestore.Timestamp.fromMillis(NOW)},
+  });
+  assert.equal(store.has(PRIVATE), false);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    assert.equal(await progressQuestForUser(UID, "favourite", "deleting-favourite", NOW, db.doc(pendingPath)), true);
+    assert.equal(store.has(pendingPath), false);
+    assert.deepEqual(store.get(USER), originalUser);
+    assert.equal([...store.keys()].some((path) => path.startsWith(`${USER}/`)), false);
+    assert.equal([...store.keys()].some((path) => path.startsWith("questEventRate/")), false);
+    assert.equal([...store.keys()].some((path) => path.startsWith("coinTransactions/")), false);
+  }
+  // Completing root anonymization does not recursively remove any descendants recreated during deletion.
+  store.set(USER, {deleted: true});
+  assert.equal([...store.keys()].some((path) => path.startsWith(`${USER}/`)), false);
+});
+
+test("durable favourite payment reads the deletion barrier in the same transaction", async (t) => {
+  t.mock.method(Date, "now", () => NOW);
+  const pendingPath = `wallpaper_stats/W1/favouriteContributions/${UID}/pendingQuests/1`;
+  const state = seedState({items: [
+    {id: "fav_3", event: "favourite", target: 3, progress: 2, claimed: false},
+    ...seedState().items.filter((item) => item.event !== "favourite").slice(0, 2),
+  ]});
+  const store = installFakeDb(t, {
+    [USER]: userDoc(), [PRIVATE]: {rev: 1, quests: state},
+    [pendingPath]: {acceptedAt: admin.firestore.Timestamp.fromMillis(NOW)},
+  });
+  const run = db.runTransaction.bind(db);
+  let barrierWasRead = false;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    run(async (tx) => {
+      const reads = t.mock.method(tx, "get");
+      const result = await callback(tx);
+      barrierWasRead = reads.mock.calls.some(({arguments: [ref]}) =>
+        "path" in ref && ref.path === `creatorDeletionState/${UID}`);
+      return result;
+    }));
+  assert.equal(await progressQuestForUser(UID, "favourite", "open-barrier-favourite", NOW, db.doc(pendingPath)), true);
+  assert.equal(barrierWasRead, true);
+  assert.equal(store.has(pendingPath), false);
+  assert.equal(store.get(USER)?.coins, 100 + DEFAULT_ECONOMY.award.questCoins);
+  assert.equal(store.get(USER)?.xp, DEFAULT_ECONOMY.award.questXp);
+});
+
+test("a durable worker crossing midnight cannot rewind newer quest state using its captured clock", async (t) => {
+  const tomorrow = NOW + 86_400_000;
+  t.mock.method(Date, "now", () => tomorrow);
+  const pendingPath = `wallpaper_stats/W1/favouriteContributions/${UID}/pendingQuests/1`;
+  const current = {rev: 9, quests: buildQuestState(null, tomorrow, false)};
+  const store = installFakeDb(t, {
+    [USER]: userDoc(), [PRIVATE]: current,
+    [pendingPath]: {acceptedAt: admin.firestore.Timestamp.fromMillis(NOW)},
+  });
+  assert.equal(await progressQuestForUser(UID, "favourite", "midnight-pending", NOW, db.doc(pendingPath)), true);
+  assert.equal(store.has(pendingPath), false);
+  assert.deepEqual(store.get(PRIVATE), current);
+  assert.equal(store.has(`questEventRate/${UID}_${dayKey(NOW)}_favourite`), false);
+  assert.equal(store.has(`questEventRate/${UID}_${dayKey(tomorrow)}_favourite`), false);
 });
 
 test("the callable takes only the client events and ignores the rest", async (t) => {

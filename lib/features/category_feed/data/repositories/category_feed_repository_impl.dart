@@ -11,7 +11,7 @@ import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
@@ -40,13 +40,14 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
   final PrismWallpaperRepository _prismRepository;
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
+  final Map<String, int> _generations = <String, int>{};
 
   static const int _feedTtlHours = 6;
   static const Duration _prismFirstTimeout = Duration(seconds: 10);
 
   @override
   Future<Result<List<CategoryEntity>>> getCategories() async {
-    final categories = category_data.categoryDefinitions
+    final categories = CategoryCatalog.current
         .map(
           (def) => CategoryEntity(
             name: def.name,
@@ -65,12 +66,17 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
   @override
   Future<Result<CategoryFeedPage>> fetchCategoryFeed({required CategoryEntity category, required bool refresh}) async {
     final mode = refresh ? 'r' : 'm';
+    final String scope = _scopeFor(category);
+    final int generation = refresh ? (_generations[scope] ?? 0) + 1 : (_generations[scope] ?? 0);
+    _generations[scope] = generation;
+    bool isCurrent() => _generations[scope] == generation;
 
     try {
       final Future<List<FeedItemEntity>> prismFirst = refresh
           ? _fetchPrismFirst(category).timeout(_prismFirstTimeout, onTimeout: () => const <FeedItemEntity>[])
           : Future.value(const <FeedItemEntity>[]);
       final fetched = await _fetchFromSource(category, refresh: refresh);
+      if (!isCurrent()) return Result.error(const UnknownFailure('Category request was invalidated'));
       final CategoryFeedPage? providerPage = fetched.data;
       final page = providerPage == null
           ? null
@@ -88,13 +94,14 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         }
         return await _cachedOrFailure(category: category, mode: mode, failure: failure);
       }
+      if (!isCurrent()) return Result.error(const UnknownFailure('Category request was invalidated'));
 
       try {
-        await _writeCache(category, page, append: !refresh);
+        await _writeCache(category, page, append: !refresh, isCurrent: isCurrent);
       } catch (error) {
         logger.w('[CategoryFeedRepository] feed cache write failed: $error');
       }
-      _remember(page.items);
+      if (isCurrent()) _remember(page.items);
 
       logger.i(
         '[CategoryFeedRepository] fetchCategoryFeed success',
@@ -215,7 +222,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return Result.success(CategoryFeedPage(items: walls.map(toItem).toList(growable: false), hasMore: hasMore));
   }
 
-  Future<void> _writeCache(CategoryEntity category, CategoryFeedPage page, {required bool append}) async {
+  Future<void> _writeCache(
+    CategoryEntity category,
+    CategoryFeedPage page, {
+    required bool append,
+    required bool Function() isCurrent,
+  }) async {
     List<FeedItemEntity> items = page.items;
     if (append) {
       final CategoryFeedPage? previous = await _readCached(category);
@@ -227,6 +239,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         items = merged.values.toList(growable: false);
       }
     }
+    if (!isCurrent()) return;
     while (items.length > 240 ||
         utf8
                 .encode(

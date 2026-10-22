@@ -71,7 +71,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   void _onPanStart(DragStartDetails details) {
-    if (_phase == _SwipePhase.animating) return;
+    if (_phase == _SwipePhase.animating || _bloc.state.isBusy) return;
     setState(() {
       _phase = _SwipePhase.dragging;
     });
@@ -131,6 +131,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   void _startDismissAnimation({required bool approve, String? reason}) {
+    if (_bloc.state.isBusy) return;
     PrismHaptics.impact();
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     _startAnimation(
@@ -192,13 +193,11 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           listenWhen: (previous, current) => current.undoCount > previous.undoCount,
           listener: (context, state) => toasts.success(context.l10n.adminUndoSuccessful),
           child: BlocConsumer<ReviewBatchBloc, ReviewBatchState>(
+            listenWhen: (previous, current) =>
+                previous.status != current.status || previous.errorMessage != current.errorMessage,
             listener: (context, state) {
               if (state.status == ReviewBatchStatus.error && state.errorMessage != null) {
                 toasts.error(context.l10n.adminBatchActionFailed);
-              }
-              if (state.status == ReviewBatchStatus.batchComplete) {
-                toasts.success(context.l10n.adminBatchCompleteLoading);
-                _bloc.add(const ReviewBatchNextBatchRequested());
               }
             },
             builder: (context, state) {
@@ -330,13 +329,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   void _reserveForDrop() {
-    if (_phase == _SwipePhase.animating) return;
+    if (_phase == _SwipePhase.animating || _bloc.state.isBusy) return;
     PrismHaptics.tap();
     _bloc.add(const ReviewBatchSwipeReserved());
   }
 
   void _dismissFromSemantics({required bool approve}) {
-    if (_phase == _SwipePhase.animating) return;
+    if (_phase == _SwipePhase.animating || _bloc.state.isBusy) return;
     if (approve) {
       _startDismissAnimation(approve: true);
     } else {
@@ -351,7 +350,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         _ActionButton(
           icon: Icons.undo_rounded,
           label: context.l10n.adminUndo,
-          enabled: state.canUndo,
+          enabled: state.canUndo && !state.isBusy,
           onTap: () {
             PrismHaptics.tap();
             _bloc.add(const ReviewBatchUndoRequested());
@@ -373,12 +372,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             icon: Icons.auto_awesome_motion_outlined,
             label: context.l10n.adminReserve,
             semanticLabel: context.l10n.adminReserveForDrop,
+            enabled: !state.isBusy,
             onTap: _reserveForDrop,
           ),
         _ActionButton(
           icon: Icons.skip_next_rounded,
           label: context.l10n.adminSkip,
-          enabled: state.hasMoreWalls,
+          enabled: state.hasMoreWalls && !state.isBusy,
           onTap: () {
             PrismHaptics.tap();
             _bloc.add(const ReviewBatchSwipeSkipped());

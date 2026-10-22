@@ -34,6 +34,8 @@ class _FakeProfiles implements PublicProfileRepository {
   final Map<String, String> uidByEmail = <String, String>{};
   final List<String> reads = <String>[];
   bool failing = false;
+  Completer<void>? readGate;
+  final readStarted = Completer<void>();
 
   @override
   Future<void> clearForUser(String userId) async {}
@@ -41,24 +43,26 @@ class _FakeProfiles implements PublicProfileRepository {
   @override
   Stream<PublicProfileEntity?> watchProfile(String identifier) {
     reads.add(identifier);
+    if (!readStarted.isCompleted) readStarted.complete();
     if (failing) return Stream<PublicProfileEntity?>.error(StateError('offline'));
     final String? uid = uidByEmail[identifier.toLowerCase()];
-    return Stream<PublicProfileEntity?>.value(
-      uid == null
-          ? null
-          : PublicProfileEntity(
-              id: uid,
-              name: 'Name',
-              email: identifier,
-              username: '',
-              profilePhoto: '',
-              bio: '',
-              followers: const <String>[],
-              following: const <String>[],
-              links: const <String, String>{},
-              coverPhoto: '',
-            ),
-    );
+    final PublicProfileEntity? profile = uid == null
+        ? null
+        : PublicProfileEntity(
+            id: uid,
+            name: 'Name',
+            email: identifier,
+            username: '',
+            profilePhoto: '',
+            bio: '',
+            followers: const <String>[],
+            following: const <String>[],
+            links: const <String, String>{},
+            coverPhoto: '',
+          );
+    return readGate == null
+        ? Stream<PublicProfileEntity?>.value(profile)
+        : Stream<PublicProfileEntity?>.fromFuture(readGate!.future.then((_) => profile));
   }
 
   @override
@@ -86,6 +90,26 @@ void main() {
     expect(creatorPostsTopicFromUid('uidAna'), 'posts_uidAna');
     expect(creatorPostsTopicFromUid(' a/b+c '), 'posts_abc');
     expect(creatorPostsTopicFromUid('  '), isNull);
+  });
+
+  test('invalidated creator lookup neither caches its result nor dispatches UID topics or another batch', () async {
+    bool current = true;
+    profiles.readGate = Completer<void>();
+    final pending = setCreatorPostsTopics(
+      messaging,
+      <String>['ana@example.com', for (int i = 0; i < 10; i++) 'creator$i@example.com'],
+      subscribed: false,
+      sourceTag: 'test',
+      isCurrent: () => current,
+    );
+    await profiles.readStarted.future;
+    expect(profiles.reads, hasLength(10));
+    current = false;
+    profiles.readGate!.complete();
+    await pending;
+    expect(profiles.reads, hasLength(10));
+    expect(messaging.unsubscribed.where((topic) => topic.startsWith('posts_')), isEmpty);
+    expect(settings.get<String>('creatorUidByEmail', defaultValue: ''), isEmpty);
   });
 
   test('following joins the legacy topic and posts_<uid> using a uid the caller knows', () async {

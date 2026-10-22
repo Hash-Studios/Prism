@@ -373,6 +373,7 @@ void main() {
     late _MockToggleFavouriteWallUseCase toggleUseCase;
     late List<String> toasts;
     late List<MethodCall> shareCalls;
+    late Completer<MethodCall> shareRequested;
     late Directory tempDir;
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     const MethodChannel shareChannel = MethodChannel('dev.fluttercommunity.plus/share');
@@ -388,6 +389,7 @@ void main() {
       ).thenAnswer((_) => StreamController<FileResponse>().stream);
       toasts = <String>[];
       shareCalls = <MethodCall>[];
+      shareRequested = Completer<MethodCall>();
       tempDir = Directory.systemTemp.createTempSync('fav_export_test');
       final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(toastChannel, (call) async {
@@ -396,9 +398,17 @@ void main() {
       });
       messenger.setMockMethodCallHandler(shareChannel, (call) async {
         shareCalls.add(call);
+        if (!shareRequested.isCompleted) shareRequested.complete(call);
         return 'shared';
       });
-      messenger.setMockMethodCallHandler(pathChannel, (call) async => tempDir.path);
+      final Directory documentsDir = Directory('${tempDir.path}/documents')..createSync();
+      messenger.setMockMethodCallHandler(pathChannel, (call) async {
+        return switch (call.method) {
+          'getTemporaryDirectory' => tempDir.path,
+          'getApplicationDocumentsDirectory' => documentsDir.path,
+          _ => throw UnsupportedError('Unexpected path provider method: ${call.method}'),
+        };
+      });
     });
 
     tearDown(() {
@@ -685,11 +695,10 @@ void main() {
       ]);
       await pumpLoaded(tester);
 
-      await openMenu(tester, 'Export favourites');
-      for (int i = 0; i < 120 && shareCalls.isEmpty; i++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-        await tester.pump();
-      }
+      final MethodCall? shared = await tester.runAsync(() async {
+        await openMenu(tester, 'Export favourites');
+        return shareRequested.future;
+      });
 
       final List<File> written = tempDir.listSync().whereType<File>().toList();
       expect(written, hasLength(1));
@@ -699,6 +708,8 @@ void main() {
       expect((decoded['favourites']! as List<Object?>).length, 2);
       expect(toasts, isEmpty);
       expect(shareCalls, isNotEmpty);
+      expect(shared!.method, 'share');
+      expect((shared.arguments as Map)['paths'], <String>[written.single.path]);
     });
 
     testWidgets('Export with no favourites says so and shares nothing', (tester) async {

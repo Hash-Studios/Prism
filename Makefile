@@ -2,6 +2,8 @@
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
+QA_RENDER_TARGET ?= $(wildcard test/qa_render/*_render.dart)
+QA_RENDER_FLAGS ?=
 DEVICE ?=
 RUN_ARGS ?=
 BUILD_ARGS ?=
@@ -12,7 +14,8 @@ DOPPLER_PROJECT ?= prism
 DOPPLER_CONFIG ?= dev
 DOPPLER_REQUIRED ?= true
 DOPPLER_ARGS = --project $(DOPPLER_PROJECT) --config $(DOPPLER_CONFIG)
-ENV_DART_DEFINES ?= $(shell DOPPLER_PROJECT=$(DOPPLER_PROJECT) DOPPLER_CONFIG=$(DOPPLER_CONFIG) ./tool/dart_defines_from_doppler.sh)
+DOPPLER_FLUTTER = python3 tool/flutter_with_doppler.py
+export DOPPLER_PROJECT DOPPLER_CONFIG
 SENTRY_SIZE_AAB ?= build/app/outputs/bundle/release/app-release.aab
 SENTRY_ENV ?=
 SENTRY_RELEASE ?=
@@ -20,11 +23,7 @@ SENTRY_DIST ?=
 SENTRY_ENABLED ?=
 SENTRY_UPLOAD ?= true
 SENTRY_DOPPLER_CONFIG ?= prd
-SENTRY_DART_DEFINES = $(strip \
-	$(if $(SENTRY_ENV),--dart-define=SENTRY_ENV=$(SENTRY_ENV),) \
-	$(if $(SENTRY_RELEASE),--dart-define=SENTRY_RELEASE=$(SENTRY_RELEASE),) \
-	$(if $(SENTRY_DIST),--dart-define=SENTRY_DIST=$(SENTRY_DIST),) \
-	$(if $(SENTRY_ENABLED),--dart-define=SENTRY_ENABLED=$(SENTRY_ENABLED),))
+export SENTRY_DSN SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED
 ANDROID_JAVA_HOME ?= $(or $(JAVA_HOME),$(shell /usr/libexec/java_home -v 21 2>/dev/null),$(shell [ ! -d '/Applications/Android Studio.app/Contents/jbr/Contents/Home' ] || printf '%s' '/Applications/Android Studio.app/Contents/jbr/Contents/Home'))
 ifeq ($(OS),Windows_NT)
   GRADLE_USER_HOME_DIR ?= $(HOME)/.gradle-prism
@@ -149,7 +148,11 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@bash tool/dart_defines_from_doppler_test.sh
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test
+
+.PHONY: notification-contract-fixture-test
+notification-contract-fixture-test: ensure-fvm
+	@FLUTTER="$(FLUTTER)" python3 tool/notification_contract_fixture_test.py
 
 env-guard:
 	@./tool/env_define_guard.sh
@@ -184,9 +187,9 @@ run: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	if [ -n "$(DEVICE)" ]; then \
-		$(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(DOPPLER_FLUTTER) -- $(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(RUN_ARGS); \
 	else \
-		$(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(DOPPLER_FLUTTER) -- $(FLUTTER) run $(FIREBASE_RUN_ARG) $(RUN_ARGS); \
 	fi
 
 build: ensure-fvm doppler-check
@@ -198,10 +201,9 @@ build: ensure-fvm doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(DOPPLER_FLUTTER) --release-platform android -- $(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
-	@test -f android/app/google-services.json || { echo "android/app/google-services.json is missing: a release build would skip Firebase init. Copy it from the main checkout."; exit 1; }
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
@@ -210,7 +212,7 @@ build-aab: ensure-fvm doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(DOPPLER_FLUTTER) --release-platform android -- $(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(BUILD_ARGS)
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
@@ -274,15 +276,14 @@ ios-setup: ensure-fvm
 	@echo "iOS pods setup complete."
 
 build-ios: ensure-fvm doppler-check
-	@$(FLUTTER) build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
+	@$(DOPPLER_FLUTTER) --release-platform ios -- $(FLUTTER) build ios $(IOS_BUILD_ARGS)
 
 build-ipa: ensure-fvm doppler-check
-	@test -f ios/Runner/GoogleService-Info.plist || { echo "ios/Runner/GoogleService-Info.plist is missing. Copy it from the main checkout."; exit 1; }
 	@if [ -z "$(BUILD_NUMBER)" ]; then \
 		echo "Usage: make build-ipa BUILD_NUMBER=303"; \
 		exit 1; \
 	fi
-	@$(FLUTTER) build ipa --release --build-number=$(BUILD_NUMBER) --obfuscate --split-debug-info=build/ios/outputs/symbols $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(IOS_BUILD_ARGS)
+	@$(DOPPLER_FLUTTER) --release-platform ios -- $(FLUTTER) build ipa --release --build-number=$(BUILD_NUMBER) --obfuscate --split-debug-info=build/ios/outputs/symbols $(IOS_BUILD_ARGS)
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
@@ -347,6 +348,10 @@ test: ensure-fvm
 		echo "No test files found, skipping."; \
 	fi
 
+.PHONY: test-qa-render
+test-qa-render: ensure-fvm
+	@$(FLUTTER) test $(QA_RENDER_TARGET) --dart-define=QA_RENDER=true $(QA_RENDER_FLAGS)
+
 cloudflare-worker-check:
 	@sh ./tool/cloudflare-worker-check.sh
 
@@ -360,3 +365,13 @@ find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
 	@report=$$(mktemp) && trap 'rm -f "$$report"' EXIT && \
 		$(DART) run tool/find_unused_code.dart --json > "$$report" && \
 		$(DART) run tool/validate_find_unused_allowlist.dart "$$report" tool/find_unused_allowlist.json
+
+.PHONY: test-coverage test-functions-coverage test-coverage-tool
+test-coverage: ensure-fvm
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" bash tool/flutter_coverage.sh
+
+test-functions-coverage:
+	@bash tool/functions_coverage.sh
+
+test-coverage-tool: ensure-fvm
+	@FLUTTER="$(FLUTTER)" DART="$(DART)" python3 -m unittest discover -s tool -p 'test_coverage*test.py'

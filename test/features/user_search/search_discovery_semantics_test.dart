@@ -1,11 +1,15 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 class _DiscoveryRouter extends AppRouter {
   @override
@@ -23,6 +27,8 @@ class _DiscoveryRouter extends AppRouter {
     ),
   ];
 }
+
+class _MockRemoteConfig extends Mock implements FirebaseRemoteConfig {}
 
 final List<PrismPaletteColor> _tappedColours = <PrismPaletteColor>[];
 
@@ -61,6 +67,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('category:AI%20Art'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('category row follows the Remote Config list', (tester) async {
+    final remoteConfig = _MockRemoteConfig();
+    when(
+      () => remoteConfig.getString(categoriesRemoteConfigKey),
+    ).thenReturn('[{"name":"Diwali","source":"pexels","imageUrl":"https://img/d.jpg"}]');
+    CategoryCatalog.resolve(remoteConfig);
+    addTearDown(CategoryCatalog.debugReset);
+    final router = _DiscoveryRouter();
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
+      await router.navigatePath('/');
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('Category, AI Art'), findsNothing);
+      final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel('Category, Diwali'));
+      tester.binding.performSemanticsAction(
+        SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('category:Diwali'), findsOneWidget);
     } finally {
       semantics.dispose();
     }

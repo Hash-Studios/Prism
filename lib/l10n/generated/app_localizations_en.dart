@@ -989,6 +989,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountRemoveLink => 'Remove link';
 
   @override
+  String get accountRemovePhoto => 'Remove photo';
+
+  @override
   String get accountRemoveSavedOffline => 'Remove saved offline';
 
   @override
@@ -1389,9 +1392,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'Batch complete';
-
-  @override
-  String get adminBatchCompleteLoading => 'Batch complete. Loading the next batch.';
 
   @override
   String get adminBodyLabel => 'Body';
@@ -2563,6 +2563,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Discard';
+
+  @override
+  String get corePopupProfilePhoto => 'profile photo';
 
   @override
   String get corePopupWhatsNew => 'What\'s new';
@@ -4796,6 +4799,11 @@ class AppLocalizationsEn extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Free · $countString left';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Free, you own this wallpaper';
   }
 
   @override

@@ -1000,6 +1000,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountRemoveLink => 'Link entfernen';
 
   @override
+  String get accountRemovePhoto => 'Foto entfernen';
+
+  @override
   String get accountRemoveSavedOffline => 'Offline gespeicherte Inhalte entfernen';
 
   @override
@@ -1401,9 +1404,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'Stapel abgeschlossen';
-
-  @override
-  String get adminBatchCompleteLoading => 'Stapel abgeschlossen. Der nächste Stapel wird geladen.';
 
   @override
   String get adminBodyLabel => 'Text';
@@ -2589,6 +2589,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Verwerfen';
+
+  @override
+  String get corePopupProfilePhoto => 'Profilbild';
 
   @override
   String get corePopupWhatsNew => 'Neuigkeiten';
@@ -4833,6 +4836,11 @@ class AppLocalizationsDe extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Kostenlos · noch $countString';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Kostenlos, dieses Hintergrundbild gehört dir';
   }
 
   @override

@@ -31,13 +31,27 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
+  test('the same selected image bytes have the same draft id across file paths', () async {
+    final first = File('${root.path}/camera.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
+    final second = await first.copy('${root.path}/gallery.png');
+
+    expect(
+      UploadDraftStore.idForBytes(await first.readAsBytes()),
+      UploadDraftStore.idForBytes(await second.readAsBytes()),
+    );
+    expect(
+      UploadDraftStore.idForBytes(<int>[4, 3, 2, 1]),
+      isNot(UploadDraftStore.idForBytes(await first.readAsBytes())),
+    );
+  });
+
   test('owns a file and restores metadata after the store is reopened', () async {
     final File original = File('${root.path}/selected.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
     final UploadDraftStore firstRun = UploadDraftStore(
       store: DurableJsonStore('upload_test', directory: recordsDirectory),
       directory: filesDirectory,
     );
-    final String draftId = await UploadDraftStore.idForFile(original);
+    final String draftId = UploadDraftStore.idForBytes(await original.readAsBytes());
     final UploadDraft saved = await firstRun.save(
       owner: 'account-a',
       draftId: draftId,
@@ -119,7 +133,7 @@ void main() {
     final File original = File('${root.path}/selected.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
     final DurableJsonStore records = DurableJsonStore('upload_test', directory: recordsDirectory);
     final UploadDraftStore drafts = UploadDraftStore(store: records, directory: filesDirectory);
-    final String draftId = await UploadDraftStore.idForFile(original);
+    final String draftId = UploadDraftStore.idForBytes(await original.readAsBytes());
     final UploadDraft a = await drafts.save(
       owner: 'account-a',
       draftId: draftId,

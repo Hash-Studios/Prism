@@ -124,6 +124,142 @@ void main() {
     await bloc.stream.firstWhere((s) => s.status == ReviewBatchStatus.loaded);
   }
 
+  test('the last unprocessed wall is not skipped and an exhausted batch loads the next page', () async {
+    await loaded();
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.currentWall?.id, 'w1');
+    bloc.add(const ReviewBatchSwipeApproved());
+    await pumpEventQueue();
+    client.docs[FirebaseCollections.walls]!['w2'] = Map<String, dynamic>.of(original);
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.currentWall?.id, 'w2');
+    expect(bloc.state.currentIndex, 0);
+    expect(bloc.state.undoStack, isEmpty);
+    bloc.add(const ReviewBatchSwipeApproved());
+    await pumpEventQueue();
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.walls, isEmpty);
+    expect(bloc.state.totalPending, 0);
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.status, ReviewBatchStatus.loaded);
+  });
+
+  for (final bool fail in <bool>[false, true]) {
+    test('moderation owns skip undo load and other moderation inputs until ${fail ? 'failure' : 'success'}', () async {
+      final gate = Completer<void>();
+      final controlled = _ControlledUpdateClient(
+        docs: <String, Map<String, Map<String, dynamic>>>{
+          FirebaseCollections.walls: <String, Map<String, dynamic>>{
+            'w1': Map<String, dynamic>.of(original),
+            'w2': Map<String, dynamic>.of(original),
+          },
+        },
+        beforeWrite: (_) => gate.future,
+      );
+      controlled.onQuery = (spec) => <FakeDocRow>[
+        for (final entry in controlled.docs[FirebaseCollections.walls]!.entries)
+          if (entry.value['review'] == false) (id: entry.key, data: Map<String, dynamic>.of(entry.value)),
+      ];
+      final reviewing = ReviewBatchBloc(ReviewBatchRepository(controlled), AdminModerationRepository(controlled));
+      addTearDown(reviewing.close);
+      reviewing.add(const ReviewBatchLoadRequested());
+      await pumpEventQueue();
+      reviewing.add(const ReviewBatchSwipeApproved());
+      await pumpEventQueue();
+      for (final event in <ReviewBatchEvent>[
+        const ReviewBatchSwipeApproved(),
+        const ReviewBatchSwipeRejected(),
+        const ReviewBatchSwipeReserved(),
+        const ReviewBatchSwipeSkipped(),
+        const ReviewBatchUndoRequested(),
+        const ReviewBatchLoadRequested(),
+        const ReviewBatchNextBatchRequested(),
+        const ReviewBatchDepthChanged('w1', WallDepthTier.menu),
+      ]) {
+        reviewing.add(event);
+      }
+      await pumpEventQueue();
+      expect(controlled.started, <String>['w1']);
+      expect(reviewing.state.currentIndex, 0);
+      if (fail) {
+        gate.completeError(StateError('offline'));
+      } else {
+        gate.complete();
+      }
+      await pumpEventQueue();
+      expect(reviewing.state.currentIndex, fail ? 0 : 1);
+      expect(reviewing.state.undoStack.length, fail ? 0 : 1);
+      expect(controlled.docs[FirebaseCollections.rejectedWalls], isNull);
+      reviewing.add(const ReviewBatchSwipeSkipped());
+      await pumpEventQueue();
+      expect(reviewing.state.currentIndex, fail ? 1 : 2);
+    });
+  }
+
+  test('a full skipped batch continues after its cursor, including an empty final page', () async {
+    client.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{
+      for (int i = 0; i < 21; i++) 'w$i': Map<String, dynamic>.of(original),
+    };
+    client.onQuery = (spec) {
+      final rows = <FakeDocRow>[
+        for (final entry in client.docs[FirebaseCollections.walls]!.entries)
+          (id: entry.key, data: Map<String, dynamic>.of(entry.value)),
+      ];
+      final int start = spec.startAfterDocId == null ? 0 : rows.indexWhere((row) => row.id == spec.startAfterDocId) + 1;
+      return rows.skip(start).take(spec.limit ?? rows.length).toList();
+    };
+    await loaded();
+    expect(bloc.state.walls.length, 20);
+    for (int i = 0; i < 20; i++) {
+      bloc.add(const ReviewBatchSwipeSkipped());
+      await pumpEventQueue();
+    }
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.currentWall?.id, 'w20');
+    expect(
+      client.querySpecs.where((spec) => spec.sourceTag == 'review_batch.pending_walls').last.startAfterDocId,
+      'w19',
+    );
+    expect(bloc.state.totalPending, 21);
+    bloc.add(const ReviewBatchSwipeSkipped());
+    await pumpEventQueue();
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.walls, isEmpty);
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(
+      client.querySpecs.where((spec) => spec.sourceTag == 'review_batch.pending_walls').last.startAfterDocId,
+      'w20',
+    );
+    expect(bloc.state.walls, isEmpty);
+  });
+
+  test('a failed next-page count cannot advance past an unseen page', () async {
+    await loaded();
+    bloc.add(const ReviewBatchSwipeSkipped());
+    await pumpEventQueue();
+    bool failCount = true;
+    client.onQuery = (spec) {
+      if (spec.sourceTag == 'review_batch.pending_count' && failCount) {
+        failCount = false;
+        throw StateError('count unavailable');
+      }
+      return <FakeDocRow>[(id: spec.startAfterDocId == 'w2' ? 'w3' : 'w2', data: Map<String, dynamic>.of(original))];
+    };
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.status, ReviewBatchStatus.error);
+    bloc.add(const ReviewBatchNextBatchRequested());
+    await pumpEventQueue();
+    expect(bloc.state.currentWall?.id, 'w2');
+  });
+
   test('undo of a reject restores the wall and drops the rejection record', () async {
     await loaded();
     bloc.add(const ReviewBatchSwipeRejected(reason: 'no'));
@@ -247,7 +383,7 @@ void main() {
       expect(wallDepthTier(picking.state.walls.first), WallDepthTier.none);
     });
 
-    test('a pick queued for wall A still writes wall A after the admin moved to wall B', () async {
+    test('queued picks stay bound to wall A and skip is rejected until depth persistence finishes', () async {
       final Completer<void> firstWrite = Completer<void>();
       final controlled = _ControlledUpdateClient(
         docs: twoWalls(),
@@ -259,7 +395,7 @@ void main() {
       picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.none));
       picking.add(const ReviewBatchSwipeSkipped());
       await pumpEventQueue();
-      expect(picking.state.currentWall!.id, 'w2');
+      expect(picking.state.currentWall!.id, 'w1');
 
       firstWrite.complete();
       await pumpEventQueue();
@@ -267,8 +403,52 @@ void main() {
       expect(controlled.started, <String>['w1', 'w1']);
       expect(wallDepthTier(picking.state.walls[0]), WallDepthTier.none);
       expect(picking.state.walls[1].payload.containsKey('depth'), isFalse);
+      picking.add(const ReviewBatchSwipeSkipped());
+      await pumpEventQueue();
       expect(picking.state.currentIndex, 1);
     });
+
+    for (final bool fail in <bool>[false, true]) {
+      test('a delayed depth ${fail ? 'failure' : 'success'} excludes moderation undo and reload', () async {
+        final gate = Completer<void>();
+        final controlled = _ControlledUpdateClient(docs: twoWalls(), beforeWrite: (_) => gate.future);
+        final picking = await blocFor(controlled);
+        picking.add(const ReviewBatchDepthChanged('w1', WallDepthTier.menu));
+        await pumpEventQueue();
+        final reads = controlled.querySpecs.length;
+        for (final event in <ReviewBatchEvent>[
+          const ReviewBatchSwipeApproved(),
+          const ReviewBatchSwipeRejected(),
+          const ReviewBatchSwipeReserved(),
+          const ReviewBatchSwipeSkipped(),
+          const ReviewBatchUndoRequested(),
+          const ReviewBatchLoadRequested(),
+          const ReviewBatchNextBatchRequested(),
+        ]) {
+          picking.add(event);
+        }
+        await pumpEventQueue();
+        expect(controlled.started, <String>['w1']);
+        expect(controlled.querySpecs.length, reads);
+        expect(picking.state.currentIndex, 0);
+        if (fail) {
+          gate.completeError(StateError('offline'));
+        } else {
+          gate.complete();
+        }
+        await pumpEventQueue();
+        expect(picking.state.isBusy, isFalse);
+        expect(picking.state.currentIndex, 0);
+        expect(picking.state.undoStack, isEmpty);
+        expect(wallDepthTier(picking.state.walls.first), fail ? isNull : WallDepthTier.menu);
+        expect(picking.state.status, fail ? ReviewBatchStatus.error : ReviewBatchStatus.loaded);
+        expect(controlled.docs[FirebaseCollections.walls]!['w1']!['review'], isFalse);
+        picking.add(const ReviewBatchLoadRequested());
+        await pumpEventQueue();
+        expect(controlled.querySpecs.length, greaterThan(reads));
+        expect(picking.state.status, ReviewBatchStatus.loaded);
+      });
+    }
 
     test('a pick for a wall that left the batch writes nothing', () async {
       final controlled = _ControlledUpdateClient(docs: twoWalls());

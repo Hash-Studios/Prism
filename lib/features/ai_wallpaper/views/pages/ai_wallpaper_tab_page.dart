@@ -114,6 +114,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AppLocalizations? _promptMessages;
 
   bool _loadingHistory = false;
+  int _historyLoadGeneration = 0;
   bool _historyFailed = false;
   bool _loadingGeneration = false;
   bool _saving = false;
@@ -293,7 +294,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _loadHistory({bool userInitiated = false}) async {
+    final int loadGeneration = ++_historyLoadGeneration;
     final String userId = app_state.prismUser.id;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool isCurrentLoad() =>
+        mounted &&
+        _isLoggedIn &&
+        app_state.prismUser.id == userId &&
+        ownerSession == CoinsService.instance.economySession &&
+        loadGeneration == _historyLoadGeneration;
     _switchPromptOwner(_localOwnerId);
     if (_historyUserId != userId) {
       _historyUserId = userId;
@@ -304,6 +313,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     if (!_isLoggedIn) {
       setState(() {
+        _loadingHistory = false;
         _history = <AiGenerationRecord>[];
         _latest = null;
         _confirmedSubmissionRecords.clear();
@@ -317,7 +327,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     });
     try {
       final List<AiGenerationRecord> local = await _repository.fetchLocalHistory(userId: userId);
-      if (!mounted || app_state.prismUser.id != userId) return;
+      if (!isCurrentLoad()) return;
       if (local.isNotEmpty) {
         final List<AiGenerationRecord> localWithConfirmed = mergeAiSubmissionHistory(
           local,
@@ -330,15 +340,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         });
       }
       final bool online = await _hasNetworkOrUnknown();
+      if (!mounted || !isCurrentLoad()) return;
       if (!online) {
-        if (mounted) {
-          setState(() => _historyFailed = local.isEmpty);
-          if (userInitiated) toasts.error(context.l10n.economyAiOfflineSavedHistory);
-        }
+        setState(() => _historyFailed = local.isEmpty);
+        if (userInitiated) toasts.error(context.l10n.economyAiOfflineSavedHistory);
         return;
       }
       final result = await _repository.fetchHistory(userId: userId);
-      if (!mounted || app_state.prismUser.id != userId) return;
+      if (!isCurrentLoad()) return;
       final mergedResult = mergeAiSubmissionHistory(result, _confirmedSubmissionRecords, fetchedUserId: userId);
       setState(() {
         _history = mergedResult;
@@ -347,12 +356,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(AiHistoryOpenedEvent(count: result.length));
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      if (mounted) {
+      if (mounted && isCurrentLoad()) {
         setState(() => _historyFailed = true);
         toasts.error(aiHistoryFailureMessage(context.l10n, error), haptic: userInitiated);
       }
     } finally {
-      if (mounted) {
+      if (mounted && loadGeneration == _historyLoadGeneration) {
         setState(() => _loadingHistory = false);
       }
     }
@@ -377,9 +386,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return true;
   }
 
-  Future<bool> _isOnlineForGeneration() async {
+  Future<bool> _isOnlineForGeneration({required bool Function() ownsSession}) async {
     final bool online = await _hasNetworkOrUnknown();
-    if (!online && mounted) {
+    if (!online && mounted && ownsSession()) {
       toasts.error(context.l10n.economyAiConnectToGenerate);
     }
     return online;
@@ -468,12 +477,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
     if (!_canStartGeneration()) return;
+    final String ownerId = app_state.prismUser.id;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        _isLoggedIn && app_state.prismUser.id == ownerId && ownerSession == CoinsService.instance.economySession;
     final String operationId = AnalyticsCorrelation.newId();
     final Stopwatch elapsed = Stopwatch()..start();
     setState(() => _loadingGeneration = true);
     _scrollToTop();
-    final bool online = await _isOnlineForGeneration();
-    if (!online || !mounted) {
+    final bool online = await _isOnlineForGeneration(ownsSession: ownsSession);
+    if (!online || !mounted || !ownsSession()) {
       analytics.track(
         AiGenerateFailedEvent(
           error: online ? 'cancelled' : 'offline',
@@ -493,8 +506,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       operationId: operationId,
       sourceTag: 'coins.reserve.ai_screen',
     );
-    if (!mounted) {
-      if (reservation.success) {
+    if (!mounted || !ownsSession()) {
+      if (reservation.success && ownsSession()) {
         await CoinsService.instance.rollbackAiGenerationReservation(
           reservation.mode,
           sourceTag: 'coins.rollback.ai_screen',
@@ -502,6 +515,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           operationId: operationId,
         );
       }
+      if (mounted) setState(() => _loadingGeneration = false);
       return;
     }
     if (reservation.refundPending) {
@@ -559,6 +573,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       );
       generationSucceeded = true;
 
+      // The repository handles persistence of the completed remote result for its original owner. Do not publish
+      // it, report a commit against a replacement balance, or refund it in another sign-in session.
+      if (!ownsSession()) return;
+
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
         coinsSpent: reservation.coinsSpent,
@@ -569,6 +587,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
       if (mounted) {
         setState(() {
+          // Any history snapshot started before this completion may omit the now-synced generation.
+          ++_historyLoadGeneration;
+          _loadingHistory = false;
+          _historyFailed = false;
           _latest = generated;
           _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
         });
@@ -614,6 +636,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         );
         return;
       }
+      if (!ownsSession()) return;
       logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       final CoinMutationResult refund = await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,

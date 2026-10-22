@@ -11,8 +11,12 @@ part 'public_profile_wall_entity.freezed.dart';
 abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
   const factory PublicProfileWallEntity({
     required String id,
+
+    /// The Firestore document id. It can differ from [id], the wall's own id field.
+    String? firestoreDocumentId,
     String? by,
     String? desc,
+    String? category,
     String? size,
     String? resolution,
     String? email,
@@ -38,10 +42,11 @@ abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
         sizeBytes: size != null ? int.tryParse(size!) : null,
         authorName: by,
         authorEmail: email,
-        category: desc,
+        category: category?.trim().isEmpty == true ? null : category,
         createdAt: createdAt,
       ),
       collections: collections,
+      firestoreDocumentId: firestoreDocumentId,
       review: review,
       depthTier: depthTier,
     );

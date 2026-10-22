@@ -999,6 +999,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountRemoveLink => 'Remover link';
 
   @override
+  String get accountRemovePhoto => 'Remover foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Remover itens salvos off-line';
 
   @override
@@ -1399,9 +1402,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'Lote concluído';
-
-  @override
-  String get adminBatchCompleteLoading => 'Lote concluído. Carregando o próximo lote.';
 
   @override
   String get adminBodyLabel => 'Corpo';
@@ -2588,6 +2588,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Descartar';
+
+  @override
+  String get corePopupProfilePhoto => 'foto do perfil';
 
   @override
   String get corePopupWhatsNew => 'Novidades';
@@ -4896,6 +4899,11 @@ class AppLocalizationsPt extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Grátis · $countString restantes';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Grátis, este papel de parede é seu';
   }
 
   @override
@@ -10942,6 +10950,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountRemoveLink => 'Remover link';
 
   @override
+  String get accountRemovePhoto => 'Remover foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Remover itens salvos off-line';
 
   @override
@@ -11342,9 +11353,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get adminBatchComplete => 'Lote concluído';
-
-  @override
-  String get adminBatchCompleteLoading => 'Lote concluído. Carregando o próximo lote.';
 
   @override
   String get adminBodyLabel => 'Corpo';
@@ -12531,6 +12539,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get corePopupDiscard => 'Descartar';
+
+  @override
+  String get corePopupProfilePhoto => 'foto do perfil';
 
   @override
   String get corePopupWhatsNew => 'Novidades';
@@ -14839,6 +14850,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Grátis · $countString restantes';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Grátis, este papel de parede é seu';
   }
 
   @override

@@ -96,11 +96,6 @@ class FavoritesLocalDataSource {
     return withStatus..sort(compareByCreatedAtDesc);
   }
 
-  Future<void> saveWallSnapshot(String userId, Iterable<FavouriteWallEntity> walls) {
-    final scope = _scope(userId);
-    return _serialize(scope, () => _writeWallSnapshot(scope, walls));
-  }
-
   Future<void> updateWallSnapshot(
     String userId,
     Iterable<FavouriteWallEntity> Function(List<FavouriteWallEntity> current) update,
@@ -190,9 +185,6 @@ class FavoritesLocalDataSource {
     );
   }
 
-  Future<void> writeFavouriteOperation(String userId, String wallId, Map<String, Object?> operation) =>
-      _serialize(_scope(userId), () => _durable.write('${_scope(userId)}::op:$wallId', operation));
-
   Future<bool> runFavouriteOperationsIfCurrent(
     String userId,
     Map<String, String> operationIds,
@@ -267,18 +259,6 @@ class FavoritesLocalDataSource {
       changed = true;
     });
     return changed;
-  }
-
-  Future<bool> hasCurrentFavouriteOperation(String userId, String wallId, String operationId) async {
-    final operation = await readFavouriteOperation(userId, wallId);
-    return operation?['operationId'] == operationId && operation?['owner'] == _scope(userId);
-  }
-
-  Future<Map<String, String>> readFavouriteSyncStatuses(String userId) async {
-    final operations = await readFavouriteOperations(userId);
-    return Map<String, String>.fromEntries(
-      operations.entries.map((entry) => MapEntry<String, String>(entry.key, entry.value['status']?.toString() ?? '')),
-    );
   }
 
   Future<void> clearUser(String userId) async {

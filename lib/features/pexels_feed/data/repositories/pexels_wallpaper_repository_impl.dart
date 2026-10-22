@@ -21,10 +21,15 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PexelsWallpaperRepository)
 class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
-  PexelsWallpaperRepositoryImpl(FeedCacheLocalDataSource feedCacheLocal)
-    : _cache = PagedFeedCache(feedCacheLocal, source: 'pexels');
+  PexelsWallpaperRepositoryImpl(this._local);
 
-  final PagedFeedCache _cache;
+  final FeedCacheLocalDataSource _local;
+  final Map<String, PagedFeedCache> _feedCaches = <String, PagedFeedCache>{};
+
+  PagedFeedCache _cacheFor(String key, {bool refresh = false}) {
+    if (!refresh && _feedCaches.containsKey(key)) return _feedCaches[key]!;
+    return _feedCaches[key] = PagedFeedCache(_local, source: 'pexels');
+  }
 
   static const String _host = 'api.pexels.com';
   static const String _searchPath = '/v1/search';
@@ -39,7 +44,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
-      _cache.hasMore(paginationKey ?? categoryName);
+      _cacheFor(paginationKey ?? categoryName).hasMore(paginationKey ?? categoryName);
 
   @override
   Future<Result<List<PexelsWallpaper>>> fetchFeed({
@@ -93,12 +98,10 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     bool portraitOnly = true,
   }) async {
     final String pageKey = paginationKey ?? categoryName;
-    if (refresh) {
-      _cache.reset(pageKey);
-    }
+    final PagedFeedCache cache = _cacheFor(pageKey, refresh: refresh);
 
     final String scope = _scope(categoryName, paginationKey, portraitOnly: portraitOnly);
-    final int page = refresh ? startPage : _cache.pageFor(pageKey);
+    final int page = refresh ? startPage : cache.pageFor(pageKey);
     final Uri uri = buildUri(page);
 
     try {
@@ -113,6 +116,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
         return await _cachedOrFailure(
           refresh: refresh,
           pageKey: pageKey,
+          cache: cache,
           scope: scope,
           failure: ServerFailure(
             'Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
@@ -127,19 +131,23 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       final bool hasMore = totalPages == 0 ? payload.photos.isNotEmpty : currentPage < totalPages;
 
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
+      if (!identical(_feedCaches[pageKey], cache)) return Result.success(walls);
       _remember(walls);
       try {
-        await _cache.write(
+        await cache.write(
           pageKey,
           scope: scope,
           payload: payload.toJson(),
           nextPage: currentPage + 1,
           hasMore: hasMore,
           append: !refresh,
+          isCurrent: () => identical(_feedCaches[pageKey], cache),
         );
       } catch (error) {
         logger.w('[PexelsWallpaperRepository] feed cache write failed: $error');
-        _cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
+        if (identical(_feedCaches[pageKey], cache)) {
+          cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
+        }
       }
 
       logger.i(
@@ -148,7 +156,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
+      final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope, cache: cache) : null;
       if (cached != null) {
         logger.w(
           '[PexelsWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -201,12 +209,13 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   };
 
   Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({
+    required PagedFeedCache cache,
     required bool refresh,
     required String pageKey,
     required String scope,
     required Failure failure,
   }) async {
-    final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
+    final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope, cache: cache) : null;
     if (cached != null) {
       logger.w(
         '[PexelsWallpaperRepository] remote status failed; returning cached snapshot',
@@ -217,7 +226,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<List<PexelsWallpaper>?> _readCached({required String pageKey, required String scope}) => _cache.read(
+  Future<List<PexelsWallpaper>?> _readCached({
+    required String pageKey,
+    required String scope,
+    required PagedFeedCache cache,
+  }) => cache.read(
     pageKey,
     scope: scope,
     decode: (payload) =>

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show SocketException;
+import 'dart:io' show HandshakeException, SocketException;
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
@@ -22,7 +23,120 @@ class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
   }) => Future<void>.error(StateError('cache unavailable'));
 }
 
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
+}
+
 void main() {
+  test('refresh invalidates a page already awaiting its cache append read', () async {
+    final cache = _DelayedReadCache();
+    final repository = PexelsWallpaperRepositoryImpl(cache);
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        cache.hold = true;
+        final pending = repository.fetchFeed(categoryName: 'A', refresh: false);
+        await cache.started.future;
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        cache.release.complete();
+        await pending;
+        expect((cache.snapshots.values.single.payload! as Map)['pages'] as List, hasLength(1));
+        await repository.fetchFeed(categoryName: 'A', refresh: false);
+      },
+      () => MockClient((request) async {
+        pages.add(int.parse(request.url.queryParameters['page']!));
+        return _page(pages.last);
+      }),
+    );
+    expect(pages, <int>[1, 2, 1, 2]);
+  });
+  test('stale pages and A-B-A refreshes cannot replace the current cursor or snapshot', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    final repository = PexelsWallpaperRepositoryImpl(cache);
+    final old = Completer<http.Response>();
+    final started = Completer<void>();
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        final pending = repository.fetchFeed(categoryName: 'A', refresh: false);
+        await started.future;
+        await repository.fetchFeed(categoryName: 'B', refresh: true);
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        old.complete(_page(2));
+        await pending;
+        expect((cache.snapshots['pexels/a.portrait']!.payload! as Map)['pages'] as List, hasLength(1));
+        await repository.fetchFeed(categoryName: 'A', refresh: false);
+      },
+      () => MockClient((request) async {
+        final page = int.parse(request.url.queryParameters['page']!);
+        pages.add(page);
+        if (pages.length == 2) {
+          started.complete();
+          return old.future;
+        }
+        return _page(page);
+      }),
+    );
+    expect(pages, <int>[1, 2, 1, 1, 2]);
+  });
+  test('single lookup returns the photo and retains transport failure categories', () async {
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
+    final found = await http.runWithClient(
+      () => repository.fetchById('7'),
+      () => MockClient((request) async {
+        expect(request.url.path, '/v1/photos/7');
+        return http.Response(
+          '{"id":7,"src":{"original":"https://example.com/full","portrait":"https://example.com/thumb"}}',
+          200,
+        );
+      }),
+    );
+    expect(found.data!.id, '7');
+    expect(found.data!.core.fullUrl, 'https://example.com/full');
+    expect(found.data!.core.thumbnailUrl, 'https://example.com/thumb');
+    for (final entry in <(Object, String)>[
+      (const HandshakeException('tls'), 'tls_error'),
+      (TimeoutException('slow'), 'timeout'),
+      (http.ClientException('closed'), 'http_client_error'),
+      (const FormatException('bad payload'), 'FormatException'),
+    ]) {
+      final result = await http.runWithClient(
+        () => repository.fetchById('7'),
+        () => MockClient((_) async => throw entry.$1),
+      );
+      expect(result.failure!.code, entry.$2);
+      expect(result.failure, entry.$1 is FormatException ? isA<ServerFailure>() : isA<NetworkFailure>());
+    }
+  });
+
+  test('a transport failure restores cached feed data on refresh only', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    final repository = PexelsWallpaperRepositoryImpl(cache);
+    await http.runWithClient(
+      () => repository.fetchFeed(categoryName: 'forest', refresh: true),
+      () => MockClient((_) async => _page(1)),
+    );
+    await http.runWithClient(() async {
+      expect((await repository.fetchFeed(categoryName: 'forest', refresh: true)).data!.single.id, '1');
+      expect((await repository.fetchFeed(categoryName: 'forest', refresh: false)).failure, isA<ServerFailure>());
+    }, () => MockClient((_) async => throw const SocketException('offline')));
+  });
+
   group('fetchById failures', () {
     Future<Result<PexelsWallpaper?>> fetchWith(http.Client client) {
       final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());

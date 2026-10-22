@@ -22,39 +22,84 @@ export function parseUsername(raw: unknown): string {
  * A name that only a profile holds, with no registry doc yet, counts as taken too. The previous registry doc of the
  * caller is released. The server writes `username` and `usernameLower` on the profile.
  */
+export async function reserveUsername(uid: string, username: string, initial = false): Promise<{
+  username: string; usernameLower: string;
+}> {
+  const lower = usernameLowerOf(username);
+  const userRef = db.collection(USERS_V2).doc(uid);
+  const nameRef = db.collection(USERNAMES).doc(lower);
+  return db.runTransaction(async (tx) => {
+    const [userSnap, deletion] = await Promise.all([
+      tx.get(userRef), tx.get(db.collection("creatorDeletionState").doc(uid)),
+    ]);
+    if (!userSnap.exists || userSnap.data()?.deleted === true || deletion.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "Your profile was not found.");
+    }
+    const user = userSnap.data();
+    const oldUsername = typeof user?.username === "string" ? user.username : "";
+    const oldLower = usernameLowerOf(oldUsername);
+    const oldRef = oldLower && oldLower !== lower ? db.collection(USERNAMES).doc(oldLower) : null;
+    const [nameSnap, holders, oldSnap] = await Promise.all([
+      tx.get(nameRef),
+      tx.get(db.collection(USERS_V2).where("usernameLower", "==", lower)),
+      oldRef ? tx.get(oldRef) : Promise.resolve(null),
+    ]);
+    // A callable may beat the creation trigger, or this may be a retried creation event.
+    if (initial && oldLower && (oldRef ? oldSnap : nameSnap)?.data()?.uid === uid) {
+      return {username: oldUsername, usernameLower: oldLower};
+    }
+    const owner = nameSnap.data()?.uid;
+    // Only a server-owned deletion tombstone releases a historical reservation. Missing profiles are unknown.
+    const ownerSnap = nameSnap.exists && owner !== uid && typeof owner === "string" && owner.length > 0 ?
+      await tx.get(db.collection(USERS_V2).doc(owner)) : null;
+    const reservedByOther = nameSnap.exists && owner !== uid && ownerSnap?.data()?.deleted !== true;
+    if (reservedByOther || holders.docs.some((doc) => doc.id !== uid && doc.data().deleted !== true)) {
+      throw new HttpsError("already-exists", "That username is taken.");
+    }
+    tx.set(nameRef, {uid, claimedAt: admin.firestore.FieldValue.serverTimestamp()});
+    if (oldRef && oldSnap?.data()?.uid === uid) tx.delete(oldRef);
+    tx.update(userRef, {username, usernameLower: lower,
+      ...(typeof user?.name === "string" ? {nameLower: usernameLowerOf(user.name)} : {})});
+    return {username, usernameLower: lower};
+  });
+}
+
+/** Initial names use the same reservation transaction as explicit claims, never a query-then-write. */
+export async function reserveInitialUsername(uid: string, raw: unknown) {
+  const cleaned = typeof raw === "string" ? raw.replace(/\W/g, "").slice(0, 30) : "";
+  const base = cleaned.length >= 3 ? cleaned : "user";
+  const suffix = uid.replace(/\W/g, "").toLowerCase();
+  const candidates = [base, ...[4, 8, 12, 20].map((length) =>
+    `${base.slice(0, 29 - Math.min(length, suffix.length))}_${suffix.slice(0, length)}`)];
+  for (const candidate of new Set(candidates)) {
+    try {
+      return await reserveUsername(uid, parseUsername(candidate), true);
+    } catch (err) {
+      if (!(err instanceof HttpsError) || err.code !== "already-exists") throw err;
+    }
+  }
+  throw new HttpsError("already-exists", "Choose a different username.");
+}
+
 export const claimUsername = onCall(
   {
     region: CALLABLE_REGIONS,
     cors: true,
     maxInstances: 10,
   },
-  async (request: CallableRequest<{username?: string}>): Promise<{username: string; usernameLower: string}> => {
+  async (request: CallableRequest<{username?: string; initial?: boolean}>): Promise<{username: string; usernameLower: string}> => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to choose a username.");
-    const username = parseUsername(request.data?.username);
-    const lower = usernameLowerOf(username);
-
-    const userRef = db.collection(USERS_V2).doc(uid);
-    const nameRef = db.collection(USERNAMES).doc(lower);
-    await db.runTransaction(async (tx) => {
-      const userSnap = await tx.get(userRef);
-      if (!userSnap.exists) throw new HttpsError("failed-precondition", "Your profile was not found.");
-      const oldLower = usernameLowerOf(userSnap.data()?.username);
-      const oldRef = oldLower && oldLower !== lower ? db.collection(USERNAMES).doc(oldLower) : null;
-      const [nameSnap, holders, oldSnap] = await Promise.all([
-        tx.get(nameRef),
-        tx.get(db.collection(USERS_V2).where("usernameLower", "==", lower).limit(2)),
-        oldRef ? tx.get(oldRef) : Promise.resolve(null),
-      ]);
-      const registryOwner = nameSnap.data()?.uid;
-      if ((nameSnap.exists && registryOwner !== uid) || holders.docs.some((doc) => doc.id !== uid)) {
-        throw new HttpsError("already-exists", "That username is taken.");
-      }
-      tx.set(nameRef, {uid, claimedAt: admin.firestore.FieldValue.serverTimestamp()});
-      if (oldRef && oldSnap?.data()?.uid === uid) tx.delete(oldRef);
-      tx.update(userRef, {username, usernameLower: lower});
-    });
+    if (request.data?.initial !== undefined && typeof request.data.initial !== "boolean") {
+      throw new HttpsError("invalid-argument", "initial must be a boolean.");
+    }
+    if (request.data?.initial === true && typeof request.data.username !== "string") {
+      throw new HttpsError("invalid-argument", "An initial username candidate must be a string.");
+    }
+    const result = request.data?.initial === true ?
+      await reserveInitialUsername(uid, request.data?.username) :
+      await reserveUsername(uid, parseUsername(request.data?.username));
     logger.info("claimUsername: claimed.", {uid});
-    return {username, usernameLower: lower};
+    return result;
   },
 );

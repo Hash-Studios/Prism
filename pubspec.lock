@@ -18,7 +18,7 @@ packages:
     source: hosted
     version: "1.3.77"
   analyzer:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: analyzer
       sha256: de7148ed2fcec579b19f122c1800933dfa028f6d9fd38a152b04b1516cec120b
@@ -601,7 +601,7 @@ packages:
     source: hosted
     version: "4.15.0"
   firebase_core_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: firebase_core_platform_interface
       sha256: "9bfbc85faca09346471ac56fbcee00757ebcfd85887c6f602764eff0001902d8"
@@ -649,7 +649,7 @@ packages:
     source: hosted
     version: "6.7.0"
   firebase_remote_config_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: firebase_remote_config_platform_interface
       sha256: dc5a9713031f2ca744cb266d96a58609e929db19f3d91a1dd6bb8f8a0d77acad

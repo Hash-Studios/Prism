@@ -5,6 +5,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
+import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
@@ -72,6 +74,16 @@ void main() {
         verify(() => firestore.query<FeedItemEntity>(captureAny(), any())).captured.single as FirestoreQuerySpec;
     expect(spec.sourceTag, 'wallpaper_detail.similar');
     expect(spec.filters.map((f) => (f.field, f.value)), contains(('category', 'Nature')));
+  });
+
+  test('mapped Firestore category drives the query after a DTO round trip', () async {
+    stubRows(<FeedItemEntity>[]);
+    final dto = PrismWallDocDto.fromJson(<String, dynamic>{'category': 'Nature', 'desc': 'A lake at dawn'});
+    final wall = PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake');
+    await loader.load(PrismFeedItem(id: wall.id, wallpaper: wall));
+    final spec =
+        verify(() => firestore.query<FeedItemEntity>(captureAny(), any())).captured.single as FirestoreQuerySpec;
+    expect(spec.filters.map((filter) => (filter.field, filter.value)), contains(('category', 'Nature')));
   });
 
   test('the current wall and blocked creators are left out', () async {

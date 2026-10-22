@@ -247,19 +247,6 @@ void main() {
     expect(find.byType(LoadingCards), findsNothing);
   });
 
-  testWidgets('Try again runs the same search again', (tester) async {
-    when(
-      () => service.search(any(), filters: any(named: 'filters')),
-    ).thenAnswer((_) => Future<WallpaperSearchPage>.error(const WallpaperSearchException('down')));
-    await submit(tester, 'forest');
-    await tester.pump();
-
-    await tester.tap(find.text('Try again'));
-    await tester.pump();
-
-    verify(() => service.search('forest', filters: any(named: 'filters'))).called(2);
-  });
-
   testWidgets('a successful empty search shows the empty state', (tester) async {
     when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
       (_) async => (

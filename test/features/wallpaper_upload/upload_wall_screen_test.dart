@@ -156,7 +156,7 @@ void main() {
     final File image = await makeImage(tester);
     final _DraftStoreFixture fixture = await makeDraftStore(tester);
     UploadDraftStore drafts = fixture.open();
-    final String draftId = (await tester.runAsync(() => UploadDraftStore.idForFile(image)))!;
+    final String draftId = (await tester.runAsync(() async => UploadDraftStore.idForBytes(await image.readAsBytes())))!;
 
     Widget uploader() =>
         UploadWallScreen(image: image, prepareImageForTesting: () async {}, draftStoreForTesting: drafts);

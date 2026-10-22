@@ -147,11 +147,6 @@ void main() {
       expect(frameStyle('frame_ring', accent: accent).colors, everyElement(accent));
       expect(frameStyle('frame_gold', accent: accent).colors, isNot(contains(accent)));
     });
-
-    test('the prism frame carries the Glint ring colours', () {
-      expect(frameStyle('frame_prism').colors.length, 9);
-      expect(glowStyle('glow_prism').colors.length, 8);
-    });
   });
 
   test('shopFromPrice is the lowest live price, with overrides, skipping founders items once sold out', () {

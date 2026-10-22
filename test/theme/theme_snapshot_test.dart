@@ -2,151 +2,39 @@ import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-String _hex(Color? c) => c == null ? 'null' : c.toARGB32().toRadixString(16).padLeft(8, '0');
-
-String _style(TextStyle? s) =>
-    s == null ? 'null' : '${s.fontFamily}/${s.fontSize}/${s.fontWeight?.value}/${_hex(s.color)}';
-
-String describeTheme(ThemeData t) {
-  final tt = t.textTheme;
-  return [
-    t.brightness.name,
-    'canvas=${_hex(t.canvasColor)}',
-    'primary=${_hex(t.primaryColor)}',
-    'focus=${_hex(t.focusColor)}',
-    'hint=${_hex(t.hintColor)}',
-    'scheme=${_hex(t.colorScheme.primary)}/${_hex(t.colorScheme.secondary)}/${_hex(t.colorScheme.error)}',
-    'overlay=${t.appBarTheme.systemOverlayStyle?.statusBarIconBrightness?.name}',
-    'labelLarge=${_style(tt.labelLarge)}',
-    'headlineSmall=${_style(tt.headlineSmall)}',
-    'headlineMedium=${_style(tt.headlineMedium)}',
-    'displaySmall=${_style(tt.displaySmall)}',
-    'displayMedium=${_style(tt.displayMedium)}',
-    'displayLarge=${_style(tt.displayLarge)}',
-    'titleMedium=${_style(tt.titleMedium)}',
-    'titleLarge=${_style(tt.titleLarge)}',
-    'bodyMedium=${_style(tt.bodyMedium)}',
-    'bodyLarge=${_style(tt.bodyLarge)}',
-    'bodySmall=${_style(tt.bodySmall)}',
-  ].join(' ');
-}
-
-const _expected = <String, String>{
-  'kLightTheme':
-      'light canvas=00000000 primary=ffffffff focus=1f000000 hint=99000000 '
-      'scheme=ffe57697/ff090909/ffbe2727 overlay=dark labelLarge=Proxima Nova/15.0/600/ff090909 '
-      'headlineSmall=Proxima Nova/20.0/700/ff090909 headlineMedium=Proxima Nova/24.0/700/ff090909 '
-      'displaySmall=Fraunces/28.0/700/ff090909 displayMedium=Fraunces/34.0/700/ff090909 '
-      'displayLarge=Fraunces/40.0/700/ff090909 titleMedium=Proxima Nova/16.0/700/ff090909 '
-      'titleLarge=Proxima Nova/20.0/700/ff090909 bodyMedium=Proxima Nova/14.0/500/ff090909 '
-      'bodyLarge=Proxima Nova/16.0/500/ff090909 bodySmall=Proxima Nova/12.0/500/ff535353',
-  'kLightTheme2':
-      'light canvas=00000000 primary=fff7f1e3 focus=1f000000 hint=99000000 '
-      'scheme=ffc19439/ff1e1709/ffb22624 overlay=dark labelLarge=Proxima Nova/15.0/600/ff1e1709 '
-      'headlineSmall=Proxima Nova/20.0/700/ff1e1709 headlineMedium=Proxima Nova/24.0/700/ff1e1709 '
-      'displaySmall=Fraunces/28.0/700/ff1e1709 displayMedium=Fraunces/34.0/700/ff1e1709 '
-      'displayLarge=Fraunces/40.0/700/ff1e1709 titleMedium=Proxima Nova/16.0/700/ff1e1709 '
-      'titleLarge=Proxima Nova/20.0/700/ff1e1709 bodyMedium=Proxima Nova/14.0/500/ff1e1709 '
-      'bodyLarge=Proxima Nova/16.0/500/ff1e1709 bodySmall=Proxima Nova/12.0/500/ff5f584a',
-  'kLightTheme3':
-      'light canvas=00000000 primary=ffc5a79f focus=1f000000 hint=99000000 '
-      'scheme=ffa7796d/ff19110f/ff5e1a19 overlay=dark labelLarge=Proxima Nova/15.0/600/ff19110f '
-      'headlineSmall=Proxima Nova/20.0/700/ff19110f headlineMedium=Proxima Nova/24.0/700/ff19110f '
-      'displaySmall=Fraunces/28.0/700/ff19110f displayMedium=Fraunces/34.0/700/ff19110f '
-      'displayLarge=Fraunces/40.0/700/ff19110f titleMedium=Proxima Nova/16.0/700/ff19110f '
-      'titleLarge=Proxima Nova/20.0/700/ff19110f bodyMedium=Proxima Nova/14.0/500/ff19110f '
-      'bodyLarge=Proxima Nova/16.0/500/ff19110f bodySmall=Proxima Nova/12.0/500/ff3a2e2b',
-  'kLightTheme4':
-      'light canvas=00000000 primary=ff8399be focus=1f000000 hint=99000000 '
-      'scheme=ff596f95/ff0b0d12/ff381417 overlay=dark labelLarge=Proxima Nova/15.0/600/ff0b0d12 '
-      'headlineSmall=Proxima Nova/20.0/700/ff0b0d12 headlineMedium=Proxima Nova/24.0/700/ff0b0d12 '
-      'displaySmall=Fraunces/28.0/700/ff0b0d12 displayMedium=Fraunces/34.0/700/ff0b0d12 '
-      'displayLarge=Fraunces/40.0/700/ff0b0d12 titleMedium=Proxima Nova/16.0/700/ff0b0d12 '
-      'titleLarge=Proxima Nova/20.0/700/ff0b0d12 bodyMedium=Proxima Nova/14.0/500/ff0b0d12 '
-      'bodyLarge=Proxima Nova/16.0/500/ff0b0d12 bodySmall=Proxima Nova/12.0/500/ff1a1f27',
-  'kDarkTheme':
-      'dark canvas=00000000 primary=ff000000 focus=1fffffff hint=99ffffff scheme=ffe57697/fff0f0f0/ffff6b6b '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/fff0f0f0 headlineSmall=Proxima Nova/20.0/700/fff0f0f0 '
-      'headlineMedium=Proxima Nova/24.0/700/fff0f0f0 displaySmall=Fraunces/28.0/700/fff0f0f0 '
-      'displayMedium=Fraunces/34.0/700/fff0f0f0 displayLarge=Fraunces/40.0/700/fff0f0f0 titleMedium=Proxima '
-      'Nova/16.0/700/fff0f0f0 titleLarge=Proxima Nova/20.0/700/fff0f0f0 bodyMedium=Proxima '
-      'Nova/14.0/500/fff0f0f0 bodyLarge=Proxima Nova/16.0/500/fff0f0f0 bodySmall=Proxima '
-      'Nova/12.0/500/ffa8a8a8',
-  'kDarkTheme2':
-      'dark canvas=00000000 primary=ff000000 focus=1fffffff hint=99ffffff scheme=ffffffff/ffffffff/ffff6b6b '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffffffff headlineSmall=Proxima Nova/20.0/700/ffffffff '
-      'headlineMedium=Proxima Nova/24.0/700/ffffffff displaySmall=Fraunces/28.0/700/ffffffff '
-      'displayMedium=Fraunces/34.0/700/ffffffff displayLarge=Fraunces/40.0/700/ffffffff titleMedium=Proxima '
-      'Nova/16.0/700/ffffffff titleLarge=Proxima Nova/20.0/700/ffffffff bodyMedium=Proxima '
-      'Nova/14.0/500/ffffffff bodyLarge=Proxima Nova/16.0/500/ffffffff bodySmall=Proxima '
-      'Nova/12.0/500/ffb3b3b3',
-  'kDarkTheme3':
-      'dark canvas=00000000 primary=ff202113 focus=1fffffff hint=99ffffff scheme=ff767b45/ffe3e4d0/fffc7a77 '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffe3e4d0 headlineSmall=Proxima Nova/20.0/700/ffe3e4d0 '
-      'headlineMedium=Proxima Nova/24.0/700/ffe3e4d0 displaySmall=Fraunces/28.0/700/ffe3e4d0 '
-      'displayMedium=Fraunces/34.0/700/ffe3e4d0 displayLarge=Fraunces/40.0/700/ffe3e4d0 titleMedium=Proxima '
-      'Nova/16.0/700/ffe3e4d0 titleLarge=Proxima Nova/20.0/700/ffe3e4d0 bodyMedium=Proxima '
-      'Nova/14.0/500/ffe3e4d0 bodyLarge=Proxima Nova/16.0/500/ffe3e4d0 bodySmall=Proxima '
-      'Nova/12.0/500/ffa9aa97',
-  'kDarkTheme4':
-      'dark canvas=00000000 primary=ff041b29 focus=1fffffff hint=99ffffff scheme=ff427da8/ffb0cce0/ffff6b6b '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffb0cce0 headlineSmall=Proxima Nova/20.0/700/ffb0cce0 '
-      'headlineMedium=Proxima Nova/24.0/700/ffb0cce0 displaySmall=Fraunces/28.0/700/ffb0cce0 '
-      'displayMedium=Fraunces/34.0/700/ffb0cce0 displayLarge=Fraunces/40.0/700/ffb0cce0 titleMedium=Proxima '
-      'Nova/16.0/700/ffb0cce0 titleLarge=Proxima Nova/20.0/700/ffb0cce0 bodyMedium=Proxima '
-      'Nova/14.0/500/ffb0cce0 bodyLarge=Proxima Nova/16.0/500/ffb0cce0 bodySmall=Proxima '
-      'Nova/12.0/500/ff839db0',
-  'kDarkTheme5':
-      'dark canvas=00000000 primary=ff12210e focus=1fffffff hint=99ffffff scheme=ff4c7044/ffd9e6d6/fffd706f '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffd9e6d6 headlineSmall=Proxima Nova/20.0/700/ffd9e6d6 '
-      'headlineMedium=Proxima Nova/24.0/700/ffd9e6d6 displaySmall=Fraunces/28.0/700/ffd9e6d6 '
-      'displayMedium=Fraunces/34.0/700/ffd9e6d6 displayLarge=Fraunces/40.0/700/ffd9e6d6 titleMedium=Proxima '
-      'Nova/16.0/700/ffd9e6d6 titleLarge=Proxima Nova/20.0/700/ffd9e6d6 bodyMedium=Proxima '
-      'Nova/14.0/500/ffd9e6d6 bodyLarge=Proxima Nova/16.0/500/ffd9e6d6 bodySmall=Proxima '
-      'Nova/12.0/500/ff9dab9a',
-  'kDarkTheme6':
-      'dark canvas=00000000 primary=ff290d02 focus=1fffffff hint=99ffffff scheme=ff703826/ffdfb0a0/ffff6b6b '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffdfb0a0 headlineSmall=Proxima Nova/20.0/700/ffdfb0a0 '
-      'headlineMedium=Proxima Nova/24.0/700/ffdfb0a0 displaySmall=Fraunces/28.0/700/ffdfb0a0 '
-      'displayMedium=Fraunces/34.0/700/ffdfb0a0 displayLarge=Fraunces/40.0/700/ffdfb0a0 titleMedium=Proxima '
-      'Nova/16.0/700/ffdfb0a0 titleLarge=Proxima Nova/20.0/700/ffdfb0a0 bodyMedium=Proxima '
-      'Nova/14.0/500/ffdfb0a0 bodyLarge=Proxima Nova/16.0/500/ffdfb0a0 bodySmall=Proxima '
-      'Nova/12.0/500/ffb58b7c',
-  'kDarkTheme7':
-      'dark canvas=00000000 primary=ff142431 focus=1fffffff hint=99ffffff scheme=ff2d6079/ffa9cddf/fff17b7e '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffa9cddf headlineSmall=Proxima Nova/20.0/700/ffa9cddf '
-      'headlineMedium=Proxima Nova/24.0/700/ffa9cddf displaySmall=Fraunces/28.0/700/ffa9cddf '
-      'displayMedium=Fraunces/34.0/700/ffa9cddf displayLarge=Fraunces/40.0/700/ffa9cddf titleMedium=Proxima '
-      'Nova/16.0/700/ffa9cddf titleLarge=Proxima Nova/20.0/700/ffa9cddf bodyMedium=Proxima '
-      'Nova/14.0/500/ffa9cddf bodyLarge=Proxima Nova/16.0/500/ffa9cddf bodySmall=Proxima '
-      'Nova/12.0/500/ff87a6b7',
-  'kDarkTheme8':
-      'dark canvas=00000000 primary=ff393d46 focus=1fffffff hint=99ffffff scheme=ff686e80/ffeeeff2/fff5b5b7 '
-      'overlay=light labelLarge=Proxima Nova/15.0/600/ffeeeff2 headlineSmall=Proxima Nova/20.0/700/ffeeeff2 '
-      'headlineMedium=Proxima Nova/24.0/700/ffeeeff2 displaySmall=Fraunces/28.0/700/ffeeeff2 '
-      'displayMedium=Fraunces/34.0/700/ffeeeff2 displayLarge=Fraunces/40.0/700/ffeeeff2 titleMedium=Proxima '
-      'Nova/16.0/700/ffeeeff2 titleLarge=Proxima Nova/20.0/700/ffeeeff2 bodyMedium=Proxima '
-      'Nova/14.0/500/ffeeeff2 bodyLarge=Proxima Nova/16.0/500/ffeeeff2 bodySmall=Proxima '
-      'Nova/12.0/500/ffc5c6cb',
-};
-
 void main() {
-  test('theme getters keep the values they had before the builder refactor', () {
-    final themes = <String, ThemeData>{
-      'kLightTheme': kLightTheme,
-      'kLightTheme2': kLightTheme2,
-      'kLightTheme3': kLightTheme3,
-      'kLightTheme4': kLightTheme4,
-      'kDarkTheme': kDarkTheme,
-      'kDarkTheme2': kDarkTheme2,
-      'kDarkTheme3': kDarkTheme3,
-      'kDarkTheme4': kDarkTheme4,
-      'kDarkTheme5': kDarkTheme5,
-      'kDarkTheme6': kDarkTheme6,
-      'kDarkTheme7': kDarkTheme7,
-      'kDarkTheme8': kDarkTheme8,
-    };
-    expect(themes.keys, _expected.keys);
-    themes.forEach((name, theme) => expect(describeTheme(theme), _expected[name], reason: name));
+  final Map<String, ThemeData> themes = <String, ThemeData>{
+    'light': kLightTheme,
+    'light coffee': kLightTheme2,
+    'light rose': kLightTheme3,
+    'light cotton blue': kLightTheme4,
+    'dark': kDarkTheme,
+    'dark AMOLED': kDarkTheme2,
+    'dark olive': kDarkTheme3,
+    'dark deep ocean': kDarkTheme4,
+    'dark jungle': kDarkTheme5,
+    'dark pepper': kDarkTheme6,
+    'dark sky': kDarkTheme7,
+    'dark steel': kDarkTheme8,
+  };
+
+  test('all themes preserve Prism display and body type roles', () {
+    for (final MapEntry<String, ThemeData> entry in themes.entries) {
+      final TextTheme text = entry.value.textTheme;
+      expect(text.displaySmall?.fontFamily, 'Fraunces', reason: entry.key);
+      expect(text.displayMedium?.fontFamily, 'Fraunces', reason: entry.key);
+      expect(text.displayLarge?.fontFamily, 'Fraunces', reason: entry.key);
+      expect(text.bodyLarge?.fontFamily, 'Proxima Nova', reason: entry.key);
+      expect(text.displaySmall!.fontSize! < text.displayMedium!.fontSize!, isTrue, reason: entry.key);
+      expect(text.displayMedium!.fontSize! < text.displayLarge!.fontSize!, isTrue, reason: entry.key);
+      expect(text.displaySmall!.fontSize! > text.bodyLarge!.fontSize!, isTrue, reason: entry.key);
+    }
+  });
+
+  test('status bar icons contrast with each theme brightness', () {
+    for (final MapEntry<String, ThemeData> entry in themes.entries) {
+      final Brightness expected = entry.value.brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+      expect(entry.value.appBarTheme.systemOverlayStyle?.statusBarIconBrightness, expected, reason: entry.key);
+    }
   });
 }

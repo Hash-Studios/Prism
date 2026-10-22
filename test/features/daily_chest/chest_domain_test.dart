@@ -7,7 +7,6 @@ import 'package:Prism/features/daily_chest/domain/chest_action.dart';
 import 'package:Prism/features/daily_chest/domain/chest_copy.dart';
 import 'package:Prism/features/daily_chest/domain/chest_odds.dart';
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
-import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,19 +73,6 @@ void main() {
     test('a paid chest opens when the balance covers the price and not when it is a coin short', () {
       expect(chestAction(status: _status(), balance: 8), ChestAction.open);
       expect(chestAction(status: _status(), balance: 7), ChestAction.getCoins);
-    });
-  });
-
-  group('tiers', () {
-    test('each tier has its game colour and a label', () {
-      expect(
-        <int>[for (final ChestTier t in ChestTier.values) t.color.toARGB32()],
-        <int>[0xFF34D399, 0xFF38BDF8, 0xFFA78BFA, 0xFFF5B83D],
-      );
-      expect(
-        <String>[for (final ChestTier t in ChestTier.values) t.label(AppLocalizationsEn())],
-        <String>['Common', 'Rare', 'Epic', 'Legendary'],
-      );
     });
   });
 

@@ -5,15 +5,15 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {defineSecret} from "firebase-functions/params";
 import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId, isAiPreview, parseAiSource} from "./aiWallSource";
 import {db, REGION} from "./common";
-import {R2Storage, r2ObjectId, r2Secrets} from "./r2Storage";
+import {R2Storage, r2Env, r2ObjectId, r2Secrets} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {STUDIO_ASSET_BASE, verifiedStudioSource} from "./studio/assetSource";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const validId = (value: unknown): value is string => typeof value === "string" &&
   /^[A-Za-z0-9_-]{1,200}$/.test(value);
-export const ownedAssetStorageEnabled = (): boolean => ["R2_ACCOUNT_ID", "R2_PRIVATE_BUCKET", "R2_PREVIEW_BUCKET",
-  "R2_PREVIEW_BASE_URL"].some((key) => !!process.env[key]);
+export const ownedAssetStorageEnabled = (): boolean => (["R2_ACCOUNT_ID", "R2_PRIVATE_BUCKET", "R2_PREVIEW_BUCKET",
+  "R2_PREVIEW_BASE_URL"] as const).some((key) => !!r2Env(key));
 export class PermanentOwnedAssetError extends Error {}
 class R2IntegrityError extends PermanentOwnedAssetError {}
 /** Storage "repo" of Prism Studio walls: their source is the worker bucket, not a GitHub repository. */
@@ -69,7 +69,7 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   const digest = hash(input.bytes);
   const objectId = r2ObjectId(input, digest);
   const object = objectName({...input, digest});
-  const bucket = process.env.R2_PRIVATE_BUCKET;
+  const bucket = r2Env("R2_PRIVATE_BUCKET");
   if (!bucket) throw new Error("R2 private bucket is not configured");
   const registry = db.collection("r2ObjectRegistry").doc(objectId);
   const registryData = await db.runTransaction(async (tx) => {
@@ -200,7 +200,7 @@ export function stored(value: unknown): value is StoredUpload {
   } catch {
     return false;
   }
-  return "bucket" in value && value.bucket === process.env.R2_PRIVATE_BUCKET &&
+  return "bucket" in value && value.bucket === r2Env("R2_PRIVATE_BUCKET") &&
     "object" in value && typeof value.object === "string" &&
     ((kind !== undefined && asset.sourceKind === kind && new RegExp(`^${prefix}/[a-f0-9]{64}$`).test(value.object)) ||
       (!("sourceKind" in value) && /^retained\/[a-f0-9]{64}$/.test(value.object))) &&
@@ -224,7 +224,7 @@ function contentType(bytes: Buffer): string {
 }
 export function ownedThumbnailUrl(asset: StoredUpload): string {
   if (!stored(asset) || !asset.previewObjectId) throw new Error("Owned preview is not available");
-  const base = process.env.R2_PREVIEW_BASE_URL;
+  const base = r2Env("R2_PREVIEW_BASE_URL");
   if (!base) throw new Error("Owned thumbnail endpoint is not configured");
   const parsed = new URL(base);
   if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) {
@@ -249,7 +249,7 @@ async function proveAsset(data: admin.firestore.DocumentData, prefix: "wallpaper
   const raw = data[prefix === "thumb" ? "wallpaper_thumb" : "wallpaper_url"];
   if (typeof raw !== "string") return null;
   const privateOriginal = raw === "" && prefix === "wallpaper";
-  const previewBase = process.env.R2_PREVIEW_BASE_URL?.replace(/\/$/, "");
+  const previewBase = r2Env("R2_PREVIEW_BASE_URL")?.replace(/\/$/, "");
   const privateThumb = prefix === "thumb" && !!previewBase && raw.startsWith(`${previewBase}/previews/`);
   const privateAsset = privateOriginal || privateThumb;
   const keyPrefix = privateAsset ? "owned_" : "";
@@ -628,7 +628,7 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
       typeof value.uid !== "string" || !validId(value.uid) || typeof value.repo !== "string" ||
       typeof value.path !== "string" || typeof value.sha !== "string" || !/^[a-f0-9]{40}$/.test(value.sha) ||
       typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256) ||
-      value.bucket !== process.env.R2_PRIVATE_BUCKET ||
+      value.bucket !== r2Env("R2_PRIVATE_BUCKET") ||
       value.object !== `${objectPrefix(sourceKind)}/${value.objectId}` ||
       value.objectId !== r2ObjectId({uid: value.uid, repo: value.repo, path: value.path, sha: value.sha,
         ...(sourceKind ? {sourceKind} : {}),

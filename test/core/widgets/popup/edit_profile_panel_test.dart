@@ -1,7 +1,16 @@
+import 'dart:async';
+
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/account/username_service.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,11 +23,21 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   late FakeFirestoreClient firestore;
+  late List<Map<String, Object?>> claims;
+  late Future<Object?> Function(Map<String, Object?>) claimResponse;
 
   setUp(() async {
     await getIt.reset();
     firestore = FakeFirestoreClient();
     getIt.registerSingleton<FirestoreClient>(firestore);
+    claims = <Map<String, Object?>>[];
+    claimResponse = (data) async => <String, Object?>{'username': data['username']};
+    UsernameService.instance = UsernameService(
+      request: (data) {
+        claims.add(data);
+        return claimResponse(data);
+      },
+    );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       toastChannel,
       (_) async => true,
@@ -35,6 +54,8 @@ void main() {
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     await getIt.reset();
+    UsernameService.instance = UsernameService();
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
   Future<void> pumpPanel(WidgetTester tester) async {
@@ -149,7 +170,68 @@ void main() {
       await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
-      expect(firestore.writes.single.data, <String, dynamic>{'username': 'abc'});
+      expect(firestore.writes, isEmpty, reason: 'Canonical usernames are written only by the server.');
+      expect(app_state.prismUser.username, 'abc');
+      expect(claims, <Map<String, Object?>>[
+        <String, Object?>{'username': 'abc'},
+      ]);
+    });
+
+    testWidgets('a rejected server claim leaves the name unchanged and the editor open', (tester) async {
+      claimResponse = (_) async => throw StateError('already-exists');
+      await pumpPanel(tester);
+      await tester.enterText(usernameField(), 'racing_name');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      expect(app_state.prismUser.username, 'creator_01');
+      expect(firestore.writes, isEmpty);
+      expect(find.text('Edit profile'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('a claim completed after account switch cannot mutate the new session', (tester) async {
+      final Completer<Object?> pending = Completer<Object?>();
+      claimResponse = (_) => pending.future;
+      await pumpPanel(tester);
+      await tester.enterText(usernameField(), 'claimed_name');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      await tester.tap(find.text('Save changes'));
+      await tester.pump();
+      final previousUser = app_state.prismUser;
+      app_state.prismUser = profileUser(id: 'other', username: 'other_name');
+      pending.complete(<String, Object?>{'username': 'claimed_name'});
+      await tester.pumpAndSettle();
+      expect(app_state.prismUser.username, 'other_name');
+      expect(previousUser.username, 'creator_01');
+      expect(firestore.writes, isEmpty);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('an account switch during persistence stops the rest of the profile save', (tester) async {
+      final original = app_state.prismUser;
+      final session = _DelayedSession(original);
+      getIt.registerSingleton<SessionRepository>(session);
+      await pumpPanel(tester);
+      await tester.enterText(usernameField(), 'claimed_name');
+      await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Changed Name');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      await tester.tap(find.text('Save changes'));
+      await tester.pump();
+      expect(session.started.isCompleted, isTrue);
+      session.currentUser = profileUser(id: 'other', username: 'other_name');
+      session.gate.complete();
+      await tester.pumpAndSettle();
+      expect(firestore.writes, isEmpty);
+      expect(original.name, 'Me Myself');
+      expect(app_state.prismUser.username, 'other_name');
+      expect(session.replacements, hasLength(1));
+      expect(find.text('Edit profile'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('a name another user holds shows an inline error', (tester) async {
@@ -256,6 +338,62 @@ void main() {
     expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
   });
 
+  group('Remove photo', () {
+    const String googlePhoto = 'https://lh3.googleusercontent.com/a/me=s96-c';
+    const String customPhoto = 'https://raw.githubusercontent.com/Hash-Studios/walls/main/me_1_me.jpg';
+
+    tearDown(() => signedInAccountPhoto = () => null);
+
+    for (final String photo in <String>[defaultProfilePhotoUrl, googlePhoto]) {
+      testWidgets('is not offered for ${photo == googlePhoto ? 'the Google photo' : 'no photo'}', (tester) async {
+        app_state.prismUser.profilePhoto = photo;
+        await pumpPanel(tester);
+
+        expect(find.text('Remove photo'), findsNothing);
+      });
+    }
+
+    for (final String? accountPhoto in <String?>[googlePhoto, null]) {
+      testWidgets('asks first, then puts back ${accountPhoto == null ? 'no photo' : 'the Google photo'}', (
+        tester,
+      ) async {
+        signedInAccountPhoto = () => accountPhoto;
+        app_state.prismUser.profilePhoto = customPhoto;
+        await pumpPanel(tester);
+
+        await tester.tap(find.text('Remove photo'));
+        await tester.pumpAndSettle();
+        expect(find.text('Remove profile photo?'), findsOneWidget);
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        final String expected = accountPhoto ?? defaultProfilePhotoUrl;
+        expect(app_state.prismUser.profilePhoto, expected);
+        expect(firestore.docs[FirebaseCollections.usersV2]!['me']!['profilePhoto'], expected);
+        expect(find.text('Remove photo'), findsNothing);
+      });
+    }
+
+    testWidgets('keeps the custom photo when the write fails', (tester) async {
+      await getIt.reset();
+      getIt.registerSingleton<FirestoreClient>(_FailingWriteFirestore());
+      signedInAccountPhoto = () => googlePhoto;
+      app_state.prismUser.profilePhoto = customPhoto;
+      await pumpPanel(tester);
+
+      await tester.tap(find.text('Remove photo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(app_state.prismUser.profilePhoto, customPhoto);
+      expect(find.text('Remove photo'), findsOneWidget);
+      // The error toast runs a timer.
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
   testWidgets('the link type opens a sheet that marks the current type', (tester) async {
     await pumpPanel(tester);
 
@@ -300,4 +438,28 @@ void main() {
     expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Edit profile'), findsNothing);
   });
+}
+
+class _FailingWriteFirestore extends FakeFirestoreClient {
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
+      Future<void>.error(StateError('offline'));
+}
+
+class _DelayedSession extends Fake implements SessionRepository {
+  _DelayedSession(this.currentUser);
+
+  @override
+  PrismUsersV2 currentUser;
+  final Completer<void> started = Completer<void>();
+  final Completer<void> gate = Completer<void>();
+  final List<PrismUsersV2> replacements = <PrismUsersV2>[];
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    replacements.add(user);
+    if (!started.isCompleted) started.complete();
+    await gate.future;
+    return Result.success(SessionEntity.guest);
+  }
 }

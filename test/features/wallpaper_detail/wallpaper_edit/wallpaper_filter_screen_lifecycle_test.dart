@@ -98,6 +98,33 @@ class _PreviewWallpaperClient implements WallpaperClient {
 }
 
 void main() {
+  testWidgets('retry recovers a moved image and holding the preview compares the original', (tester) async {
+    final directory = Directory.systemTemp.createTempSync('wallpaper_filter_retry_');
+    final source = File('${directory.path}/source.png');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForFailure(tester);
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+
+    await tester.tap(find.text('Try again'));
+    await _waitForReady(tester);
+    expect(find.text("Couldn't open this wallpaper"), findsNothing);
+    await tester.tap(find.text('AddictiveBlue'));
+    await tester.pump();
+    final preview = find.descendant(of: find.byType(AspectRatio).first, matching: find.byType(Image)).first;
+    final gesture = await tester.startGesture(tester.getCenter(preview));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('Original'), findsNWidgets(2));
+    await gesture.up();
+    await tester.pump();
+    expect(find.text('Original'), findsOneWidget);
+    expect(find.byType(ImageFiltered), findsWidgets);
+    await tester.tap(find.byTooltip('Reset'));
+    await tester.pump();
+    final reset = find.ancestor(of: find.byTooltip('Reset'), matching: find.byType(IconButton));
+    expect(tester.widget<IconButton>(reset).onPressed, isNull);
+  });
+
   testWidgets('does not offer export while the source image cannot be decoded', (tester) async {
     final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_test_');
     final File source = File('${directory.path}/invalid.img');

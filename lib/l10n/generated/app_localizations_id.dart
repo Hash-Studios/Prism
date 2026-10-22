@@ -987,6 +987,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountRemoveLink => 'Hapus tautan';
 
   @override
+  String get accountRemovePhoto => 'Hapus foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Hapus yang disimpan offline';
 
   @override
@@ -1387,9 +1390,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'Tinjauan batch selesai';
-
-  @override
-  String get adminBatchCompleteLoading => 'Batch selesai. Memuat batch berikutnya.';
 
   @override
   String get adminBodyLabel => 'Isi';
@@ -2568,6 +2568,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Buang';
+
+  @override
+  String get corePopupProfilePhoto => 'foto profil';
 
   @override
   String get corePopupWhatsNew => 'Yang baru';
@@ -4814,6 +4817,11 @@ class AppLocalizationsId extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Gratis · sisa $countString';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Gratis, wallpaper ini milik Anda';
   }
 
   @override

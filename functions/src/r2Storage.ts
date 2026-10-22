@@ -6,19 +6,37 @@ type Config = {accountId: string; accessKeyId: string; secretAccessKey: string; 
 const sha256 = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const hmac = (key: string | Buffer, value: string) => createHmac("sha256", key).update(value).digest();
 export const r2Secrets = [defineSecret("R2_ACCESS_KEY_ID"), defineSecret("R2_SECRET_ACCESS_KEY")];
+export type R2EnvName = "R2_ACCOUNT_ID" | "R2_ACCESS_KEY_ID" | "R2_SECRET_ACCESS_KEY" | "R2_PRIVATE_BUCKET" |
+  "R2_PREVIEW_BUCKET" | "R2_PREVIEW_BASE_URL";
+/**
+ * Reads one R2 setting with surrounding whitespace removed (secret stores can keep a trailing newline).
+ * Returns undefined when unset or "". Throws, naming only the variable, when it is blank or has inner whitespace or
+ * control characters, because such a value cannot be a valid key, bucket, or URL.
+ */
+export function r2Env(name: R2EnvName): string | undefined {
+  const raw = process.env[name];
+  if (!raw) return undefined;
+  const value = raw.trim();
+  if (!value) throw new Error(`R2 storage configuration is invalid: ${name} is empty`);
+  if (/[\s\p{Cc}]/u.test(value)) {
+    throw new Error(`R2 storage configuration is invalid: ${name} contains whitespace or control characters`);
+  }
+  return value;
+}
 function config(): Config {
-  const values = [process.env.R2_ACCOUNT_ID, process.env.R2_ACCESS_KEY_ID, process.env.R2_SECRET_ACCESS_KEY,
-    process.env.R2_PRIVATE_BUCKET, process.env.R2_PREVIEW_BUCKET];
-  if (![...values, process.env.R2_PREVIEW_BASE_URL].some((value) => !!value)) throw new Error("R2 storage is not configured");
-  if (values.some((value) => !value?.trim())) throw new Error("R2 storage configuration is incomplete");
-  if (!/^[a-f0-9]{32}$/i.test(values[0]!) || values[3] === values[4] || !process.env.R2_PREVIEW_BASE_URL?.trim()) {
+  const values = (["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_PRIVATE_BUCKET",
+    "R2_PREVIEW_BUCKET"] as const).map(r2Env);
+  const previewBase = r2Env("R2_PREVIEW_BASE_URL");
+  if (![...values, previewBase].some((value) => !!value)) throw new Error("R2 storage is not configured");
+  if (values.some((value) => !value)) throw new Error("R2 storage configuration is incomplete");
+  if (!/^[a-f0-9]{32}$/i.test(values[0]!) || values[3] === values[4] || !previewBase) {
     throw new Error("R2 storage configuration is invalid");
   }
   if (![values[3], values[4]].every((value) => /^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(value!))) {
     throw new Error("R2 bucket configuration is invalid");
   }
   try {
-    const preview = new URL(process.env.R2_PREVIEW_BASE_URL);
+    const preview = new URL(previewBase);
     if (preview.protocol !== "https:" || preview.username || preview.password || preview.port || preview.search || preview.hash) {
       throw new Error("Invalid preview endpoint");
     }

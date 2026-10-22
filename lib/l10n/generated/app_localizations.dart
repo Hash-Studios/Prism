@@ -1725,6 +1725,12 @@ abstract class AppLocalizations {
   /// **'Remove link'**
   String get accountRemoveLink;
 
+  /// Button that removes a custom profile photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get accountRemovePhoto;
+
   /// Action label for removing saved offline wallpapers.
   ///
   /// In en, this message translates to:
@@ -2450,12 +2456,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Batch complete'**
   String get adminBatchComplete;
-
-  /// No description provided for @adminBatchCompleteLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Batch complete. Loading the next batch.'**
-  String get adminBatchCompleteLoading;
 
   /// No description provided for @adminBodyLabel.
   ///
@@ -4562,6 +4562,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get corePopupDiscard;
+
+  /// Item name in the profile photo removal confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'profile photo'**
+  String get corePopupProfilePhoto;
 
   /// Title for the app changelog sheet.
   ///
@@ -7942,6 +7948,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label} · Free · {count} left'**
   String economyDownloadFreeLeftFor(String label, int count);
+
+  /// No description provided for @economyDownloadFreeOwnedSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}. Free, you own this wallpaper'**
+  String economyDownloadFreeOwnedSemantics(String label);
 
   /// No description provided for @economyDownloadFreeWithPassSemantics.
   ///

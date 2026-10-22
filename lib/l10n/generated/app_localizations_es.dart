@@ -997,6 +997,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountRemoveLink => 'Eliminar enlace';
 
   @override
+  String get accountRemovePhoto => 'Eliminar foto';
+
+  @override
   String get accountRemoveSavedOffline => 'Eliminar contenido guardado sin conexión';
 
   @override
@@ -1397,9 +1400,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminBatchComplete => 'Lote completado';
-
-  @override
-  String get adminBatchCompleteLoading => 'Lote completado. Cargando el siguiente lote.';
 
   @override
   String get adminBodyLabel => 'Cuerpo';
@@ -2582,6 +2582,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get corePopupDiscard => 'Descartar';
+
+  @override
+  String get corePopupProfilePhoto => 'foto de perfil';
 
   @override
   String get corePopupWhatsNew => 'Novedades';
@@ -4838,6 +4841,11 @@ class AppLocalizationsEs extends AppLocalizations {
     final String countString = countNumberFormat.format(count);
 
     return '$label · Gratis · quedan $countString';
+  }
+
+  @override
+  String economyDownloadFreeOwnedSemantics(String label) {
+    return '$label. Gratis, este fondo de pantalla es tuyo';
   }
 
   @override

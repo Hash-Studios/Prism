@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
@@ -29,6 +31,8 @@ class _FailingReadFirestore extends FakeFirestoreClient {
   _FailingReadFirestore(this.error);
 
   final Object error;
+  Completer<void>? readGate;
+  final readStarted = Completer<void>();
 
   @override
   Future<T?> getById<T>(
@@ -37,7 +41,11 @@ class _FailingReadFirestore extends FakeFirestoreClient {
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
     bool preferCacheFirst = false,
-  }) => Future<T?>.error(error);
+  }) async {
+    if (!readStarted.isCompleted) readStarted.complete();
+    await readGate?.future;
+    throw error;
+  }
 
   @override
   Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) {
@@ -150,6 +158,38 @@ void main() {
 
   test('Apple rolls Firebase back when post-credential analytics fails', () async {
     await runPostCredentialFailure(StateError('server unavailable'));
+  });
+
+  test('Apple delayed failure cannot roll back or report failure under a replacement session', () async {
+    final firebase = _Auth();
+    final error = StateError('server unavailable');
+    final firestore = _FailingReadFirestore(error)..readGate = Completer<void>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final google = GoogleAuth(auth: firebase, googleSignIn: _GoogleSignIn(), messaging: _Messaging());
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      appleChannel,
+      (call) async => <String, Object?>{
+        'type': 'appleid',
+        'authorizationCode': 'code',
+        'identityToken': 'identity-token',
+        'userIdentifier': 'apple-user',
+      },
+    );
+    final pending = AppleAuth(auth: firebase, googleAuth: google).signInWithApple();
+    final rejected = expectLater(pending, throwsA(same(error)));
+    await firestore.readStarted.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    final replacementAuth = _User();
+    firebase.user = replacementAuth;
+    firestore.readGate!.complete();
+    await rejected;
+    expect(_calls, <String>['auth.signIn']);
+    expect(firebase.currentUser, same(replacementAuth));
+    expect(app_state.prismUser, same(replacement));
+    expect(analytics.events, isEmpty);
   });
 
   test('Apple rolls Firebase back for a post-credential cancellation', () async {

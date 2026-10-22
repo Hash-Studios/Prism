@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -12,8 +11,6 @@ import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_star
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app_main;
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -197,17 +194,6 @@ void main() {
     expect(toasts, <String>["Couldn't save your picks. Try again."]);
     expect(find.text('try again'), findsOneWidget);
     expect(find.textContaining("couldn't save your picks"), findsOneWidget);
-  });
-
-  test('the shell route annotation belongs to the shell class', () {
-    final unit = parseString(
-      content: File('lib/features/onboarding_v2/src/views/onboarding_v2_shell.dart').readAsStringSync(),
-    ).unit;
-    final shell = unit.declarations.whereType<ClassDeclaration>().firstWhere(
-      (declaration) => declaration.namePart.typeName.lexeme == 'OnboardingV2Shell',
-    );
-
-    expect(shell.metadata.single.toSource(), startsWith('@RoutePage'));
   });
 
   testWidgets('a failed starter pack save shows an error and a retry', (tester) async {

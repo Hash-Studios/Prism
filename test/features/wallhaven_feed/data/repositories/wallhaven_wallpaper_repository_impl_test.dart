@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show SocketException;
 
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart';
@@ -13,7 +14,175 @@ import 'package:http/testing.dart';
 
 import '../../../../support/fake_feed_cache_local_data_source.dart';
 
+class _FailingWriteCache extends FakeFeedCacheLocalDataSource {
+  @override
+  Future<void> write({
+    required String source,
+    required String scope,
+    required Object? payload,
+    required int ttlHours,
+  }) => Future<void>.error(StateError('disk full'));
+}
+
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
+}
+
 void main() {
+  test('refresh invalidates a page already awaiting its cache append read', () async {
+    final cache = _DelayedReadCache();
+    final repository = WallhavenWallpaperRepositoryImpl(cache);
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        cache.hold = true;
+        final pending = repository.fetchFeed(categoryName: 'A', refresh: false);
+        await cache.started.future;
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        cache.release.complete();
+        await pending;
+        expect((cache.snapshots.values.single.payload! as Map)['pages'] as List, hasLength(1));
+        await repository.fetchFeed(categoryName: 'A', refresh: false);
+      },
+      () => MockClient((request) async {
+        pages.add(int.parse(request.url.queryParameters['page']!));
+        return _page(pages.last);
+      }),
+    );
+    expect(pages, <int>[1, 2, 1, 2]);
+  });
+  test('stale pages and A-B-A refreshes cannot replace the current cursor or snapshot', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    final repository = WallhavenWallpaperRepositoryImpl(cache);
+    final old = Completer<http.Response>();
+    final started = Completer<void>();
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        final pending = repository.fetchFeed(categoryName: 'A', refresh: false);
+        await started.future;
+        await repository.fetchFeed(categoryName: 'B', refresh: true);
+        await repository.fetchFeed(categoryName: 'A', refresh: true);
+        old.complete(_page(2));
+        await pending;
+        final snapshot = cache.snapshots.entries.firstWhere((entry) => entry.key.startsWith('wallhaven/a.')).value;
+        expect((snapshot.payload! as Map)['pages'] as List, hasLength(1));
+        await repository.fetchFeed(categoryName: 'A', refresh: false);
+      },
+      () => MockClient((request) async {
+        final page = int.parse(request.url.queryParameters['page']!);
+        pages.add(page);
+        if (pages.length == 2) {
+          started.complete();
+          return old.future;
+        }
+        return _page(page);
+      }),
+    );
+    expect(pages, <int>[1, 2, 1, 1, 2]);
+  });
+  test('disk write failures keep feed pagination and toplist results usable', () async {
+    final repository = WallhavenWallpaperRepositoryImpl(_FailingWriteCache());
+    final pages = <String>[];
+    await http.runWithClient(
+      () async {
+        expect((await repository.fetchFeed(categoryName: 'forest', refresh: true)).data!.single.id, 'wall-1');
+        expect((await repository.fetchFeed(categoryName: 'forest', refresh: false)).data!.single.id, 'wall-2');
+        expect((await repository.fetchToplist(page: 3)).data!.single.id, 'wall-3');
+      },
+      () => MockClient((request) async {
+        pages.add(request.url.queryParameters['page']!);
+        return _page(int.parse(pages.last));
+      }),
+    );
+    expect(pages, <String>['1', '2', '3']);
+    expect(repository.hasMoreForCategory('forest'), isTrue);
+  });
+
+  test('toplist refresh restores cached pages on transport or status errors but fetch-more fails', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    final repository = WallhavenWallpaperRepositoryImpl(cache);
+    Object? error;
+    var status = 200;
+    await http.runWithClient(
+      () async {
+        expect((await repository.fetchToplist()).data!.single.id, 'wall-1');
+        expect((await repository.fetchToplist(page: 2)).data!.single.id, 'wall-2');
+        status = 503;
+        expect((await repository.fetchToplist()).data!.map((wall) => wall.id), <String>['wall-1', 'wall-2']);
+        expect((await repository.fetchToplist(page: 3)).failure, isA<ServerFailure>());
+        error = const SocketException('offline');
+        expect((await repository.fetchToplist()).data!.map((wall) => wall.id), <String>['wall-1', 'wall-2']);
+        expect(
+          (await repository.fetchToplist(page: 3)).failure!.message,
+          contains('Failed to fetch WallHaven toplist'),
+        );
+        expect((await repository.fetchFeed(categoryName: 'uncached', refresh: true)).isFailure, isTrue);
+      },
+      () => MockClient((request) async {
+        if (error != null) throw error!;
+        return status == 200
+            ? _page(int.parse(request.url.queryParameters['page']!))
+            : http.Response('offline', status);
+      }),
+    );
+  });
+
+  test('feed transport failure restores a durable snapshot after repository restart', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    await http.runWithClient(() async {
+      await WallhavenWallpaperRepositoryImpl(cache).fetchFeed(categoryName: 'forest', refresh: true);
+    }, () => MockClient((_) async => _page(1)));
+    final repository = WallhavenWallpaperRepositoryImpl(cache);
+    final restored = await http.runWithClient(
+      () => repository.fetchFeed(categoryName: 'forest', refresh: true),
+      () => MockClient((_) async => throw const SocketException('offline')),
+    );
+    expect(restored.data!.single.id, 'wall-1');
+    expect(repository.hasMoreForCategory('forest'), isTrue);
+  });
+
+  test('single lookup maps a successful response and malformed data to distinct outcomes', () async {
+    final repository = WallhavenWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
+    await http.runWithClient(
+      () async {
+        final found = await repository.fetchById('ABC123');
+        expect(found.data!.id, 'abc123');
+        expect(found.data!.fullUrl, 'https://example.com/full');
+      },
+      () => MockClient((request) async {
+        expect(request.url.path, '/api/v1/w/abc123');
+        return http.Response(
+          jsonEncode(<String, Object>{
+            'data': <String, Object>{'id': 'abc123', 'path': 'https://example.com/full'},
+          }),
+          200,
+        );
+      }),
+    );
+    final malformed = await http.runWithClient(
+      () => repository.fetchById('abc123'),
+      () => MockClient((_) async => http.Response('invalid json', 200)),
+    );
+    expect(malformed.failure, isA<ServerFailure>());
+    expect(malformed.failure!.message, wallpaperLoadFailureMessage);
+  });
+
   test('category and personalized searches keep independent pagination', () async {
     final List<int> pages = <int>[];
     final http.Client client = MockClient((http.Request request) async {

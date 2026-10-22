@@ -12,6 +12,8 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -82,6 +84,8 @@ class _FakeAuth extends Fake implements FirebaseAuth {
 
   User? user;
   final Object? signOutError;
+  Completer<void>? signOutStarted;
+  Completer<void>? signOutGate;
 
   @override
   User? get currentUser => user;
@@ -98,11 +102,17 @@ class _FakeAuth extends Fake implements FirebaseAuth {
     _log.add('auth.signOut');
     if (signOutError != null) throw signOutError!;
     user = null;
+    signOutStarted?.complete();
+    await signOutGate?.future;
   }
 }
 
 // ignore: avoid_implementing_value_types
 class _FakeAccount extends Fake implements GoogleSignInAccount {
+  @override
+  String? get displayName => 'User';
+  @override
+  String? get photoUrl => null;
   @override
   GoogleSignInAuthentication get authentication => const GoogleSignInAuthentication(idToken: 'id-token');
 }
@@ -111,6 +121,8 @@ class _FakeGoogleSignIn extends Fake implements GoogleSignIn {
   _FakeGoogleSignIn({this.initializeError});
 
   final Object? initializeError;
+  Completer<void>? signOutStarted;
+  Completer<void>? signOutGate;
 
   @override
   Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {
@@ -121,7 +133,10 @@ class _FakeGoogleSignIn extends Fake implements GoogleSignIn {
   Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async => _FakeAccount();
 
   @override
-  Future<void> signOut() async {}
+  Future<void> signOut() async {
+    signOutStarted?.complete();
+    await signOutGate?.future;
+  }
 }
 
 class _FakeMessaging extends Fake implements FirebaseMessaging {
@@ -170,12 +185,75 @@ class _FailingTasteSignalStore extends TasteSignalStore {
   Future<void> clear({bool allowReseed = false}) => Future<void>.error(StateError('disk full'));
 }
 
+class _DelayedTasteSignalStore extends TasteSignalStore {
+  _DelayedTasteSignalStore(super.settingsLocal);
+  final started = Completer<void>();
+  final gate = Completer<void>();
+
+  @override
+  Future<void> clear({bool allowReseed = false}) async {
+    await super.clear(allowReseed: allowReseed);
+    started.complete();
+    await gate.future;
+  }
+}
+
+class _DelayedProfiles extends Fake implements PublicProfileRepository {
+  final started = Completer<void>();
+  final result = Completer<PublicProfileEntity?>();
+
+  @override
+  Stream<PublicProfileEntity?> watchProfile(String identifier) {
+    started.complete();
+    return Stream<PublicProfileEntity?>.fromFuture(result.future);
+  }
+}
+
 void main() {
   late _LoggingFirestore firestore;
   late SettingsLocalDataSource settings;
   late GoogleAuth auth;
 
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  for (final bool duringGoogleSignOut in <bool>[false, true]) {
+    test(
+      'Google rollback stops after a switch during ${duringGoogleSignOut ? 'SDK sign-out' : 'remote cleanup'}',
+      () async {
+        firestore.failReads = true;
+        final firebase = _FakeAuth();
+        final google = _FakeGoogleSignIn();
+        final started = Completer<void>();
+        final gate = Completer<void>();
+        if (duringGoogleSignOut) {
+          google.signOutStarted = started;
+          google.signOutGate = gate;
+        } else {
+          firestore.loggedOutWriteStarted = started;
+          firestore.loggedOutWriteGate = gate;
+        }
+        final analytics = FakeAppAnalytics();
+        AnalyticsRuntime.instance = analytics;
+        final pending = GoogleAuth(
+          auth: firebase,
+          googleSignIn: google,
+          messaging: _FakeMessaging(),
+        ).signInWithGoogle();
+        final rejected = expectLater(pending, throwsStateError);
+        await started.future;
+        final replacement = profileUser(id: 'other');
+        app_state.prismUser = replacement;
+        firebase.user = _FakeUser(uid: 'other');
+        gate.complete();
+        await rejected;
+        expect(_log, isNot(contains('auth.signOut')));
+        expect(firebase.currentUser?.uid, 'other');
+        expect(app_state.prismUser, same(replacement));
+        expect(analytics.userIds, isEmpty);
+        expect(analytics.events, isEmpty);
+      },
+    );
+  }
 
   setUp(() async {
     _log.clear();
@@ -189,6 +267,93 @@ void main() {
       ..registerSingleton<FeedImpressionStore>(FeedImpressionStore(settings))
       ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(settings));
     auth = GoogleAuth(auth: _FakeAuth(), googleSignIn: _FakeGoogleSignIn(), messaging: _FakeMessaging());
+  });
+
+  test('Google rollback stops topic dispatch after an old creator UID lookup returns', () async {
+    app_state.prismUser = profileUser()..following = <String>['creator@example.com'];
+    firestore.failReads = true;
+    final firebase = _FakeAuth();
+    final profiles = _DelayedProfiles();
+    getIt.registerSingleton<PublicProfileRepository>(profiles);
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+    ).signInWithGoogle();
+    final rejected = expectLater(pending, throwsStateError);
+    await profiles.started.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    firebase.user = _FakeUser(uid: 'other');
+    profiles.result.complete(
+      const PublicProfileEntity(
+        id: 'creator-id',
+        name: '',
+        email: 'creator@example.com',
+        username: '',
+        profilePhoto: '',
+        bio: '',
+        followers: <String>[],
+        following: <String>[],
+        links: <String, String>{},
+        coverPhoto: '',
+      ),
+    );
+    await rejected;
+    expect(_log.where((call) => call.startsWith('fcm.unsubscribe posts_')), isEmpty);
+    expect(_log, isNot(contains('auth.signOut')));
+    expect(app_state.prismUser, same(replacement));
+  });
+
+  test('Google rollback stops sequential personalization cleanup when the owner changes', () async {
+    firestore.failReads = true;
+    final firebase = _FakeAuth();
+    final taste = _DelayedTasteSignalStore(settings);
+    await getIt.unregister<TasteSignalStore>();
+    getIt.registerSingleton<TasteSignalStore>(taste);
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+    ).signInWithGoogle();
+    final rejected = expectLater(pending, throwsStateError);
+    await taste.started.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    firebase.user = _FakeUser(uid: 'other');
+    final impressions = getIt<FeedImpressionStore>();
+    final now = DateTime.now().toUtc();
+    await impressions.recordShown(<String>['replacement-wall'], now);
+    taste.gate.complete();
+    await rejected;
+    expect(impressions.recentShows(now), contains('replacement-wall'));
+    expect(_log, isNot(contains('auth.signOut')));
+    expect(app_state.prismUser, same(replacement));
+  });
+
+  test('Google rollback completion cannot publish guest over a replacement during Firebase sign-out', () async {
+    firestore.failReads = true;
+    final firebase = _FakeAuth()
+      ..signOutStarted = Completer<void>()
+      ..signOutGate = Completer<void>();
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+    ).signInWithGoogle();
+    final rejected = expectLater(pending, throwsStateError);
+    await firebase.signOutStarted!.future;
+    final replacement = profileUser(id: 'other');
+    app_state.prismUser = replacement;
+    firebase.user = _FakeUser(uid: 'other');
+    firebase.signOutGate!.complete();
+    await rejected;
+    expect(app_state.prismUser, same(replacement));
+    expect(firebase.currentUser?.uid, 'other');
+    expect(analytics.userIds, isEmpty);
+    expect(analytics.events, isEmpty);
   });
 
   tearDown(() async {

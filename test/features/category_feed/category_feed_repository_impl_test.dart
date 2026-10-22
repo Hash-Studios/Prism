@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/data/repositories/category_feed_repository_impl.dart';
@@ -18,6 +20,7 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -31,6 +34,8 @@ class _MockWallhaven extends Mock implements WallhavenWallpaperRepository {}
 
 class _MockPexels extends Mock implements PexelsWallpaperRepository {}
 
+class _MockRemoteConfig extends Mock implements FirebaseRemoteConfig {}
+
 class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
   @override
   Future<void> write({
@@ -39,6 +44,23 @@ class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
     required Object? payload,
     required int ttlHours,
   }) => Future<void>.error(StateError('cache unavailable'));
+}
+
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
 }
 
 const CategoryEntity _cyberpunk = CategoryEntity(
@@ -130,6 +152,35 @@ void main() {
     await repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
     expect(cache.snapshots, hasLength(1));
     expect(((cache.snapshots.values.single.payload! as Map)['items'] as List), hasLength(1));
+  });
+
+  test('an old category append cannot overwrite refresh after its cache read', () async {
+    final delayedCache = _DelayedReadCache();
+    final repo = CategoryFeedRepositoryImpl(
+      SettingsLocalDataSource(store),
+      delayedCache,
+      _MockPrism(),
+      wallhaven,
+      _MockPexels(),
+    );
+    int calls = 0;
+    when(
+      () => wallhaven.fetchFeed(
+        categoryName: any(named: 'categoryName'),
+        refresh: any(named: 'refresh'),
+        categories: any(named: 'categories'),
+        purity: any(named: 'purity'),
+      ),
+    ).thenAnswer((_) async => Result.success(<WallhavenWallpaper>[_wall('wall-${++calls}')]));
+    await repo.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+    delayedCache.hold = true;
+    final old = repo.fetchCategoryFeed(category: _cyberpunk, refresh: false);
+    await delayedCache.started.future;
+    await repo.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+    delayedCache.release.complete();
+    await old;
+    final items = (delayedCache.snapshots.values.single.payload! as Map)['items'] as List;
+    expect(items.map((item) => decodeFeedItem(Map<String, dynamic>.from(item as Map))!.id), <String>['wall-3']);
   });
 
   test('a successful provider page is returned when local cache persistence fails', () async {
@@ -359,6 +410,24 @@ void main() {
       final amoled = categories.singleWhere((category) => category.name == 'AMOLED');
       expect(amoled.source, WallpaperSource.wallhaven);
       expect(amoled.image, startsWith('https://images.pexels.com/photos/'));
+    });
+
+    test('getCategories serves the Remote Config list', () async {
+      final remoteConfig = _MockRemoteConfig();
+      when(() => remoteConfig.getString(categoriesRemoteConfigKey)).thenReturn(
+        '[{"name":"Diwali","source":"pexels","imageUrl":"https://img/d.jpg"},'
+        '{"name":"Nature","source":"wallhaven","imageUrl":"https://img/n.jpg"}]',
+      );
+      CategoryCatalog.resolve(remoteConfig);
+      addTearDown(CategoryCatalog.debugReset);
+
+      final categories = (await repository.getCategories()).data!;
+
+      expect(categories.map((category) => category.name), <String>['Diwali', 'Nature']);
+      expect(categories.first.source, WallpaperSource.pexels);
+      expect(categories.first.image2, 'https://img/d.jpg');
+      expect(categories.first.hasPrismWalls, isFalse);
+      expect(categories.last.hasPrismWalls, isTrue);
     });
   });
 }

@@ -1286,6 +1286,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "Remove photo",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "Remove saved offline",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -1816,7 +1820,6 @@
   "adminBackToReviewList": "Back to the review list",
   "adminBatchActionFailed": "Could not complete this review action. Try again.",
   "adminBatchComplete": "Batch complete",
-  "adminBatchCompleteLoading": "Batch complete. Loading the next batch.",
   "adminBodyLabel": "Body",
   "adminBodyRequired": "Body is required",
   "adminBy": "By",
@@ -2491,6 +2494,10 @@
   "corePopupDiscard": "Discard",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "profile photo",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "What's new",
   "@corePopupWhatsNew": {
@@ -4069,6 +4076,14 @@
       "count": {
         "type": "int",
         "format": "decimalPattern"
+      }
+    }
+  },
+  "economyDownloadFreeOwnedSemantics": "{label}. Free, you own this wallpaper",
+  "@economyDownloadFreeOwnedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
       }
     }
   },

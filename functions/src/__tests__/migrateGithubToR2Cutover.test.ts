@@ -197,6 +197,14 @@ const aiWall = (data: Record<string, unknown> = {}): MigrationWall => ({docPath:
     email: "creator@example.com", resolution: "1179x2048",
     wallpaper_url: `https://prismwalls.com/api/ai/assets/ai/public/${GEN}.png`,
     wallpaper_thumb: `https://prismwalls.com/api/ai/assets/ai/public/${GEN}.png`, ...data}});
+
+test("AI2 walls and old stored identities both keep their generation in the migration inventory", () => {
+  for (const id of ["AI2B83C297CF7C420FF33FA03823705EA95", "AIGENMLT7O22"]) {
+    const [row] = buildGithubInventory([aiWall({id})], tree, options).walls;
+    assert.equal(row.status, "planned");
+    assert.deepEqual(row.ai, {generationId: GEN});
+  }
+});
 const FIREBASE_URL = "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/" +
   "Replacement%20Thumbnails%2Fpicker%20(1).jpg?alt=media&token=t";
 const firebaseWall = (data: Record<string, unknown> = {}): MigrationWall => ({docPath: "walls/fb", incarnation: 100,

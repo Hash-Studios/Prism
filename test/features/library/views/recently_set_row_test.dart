@@ -29,14 +29,20 @@ void main() {
     expect(find.text('Recently set'), findsNothing);
   });
 
-  testWidgets('shows each wallpaper once, newest first, at most eight', (tester) async {
+  testWidgets('deduplicates history in supplied order and shows at most eight wallpapers', (tester) async {
     await pumpRow(tester, <AppliedWallpaper>[
-      for (int i = 0; i < 12; i++) _item('w$i'),
-      _item('dup', fullUrl: 'https://example.com/w0.jpg'),
+      _item('w0', at: DateTime.utc(2026, 1, 1)),
+      _item('dup', fullUrl: 'https://example.com/w0.jpg', at: DateTime.utc(2026, 1, 3)),
+      for (int i = 1; i < 9; i++) _item('w$i', at: DateTime.utc(2026, 1, i + 1)),
     ]);
 
     expect(find.text('Recently set'), findsOneWidget);
-    expect(find.bySemanticsLabel('Set this wallpaper again'), findsAtLeastNWidgets(1));
+    expect(find.bySemanticsLabel('Set this wallpaper again'), findsNWidgets(8));
     expect(find.byType(InkWell), findsNWidgets(8));
+    final List<String> renderedPaths = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((image) => (image.image as FileImage).file.path)
+        .toList();
+    expect(renderedPaths, <String>[for (int i = 0; i < 8; i++) '/missing/w$i.jpg']);
   });
 }

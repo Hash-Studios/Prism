@@ -15,7 +15,7 @@ import {authorOf, syncAuthorFields} from "./wallAuthor";
  * user documents (not as a subcollection), so we detect new follows by
  * diffing `before.followers` vs `after.followers`.
  *
- * It also keeps `usernameLower` and `nameLower` equal to the lowercased username and name, and copies a changed
+ * It also keeps `nameLower` equal to the lowercased name, and copies a changed
  * name or photo to the user's walls and setups. When a new follower is blocked by the followed user, the follow
  * is removed from both users instead of notified.
  *
@@ -37,13 +37,10 @@ export const onFollowCreated = onDocumentUpdated(
       return;
     }
 
-    // Keep usernameLower and nameLower in sync for search. The write re-fires this trigger once, and that run
+    // Username search fields belong to the reservation transaction. Keep nameLower in sync for search.
+    // The write re-fires this trigger once, and that run
     // finds nothing to change.
     const lowerFields: Record<string, string> = {};
-    const usernameLower = usernameLowerOf(after.username);
-    if (after.usernameLower !== usernameLower) {
-      lowerFields.usernameLower = usernameLower;
-    }
     const nameLower = usernameLowerOf(after.name);
     if (typeof after.name === "string" && after.nameLower !== nameLower) {
       lowerFields.nameLower = nameLower;
@@ -60,7 +57,7 @@ export const onFollowCreated = onDocumentUpdated(
     const afterAuthor = authorOf(after);
     if (beforeAuthor.by !== afterAuthor.by || beforeAuthor.userPhoto !== afterAuthor.userPhoto) {
       try {
-        await syncAuthorFields(after);
+        await syncAuthorFields(event.params.userId, after);
       } catch (err) {
         logger.warn("onFollowCreated: author sync failed.", {err});
       }

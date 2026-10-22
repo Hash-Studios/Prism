@@ -134,6 +134,16 @@ test("a user AI wall gets a server receipt of its Worker record, and the first r
   assert.equal(store.get(`aiGenerationReceipts/${GEN}`)?.userId, "first");
 });
 
+for (const id of ["AI2B83C297CF7C420FF33FA03823705EA95", "AIGENMLT7O22"]) {
+  test(`submission captures provenance for the app's ${id} identity`, async (t) => {
+    workerRecords(t, () => new Response(JSON.stringify(aiRecord), {status: 200}));
+    const {store} = setup(t, {name: "Maker"}, aiWall({id, wallpaper_url: aiRecord.watermarkedImageUrl}));
+    await fire(store);
+    assert.equal(store.get(`aiGenerationReceipts/${GEN}`)?.generationId, GEN);
+    assert.equal(store.get(`aiGenerationReceipts/${GEN}`)?.userId, "maker");
+  });
+}
+
 test("a failed receipt create does not stop premium admin notifications or owner sync", async (t) => {
   workerRecords(t, () => new Response(JSON.stringify(aiRecord), {status: 200}));
   const {store, topics} = setup(t, {name: "Real Maker", premium: true}, aiWall());

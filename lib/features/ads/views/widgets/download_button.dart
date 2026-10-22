@@ -251,6 +251,13 @@ class _DownloadButtonState extends State<DownloadButton> {
     } else if (_isGuest) {
       text = label;
       semantics = label;
+    } else if (OriginalAccessService.isUnlockedDropUrl(
+      widget.link?.trim() ?? '',
+      widget.contentId,
+      widget.wallpaperSource,
+    )) {
+      text = context.l10n.economyDownloadFreeFor(label);
+      semantics = context.l10n.economyDownloadFreeOwnedSemantics(label);
     } else if (_downloadIsFree(widget.isPremiumContent)) {
       final int left = CoinsService.instance.graceDownloadsLeft;
       text = widget.isPremiumContent
@@ -441,6 +448,18 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
         return;
       }
+      // The Drop unlock already paid for this wall.
+      if (OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId, tap.wallpaperSource)) {
+        final bool saved = await _performDownload();
+        _track(
+          DownloadResultEvent(
+            result: saved ? 'success' : 'failed',
+            reason: saved ? null : _failureReason ?? 'drop_save_failed',
+            stage: saved ? 'download' : _failureStage,
+          ),
+        );
+        return;
+      }
       final CoinGateResult result = await _gatedDownload();
       _trackGateResult(result);
     } catch (error, stackTrace) {
@@ -509,7 +528,11 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
     final File? localOriginal = await _previouslyAcquiredLocalOriginal(tap);
     if (!mounted) return (proceed: false, freeLocalCopy: null);
-    final bool free = app_state.prismUser.premium || _isGuest || _downloadIsFree(tap.isPremiumContent);
+    final bool free =
+        app_state.prismUser.premium ||
+        _isGuest ||
+        _downloadIsFree(tap.isPremiumContent) ||
+        OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId, tap.wallpaperSource);
     final int cost = _tapSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
@@ -716,7 +739,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       serverRequiredCoins = quote.requiredCoins;
       serverBalance = quote.currentBalance;
       if (!mounted || !_ownerStillMatches(_tap)) return CoinGateResult.cancelled;
-      CoinsService.instance.balanceNotifier.value = quote.currentBalance;
+      CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: _tap.ownerId);
     }
     return CoinGate.forContext(context).run(
       CoinGateSpec(
@@ -739,10 +762,11 @@ class _DownloadButtonState extends State<DownloadButton> {
                   );
                   return CoinMutationResult(
                     success: true,
+                    // Original-access receipts do not use CoinGate's spend/refund ledger.
                     changed: false,
                     previousBalance: balance,
-                    currentBalance: balance,
-                    delta: 0,
+                    currentBalance: CoinsService.instance.balanceNotifier.value,
+                    delta: CoinsService.instance.balanceNotifier.value - balance,
                   );
                 } on OriginalAccessInsufficientBalance catch (error) {
                   serverRequiredCoins = error.requiredCoins;

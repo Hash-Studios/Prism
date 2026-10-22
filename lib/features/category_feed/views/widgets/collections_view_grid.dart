@@ -52,7 +52,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       await refreshCollectionWithName();
     } catch (error, stackTrace) {
       logger.w('Failed to refresh the collection.', error: error, stackTrace: stackTrace);
-      toasts.error(context.l10n.wallpaperCollectionRefreshError);
+      if (mounted) toasts.error(context.l10n.wallpaperCollectionRefreshError);
     }
     if (mounted) setState(() => _loadMoreFailed = false);
   }

@@ -9,13 +9,14 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -342,6 +343,31 @@ void main() {
 
   for (final Brightness brightness in Brightness.values) {
     group('${brightness.name} theme', () {
+      testWidgets('protected streak originals never advertise a local acquisition offer', (tester) async {
+        final bloc = _MockShopBloc();
+        whenListen(
+          bloc,
+          const Stream<StreakShopState>.empty(),
+          initialState: const StreakShopState(
+            status: StreakShopStatus.success,
+            items: <PrismWallpaper>[
+              PrismWallpaper(
+                core: WallpaperCore(id: 'protected', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+                review: true,
+                isStreakExclusive: true,
+                requiredStreakDays: 1,
+                streakShopCoinCost: 1,
+              ),
+            ],
+          ),
+        );
+        getIt.registerFactory<StreakShopBloc>(() => bloc);
+        CoinsService.instance.balanceNotifier.value = 1000;
+        await tester.pumpWidget(_host(const RewardsCollectionSection(), brightness));
+        await tester.pump();
+        expect(find.text('Streak collection'), findsNothing);
+        expect(find.byType(PrismWallTile), findsNothing);
+      });
       testWidgets('spend section shows prices from CoinPolicy and runs the freeze callback', (tester) async {
         int freezeTaps = 0;
         await tester.binding.setSurfaceSize(const Size(400, 900));

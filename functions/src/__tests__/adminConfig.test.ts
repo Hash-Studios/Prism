@@ -21,9 +21,11 @@ test("a verified email in admin_users is an admin, an unverified one is not", as
   assert.equal(await isAdminCaller(caller({email: "rules@x.com"})), false);
 });
 
-test("an email in config/adminNotifications is an admin in any letter case, as before", async (t) => {
+test("only a verified recipient email is an admin, in any letter case", async (t) => {
   installFakeDb(t, seed);
-  assert.equal(await isAdminCaller(caller({email: "CONFIG@x.com"})), true);
+  assert.equal(await isAdminCaller(caller({email: "CONFIG@x.com", email_verified: true})), true);
+  assert.equal(await isAdminCaller(caller({email: "CONFIG@x.com", email_verified: false})), false);
+  assert.equal(await isAdminCaller(caller({email: "CONFIG@x.com"})), false);
 });
 
 test("anyone else, and a caller without auth or email, is not an admin", async (t) => {

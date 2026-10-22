@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_profile_sync.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -75,10 +75,13 @@ class GoogleAuth {
 
   Future<SignInOutcome> signInWithGoogle() async {
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
+    final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
       await _ensureGoogleSignInInitialized();
+      session.requireCurrent();
       final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+      session.requireCurrent();
       final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
       final String? idToken = googleSignInAuthentication.idToken;
       if (idToken == null || idToken.trim().isEmpty) {
@@ -93,9 +96,13 @@ class GoogleAuth {
       if (user == null) {
         throw StateError('Firebase user missing after Google sign-in.');
       }
-      final String resolvedDisplayName = _resolvedDisplayName(user);
+      session.acceptCredential(user);
+      // Firebase keeps the Google name of account creation; only [_rememberGoogleProfile] changes it.
+      final String? lastGoogleName = user.displayName;
+      final String resolvedDisplayName = _resolvedDisplayName(googleSignInAccount, user);
       final String resolvedEmail = _resolvedEmail(user);
-      final String resolvedPhotoUrl = _resolvedPhotoUrl(user);
+      final String? googlePhotoUrl = sizedGooglePhoto(googleSignInAccount.photoUrl);
+      final String resolvedPhotoUrl = photoOrPlaceholder(googlePhotoUrl);
       if (resolvedEmail.isEmpty) {
         throw StateError('Google sign-in returned user without email.');
       }
@@ -105,8 +112,18 @@ class GoogleAuth {
         email: resolvedEmail,
         photoUrl: resolvedPhotoUrl,
         sourceTagPrefix: 'auth.signin',
+        syncProfile: (PrismUsersV2 profile) => googleProfileUpdates(
+          profile,
+          lastGoogleName: lastGoogleName,
+          googleName: resolvedDisplayName,
+          googlePhotoUrl: resolvedPhotoUrl,
+        ),
         messaging: _messaging,
+        session: session,
       );
+      session.requireCurrent();
+      await _rememberGoogleProfile(user, session: session, name: resolvedDisplayName, photoUrl: googlePhotoUrl);
+      session.requireCurrent();
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.google,
@@ -114,42 +131,47 @@ class GoogleAuth {
           sourceContext: 'google_auth',
         ),
       );
+      session.requireCurrent();
       return SignInOutcome.signedIn;
     } catch (e, st) {
       if (_isSignInCancelled(e)) {
         if (firebaseSignedIn) {
-          await _rollbackSignIn();
+          await _rollbackSignIn(session);
         }
-        await _trackSignInFailure(
-          const AuthLoginResultEvent(
-            method: AuthMethodValue.google,
-            result: EventResultValue.cancelled,
-            reason: AnalyticsReasonValue.userCancelled,
-            sourceContext: 'google_auth',
-          ),
-        );
+        if (session.isCurrent) {
+          await _trackSignInFailure(
+            const AuthLoginResultEvent(
+              method: AuthMethodValue.google,
+              result: EventResultValue.cancelled,
+              reason: AnalyticsReasonValue.userCancelled,
+              sourceContext: 'google_auth',
+            ),
+          );
+        }
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
         return SignInOutcome.cancelled;
       }
       if (firebaseSignedIn) {
-        await _rollbackSignIn();
+        await _rollbackSignIn(session);
       }
-      await _trackSignInFailure(
-        const AuthLoginResultEvent(
-          method: AuthMethodValue.google,
-          result: EventResultValue.failure,
-          reason: AnalyticsReasonValue.error,
-          sourceContext: 'google_auth',
-        ),
-      );
+      if (session.isCurrent) {
+        await _trackSignInFailure(
+          const AuthLoginResultEvent(
+            method: AuthMethodValue.google,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+            sourceContext: 'google_auth',
+          ),
+        );
+      }
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
       rethrow;
     }
   }
 
-  Future<void> _rollbackSignIn() async {
+  Future<void> _rollbackSignIn(SignInSession session) async {
     try {
-      await signOutGoogle();
+      await signOutGoogle(session: session);
     } catch (rollbackError, rollbackStackTrace) {
       logger.w(
         'Failed to roll back Firebase sign-in.',
@@ -182,16 +204,22 @@ class GoogleAuth {
   /// The one sign-out path (Google, Apple, account deletion, and a sign-in that
   /// failed after Firebase accepted the credential). Server writes and topic
   /// unsubscribes run first, while the Firebase session can still authorize them.
-  Future<bool> signOutGoogle() async {
-    clearInAppNotificationSyncGateAll();
-    await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
-    await _bounded(FcmTokenService.instance.clearSyncedToken, 'clear synced FCM token');
-    await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
-    if (getIt.isRegistered<FavouritesSyncService>()) {
-      await _bounded(getIt<FavouritesSyncService>().stop, 'stop favourites sync');
-    }
+  Future<bool> signOutGoogle({SignInSession? session}) async {
+    final SignInSession operation = session ?? SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
+    if (!operation.isCurrent) return false;
     final PrismUsersV2 existingUser = app_state.prismUser;
     final User? authenticatedUser = _auth.currentUser;
+    clearInAppNotificationSyncGateAll();
+    await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
+    if (!operation.isCurrent) return false;
+    await _bounded(FcmTokenService.instance.clearSyncedToken, 'clear synced FCM token');
+    if (!operation.isCurrent) return false;
+    await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
+    if (!operation.isCurrent) return false;
+    if (getIt.isRegistered<FavouritesSyncService>()) {
+      await _bounded(getIt<FavouritesSyncService>().stop, 'stop favourites sync');
+      if (!operation.isCurrent) return false;
+    }
     final String authenticatedUid = authenticatedUser?.uid.trim() ?? '';
     final String userId = authenticatedUid.isNotEmpty ? authenticatedUid : existingUser.id;
     String email = existingUser.id == userId ? existingUser.email : '';
@@ -218,16 +246,24 @@ class GoogleAuth {
         );
       }
     }
+    if (!operation.isCurrent) return false;
     await Future.wait(<Future<void>>[
       _bounded(() => _markLoggedOut(userId), 'mark logged out'),
       _bounded(
-        () => _unsubscribeUserTopics(userId: userId, email: authenticatedUser?.email ?? email, following: following),
+        () => _unsubscribeUserTopics(
+          operation,
+          userId: userId,
+          email: authenticatedUser?.email ?? email,
+          following: following,
+        ),
         'unsubscribe topics',
       ),
-      _clearPersonalization(),
+      _clearPersonalization(operation),
     ]);
+    if (!operation.isCurrent) return false;
     try {
       await _ensureGoogleSignInInitialized();
+      if (!operation.isCurrent) return false;
       await googleSignIn.signOut();
     } catch (e, st) {
       logger.w(
@@ -237,8 +273,7 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
-    app_state.prismUser = createGuestPrismUser();
-    CoinsService.instance.resetSession();
+    if (!operation.isCurrent) return false;
     // isSignedIn() reads FirebaseAuth.currentUser directly, so it must actually be cleared
     // here too. Used for Apple-signed-in users as well, not just Google.
     bool firebaseSignOutSucceeded = true;
@@ -248,16 +283,21 @@ class GoogleAuth {
       firebaseSignOutSucceeded = false;
       logger.w('FirebaseAuth signOut failed; continuing local sign-out cleanup.', error: e, stackTrace: st);
     }
+    if (!operation.finishSignOut(firebaseSucceeded: firebaseSignOutSucceeded, guest: createGuestPrismUser())) {
+      return false;
+    }
     try {
       await syncSentryUserScope(loggedIn: false, id: '', email: '');
     } catch (e, st) {
       logger.w('Failed to clear Sentry user scope.', tag: 'GoogleAuth', error: e, stackTrace: st);
     }
+    if (!operation.isCurrent) return false;
     try {
       await app_state.persistPrismUser();
     } catch (e, st) {
       logger.w('Failed to persist signed-out user state.', tag: 'GoogleAuth', error: e, stackTrace: st);
     }
+    if (!operation.isCurrent) return false;
     try {
       await PurchasesService.instance.logOut();
     } catch (e, st) {
@@ -268,21 +308,25 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
+    if (!operation.isCurrent) return false;
     try {
       await analytics.setUserId(null);
     } catch (e, st) {
       logger.w('Failed to clear analytics user id.', tag: 'GoogleAuth', error: e, stackTrace: st);
     }
+    if (!operation.isCurrent) return false;
     try {
       await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
     } catch (e, st) {
       logger.w('Failed to clear analytics subscription tier.', tag: 'GoogleAuth', error: e, stackTrace: st);
     }
+    if (!operation.isCurrent) return false;
     try {
       await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     } catch (e, st) {
       logger.w('Failed to clear analytics premium state.', tag: 'GoogleAuth', error: e, stackTrace: st);
     }
+    if (!operation.isCurrent) return false;
     logger.d('User Sign Out');
     return firebaseSignOutSucceeded;
   }
@@ -315,7 +359,8 @@ class GoogleAuth {
   }
 
   /// A shared or handed-down device must stop getting the previous user's pushes.
-  Future<void> _unsubscribeUserTopics({
+  Future<void> _unsubscribeUserTopics(
+    SignInSession operation, {
     required String userId,
     required String email,
     required Iterable<String> following,
@@ -328,10 +373,27 @@ class GoogleAuth {
       final String? userTopic = userTopicFromId(userId);
       final String? followersTopic = followersTopicFromEmail(email);
       await Future.wait(<Future<void>>[
-        if (userTopic != null) unsubscribeFromTopicSafely(messaging, userTopic, sourceTag: 'auth.signout.user_topic'),
+        if (userTopic != null)
+          unsubscribeFromTopicSafely(
+            messaging,
+            userTopic,
+            sourceTag: 'auth.signout.user_topic',
+            isCurrent: () => operation.isCurrent,
+          ),
         if (followersTopic != null)
-          unsubscribeFromTopicSafely(messaging, followersTopic, sourceTag: 'auth.signout.followers_topic'),
-        setCreatorPostsTopics(messaging, following, subscribed: false, sourceTag: 'auth.signout.posts_topics'),
+          unsubscribeFromTopicSafely(
+            messaging,
+            followersTopic,
+            sourceTag: 'auth.signout.followers_topic',
+            isCurrent: () => operation.isCurrent,
+          ),
+        setCreatorPostsTopics(
+          messaging,
+          following,
+          subscribed: false,
+          sourceTag: 'auth.signout.posts_topics',
+          isCurrent: () => operation.isCurrent,
+        ),
       ]);
     } catch (e, st) {
       logger.w('Topic unsubscribe on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
@@ -339,7 +401,8 @@ class GoogleAuth {
   }
 
   /// Taste signals, feed impressions and applied-wallpaper history belong to the user, not the device.
-  Future<void> _clearPersonalization() async {
+  Future<void> _clearPersonalization(SignInSession operation) async {
+    if (!operation.isCurrent) return;
     if (getIt.isRegistered<TasteSignalStore>()) {
       try {
         await getIt<TasteSignalStore>().clear(allowReseed: true);
@@ -347,6 +410,7 @@ class GoogleAuth {
         logger.w('Taste signal clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
+    if (!operation.isCurrent) return;
     if (getIt.isRegistered<FeedImpressionStore>()) {
       try {
         await getIt<FeedImpressionStore>().clear();
@@ -354,6 +418,7 @@ class GoogleAuth {
         logger.w('Feed impression clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
+    if (!operation.isCurrent) return;
     if (getIt.isRegistered<WallpaperHistoryStore>()) {
       try {
         await getIt<WallpaperHistoryStore>().clear();
@@ -361,6 +426,7 @@ class GoogleAuth {
         logger.w('Wallpaper history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
+    if (!operation.isCurrent) return;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       try {
         await ShortcutsFavouritesStore.clear();
@@ -410,7 +476,39 @@ class GoogleAuth {
     }
   }
 
-  String _resolvedDisplayName(User user) {
+  /// Saves the Google name and photo on the Firebase user. The next sign-in compares the Prism name with this name to
+  /// see if the user changed it, and removing a custom photo in Edit Profile brings back this photo.
+  Future<void> _rememberGoogleProfile(
+    User user, {
+    required SignInSession session,
+    required String name,
+    required String? photoUrl,
+  }) async {
+    session.requireCurrent();
+    try {
+      if (name != user.displayName) {
+        await user.updateDisplayName(name);
+        session.requireCurrent();
+      }
+      if (!isSamePhoto(photoUrl, user.photoURL)) {
+        await user.updatePhotoURL(photoUrl);
+      }
+    } catch (error, stackTrace) {
+      logger.w(
+        'Google name and photo not saved on the Firebase user.',
+        tag: 'GoogleAuth',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    session.requireCurrent();
+  }
+
+  String _resolvedDisplayName(GoogleSignInAccount account, User user) {
+    final String fromGoogle = (account.displayName ?? '').trim();
+    if (fromGoogle.isNotEmpty) {
+      return fromGoogle;
+    }
     final String fromDisplayName = (user.displayName ?? '').trim();
     if (fromDisplayName.isNotEmpty) {
       return fromDisplayName;
@@ -423,12 +521,4 @@ class GoogleAuth {
   }
 
   String _resolvedEmail(User user) => (user.email ?? '').trim();
-
-  String _resolvedPhotoUrl(User user) {
-    final String candidate = (user.photoURL ?? '').trim();
-    if (candidate.isNotEmpty) {
-      return candidate;
-    }
-    return app_state.defaultProfilePhotoUrl;
-  }
 }

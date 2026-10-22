@@ -457,6 +457,7 @@ class CoinsService with WidgetsBindingObserver {
   int _xpMutationGeneration = 0;
   int _economyRev = -1;
   int _economyMutationGeneration = 0;
+  int _balanceMutationGeneration = 0;
   int _graceDownloadsUsed = 0;
   String? _adsTodayDay;
   int _adsTodayCount = 0;
@@ -475,6 +476,10 @@ class CoinsService with WidgetsBindingObserver {
 
   /// The signed-in user's passes. Empty while the cached passes belong to someone else.
   Passes get currentPasses => _ownsEconomyState ? passesNotifier.value : Passes.empty;
+
+  /// The signed-in user's unlocked Drop walls. Empty while the cached unlocks belong to someone else.
+  Map<String, DropUnlock> get currentDropUnlocks =>
+      _ownsEconomyState ? dropsUnlockedNotifier.value : const <String, DropUnlock>{};
 
   /// Premium collections and premium walls are open: Pro or an active premium pass.
   bool get premiumContentUnlocked => app_state.prismUser.premium || currentPasses.premiumPassActive(DateTime.now());
@@ -501,6 +506,13 @@ class CoinsService with WidgetsBindingObserver {
   void setPassesForTest(Passes passes) {
     _ensureEconomyUser(app_state.prismUser.id);
     passesNotifier.value = passes;
+  }
+
+  /// Sets the Drop unlocks as the signed-in user's own, as a sync from the server would.
+  @visibleForTesting
+  void setDropUnlocksForTest(Map<String, DropUnlock> unlocks) {
+    _ensureEconomyUser(app_state.prismUser.id);
+    dropsUnlockedNotifier.value = unlocks;
   }
 
   /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.
@@ -611,6 +623,7 @@ class CoinsService with WidgetsBindingObserver {
     _watchSessionForSpinWheel();
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int balanceGeneration = _balanceMutationGeneration;
     final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
@@ -659,7 +672,9 @@ class CoinsService with WidgetsBindingObserver {
       await reconcileRankRewards();
       return;
     }
-    _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
+    if (_balanceMutationGeneration == balanceGeneration) {
+      _applyLocalBalance(parseIntOr(data['coins']), delta: 0, authoritative: false);
+    }
     if (_economyMutationGeneration == mutationGeneration) {
       final bool syncXp = _xpMutationGeneration == xpGeneration;
       _syncStreakFromUserData(data, syncXp: syncXp);
@@ -775,6 +790,7 @@ class CoinsService with WidgetsBindingObserver {
     _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int balanceGeneration = _balanceMutationGeneration;
     final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
@@ -826,8 +842,9 @@ class CoinsService with WidgetsBindingObserver {
       if (_rankRewardsNeedSync) await reconcileRankRewards();
       return app_state.prismUser.coins;
     }
-    final int coins = parseIntOr(userData['coins']);
-    _applyLocalBalance(coins, delta: 0);
+    if (_balanceMutationGeneration == balanceGeneration) {
+      _applyLocalBalance(parseIntOr(userData['coins']), delta: 0, authoritative: false);
+    }
     if (_economyMutationGeneration == mutationGeneration) {
       final bool syncXp = _xpMutationGeneration == xpGeneration;
       _syncStreakFromUserData(userData, syncXp: syncXp);
@@ -835,7 +852,7 @@ class CoinsService with WidgetsBindingObserver {
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
     if (_rankRewardsNeedSync) await reconcileRankRewards();
-    return coins;
+    return app_state.prismUser.coins;
   }
 
   Future<StreakStatus> refreshStreakStatus() async {
@@ -3318,16 +3335,14 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Applies a balance the server returned outside the coin callables, such as a badge reward.
-  void applyServerBalance(int balance) {
-    if (!_canMutateCoins()) return;
-    if (balance == app_state.prismUser.coins) {
-      balanceNotifier.value = balance;
-      return;
-    }
+  void applyServerBalance(int balance, {String? ownerId}) {
+    if (!_canMutateCoins() || (ownerId != null && ownerId != app_state.prismUser.id)) return;
     _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
   }
 
-  void _applyLocalBalance(int newBalance, {required int delta}) {
+  void _applyLocalBalance(int newBalance, {required int delta, bool authoritative = true}) {
+    // Even an unchanged authoritative reply supersedes snapshots already in flight.
+    if (authoritative) _balanceMutationGeneration++;
     final int previous = app_state.prismUser.coins;
     app_state.prismUser.coins = newBalance;
     balanceNotifier.value = newBalance;

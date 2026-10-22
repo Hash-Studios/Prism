@@ -1407,6 +1407,10 @@
   "@accountRemoveLink": {
     "description": "Remove profile link tooltip."
   },
+  "accountRemovePhoto": "Hapus foto",
+  "@accountRemovePhoto": {
+    "description": "Button that removes a custom profile photo."
+  },
   "accountRemoveSavedOffline": "Hapus yang disimpan offline",
   "@accountRemoveSavedOffline": {
     "description": "Action label for removing saved offline wallpapers."
@@ -1937,7 +1941,6 @@
   "adminBackToReviewList": "Kembali ke daftar tinjauan",
   "adminBatchActionFailed": "Tindakan tinjauan ini tidak dapat diselesaikan. Coba lagi.",
   "adminBatchComplete": "Tinjauan batch selesai",
-  "adminBatchCompleteLoading": "Batch selesai. Memuat batch berikutnya.",
   "adminBodyLabel": "Isi",
   "adminBodyRequired": "Isi wajib diisi",
   "adminBy": "Oleh",
@@ -2612,6 +2615,10 @@
   "corePopupDiscard": "Buang",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
+  },
+  "corePopupProfilePhoto": "foto profil",
+  "@corePopupProfilePhoto": {
+    "description": "Item name in the profile photo removal confirmation."
   },
   "corePopupWhatsNew": "Yang baru",
   "@corePopupWhatsNew": {
@@ -4190,6 +4197,14 @@
       "count": {
         "type": "int",
         "format": "decimalPattern"
+      }
+    }
+  },
+  "economyDownloadFreeOwnedSemantics": "{label}. Gratis, wallpaper ini milik Anda",
+  "@economyDownloadFreeOwnedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
       }
     }
   },

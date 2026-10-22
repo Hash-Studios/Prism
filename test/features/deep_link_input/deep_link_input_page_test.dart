@@ -176,14 +176,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('an empty picker path never opens a tool', (tester) async {
-    picker.choose = () async => XFile('');
-    await showChooser(tester, DeepLinkInputWorkflow.uploadWall);
-    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-    await tester.pumpAndSettle();
+  testWidgets('blank picker paths never open a tool', (tester) async {
+    for (final String path in <String>['', '   \t\n']) {
+      picker.choose = () async => XFile(path);
+      await showChooser(tester, DeepLinkInputWorkflow.uploadWall);
+      await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
+      await tester.pumpAndSettle();
 
-    expect(opened, isEmpty);
-    expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
+      expect(opened, isEmpty);
+      expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
+    }
   });
 
   testWidgets('an in-flight picker cannot open twice and ignores a result after the page closes', (tester) async {

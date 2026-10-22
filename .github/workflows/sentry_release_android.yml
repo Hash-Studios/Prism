@@ -51,14 +51,8 @@ jobs:
         run: |
           (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
 
-      - name: Inject required app secrets
-        run: |
-          FIREBASE_SECRET="$(doppler secrets get FIREBASE_SECRET --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
-          if [ -z "$FIREBASE_SECRET" ]; then
-            echo "FIREBASE_SECRET secret is required."
-            exit 1
-          fi
-          echo "$FIREBASE_SECRET" > android/app/google-services.json
+      - name: Prepare real Android Firebase configuration
+        run: python3 tool/prepare_release_firebase.py android --from-doppler
 
       - name: Resolve Sentry environment variables
         env:
@@ -91,14 +85,8 @@ jobs:
 
       - name: Build release AAB with split debug info
         run: |
-          DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
-          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols \
-            $DART_DEFINES \
-            --dart-define=SENTRY_DSN="$SENTRY_DSN" \
-            --dart-define=SENTRY_ENV="$SENTRY_ENV" \
-            --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
-            --dart-define=SENTRY_DIST="$SENTRY_DIST" \
-            --dart-define=SENTRY_ENABLED=true
+          SENTRY_ENABLED=true python3 tool/flutter_with_doppler.py --release-platform android -- \
+            flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
 
       - name: Upload debug symbols and mappings to Sentry
         run: dart run sentry_dart_plugin

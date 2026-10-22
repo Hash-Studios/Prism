@@ -3,6 +3,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str} from "./common";
 import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
+import {verifiedEmailForUid} from "./wallAuthor";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -69,6 +70,17 @@ async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: 
   snap.docs.forEach((doc) => queue(doc.ref));
 }
 
+/** Deleted names may be reused. Include stale reservations, but never delete a reassigned name on retry. */
+async function releaseUsernames(uid: string): Promise<void> {
+  const names = await db.collection("usernames").where("uid", "==", uid).get();
+  for (const name of names.docs) {
+    await db.runTransaction(async (tx) => {
+      const current = await tx.get(name.ref);
+      if (current.data()?.uid === uid) tx.delete(name.ref);
+    });
+  }
+}
+
 /**
  * Every step before the auth deletion can run again: deletes of missing docs succeed, the email used to find
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
@@ -85,8 +97,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   }
 
   const userRef = db.collection(USERS).doc(callerUid);
-  const userSnap = await userRef.get();
-  const email = ((userSnap.data()?.email ?? "") as string).toString().trim();
+  const email = await verifiedEmailForUid(callerUid);
 
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
@@ -112,12 +123,12 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   try {
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
-    if (email) await queueDeleteWhereEqual(DRAFT_SETUPS, "email", email, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);
     await queueBoosts(callerUid, queue, queueUpdate);
     // The email may be stored as typed or in lower case.
     for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
+      await queueDeleteWhereEqual(DRAFT_SETUPS, "email", address, queue);
       for (const collection of SCRUBBED_BY_EMAIL) {
         await queueUpdateWhere(collection, "email", "==", address,
           {by: DELETED_NAME, userPhoto: "", email: ""}, queueUpdate);
@@ -141,6 +152,8 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     throw new HttpsError("internal", "Could not delete all account data. Try again.");
   }
 
+  // The deletion barrier already prevents new claims by this UID while its old names are released.
+  await releaseUsernames(callerUid);
   // 5. Anonymize usersv2 doc — same fields/shape as the client's anonymize step (full overwrite, not merge),
   // so uploaded walls/setups still resolve to "Deleted Account".
   await userRef.set({

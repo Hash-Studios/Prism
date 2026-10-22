@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/auth/google_profile_sync.dart';
 import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/account/username_service.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_link_type_label.dart';
@@ -20,6 +21,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -30,6 +32,10 @@ import 'package:path/path.dart' as path;
 @visibleForTesting
 String uploadFileName(String uid, String basename, {int? epochMs}) =>
     '${uid}_${epochMs ?? DateTime.now().millisecondsSinceEpoch}_$basename';
+
+/// The photo on the signed-in Firebase user. Google sign-in keeps it equal to the Google account photo.
+@visibleForTesting
+String? Function() signedInAccountPhoto = () => FirebaseAuth.instance.currentUser?.photoURL;
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -101,9 +107,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   /// Uploads [file] under a name no other user or upload can share and returns its download URL.
-  Future<String> _uploadImage(File file, {required int minWidth}) async {
+  Future<String> _uploadImage(
+    File file, {
+    required int minWidth,
+    required String ownerId,
+    required bool Function() ownsSession,
+  }) async {
     final Uint8List compressed = await compressFile(file, minWidth: minWidth);
-    final String fileName = uploadFileName(app_state.prismUser.id, path.basename(file.path));
+    if (!ownsSession()) throw StateError('The profile session changed during image compression.');
+    final String fileName = uploadFileName(ownerId, path.basename(file.path));
     final value = await GitHubContentApi().putFile(
       repo: Env.normalize(Env.ghRepoWalls),
       message: fileName,
@@ -126,29 +138,29 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     if (ok && mounted) await remove();
   }
 
+  /// Puts back the Google account photo, or the placeholder when there is none. Later Google sign-ins keep it current.
+  /// The custom photo stays when the write fails.
+  Future<void> _removePhoto() async {
+    final AppLocalizations l10n = context.l10n;
+    final String photo = photoOrPlaceholder(signedInAccountPhoto());
+    try {
+      await _updateCurrentUser(<String, dynamic>{'profilePhoto': photo}, 'profile.edit.removePhoto');
+    } catch (e) {
+      logger.d(e.toString());
+      toasts.error(l10n.coreProfileSaveFailed);
+      return;
+    }
+    app_state.prismUser.profilePhoto = photo;
+    app_state.persistPrismUser();
+    if (mounted) setState(() {});
+  }
+
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
     return firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, data, sourceTag: sourceTag);
   }
 
-  Future<bool> _isUsernameAvailable(String username) async {
-    final String currentUserId = app_state.prismUser.id;
-    final List<List<String>> matches = await Future.wait(<Future<List<String>>>[
-      _userIdsWhere('username', username),
-      _userIdsWhere('usernameLower', username.toLowerCase()),
-    ]);
-    return !matches.expand((ids) => ids).any((id) => id != currentUserId);
-  }
-
-  Future<List<String>> _userIdsWhere(String field, String value) {
-    return firestoreClient.query<String>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'profile.edit.usernameAvailability.$field',
-        filters: <FirestoreFilter>[FirestoreFilter(field: field, op: FirestoreFilterOp.isEqualTo, value: value)],
-        limit: 2,
-      ),
-      (data, docId) => docId,
-    );
+  Future<bool> _isUsernameAvailable(String username) {
+    return UsernameService.instance.isAvailable(username, app_state.prismUser.id);
   }
 
   bool get _hasChanges {
@@ -161,6 +173,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
 
   Future<void> _saveProfile() async {
+    final PrismUsersV2 user = app_state.prismUser;
+    final String ownerId = user.id;
+    bool ownsSession() => mounted && identical(app_state.prismUser, user) && user.id == ownerId;
     final AppLocalizations l10n = context.l10n;
     if (usernameEdit && available != true) {
       toasts.error(l10n.coreChooseUsername);
@@ -168,16 +183,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
     setState(() => isLoading = true);
     try {
-      final PrismUsersV2 user = app_state.prismUser;
       final Map<String, dynamic> updates = <String, dynamic>{};
       if (usernameEdit && usernameController.text.length >= minUsernameLength) {
-        updates['username'] = usernameController.text;
+        final String claimed = await UsernameService.instance.claim(usernameController.text);
+        if (!ownsSession()) return;
+        user.username = claimed;
+        await app_state.persistPrismUser();
+        if (!ownsSession()) return;
       }
       if (_pfp != null && pfpEdit) {
-        updates['profilePhoto'] = await _uploadImage(_pfp!, minWidth: 400);
+        updates['profilePhoto'] = await _uploadImage(_pfp!, minWidth: 400, ownerId: ownerId, ownsSession: ownsSession);
+        if (!ownsSession()) return;
       }
       if (_cover != null && coverEdit) {
-        updates['coverPhoto'] = await _uploadImage(_cover!, minWidth: 1080);
+        updates['coverPhoto'] = await _uploadImage(_cover!, minWidth: 1080, ownerId: ownerId, ownsSession: ownsSession);
+        if (!ownsSession()) return;
       }
       if (bioEdit && bioController.text.isNotEmpty) {
         updates['bio'] = bioController.text;
@@ -195,25 +215,28 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         updates['links'] = links;
       }
       if (updates.isNotEmpty) {
-        await _updateCurrentUser(updates, 'profile.edit.save');
+        if (!ownsSession()) return;
+        await firestoreClient.updateDoc(FirebaseCollections.usersV2, ownerId, updates, sourceTag: 'profile.edit.save');
+        if (!ownsSession()) return;
       }
 
-      if (updates['username'] != null) user.username = updates['username'] as String;
+      if (!ownsSession()) return;
       if (updates['profilePhoto'] != null) user.profilePhoto = updates['profilePhoto'] as String;
       if (updates['coverPhoto'] != null) user.coverPhoto = updates['coverPhoto'] as String;
       if (updates['bio'] != null) user.bio = updates['bio'] as String;
       if (updates['name'] != null) user.name = updates['name'] as String;
       if (updates['links'] != null) user.links = updates['links'] as Map<String, String>;
       await app_state.persistPrismUser();
+      if (!ownsSession()) return;
 
       await CoinsService.instance.maybeAwardProfileCompletion();
-      if (mounted) {
+      if (mounted && ownsSession()) {
         Navigator.pop(context);
         toasts.success(l10n.coreProfileUpdated);
       }
     } catch (e) {
       logger.d(e.toString());
-      toasts.error(l10n.coreProfileSaveFailed);
+      if (ownsSession()) toasts.error(l10n.coreProfileSaveFailed);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -222,7 +245,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   void _onUsernameChanged(String value) {
     _usernameDebounce?.cancel();
     final bool longEnough = value.length >= minUsernameLength;
-    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool validChars = RegExp(r'^\w{1,30}$').hasMatch(value);
     final bool valid = longEnough && validChars;
     final int checkId = ++_usernameCheckId;
     setState(() {
@@ -377,6 +400,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   _pfp = file;
                   pfpEdit = true;
                 }),
+                onRemovePhoto: _pfp == null && isCustomProfilePhoto(app_state.prismUser.profilePhoto)
+                    ? () => _confirmRemove(_removePhoto, l10n.corePopupProfilePhoto)
+                    : null,
               ),
               const SizedBox(height: fieldGap),
               Padding(

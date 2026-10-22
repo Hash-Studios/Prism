@@ -37,15 +37,12 @@ Run these from the repo root.
    doppler secrets --project prism --config <dev|dev_personal|prd> --only-names
    ```
    Compare against the keys in `lib/env/env.dart` (`GH_USERNAME`, `GH_REPO_WALLS`,
-   `GH_REPO_SETUPS`, `RC_API_KEY`, `RC_ANDROID_API_KEY`, `RC_IOS_API_KEY`, `PEXELS_API_KEY`,
+   `R2_PREVIEW_BASE_URL`, `RC_API_KEY`, `RC_ANDROID_API_KEY`, `RC_IOS_API_KEY`, `PEXELS_API_KEY`,
    `SENTRY_DSN`, `SENTRY_ENV`, `SENTRY_RELEASE`, `SENTRY_DIST`, `SENTRY_ENABLED`,
-   `MIXPANEL_TOKEN`, `MIXPANEL_ENABLED`). **Known gap, verified today:** `prd` does not have
-   `RC_API_KEY` / `RC_ANDROID_API_KEY` / `RC_IOS_API_KEY`. It only has
-   `REVENUECAT_ENTITLEMENT_ID`, `REVENUECAT_IOS_API_KEY`, `REVENUECAT_USE_IN_MEMORY`. A release
-   build with `DOPPLER_CONFIG=prd` will fail `make doppler-check` (which `build`, `build-aab`,
-   `build-ios`, and `build-ipa` all depend on) until this is fixed in Doppler. Stop and tell the
-   human; do not silently fall back to `dev` for a release build, and do not add the missing keys
-   to Doppler yourself (see "Secrets" below).
+   `MIXPANEL_TOKEN`, `MIXPANEL_ENABLED`). If a key is missing, `make doppler-check` (which `build`,
+   `build-aab`, `build-ios`, and `build-ipa` all depend on) fails. Stop and tell the human; do not
+   fall back to `dev` for a release build, and do not add the missing keys to Doppler yourself
+   (see "Secrets" below).
    `make doppler-check` runs this same comparison for the config in `DOPPLER_CONFIG` (default
    `dev`); `make secrets-print DOPPLER_CONFIG=<config>` prints the config with every value masked.
 
@@ -56,9 +53,7 @@ Run these from the repo root.
    passwords):
    ```sh
    M=/Users/codenameakshay/Development/codenameakshay/Prism
-   cp "$M/lib/firebase_options.dart"            lib/
    cp "$M/android/app/google-services.json"     android/app/
-   cp "$M/ios/Runner/GoogleService-Info.plist"  ios/Runner/
    cp "$M/android/key.jks" "$M/android/key.properties" android/
    # The human's copy may point at an old path (it pointed at C:/Users/... in 2026-09).
    # Gradle resolves storeFile from android/app/, so point the worktree copy at ../key.jks:
@@ -66,9 +61,14 @@ Run these from the repo root.
    grep '^storeFile' android/key.properties     # read only this line, never the passwords
    git status --short --ignored android/key.jks android/key.properties   # must show "!!"
    ```
-   Without `android/app/google-services.json` the Makefile silently adds
-   `SKIP_FIREBASE_INIT=true`, which ships an app with Firebase off. `build-aab` and `build-ipa`
-   now fail fast when a Firebase config file is missing. If the key files are not in the main
+   Release targets derive `lib/firebase_options.dart` from the platform's validated native
+   config, not a copied Dart file or a stub. Android CI uses the existing Doppler
+   `FIREBASE_SECRET`. iOS requires an owner-supplied real `GoogleService-Info.plist` locally,
+   or the new GitHub secret `IOS_GOOGLE_SERVICE_INFO_PLIST` containing raw XML in TestFlight.
+   The iOS config and secret were confirmed absent. Do not assume the main checkout has one,
+   invent values, provision it, or bypass the prerequisite. See `docs/development/doppler.md`.
+   Release targets fail before building on missing or mismatched config and reject Firebase
+   skip flags. Local debug/CI stubs are not release inputs. If the key files are not in the main
    checkout, ask the human to put them there. Fallback: the human decrypts
    `android/android_keys.zip.gpg` (gpg asks for the passphrase; never ask for it in chat). Never
    generate a new keystore: Play rejects updates signed with a different key.
@@ -334,8 +334,7 @@ make build-aab DOPPLER_CONFIG=prd
 This runs `flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols`
 with dart-defines pulled from Doppler `prd`, then (because `SENTRY_UPLOAD` defaults to `true`)
 uploads debug symbols via `tool/sentry_upload.sh` using Doppler `prd` Sentry credentials
-(`SENTRY_DOPPLER_CONFIG` defaults to `prd` already, no need to pass it). **Blocked today**: see the
-`prd`-missing-`RC_*`-keys gap in Preconditions step 2. Fix that in Doppler before this succeeds.
+(`SENTRY_DOPPLER_CONFIG` defaults to `prd` already, no need to pass it).
 
 If it fails with `Keystore file not found` or `Failed to read key`, stop and ask the human. Do
 not regenerate the keystore (that breaks Play updates for every existing install).
@@ -408,8 +407,9 @@ Apple ID signed in on this Mac), sign with the `prism` App Store Connect API key
 file is `~/.asc/keys/AuthKey_B3QRNA5QHB.p8`; get the issuer with `asc --profile prism auth issuer-id`.
 This is what shipped 3.0.9 (336):
 ```sh
-fvm flutter build ios --config-only --release --build-number=<N> \
-  --obfuscate --split-debug-info=build/ios/outputs/symbols $(DOPPLER_CONFIG=prd ./tool/dart_defines_from_doppler.sh)
+DOPPLER_CONFIG=prd python3 tool/flutter_with_doppler.py --release-platform ios -- \
+  fvm flutter build ios --config-only --release --build-number=<N> \
+  --obfuscate --split-debug-info=build/ios/outputs/symbols
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath ~/.asc/keys/AuthKey_B3QRNA5QHB.p8
       -authenticationKeyID B3QRNA5QHB -authenticationKeyIssuerID <issuer>)
 xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
@@ -419,8 +419,9 @@ xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -expor
 DOPPLER_PROJECT=prism SENTRY_DOPPLER_CONFIG=prd DART_CMD="fvm dart" ./tool/sentry_upload.sh
 ```
 The ipa is then `build/ios/ipa/prism.ipa` (lower case). Run this from a script file, and never echo
-the defines. Do not use `.github/workflows/testflight.yml` as it is: it reads Doppler config
-`production` and passes `SKIP_FIREBASE_INIT=true`, which ships an app with Firebase off.
+the defines. TestFlight uses `prd`, prepares real native and Dart Firebase configuration before
+signing, and no longer disables Firebase. It remains blocked until the owner supplies the
+real `IOS_GOOGLE_SERVICE_INFO_PLIST` secret. Do not run the workflow to bypass that blocker.
 
 ### 10. iOS: upload to TestFlight and App Store Connect
 
