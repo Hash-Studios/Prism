@@ -311,7 +311,42 @@ void main() {
     expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
   });
 
-  testWidgets('a stalled short-link request falls back without waiting for its network timeout', (tester) async {
+  testWidgets('a short link that takes longer than 750 ms is used for sharing', (tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final Completer<String?> link = Completer<String?>();
+    String? sharedLink;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ShareButton(
+            id: 'EY3F',
+            source: WallpaperSource.prism,
+            url: null,
+            thumbUrl: '',
+            createLink: (id, source, url, thumbUrl) => link.future,
+            shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
+              sharedLink = link;
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    link.complete('https://prismwalls.com/l/short123');
+    await tester.pumpAndSettle();
+
+    expect(sharedLink, 'https://prismwalls.com/l/short123');
+  });
+
+  testWidgets('a stalled short-link request falls back after the six-second request budget', (tester) async {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final Completer<String?> link = Completer<String?>();
@@ -339,6 +374,9 @@ void main() {
     );
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+
+    expect(sharedLink, isNull);
     await tester.pump(const Duration(seconds: 1));
 
     expect(sharedLink, startsWith('https://prismwalls.com/share?'));
