@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
@@ -29,12 +31,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// about 480 wide.
 int feedCarouselColumns(double width) => (width / 480).floor().clamp(1, 3);
 
-/// Height of one carousel page: the page is as wide as the screen divided by [feedCarouselColumns], less the
-/// [PrismFeedLayout.gridSpacing] margin on both sides, and 0.6 times as tall as it is wide.
-double feedCarouselCardHeight(BuildContext context) {
-  final double width = MediaQuery.sizeOf(context).width;
-  return (width / feedCarouselColumns(width) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
+/// Width the carousel spans: the screen, less the side rail on an iPhone Duo.
+double _carouselWidth(BuildContext context) => MediaQuery.sizeOf(context).width - screenSideSafeColumnWidth(context);
+
+/// [feedCarouselColumns] for the carousel in [context]. The unfolded iPhone Duo in landscape is narrower than two
+/// 480-wide cards, but shows two, as an iPad in landscape does.
+int _carouselColumns(BuildContext context) {
+  final int columns = feedCarouselColumns(_carouselWidth(context));
+  final bool duoLandscape =
+      MediaQuery.orientationOf(context) == Orientation.landscape && screenSideSafeColumnWidth(context) > 0;
+  return duoLandscape ? math.max(2, columns) : columns;
 }
+
+/// Height of one carousel page: the page is as wide as the carousel divided by its columns, less the
+/// [PrismFeedLayout.gridSpacing] margin on both sides, and 0.6 times as tall as it is wide.
+double feedCarouselCardHeight(BuildContext context) =>
+    (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
 /// The home carousel: Wall of the Day, the live Drop, boosted walls, the promo banner and the first wallpapers as
 /// rounded pages, with page dots over the bottom of the image.
@@ -167,8 +179,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ? (remoteBannerTitle.trim().isEmpty ? context.l10n.coreDefaultBanner : remoteBannerTitle)
         : '';
     final double height = feedCarouselCardHeight(context);
-    final double width = MediaQuery.sizeOf(context).width;
-    final int columns = feedCarouselColumns(width);
+    final double width = _carouselWidth(context);
+    final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
       if (hasWotd) const WallOfTheDayCard(),

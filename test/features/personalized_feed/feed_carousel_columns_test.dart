@@ -41,4 +41,54 @@ void main() {
   testWidgets('feedCarouselCardHeight uses half the width on a tablet', (WidgetTester tester) async {
     expect(await _heightAt(tester, const Size(1032, 1376)), (1032 / 2 - 2 * PrismFeedLayout.gridSpacing) * 0.6);
   });
+
+  group('iPhone Duo', () {
+    Future<double> heightOnDuo(WidgetTester tester, {required Size size, required EdgeInsets padding}) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = size
+        ..viewPadding = FakeViewPadding(top: padding.top, right: padding.right, bottom: padding.bottom);
+      addTearDown(tester.view.reset);
+      late double height;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData.fromView(tester.view),
+          child: Builder(
+            builder: (BuildContext context) {
+              height = feedCarouselCardHeight(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      return height;
+    }
+
+    testWidgets('the unfolded screen in landscape shows two cards beside the rail', (WidgetTester tester) async {
+      final double height = await heightOnDuo(
+        tester,
+        size: const Size(951, 669),
+        padding: const EdgeInsets.only(right: 84, bottom: 34),
+      );
+      expect(height, ((951 - 84) / 2 - 2 * PrismFeedLayout.gridSpacing) * 0.6);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the unfolded screen in portrait keeps one card', (WidgetTester tester) async {
+      final double height = await heightOnDuo(
+        tester,
+        size: const Size(669, 951),
+        padding: const EdgeInsets.only(top: 82, bottom: 34),
+      );
+      expect(height, (669 - 2 * PrismFeedLayout.gridSpacing) * 0.6);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('an Android screen of the same size keeps one card', (WidgetTester tester) async {
+      final double height = await heightOnDuo(
+        tester,
+        size: const Size(951, 669),
+        padding: const EdgeInsets.only(right: 84, bottom: 34),
+      );
+      expect(height, (951 - 2 * PrismFeedLayout.gridSpacing) * 0.6);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
 }
