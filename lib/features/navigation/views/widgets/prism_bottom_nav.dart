@@ -9,9 +9,12 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the four tab destinations. A filled circle sits behind the active one.
+/// The floating pill with the four tab destinations. A filled circle sits behind the active one. [axis] is vertical in
+/// the side rail.
 class PrismBottomNav extends StatefulWidget {
-  const PrismBottomNav({super.key});
+  const PrismBottomNav({this.axis = Axis.horizontal, super.key});
+
+  final Axis axis;
 
   @override
   State<PrismBottomNav> createState() => _PrismBottomNavState();
@@ -75,9 +78,11 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   Widget build(BuildContext context) {
     final int activeIndex = _tabsRouter?.activeIndex ?? 0;
 
+    final bool vertical = widget.axis == Axis.vertical;
     return Container(
       padding: const EdgeInsets.all(4),
-      height: 56,
+      width: vertical ? 56 : null,
+      height: vertical ? null : 56,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         boxShadow: <BoxShadow>[
@@ -85,7 +90,8 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
         ],
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
-      child: Row(
+      child: Flex(
+        direction: widget.axis,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           for (var i = 0; i < _tabs.length; i++)
