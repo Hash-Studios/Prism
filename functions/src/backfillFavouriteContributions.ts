@@ -4,7 +4,7 @@ import {FAVOURITE_AGGREGATION_GATE, isPrismFavourite} from "./wallStats";
 import {normalizeId, WALLPAPER_STATS} from "./viewStats";
 
 type Options = {apply: false; cursor?: string; maxPages?: number; pageSize?: number} |
-  {apply: true; epoch: string; favouritesFrozen: boolean; maxPages?: number; pageSize?: number};
+  {apply: true; epoch: string; favouritesFrozen: boolean; maxPages?: number; pageSize?: number; concurrency?: number};
 
 function member(doc: admin.firestore.QueryDocumentSnapshot): {uid: string; wallId: string} | null {
   const parts = doc.ref.path.split("/");
@@ -20,8 +20,11 @@ function member(doc: admin.firestore.QueryDocumentSnapshot): {uid: string; wallI
 export async function backfillFavouriteContributions(options: Options) {
   const pageSize = options.pageSize ?? 100;
   const maxPages = options.maxPages ?? 10;
+  // Each document is still its own transaction, so aliases and hot walls serialize inside Firestore.
+  const concurrency = options.apply ? options.concurrency ?? 1 : 1;
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 200 ||
-      !Number.isInteger(maxPages) || maxPages < 1) throw new Error("Invalid page bounds.");
+      !Number.isInteger(maxPages) || maxPages < 1 ||
+      !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50) throw new Error("Invalid page bounds.");
   if (options.apply && (!options.favouritesFrozen || !/^[A-Za-z0-9_-]{1,64}$/.test(options.epoch))) {
     throw new Error("Apply requires a stable epoch and confirmation that favourite writes are frozen.");
   }
@@ -51,14 +54,9 @@ export async function backfillFavouriteContributions(options: Options) {
     if (cursor) query = query.startAfter(db.doc(cursor));
     const docs = await query.get();
     scanned += docs.size;
-    for (const doc of docs.docs) {
+    const applyDoc = async (doc: admin.firestore.QueryDocumentSnapshot, epoch: string) => {
       const identity = phase === "publishing" ? null : member(doc);
-      if (!options.apply) {
-        if (identity) pairs.add(`${identity.uid}/${identity.wallId}`);
-        continue;
-      }
-      const epoch = options.epoch;
-      if (phase !== "publishing" && !identity) continue;
+      if (phase !== "publishing" && !identity) return;
       await db.runTransaction(async (tx) => {
         const currentGate = (await tx.get(gateRef)).data();
         if (currentGate?.epoch !== epoch || currentGate.phase !== phase) return;
@@ -80,6 +78,17 @@ export async function backfillFavouriteContributions(options: Options) {
           tx.set(stats, {favouriteEpoch: epoch}, {merge: true});
         }
       });
+    };
+    if (!options.apply) {
+      for (const doc of docs.docs) {
+        const identity = member(doc);
+        if (identity) pairs.add(`${identity.uid}/${identity.wallId}`);
+      }
+    } else {
+      // The page checkpoint moves only after every document in the page has committed.
+      for (let i = 0; i < docs.size; i += concurrency) {
+        await Promise.all(docs.docs.slice(i, i + concurrency).map((doc) => applyDoc(doc, options.epoch)));
+      }
     }
     const nextCursor = docs.empty ? null : docs.docs[docs.size - 1].ref.path;
     if (!options.apply) {
@@ -111,6 +120,8 @@ if (require.main === module) {
   const cursor = args.find((arg) => arg.startsWith("--cursor="))?.slice("--cursor=".length);
   backfillFavouriteContributions(apply ? {
     apply: true, epoch, maxPages, favouritesFrozen: args.includes("--confirm-favourites-frozen"),
+    concurrency: Number(args.find((arg) => arg === "--concurrency" || arg.startsWith("--concurrency="))
+      ?.slice("--concurrency=".length) ?? 1),
   } : {apply: false, maxPages, cursor}).then((result) => console.log(JSON.stringify(result))).catch((err: unknown) => {
     console.error(err);
     process.exitCode = 1;
