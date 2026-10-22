@@ -25,8 +25,6 @@ class UploadDraftStore {
   static final Map<String, int> _ownerGenerations = <String, int>{};
   int _fileSequence = 0;
 
-  static Future<String> idForFile(File file) async => idForBytes(await file.readAsBytes());
-
   static String idForBytes(List<int> bytes) => sha256.convert(bytes).toString();
 
   Future<UploadDraft> save({

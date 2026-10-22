@@ -45,6 +45,82 @@ FeedItemEntity _prismItem(String id, {required String authorEmail}) {
 }
 
 void main() {
+  test('same-category refresh rejects old pages and ignores pagination while loading', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    final oldPage = Completer<Result<CategoryFeedPage>>();
+    final refresh = Completer<Result<CategoryFeedPage>>();
+    int calls = 0;
+    when(() => fetch(any())).thenAnswer((_) {
+      calls++;
+      if (calls == 1) {
+        return Future.value(
+          Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('old', authorEmail: 'a')], hasMore: true)),
+        );
+      }
+      return calls == 2 ? oldPage.future : refresh.future;
+    });
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const CategoryFeedEvent.refreshRequested());
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+    await Future<void>.delayed(Duration.zero);
+    final callsDuringRefresh = calls;
+    refresh.complete(
+      Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorEmail: 'a')], hasMore: true)),
+    );
+    await Future<void>.delayed(Duration.zero);
+    oldPage.complete(
+      Result.success(
+        CategoryFeedPage(items: <FeedItemEntity>[_prismItem('stale-page', authorEmail: 'a')], hasMore: false),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.items.map((item) => item.id), <String>['fresh']);
+    expect(bloc.state.hasMore, isTrue);
+    expect(callsDuringRefresh, 3);
+  });
+
+  test('A-B-A selection rejects the first A completion', () async {
+    final fetch = _MockFetchCategoryFeedUseCase();
+    final old = Completer<Result<CategoryFeedPage>>();
+    int calls = 0;
+    when(() => fetch(any())).thenAnswer((_) {
+      if (++calls == 1) return old.future;
+      return Future.value(
+        Result.success(
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh-$calls', authorEmail: 'a')], hasMore: true),
+        ),
+      );
+    });
+    final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(
+      const CategoryFeedEvent.categorySelected(
+        category: CategoryEntity(
+          name: 'B',
+          source: WallpaperSource.prism,
+          searchType: CategorySearchType.nonSearch,
+          image: '',
+          image2: '',
+        ),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(Duration.zero);
+    old.complete(Result.success(const CategoryFeedPage(items: <FeedItemEntity>[], hasMore: false)));
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.items.map((item) => item.id), <String>['fresh-3']);
+    expect(bloc.state.hasMore, isTrue);
+  });
   test('started loads the category list and fetches no feed', () async {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();

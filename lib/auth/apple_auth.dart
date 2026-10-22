@@ -34,6 +34,7 @@ class AppleAuth {
 
   Future<SignInOutcome> signInWithApple() async {
     logger.i('signInWithApple start', tag: 'AppleAuth');
+    final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
       final rawNonce = _generateNonce();
@@ -43,6 +44,7 @@ class AppleAuth {
         scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
         nonce: nonce,
       );
+      session.requireCurrent();
 
       // The Apple-specific credential; the generic OAuthProvider('apple.com') path fails on iOS with invalid-credential.
       final oauthCredential = AppleAuthProvider.credentialWithIDToken(
@@ -58,6 +60,7 @@ class AppleAuth {
       if (user == null) {
         throw Exception('Apple sign-in returned null user');
       }
+      session.acceptCredential(user);
 
       // Apple only provides the name on the very first sign-in.
       final String displayName = (appleCredential.givenName ?? '').isNotEmpty
@@ -66,6 +69,7 @@ class AppleAuth {
 
       if ((appleCredential.givenName ?? '').isNotEmpty && user.displayName == null) {
         await user.updateDisplayName(displayName);
+        session.requireCurrent();
       }
 
       final String email = appleCredential.email ?? user.email ?? '';
@@ -77,7 +81,9 @@ class AppleAuth {
         email: email,
         photoUrl: photoURL,
         sourceTagPrefix: 'apple_auth.signin',
+        session: session,
       );
+      session.requireCurrent();
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.apple,
@@ -85,53 +91,60 @@ class AppleAuth {
           sourceContext: 'apple_auth',
         ),
       );
+      session.requireCurrent();
       return SignInOutcome.signedIn;
     } on SignInWithAppleAuthorizationException catch (e) {
       if (firebaseSignedIn) {
-        await _rollbackFirebaseSignIn();
+        await _rollbackFirebaseSignIn(session);
       }
       if (e.code == AuthorizationErrorCode.canceled) {
-        await _trackSignInResult(
-          const AuthLoginResultEvent(
-            method: AuthMethodValue.apple,
-            result: EventResultValue.cancelled,
-            reason: AnalyticsReasonValue.userCancelled,
-            sourceContext: 'apple_auth',
-          ),
-        );
+        if (session.isCurrent) {
+          await _trackSignInResult(
+            const AuthLoginResultEvent(
+              method: AuthMethodValue.apple,
+              result: EventResultValue.cancelled,
+              reason: AnalyticsReasonValue.userCancelled,
+              sourceContext: 'apple_auth',
+            ),
+          );
+        }
         logger.i('signInWithApple canceled by user', tag: 'AppleAuth');
         return SignInOutcome.cancelled;
       }
-      await _trackSignInResult(
-        const AuthLoginResultEvent(
-          method: AuthMethodValue.apple,
-          result: EventResultValue.failure,
-          reason: AnalyticsReasonValue.error,
-          sourceContext: 'apple_auth',
-        ),
-      );
+      if (session.isCurrent) {
+        await _trackSignInResult(
+          const AuthLoginResultEvent(
+            method: AuthMethodValue.apple,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+            sourceContext: 'apple_auth',
+          ),
+        );
+      }
       logger.e('signInWithApple authorization failed', tag: 'AppleAuth', error: e);
       rethrow;
     } catch (e, st) {
       if (firebaseSignedIn) {
-        await _rollbackFirebaseSignIn();
+        await _rollbackFirebaseSignIn(session);
       }
-      await _trackSignInResult(
-        const AuthLoginResultEvent(
-          method: AuthMethodValue.apple,
-          result: EventResultValue.failure,
-          reason: AnalyticsReasonValue.error,
-          sourceContext: 'apple_auth',
-        ),
-      );
+      if (session.isCurrent) {
+        await _trackSignInResult(
+          const AuthLoginResultEvent(
+            method: AuthMethodValue.apple,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+            sourceContext: 'apple_auth',
+          ),
+        );
+      }
       logger.e('signInWithApple failed', tag: 'AppleAuth', error: e, stackTrace: st);
       rethrow;
     }
   }
 
-  Future<void> _rollbackFirebaseSignIn() async {
+  Future<void> _rollbackFirebaseSignIn(SignInSession session) async {
     try {
-      await (_googleAuth ?? globalGoogleAuth).signOutGoogle();
+      await (_googleAuth ?? globalGoogleAuth).signOutGoogle(session: session);
     } catch (error, stackTrace) {
       logger.w('Failed to roll back Apple Firebase sign-in.', tag: 'AppleAuth', error: error, stackTrace: stackTrace);
     }

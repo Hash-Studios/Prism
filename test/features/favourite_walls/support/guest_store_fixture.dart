@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
+import 'package:Prism/features/favourite_walls/domain/guest_favourites_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -28,6 +29,11 @@ GuestFavouritesStore tempGuestStore() {
     legacyCache: LazyFileCache('guest_favourites'),
   );
 }
+
+/// Seeds the current temp store in one durable write, without replaying unrelated guest saves.
+Future<void> seedGuestFavouritesSnapshot(Map<String, Map<String, Object?>> items) => DurableJsonStore(
+  'guest_favourites',
+).write('__guest::snapshot', <String, Object?>{'itemsJson': GuestFavouritesCodec.encode(items)});
 
 /// A store that never touches the disk, for tests that do not use guests.
 GuestFavouritesStore unusedGuestStore() => GuestFavouritesStore(

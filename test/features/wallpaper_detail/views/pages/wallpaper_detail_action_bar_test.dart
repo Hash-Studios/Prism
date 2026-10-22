@@ -497,6 +497,7 @@ void main() {
           }
           return <String, Object>{
             'status': 'granted',
+            'currentBalance': 100,
             'url': 'https://signed.test/prism-1',
             'expiresAt': DateTime.now().add(const Duration(minutes: 2)).millisecondsSinceEpoch,
           };

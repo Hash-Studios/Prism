@@ -7,10 +7,10 @@ class WallOfTheDayFirestorePointer {
   factory WallOfTheDayFirestorePointer.fromMap(Map<String, dynamic> data) {
     return WallOfTheDayFirestorePointer(
       wallDocumentId: data['wallId']?.toString() ?? '',
-      featuredAt: parseDateTime(data['date']) ?? DateTime.now(),
+      featuredAt: parseDateTime(data['date']),
     );
   }
 
   final String wallDocumentId;
-  final DateTime featuredAt;
+  final DateTime? featuredAt;
 }

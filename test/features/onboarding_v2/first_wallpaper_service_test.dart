@@ -1,9 +1,9 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -147,23 +147,31 @@ void main() {
 
     test('granted canonical original, not the public URL, reaches the native operation', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      final result = await build(
-        capabilities: bothSupported,
-        originalAccess: OriginalAccessService(
-          owner: () => 'user',
-          call: (request) async {
-            expect(request['assetId'], 'protected');
-            expect(request['action'], 'set');
-            return {
-              'status': 'granted',
-              'url': 'https://signed.example/original.jpg',
-              'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
-            };
-          },
-        ),
-      ).performAction('', wallpaperId: 'protected', wallpaperSource: WallpaperSource.prism);
+      final result =
+          await build(
+            capabilities: bothSupported,
+            originalAccess: OriginalAccessService(
+              owner: () => 'user',
+              call: (request) async {
+                expect(request['assetId'], 'protected');
+                expect(request['action'], 'set');
+                return {
+                  'status': 'granted',
+                  'currentBalance': 100,
+                  'url': 'https://signed.example/original.jpg',
+                  'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+                };
+              },
+            ),
+          ).performAction(
+            'https://public.example/full.jpg',
+            wallpaperId: 'protected',
+            wallpaperSource: WallpaperSource.prism,
+          );
       expect(result.success, isTrue);
       expect(appliedUrls, ['https://signed.example/original.jpg']);
+      expect(appliedTargets, <WallpaperTarget>[WallpaperTarget.both]);
+      expect(savedRequests, isEmpty);
     });
 
     test('unknown remote access never invokes native operations', () async {

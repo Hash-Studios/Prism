@@ -3,6 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {sendNotification} from "../notificationHelper";
+import {installFakeDb} from "./fakeDb";
 
 import {onNotificationCreated, topicForModifier} from "../onNotificationCreated";
 
@@ -18,6 +19,9 @@ async function run(
   doc: Record<string, unknown>, t: test.TestContext,
   {deliveries = 1, loggedIn = true, retryClaim = false, token = ""} = {},
 ): Promise<Sent[]> {
+  installFakeDb(t);
+  const document = db.doc.bind(db);
+  const transaction = db.runTransaction.bind(db);
   const users = {
     where: () => users,
     limit: () => users,
@@ -31,23 +35,25 @@ async function run(
     return "id";
   });
   const ref = db.doc("notifications/n1");
-  t.mock.method(db, "doc", () => ({get: async () => ({data: () => (token ? {fcmToken: token} : {})})}));
+  t.mock.method(db, "doc", (path: string) => path.endsWith("/private/session") ?
+    ({get: async () => ({data: () => (token ? {fcmToken: token} : {})})}) : document(path));
   let stored = {...doc};
   let transactions = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<boolean>) => {
-    const result = transactions.then(async () => {
+    const result = transactions.then(async () => transaction(async (scoreTx) => {
       let update: Record<string, unknown> = {};
       const tx = {
         get: async (target: unknown) => {
-          assert.equal(target, ref);
+          if (target !== ref) return scoreTx.get(target as admin.firestore.DocumentReference);
           return {exists: true, data: () => stored};
         },
         update: (target: unknown, data: Record<string, unknown>) => {
           assert.equal(target, ref);
           update = data;
         },
+        set: scoreTx.set.bind(scoreTx),
       } as unknown as admin.firestore.Transaction;
-      if (retryClaim) {
+      if (retryClaim && !stored.pushHandled) {
         await callback(tx);
         // A competing invocation committed while this transaction was retried.
         stored = {...stored, pushHandled: true};
@@ -56,7 +62,7 @@ async function run(
       const claimed = await callback(tx);
       stored = {...stored, ...update};
       return claimed;
-    });
+    }));
     transactions = result.then(() => undefined);
     return result;
   });

@@ -273,7 +273,7 @@ void main() {
     final retained = await offlineAssets.retain('wallpaper', file: source);
 
     expect(await service.retainedAssetBytes(), 3);
-    expect(await service.retainedAssetPaths(), <String, String>{'wallpaper': retained.path});
+    expect(await offlineAssets.localPaths(), <String, String>{'wallpaper': retained.path});
     await service.clearTransientCache();
     expect(await retained.exists(), isTrue);
 

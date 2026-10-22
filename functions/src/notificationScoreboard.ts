@@ -99,11 +99,6 @@ function counterRef(docId: string) {
   return db.doc(`metrics/notificationScoreboard/days/${docId}`);
 }
 
-/** Test stubs implement get and nothing else. A live ref exposes the Firestore client. */
-function isLiveRef(ref: unknown): boolean {
-  return !!ref && typeof ref === "object" && "firestore" in ref;
-}
-
 /**
  * Counts one FCM attempt. Accepts are API accepts, not impressions.
  * A failure here never fails the push.
@@ -112,7 +107,6 @@ export async function recordPushOutcome(kind: string, outcome: "sends" | "accept
   if (!isNotificationKind(kind)) return;
   try {
     const ref = counterRef(randomShardDocId(utcDateString(at)));
-    if (!isLiveRef(ref)) return;
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       tx.set(ref, {[outcome]: applyScore(snap.data(), outcome, kind)}, {merge: true});

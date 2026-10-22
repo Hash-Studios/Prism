@@ -39,13 +39,13 @@ function mount(token, storage = new Map(), search = '?utm_source=launch&utm_camp
   return { requests, listeners, Element, site, cleanup };
 }
 
-test('sends campaign-aware landing, real store clicks and hover QR through Mixpanel HTTP', () => {
+test('sends campaign-aware landing, real store clicks and actual QR reveals through Mixpanel HTTP', () => {
   const state = mount('public-test-token');
   state.listeners.get('click')({ target: new state.Element({ href: state.site.APP_STORE_URL }) });
-  state.listeners.get('mouseover')({ target: new state.Element(null, true) });
-  state.listeners.get('mouseover')({ target: new state.Element(null, true) });
+  state.listeners.get('prism:qr-revealed')({ target: new state.Element(null, true) });
+  state.listeners.get('prism:qr-revealed')({ target: new state.Element(null, true) });
   assert.deepEqual(state.requests.map((request) => request.payload.event),
-    ['web_landing_viewed', 'web_store_clicked', 'web_qr_viewed']);
+    ['web_landing_viewed', 'web_store_clicked', 'web_qr_viewed', 'web_qr_viewed']);
   for (const request of state.requests) {
     assert.equal(request.url, 'https://api-js.mixpanel.com/track?ip=0');
     assert.equal(request.options.method, 'POST');
@@ -56,6 +56,7 @@ test('sends campaign-aware landing, real store clicks and hover QR through Mixpa
   }
   assert.equal(state.requests[1].payload.properties.store, 'app_store');
   assert.equal(state.listeners.has('focusin'), false);
+  assert.equal(state.listeners.has('mouseover'), false);
   state.cleanup();
   assert.equal(state.listeners.size, 0);
 });

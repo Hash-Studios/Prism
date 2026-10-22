@@ -33,7 +33,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
         authorName: displayAuthor,
         authorEmail: email.isEmpty ? null : email,
         authorPhoto: userPhoto.isEmpty ? null : userPhoto,
-        category: desc.isEmpty ? null : desc,
+        category: category.isEmpty ? null : category,
         createdAt: createdAt,
       ),
       title: cleanTitle == null || cleanTitle.isEmpty ? null : cleanTitle,

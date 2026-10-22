@@ -238,7 +238,7 @@ void main() {
 
   test('an empty cache snapshot does not erase the saved snapshot before server metadata arrives', () async {
     final local = _local();
-    await local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('saved_wall')]);
+    await local.updateWallSnapshot('user_b', (_) => <FavouriteWallEntity>[prismFav('saved_wall')]);
     final repository = FavouriteWallsRepositoryImpl(
       _MetadataFirestore()..cacheOnlyEmpty = true,
       local,
@@ -365,7 +365,7 @@ void main() {
   test('a server-confirmed empty snapshot within the cache grace clears the saved snapshot', () {
     fakeAsync((async) {
       final local = _local();
-      local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('stale_wall')]);
+      local.updateWallSnapshot('user_b', (_) => <FavouriteWallEntity>[prismFav('stale_wall')]);
       async.flushMicrotasks();
       final firestore = _NeverServerControllerFirestore();
       final repository = FavouriteWallsRepositoryImpl(
@@ -418,7 +418,7 @@ void main() {
 
   test('server-confirmed empty favourites clear the stale local snapshot', () async {
     final local = _local();
-    await local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('removed_elsewhere')]);
+    await local.updateWallSnapshot('user_b', (_) => <FavouriteWallEntity>[prismFav('removed_elsewhere')]);
     final repository = FavouriteWallsRepositoryImpl(
       _MetadataFirestore(),
       local,
@@ -530,7 +530,7 @@ void main() {
       (index) => prismFav('large-$index', category: 'metadata' * 80),
     );
 
-    await local.saveWallSnapshot('large-owner', metadata);
+    await local.updateWallSnapshot('large-owner', (_) => metadata);
 
     expect(await local.readWallSnapshot('large-owner'), hasLength(1200));
     expect(durable.records.keys.where((key) => key.startsWith('large-owner::snapshot:')), hasLength(greaterThan(1)));
@@ -853,7 +853,7 @@ void main() {
       EmptyCanonicalWallpaperRepository(),
     );
     final starter = prismFav('starter-sunset');
-    await local.saveWallSnapshot('account', <FavouriteWallEntity>[starter]);
+    await local.updateWallSnapshot('account', (_) => <FavouriteWallEntity>[starter]);
     await local.setWallFavourite('account', starter.id, true);
 
     final result = await repository.clearAll(userId: 'account', wallIds: <String>[starter.id]);

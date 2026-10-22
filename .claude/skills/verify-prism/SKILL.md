@@ -54,9 +54,12 @@ fvm flutter build apk --debug --dart-define=SKIP_FIREBASE_INIT=true
 `SKIP_FIREBASE_INIT=true` is enough for UI-only proof. If a recipe needs real Firebase-backed data (feeds, coins, notifications), use Doppler dev secrets instead:
 
 ```bash
-DOPPLER_PROJECT=prism DOPPLER_CONFIG=dev ./tool/dart_defines_from_doppler.sh
+DOPPLER_PROJECT=prism DOPPLER_CONFIG=dev python3 tool/flutter_with_doppler.py -- \
+  fvm flutter run
 ```
-and pass the printed `--dart-define=...` flags to `flutter build`/`flutter run` in place of `SKIP_FIREBASE_INIT`.
+The runner passes allowlisted app settings directly as argv without printing values. Replace
+`fvm flutter run` with the required debug build command if needed. Real native Firebase config
+and Dart options must already exist for Firebase-backed debug verification.
 
 **One lock per platform.** The helper takes `/tmp/prism-verify-ios.lock` and `/tmp/prism-verify-android.lock`. If a lock is held by a live run, **stop**; run `cleanup` first. Override only with `PRISM_VERIFY_TAKEOVER=1` after you confirm the other run is done.
 

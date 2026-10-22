@@ -34,13 +34,11 @@ export async function isAdminCaller(auth: AdminCaller | undefined): Promise<bool
   const token = auth?.token;
   if (token?.admin === true) return true;
   const email = typeof token?.email === "string" ? token.email.trim() : "";
-  if (email === "") return false;
-  if (token?.email_verified === true) {
-    try {
-      if ((await db.collection("admin_users").doc(email).get()).exists) return true;
-    } catch (err) {
-      logger.error("isAdminCaller: failed to read admin_users.", {err});
-    }
+  if (email === "" || token?.email_verified !== true) return false;
+  try {
+    if ((await db.collection("admin_users").doc(email).get()).exists) return true;
+  } catch (err) {
+    logger.error("isAdminCaller: failed to read admin_users.", {err});
   }
   const lower = email.toLowerCase();
   return (await getAdminEmails()).some((e) => e.toLowerCase() === lower);

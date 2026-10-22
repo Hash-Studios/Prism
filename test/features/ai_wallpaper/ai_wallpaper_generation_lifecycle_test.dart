@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -15,15 +19,21 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
@@ -76,11 +86,13 @@ class _RecordingAnalytics extends FakeAppAnalytics {
 }
 
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, {this.generation, this.variation});
+  _FakeAiGenerationRepository(this.record, {this.generation, this.variation, this.localHistory, this.history});
 
   final AiGenerationRecord record;
   final Future<AiGenerationRecord> Function()? generation;
   final Future<AiGenerationRecord> Function()? variation;
+  final Future<List<AiGenerationRecord>> Function()? localHistory;
+  final Future<List<AiGenerationRecord>> Function()? history;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
   final List<String?> chargeTxIds = <String?>[];
   final Map<String, String> prompts = <String, String>{};
@@ -99,13 +111,12 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   }
 
   @override
-  Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => <AiGenerationRecord>[
-    record,
-  ];
+  Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async =>
+      history == null ? <AiGenerationRecord>[record] : await history!();
 
   @override
   Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
-      const <AiGenerationRecord>[];
+      localHistory == null ? const <AiGenerationRecord>[] : await localHistory!();
 
   @override
   Future<AiGenerationRecord> generate({
@@ -137,9 +148,56 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   }
 }
 
-AiGenerationRecord _record({String id = 'generation-1', int width = 720, int height = 1280}) => AiGenerationRecord(
+class _MemoryAiStore extends Fake implements DurableJsonStore {
+  final Map<String, Map<String, Object?>> records = {};
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async => records[key];
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readAll() async => Map.of(records);
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async => records[key] = Map.of(value);
+
+  @override
+  Future<void> delete(String key) async => records.remove(key);
+}
+
+class _HistorySnapshotFirestore extends FakeFirestoreClient {
+  bool delayQueries = false;
+  final List<Completer<List<FakeDocRow>>> pending = [];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    if (!delayQueries) return super.query(spec, map);
+    final snapshot = Completer<List<FakeDocRow>>();
+    pending.add(snapshot);
+    return (await snapshot.future).map((row) => map(row.data, row.id)).toList();
+  }
+}
+
+class _GenerationUser extends Fake implements User {
+  @override
+  String get uid => 'user-1';
+
+  @override
+  Future<String> getIdToken([bool forceRefresh = false]) async => 'token';
+}
+
+class _GenerationAuth extends Fake implements FirebaseAuth {
+  @override
+  User get currentUser => _GenerationUser();
+}
+
+AiGenerationRecord _record({
+  String id = 'generation-1',
+  String userId = 'user-1',
+  int width = 720,
+  int height = 1280,
+}) => AiGenerationRecord(
   id: id,
-  userId: 'user-1',
+  userId: userId,
   createdAt: DateTime.utc(2026),
   prompt: 'A quiet mountain lake',
   stylePreset: AiStylePreset.nature,
@@ -171,7 +229,8 @@ void main() {
   Future<void> setUpPage(
     WidgetTester tester,
     Future<dynamic> Function(String, dynamic) onCall, {
-    _FakeAiGenerationRepository? repository,
+    AiGenerationRepositoryImpl? repository,
+    FirestoreClient? firestore,
     ConnectivityService? connectivity,
     List<MethodCall>? toastCalls,
   }) async {
@@ -182,6 +241,7 @@ void main() {
     await getIt.reset();
     getIt.registerSingleton<ConnectivityService>(connectivity ?? _FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    if (firestore != null) getIt.registerSingleton<FirestoreClient>(firestore);
     functions.onCall = onCall;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
       if (call.method == 'showToast') toastCalls?.add(call);
@@ -211,6 +271,231 @@ void main() {
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });
+
+  testWidgets('stale remote history cannot hide a completed generation after its local record is synced', (
+    tester,
+  ) async {
+    final store = _MemoryAiStore();
+    final firestore = _HistorySnapshotFirestore();
+    final repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'generationId': 'gen_mlt7o22q_7a9688a037a47de6',
+            'imageUrls': {
+              'imageUrl': 'https://example.test/full.png',
+              'watermarkedImageUrl': 'https://example.test/wm.png',
+            },
+          }),
+          200,
+        ),
+      ),
+      auth: _GenerationAuth(),
+      localStore: store,
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: repository,
+      firestore: firestore,
+    );
+    firestore.delayQueries = true;
+    final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    expect(firestore.pending, hasLength(1));
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    expect(store.records['history/user-1/gen_mlt7o22q_7a9688a037a47de6']?['_syncState'], 'synced');
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+
+    firestore.pending.single.complete([]);
+    await refresh;
+    await tester.pumpAndSettle();
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
+      'gen_mlt7o22q_7a9688a037a47de6',
+    ]);
+
+    // A new, authoritative empty window must still remove synced history from the page.
+    final nextRefresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    firestore.pending.last.complete([]);
+    await nextRefresh;
+    await tester.pumpAndSettle();
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history, isEmpty);
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record, isNull);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a late local history load cannot replace a completed generation', (tester) async {
+    final local = Completer<List<AiGenerationRecord>>();
+    var localCalls = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async => _record(id: 'new-generation'),
+        localHistory: () => ++localCalls == 1 ? Future.value([]) : local.future,
+      ),
+    );
+    final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    local.complete([_record()]);
+    await refresh;
+    await tester.pumpAndSettle();
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'new-generation');
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  for (final staleFails in [false, true]) {
+    testWidgets('latest refresh wins when an older remote response ${staleFails ? 'fails' : 'succeeds'} last', (
+      tester,
+    ) async {
+      final firestore = _HistorySnapshotFirestore();
+      final repository = AiGenerationRepositoryImpl.forTest(
+        client: MockClient((_) async => http.Response('{}', 200)),
+        auth: _GenerationAuth(),
+        localStore: _MemoryAiStore(),
+      );
+      await setUpPage(tester, (name, parameters) async => {}, repository: repository, firestore: firestore);
+      firestore.delayQueries = true;
+      final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh;
+      final older = refresh();
+      await tester.pump();
+      final newer = refresh();
+      await tester.pump();
+      expect(firestore.pending, hasLength(2));
+      firestore.pending[1].complete([(id: 'newer', data: _record(id: 'newer').toJson())]);
+      await newer;
+      await tester.pumpAndSettle();
+      if (staleFails) {
+        firestore.pending[0].completeError(StateError('old refresh failed'));
+      } else {
+        firestore.pending[0].complete([(id: 'older', data: _record(id: 'older').toJson())]);
+      }
+      await older;
+      await tester.pumpAndSettle();
+      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'newer');
+      final history = tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip));
+      expect(history.history.map((r) => r.id), ['newer']);
+      expect(history.failed, false);
+      expect(history.loading, false);
+    });
+  }
+
+  testWidgets('history from a previous A session is ignored after A to B to A without another load', (tester) async {
+    final oldHistory = Completer<List<AiGenerationRecord>>();
+    var reads = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async => {},
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        history: () => ++reads == 1 ? Future.value([_record()]) : oldHistory.future,
+      ),
+    );
+    final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    expect(reads, 2);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..loggedIn = true;
+    CoinsService.instance.resetSession();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    CoinsService.instance.resetSession();
+    oldHistory.complete([_record(id: 'old-session-history')]);
+    await refresh;
+    await tester.pumpAndSettle();
+    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
+  });
+
+  for (final outcome in ['success', 'failure', 'return-to-A']) {
+    testWidgets('old generation $outcome cannot publish, commit or refund in a replacement session', (tester) async {
+      final analytics = _RecordingAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      final generation = Completer<AiGenerationRecord>();
+      final refunds = <String>[];
+      var historyReads = 0;
+      final toasts = <MethodCall>[];
+      await setUpPage(
+        tester,
+        (name, parameters) async {
+          if (name == 'awardCoins') refunds.add(app_state.prismUser.id);
+          return <String, Object>{
+            'success': true,
+            'changed': true,
+            'currentBalance': 90,
+            'delta': -10,
+            'transactionId': 'reservation-1',
+          };
+        },
+        repository: _FakeAiGenerationRepository(
+          _record(),
+          generation: () => generation.future,
+          history: () async => [
+            if (++historyReads == 1) _record() else _record(id: 'replacement-history', userId: app_state.prismUser.id),
+          ],
+        ),
+        toastCalls: toasts,
+      );
+      await tester.ensureVisible(find.text('Generate'));
+      await tester.tap(find.text('Generate'));
+      await tester.pump();
+      expect(analytics.events.whereType<AiGenerateStartedEvent>(), hasLength(1));
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true
+        ..coins = 77;
+      CoinsService.instance.resetSession();
+      if (outcome == 'return-to-A') {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'user-1'
+          ..loggedIn = true
+          ..coins = 77;
+        CoinsService.instance.resetSession();
+      }
+      final refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+      await refresh;
+      if (outcome == 'failure') {
+        generation.completeError(StateError('old account request failed'));
+      } else {
+        generation.complete(_record(id: 'old-account-generation'));
+      }
+      await tester.pumpAndSettle();
+      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'replacement-history');
+      expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
+        'replacement-history',
+      ]);
+      expect(analytics.events.whereType<AiChargeCommittedEvent>(), isEmpty);
+      expect(refunds, isEmpty);
+      expect(toasts, isEmpty);
+      expect(app_state.prismUser.coins, 77);
+      await tester.pump(const Duration(seconds: 2));
+    });
+  }
 
   testWidgets('initial history failures do not play an error haptic', (tester) async {
     final List<Object?> hapticTypes = <Object?>[];

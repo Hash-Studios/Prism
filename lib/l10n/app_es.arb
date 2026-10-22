@@ -487,7 +487,6 @@
   "adminBackToReviewList": "Volver a la lista de revisión",
   "adminBatchActionFailed": "No se pudo completar esta acción de revisión. Inténtalo de nuevo.",
   "adminBatchComplete": "Lote completado",
-  "adminBatchCompleteLoading": "Lote completado. Cargando el siguiente lote.",
   "adminBodyLabel": "Cuerpo",
   "adminBodyRequired": "El cuerpo es obligatorio",
   "adminBy": "Por",

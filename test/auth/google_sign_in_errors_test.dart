@@ -9,7 +9,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../support/fake_app_analytics.dart';
 
-class _Auth extends Fake implements FirebaseAuth {}
+class _Auth extends Fake implements FirebaseAuth {
+  @override
+  User? get currentUser => null;
+}
 
 class _ThrowingGoogleSignIn extends Fake implements GoogleSignIn {
   _ThrowingGoogleSignIn(this.code);

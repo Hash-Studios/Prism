@@ -66,12 +66,37 @@ class QuickTileConfigService {
     await _setString(prefs, PersistenceKeys.quickTileWotdTarget, target.name);
   }
 
-  /// Caches the current WOTD wallpaper URL so the tile can apply it without
-  /// a network call.  Call this whenever the WotdBloc emits a success state.
-  static Future<void> pushWotdUrl(String url) async {
+  static const String wotdRetainedKey = 'quick_tile.wotd.retained';
+
+  /// Caches the WOTD URL and optional retained asset metadata for the native tile.
+  static Future<void> pushWotdUrl(
+    String url, {
+    String? wallDocumentId,
+    DateTime? featuredDayUtc,
+    String? retainedAssetKey,
+    bool Function()? isCurrent,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
+    if (isCurrent?.call() == false) return;
+    if (wallDocumentId != null && wallDocumentId.isNotEmpty && featuredDayUtc != null && retainedAssetKey != null) {
+      final utc = featuredDayUtc.toUtc();
+      await _setString(
+        prefs,
+        wotdRetainedKey,
+        jsonEncode(<String, String>{
+          'documentId': wallDocumentId,
+          'featuredDayUtc': DateTime.utc(utc.year, utc.month, utc.day).toIso8601String(),
+          'assetKey': retainedAssetKey,
+        }),
+      );
+    } else if (!await prefs.remove(wotdRetainedKey)) {
+      throw StateError('Wall of the Day retained metadata could not be cleared');
+    }
+    if (isCurrent?.call() == false) return;
     await _setString(prefs, PersistenceKeys.quickTileWotdUrl, url);
+    if (isCurrent?.call() == false) return;
     await persistPexelsApiKey();
+    if (isCurrent?.call() == false) return;
     await const QuickSettingsChannel().refreshWotdWidget();
   }
 

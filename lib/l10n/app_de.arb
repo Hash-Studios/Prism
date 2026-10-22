@@ -1812,7 +1812,6 @@
   "adminBackToReviewList": "Zurück zur Prüfliste",
   "adminBatchActionFailed": "Diese Prüfaktion konnte nicht abgeschlossen werden. Versuch es erneut.",
   "adminBatchComplete": "Stapel abgeschlossen",
-  "adminBatchCompleteLoading": "Stapel abgeschlossen. Der nächste Stapel wird geladen.",
   "adminBodyLabel": "Text",
   "adminBodyRequired": "Der Text ist erforderlich",
   "adminBy": "Von",

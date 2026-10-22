@@ -5,6 +5,17 @@ import {db, str} from "./common";
 /** Collections whose docs copy the owner's name and photo into `by` and `userPhoto`. */
 export const AUTHORED_COLLECTIONS = ["walls", "setups"];
 
+/** Only Admin Auth can establish ownership of email-indexed records, including for legacy profiles. */
+export async function verifiedEmailForUid(uid: string): Promise<string> {
+  try {
+    const identity = await admin.auth().getUser(uid);
+    return identity.emailVerified ? str(identity.email) : "";
+  } catch (err) {
+    if (err instanceof Error && "code" in err && err.code === "auth/user-not-found") return "";
+    throw err;
+  }
+}
+
 /** The name and photo that the owner's uploads show. The username fills in when the profile has no name. */
 export function authorOf(owner: admin.firestore.DocumentData): {by: string; userPhoto: string} {
   return {by: str(owner.name) || str(owner.username), userPhoto: str(owner.profilePhoto)};
@@ -26,8 +37,8 @@ export function authorUpdate(
  * Writes the owner's current name and photo to each of their walls and setups, found by the email as typed or in
  * lower case. Returns the count of docs written.
  */
-export async function syncAuthorFields(owner: admin.firestore.DocumentData): Promise<number> {
-  const email = str(owner.email);
+export async function syncAuthorFields(uid: string, owner: admin.firestore.DocumentData): Promise<number> {
+  const email = await verifiedEmailForUid(uid);
   const changes: Array<{ref: admin.firestore.DocumentReference; update: Record<string, string>}> = [];
   for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
     for (const collection of AUTHORED_COLLECTIONS) {

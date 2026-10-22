@@ -3,6 +3,8 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {deleteAccount} from "../deleteAccount";
+import {claimUsername} from "../claimUsername";
+import {installFakeDb} from "./fakeDb";
 
 type Options = {
   email?: string;
@@ -11,6 +13,9 @@ type Options = {
   failUpdate?: boolean;
   slowQueries?: boolean;
   authError?: string;
+  authEmail?: string;
+  emailVerified?: boolean;
+  lookupError?: string;
 };
 
 function fake(t: TestContext, options: Options = {}) {
@@ -46,6 +51,8 @@ function fake(t: TestContext, options: Options = {}) {
         log.push(`barrier:${name}/${id}`);
       }})});
   t.mock.method(db, "collectionGroup", (name: string) => query(name));
+  const transaction = {get: async () => ({data: () => ({})}), delete: () => undefined};
+  t.mock.method(db, "runTransaction", async (callback: (tx: typeof transaction) => Promise<unknown>) => callback(transaction));
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
   });
@@ -76,6 +83,11 @@ function fake(t: TestContext, options: Options = {}) {
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
     if (options.authError) throw Object.assign(new Error("gone"), {code: options.authError});
+  });
+  t.mock.method(admin.auth(), "getUser", async () => {
+    if (options.lookupError) throw Object.assign(new Error("lookup failed"), {code: options.lookupError});
+    return {uid: "u1", email: options.authEmail ?? options.email ?? "sam@example.com",
+      emailVerified: options.emailVerified ?? true};
   });
   return Object.assign(log, {updates});
 }
@@ -122,10 +134,31 @@ test("a failed delete throws before the profile is anonymized or the auth user r
 });
 
 test("a retry after the auth user is already gone still succeeds", async (t) => {
-  const log = fake(t, {email: "", authError: "auth/user-not-found"});
+  const log = fake(t, {email: "victim@example.com", authError: "auth/user-not-found", lookupError: "auth/user-not-found"});
   assert.deepEqual(await call(), {ok: true});
   assert.ok(!log.includes("delete:draftSetups/d1"));
   assert.ok(log.includes("anonymize"));
+});
+
+test("a legacy forged profile cannot select a victim's email for deletion", async (t) => {
+  const log = fake(t, {email: "victim@example.com", authEmail: "Attacker@Example.com"});
+  await call();
+  assert.ok(!log.some((entry) => entry.includes("victim@example.com")));
+  assert.ok(log.includes("query:walls.email==Attacker@Example.com"));
+  assert.ok(log.includes("query:walls.email==attacker@example.com"));
+});
+
+test("an unverified auth email cannot authorize cross-user cleanup", async (t) => {
+  const log = fake(t, {email: "victim@example.com", emailVerified: false});
+  await call();
+  assert.ok(!log.some((entry) => entry.includes("victim@example.com")));
+  assert.ok(log.includes("delete:githubUploads/d1"));
+});
+
+test("a transient auth lookup failure stops deletion before any mutation", async (t) => {
+  const log = fake(t, {lookupError: "auth/internal-error"});
+  await assert.rejects(call, {code: "auth/internal-error"});
+  assert.deepEqual([...log], []);
 });
 
 test("other auth errors still fail the call", async (t) => {
@@ -271,4 +304,61 @@ test("a call with no auth is refused", async () => {
   await assert.rejects(async () => {
     await deleteAccount.run({data: {}} as unknown as Parameters<typeof deleteAccount.run>[0]);
   }, {code: "unauthenticated"});
+});
+
+test("SV-S12 releases all deleted UID reservations, permits reuse and never removes the new owner's claim on retry", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {username: "OldName", usernameLower: "oldname"},
+    "usersv2/u2": {username: "NewUser", usernameLower: "newuser"},
+    "usernames/oldname": {uid: "u1"},
+    "usernames/stalename": {uid: "u1"},
+    "usernames/foreign": {uid: "u2"},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  await call();
+  assert.equal(store.has("usernames/oldname"), false);
+  assert.equal(store.has("usernames/stalename"), false);
+  assert.equal(store.get("usernames/foreign")?.uid, "u2");
+  assert.deepEqual(await claimUsername.run({auth: {uid: "u2"}, data: {username: "OldName"}} as
+    Parameters<typeof claimUsername.run>[0]), {username: "OldName", usernameLower: "oldname"});
+  await call();
+  assert.equal(store.get("usernames/oldname")?.uid, "u2");
+});
+
+test("SV-S12 rechecks reservation ownership after the cleanup query", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {username: "OldName"}, "usernames/oldname": {uid: "u1"},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    store.set("usernames/oldname", {uid: "u2"});
+    return runTransaction(callback);
+  });
+  await call();
+  assert.equal(store.get("usernames/oldname")?.uid, "u2");
+});
+
+test("SV-S12 failed reservation cleanup preserves the profile and can be retried", async (t) => {
+  const log = fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {username: "OldName"}, "usernames/oldname": {uid: "u1"},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("reservation unavailable");
+  });
+  await assert.rejects(call, /reservation unavailable/);
+  assert.equal(store.get("usersv2/u1")?.username, "OldName");
+  assert.equal(log.includes("auth"), false);
+  t.mock.method(db, "runTransaction", runTransaction);
+  await call();
+  assert.equal(store.has("usernames/oldname"), false);
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
 });

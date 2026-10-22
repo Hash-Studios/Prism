@@ -69,7 +69,7 @@ void main() {
     final favourites = FavoritesLocalDataSource(store);
     await favourites.setWallFavourite('user-1', 'wall-1', true);
     await favourites.setWallFavourite('user-2', 'wall-9', true);
-    await favourites.saveWallSnapshot('user-1', <FavouriteWallEntity>[prismFav('wall-1')]);
+    await favourites.updateWallSnapshot('user-1', (_) => <FavouriteWallEntity>[prismFav('wall-1')]);
     await favourites.createFavouriteOperation(
       'user-1',
       'wall-1',

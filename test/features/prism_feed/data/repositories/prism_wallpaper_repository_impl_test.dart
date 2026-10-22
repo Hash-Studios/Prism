@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -14,6 +17,66 @@ import '../../../../support/fake_user_block_repository.dart';
 
 void main() {
   group('PrismWallpaperRepositoryImpl', () {
+    test('a page paused in its cache append read cannot overwrite a refreshed snapshot', () async {
+      final firestore = _walls(_buildWallDocs(count: 60));
+      final cache = _DelayedReadCache();
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        cache,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      await repo.fetchFeed(refresh: true);
+      cache.hold = true;
+      final stale = repo.fetchFeed(refresh: false);
+      await cache.started.future;
+      await repo.fetchFeed(refresh: true);
+      cache.release.complete();
+      await stale;
+      expect((cache.snapshots['prism/main']!.payload! as Map)['rows'] as List, hasLength(24));
+      expect((await repo.fetchFeed(refresh: false)).data!.first.id, 'wall-25');
+    });
+
+    test('a failed refresh paused in cache fallback cannot restore a stale cursor', () async {
+      final firestore = _walls(_buildWallDocs(count: 60));
+      final cache = _DelayedReadCache();
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        cache,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      await repo.fetchFeed(refresh: true);
+      await repo.fetchFeed(refresh: false);
+      firestore.queryError = StateError('offline');
+      cache.hold = true;
+      final stale = repo.fetchFeed(refresh: true);
+      await cache.started.future;
+      firestore.queryError = null;
+      await repo.fetchFeed(refresh: true);
+      cache.release.complete();
+      await stale;
+      expect((await repo.fetchFeed(refresh: false)).data!.first.id, 'wall-25');
+      expect(firestore.querySpecs.last.startAfterDocId, 'doc-24');
+    });
+    test('an old page cannot advance the refreshed cursor or append its cache', () async {
+      final firestore = _DelayedPageFirestore(_buildWallDocs(count: 60));
+      final cache = FakeFeedCacheLocalDataSource();
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        cache,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      await repo.fetchFeed(refresh: true);
+      final stale = repo.fetchFeed(refresh: false);
+      await firestore.started.future;
+      await repo.fetchFeed(refresh: true);
+      firestore.release.complete();
+      await stale;
+      expect((cache.snapshots['prism/main']!.payload! as Map)['rows'] as List, hasLength(24));
+      final next = await repo.fetchFeed(refresh: false);
+      expect(next.data!.first.id, 'wall-25');
+      expect(next.data!.last.id, 'wall-48');
+      expect(firestore.querySpecs.last.startAfterDocId, 'doc-24');
+    });
     test('canonical document lookup is server-only and retains canonical wall identity', () async {
       final docs = _buildWallDocs(count: 1);
       docs.single.data.addAll(<String, dynamic>{'originalProtected': true, 'wallpaper_url': ''});
@@ -342,4 +405,39 @@ class _FailingGetFirestore extends FakeFirestoreClient {
   }) => Future<T?>.error(
     FirestoreError(message: '[cloud_firestore/unavailable] The service is currently unavailable.', code: 'unavailable'),
   );
+}
+
+class _DelayedPageFirestore extends FakeFirestoreClient {
+  _DelayedPageFirestore(List<({String docId, Map<String, dynamic> data})> docs) : super(onQuery: _walls(docs).onQuery);
+  final started = Completer<void>();
+  final release = Completer<void>();
+  bool delayed = false;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    final rows = await super.query(spec, map);
+    if (spec.startAfterDocId != null && !delayed) {
+      delayed = true;
+      started.complete();
+      await release.future;
+    }
+    return rows;
+  }
+}
+
+class _DelayedReadCache extends FakeFeedCacheLocalDataSource {
+  bool hold = false;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final snapshot = await super.read(source: source, scope: scope);
+    if (hold) {
+      hold = false;
+      started.complete();
+      await release.future;
+    }
+    return snapshot;
+  }
 }

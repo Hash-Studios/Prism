@@ -188,7 +188,7 @@ void main() {
   });
 
   test('local fallback also hydrates without removing saved membership', () async {
-    await local.saveWallSnapshot('user', <FavouriteWallEntity>[prismFav('cached')]);
+    await local.updateWallSnapshot('user', (_) => <FavouriteWallEntity>[prismFav('cached')]);
     firestore.offline = true;
     canonical.lookup = (id) async => Result.success(_current(id, 'premium'));
     final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore(), canonical);

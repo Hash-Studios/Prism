@@ -122,9 +122,9 @@ cd web && npm ci && npm run build
 
 ### Secrets: Doppler
 
-Doppler project `prism`, configs `dev`, `dev_personal`, `prd`. `tool/dart_defines_from_doppler.sh` turns secrets into `--dart-define` flags (it drops `GH_TOKEN`). `String.fromEnvironment` is allowed only in `lib/env/env.dart` (`make env-guard`). Never print secret values; check names with `doppler secrets --project prism --config <cfg> --only-names`.
+Doppler project `prism`, configs `dev`, `dev_personal`, `prd`. `tool/flutter_with_doppler.py` passes only allowlisted shipping `Env` keys as Flutter argv, without shell interpolation. `String.fromEnvironment` is allowed only in `lib/env/env.dart` (`make env-guard`). Never print secret values; check names with `doppler secrets --project prism --config <cfg> --only-names`. Release native configuration and the new iOS prerequisite are documented in `docs/development/doppler.md`.
 
-Without Doppler, stub `lib/firebase_options.dart` (gitignored, never commit it) and pass `--dart-define=SKIP_FIREBASE_INIT=true`. A fresh worktree has no `lib/firebase_options.dart`: copy it from the main checkout.
+For explicit local debug/CI checks without Doppler, use a gitignored `lib/firebase_options.dart` stub and `--dart-define=SKIP_FIREBASE_INIT=true`. Never use either as a release fallback. Release Make targets derive Dart options from validated real native config. TestFlight requires the owner-supplied `IOS_GOOGLE_SERVICE_INFO_PLIST` GitHub secret, which was confirmed absent.
 
 ### Git hooks
 
@@ -136,7 +136,7 @@ UI changes need proof on a real app run: iOS Simulator and Android emulator scre
 
 ### CI gate (`.github/workflows/ci.yml`)
 
-PRs only; drafts skip, and a new push cancels the old run. `changes` path-filters the jobs: `flutter` (`make ci`: format, guards, analyze, tests), `functions`, `web`, `rules` (Firestore rules smoke test on the emulator), `app_size`. `ci` aggregates `flutter`, `functions`, `web` and `rules` and is the only required check on `master`; a skipped job counts as a pass. `app_size` is not required. It compares the head APK with the base APK that `app_size_base` builds and caches after each merge to `master`, which is the only job that runs on push. Codacy "action required" is not a gate.
+PRs only; drafts skip, and a new push cancels the old run. `changes` path-filters the jobs: `flutter` (`make ci`: format, guards, analyze, tests), `functions`, `web`, `rules` (Firestore rules smoke test on the emulator), `app_size`. Top-level `functions/src/*.ts` changes also schedule the small `notification_contract` Flutter test job, which participates in the required `ci` aggregate. `ci` aggregates `flutter`, `functions`, `web` and `rules` and is the only required check on `master`; a skipped job counts as a pass. `app_size` is not required. It compares the head APK with the base APK that `app_size_base` builds and caches after each merge to `master`, which is the only job that runs on push. Codacy "action required" is not a gate.
 
 ---
 

@@ -30,6 +30,7 @@ void main() {
           };
           return {
             'status': 'granted',
+            'currentBalance': 30,
             if (pair)
               'grants': [
                 for (final id in ['home', 'lock']) {'assetId': id, ...grant},
@@ -174,6 +175,7 @@ void main() {
         input = request;
         return {
           'status': 'granted',
+          'currentBalance': 90,
           'url': 'https://signed.example/original',
           'expiresAt': now.add(const Duration(minutes: 5)).millisecondsSinceEpoch,
         };
@@ -201,6 +203,7 @@ void main() {
         owner = 'bob';
         return {
           'status': 'granted',
+          'currentBalance': 90,
           'url': 'https://signed.example/original',
           'expiresAt': now.add(const Duration(minutes: 5)).millisecondsSinceEpoch,
         };
@@ -227,6 +230,7 @@ void main() {
         if (ids.length == 1) throw StateError('transport lost after debit');
         return {
           'status': 'granted',
+          'currentBalance': 90,
           'url': 'https://signed.example/original',
           'expiresAt': now.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
         };
@@ -253,6 +257,7 @@ void main() {
       if (fail) throw StateError('reply lost');
       return {
         'status': 'granted',
+        'currentBalance': 90,
         'url': 'https://signed.example/original',
         'expiresAt': now.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
       };
@@ -284,6 +289,7 @@ void main() {
         ids.add(input['requestId'] as String);
         return {
           'status': 'granted',
+          'currentBalance': 90,
           'url': 'https://signed.example/original',
           'expiresAt': now.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
         };
@@ -385,6 +391,7 @@ void main() {
         if (input['mode'] == 'quote') return {'status': 'quoted', 'requiredCoins': 5, 'currentBalance': 20};
         return {
           'status': 'granted',
+          'currentBalance': 15,
           'grants': [
             for (final id in ['home', 'lock'])
               {

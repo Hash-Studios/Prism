@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show SocketException;
 import 'dart:io' as io;
 
@@ -78,15 +79,24 @@ void main() {
     );
   }
 
-  Future<void> settleImages(WidgetTester tester) async {
-    for (var frame = 0; frame < 3; frame++) {
-      await tester.pumpAndSettle();
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+  Future<void> settleImages(WidgetTester tester, {Finder? until}) async {
+    final target = until ?? find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null);
+    final deadline = Stopwatch()..start();
+    while (deadline.elapsed < const Duration(seconds: 5)) {
+      await tester.pump(const Duration(milliseconds: 16));
+      if (target.evaluate().isNotEmpty) return;
+      // Image codec and file callbacks run outside the test clock. Yield to them, then check the rendered state.
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     }
-    await tester.pumpAndSettle();
+    expect(target, findsWidgets, reason: 'The image did not reach its expected decoded/error state within 5 seconds.');
   }
 
-  Future<void> pumpTile(WidgetTester tester, {String thumbnailUrl = thumbnail, String fullUrl = full}) async {
+  Future<void> pumpTile(
+    WidgetTester tester, {
+    String thumbnailUrl = thumbnail,
+    String fullUrl = full,
+    Finder? until,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -112,7 +122,7 @@ void main() {
         ),
       ),
     );
-    await settleImages(tester);
+    await settleImages(tester, until: until);
   }
 
   testWidgets('a failed thumbnail displays the available full wallpaper instead of grey', (tester) async {
@@ -124,10 +134,31 @@ void main() {
     verify(() => cache.getFileStream(full, withProgress: true)).called(1);
   });
 
+  testWidgets('a delayed full wallpaper still decodes after the thumbnail fails', (tester) async {
+    respond(thumbnail, success: false);
+    final response = Completer<FileResponse>();
+    Timer? responseTimer;
+    late Zone imageIoZone;
+    addTearDown(() => responseTimer?.cancel());
+    await tester.runAsync(() async {
+      imageIoZone = Zone.current;
+    });
+    when(() => cache.getFileStream(full, withProgress: true)).thenAnswer((_) {
+      imageIoZone.run(() {
+        responseTimer = Timer(const Duration(milliseconds: 250), () => response.complete(image));
+      });
+      return Stream.fromFuture(response.future);
+    });
+    await pumpTile(tester);
+
+    expect(find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null), findsOneWidget);
+    verify(() => cache.getFileStream(full, withProgress: true)).called(1);
+  });
+
   testWidgets('failed images offer retry and display the wallpaper once the connection recovers', (tester) async {
     respond(thumbnail, success: false);
     respond(full, success: false);
-    await pumpTile(tester);
+    await pumpTile(tester, until: find.byTooltip('Retry image'));
 
     expect(find.byTooltip('Retry image'), findsOneWidget);
     respond(thumbnail, success: true);
@@ -180,7 +211,7 @@ void main() {
 
   testWidgets('identical failed URLs are not retried automatically in a loop', (tester) async {
     respond(full, success: false);
-    await pumpTile(tester, thumbnailUrl: full);
+    await pumpTile(tester, thumbnailUrl: full, until: find.byTooltip('Retry image'));
 
     expect(find.byTooltip('Retry image'), findsOneWidget);
     verify(() => cache.getFileStream(full, withProgress: true)).called(1);
@@ -227,7 +258,7 @@ void main() {
         home: BlocProvider<WotdBloc>.value(value: bloc, child: const WallOfTheDayCard()),
       ),
     );
-    await settleImages(tester);
+    await settleImages(tester, until: find.byTooltip('Retry image'));
     expect(find.byTooltip('Retry image'), findsOneWidget);
 
     respond(thumbnail, success: true);
@@ -248,7 +279,7 @@ void main() {
         home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: thumbnail)),
       ),
     );
-    await settleImages(tester);
+    await settleImages(tester, until: find.byTooltip('Retry image'));
 
     expect(find.byTooltip('Retry image'), findsOneWidget);
     respond(thumbnail, success: true);
@@ -268,7 +299,7 @@ void main() {
         home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: '')),
       ),
     );
-    await settleImages(tester);
+    await settleImages(tester, until: find.byType(PulseFill));
 
     expect(find.byTooltip('Retry image'), findsNothing);
     expect(find.byType(PulseFill), findsOneWidget);

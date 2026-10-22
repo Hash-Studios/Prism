@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import test from "node:test";
+import test, {beforeEach} from "node:test";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db, utcDateString} from "../common";
+import {installFakeDb} from "./fakeDb";
 import {
   nativeNotificationLocalization,
   notificationCopyPayload,
@@ -20,6 +21,11 @@ import {
   sendToUserByEmail,
   userIdToTopic,
 } from "../notificationHelper";
+
+beforeEach((t) => {
+  assert.ok("mock" in t);
+  installFakeDb(t);
+});
 
 test("notification topics match the names the app subscribes to", () => {
   assert.equal(emailToTopic("sam+one@example.com"), "samone");
@@ -420,13 +426,14 @@ function personalSetup(
   localizationToken = sessionToken,
 ) {
   const inbox: Array<{ id?: string; data: Record<string, unknown> }> = [];
+  const document = db.doc.bind(db);
   t.mock.method(db, "collection", () => ({
     add: async (data: Record<string, unknown>) => inbox.push({data}),
     doc: (id: string) => ({
       set: async (data: Record<string, unknown>) => inbox.push({id, data}),
     }),
   }));
-  t.mock.method(db, "doc", () => ({
+  t.mock.method(db, "doc", (path: string) => path.endsWith("/private/session") ? ({
     get: async () => ({
       data: () => (sessionToken ?
         {
@@ -440,7 +447,7 @@ function personalSetup(
         } :
         {}),
     }),
-  }));
+  }) : document(path));
   const sent: Sent[] = [];
   t.mock.method(admin.messaging(), "send", async (message: Sent) => {
     sent.push(message);

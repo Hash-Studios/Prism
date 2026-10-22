@@ -1404,9 +1404,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get adminBatchComplete => 'Lote concluído';
 
   @override
-  String get adminBatchCompleteLoading => 'Lote concluído. Carregando o próximo lote.';
-
-  @override
   String get adminBodyLabel => 'Corpo';
 
   @override
@@ -11356,9 +11353,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get adminBatchComplete => 'Lote concluído';
-
-  @override
-  String get adminBatchCompleteLoading => 'Lote concluído. Carregando o próximo lote.';
 
   @override
   String get adminBodyLabel => 'Corpo';

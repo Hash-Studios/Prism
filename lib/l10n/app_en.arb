@@ -1820,7 +1820,6 @@
   "adminBackToReviewList": "Back to the review list",
   "adminBatchActionFailed": "Could not complete this review action. Try again.",
   "adminBatchComplete": "Batch complete",
-  "adminBatchCompleteLoading": "Batch complete. Loading the next batch.",
   "adminBodyLabel": "Body",
   "adminBodyRequired": "Body is required",
   "adminBy": "By",

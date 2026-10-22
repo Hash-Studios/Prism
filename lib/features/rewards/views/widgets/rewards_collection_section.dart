@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
@@ -49,8 +50,15 @@ class _CollectionBody extends StatelessWidget {
       builder: (context, state) {
         final bool loading = state.status == StreakShopStatus.initial || state.status == StreakShopStatus.loading;
         final bool failed = state.status == StreakShopStatus.failure;
+        // Protected streak originals have no server-owned acquisition path yet. A local streak or balance is not a grant.
+        final items = state.items
+            .where(
+              (wall) =>
+                  !wall.isStreakExclusive || !OriginalAccessService.requiresGrant(wall.fullUrl, wall.id, wall.source),
+            )
+            .toList(growable: false);
         // An optional section: with nothing to unlock there is nothing to show.
-        if (!loading && !failed && state.items.isEmpty) {
+        if (!loading && !failed && items.isEmpty) {
           return const SizedBox.shrink();
         }
         return Column(
@@ -58,7 +66,7 @@ class _CollectionBody extends StatelessWidget {
           children: <Widget>[
             PrismSectionHeader(
               title: context.l10n.economyStreakCollection,
-              padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.xxs),
+              padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.xxs),
             ),
             Text(context.l10n.economyStreakCollectionDescription, style: PrismTextStyles.caption(context)),
             const SizedBox(height: PrismSpace.sm),
@@ -73,7 +81,7 @@ class _CollectionBody extends StatelessWidget {
                 onAction: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
               )
             else
-              _CollectionGrid(items: state.items),
+              _CollectionGrid(items: items),
           ],
         );
       },

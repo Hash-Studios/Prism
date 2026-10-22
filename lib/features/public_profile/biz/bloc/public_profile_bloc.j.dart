@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -39,14 +40,25 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     on<_FollowChangeRequested>(_onFollowChangeRequested);
   }
 
+  int _wallGeneration = 0;
+  bool _isClosing = false;
   // Only the newest search may write results; slower earlier ones are dropped.
   final Map<UserRelationKind, String> _latestQuery = <UserRelationKind, String>{};
+  final Map<String, Future<void>> _followTails = <String, Future<void>>{};
+  final Map<String, Object> _followIntents = <String, Object>{};
+  final Map<String, bool> _confirmedFollowing = <String, bool>{};
 
   final FetchPublicProfileWallsUseCase _fetchPublicProfileWallsUseCase;
   final FollowUserUseCase _followUserUseCase;
   final UnfollowUserUseCase _unfollowUserUseCase;
   final FetchUserSummariesPageUseCase _fetchUserSummariesPageUseCase;
   final SearchUsersByUsernameUseCase _searchUsersByUsernameUseCase;
+
+  @override
+  Future<void> close() {
+    _isClosing = true;
+    return super.close();
+  }
 
   Future<void> _onStarted(_Started event, Emitter<PublicProfileState> emit) async {
     // Clear previous user's walls immediately so UI never flashes stale grids.
@@ -67,16 +79,19 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _loadAll({required Emitter<PublicProfileState> emit, required bool refresh}) async {
+    final int generation = ++_wallGeneration;
+    final String email = state.email;
     if (state.email.isEmpty) {
       emit(state.copyWith(status: LoadStatus.failure));
       return;
     }
 
-    emit(state.copyWith(status: LoadStatus.loading));
+    emit(state.copyWith(status: LoadStatus.loading, isFetchingMoreWalls: false));
 
     final wallsResult = await _fetchPublicProfileWallsUseCase(
-      FetchPublicProfileWallsParams(email: state.email, refresh: refresh),
+      FetchPublicProfileWallsParams(email: email, refresh: refresh),
     );
+    if (_isClosing || isClosed || emit.isDone || generation != _wallGeneration) return;
 
     wallsResult.fold(
       onSuccess: (walls) => emit(
@@ -92,14 +107,15 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _onFetchMoreWallsRequested(_FetchMoreWallsRequested event, Emitter<PublicProfileState> emit) async {
-    if (state.isFetchingMoreWalls || !state.hasMoreWalls) {
+    if (state.email.isEmpty || state.status == LoadStatus.loading || state.isFetchingMoreWalls || !state.hasMoreWalls) {
       return;
     }
+    final int generation = _wallGeneration;
+    final String email = state.email;
     emit(state.copyWith(isFetchingMoreWalls: true));
 
-    final result = await _fetchPublicProfileWallsUseCase(
-      FetchPublicProfileWallsParams(email: state.email, refresh: false),
-    );
+    final result = await _fetchPublicProfileWallsUseCase(FetchPublicProfileWallsParams(email: email, refresh: false));
+    if (_isClosing || isClosed || emit.isDone || generation != _wallGeneration) return;
 
     result.fold(
       onSuccess: (page) {
@@ -171,60 +187,99 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _onFollowChangeRequested(_FollowChangeRequested event, Emitter<PublicProfileState> emit) async {
+    final int session = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        !_isClosing &&
+        !isClosed &&
+        !emit.isDone &&
+        session == CoinsService.instance.economySession &&
+        app_state.prismUser.loggedIn &&
+        app_state.prismUser.id == event.currentUserId &&
+        app_state.prismUser.email.trim().toLowerCase() == event.currentUserEmail.trim().toLowerCase();
+    if (!ownsSession()) return;
     final String targetKey = event.targetUserEmail.trim().toLowerCase();
+    final String queueKey = '${event.currentUserId}::$targetKey';
+    final String operationKey = '$session::$queueKey';
+    final Object intent = Object();
+    _followIntents[targetKey] = intent;
+    // A returning owner's new intent must still follow any already-dispatched transaction.
+    final Future<void>? previous = _followTails[queueKey];
+    final completion = Completer<void>();
+    _followTails[queueKey] = completion.future;
     emit(_withFollowApplied(state, event.targetUserEmail, follow: event.follow));
 
-    final result = event.follow
-        ? await _followUserUseCase(
-            FollowUserParams(
-              currentUserId: event.currentUserId,
-              currentUserEmail: event.currentUserEmail,
-              targetUserId: event.targetUserId,
-              targetUserEmail: event.targetUserEmail,
-            ),
-          )
-        : await _unfollowUserUseCase(
-            UnfollowUserParams(
-              currentUserId: event.currentUserId,
-              currentUserEmail: event.currentUserEmail,
-              targetUserId: event.targetUserId,
-              targetUserEmail: event.targetUserEmail,
-            ),
-          );
-    final FollowOutcome outcome = FollowOutcome(
-      id: (state.followOutcome?.id ?? 0) + 1,
-      follow: event.follow,
-      success: result.isSuccess,
-      targetName: event.targetName,
-    );
-    unawaited(
-      analytics.track(
-        FollowResultEvent(
-          action: event.follow ? 'follow' : 'unfollow',
-          result: result.isSuccess ? 'success' : 'failure',
-          creatorId: event.targetUserId,
-          source: 'public_profile',
-        ),
-      ),
-    );
-    if (result.isFailure) {
-      final PublicProfileState rolledBack = _withFollowApplied(state, event.targetUserEmail, follow: !event.follow);
-      emit(
-        rolledBack.copyWith(
-          followOverrides: <String, bool>{...rolledBack.followOverrides}..remove(targetKey),
-          followOutcome: outcome,
+    try {
+      if (previous != null) await previous;
+      if (!ownsSession()) return;
+      final result = event.follow
+          ? await _followUserUseCase(
+              FollowUserParams(
+                currentUserId: event.currentUserId,
+                currentUserEmail: event.currentUserEmail,
+                targetUserId: event.targetUserId,
+                targetUserEmail: event.targetUserEmail,
+              ),
+            )
+          : await _unfollowUserUseCase(
+              UnfollowUserParams(
+                currentUserId: event.currentUserId,
+                currentUserEmail: event.currentUserEmail,
+                targetUserId: event.targetUserId,
+                targetUserEmail: event.targetUserEmail,
+              ),
+            );
+      if (!ownsSession()) return;
+      final bool ownsIntent = identical(_followIntents[targetKey], intent);
+      final FollowOutcome outcome = FollowOutcome(
+        id: (state.followOutcome?.id ?? 0) + 1,
+        follow: event.follow,
+        success: result.isSuccess,
+        targetName: event.targetName,
+      );
+      unawaited(
+        analytics.track(
+          FollowResultEvent(
+            action: event.follow ? 'follow' : 'unfollow',
+            result: result.isSuccess ? 'success' : 'failure',
+            creatorId: event.targetUserId,
+            source: 'public_profile',
+          ),
         ),
       );
-      return;
-    }
+      if (result.isFailure) {
+        if (!ownsIntent) return;
+        final bool following = app_state.prismUser.following.any((email) => email.trim().toLowerCase() == targetKey);
+        final PublicProfileState rolledBack = _withFollowApplied(state, event.targetUserEmail, follow: following);
+        final overrides = <String, bool>{...rolledBack.followOverrides};
+        if (_confirmedFollowing.containsKey(operationKey)) {
+          overrides[targetKey] = _confirmedFollowing[operationKey]!;
+        } else {
+          overrides.remove(targetKey);
+        }
+        emit(rolledBack.copyWith(followOverrides: overrides, followOutcome: outcome));
+        return;
+      }
 
-    await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
-    unawaited(_syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow));
-    emit(state.copyWith(followOutcome: outcome));
+      _confirmedFollowing[operationKey] = event.follow;
+      await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
+      if (!ownsSession()) return;
+      await _syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow, isCurrent: ownsSession);
+      if (!ownsSession() || !identical(_followIntents[targetKey], intent)) return;
+      emit(state.copyWith(followOutcome: outcome.copyWith(id: (state.followOutcome?.id ?? 0) + 1)));
+    } finally {
+      completion.complete();
+      if (identical(_followTails[queueKey], completion.future)) _followTails.remove(queueKey);
+      if (identical(_followIntents[targetKey], intent)) _followIntents.remove(targetKey);
+    }
   }
 
   /// Posts pushes for the creator follow the follow state.
-  Future<void> _syncPostsTopic(String email, String targetUserId, {required bool follow}) async {
+  Future<void> _syncPostsTopic(
+    String email,
+    String targetUserId, {
+    required bool follow,
+    required bool Function() isCurrent,
+  }) async {
     try {
       if (follow && !creatorPostsAlertsEnabled) return;
       await setCreatorPostsTopics(
@@ -233,6 +288,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         subscribed: follow,
         sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
         knownUids: targetUserId.trim().isEmpty ? const <String, String>{} : <String, String>{email: targetUserId},
+        isCurrent: isCurrent,
       );
     } catch (error, stackTrace) {
       logger.w('Could not sync the posts topic.', error: error, stackTrace: stackTrace);

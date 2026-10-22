@@ -30,7 +30,7 @@ enum PrismShortcutError: Error, CustomLocalizedStringResourceConvertible {
     case .noFavourites:
       return "No favourites yet. Open Prism and tap the heart on a wallpaper."
     case .wallOfTheDayUnavailable:
-      return "Could not load the Wall of the Day. Check your connection."
+      return "Open Prism and download today's Wall of the Day original, then run this Shortcut again."
     case .favouriteUnavailable:
       return "Could not load your favourite wallpaper. Check your connection."
     case .unsupportedImage:
@@ -65,8 +65,7 @@ struct GetPrismWallpaperIntent: AppIntent {
 
   private static func wallOfTheDayImage() async throws -> Data {
     do {
-      let url = try await PrismShortcutWallpaperLoader.wallOfTheDayImageURL()
-      return try await PrismShortcutWallpaperLoader.imageData(from: url)
+      return try await PrismShortcutWallpaperLoader.wallOfTheDayImage()
     } catch let error as CancellationError {
       throw error
     } catch {

@@ -9,8 +9,15 @@ import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_mobile_ads/src/ad_instance_manager.dart' show AdMessageCodec;
 
 import '../../support/fake_app_analytics.dart';
+
+class _ThrowingConsent extends AdConsent {
+  @override
+  Future<bool> ensure() async => throw StateError('consent unavailable');
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +27,26 @@ void main() {
   late FakeAppAnalytics analytics;
   late AdsRepositoryImpl repository;
   late List<String> nativeMethods;
+  late List<int> loadIds;
+  late List<int> disposedIds;
+  late bool throwLoad;
+  final codec = StandardMethodCodec(AdMessageCodec());
+
+  Future<void> adEvent(int id, String event, {LoadAdError? error}) async {
+    final done = Completer<void>();
+    messenger.handlePlatformMessage(
+      channel,
+      codec.encodeMethodCall(
+        MethodCall('onAdEvent', <String, Object?>{
+          'adId': id,
+          'eventName': event,
+          if (error != null) 'loadAdError': error,
+        }),
+      ),
+      (_) => done.complete(),
+    );
+    await done.future;
+  }
 
   void consent(bool granted) {
     AdConsent.instance = AdConsent(
@@ -36,10 +63,18 @@ void main() {
     AnalyticsRuntime.instance = analytics;
     repository = AdsRepositoryImpl();
     nativeMethods = [];
+    loadIds = [];
+    disposedIds = [];
+    throwLoad = false;
     messenger.setMockMessageHandler(channel, (ByteData? message) async {
-      // Only read the standard method name, leaving the SDK's ad objects opaque.
-      final method = const StandardMessageCodec().readValue(ReadBuffer(message!))! as String;
+      final call = codec.decodeMethodCall(message);
+      final method = call.method;
       nativeMethods.add(method);
+      if (method == 'loadRewardedAd') {
+        loadIds.add((call.arguments as Map)['adId'] as int);
+        if (throwLoad) return codec.encodeErrorEnvelope(code: 'native_load_failed');
+      }
+      if (method == 'disposeAd') disposedIds.add((call.arguments as Map)['adId'] as int);
       if (method == 'MobileAds#initialize') return Completer<ByteData?>().future;
       return const StandardMethodCodec().encodeSuccessEnvelope(null);
     });
@@ -98,5 +133,83 @@ void main() {
     expect(retry.data?.adFailed, true);
     expect(retry.data?.failureReason, AdFailureReason.consent);
     expect(nativeMethods.where((method) => method == 'loadRewardedAd').length, 1);
+  });
+
+  testWidgets('timed-out consent cannot start a native load after a newer refused request', (tester) async {
+    final gate = Completer<bool>();
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () => gate.future,
+    );
+    Result<AdsEntity>? first;
+    repository.createRewardedAd().then((value) => first = value);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 30));
+    expect(first?.failure, isA<NetworkFailure>());
+    consent(false);
+    expect((await repository.createRewardedAd()).data?.failureReason, AdFailureReason.consent);
+    gate.complete(true);
+    await tester.pump();
+    expect(loadIds, isEmpty);
+    expect(analytics.events.whereType<AdLoadResultEvent>().length, 2);
+  });
+
+  testWidgets('a late loaded ad is disposed and cannot replace a newer loaded ad', (tester) async {
+    repository.createRewardedAd();
+    await tester.pump();
+    final oldId = loadIds.single;
+    await tester.pump(const Duration(seconds: 30));
+    final second = repository.createRewardedAd();
+    await tester.pump();
+    final currentId = loadIds.last;
+    await adEvent(currentId, 'onAdLoaded');
+    expect((await second).data?.adLoaded, isTrue);
+    await adEvent(oldId, 'onAdLoaded');
+    await tester.pump();
+    expect(disposedIds, contains(oldId));
+    expect(disposedIds, isNot(contains(currentId)));
+    expect(analytics.events.whereType<AdLoadResultEvent>().length, 2);
+  });
+
+  testWidgets('a retry scheduled near the deadline cannot load after timeout', (tester) async {
+    repository.createRewardedAd();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 29));
+    await adEvent(loadIds.single, 'onAdFailedToLoad', error: LoadAdError(2, 'test', 'offline', null));
+    await tester.pump(const Duration(seconds: 1));
+    consent(false);
+    await repository.createRewardedAd();
+    await tester.pump(const Duration(seconds: 2));
+    expect(loadIds.length, 1);
+  });
+
+  testWidgets('each logical request gets a fresh retry budget', (tester) async {
+    for (int request = 0; request < 2; request++) {
+      final pending = repository.createRewardedAd();
+      await tester.pump();
+      for (int attempt = 0; attempt < 4; attempt++) {
+        await adEvent(loadIds.last, 'onAdFailedToLoad', error: LoadAdError(2, 'test', 'offline', null));
+        await tester.pump(const Duration(seconds: 2));
+      }
+      expect((await pending).data?.adFailed, isTrue);
+      expect(loadIds.length, (request + 1) * 4);
+    }
+  });
+
+  testWidgets('consent exceptions terminate the request and allow a later retry', (tester) async {
+    AdConsent.instance = _ThrowingConsent();
+    expect((await repository.createRewardedAd()).data?.adFailed, isTrue);
+    consent(false);
+    expect((await repository.createRewardedAd()).data?.failureReason, AdFailureReason.consent);
+  });
+
+  testWidgets('native load exceptions clear loading without leaving retry timers', (tester) async {
+    throwLoad = true;
+    final result = await repository.createRewardedAd();
+    expect(result.data?.adFailed, isTrue);
+    expect(result.data?.loadingAd, isFalse);
+    consent(false);
+    expect((await repository.createRewardedAd()).data?.failureReason, AdFailureReason.consent);
   });
 }

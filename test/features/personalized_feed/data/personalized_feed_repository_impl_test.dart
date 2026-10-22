@@ -477,12 +477,12 @@ class _PendingRecordTasteSignalStore extends TasteSignalStore {
   }
 }
 
-PrismUsersV2 _signedInUser({List<String> following = const <String>[]}) {
+PrismUsersV2 _signedInUser({List<String> following = const <String>[], String id = 'feed-test-user'}) {
   final String now = DateTime.now().toUtc().toIso8601String();
   return PrismUsersV2(
     username: '',
     email: '',
-    id: 'feed-test-user',
+    id: id,
     createdAt: now,
     premium: false,
     lastLoginAt: now,
@@ -1653,6 +1653,105 @@ void main() {
   });
 
   group('fetchFollowing', () {
+    test('equal timestamps use document identity as a stable global tie breaker', () async {
+      app_state.prismUser = _signedInUser(
+        following: List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}@example.com'),
+      );
+      final repository = _repository(
+        firestore: _ChunkedFollowingFirestore(sameDate: true),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      final ids = <String>[];
+      for (int page = 1; page <= 10; page++) {
+        final result = (await repository.fetchFollowing(page: page)).data!;
+        ids.addAll(result.items.map((item) => item.id));
+        if (!result.hasMore) break;
+      }
+      expect(ids, List<String>.generate(62, (i) => 'W${61 - i}'));
+    });
+    test('uneven creator chunks merge globally ordered bounded pages without losing buffered rows', () async {
+      final emails = List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}@example.com');
+      app_state.prismUser = _signedInUser(following: emails);
+      final firestore = _ChunkedFollowingFirestore();
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      final ids = <String>[];
+      for (int page = 1; page <= 10; page++) {
+        final calls = firestore.specs.length;
+        final result = (await repository.fetchFollowing(page: page)).data!;
+        expect(result.items.length, lessThanOrEqualTo(12));
+        expect(firestore.specs.length - calls, lessThanOrEqualTo(3));
+        ids.addAll(result.items.map((item) => item.id));
+        if (!result.hasMore) break;
+      }
+      expect(ids, List<String>.generate(62, (i) => 'W$i'));
+      expect(firestore.specs.every((spec) => spec.limit == 12), isTrue);
+      expect(firestore.specs.skip(2).every((spec) => spec.startAfterDocId != null), isTrue);
+      expect(firestore.specs.every((spec) => spec.orderBy.last.field == firestoreDocumentIdField), isTrue);
+    });
+
+    test('a late first Following page cannot replace refreshed chunk cursors', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final firestore = _DelayedFollowingFirestore(rows: 57);
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      final old = repository.fetchFollowing(page: 1);
+      await firestore.started.future;
+      await repository.fetchFollowing(page: 1);
+      await repository.fetchFollowing(page: 2);
+      firestore.release.complete();
+      expect((await old).isFailure, isTrue);
+      expect((await repository.fetchFollowing(page: 3)).data!.items.first.id, 'W24');
+    });
+    test('cursor pages reach all 57 walls once without growing query limits', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final firestore = _FollowingFirestore(rows: 57);
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      final ids = <String>[];
+      for (int page = 1; page <= 10; page++) {
+        final result = (await repository.fetchFollowing(page: page)).data!;
+        expect(result.items.length, lessThanOrEqualTo(12));
+        ids.addAll(result.items.map((item) => item.id));
+        if (!result.hasMore) break;
+      }
+      expect(ids, List<String>.generate(57, (i) => 'W$i'));
+      expect(firestore.limits.every((limit) => limit == 12), isTrue);
+    });
+
+    test('loaded empty following is authoritative after bootstrap and owner changes', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final firestore = _FollowingFirestore(rows: 3);
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      await repository.fetch(_firstPage);
+      app_state.prismUser = _signedInUser();
+      final calls = firestore.limits.length;
+      expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
+      await repository.fetch(_firstPage);
+      expect(firestore.limits, hasLength(calls));
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      await repository.fetch(_firstPage);
+      final ownerCalls = firestore.limits.length;
+      app_state.prismUser = _signedInUser(id: 'replacement-owner');
+      expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
+      expect(firestore.limits, hasLength(ownerCalls));
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
+    });
     test('returns the followed creators walls and reports that more may follow', () async {
       app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
       final _FollowingFirestore firestore = _FollowingFirestore(rows: 12);
@@ -1899,8 +1998,9 @@ class _FollowingFirestore extends _EmptyFirestore {
       throw StateError('offline');
     }
     limits.add(spec.limit!);
+    final start = spec.startAfterDocId == null ? 0 : int.parse(spec.startAfterDocId!.substring(3)) + 1;
     return <T>[
-      for (int i = 0; i < rows; i++)
+      for (int i = start; i < rows && i < start + spec.limit!; i++)
         map(<String, dynamic>{
           'id': 'W$i',
           'wallpaper_url': 'https://example.com/w$i.jpg',
@@ -1910,6 +2010,53 @@ class _FollowingFirestore extends _EmptyFirestore {
           'email': email,
           'createdAt': '2026-09-01T00:00:00Z',
         }, 'doc$i'),
+    ];
+  }
+}
+
+class _DelayedFollowingFirestore extends _FollowingFirestore {
+  _DelayedFollowingFirestore({required super.rows});
+  final started = Completer<void>();
+  final release = Completer<void>();
+  bool delayed = false;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    final rows = await super.query(spec, map);
+    if (!delayed) {
+      delayed = true;
+      started.complete();
+      await release.future;
+    }
+    return rows;
+  }
+}
+
+class _ChunkedFollowingFirestore extends _EmptyFirestore {
+  _ChunkedFollowingFirestore({this.sameDate = false});
+  final bool sameDate;
+  final specs = <FirestoreQuerySpec>[];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    specs.add(spec);
+    final emails = spec.filters.firstWhere((filter) => filter.field == 'email').value! as List<String>;
+    final all = <int>[
+      for (int i = 0; i < 62; i++)
+        if (emails.contains(i % 13 == 0 ? 'c10@example.com' : 'c00@example.com')) i,
+    ];
+    if (sameDate) all.sort((a, b) => b.compareTo(a));
+    final cursor = spec.startAfterDocId == null ? null : int.parse(spec.startAfterDocId!.substring(3));
+    final indexes = all.skip(cursor == null ? 0 : all.indexOf(cursor) + 1).take(spec.limit!);
+    return <T>[
+      for (final i in indexes)
+        map(<String, dynamic>{
+          'id': 'W$i',
+          'wallpaper_url': 'https://example.com/$i',
+          'review': true,
+          'email': i % 13 == 0 ? 'c10@example.com' : 'c00@example.com',
+          'createdAt': DateTime.utc(2026).subtract(Duration(minutes: sameDate ? 0 : i)).toIso8601String(),
+        }, 'doc${i.toString().padLeft(3, '0')}'),
     ];
   }
 }

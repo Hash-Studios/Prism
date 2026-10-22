@@ -26,17 +26,36 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
   final AdminModerationRepository _moderation;
 
   static const int _maxUndoStack = 5;
+  String? _lastWallId;
 
   ReviewBatchBloc(this._repository, this._moderation) : super(const ReviewBatchState()) {
-    on<ReviewBatchLoadRequested>(_onLoadRequested);
-    on<ReviewBatchSwipeApproved>(_onSwipeApproved);
-    on<ReviewBatchSwipeRejected>(_onSwipeRejected);
-    on<ReviewBatchSwipeReserved>(_onSwipeReserved);
+    on<ReviewBatchLoadRequested>((event, emit) => _exclusive(event, emit, _onLoadRequested));
+    on<ReviewBatchSwipeApproved>((event, emit) => _exclusive(event, emit, _onSwipeApproved));
+    on<ReviewBatchSwipeRejected>((event, emit) => _exclusive(event, emit, _onSwipeRejected));
+    on<ReviewBatchSwipeReserved>((event, emit) => _exclusive(event, emit, _onSwipeReserved));
     // One write at a time and in order, so two quick picks cannot reach Firestore the wrong way round.
-    on<ReviewBatchDepthChanged>(_onDepthChanged, transformer: (events, mapper) => events.asyncExpand(mapper));
-    on<ReviewBatchSwipeSkipped>(_onSwipeSkipped);
-    on<ReviewBatchUndoRequested>(_onUndoRequested);
-    on<ReviewBatchNextBatchRequested>(_onNextBatchRequested);
+    on<ReviewBatchDepthChanged>(
+      (event, emit) => _exclusive(event, emit, _onDepthChanged),
+      transformer: (events, mapper) => events.asyncExpand(mapper),
+    );
+    on<ReviewBatchSwipeSkipped>((event, emit) => _exclusive(event, emit, _onSwipeSkipped));
+    on<ReviewBatchUndoRequested>((event, emit) => _exclusive(event, emit, _onUndoRequested));
+    on<ReviewBatchNextBatchRequested>((event, emit) => _exclusive(event, emit, _onNextBatchRequested));
+  }
+
+  Future<void> _exclusive<E extends ReviewBatchEvent>(
+    E event,
+    Emitter<ReviewBatchState> emit,
+    Future<void> Function(E, Emitter<ReviewBatchState>) action,
+  ) async {
+    // One guard across event types. Repeated input belongs to the displayed wall, not the next wall.
+    if (state.isBusy) return;
+    emit(state.copyWith(isBusy: true));
+    try {
+      await action(event, emit);
+    } finally {
+      if (!emit.isDone) emit(state.copyWith(isBusy: false));
+    }
   }
 
   Future<void> _onLoadRequested(ReviewBatchLoadRequested event, Emitter<ReviewBatchState> emit) async {
@@ -48,16 +67,19 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
       if (walls.isNotEmpty) {
         await _repository.categorizeWalls(walls);
         final categorizedWalls = await _repository.fetchPendingWallsBatch();
+        final totalPending = await _repository.getPendingWallsCount();
+        _lastWallId = categorizedWalls.isEmpty ? null : categorizedWalls.last.id;
 
         emit(
           state.copyWith(
             status: ReviewBatchStatus.loaded,
             walls: categorizedWalls,
             currentIndex: 0,
-            totalPending: await _repository.getPendingWallsCount(),
+            totalPending: totalPending,
           ),
         );
       } else {
+        _lastWallId = null;
         emit(state.copyWith(status: ReviewBatchStatus.loaded, walls: walls, currentIndex: 0, totalPending: 0));
       }
     } catch (e) {
@@ -209,16 +231,15 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
   }
 
   Future<void> _onNextBatchRequested(ReviewBatchNextBatchRequested event, Emitter<ReviewBatchState> emit) async {
-    if (state.currentIndex >= state.walls.length - 1) {
-      emit(state.copyWith(status: ReviewBatchStatus.batchComplete));
-      return;
-    }
+    if (state.hasMoreWalls) return;
 
-    final lastWallId = state.walls.last.id;
+    final lastWallId = _lastWallId;
     emit(state.copyWith(status: ReviewBatchStatus.loading));
 
     try {
       final walls = await _repository.fetchPendingWallsBatch(startAfterDocId: lastWallId);
+      final totalPending = await _repository.getPendingWallsCount();
+      if (walls.isNotEmpty) _lastWallId = walls.last.id;
 
       emit(
         state.copyWith(
@@ -226,7 +247,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
           walls: walls,
           currentIndex: 0,
           undoStack: const [],
-          totalPending: await _repository.getPendingWallsCount(),
+          totalPending: totalPending,
         ),
       );
     } catch (e) {

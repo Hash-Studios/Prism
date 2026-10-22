@@ -1390,9 +1390,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminBatchComplete => 'बैच पूरा हुआ';
 
   @override
-  String get adminBatchCompleteLoading => 'बैच पूरा हुआ। अगला बैच लोड हो रहा है।';
-
-  @override
   String get adminBodyLabel => 'मुख्य पाठ';
 
   @override
