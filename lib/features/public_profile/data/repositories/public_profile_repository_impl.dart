@@ -244,7 +244,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       }
 
       final items = rows
-          .map((row) => PublicProfileSnapshotCodec.wallFromDto(row.doc, row.docId))
+          .map((row) => PublicProfileSnapshotCodec.wallFromDto(row.doc, row.docId, firestoreDocumentId: row.docId))
           .toList(growable: false);
       try {
         await _serializeSnapshotWrite(owner, () async {
@@ -256,16 +256,19 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             } catch (_) {}
           }
           if (!isCurrent()) return;
-          final Map<String, WallDocDto> uniqueRows = <String, WallDocDto>{
+          final Map<String, PublicProfileSnapshotWall> uniqueRows = <String, PublicProfileSnapshotWall>{
             if (previous != null)
-              for (final row in PublicProfileSnapshotCodec.decodeWalls(previous)) row.id: row,
-            for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): row.doc,
+              for (final wall in PublicProfileSnapshotCodec.decodeWalls(previous)) wall.doc.id: wall,
+            for (final row in rows)
+              (row.doc.id.isNotEmpty ? row.doc.id : row.docId): (doc: row.doc, documentId: row.docId),
           };
           await _profileSnapshots.write(
             snapshotKey,
             PublicProfileSnapshotCodec.encodeWalls(
               uniqueRows.entries.map(
-                (entry) => entry.value.id.isEmpty ? entry.value.copyWith(id: entry.key) : entry.value,
+                (entry) => entry.value.doc.id.isEmpty
+                    ? (doc: entry.value.doc.copyWith(id: entry.key), documentId: entry.value.documentId)
+                    : entry.value,
               ),
               hasMore: rows.length == 12,
             ),
@@ -283,9 +286,14 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         try {
           final cached = await _profileSnapshots.read(snapshotKey);
           if (cached != null && isCurrent()) {
-            final List<WallDocDto> docs = PublicProfileSnapshotCodec.decodeWalls(cached);
-            final items = docs
-                .map((doc) => PublicProfileSnapshotCodec.wallFromDto(doc, doc.id))
+            final items = PublicProfileSnapshotCodec.decodeWalls(cached)
+                .map(
+                  (wall) => PublicProfileSnapshotCodec.wallFromDto(
+                    wall.doc,
+                    wall.doc.id,
+                    firestoreDocumentId: wall.documentId,
+                  ),
+                )
                 .toList(growable: false);
             return Result.success((items: items, hasMore: cached['hasMore'] as bool? ?? false));
           }

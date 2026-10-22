@@ -6,6 +6,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 
+typedef PublicProfileSnapshotWall = ({WallDocDto doc, String? documentId});
+
 class PublicProfileSnapshotCodec {
   const PublicProfileSnapshotCodec._();
 
@@ -43,30 +45,54 @@ class PublicProfileSnapshotCodec {
           )
           .toList(growable: false);
 
-  static Map<String, Object?> encodeWalls(Iterable<WallDocDto> items, {required bool hasMore}) => <String, Object?>{
-    'itemsJson': jsonEncode(items.map((item) => item.toJson()).toList(growable: false)),
-    'hasMore': hasMore,
-  };
+  static Map<String, Object?> encodeWalls(Iterable<PublicProfileSnapshotWall> items, {required bool hasMore}) {
+    final List<PublicProfileSnapshotWall> walls = items.toList(growable: false);
+    return <String, Object?>{
+      'itemsJson': jsonEncode(walls.map((wall) => wall.doc.toJson()).toList(growable: false)),
+      'documentIdsJson': jsonEncode(walls.map((wall) => wall.documentId).toList(growable: false)),
+      'hasMore': hasMore,
+    };
+  }
 
-  static List<WallDocDto> decodeWalls(Map<String, Object?> record) =>
-      (jsonDecode(record['itemsJson']! as String) as List<Object?>)
-          .map((value) => WallDocDto.fromJson(Map<String, dynamic>.from(value as Map)))
-          .toList(growable: false);
+  static List<PublicProfileSnapshotWall> decodeWalls(Map<String, Object?> record) {
+    final List<WallDocDto> docs = (jsonDecode(record['itemsJson']! as String) as List<Object?>)
+        .map((value) => WallDocDto.fromJson(Map<String, dynamic>.from(value as Map)))
+        .toList(growable: false);
+    final List<Object?>? documentIds = _decodeDocumentIds(record['documentIdsJson'], docs.length);
+    return <PublicProfileSnapshotWall>[
+      for (int i = 0; i < docs.length; i++) (doc: docs[i], documentId: _documentIdOrNull(documentIds?[i])),
+    ];
+  }
 
-  static PublicProfileWallEntity wallFromDto(WallDocDto dto, String id) => PublicProfileWallEntity(
-    id: dto.id.isNotEmpty ? dto.id : id,
-    by: dto.by,
-    desc: dto.desc,
-    category: dto.category,
-    size: dto.size,
-    resolution: dto.resolution,
-    email: dto.email,
-    source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
-    wallpaperThumb: dto.wallpaperThumb,
-    wallpaperUrl: dto.wallpaperUrl,
-    collections: dto.collections,
-    createdAt: dto.createdAt,
-    review: dto.review,
-    depthTier: WallDepthTier.parse(dto.depth['tier']),
-  );
+  /// The document ids are optional metadata. An unreadable list leaves every id unknown, not the walls unreadable.
+  static List<Object?>? _decodeDocumentIds(Object? value, int length) {
+    if (value is! String) return null;
+    try {
+      final Object? decoded = jsonDecode(value);
+      return decoded is List<Object?> && decoded.length == length ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static String? _documentIdOrNull(Object? value) => value is String && value.isNotEmpty ? value : null;
+
+  static PublicProfileWallEntity wallFromDto(WallDocDto dto, String id, {String? firestoreDocumentId}) =>
+      PublicProfileWallEntity(
+        id: dto.id.isNotEmpty ? dto.id : id,
+        firestoreDocumentId: firestoreDocumentId,
+        by: dto.by,
+        desc: dto.desc,
+        category: dto.category,
+        size: dto.size,
+        resolution: dto.resolution,
+        email: dto.email,
+        source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
+        wallpaperThumb: dto.wallpaperThumb,
+        wallpaperUrl: dto.wallpaperUrl,
+        collections: dto.collections,
+        createdAt: dto.createdAt,
+        review: dto.review,
+        depthTier: WallDepthTier.parse(dto.depth['tier']),
+      );
 }
