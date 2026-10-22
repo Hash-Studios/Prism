@@ -92,13 +92,14 @@ def prepare(platform, source=None):
         content = path.read_bytes()
     values = options(platform, content)
     fields = '\n'.join(f'    {key}: {dart_string(value)},' for key, value in values.items())
+    dart_platform = 'iOS' if platform == 'ios' else platform  # Dart's enum value is TargetPlatform.iOS.
     dart = f'''// Generated from validated native Firebase config. Do not commit.
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
 class DefaultFirebaseOptions {{
   static FirebaseOptions get currentPlatform {{
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.{platform}) {{
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.{dart_platform}) {{
       return {platform};
     }}
     throw UnsupportedError('Firebase configuration was prepared only for {platform}.');

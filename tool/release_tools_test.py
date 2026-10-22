@@ -155,6 +155,17 @@ class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
                 options = (self.work / 'lib/firebase_options.dart').read_text()
                 self.assertIn(f'appId: \'1:{SENDER}:{platform}:abcdef0123456789\'', options)
                 self.assertIn("projectId: 'prism-wallpapers'", options)
+                enum = {'android': 'android', 'ios': 'iOS'}[platform]
+                self.assertIn(f'defaultTargetPlatform == TargetPlatform.{enum})', options)
+                self.assertIn(f'return {platform};', options)
+                self.assertIn(f'static const FirebaseOptions {platform} = FirebaseOptions(', options)
+                self.assertIn(f"throw UnsupportedError('Firebase configuration was prepared only for {platform}.');",
+                              options)
+                fields = re.findall(r'^    (\w+): ', options, re.MULTILINE)
+                expected_fields = ['apiKey', 'appId', 'messagingSenderId', 'projectId', 'storageBucket']
+                if platform == 'ios':
+                    expected_fields += ['iosBundleId', 'iosClientId']
+                self.assertCountEqual(fields, expected_fields)
                 self.assertIn(f"apiKey: '{API_KEY}'", options)
                 self.assertNotIn('SKIP_FIREBASE_INIT', ' '.join(json.loads(Path(self.env['CAPTURE']).read_text())))
                 self.assertNotIn(API_KEY, result.stdout + result.stderr)
