@@ -120,7 +120,8 @@ if (require.main === module) {
   const cursor = args.find((arg) => arg.startsWith("--cursor="))?.slice("--cursor=".length);
   backfillFavouriteContributions(apply ? {
     apply: true, epoch, maxPages, favouritesFrozen: args.includes("--confirm-favourites-frozen"),
-    concurrency: Number(args.find((arg) => arg.startsWith("--concurrency="))?.slice("--concurrency=".length) ?? 1),
+    concurrency: Number(args.find((arg) => arg === "--concurrency" || arg.startsWith("--concurrency="))
+      ?.slice("--concurrency=".length) ?? 1),
   } : {apply: false, maxPages, cursor}).then((result) => console.log(JSON.stringify(result))).catch((err: unknown) => {
     console.error(err);
     process.exitCode = 1;
