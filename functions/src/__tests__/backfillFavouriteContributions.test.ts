@@ -117,3 +117,21 @@ test("a failed publish checkpoint can replay absolute totals without double coun
   assert.equal((await apply()).phase, "ready");
   assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
 });
+
+test("concurrent apply inside a page gives the same totals as one document at a time", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1/images/w1": fav("w1"), "usersv2/u1/images/W1": fav("W1", "WaLlOfThEdAy"),
+    "usersv2/u2/images/w1": fav("w1"), "usersv2/u2/images/w2": fav("w2"), "usersv2/u3/images/w2": fav("w2", "Pexels"),
+    "wallpaper_stats/W1": {favs: 99}, "wallpaper_stats/EMPTY": {favs: 5},
+  });
+  const result = await backfillFavouriteContributions({
+    apply: true, epoch: "rollout-v1", favouritesFrozen: true, pageSize: 100, maxPages: 100, concurrency: 10,
+  });
+  assert.equal(result.phase, "ready");
+  assert.equal(store.get("wallpaper_stats/W1")?.favs, 2);
+  assert.equal(store.get("wallpaper_stats/W2")?.favs, 1);
+  assert.equal(store.get("wallpaper_stats/EMPTY")?.favs, 0);
+  await assert.rejects(() => backfillFavouriteContributions({
+    apply: true, epoch: "rollout-v1", favouritesFrozen: true, concurrency: 0,
+  }), /bounds/);
+});
