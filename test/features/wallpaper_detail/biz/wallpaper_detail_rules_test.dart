@@ -38,6 +38,36 @@ FeedItemEntity _prism({
 );
 
 void main() {
+  test('Prism details upgrades the thumbnail without requesting the original', () {
+    final item = _prism();
+    final url = Uri.parse(wallpaperDetailPreviewUrl(item, projectId: 'prism-test'));
+    expect(url.host, 'us-central1-prism-test.cloudfunctions.net');
+    expect(url.path, '/wallpaperPreview');
+    expect(url.queryParameters, {'id': item.id, 'thumb': item.thumbnailUrl});
+    expect(url.toString(), isNot(contains('full.jpg')));
+  });
+
+  test('offline initialization retains the thumbnail fallback', () {
+    expect(wallpaperDetailPreviewUrl(_prism()), _prism().thumbnailUrl);
+  });
+
+  test('external wallpapers and bundled starters keep their full image', () {
+    const external = FeedItemEntity.wallhaven(
+      id: 'external',
+      wallpaper: WallhavenWallpaper(
+        core: WallpaperCore(
+          id: 'external',
+          source: WallpaperSource.wallhaven,
+          fullUrl: 'https://img/full.jpg',
+          thumbnailUrl: 'https://img/thumb.jpg',
+        ),
+      ),
+    );
+    final starter = _prism().copyWith(id: 'starter-prism');
+    expect(wallpaperDetailPreviewUrl(external, projectId: 'prism-test'), external.fullUrl);
+    expect(wallpaperDetailPreviewUrl(starter, projectId: 'prism-test'), starter.fullUrl);
+  });
+
   group('isPremiumFeedItem', () {
     test('is true when a Prism wall sits in a premium collection', () {
       expect(isPremiumFeedItem(_prism(collections: <String>['Gold', 'Nature']), <String>['Gold']), isTrue);
