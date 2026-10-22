@@ -19,7 +19,7 @@ Future<double> _widthFor(WidgetTester tester, {required Size size, required Edge
 }
 
 void main() {
-  testWidgets('iOS: only a portrait screen with a right column and no top inset has a side column', (tester) async {
+  testWidgets('iOS: only a right column with no top or left inset is a side column', (tester) async {
     // iPhone Duo outer screen.
     expect(await _widthFor(tester, size: const Size(466, 678), viewPadding: const EdgeInsets.only(right: 84)), 84);
     // A portrait screen with a status bar on top, even with a right inset.
@@ -27,8 +27,13 @@ void main() {
       await _widthFor(tester, size: const Size(820, 1180), viewPadding: const EdgeInsets.only(top: 24, right: 20)),
       0,
     );
-    // Landscape.
-    expect(await _widthFor(tester, size: const Size(678, 466), viewPadding: const EdgeInsets.only(right: 84)), 0);
+    // iPhone Duo inner screen in landscape.
+    expect(await _widthFor(tester, size: const Size(951, 669), viewPadding: const EdgeInsets.only(right: 84)), 84);
+    // Another iPhone in landscape has an inset on both sides.
+    expect(
+      await _widthFor(tester, size: const Size(874, 402), viewPadding: const EdgeInsets.only(left: 62, right: 62)),
+      0,
+    );
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('other platforms never have a side column', (tester) async {
