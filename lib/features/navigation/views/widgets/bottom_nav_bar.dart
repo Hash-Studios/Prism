@@ -25,7 +25,10 @@ class BottomBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: MediaQuery.removePadding(context: context, removeRight: true, child: child ?? const SizedBox()),
+              child: SideSafeColumnScope(
+                nativeWidth: railWidth,
+                child: MediaQuery.removePadding(context: context, removeRight: true, child: child ?? const SizedBox()),
+              ),
             ),
             SizedBox(
               width: railWidth,

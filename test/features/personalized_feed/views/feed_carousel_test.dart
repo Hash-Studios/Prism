@@ -11,6 +11,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
+import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
@@ -34,6 +35,14 @@ class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {
 class _MockStackRouter extends Mock implements StackRouter {}
 
 class _MockStartupRepository extends Mock implements StartupRepository {}
+
+class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
+  @override
+  int get activeIndex => 0;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 StartupConfigEntity _startupConfig({required String bannerText}) => StartupConfigEntity(
   topImageLink: app_constants.defaultTopImageLink,
@@ -98,22 +107,47 @@ void main() {
     WidgetTester tester,
     List<PrismFeedItem> walls, {
     Size size = screen,
+    EdgeInsets viewPadding = EdgeInsets.zero,
+    bool useBottomBar = false,
     bool reduceMotion = true,
     List<PrismWallpaper> boosted = const <PrismWallpaper>[],
     WallOfTheDayEntity? wotdEntity,
     DropEntity? liveDrop,
     StackRouter? router,
   }) async {
-    tester.view.physicalSize = size;
-    tester.view.devicePixelRatio = 1;
+    tester.view
+      ..physicalSize = size
+      ..devicePixelRatio = 1
+      ..viewPadding = FakeViewPadding(
+        top: viewPadding.top,
+        right: viewPadding.right,
+        bottom: viewPadding.bottom,
+        left: viewPadding.left,
+      )
+      ..padding = FakeViewPadding(
+        top: viewPadding.top,
+        right: viewPadding.right,
+        bottom: viewPadding.bottom,
+        left: viewPadding.left,
+      );
     addTearDown(tester.view.reset);
     final wotd = _MockWotdBloc();
+    final _FakeTabsRouter tabsRouter = _FakeTabsRouter();
+    addTearDown(tabsRouter.dispose);
     when(() => wotd.state).thenReturn(
       WotdState.initial().copyWith(
         status: wotdEntity == null ? LoadStatus.initial : LoadStatus.success,
         entity: wotdEntity,
       ),
     );
+    final Widget carousel = router == null
+        ? FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop)
+        : StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop),
+          );
+    final Widget carouselWithBloc = BlocProvider<WotdBloc>.value(value: wotd, child: carousel);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -123,19 +157,13 @@ void main() {
           data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
           child: child!,
         ),
-        home: Scaffold(
-          body: BlocProvider<WotdBloc>.value(
-            value: wotd,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: router == null
-                  ? FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop)
-                  : StackRouterScope(
-                      controller: router,
-                      stateHash: 0,
-                      child: FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop),
-                    ),
-            ),
+        home: TabsRouterScope(
+          controller: tabsRouter,
+          stateHash: 0,
+          child: Scaffold(
+            body: useBottomBar
+                ? BottomBar(child: carouselWithBloc)
+                : Align(alignment: Alignment.topCenter, child: carouselWithBloc),
           ),
         ),
       ),
@@ -162,6 +190,187 @@ void main() {
     );
     expect(clip.borderRadius, BorderRadius.circular(20));
   });
+
+  testWidgets('the Duo landscape carousel and its dots use the tab body width beside the rail', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(951, 669),
+      viewPadding: const EdgeInsets.only(right: 84, bottom: 34),
+      useBottomBar: true,
+    );
+
+    final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    final Rect secondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
+    final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
+    expect(carousel.width, 951 - 84);
+    expect(carousel.height, closeTo(((951 - 84) / 2 - 8) * 0.6, 0.01));
+    expect(card.width, closeTo(carousel.width / 2 - 8, 0.01));
+    expect(secondCard.left, closeTo(card.right + 8, 0.01));
+    expect(secondCard.right, lessThanOrEqualTo(carousel.right));
+    expect(dots.width, closeTo(carousel.width / 2, 0.01));
+    expect(dots.center.dx, closeTo(card.center.dx, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the folded Duo portrait keeps one card inside the narrowed tab body', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(466, 678),
+      viewPadding: const EdgeInsets.only(right: 84, bottom: 34),
+      useBottomBar: true,
+    );
+
+    final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
+    expect(carousel.width, 466 - 84);
+    expect(card.width, closeTo(carousel.width - 8, 0.01));
+    expect(dots.center.dx, closeTo(card.center.dx, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('a same-size Duo rail transition rebuilds carousel layout without replacing its state', (tester) async {
+    const Size size = Size(951, 669);
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: size,
+      viewPadding: const EdgeInsets.only(right: 84, bottom: 34),
+      useBottomBar: true,
+    );
+    final State before = tester.state(find.byType(FeedCarousel));
+    final Rect railCarousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect railDots = tester.getRect(find.byType(FeedCarouselDots));
+    final double railCardHeight = railCarousel.height;
+    expect(railCarousel.width, size.width - 84);
+    expect(railCardHeight, closeTo(((size.width - 84) / 2 - 8) * 0.6, 0.01));
+    expect(railDots.width, closeTo(railCarousel.width / 2, 0.01));
+    expect(railDots.center.dx, closeTo(railCarousel.width / 4, 0.01));
+
+    tester.view
+      ..viewPadding = const FakeViewPadding(right: 100, bottom: 34)
+      ..padding = const FakeViewPadding(right: 100, bottom: 34);
+    await tester.pump();
+
+    expect(tester.state(find.byType(FeedCarousel)), same(before));
+    final Rect widerRailCarousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect widerRailCard = tester.getRect(find.byType(FeedHeroCard).first);
+    final Rect widerRailSecondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
+    final Rect widerRailDots = tester.getRect(find.byType(FeedCarouselDots));
+    expect(widerRailCarousel.width, size.width - 100);
+    expect(widerRailCarousel.height, closeTo(((size.width - 100) / 2 - 8) * 0.6, 0.01));
+    expect(widerRailCard.width, closeTo(widerRailCarousel.width / 2 - 8, 0.01));
+    expect(widerRailSecondCard.left, closeTo(widerRailCard.right + 8, 0.01));
+    expect(widerRailSecondCard.right, lessThanOrEqualTo(widerRailCarousel.right));
+    expect(widerRailDots.width, closeTo(widerRailCarousel.width / 2, 0.01));
+    expect(widerRailDots.center.dx, closeTo(widerRailCard.center.dx, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the Duo carousel follows folded portrait, inner portrait, landscape, and folded metrics', (
+    tester,
+  ) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(466, 678),
+      viewPadding: const EdgeInsets.only(right: 84, bottom: 34),
+      useBottomBar: true,
+    );
+
+    void expectLayout({required double width, required double cardWidth}) {
+      final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+      final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+      final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
+      expect(carousel.width, width);
+      expect(card.width, closeTo(cardWidth, 0.01));
+      expect(dots.center.dx, closeTo(card.center.dx, 0.01));
+    }
+
+    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 8);
+
+    tester.view
+      ..physicalSize = const Size(669, 951)
+      ..viewPadding = const FakeViewPadding(top: 82, bottom: 34)
+      ..padding = const FakeViewPadding(top: 82, bottom: 34);
+    await tester.pump();
+    expectLayout(width: 669, cardWidth: 669 - 8);
+
+    tester.view
+      ..physicalSize = const Size(951, 669)
+      ..viewPadding = const FakeViewPadding(right: 84, bottom: 34)
+      ..padding = const FakeViewPadding(right: 84, bottom: 34);
+    await tester.pump();
+    expectLayout(width: 951 - 84, cardWidth: (951 - 84) / 2 - 8);
+
+    tester.view
+      ..physicalSize = const Size(466, 678)
+      ..viewPadding = const FakeViewPadding(right: 84, bottom: 34)
+      ..padding = const FakeViewPadding(right: 84, bottom: 34);
+    await tester.pump();
+    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 8);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('ordinary iPhone landscape does not become a side-rail carousel', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(844, 390),
+      viewPadding: const EdgeInsets.only(left: 44, right: 44),
+      useBottomBar: true,
+    );
+
+    final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    expect(carousel.width, 844);
+    expect(card.width, closeTo(carousel.width - 8, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iPad split, Stage Manager, and full-window widths keep the regular column policy', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(507, 1366),
+      viewPadding: const EdgeInsets.only(top: 24, right: 16),
+      useBottomBar: true,
+    );
+
+    final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    expect(carousel.width, 507);
+    expect(card.width, closeTo(carousel.width - 8, 0.01));
+
+    tester.view.physicalSize = const Size(700, 900);
+    await tester.pump();
+    final Rect stageManagerSplitCarousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect stageManagerSplitCard = tester.getRect(find.byType(FeedHeroCard).first);
+    expect(stageManagerSplitCarousel.width, 700);
+    expect(stageManagerSplitCard.width, closeTo(stageManagerSplitCarousel.width - 8, 0.01));
+
+    tester.view.physicalSize = const Size(1032, 744);
+    await tester.pump();
+    final Rect stageManagerCarousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect stageManagerCard = tester.getRect(find.byType(FeedHeroCard).first);
+    final Rect stageManagerDots = tester.getRect(find.byType(FeedCarouselDots));
+    expect(stageManagerCarousel.width, 1032);
+    expect(stageManagerCard.width, closeTo(stageManagerCarousel.width / 2 - 8, 0.01));
+    expect(stageManagerDots.center.dx, closeTo(stageManagerCard.center.dx, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('Android ignores a Duo-shaped right inset in the rendered carousel', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a'), _wall('b')],
+      size: const Size(951, 669),
+      viewPadding: const EdgeInsets.only(right: 84, bottom: 34),
+      useBottomBar: true,
+    );
+
+    final Rect carousel = tester.getRect(find.byType(FeedCarousel));
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    expect(carousel.width, 951);
+    expect(card.width, closeTo(carousel.width - 8, 0.01));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the banner page uses localized default copy when Remote Config has no title', (tester) async {
     final _MockStartupRepository repository = _MockStartupRepository();

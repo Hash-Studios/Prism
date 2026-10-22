@@ -86,6 +86,13 @@ class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _SideWidthsProbe extends StatelessWidget {
+  const _SideWidthsProbe();
+
+  @override
+  Widget build(BuildContext context) => Text('${screenSideSafeColumnWidth(context)}:${sideSafeColumnWidth(context)}');
+}
+
 Widget _host(_FakeTabsRouter router, Widget child, {bool reduceMotion = false}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
@@ -247,7 +254,7 @@ void main() {
   group('iOS right safe column (iPhone Duo outer screen)', () {
     double bodySafeColumnWidth = -1;
 
-    Future<void> pumpDuo(WidgetTester tester) async {
+    Future<void> pumpDuo(WidgetTester tester, {Widget? child}) async {
       final display = tester.platformDispatcher.displays.first;
       display
         ..devicePixelRatio = 3
@@ -263,12 +270,14 @@ void main() {
         _host(
           _FakeTabsRouter(),
           BottomBar(
-            child: Builder(
-              builder: (context) {
-                bodySafeColumnWidth = sideSafeColumnWidth(context);
-                return const SizedBox.expand(key: Key('body'));
-              },
-            ),
+            child:
+                child ??
+                Builder(
+                  builder: (context) {
+                    bodySafeColumnWidth = sideSafeColumnWidth(context);
+                    return const SizedBox.expand(key: Key('body'));
+                  },
+                ),
           ),
         ),
       );
@@ -289,6 +298,19 @@ void main() {
       expect(tester.widget<PrismBottomNav>(find.byType(PrismBottomNav)).axis, Axis.horizontal);
       expect(tester.getSize(find.byKey(const Key('body'))).width, 466);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('updates a const whole-screen probe after a same-size native inset change', (tester) async {
+      await pumpDuo(tester, child: const _SideWidthsProbe());
+
+      expect(find.text('84.0:0.0'), findsOneWidget);
+
+      tester.view
+        ..viewPadding = const FakeViewPadding(right: 100 * 3, bottom: 34 * 3)
+        ..padding = const FakeViewPadding(right: 100 * 3, bottom: 34 * 3);
+      await tester.pump();
+
+      expect(find.text('100.0:0.0'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
   testWidgets('tapping the active tab again pops that tab back to its root', (tester) async {

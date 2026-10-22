@@ -9,6 +9,13 @@ class _SideColumnProbe extends StatelessWidget {
   Widget build(BuildContext context) => Text('${sideSafeColumnWidth(context)}');
 }
 
+class _ScreenSideColumnProbe extends StatelessWidget {
+  const _ScreenSideColumnProbe();
+
+  @override
+  Widget build(BuildContext context) => Text('${screenSideSafeColumnWidth(context)}');
+}
+
 Future<double> _widthFor(WidgetTester tester, {required Size size, required EdgeInsets viewPadding}) async {
   tester.view.display
     ..devicePixelRatio = 1
@@ -166,5 +173,33 @@ void main() {
     await tester.pump();
 
     expect(find.text('84.0'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS: const whole-screen caller tracks an unmasked native inset change', (tester) async {
+    tester.view.display
+      ..devicePixelRatio = 1
+      ..size = const Size(951, 669);
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(951, 669)
+      ..viewPadding = const FakeViewPadding(right: 84)
+      ..padding = const FakeViewPadding(right: 84);
+    addTearDown(tester.view.reset);
+    addTearDown(tester.view.display.reset);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery.fromView(view: tester.view, child: const _ScreenSideColumnProbe()),
+      ),
+    );
+    expect(find.text('84.0'), findsOneWidget);
+
+    tester.view
+      ..viewPadding = const FakeViewPadding(right: 100)
+      ..padding = const FakeViewPadding(right: 100);
+    await tester.pump();
+
+    expect(find.text('100.0'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }
