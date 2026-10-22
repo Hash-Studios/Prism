@@ -209,6 +209,33 @@ void main() {
     handle.dispose();
   });
 
+  group('iOS right safe column (iPhone Duo outer screen)', () {
+    Future<void> pumpDuo(WidgetTester tester) async {
+      tester.view
+        ..devicePixelRatio = 3
+        ..physicalSize = const Size(466 * 3, 678 * 3)
+        ..viewPadding = const FakeViewPadding(right: 84 * 3, bottom: 34 * 3)
+        ..padding = const FakeViewPadding(right: 84 * 3, bottom: 34 * 3);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_host(_FakeTabsRouter(), const BottomBar(child: SizedBox.expand(key: Key('body')))));
+    }
+
+    testWidgets('puts the tabs in a vertical rail in the column, beside the content', (tester) async {
+      await pumpDuo(tester);
+
+      expect(tester.widget<PrismBottomNav>(find.byType(PrismBottomNav)).axis, Axis.vertical);
+      expect(tester.getRect(find.byType(PrismBottomNav)).left, greaterThanOrEqualTo(466 - 84));
+      expect(tester.getSize(find.byKey(const Key('body'))).width, 466 - 84);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('keeps the floating bar on other platforms', (tester) async {
+      await pumpDuo(tester);
+
+      expect(tester.widget<PrismBottomNav>(find.byType(PrismBottomNav)).axis, Axis.horizontal);
+      expect(tester.getSize(find.byKey(const Key('body'))).width, 466);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
+
   testWidgets('tapping the active tab again pops that tab back to its root', (tester) async {
     final router = _TestRouter();
     await tester.pumpWidget(
