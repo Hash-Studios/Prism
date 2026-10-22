@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -12,6 +14,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsAction, SemanticsActionEvent;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -19,7 +22,9 @@ import '../../support/fake_app_analytics.dart';
 PageInfo _stub(String name) => PageInfo(name, builder: (_) => Text(name));
 
 class _Shell extends StatelessWidget {
-  const _Shell();
+  const _Shell({this.axis = Axis.horizontal});
+
+  final Axis axis;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +33,7 @@ class _Shell extends StatelessWidget {
       builder: (context, child) => Column(
         children: [
           Expanded(child: child),
-          const PrismBottomNav(),
+          PrismBottomNav(axis: axis),
         ],
       ),
     );
@@ -36,11 +41,15 @@ class _Shell extends StatelessWidget {
 }
 
 class _TestRouter extends RootStackRouter {
+  _TestRouter({this.axis = Axis.horizontal});
+
+  final Axis axis;
+
   @override
   List<AutoRoute> get routes => [
     AutoRoute(
       path: '/',
-      page: PageInfo('Shell', builder: (_) => const _Shell()),
+      page: PageInfo('Shell', builder: (_) => _Shell(axis: axis)),
       children: [
         AutoRoute(path: 'home', page: _stub(HomeTabRoute.name)),
         AutoRoute(
@@ -148,6 +157,32 @@ void main() {
     expect(analytics.events.where((e) => e.eventName == 'nav_tab_selected'), hasLength(1));
   });
 
+  testWidgets('the vertical rail keeps named selected semantics and semantic tab switching', (tester) async {
+    final handle = tester.ensureSemantics();
+    final router = _FakeTabsRouter();
+    await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav(axis: Axis.vertical))));
+
+    for (final label in ['Home', 'Search', 'Rewards', 'Collections']) {
+      expect(find.byTooltip(label), findsOneWidget);
+      expect(tester.getSemantics(find.bySemanticsLabel(label)), isSemantics(isButton: true));
+    }
+    expect(tester.getSemantics(find.bySemanticsLabel('Home')), isSemantics(isSelected: true, isButton: true));
+    expect(tester.getSemantics(find.bySemanticsLabel('Search')), isSemantics(isSelected: false, isButton: true));
+
+    final int rewardsNodeId = tester.getSemantics(find.bySemanticsLabel('Rewards')).id;
+    tester.platformDispatcher.onSemanticsActionEvent!(
+      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: rewardsNodeId),
+    );
+    await tester.pumpAndSettle();
+    expect(router.activeIndex, 2);
+    expect(tester.getSemantics(find.bySemanticsLabel('Rewards')), isSemantics(isSelected: true, isButton: true));
+    final NavTabSelectedEvent event = analytics.events.whereType<NavTabSelectedEvent>().single;
+    expect(event.fromTab, NavTabValue.home);
+    expect(event.toTab, NavTabValue.streak);
+
+    handle.dispose();
+  });
+
   testWidgets('the pill is 56 high and the tap targets are at least 48', (tester) async {
     final router = _FakeTabsRouter();
     await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav())));
@@ -210,14 +245,33 @@ void main() {
   });
 
   group('iOS right safe column (iPhone Duo outer screen)', () {
+    double bodySafeColumnWidth = -1;
+
     Future<void> pumpDuo(WidgetTester tester) async {
+      final display = tester.platformDispatcher.displays.first;
+      display
+        ..devicePixelRatio = 3
+        ..size = const Size(466 * 3, 678 * 3);
+      addTearDown(display.reset);
       tester.view
         ..devicePixelRatio = 3
         ..physicalSize = const Size(466 * 3, 678 * 3)
         ..viewPadding = const FakeViewPadding(right: 84 * 3, bottom: 34 * 3)
         ..padding = const FakeViewPadding(right: 84 * 3, bottom: 34 * 3);
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(_host(_FakeTabsRouter(), const BottomBar(child: SizedBox.expand(key: Key('body')))));
+      await tester.pumpWidget(
+        _host(
+          _FakeTabsRouter(),
+          BottomBar(
+            child: Builder(
+              builder: (context) {
+                bodySafeColumnWidth = sideSafeColumnWidth(context);
+                return const SizedBox.expand(key: Key('body'));
+              },
+            ),
+          ),
+        ),
+      );
     }
 
     testWidgets('puts the tabs in a vertical rail in the column, beside the content', (tester) async {
@@ -226,6 +280,7 @@ void main() {
       expect(tester.widget<PrismBottomNav>(find.byType(PrismBottomNav)).axis, Axis.vertical);
       expect(tester.getRect(find.byType(PrismBottomNav)).left, greaterThanOrEqualTo(466 - 84));
       expect(tester.getSize(find.byKey(const Key('body'))).width, 466 - 84);
+      expect(bodySafeColumnWidth, 0);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('keeps the floating bar on other platforms', (tester) async {
@@ -238,6 +293,34 @@ void main() {
 
   testWidgets('tapping the active tab again pops that tab back to its root', (tester) async {
     final router = _TestRouter();
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+    final tabs = router.innerRouterOf<TabsRouter>('Shell')!;
+    final searchStack = tabs.stackRouterOfIndex(1)!;
+    unawaited(searchStack.push(const UserSearchRoute()));
+    await tester.pumpAndSettle();
+    expect(find.text(UserSearchRoute.name), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+
+    expect(tabs.activeIndex, 1);
+    expect(searchStack.stack.length, 1);
+    expect(find.text(SearchRoute.name), findsOneWidget);
+    expect(find.text(UserSearchRoute.name), findsNothing);
+  });
+
+  testWidgets('tapping the active vertical-rail tab again pops that tab back to its root', (tester) async {
+    final router = _TestRouter(axis: Axis.vertical);
     await tester.pumpWidget(
       MaterialApp.router(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
