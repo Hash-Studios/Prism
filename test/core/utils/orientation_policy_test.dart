@@ -69,6 +69,31 @@ void main() {
     ], reason: 'a folded display that becomes phone-sized must restore portrait');
   });
 
+  testWidgets('an unfolded iPhone Duo can turn, though its display still reports the outer screen', (tester) async {
+    final List<Object?> calls = <Object?>[];
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemChrome.setPreferredOrientations') calls.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(() {
+      tester.view.reset();
+      tester.view.display.reset();
+    });
+
+    tester.view.devicePixelRatio = 3;
+    tester.view.display.devicePixelRatio = 3;
+    tester.view.display.size = const Size(1398, 2034);
+    tester.view.physicalSize = const Size(2007, 2853);
+    await applyAllowedOrientations(view: tester.view);
+    expect(calls.last, <String>[], reason: 'the unfolded inner screen is tablet-sized');
+
+    tester.view.physicalSize = const Size(1398, 2034);
+    await applyAllowedOrientations(view: tester.view);
+    expect(calls.last, <String>['DeviceOrientation.portraitUp'], reason: 'the folded outer screen is a phone');
+  });
+
   testWidgets('retries orientation request after platform failure', (tester) async {
     final List<Object?> calls = <Object?>[];
     bool failNextCall = false;

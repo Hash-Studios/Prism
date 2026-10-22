@@ -29,13 +29,19 @@ Future<void> applyAllowedOrientations({FlutterView? view}) async {
   }
 }
 
-/// Logical size of the screen that shows [view], or null before it is known. The display comes first, because a
-/// letterboxed window on a tablet is phone-sized. Android reports no display size, so the window is the fallback there.
+/// Logical size of the screen that shows [view], or null before it is known. The larger of the display and the window
+/// wins: a letterboxed window on a tablet is phone-sized, and an unfolded iPhone Duo still reports its outer display.
+/// Android reports no display size, so the window is the fallback there.
 Size? _screenSize(FlutterView view) {
   final Display display = view.display;
-  if (!display.size.isEmpty && display.devicePixelRatio > 0) return display.size / display.devicePixelRatio;
-  if (!view.physicalSize.isEmpty && view.devicePixelRatio > 0) return view.physicalSize / view.devicePixelRatio;
-  return null;
+  final Size? displaySize = !display.size.isEmpty && display.devicePixelRatio > 0
+      ? display.size / display.devicePixelRatio
+      : null;
+  final Size? windowSize = !view.physicalSize.isEmpty && view.devicePixelRatio > 0
+      ? view.physicalSize / view.devicePixelRatio
+      : null;
+  if (displaySize == null || windowSize == null) return displaySize ?? windowSize;
+  return windowSize.shortestSide > displaySize.shortestSide ? windowSize : displaySize;
 }
 
 /// Runs [applyAllowedOrientations] when it starts and on every metrics change.
