@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.9.0
+- Unlocked Weekly Drop wallpapers open and save again
+- Your profile name and photo follow your Google account, and a name or photo you set in Prism stays
+- New browse categories can arrive without an app update
+- Usernames are reserved safely, and a deleted account's username becomes free again
+- Followers and Following lists show everyone, and creator profile wallpapers open again
+- The Android Wall of the Day widget updates every day again
+- Missing notification and profile images show a clean placeholder
+- Security and stability fixes
+
 ### v3.8.0
 - Prism now speaks Spanish, German, Hindi, Indonesian and Brazilian Portuguese
 - Weekly Drops are a limited collectible, with a preview and a push when a new Drop arrives
