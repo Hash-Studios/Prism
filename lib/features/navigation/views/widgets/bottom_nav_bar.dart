@@ -29,16 +29,30 @@ class BottomBar extends StatelessWidget {
             ),
             SizedBox(
               width: railWidth,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.viewPaddingOf(context).bottom + 12),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    PrismBottomNav(axis: Axis.vertical),
-                    SizedBox(height: 12),
-                    PrismFab(),
-                  ],
-                ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 12;
+                  return SingleChildScrollView(
+                    primary: false,
+                    reverse: true,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottomPadding),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: (constraints.maxHeight - bottomPadding).clamp(0.0, double.infinity),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            PrismBottomNav(axis: Axis.vertical),
+                            SizedBox(height: 12),
+                            PrismFab(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
