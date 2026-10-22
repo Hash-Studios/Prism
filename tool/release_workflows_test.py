@@ -74,6 +74,41 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
         self.assertIn('IOS_GOOGLE_SERVICE_INFO_PLIST', result.stderr)
         self.assertFalse(Path(self.env['CAPTURE']).exists())
 
+    def test_actual_workflow_preparation_generates_matching_platform_options(self):
+        cases = (
+            ('testflight.yml', 'build-and-upload', 'Prepare real iOS Firebase configuration', 'ios'),
+            ('sentry_release_android.yml', 'build_android_with_sentry',
+             'Prepare real Android Firebase configuration', 'android'),
+        )
+        for name, job_name, step_name, platform in cases:
+            with self.subTest(workflow=name):
+                config = fixture.ios_config() if platform == 'ios' else fixture.android_config()
+                if platform == 'ios':
+                    self.env['IOS_GOOGLE_SERVICE_INFO_PLIST'] = fixture.plistlib.dumps(config).decode()
+                else:
+                    Path(self.env['PAYLOAD']).write_text(json.dumps(config))
+                steps = workflow(name)['jobs'][job_name]['steps']
+                command = next(step['run'] for step in steps if step.get('name') == step_name)
+                result = self.run_tool('bash', '-e', '-c', command)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                native_path = ('ios/Runner/GoogleService-Info.plist' if platform == 'ios'
+                               else 'android/app/google-services.json')
+                native = Path(self.work / native_path)
+                actual = fixture.plistlib.loads(native.read_bytes()) if platform == 'ios' else json.loads(native.read_text())
+                self.assertEqual(actual, config)
+                options = (self.work / 'lib/firebase_options.dart').read_text()
+                enum = 'iOS' if platform == 'ios' else 'android'
+                self.assertIn(f'defaultTargetPlatform == TargetPlatform.{enum})', options)
+                self.assertIn(f'return {platform};', options)
+                self.assertIn(f'static const FirebaseOptions {platform} = FirebaseOptions(', options)
+                self.assertIn(f"throw UnsupportedError('Firebase configuration was prepared only for {platform}.');",
+                              options)
+                fields = re.findall(r'^    (\w+): ', options, re.MULTILINE)
+                expected_fields = ['apiKey', 'appId', 'messagingSenderId', 'projectId', 'storageBucket']
+                if platform == 'ios':
+                    expected_fields += ['iosBundleId', 'iosClientId']
+                self.assertCountEqual(fields, expected_fields)
+
     def test_function_only_paths_schedule_actual_notification_contract(self):
         ci = workflow('ci.yml')
         filters = yaml_data(ci['jobs']['changes']['steps'][0]['with']['filters'])
