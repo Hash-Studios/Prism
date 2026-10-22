@@ -12,6 +12,7 @@ import 'package:Prism/features/in_app_notifications/domain/notification_copy.dar
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -185,7 +186,10 @@ class NotificationRow extends StatelessWidget {
                         fit: BoxFit.cover,
                         memCacheWidth: memCacheWidth,
                         placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
-                        errorWidget: (_, _, _) => const SizedBox.shrink(),
+                        errorWidget: (_, _, _) => ColoredBox(
+                          color: cs.surfaceContainerHigh,
+                          child: Center(child: Icon(JamIcons.picture, color: cs.onSurfaceVariant, size: 24)),
+                        ),
                       ),
                     ),
                   ),
