@@ -70,6 +70,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:equatable/equatable.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1486,9 +1487,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required bool paletteLoading,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
-    final String full = entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(entity)
-        ? thumb
-        : entity.fullUrl.trim();
+    final String full = wallpaperDetailPreviewUrl(
+      entity,
+      projectId: Firebase.apps.isEmpty ? null : Firebase.app().options.projectId,
+    );
     final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
     final bool fullIsNetwork = isValidNetworkUrl(full);
     final bool thumbIsNetwork = isValidNetworkUrl(thumb);

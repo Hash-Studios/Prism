@@ -4,6 +4,7 @@ import 'dart:ui' show Size;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 
@@ -93,4 +94,16 @@ List<String> wallpaperTags(FeedItemEntity item) {
     if (tags.length == _maxTags) break;
   }
   return tags;
+}
+
+/// Preview delivery is separate from acquiring an authorized original.
+String wallpaperDetailPreviewUrl(FeedItemEntity entity, {String? projectId}) {
+  if (entity.source != WallpaperSource.prism || BundledWallpapers.isStarter(entity)) {
+    return entity.fullUrl.trim();
+  }
+  if (projectId == null || projectId.isEmpty) return entity.thumbnailUrl.trim();
+  return Uri.https('us-central1-$projectId.cloudfunctions.net', '/wallpaperPreview', {
+    'id': entity.id,
+    'thumb': entity.thumbnailUrl.trim(),
+  }).toString();
 }
