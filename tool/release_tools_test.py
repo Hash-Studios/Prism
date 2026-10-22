@@ -155,6 +155,9 @@ class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
                 options = (self.work / 'lib/firebase_options.dart').read_text()
                 self.assertIn(f'appId: \'1:{SENDER}:{platform}:abcdef0123456789\'', options)
                 self.assertIn("projectId: 'prism-wallpapers'", options)
+                # Dart names the enum value TargetPlatform.iOS; TargetPlatform.ios does not compile.
+                enum = {'android': 'android', 'ios': 'iOS'}[platform]
+                self.assertIn(f'defaultTargetPlatform == TargetPlatform.{enum})', options)
                 self.assertIn(f"apiKey: '{API_KEY}'", options)
                 self.assertNotIn('SKIP_FIREBASE_INIT', ' '.join(json.loads(Path(self.env['CAPTURE']).read_text())))
                 self.assertNotIn(API_KEY, result.stdout + result.stderr)
