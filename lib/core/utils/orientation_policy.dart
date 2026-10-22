@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show Display, FlutterView, PlatformDispatcher;
 
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -29,9 +30,9 @@ Future<void> applyAllowedOrientations({FlutterView? view}) async {
   }
 }
 
-/// Logical size of the screen that shows [view], or null before it is known. The larger of the display and the window
-/// wins: a letterboxed window on a tablet is phone-sized, and an unfolded iPhone Duo still reports its outer display.
-/// Android reports no display size, so the window is the fallback there.
+/// Logical size of the screen that shows [view], or null before it is known. The display is authoritative except on
+/// iOS, where an unfolded iPhone Duo can have a window larger than its stale outer-display metrics. The window is
+/// the fallback when display metrics are unavailable.
 Size? _screenSize(FlutterView view) {
   final Display display = view.display;
   final Size? displaySize = !display.size.isEmpty && display.devicePixelRatio > 0
@@ -41,7 +42,10 @@ Size? _screenSize(FlutterView view) {
       ? view.physicalSize / view.devicePixelRatio
       : null;
   if (displaySize == null || windowSize == null) return displaySize ?? windowSize;
-  return windowSize.shortestSide > displaySize.shortestSide ? windowSize : displaySize;
+  if (defaultTargetPlatform == TargetPlatform.iOS && windowSize.shortestSide > displaySize.shortestSide) {
+    return windowSize;
+  }
+  return displaySize;
 }
 
 /// Runs [applyAllowedOrientations] when it starts and on every metrics change.
