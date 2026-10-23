@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockSearchDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDiscoveryState>
     implements SearchDiscoveryBloc {}
@@ -40,6 +41,7 @@ Future<void> _pumpDiscovery(WidgetTester tester, WallhavenWallpaper wall) async 
     BlocProvider<SearchDiscoveryBloc>.value(
       value: bloc,
       child: MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -53,6 +55,7 @@ Future<void> _pumpDiscovery(WidgetTester tester, WallhavenWallpaper wall) async 
 }
 
 void main() {
+  setUpFavouriteCounts();
   for (final rawOriginal in <String>['', ' ']) {
     testWidgets('discovery keeps the lg crop and ignores cached original thumb $rawOriginal', (tester) async {
       await _pumpDiscovery(tester, _wall(rawOriginal));
@@ -81,6 +84,7 @@ void main() {
     testWidgets('search grid keeps the lg crop and ignores cached original thumb $rawOriginal', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
@@ -106,6 +110,7 @@ void main() {
     const String smallUrl = 'https://th.wallhaven.cc/small/21/21276x.jpg';
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

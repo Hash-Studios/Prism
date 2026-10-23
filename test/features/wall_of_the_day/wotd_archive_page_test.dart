@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockArchiveBloc extends MockBloc<WotdArchiveEvent, WotdArchiveState> implements WotdArchiveBloc {}
 
@@ -42,6 +43,7 @@ WotdPastPick _pick(String id, DateTime date) => WotdPastPick(
 );
 
 void main() {
+  setUpFavouriteCounts();
   late _MockArchiveBloc bloc;
   late _MockStackRouter router;
   late FakeAppAnalytics analytics;
@@ -66,6 +68,7 @@ void main() {
     whenListen(bloc, stream ?? const Stream<WotdArchiveState>.empty(), initialState: state);
     return tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

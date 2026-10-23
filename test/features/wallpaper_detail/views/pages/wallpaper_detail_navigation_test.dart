@@ -19,6 +19,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {
@@ -56,6 +57,8 @@ FeedItemEntity _wallhaven(String id) => FeedItemEntity.wallhaven(
 );
 
 void main() {
+  setUpFavouriteCounts();
+
   final List<_MockDetailBloc> blocs = <_MockDetailBloc>[];
   final List<WallpaperDetailState> initialStates = <WallpaperDetailState>[];
 

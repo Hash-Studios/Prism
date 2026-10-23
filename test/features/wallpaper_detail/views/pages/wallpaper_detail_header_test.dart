@@ -24,10 +24,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/profile_user_fixture.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -85,6 +87,7 @@ Future<void> _waitForCachedImage(WidgetTester tester) async {
 }
 
 void main() {
+  setUpFavouriteCounts(counts: const {'PRISM-1': 7});
   late _MockWallpaperDetailBloc bloc;
   late OfflineAssetFixture offlineAssets;
 
@@ -125,6 +128,72 @@ void main() {
   }
 
   group('headline', () {
+    testWidgets('shows the published Prism favourite total in the metadata', (tester) async {
+      final entity = _prism();
+      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byIcon(JamIcons.heart_f), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
+    });
+
+    testWidgets('unknown views have neither an inline spinner nor a separator', (tester) async {
+      final entity = _prism(id: 'unknown');
+      await pump(
+        tester,
+        WallpaperDetailLoaded(entity: entity, paletteLoading: false, viewsLoading: true),
+        entity: entity,
+      );
+      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byIcon(JamIcons.heart_f), findsNothing);
+      expect(
+        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
+        findsNothing,
+      );
+    });
+
+    testWidgets('resolved zero views still show the count and separator', (tester) async {
+      final entity = _prism();
+      await pump(
+        tester,
+        WallpaperDetailLoaded(entity: entity, paletteLoading: false, views: '0'),
+        entity: entity,
+      );
+      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('0 views'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a narrow headline keeps the set count but no separator while views are unknown', (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final entity = _prism(title: 'A long wallpaper title that fills the headline');
+      await pump(
+        tester,
+        WallpaperDetailLoaded(entity: entity, paletteLoading: false, viewsLoading: true, setCount: 12),
+        entity: entity,
+      );
+      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Set 12 times'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
+        findsNothing,
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
     testWidgets('shows the title the creator gave, not the id', (tester) async {
       final FeedItemEntity entity = _prism(title: 'Misty pines');
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);

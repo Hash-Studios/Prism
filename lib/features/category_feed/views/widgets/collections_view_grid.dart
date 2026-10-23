@@ -15,6 +15,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -157,7 +158,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
           itemCount: walls.length + (showFooter ? 1 : 0),
-          gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: 0.6625),
+          gridDelegate: PrismWallGrid.delegate(
+            context,
+            footerHeight: favouriteFooterHeight,
+            columns: columns,
+            aspectRatio: 0.6625,
+          ),
           itemBuilder: (context, index) {
             if (index == walls.length && showFooter) {
               return SeeMoreButton(
@@ -203,39 +209,42 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             final FeedItemEntity entity = _entityFor(wall, wallId);
             return KeyedSubtree(
               key: ValueKey<String>(wallId),
-              child: PrismWallTile(
-                url: wallpaperThumb,
-                fallbackUrl: wallpaperUrl,
-                memCacheHeight: decodeHeight,
-                heroTag: prismHeroTag(this, index, wallId),
-                semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
-                overlay: depthTagFor(depthTierOf(entity)),
-                onTap: () {
-                  PrismHaptics.tap();
-                  unawaited(
-                    analytics.track(
-                      SurfaceActionTappedEvent(
-                        surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                        action: AnalyticsActionValue.tileOpened,
-                        sourceContext: 'home_collections_grid_tile',
-                        itemType: ItemTypeValue.wallpaper,
-                        itemId: wallId,
-                        index: index,
+              child: FavouriteWallpaperCard(
+                item: entity,
+                child: PrismWallTile(
+                  url: wallpaperThumb,
+                  fallbackUrl: wallpaperUrl,
+                  memCacheHeight: decodeHeight,
+                  heroTag: prismHeroTag(this, index, wallId),
+                  semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
+                  overlay: depthTagFor(depthTierOf(entity)),
+                  onTap: () {
+                    PrismHaptics.tap();
+                    unawaited(
+                      analytics.track(
+                        SurfaceActionTappedEvent(
+                          surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                          action: AnalyticsActionValue.tileOpened,
+                          sourceContext: 'home_collections_grid_tile',
+                          itemType: ItemTypeValue.wallpaper,
+                          itemId: wallId,
+                          index: index,
+                        ),
                       ),
-                    ),
-                  );
-                  context.router.push(
-                    WallpaperDetailRoute(
-                      entity: entity,
-                      analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
-                      heroTag: prismHeroTag(this, index, wallId),
-                    ),
-                  );
-                },
-                onLongPress: () {
-                  PrismHaptics.impact();
-                  unawaited(showWallpaperQuickActions(context, entity));
-                },
+                    );
+                    context.router.push(
+                      WallpaperDetailRoute(
+                        entity: entity,
+                        analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+                        heroTag: prismHeroTag(this, index, wallId),
+                      ),
+                    );
+                  },
+                  onLongPress: () {
+                    PrismHaptics.impact();
+                    unawaited(showWallpaperQuickActions(context, entity));
+                  },
+                ),
               ),
             );
           },

@@ -50,6 +50,7 @@ import 'package:mocktail/mocktail.dart';
 import '../support/fake_app_analytics.dart';
 import '../support/in_memory_local_store.dart';
 import 'home_render_support.dart';
+import '../support/favourite_test_scope.dart';
 
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
@@ -303,6 +304,7 @@ class _Depth {
 }
 
 void main() {
+  setUpFavouriteCounts();
   final List<String> results = <String>[];
 
   setUpAll(() async {

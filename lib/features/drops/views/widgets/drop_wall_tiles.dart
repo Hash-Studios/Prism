@@ -13,6 +13,7 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/painters/foil_sheen_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,11 @@ import 'package:flutter/material.dart';
 /// Opens an unlocked wall in the wallpaper detail page. The full url comes from the unlock, not from the Drop doc.
 void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock) {
   PrismHaptics.tap();
+  final entity = dropWallFeedItem(wall, unlock);
+  unawaited(context.router.push(WallpaperDetailRoute(entity: entity)));
+}
+
+PrismFeedItem dropWallFeedItem(DropWall wall, DropUnlock unlock) {
   final PrismWallpaper wallpaper = PrismWallpaper(
     core: WallpaperCore(
       id: wall.id,
@@ -33,13 +39,7 @@ void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock) {
     review: true,
     firestoreDocumentId: wall.id,
   );
-  unawaited(
-    context.router.push(
-      WallpaperDetailRoute(
-        entity: PrismFeedItem(id: wall.id, wallpaper: wallpaper),
-      ),
-    ),
-  );
+  return PrismFeedItem(id: wall.id, wallpaper: wallpaper);
 }
 
 /// The two-column grid of one Drop. Locked tiles are frosted under a seal, owned tiles are sharp. When the Drop is
@@ -65,12 +65,16 @@ class DropWallGrid extends StatelessWidget {
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
-        gridDelegate: PrismWallGrid.delegate(context, columns: largeTileGridColumns(MediaQuery.sizeOf(context).width)),
+        gridDelegate: PrismWallGrid.delegate(
+          context,
+          columns: largeTileGridColumns(MediaQuery.sizeOf(context).width),
+          footerHeight: favouriteFooterHeight,
+        ),
         itemCount: drop.walls.length,
         itemBuilder: (context, index) {
           final DropWall wall = drop.walls[index];
           final DropUnlock? unlock = unlocked[wall.id];
-          return DropWallTile(
+          final tile = DropWallTile(
             key: ValueKey<String>(wall.id),
             wall: wall,
             serial: dropSerial(index, drop.walls.length),
@@ -83,6 +87,14 @@ class DropWallGrid extends StatelessWidget {
                 ? () => onLockedTap(wall)
                 : null,
           );
+          return unlock == null
+              ? Column(
+                  children: [
+                    Expanded(child: tile),
+                    const SizedBox(height: favouriteFooterHeight),
+                  ],
+                )
+              : FavouriteWallpaperCard(item: dropWallFeedItem(wall, unlock), child: tile);
         },
       ),
     );

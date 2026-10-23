@@ -13,11 +13,11 @@ import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
@@ -31,6 +31,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sli
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -478,7 +479,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       SliverPadding(
         padding: PrismFeedLayout.gridPadding,
         sliver: SliverGrid(
-          gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
+          gridDelegate: PrismWallGrid.delegate(
+            context,
+            footerHeight: favouriteFooterHeight,
+            columns: crossAxisCount,
+            spacing: PrismFeedLayout.gridSpacing,
+          ),
           delegate: SliverChildBuilderDelegate((context, index) {
             final FeedItemEntity item = visibleItems[index];
             return KeyedSubtree(

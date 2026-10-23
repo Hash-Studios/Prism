@@ -1,6 +1,9 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,7 +42,22 @@ class FavouriteWallsAdapter {
 
   Future<bool> _runAction(FavouriteWallsEvent Function(int operationId) eventFor) async {
     await _ensureLoaded();
-    return (await _dispatch(eventFor)).actionStatus == ActionStatus.success;
+    final before = _bloc.state.items
+        .where((wall) => wall.source == WallpaperSource.prism)
+        .map((wall) => wall.id)
+        .toSet();
+    final completed = await _dispatch(eventFor);
+    final success = completed.actionStatus == ActionStatus.success;
+    if (success) {
+      final after = completed.items
+          .where((wall) => wall.source == WallpaperSource.prism)
+          .map((wall) => wall.id)
+          .toSet();
+      for (final id in before.difference(after).union(after.difference(before))) {
+        getIt<FavouriteCountsCubit>().refreshAfterChange(id);
+      }
+    }
+    return success;
   }
 
   Future<FavouriteWallsState> _dispatch(FavouriteWallsEvent Function(int operationId) eventFor) {

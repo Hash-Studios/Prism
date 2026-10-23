@@ -40,6 +40,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -106,6 +107,7 @@ FeedItemEntity _wallhaven() => FeedItemEntity.wallhaven(
 );
 
 void main() {
+  setUpFavouriteCounts();
   late _MockDetailBloc bloc;
   late _MockThemeBloc themeBloc;
   late _MockRecordAction recordAction;

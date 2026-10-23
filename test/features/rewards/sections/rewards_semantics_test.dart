@@ -12,10 +12,12 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
 Widget _host(Widget child) => MaterialApp(
+  builder: favouriteTestBuilder,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
 
@@ -23,6 +25,7 @@ Widget _host(Widget child) => MaterialApp(
 );
 
 void main() {
+  setUpFavouriteCounts();
   tearDown(() async {
     CoinsService.instance.streakNotifier.value = StreakStatus.empty;
     CoinsService.instance.balanceNotifier.value = 0;

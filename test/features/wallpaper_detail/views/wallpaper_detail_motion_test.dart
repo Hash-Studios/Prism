@@ -20,10 +20,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
 void main() {
+  setUpFavouriteCounts();
   for (final tag in <String?>['tile-1', null]) {
     testWidgets('reduced-motion detail loading disables flights and fades (tag $tag)', (tester) async {
       final bloc = _MockDetailBloc();

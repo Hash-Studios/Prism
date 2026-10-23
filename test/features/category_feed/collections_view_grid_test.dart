@@ -24,6 +24,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_feed_cache_local_data_source.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _FailingHttpOverrides extends HttpOverrides {
   @override
@@ -43,6 +44,7 @@ class _FailingHttpClient implements HttpClient {
 }
 
 void main() {
+  setUpFavouriteCounts();
   testWidgets('a refresh failing after disposal does not read localization from the old context', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -59,6 +61,7 @@ void main() {
     await getCollectionWithName('empty').catchError((Object _) {});
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -98,6 +101,7 @@ void main() {
     });
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -133,6 +137,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: CollectionViewGrid()),
@@ -155,6 +160,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -184,6 +190,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -209,6 +216,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -240,6 +248,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -284,6 +293,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),
@@ -329,6 +339,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -375,6 +386,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: CollectionViewGrid()),

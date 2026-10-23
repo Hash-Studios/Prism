@@ -41,6 +41,7 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 import '../support/fake_app_analytics.dart';
 import '../support/fake_firestore_client.dart';
 import '../support/in_memory_local_store.dart';
+import '../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -138,6 +139,7 @@ void _registerDetailHarness(WidgetTester tester) {
 }
 
 void main() {
+  setUpFavouriteCounts();
   TestWidgetsFlutterBinding.ensureInitialized();
   final TargetPlatformVariant android = TargetPlatformVariant.only(TargetPlatform.android);
 
@@ -155,6 +157,7 @@ void main() {
     final File image = (await tester.runAsync(_createPng))!;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: EditWallScreen(image: image),
@@ -177,6 +180,7 @@ void main() {
     final File image = (await tester.runAsync(_createPng))!;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -223,6 +227,7 @@ void main() {
       whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
@@ -282,6 +287,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -318,6 +324,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -365,6 +372,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -397,6 +405,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -428,6 +437,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ReviewScreen(),
@@ -461,6 +471,7 @@ void main() {
     final File image = (await tester.runAsync(_createPng))!;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WallpaperFilterScreen(filePath: image.path),
@@ -485,6 +496,7 @@ void main() {
     final File image = (await tester.runAsync(_createPng))!;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WallpaperFilterScreen(filePath: image.path),

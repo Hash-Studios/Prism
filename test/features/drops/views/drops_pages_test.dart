@@ -21,12 +21,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../drop_fixtures.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBloc {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
 void main() {
+  setUpFavouriteCounts();
   late _MockDropsBloc bloc;
   late _MockStackRouter router;
 
@@ -58,6 +60,7 @@ void main() {
     whenListen(bloc, const Stream<DropsState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -280,6 +283,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
@@ -302,6 +306,7 @@ void main() {
       tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       Widget tile({required bool unlocked}) => MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

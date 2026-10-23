@@ -59,14 +59,20 @@ import '../../features/drops/data/repositories/drops_repository_impl.dart'
 import '../../features/drops/domain/repositories/drops_repository.dart' as _i96;
 import '../../features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart'
     as _i782;
+import '../../features/favourite_walls/biz/favourite_counts_cubit.dart'
+    as _i465;
 import '../../features/favourite_walls/data/favourites_sync_service.dart'
     as _i99;
 import '../../features/favourite_walls/data/guest_favourites_merger.dart'
     as _i649;
 import '../../features/favourite_walls/data/guest_favourites_store.dart'
     as _i672;
+import '../../features/favourite_walls/data/repositories/favourite_counts_repository_impl.dart'
+    as _i931;
 import '../../features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart'
     as _i176;
+import '../../features/favourite_walls/domain/repositories/favourite_counts_repository.dart'
+    as _i761;
 import '../../features/favourite_walls/domain/repositories/favourite_walls_repository.dart'
     as _i643;
 import '../../features/favourite_walls/domain/usecases/favourite_walls_usecases.dart'
@@ -478,6 +484,9 @@ _i174.GetIt initGetIt(
       sessionRepository: gh<_i738.SessionRepository>(),
     ),
   );
+  gh.lazySingleton<_i761.FavouriteCountsRepository>(
+    () => _i931.FavouriteCountsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
     () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
@@ -579,6 +588,9 @@ _i174.GetIt initGetIt(
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i289.PrismWallSearch>(),
     ),
+  );
+  gh.lazySingleton<_i465.FavouriteCountsCubit>(
+    () => _i465.FavouriteCountsCubit(gh<_i761.FavouriteCountsRepository>()),
   );
   gh.factory<_i618.WallpaperDetailBloc>(
     () => _i618.WallpaperDetailBloc(

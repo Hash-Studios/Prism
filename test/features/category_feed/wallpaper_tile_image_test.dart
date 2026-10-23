@@ -27,6 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
@@ -42,6 +43,7 @@ class _NoRetainedAssets extends OfflineAssetStore {
 }
 
 void main() {
+  setUpFavouriteCounts();
   late _MockCacheManager cache;
   late BaseCacheManager originalCache;
   late FileInfo image;
@@ -99,6 +101,7 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -192,6 +195,7 @@ void main() {
     respond(full, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -221,6 +225,7 @@ void main() {
     respond(thumbnail, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -252,6 +257,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -273,6 +279,7 @@ void main() {
     respond(thumbnail, success: false);
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -293,6 +300,7 @@ void main() {
   testWidgets('an empty URL with no fallback stays a skeleton and offers no retry', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -309,6 +317,7 @@ void main() {
     respond(thumbnail, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

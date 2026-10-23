@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
@@ -271,7 +272,7 @@ class _SearchGridState extends State<SearchGrid> {
             SliverPadding(
               padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
               sliver: SliverGrid(
-                gridDelegate: PrismWallGrid.delegate(context),
+                gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (showFooter && index == _results.length) {
                     return SeeMoreButton(seeMoreLoader: seeMoreLoader, failed: _loadMoreFailed, func: _requestNextPage);
@@ -284,22 +285,25 @@ class _SearchGridState extends State<SearchGrid> {
                     source: 'search_results',
                     index: index,
                     session: _impressions,
-                    child: PrismWallTile(
-                      key: ValueKey<String>(wallpaper.id),
-                      url: wallpaper.thumbnailUrl,
-                      fallbackUrl: wallpaper.fullUrl,
-                      memCacheHeight: decodeHeight,
-                      heroTag: prismHeroTag(this, index, wallpaper.id),
-                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                      overlay: depthTagFor(depthTierOf(wallpaper)),
-                      onTap: () {
-                        PrismHaptics.tap();
-                        _openWallpaper(wallpaper, index);
-                      },
-                      onLongPress: () {
-                        PrismHaptics.impact();
-                        unawaited(showWallpaperQuickActions(context, wallpaper, requestId: widget.searchId));
-                      },
+                    child: FavouriteWallpaperCard(
+                      item: wallpaper,
+                      child: PrismWallTile(
+                        key: ValueKey<String>(wallpaper.id),
+                        url: wallpaper.thumbnailUrl,
+                        fallbackUrl: wallpaper.fullUrl,
+                        memCacheHeight: decodeHeight,
+                        heroTag: prismHeroTag(this, index, wallpaper.id),
+                        semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
+                        overlay: depthTagFor(depthTierOf(wallpaper)),
+                        onTap: () {
+                          PrismHaptics.tap();
+                          _openWallpaper(wallpaper, index);
+                        },
+                        onLongPress: () {
+                          PrismHaptics.impact();
+                          unawaited(showWallpaperQuickActions(context, wallpaper, requestId: widget.searchId));
+                        },
+                      ),
                     ),
                   );
                 }, childCount: _results.length + (showFooter ? 1 : 0)),
@@ -331,7 +335,7 @@ class _FromPrismRow extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
         ),
         SizedBox(
-          height: 176,
+          height: 176 + favouriteFooterHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: PrismWallGrid.padding,
@@ -339,8 +343,8 @@ class _FromPrismRow extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: PrismWallGrid.spacing),
             itemBuilder: (context, index) {
               final FeedItemEntity wallpaper = results[index];
-              return AspectRatio(
-                aspectRatio: 0.5,
+              return SizedBox(
+                width: 88,
                 child: WallpaperImpression(
                   itemId: wallpaper.id,
                   provider: wallpaper.source.name,
@@ -348,18 +352,21 @@ class _FromPrismRow extends StatelessWidget {
                   source: 'search_prism_results',
                   index: index,
                   session: session,
-                  child: PrismWallTile(
-                    key: ValueKey<String>('prism-${wallpaper.id}'),
-                    url: wallpaper.thumbnailUrl,
-                    fallbackUrl: wallpaper.fullUrl,
-                    memCacheHeight: 400,
-                    heroTag: prismHeroTag(results, index, wallpaper.id),
-                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                    overlay: depthTagFor(depthTierOf(wallpaper)),
-                    onTap: () {
-                      PrismHaptics.tap();
-                      onOpen(wallpaper, index);
-                    },
+                  child: FavouriteWallpaperCard(
+                    item: wallpaper,
+                    child: PrismWallTile(
+                      key: ValueKey<String>('prism-${wallpaper.id}'),
+                      url: wallpaper.thumbnailUrl,
+                      fallbackUrl: wallpaper.fullUrl,
+                      memCacheHeight: 400,
+                      heroTag: prismHeroTag(results, index, wallpaper.id),
+                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
+                      overlay: depthTagFor(depthTierOf(wallpaper)),
+                      onTap: () {
+                        PrismHaptics.tap();
+                        onOpen(wallpaper, index);
+                      },
+                    ),
                   ),
                 ),
               );

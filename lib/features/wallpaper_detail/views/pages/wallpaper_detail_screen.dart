@@ -44,6 +44,7 @@ import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -816,25 +817,37 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                   ),
                 ),
                 if (state.views != null) ...[
-                  divider,
-                  Text(switch (int.tryParse(state.views!)) {
-                    final int views => context.l10n.wallpaperViewCount(views),
-                    _ => context.l10n.wallpaperViewCountUnavailable,
-                  }, style: dimmedHeadline),
-                ] else if (state.viewsLoading) ...[
-                  divider,
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(secondary)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      divider,
+                      Flexible(
+                        child: Text(switch (int.tryParse(state.views!)) {
+                          final int views => context.l10n.wallpaperViewCount(views),
+                          _ => context.l10n.wallpaperViewCountUnavailable,
+                        }, style: dimmedHeadline),
+                      ),
+                    ],
                   ),
                 ],
                 if (state.setCount case final int sets when sets >= _minSetCountShown) ...[
-                  divider,
-                  Text(context.l10n.wallpaperSetCount(sets), style: dimmedHeadline),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (state.views != null) divider else const SizedBox(width: 6),
+                      Flexible(child: Text(context.l10n.wallpaperSetCount(sets), style: dimmedHeadline)),
+                    ],
+                  ),
                 ],
               ],
             ),
+          ),
+        ),
+        PrismFavouriteCount(
+          id: wallpaper.id,
+          builder: (context, count) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: _buildInfoRow(context, JamIcons.heart_f, '$count'),
           ),
         ),
         if (collections != null && collections.isNotEmpty) ...[

@@ -39,6 +39,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import 'support/fav_fixtures.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWallsUseCase {}
 
@@ -49,6 +50,7 @@ class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWall
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 void main() {
+  setUpFavouriteCounts();
   late _MockFetchFavouriteWallsUseCase fetchUseCase;
   late FavouriteWallsBloc bloc;
 
@@ -85,6 +87,7 @@ void main() {
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

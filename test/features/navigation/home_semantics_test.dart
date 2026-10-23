@@ -7,6 +7,7 @@ import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/favourite_test_scope.dart';
 
 FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
   id: 'w1',
@@ -16,9 +17,11 @@ FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
 );
 
 void main() {
+  setUpFavouriteCounts();
   testWidgets('reduced motion disables tile Hero flights', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -36,6 +39,7 @@ void main() {
   testWidgets('the same wallpaper twice has distinct Hero tags', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -57,6 +61,7 @@ void main() {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

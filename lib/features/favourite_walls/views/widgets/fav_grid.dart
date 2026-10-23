@@ -26,6 +26,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/library/data/favourites_export.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -436,110 +437,133 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return KeyedSubtree(
       key: ValueKey<String>(wall.id),
-      child: PressScale(
-        scale: 0.97,
-        child: Semantics(
-          button: true,
-          image: true,
-          selected: isSelected,
-          label: wallpaperSemanticLabel(wall.authorName, context.l10n),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (_selecting) {
-                _toggleSelected(wall);
-                return;
-              }
-              PrismHaptics.tap();
-              _openWall(walls, index);
-            },
-            onLongPress: () => _toggleSelected(wall),
-            child: ClipRRect(
-              borderRadius: PrismWallGrid.tileRadius,
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  FavouriteTileImage(
-                    thumbnailUrl: wall.thumbnailUrl,
-                    fullUrl: wall.fullUrl,
-                    allowFullUrlFallback:
-                        _isExternalSource(wall.source) ||
-                        wall.fullUrl.startsWith('/') ||
-                        Uri.tryParse(wall.fullUrl)?.scheme == 'file' ||
-                        BundledWallpapers.isStarterIdentity(wall.id, wall.source),
-                    heroTag: prismHeroTag(this, index, wall.id),
-                    onUnavailable: () => _markUnavailable(wall.id),
-                  ),
-                  if (wall is LegacyFavouriteWall)
-                    IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4))),
-                  if (wall is PrismFavouriteWall && !_unavailable.contains(wall.id))
-                    ?depthTagFor(wall.wallpaper.depthTier),
-                  if (wall.syncStatus != FavouriteSyncStatus.synced)
-                    Positioned(
-                      left: PrismSpace.xs,
-                      top: PrismSpace.xs,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHigh.withValues(alpha: 0.94),
-                          borderRadius: BorderRadius.circular(PrismSpace.xs),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
-                          child: Text(
-                            wall.syncStatus == FavouriteSyncStatus.pending
-                                ? context.l10n.wallpaperFavouriteWaitingSync
-                                : context.l10n.wallpaperFavouriteNotSynced,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
+      child: wall is LegacyFavouriteWall
+          ? Column(
+              children: [
+                Expanded(child: _tileImage(context, walls, index, wall, cs, isSelected, dark)),
+                const SizedBox(height: favouriteFooterHeight),
+              ],
+            )
+          : FavouriteWallpaperCard(
+              item: wall.toFeedItem(),
+              enabled: !_selecting,
+              child: _tileImage(context, walls, index, wall, cs, isSelected, dark),
+            ),
+    );
+  }
+
+  Widget _tileImage(
+    BuildContext context,
+    List<FavouriteWallEntity> walls,
+    int index,
+    FavouriteWallEntity wall,
+    ColorScheme cs,
+    bool isSelected,
+    bool dark,
+  ) {
+    return PressScale(
+      scale: 0.97,
+      child: Semantics(
+        button: true,
+        image: true,
+        selected: isSelected,
+        label: wallpaperSemanticLabel(wall.authorName, context.l10n),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (_selecting) {
+              _toggleSelected(wall);
+              return;
+            }
+            PrismHaptics.tap();
+            _openWall(walls, index);
+          },
+          onLongPress: () => _toggleSelected(wall),
+          child: ClipRRect(
+            borderRadius: PrismWallGrid.tileRadius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                FavouriteTileImage(
+                  thumbnailUrl: wall.thumbnailUrl,
+                  fullUrl: wall.fullUrl,
+                  allowFullUrlFallback:
+                      _isExternalSource(wall.source) ||
+                      wall.fullUrl.startsWith('/') ||
+                      Uri.tryParse(wall.fullUrl)?.scheme == 'file' ||
+                      BundledWallpapers.isStarterIdentity(wall.id, wall.source),
+                  heroTag: prismHeroTag(this, index, wall.id),
+                  onUnavailable: () => _markUnavailable(wall.id),
+                ),
+                if (wall is LegacyFavouriteWall)
+                  IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4))),
+                if (wall is PrismFavouriteWall && !_unavailable.contains(wall.id))
+                  ?depthTagFor(wall.wallpaper.depthTier),
+                if (wall.syncStatus != FavouriteSyncStatus.synced)
+                  Positioned(
+                    left: PrismSpace.xs,
+                    top: PrismSpace.xs,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHigh.withValues(alpha: 0.94),
+                        borderRadius: BorderRadius.circular(PrismSpace.xs),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+                        child: Text(
+                          wall.syncStatus == FavouriteSyncStatus.pending
+                              ? context.l10n.wallpaperFavouriteWaitingSync
+                              : context.l10n.wallpaperFavouriteNotSynced,
+                          style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ),
                     ),
-                  // A pure white or black hairline keeps dark images from melting into the page.
+                  ),
+                // A pure white or black hairline keeps dark images from melting into the page.
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: PrismWallGrid.tileRadius,
+                      border: Border.all(color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
+                    ),
+                  ),
+                ),
+                if (isSelected)
                   IgnorePointer(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.25),
                         borderRadius: PrismWallGrid.tileRadius,
-                        border: Border.all(color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
+                        border: Border.all(color: cs.primary, width: 3),
                       ),
-                    ),
-                  ),
-                  if (isSelected)
-                    IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: 0.25),
-                          borderRadius: PrismWallGrid.tileRadius,
-                          border: Border.all(color: cs.primary, width: 3),
-                        ),
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(PrismSpace.xs),
-                            child: CircleAvatar(
-                              radius: 12,
-                              backgroundColor: cs.primary,
-                              child: Icon(Icons.check_rounded, size: 16, color: cs.onPrimary),
-                            ),
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(PrismSpace.xs),
+                          child: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: cs.primary,
+                            child: Icon(Icons.check_rounded, size: 16, color: cs.onPrimary),
                           ),
                         ),
                       ),
                     ),
-                  if (_unavailable.contains(wall.id) && !isSelected)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: PrismSpace.xs,
-                      child: Center(
-                        child: PrismButton(
-                          label: context.l10n.wallpaperFavouriteRemove,
-                          variant: PrismButtonVariant.danger,
-                          size: PrismButtonSize.compact,
-                          onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall], playTapHaptic: false)),
-                        ),
+                  ),
+                if (_unavailable.contains(wall.id) && !isSelected)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: PrismSpace.xs,
+                    child: Center(
+                      child: PrismButton(
+                        label: context.l10n.wallpaperFavouriteRemove,
+                        variant: PrismButtonVariant.danger,
+                        size: PrismButtonSize.compact,
+                        onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall], playTapHaptic: false)),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -618,7 +642,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
           itemCount: walls.length,
-          gridDelegate: PrismWallGrid.delegate(context),
+          gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
           itemBuilder: (context, index) => _tile(context, walls, index),
         ),
       ),
