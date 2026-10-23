@@ -87,14 +87,16 @@ class DropWallGrid extends StatelessWidget {
                 ? () => onLockedTap(wall)
                 : null,
           );
-          return unlock == null
-              ? Column(
-                  children: [
-                    Expanded(child: tile),
-                    const SizedBox(height: favouriteFooterHeight),
-                  ],
-                )
-              : FavouriteWallpaperCard(item: dropWallFeedItem(wall, unlock), child: tile);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: tile),
+              if (unlock != null)
+                FavouriteWallpaperFooter(item: dropWallFeedItem(wall, unlock))
+              else
+                const SizedBox(height: favouriteFooterHeight),
+            ],
+          );
         },
       ),
     );

@@ -122,6 +122,39 @@ void main() {
   const DropUnlock ownedA = DropUnlock(wallId: 'A', weekKey: '2026-W42', url: 'https://full.test/A.jpg');
 
   group('DropsPage', () {
+    testWidgets('unlocking a grid wall keeps its tile and plays the thaw before removing the seal', (tester) async {
+      final unlocked = ValueNotifier<Map<String, DropUnlock>>({});
+      addTearDown(unlocked.dispose);
+      final drop = dropWithin(const Duration(days: 3));
+      await pump(
+        tester,
+        at(drop),
+        Scaffold(
+          body: ValueListenableBuilder<Map<String, DropUnlock>>(
+            valueListenable: unlocked,
+            builder: (context, owned, _) => CustomScrollView(
+              slivers: [DropWallGrid(drop: drop, unlocked: owned, canBuy: true, onLockedTap: (_) {})],
+            ),
+          ),
+        ),
+      );
+      final tile = find.byKey(const ValueKey<String>('A'));
+      final originalState = tester.state(tile);
+      final seal = find.descendant(of: tile, matching: find.byType(DropSeal));
+      expect(seal, findsOneWidget);
+
+      unlocked.value = {'A': ownedA};
+      await tester.pump();
+
+      expect(tester.state(tile), same(originalState));
+      expect(seal, findsOneWidget);
+      expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+      expect(seal, findsNothing);
+      expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+    });
+
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {
       await pump(tester, DropsState.initial(), const DropsPage());
 
