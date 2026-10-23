@@ -92,7 +92,6 @@ void main() {
                 child: WallpaperTile(
                   item: PrismFeedItem(id: wall.id, wallpaper: wall),
                   index: 0,
-                  quickActions: true,
                   overlay: overlay,
                 ),
               ),

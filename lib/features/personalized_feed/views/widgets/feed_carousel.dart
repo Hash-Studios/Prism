@@ -14,6 +14,7 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
@@ -268,16 +269,19 @@ class _FeedCarouselState extends State<FeedCarousel> {
       source: source,
       index: index,
       onVisible: onVisible,
-      child: FeedHeroCard(
-        image: PrismImageTile(
-          url: wall.wallpaper.thumbnailUrl,
-          fallbackUrl: wall.wallpaper.fullUrl,
-          memCacheHeight: memCacheHeight,
+      child: WallpaperQuickActionRegion(
+        item: wall,
+        child: FeedHeroCard(
+          image: PrismImageTile(
+            url: wall.wallpaper.thumbnailUrl,
+            fallbackUrl: wall.wallpaper.fullUrl,
+            memCacheHeight: memCacheHeight,
+          ),
+          semanticLabel: wall.semanticLabel(context.l10n),
+          tag: tag,
+          badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
+          onTap: () => _openWall(wall, index, source),
         ),
-        semanticLabel: wall.semanticLabel(context.l10n),
-        tag: tag,
-        badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
-        onTap: () => _openWall(wall, index, source),
       ),
     );
   }

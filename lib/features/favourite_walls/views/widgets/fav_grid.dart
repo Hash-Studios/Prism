@@ -57,7 +57,7 @@ const List<WallpaperSource> _filterSources = <WallpaperSource>[
   WallpaperSource.pexels,
 ];
 
-enum _FavouritesMenuAction { export, clearAll }
+enum _FavouritesMenuAction { select, export, clearAll }
 
 bool _isExternalSource(WallpaperSource source) =>
     source == WallpaperSource.wallhaven || source == WallpaperSource.pexels;
@@ -76,13 +76,14 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late final TextEditingController _searchController;
-  final Set<String> _selected = <String>{};
+  Set<String>? _selection;
+  Set<String> get _selected => _selection ?? const <String>{};
   final Set<String> _unavailable = <String>{};
 
   /// A guest closes the sign-in banner once per app session.
   static bool _guestBannerDismissed = false;
 
-  bool get _selecting => _selected.isNotEmpty;
+  bool get _selecting => _selection != null;
 
   @override
   void initState() {
@@ -106,13 +107,14 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   void _exitSelection() {
     if (!mounted) return;
-    setState(_selected.clear);
+    setState(() => _selection = null);
   }
 
   void _toggleSelected(FavouriteWallEntity wall) {
     PrismHaptics.tap();
     setState(() {
-      if (!_selected.remove(wall.id)) _selected.add(wall.id);
+      final Set<String> selection = _selection ??= <String>{};
+      if (!selection.remove(wall.id)) selection.add(wall.id);
     });
   }
 
@@ -372,10 +374,15 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 tooltip: context.l10n.wallpaperFavouriteMoreActions,
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => switch (action) {
+                  _FavouritesMenuAction.select => setState(() => _selection = <String>{}),
                   _FavouritesMenuAction.export => unawaited(_export(state.items)),
                   _FavouritesMenuAction.clearAll => unawaited(_clearAll(state.items)),
                 },
                 itemBuilder: (context) => <PopupMenuEntry<_FavouritesMenuAction>>[
+                  PopupMenuItem<_FavouritesMenuAction>(
+                    value: _FavouritesMenuAction.select,
+                    child: Text(MaterialLocalizations.of(context).keyboardKeySelect),
+                  ),
                   PopupMenuItem<_FavouritesMenuAction>(
                     value: _FavouritesMenuAction.export,
                     child: Text(context.l10n.wallpaperFavouriteExport),
@@ -478,7 +485,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             PrismHaptics.tap();
             _openWall(walls, index);
           },
-          onLongPress: () => _toggleSelected(wall),
+          onLongPress: _selecting || wall is LegacyFavouriteWall ? () => _toggleSelected(wall) : null,
           child: ClipRRect(
             borderRadius: PrismWallGrid.tileRadius,
             child: Stack(
@@ -676,7 +683,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         }
         final ColorScheme cs = Theme.of(context).colorScheme;
         final List<FavouriteWallEntity> selectedWalls = _selectedWalls(state.items);
-        final bool selecting = selectedWalls.isNotEmpty;
+        final bool selecting = _selecting;
         return PopScope(
           canPop: !selecting,
           onPopInvokedWithResult: (didPop, _) {
@@ -709,7 +716,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   child: _content(context, state, loaded),
                 ),
               ),
-              if (selecting)
+              if (selecting && selectedWalls.isNotEmpty)
                 SelectionActionBar(
                   actions: <Widget>[
                     CircularMenuButton(

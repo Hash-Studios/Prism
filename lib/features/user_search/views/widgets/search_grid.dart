@@ -12,7 +12,6 @@ import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -298,10 +297,6 @@ class _SearchGridState extends State<SearchGrid> {
                         onTap: () {
                           PrismHaptics.tap();
                           _openWallpaper(wallpaper, index);
-                        },
-                        onLongPress: () {
-                          PrismHaptics.impact();
-                          unawaited(showWallpaperQuickActions(context, wallpaper, requestId: widget.searchId));
                         },
                       ),
                     ),

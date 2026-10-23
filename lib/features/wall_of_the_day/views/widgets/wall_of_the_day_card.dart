@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -55,6 +57,35 @@ class _WotdCardContent extends StatelessWidget {
 
   final WallOfTheDayEntity entity;
 
+  FeedItemEntity? get _quickActionItem {
+    final PrismWallpaper? wallpaper = entity.wallpaper;
+    if (wallpaper != null) return PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
+    if (entity.url.isEmpty || entity.wallId.isEmpty) return null;
+    final WallpaperSource source = entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source;
+    final WallpaperCore core = WallpaperCore(
+      id: entity.wallId,
+      source: source,
+      fullUrl: entity.url,
+      thumbnailUrl: entity.thumbnailUrl,
+      authorName: entity.photographer,
+    );
+    return switch (source) {
+      WallpaperSource.prism => PrismFeedItem(
+        id: core.id,
+        wallpaper: PrismWallpaper(core: core, firestoreDocumentId: entity.wallDocumentId),
+      ),
+      WallpaperSource.wallhaven => WallhavenFeedItem(
+        id: core.id,
+        wallpaper: WallhavenWallpaper(core: core),
+      ),
+      WallpaperSource.pexels => PexelsFeedItem(
+        id: core.id,
+        wallpaper: PexelsWallpaper(core: core),
+      ),
+      _ => null,
+    };
+  }
+
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
     CoinsService.instance.reportQuestEvent(QuestEvent.viewWotd);
@@ -81,7 +112,7 @@ class _WotdCardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String photographer = entity.photographer.trim();
-    return Stack(
+    final Widget card = Stack(
       fit: StackFit.expand,
       children: <Widget>[
         FeedHeroCard(
@@ -117,6 +148,8 @@ class _WotdCardContent extends StatelessWidget {
         ),
       ],
     );
+    final FeedItemEntity? item = _quickActionItem;
+    return item == null ? card : WallpaperQuickActionRegion(item: item, child: card);
   }
 }
 

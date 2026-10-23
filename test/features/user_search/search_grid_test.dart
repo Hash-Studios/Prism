@@ -605,7 +605,7 @@ void main() {
     );
   });
 
-  testWidgets('a long press opens the quick actions sheet instead of copying the link', (tester) async {
+  testWidgets('holding a search wallpaper offers quick actions and release outside cancels', (tester) async {
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
 
     await tester.pumpWidget(
@@ -623,11 +623,13 @@ void main() {
         ),
       ),
     );
-    await tester.longPress(find.byType(PrismWallTile).first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Share link'), findsOneWidget);
-    expect(find.text('Favourite'), findsOneWidget);
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(PrismWallTile).first));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
     expect(find.text('Show less like this'), findsNothing);
+    await gesture.up();
+    await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsNothing);
   });
 }

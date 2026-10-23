@@ -9,7 +9,6 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -23,7 +22,6 @@ class WallpaperTile extends StatelessWidget {
     required this.index,
     this.memCacheHeight,
     this.crossAxisCount,
-    this.quickActions = false,
     this.onShowLessLikeThis,
     this.sourceContext,
     this.overlay,
@@ -39,10 +37,7 @@ class WallpaperTile extends StatelessWidget {
   /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
 
-  /// Long press opens the quick actions sheet.
-  final bool quickActions;
-
-  /// Adds "Show less like this" to the quick actions sheet.
+  /// Offers the personalized feed's real dismiss and undo flow.
   final VoidCallback? onShowLessLikeThis;
 
   /// Replaces the analytics source context that the tile derives from the wallpaper source.
@@ -92,6 +87,7 @@ class WallpaperTile extends StatelessWidget {
       onVisible: onVisible,
       child: FavouriteWallpaperCard(
         item: item,
+        onShowLessLikeThis: onShowLessLikeThis,
         child: PrismWallTile(
           url: item.thumbnailUrl,
           fallbackUrl: item.fullUrl,
@@ -117,19 +113,6 @@ class WallpaperTile extends StatelessWidget {
             );
             context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId));
           },
-          onLongPress: quickActions
-              ? () {
-                  PrismHaptics.impact();
-                  unawaited(
-                    showWallpaperQuickActions(
-                      context,
-                      item,
-                      onShowLessLikeThis: onShowLessLikeThis,
-                      requestId: session.requestId,
-                    ),
-                  );
-                }
-              : null,
         ),
       ),
     );
