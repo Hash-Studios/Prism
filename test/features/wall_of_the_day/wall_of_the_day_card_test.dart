@@ -236,6 +236,8 @@ void main() {
           verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
       expect(route.args!.wallId, isNull);
       expect((route.args!.entity! as PrismFeedItem).wallpaper.firestoreDocumentId, 'doc-1');
+      expect(route.args!.heroTag, isNotNull);
+      expect(tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag), contains(route.args!.heroTag));
       expect(analytics.events.where((e) => e.eventName == 'wotd_opened').single.toWireParameters(), {
         'wall_id': 'wotd-1',
         'source': 'card_tap',

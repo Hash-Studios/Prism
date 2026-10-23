@@ -17,13 +17,13 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
-import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
@@ -39,8 +39,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
-import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/favourite_test_scope.dart';
+import '../../../../support/in_memory_local_store.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -190,7 +190,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
     }
-    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
+    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state.copyWith(panelCollapsed: false));
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -247,7 +247,14 @@ void main() {
   }
 
   testWidgets('the Set button names its screen for analytics and carries the resolution notes', (tester) async {
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(width: 4000, height: 2000), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(width: 4000, height: 2000),
+        paletteLoading: false,
+      ),
+    );
 
     final SetWallpaperButton button = tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton));
     expect(button.entryPoint, 'wallpaper_detail');
@@ -255,7 +262,14 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a Prism set is counted with the set action', (tester) async {
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
 
     await tapSet(tester);
 
@@ -265,7 +279,14 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a Wallhaven set is not counted', (tester) async {
-    await pump(tester, WallpaperDetailLoaded(entity: _wallhaven(), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _wallhaven(),
+        paletteLoading: false,
+      ),
+    );
 
     await tapSet(tester);
 
@@ -278,6 +299,7 @@ void main() {
     await pump(
       tester,
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _prism(),
         paletteLoading: false,
         colors: const <Color>[Color(0xFF008080), Color(0xFFFF0000)],
@@ -307,6 +329,7 @@ void main() {
       bloc,
       const Stream<WallpaperDetailState>.empty(),
       initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _prism(),
         paletteLoading: false,
         colors: const <Color>[Color(0xFF008080)],
@@ -341,7 +364,7 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('with no palette yet there is no Match accent button', (tester) async {
-    await pump(tester, WallpaperDetailLoaded(entity: _prism()));
+    await pump(tester, WallpaperDetailLoaded(recommendations: const RecommendationState.exhausted(), entity: _prism()));
 
     await tapSet(tester);
 
@@ -351,135 +374,77 @@ void main() {
 
   testWidgets('a Live chip sits on the image when the device supports live wallpapers', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
     await tester.pump();
 
     expect(find.byType(MakeItLiveChip), findsOneWidget);
     expect(find.text('Live'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the Live chip rides 12 px above the glass and fades out as the panel opens', (tester) async {
+  testWidgets('the Live chip stays within the bounded wallpaper header', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client(live: true));
     await pump(
       tester,
-      WallpaperDetailLoaded(entity: _prism(), paletteLoading: false),
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
       surfaceSize: const Size(393, 852),
     );
     await tester.pump();
-    final Finder pill = find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass));
-    final Finder panelGlass = find.byType(PrismGlass).last;
-    final Finder fade = find.byWidgetPredicate((widget) => widget is Opacity && widget.child is MakeItLiveChip);
-
-    expect(tester.getRect(panelGlass).top - tester.getRect(pill).bottom, 12);
-    expect(tester.getRect(pill).left, 34);
-    expect(tester.widget<Opacity>(fade).opacity, 1);
-
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 60));
-    final double midway = tester.widget<Opacity>(fade).opacity;
-    expect(tester.getRect(panelGlass).top - tester.getRect(pill).bottom, 12);
-    await tester.pumpAndSettle();
-
-    expect(midway, inExclusiveRange(0, 1));
-    expect(tester.widget<Opacity>(fade).opacity, 0);
-    await tester.tap(pill, warnIfMissed: false);
-    await tester.pump();
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets(
-    'in a wide window the glass is a centred 560 column clear of the side safe area, and the wallpaper stays full screen',
-    (tester) async {
-      aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-      tester.view.physicalSize = const Size(844 * 3, 390 * 3);
-      tester.view.devicePixelRatio = 3;
-      tester.view.padding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
-      tester.view.viewPadding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
-      addTearDown(tester.view.reset);
-      await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-      await tester.pump(const Duration(milliseconds: 200));
-
-      final Rect glass = tester.getRect(find.byType(PrismGlass).last);
-      expect(glass.left, 142);
-      expect(glass.right, 844 - 142);
-      expect(
-        tester.getRect(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass))).left,
-        166,
-      );
-      expect(tester.getRect(find.byType(SetWallpaperButton)).left, 166);
-      expect(tester.getRect(find.byType(SetWallpaperButton)).left, greaterThan(glass.left));
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.android),
-  );
-
-  testWidgets('tablet landscape keeps a dragged-open panel through rotation to portrait', (tester) async {
-    aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-    await pump(
-      tester,
-      WallpaperDetailLoaded(entity: _prism(), paletteLoading: false),
-      surfaceSize: const Size(1024, 768),
+    final image = tester.getRect(
+      find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
     );
-
-    final Finder glass = find.byType(PrismGlass).last;
-    final Finder pill = find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass));
-    final Finder chipOpacity = find.byWidgetPredicate((widget) => widget is Opacity && widget.child is MakeItLiveChip);
-    expect(tester.getRect(glass), const Rect.fromLTRB(232, 656, 792, 758));
-    expect(tester.getRect(pill).left, 256);
-    expect(tester.getRect(glass).top - tester.getRect(pill).bottom, 12);
-
-    await tester.drag(find.bySemanticsLabel('Expand wallpaper details'), const Offset(0, -300));
-    await tester.pumpAndSettle();
-    expect(tester.getSize(glass).height, closeTo(768 * 0.55, 0.01));
-    expect(tester.widget<Opacity>(chipOpacity).opacity, 0);
-
-    tester.view.physicalSize = const Size(768, 1024);
-    await tester.pumpAndSettle();
-    expect(tester.getRect(glass).left, 104);
-    expect(tester.getRect(glass).right, 664);
-    expect(tester.getRect(glass).bottom, 1014);
-    expect(tester.getRect(glass).top, closeTo(450.8, 0.01));
-    expect(tester.widget<Opacity>(chipOpacity).opacity, 0);
+    final chip = tester.getRect(find.byType(MakeItLiveChip));
+    expect(chip.bottom, lessThanOrEqualTo(image.bottom));
+    expect(chip.top, greaterThan(image.top));
+    expect(image.height, closeTo(852 * 0.62, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('asymmetric side safe area moves the controls, not the full-screen wallpaper', (tester) async {
-    aw.AsyncWallpaper.debugSetClient(_Client(live: true));
+  testWidgets('wide safe areas inset the inline actions without cropping the wallpaper header', (tester) async {
     tester.view.physicalSize = const Size(844, 390);
     tester.view.devicePixelRatio = 1;
-    tester.view.padding = const FakeViewPadding(left: 47, bottom: 21);
-    tester.view.viewPadding = const FakeViewPadding(left: 47, bottom: 21);
+    tester.view.padding = const FakeViewPadding(left: 47, right: 47, bottom: 21);
+    tester.view.viewPadding = const FakeViewPadding(left: 47, right: 47, bottom: 21);
     addTearDown(tester.view.reset);
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-    await tester.pump(const Duration(milliseconds: 200));
-
-    final Finder glass = find.byType(PrismGlass).last;
-    final Finder wallpaper = find.byWidgetPredicate(
-      (widget) => widget is Semantics && widget.properties.label == 'Wallpaper',
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
     );
-    expect(tester.getRect(glass), const Rect.fromLTRB(142, 257, 702, 359));
-    expect(tester.getRect(find.byType(WallpaperActionBar)).left, 142);
-    expect(tester.getRect(find.byType(WallpaperActionBar)).right, 702);
+    final actions = tester.getRect(find.byType(WallpaperActionBar));
+    expect(actions.left, 47);
+    expect(actions.right, 797);
+    expect(tester.getRect(find.byTooltip('Back')).left, greaterThanOrEqualTo(47));
     expect(
-      tester.getRect(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass))).left,
-      166,
+      tester
+          .getRect(find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'))
+          .width,
+      844,
     );
-    expect(tester.getRect(wallpaper), const Rect.fromLTWH(0, 0, 844, 390));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('phone panel keeps the original 10 px side inset at both ends of the phone width range', (tester) async {
-    for (final Size size in <Size>[const Size(320, 568), const Size(480, 960)]) {
-      await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false), surfaceSize: size);
-
-      final Rect glass = tester.getRect(find.byType(PrismGlass).last);
-      expect(glass.left, 10, reason: '$size left edge');
-      expect(glass.right, size.width - 10, reason: '$size right edge');
-      expect(tester.getRect(find.byType(WallpaperActionBar)).left, 10, reason: '$size action bar');
-      await tester.pumpWidget(const SizedBox());
-    }
-  });
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
     await tester.pump();
 
     expect(find.byType(MakeItLiveChip), findsNothing);

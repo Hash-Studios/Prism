@@ -114,6 +114,7 @@ void main() {
     WallOfTheDayEntity? wotdEntity,
     DropEntity? liveDrop,
     StackRouter? router,
+    GlobalKey<NavigatorState>? navigatorKey,
   }) async {
     tester.view
       ..physicalSize = size
@@ -150,6 +151,7 @@ void main() {
     final Widget carouselWithBloc = BlocProvider<WotdBloc>.value(value: wotd, child: carousel);
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: navigatorKey,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -506,6 +508,51 @@ void main() {
     final SurfaceActionTappedEvent event = analytics.events.whereType<SurfaceActionTappedEvent>().single;
     expect(event.sourceContext, 'personalized_feed_carousel');
     expect(event.itemId, 'a');
+  });
+
+  testWidgets('looping three-column copies have distinct hero tags and fly to the tapped detail', (tester) async {
+    registerFallbackValue(WallpaperDetailRoute());
+    final _MockStackRouter router = _MockStackRouter();
+    final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+    when(() => router.push(any())).thenAnswer((invocation) {
+      final WallpaperDetailRoute route = invocation.positionalArguments.single as WallpaperDetailRoute;
+      return navigatorKey.currentState!.push<void>(
+        PageRouteBuilder<void>(
+          pageBuilder: (_, _, _) => Scaffold(
+            body: Center(
+              child: Hero(tag: route.args!.heroTag!, child: const Text('detail')),
+            ),
+          ),
+        ),
+      );
+    });
+
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('loop-wall')],
+      size: const Size(1500, 900),
+      reduceMotion: false,
+      router: router,
+      navigatorKey: navigatorKey,
+    );
+    await swipeToNextPage(tester);
+
+    final List<Hero> heroes = tester.widgetList<Hero>(find.byType(Hero)).toList();
+    expect(heroes, hasLength(2));
+    final List<Object> tags = heroes.map((hero) => hero.tag).toList();
+    expect(tags.toSet(), hasLength(2));
+    expect(find.byType(FeedHeroCard), findsNWidgets(3));
+
+    final Rect tappedCopy = tester.getRect(find.byWidget(heroes.first));
+    await tester.tapAt(tappedCopy.center);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text('detail'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+    expect(route.args!.heroTag, heroes.first.tag);
   });
 
   testWidgets('a premium wallpaper page keeps the star badge', (tester) async {

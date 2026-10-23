@@ -1,4 +1,5 @@
 {
+  "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "de",
   "economyExportFailedLabel": "Export fehlgeschlagen",
   "@economyExportFailedLabel": {
@@ -6149,7 +6150,8 @@
   "@wallpaperAccentColorsOriginal": {
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
-  "wallpaperAccentResetHint": "Zum Zurücksetzen lange drücken",
+  "wallpaperResetOriginal": "Zurück zum Original",
+  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
   "@wallpaperAccentResetHint": {
     "description": "Toast hint explaining how to reset the selected wallpaper accent."
   },
@@ -7415,7 +7417,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Tippe, um die Akzentfarbe zu wechseln. Zum Zurücksetzen lange drücken. Für Details nach oben wischen.",
+  "wallpaperImageSemanticHint": "Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },

@@ -150,7 +150,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     openPrismLink(context, app_state.bannerURL);
   }
 
-  void _openWall(PrismFeedItem wall, int feedIndex, String sourceContext) {
+  void _openWall(PrismFeedItem wall, int feedIndex, String sourceContext, String heroTag) {
     PrismHaptics.tap();
     unawaited(
       analytics.track(
@@ -167,7 +167,11 @@ class _FeedCarouselState extends State<FeedCarousel> {
       ),
     );
     context.router.push(
-      WallpaperDetailRoute(entity: wall, requestId: WallpaperImpressionScope.maybeOf(context)?.requestId),
+      WallpaperDetailRoute(
+        entity: wall,
+        heroTag: heroTag,
+        requestId: WallpaperImpressionScope.maybeOf(context)?.requestId,
+      ),
     );
   }
 
@@ -183,24 +187,26 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
-    final List<Widget> pages = <Widget>[
-      if (hasWotd) const WallOfTheDayCard(),
+    final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
+      if (hasWotd) (_) => const WallOfTheDayCard(),
       if (_showsDrop(widget.liveDrop))
-        DropCarouselSlide(
+        (_) => DropCarouselSlide(
           drop: widget.liveDrop!,
           now: DateTime.now(),
           memCacheHeight: memCacheHeight,
           onTap: _openDrop,
         ),
-      for (int i = 0; i < widget.boostedWalls.length; i++) _boostedCard(widget.boostedWalls[i], i, memCacheHeight),
+      for (int i = 0; i < widget.boostedWalls.length; i++)
+        (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
       if (bannerImage.trim().isNotEmpty)
-        FeedHeroCard(
+        (_) => FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),
           semanticLabel: bannerTitle.isEmpty ? context.l10n.wallpaperFeedAnnouncement : bannerTitle,
           title: bannerTitle,
           onTap: _openBanner,
         ),
-      for (int i = 0; i < widget.previewWalls.length; i++) _previewCard(widget.previewWalls[i], i, memCacheHeight),
+      for (int i = 0; i < widget.previewWalls.length; i++)
+        (int realIndex) => _previewCard(widget.previewWalls[i], i, memCacheHeight, realIndex),
     ];
     if (pages.isEmpty) return const SizedBox.shrink();
     final int current = _current.clamp(0, pages.length - 1);
@@ -225,7 +231,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
             },
           ),
           itemBuilder: (BuildContext context, int i, int realIndex) =>
-              Padding(padding: PrismFeedLayout.gridPadding, child: pages[i]),
+              Padding(padding: PrismFeedLayout.gridPadding, child: pages[i](realIndex)),
         ),
         if (moving)
           Positioned(
@@ -238,18 +244,20 @@ class _FeedCarouselState extends State<FeedCarousel> {
     );
   }
 
-  Widget _boostedCard(PrismWallpaper wall, int index, int memCacheHeight) => _wallCard(
+  Widget _boostedCard(PrismWallpaper wall, int index, int memCacheHeight, int realIndex) => _wallCard(
     PrismFeedItem(id: wall.id, wallpaper: wall),
     index,
     memCacheHeight,
+    realIndex: realIndex,
     source: 'personalized_feed_carousel_boosted',
     tag: const BoostedTag(),
   );
 
-  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) => _wallCard(
+  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight, int realIndex) => _wallCard(
     wall,
     feedIndex,
     memCacheHeight,
+    realIndex: realIndex,
     source: 'personalized_feed_carousel',
     onVisible: () => widget.onWallShown?.call(wall),
   );
@@ -259,9 +267,11 @@ class _FeedCarouselState extends State<FeedCarousel> {
     int index,
     int memCacheHeight, {
     required String source,
+    required int realIndex,
     Widget? tag,
     VoidCallback? onVisible,
   }) {
+    final String heroTag = prismHeroTag(this, realIndex, '$source-${wall.id}');
     return WallpaperImpression(
       itemId: wall.id,
       provider: wall.source.name,
@@ -276,11 +286,12 @@ class _FeedCarouselState extends State<FeedCarousel> {
             url: wall.wallpaper.thumbnailUrl,
             fallbackUrl: wall.wallpaper.fullUrl,
             memCacheHeight: memCacheHeight,
+            heroTag: heroTag,
           ),
           semanticLabel: wall.semanticLabel(context.l10n),
           tag: tag,
           badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
-          onTap: () => _openWall(wall, index, source),
+          onTap: () => _openWall(wall, index, source, heroTag),
         ),
       ),
     );

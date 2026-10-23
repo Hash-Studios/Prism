@@ -15,21 +15,22 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/profile_user_fixture.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -107,7 +108,11 @@ void main() {
   });
 
   Future<void> pump(WidgetTester tester, WallpaperDetailState state, {FeedItemEntity? entity}) async {
-    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: state is WallpaperDetailLoaded ? state.copyWith(panelCollapsed: false) : state,
+    );
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -130,8 +135,15 @@ void main() {
   group('headline', () {
     testWidgets('shows the published Prism favourite total in the metadata', (tester) async {
       final entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byIcon(JamIcons.heart_f), findsOneWidget);
@@ -142,10 +154,14 @@ void main() {
       final entity = _prism(id: 'unknown');
       await pump(
         tester,
-        WallpaperDetailLoaded(entity: entity, paletteLoading: false, viewsLoading: true),
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          viewsLoading: true,
+        ),
         entity: entity,
       );
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -160,10 +176,14 @@ void main() {
       final entity = _prism();
       await pump(
         tester,
-        WallpaperDetailLoaded(entity: entity, paletteLoading: false, views: '0'),
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          views: '0',
+        ),
         entity: entity,
       );
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('0 views'), findsOneWidget);
@@ -180,10 +200,15 @@ void main() {
       final entity = _prism(title: 'A long wallpaper title that fills the headline');
       await pump(
         tester,
-        WallpaperDetailLoaded(entity: entity, paletteLoading: false, viewsLoading: true, setCount: 12),
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          viewsLoading: true,
+          setCount: 12,
+        ),
         entity: entity,
       );
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Set 12 times'), findsOneWidget);
@@ -196,41 +221,91 @@ void main() {
 
     testWidgets('shows the title the creator gave, not the id', (tester) async {
       final FeedItemEntity entity = _prism(title: 'Misty pines');
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
-      expect(find.text('Misty pines'), findsOneWidget);
+      expect(find.text('Misty pines'), findsNWidgets(2)); // Summary and expanded metadata.
       expect(find.text('PRISM-1'), findsNothing);
     });
 
     testWidgets('falls back to Wallpaper by the creator name', (tester) async {
       final FeedItemEntity entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
-      expect(find.text('Wallpaper by Akshay'), findsOneWidget);
+      expect(find.text('Wallpaper by Akshay'), findsNWidgets(2));
     });
 
     testWidgets('never shows an email as the creator', (tester) async {
       final FeedItemEntity entity = _prism(authorName: 'creator@example.com');
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
-      expect(find.text('Wallpaper by Prism creator'), findsOneWidget);
+      expect(find.text('Wallpaper by Prism creator'), findsNWidgets(2));
       expect(find.text('Wallpaper by creator@example.com'), findsNothing);
     });
 
     testWidgets('shows Set N times from 5 sets', (tester) async {
       final FeedItemEntity entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false, setCount: 12), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          setCount: 12,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Set 12 times'), findsOneWidget);
     });
 
     testWidgets('hides the set count below 5 and when unknown', (tester) async {
       final FeedItemEntity entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false, setCount: 4), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          setCount: 4,
+        ),
+        entity: entity,
+      );
       expect(find.textContaining('Set 4'), findsNothing);
       expect(find.textContaining(RegExp(r'Set \d+ times')), findsNothing);
 
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
       expect(find.textContaining(RegExp(r'Set \d+ times')), findsNothing);
     });
   });
@@ -242,7 +317,15 @@ void main() {
       lookupResult: lookup.future,
     );
     final FeedItemEntity entity = _prism();
-    await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: entity,
+        paletteLoading: false,
+      ),
+      entity: entity,
+    );
 
     final Finder pendingPreview = find.byType(FutureBuilder<File?>);
     expect(find.descendant(of: pendingPreview, matching: find.byType(CachedNetworkImage)), findsNWidgets(2));
@@ -255,7 +338,15 @@ void main() {
     testWidgets("is offered to a signed-in viewer on someone else's wall", (tester) async {
       app_state.prismUser = profileUser();
       final FeedItemEntity entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Report'), findsOneWidget);
       expect(find.text('Block creator'), findsOneWidget);
@@ -263,7 +354,15 @@ void main() {
 
     testWidgets('is hidden for a guest', (tester) async {
       final FeedItemEntity entity = _prism();
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Report'), findsOneWidget);
       expect(find.text('Block creator'), findsNothing);
@@ -272,7 +371,15 @@ void main() {
     testWidgets('is hidden on your own wall', (tester) async {
       app_state.prismUser = profileUser();
       final FeedItemEntity entity = _prism(authorEmail: 'User@Example.com');
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Block creator'), findsNothing);
     });
@@ -280,7 +387,15 @@ void main() {
     testWidgets('is hidden when the creator is unknown', (tester) async {
       app_state.prismUser = profileUser();
       final FeedItemEntity entity = _prism(authorEmail: null);
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Block creator'), findsNothing);
     });
@@ -290,7 +405,15 @@ void main() {
       final FeedItemEntity entity = _prism(id: 'starter-sunset', docId: 'bundled-starter-doc');
       expect(BundledWallpapers.isStarter(entity), isTrue);
 
-      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
 
       expect(find.text('Report'), findsNothing);
       expect(find.text('Block creator'), findsNothing);
@@ -487,7 +610,15 @@ void main() {
 
   testWidgets('the panel lists the landscape note for a wide wall', (tester) async {
     final FeedItemEntity entity = _prism(width: 4000, height: 2000);
-    await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: entity,
+        paletteLoading: false,
+      ),
+      entity: entity,
+    );
 
     expect(find.text('Landscape wallpaper: the sides will be cropped'), findsOneWidget);
   });

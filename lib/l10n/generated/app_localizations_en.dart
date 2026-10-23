@@ -11,6 +11,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'Export failed';
 
   @override
@@ -7293,7 +7296,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'Original wallpaper colors';
 
   @override
-  String get wallpaperAccentResetHint => 'Long press to reset';
+  String get wallpaperResetOriginal => 'Reset to original';
+
+  @override
+  String get wallpaperAccentResetHint => 'Hold for actions, including Reset to original';
 
   @override
   String get wallpaperAll => 'All';
@@ -8287,7 +8293,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint => 'Tap to cycle accent color. Long press to reset. Swipe up for details.';
+  String get wallpaperImageSemanticHint =>
+      'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';

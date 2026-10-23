@@ -153,6 +153,7 @@ void main() {
       expect(find.text('by Ana'), findsOneWidget);
       expect(find.text('Lock screen'), findsOneWidget);
       expect(find.text('Home screen'), findsOneWidget);
+      expect(find.byType(Hero), findsNothing);
     });
 
     testWidgets('does nothing when there is no Drop', (tester) async {
@@ -216,6 +217,8 @@ void main() {
 
       final route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
       expect(route.args!.entity!.id, 'B');
+      expect(route.args!.heroTag, isNotNull);
+      expect(tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag), contains(route.args!.heroTag));
     });
 
     testWidgets('the bar switches to Open when the wall is unlocked', (tester) async {

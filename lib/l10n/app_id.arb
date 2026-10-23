@@ -1,4 +1,5 @@
 {
+  "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
   "economyExportFailedLabel": "Ekspor gagal",
   "@economyExportFailedLabel": {
@@ -6278,7 +6279,8 @@
   "@wallpaperAccentColorsOriginal": {
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
-  "wallpaperAccentResetHint": "Tekan lama untuk mengatur ulang",
+  "wallpaperResetOriginal": "Kembali ke asli",
+  "wallpaperAccentResetHint": "Tahan untuk tindakan, termasuk Kembali ke asli",
   "@wallpaperAccentResetHint": {
     "description": "Toast hint explaining how to reset the selected wallpaper accent."
   },
@@ -7544,7 +7546,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Ketuk untuk mengganti warna aksen. Tekan lama untuk mengatur ulang. Geser ke atas untuk melihat detail.",
+  "wallpaperImageSemanticHint": "Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },

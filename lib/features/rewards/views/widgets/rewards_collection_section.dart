@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -143,7 +144,7 @@ class _CollectionGrid extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final PrismWallpaper w = items[index];
-                return _CollectionCard(wallpaper: w, unlocked: w.isUnlockedFor(streak, balance));
+                return _CollectionCard(wallpaper: w, unlocked: w.isUnlockedFor(streak, balance), index: index);
               },
             ),
           ),
@@ -154,10 +155,11 @@ class _CollectionGrid extends StatelessWidget {
 }
 
 class _CollectionCard extends StatelessWidget {
-  const _CollectionCard({required this.wallpaper, required this.unlocked});
+  const _CollectionCard({required this.wallpaper, required this.unlocked, required this.index});
 
   final PrismWallpaper wallpaper;
   final bool unlocked;
+  final int index;
 
   String _caption(AppLocalizations l10n) {
     final int? days = wallpaper.requiredStreakDays;
@@ -187,9 +189,11 @@ class _CollectionCard extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     if (unlocked) {
       PrismHaptics.tap();
+      final String heroTag = prismHeroTag(context, index, 'rewards-collection-${wallpaper.id}');
       context.router.root.push(
         WallpaperDetailRoute(
           entity: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+          heroTag: heroTag,
         ),
       );
       return;
@@ -215,6 +219,7 @@ class _CollectionCard extends StatelessWidget {
         ? l10n.wallpaperImageSemanticLabel
         : wallpaper.core.category!;
     final String caption = _caption(l10n);
+    final String heroTag = prismHeroTag(context, index, 'rewards-collection-${wallpaper.id}');
     return FavouriteWallpaperCard(
       item: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
       enabled: unlocked,
@@ -234,6 +239,7 @@ class _CollectionCard extends StatelessWidget {
                 Expanded(
                   child: PrismWallTile(
                     url: wallpaper.thumbnailUrl,
+                    heroTag: unlocked ? heroTag : null,
                     overlay: unlocked
                         ? null
                         : ClipRRect(

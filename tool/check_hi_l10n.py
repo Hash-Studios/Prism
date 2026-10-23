@@ -85,6 +85,7 @@ UNCHANGED_ENGLISH = {
     'wallpaperAutoRotateNounCategory': '{category}',
     'wallpaperHomeAppName': 'Prism',
     'wallpaperPremium': 'Premium',
+    'wallpaperProviderWallhaven': 'Wallhaven',
 }
 
 UNTRANSLATED_UI_TOKENS = (

@@ -18,6 +18,7 @@ class PreviewWallPage extends StatefulWidget {
     required this.mode,
     required this.now,
     required this.height,
+    this.heroTag,
   });
 
   final DropWall wall;
@@ -25,6 +26,7 @@ class PreviewWallPage extends StatefulWidget {
   final DropPreviewMode mode;
   final DateTime now;
   final double height;
+  final String? heroTag;
 
   @override
   State<PreviewWallPage> createState() => _PreviewWallPageState();
@@ -68,7 +70,7 @@ class _PreviewWallPageState extends State<PreviewWallPage> with SingleTickerProv
           builder: (context, _) {
             final double veil = 1 - Curves.easeOut.transform((_reveal.value / _fadeShare).clamp(0, 1));
             final double frost = 1.6 * veil;
-            Widget image = PrismImageTile(url: widget.wall.thumb);
+            Widget image = PrismImageTile(url: widget.wall.thumb, heroTag: widget.heroTag);
             if (frost > 0.01) {
               image = ImageFiltered(
                 imageFilter: ui.ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.clamp),

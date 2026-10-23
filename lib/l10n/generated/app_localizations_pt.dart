@@ -11,6 +11,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'Falha ao exportar';
 
   @override
@@ -7551,7 +7554,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'Cores originais do papel de parede';
 
   @override
-  String get wallpaperAccentResetHint => 'Pressione longamente para redefinir';
+  String get wallpaperResetOriginal => 'Restaurar original';
+
+  @override
+  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
 
   @override
   String get wallpaperAll => 'Todos';
@@ -8575,7 +8581,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toque para alternar entre cores de destaque. Pressione longamente para redefinir. Deslize para cima para obter detalhes.';
+      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
@@ -9962,6 +9968,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'Falha ao exportar';
 
   @override
@@ -17502,7 +17511,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperAccentColorsOriginal => 'Cores originais do papel de parede';
 
   @override
-  String get wallpaperAccentResetHint => 'Pressione longamente para redefinir';
+  String get wallpaperResetOriginal => 'Restaurar original';
+
+  @override
+  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
 
   @override
   String get wallpaperAll => 'Todos';
@@ -18526,7 +18538,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toque para alternar entre cores de destaque. Pressione longamente para redefinir. Deslize para cima para obter detalhes.';
+      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';

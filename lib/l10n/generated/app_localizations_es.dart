@@ -11,6 +11,9 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'No se pudo exportar';
 
   @override
@@ -7378,7 +7381,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'Colores originales del fondo de pantalla';
 
   @override
-  String get wallpaperAccentResetHint => 'Mantén pulsado para restablecer';
+  String get wallpaperResetOriginal => 'Restablecer original';
+
+  @override
+  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
 
   @override
   String get wallpaperAll => 'Todos';
@@ -8391,7 +8397,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toca para cambiar el color de acento. Mantén pulsado para restablecerlo. Desliza hacia arriba para ver los detalles.';
+      'Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Fondo de pantalla';

@@ -11,6 +11,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -21,9 +22,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -69,9 +70,13 @@ void main() {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    final WallpaperDetailLoaded state = WallpaperDetailLoaded(entity: _prism(tier), paletteLoading: false);
+    final WallpaperDetailLoaded state = WallpaperDetailLoaded(
+      recommendations: const RecommendationState.exhausted(),
+      entity: _prism(tier),
+      paletteLoading: false,
+    );
     final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
-    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
+    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state.copyWith(panelCollapsed: false));
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -85,7 +90,6 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
     await tester.pumpAndSettle();
   }
 

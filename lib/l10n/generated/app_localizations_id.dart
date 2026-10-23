@@ -11,6 +11,9 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'Ekspor gagal';
 
   @override
@@ -7321,7 +7324,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'Warna asli wallpaper';
 
   @override
-  String get wallpaperAccentResetHint => 'Tekan lama untuk mengatur ulang';
+  String get wallpaperResetOriginal => 'Kembali ke asli';
+
+  @override
+  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
 
   @override
   String get wallpaperAll => 'Semua';
@@ -8316,7 +8322,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Ketuk untuk mengganti warna aksen. Tekan lama untuk mengatur ulang. Geser ke atas untuk melihat detail.';
+      'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';

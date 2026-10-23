@@ -1,4 +1,5 @@
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -37,6 +38,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     this.panelClosed = true,
     this.panelCollapsed = true,
     this.panelScrollInProgress = false,
+    this.recommendations = const RecommendationState.initial(),
   });
 
   final FeedItemEntity entity;
@@ -52,6 +54,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final bool panelClosed;
   final bool panelCollapsed;
   final bool panelScrollInProgress;
+  final RecommendationState recommendations;
 
   /// The colour variation applied to the wallpaper, or null while the original shows.
   Color? get tint => colorChanged ? accent : null;
@@ -68,6 +71,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     bool? panelClosed,
     bool? panelCollapsed,
     bool? panelScrollInProgress,
+    RecommendationState? recommendations,
   }) {
     return WallpaperDetailLoaded(
       entity: entity ?? this.entity,
@@ -81,6 +85,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
       panelClosed: panelClosed ?? this.panelClosed,
       panelCollapsed: panelCollapsed ?? this.panelCollapsed,
       panelScrollInProgress: panelScrollInProgress ?? this.panelScrollInProgress,
+      recommendations: recommendations ?? this.recommendations,
     );
   }
 
@@ -97,6 +102,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     panelClosed,
     panelCollapsed,
     panelScrollInProgress,
+    recommendations,
   ];
 }
 

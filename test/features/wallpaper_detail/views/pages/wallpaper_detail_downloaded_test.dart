@@ -17,6 +17,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -29,9 +30,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/wait_for_real_io.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -140,7 +141,12 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false, colors: const [Colors.teal]),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _wallpaper(),
+        paletteLoading: false,
+        colors: const [Colors.teal],
+      ),
     );
     final file = File('assets/images/prism.webp');
     final router = _MockStackRouter();
@@ -183,7 +189,12 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false, colors: const [Colors.teal]),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _wallpaper(),
+        paletteLoading: false,
+        colors: const [Colors.teal],
+      ),
     );
     final file = File('${Directory.systemTemp.path}/deleted-loaded-wallpaper.jpg');
 
@@ -253,6 +264,7 @@ void main() {
       bloc,
       const Stream<WallpaperDetailState>.empty(),
       initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _wallpaper(),
         paletteLoading: false,
         colors: const [Colors.teal, Colors.indigo],

@@ -86,7 +86,7 @@ class _WotdCardContent extends StatelessWidget {
     };
   }
 
-  void _openWallpaper(BuildContext context) {
+  void _openWallpaper(BuildContext context, String? heroTag) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
     CoinsService.instance.reportQuestEvent(QuestEvent.viewWotd);
     final PrismWallpaper? wallpaper = entity.wallpaper;
@@ -94,6 +94,7 @@ class _WotdCardContent extends StatelessWidget {
       wallpaper != null
           ? WallpaperDetailRoute(
               entity: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+              heroTag: heroTag,
             )
           : WallpaperDetailRoute(
               wallId: entity.wallId,
@@ -112,6 +113,8 @@ class _WotdCardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String photographer = entity.photographer.trim();
+    final PrismWallpaper? wallpaper = entity.wallpaper;
+    final String? heroTag = wallpaper == null ? null : prismHeroTag(context, 0, 'wall-of-the-day-${entity.wallId}');
     final Widget card = Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -119,6 +122,7 @@ class _WotdCardContent extends StatelessWidget {
           image: PrismImageTile(
             url: entity.thumbnailUrl,
             fallbackUrl: entity.url,
+            heroTag: heroTag,
             memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
           ),
           semanticLabel: photographer.isEmpty
@@ -135,7 +139,7 @@ class _WotdCardContent extends StatelessWidget {
           ),
           onTap: () {
             PrismHaptics.tap();
-            _openWallpaper(context);
+            _openWallpaper(context, heroTag);
           },
         ),
         // A sibling of the card, not a child, so the card's own semantics do not swallow it.

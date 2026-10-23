@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -17,11 +18,20 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 class WallpaperQuickActionRegion extends StatelessWidget {
-  const WallpaperQuickActionRegion({super.key, required this.item, required this.child, this.onShowLessLikeThis});
+  const WallpaperQuickActionRegion({
+    super.key,
+    required this.item,
+    required this.child,
+    this.onShowLessLikeThis,
+    this.onResetOriginal,
+    this.preview,
+  });
 
   final FeedItemEntity item;
   final Widget child;
   final VoidCallback? onShowLessLikeThis;
+  final VoidCallback? onResetOriginal;
+  final Widget? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +41,18 @@ class WallpaperQuickActionRegion extends StatelessWidget {
       unfavouriteLabel: context.l10n.wallpaperUnfavourite,
       shareLabel: context.l10n.wallpaperShareLink,
       showLessLabel: onShowLessLikeThis == null ? null : context.l10n.wallpaperShowLessLikeThis,
+      resetOriginalLabel: onResetOriginal == null ? null : context.l10n.wallpaperResetOriginal,
       readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
-      preview: PrismImageTile(
-        url: item.thumbnailUrl,
-        fallbackUrl: item.fullUrl,
-        borderRadius: PrismWallGrid.tileRadius,
+      preview:
+          preview ??
+          PrismImageTile(
+            url: item.thumbnailUrl,
+            fallbackUrl: item.source == WallpaperSource.prism ? null : item.fullUrl,
+            borderRadius: PrismWallGrid.tileRadius,
+          ),
+      onAction: (action) => unawaited(
+        _dispatch(context, item, action, onShowLessLikeThis: onShowLessLikeThis, onResetOriginal: onResetOriginal),
       ),
-      onAction: (action) => unawaited(_dispatch(context, item, action, onShowLessLikeThis: onShowLessLikeThis)),
       child: child,
     );
   }
@@ -48,6 +63,7 @@ Future<void> _dispatch(
   FeedItemEntity item,
   WallpaperQuickAction action, {
   VoidCallback? onShowLessLikeThis,
+  VoidCallback? onResetOriginal,
 }) async {
   switch (action) {
     case WallpaperQuickAction.favourite:
@@ -67,6 +83,8 @@ Future<void> _dispatch(
       );
     case WallpaperQuickAction.showLess:
       onShowLessLikeThis?.call();
+    case WallpaperQuickAction.resetOriginal:
+      onResetOriginal?.call();
   }
 }
 
