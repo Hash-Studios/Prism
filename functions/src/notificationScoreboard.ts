@@ -3,7 +3,7 @@ import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str, utcDateString} from "./common";
 
-/** Kinds shared with the app. A personal push to the uid topic and the token counts as two attempts. */
+/** Kinds shared with the app. Each bound-session token delivery counts as one attempt. */
 export const NOTIFICATION_KINDS = [
   "wotd",
   "wotd_creator",

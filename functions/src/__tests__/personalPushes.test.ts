@@ -14,6 +14,7 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
   const document = db.doc.bind(db);
   const inbox: unknown[] = [];
   const topics: string[] = [];
+  const messages: Array<{topic?: string; token?: string}> = [];
   let userLookups = 0;
   const usersCollection = {
     where: (_field: string, _op: string, email: string) => {
@@ -38,14 +39,30 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
     if (name === "walls") return {doc: () => ({get: async () => ({data: () => ({})})})};
     throw new Error(`Unexpected collection ${name}`);
   });
-  t.mock.method(db, "doc", (path: string) => path.startsWith("metrics/") ? document(path) : ({
-    get: async () => ({data: () => path === "usersv2/artist-1" ? {loggedIn: false} : {}}),
-  }));
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
-    topics.push(message.topic ?? "");
+  t.mock.method(db, "doc", (path: string) => {
+    if (path.startsWith("metrics/")) return document(path);
+    if (path.endsWith("/private/session")) {
+      const uid = path.split("/")[1];
+      const email = uid.startsWith("uid-") ? `${uid.slice(4)}@example.com` : "";
+      const user = users[email] ?? users[email.toLowerCase()];
+      const token = user?.sessionToken;
+      return {get: async () => ({data: () => token ? {
+        fcmToken: token,
+        fcmTokenBindingVersion: 1,
+        fcmTokenBindingToken: token,
+      } : {}})};
+    }
+    const email = path.split("/")[1]?.replace(/^uid-/, "");
+    const user = users[`${email}@example.com`] ?? users[`${email}@example.com`.toLowerCase()];
+    return {get: async () => ({data: () => path === "usersv2/artist-1" ? {loggedIn: false} :
+      user ? {loggedIn: user.loggedIn} : undefined})};
+  });
+  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; token?: string}) => {
+    messages.push(message);
+    if (message.topic) topics.push(message.topic);
     return "id";
   });
-  return {inbox, topics, userLookups: () => userLookups};
+  return {inbox, topics, messages, userLookups: () => userLookups};
 }
 
 test("campaign email target skips signed-out users and keeps inbox", async (t) => {
@@ -59,17 +76,18 @@ test("campaign email target skips signed-out users and keeps inbox", async (t) =
 });
 
 for (const [email, user, topic, state] of [
-  ["in@example.com", {loggedIn: true}, "u_uid-in", "signed-in"],
-  ["old@example.com", {}, "u_uid-old", "legacy"],
+  ["in@example.com", {loggedIn: true, sessionToken: "signed-in-token"}, "signed-in-token", "signed-in"],
+  ["old@example.com", {}, "", "legacy"],
 ] as const) {
-  test(`campaign email target still sends for ${state} user`, async (t) => {
-    const {inbox, topics} = setup(t, user ? {[email]: user} : {});
+  test(`campaign email target for ${state} user uses only an available bound token`, async (t) => {
+    const {inbox, topics, messages} = setup(t, user ? {[email]: user} : {});
     await onCampaignNotificationRequested.run({
       params: {requestId: "r1"},
       data: {data: () => ({title: "t", body: "b", modifier: email})},
     } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
     assert.equal(inbox.length, 1);
-    assert.deepEqual(topics.sort(), [topic, `${topic}_loc_v1`]);
+    assert.deepEqual(topics, []);
+    assert.deepEqual(messages.map((message) => message.topic ?? message.token), topic ? [topic] : []);
   });
 }
 
@@ -83,20 +101,15 @@ test("campaign email target for an unmatched address keeps the inbox and sends n
   assert.deepEqual(topics, []);
 });
 
-test("campaign email target also pushes to the stored token, once per device", async (t) => {
-  const {topics} = setup(t, {"in@example.com": {loggedIn: true, fcmToken: "legacy-token"}});
-  const messages: Array<{topic?: string; token?: string}> = [];
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; token?: string}) => {
-    messages.push(message);
-    return "id";
-  });
+test("campaign email target pushes only to the bound private session token", async (t) => {
+  const {topics, messages} = setup(t, {"in@example.com": {loggedIn: true, sessionToken: "session-token", fcmToken: "legacy-token"}});
   await onCampaignNotificationRequested.run({
     params: {requestId: "r1"},
     data: {data: () => ({title: "t", body: "b", modifier: "in@example.com"})},
   } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
   assert.deepEqual(
     messages.map((m) => m.topic ?? m.token).sort(),
-    ["u_uid-in", "u_uid-in_loc_v1", "legacy-token"].sort(),
+    ["session-token"],
   );
   assert.deepEqual(topics, []);
 });

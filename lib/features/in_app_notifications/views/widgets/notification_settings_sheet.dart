@@ -252,12 +252,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
     );
     if (value) {
-      final String? userTopic = userTopicFromId(app_state.prismUser.id);
-      if (userTopic != null) {
-        await subscribeToTopicSafely(
+      final String? legacyUserTopic = userTopicFromId(app_state.prismUser.id);
+      if (legacyUserTopic != null) {
+        await unsubscribeFromTopicSafely(
           widget.permissions.messaging,
-          userTopic,
-          sourceTag: 'notification.settings.followers.enable.user_topic',
+          legacyUserTopic,
+          sourceTag: 'notification.settings.followers.enable.user_topic_cleanup',
         );
       }
       final String? followersTopic = followersTopicFromEmail(app_state.prismUser.email);

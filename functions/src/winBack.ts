@@ -3,7 +3,6 @@ import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {
   sendNotification,
-  userIdToTopic,
   userPushTokens,
 } from "./notificationHelper";
 import {db, REGION, str} from "./common";
@@ -203,10 +202,6 @@ export const sendWinBackPushes = onSchedule(
 
                 const wall = n === 60 ? await wallForDay60() : undefined;
                 const targets = [
-                  {
-                    fcmTarget: {topic: userIdToTopic(uid)},
-                    nativeLocalization: false,
-                  },
                   ...(await userPushTokens(uid, data.fcmToken)).map(
                     ({token, nativeLocalization}) => ({
                       fcmTarget: {token},
@@ -234,6 +229,7 @@ export const sendWinBackPushes = onSchedule(
                 ) {
                   return false;
                 }
+                if (targets.length === 0) return false;
                 let accepted = 0;
                 for (const {fcmTarget, nativeLocalization} of targets) {
                   const sent = await sendNotification({

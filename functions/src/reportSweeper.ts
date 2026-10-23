@@ -3,7 +3,6 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {sendToUserByEmail} from "./notificationHelper";
-import {notificationCopyPayload} from "./notificationCatalog";
 import {db, REGION} from "./common";
 
 const ESCALATE_AFTER_MS = 12 * 60 * 60 * 1000;
@@ -63,28 +62,12 @@ export const sweepOpenReports = onSchedule(
       return;
     }
     for (const report of due) {
-      const data = report.data();
-      const isWall =
-        data.contentType === "wall" &&
-        typeof data.targetFirestoreDocId === "string";
       for (const adminEmail of adminEmails) {
         await sendToUserByEmail(
           {
-            ...notificationCopyPayload({
-              kind: "reportNeedsReview",
-              contentType:
-                typeof data.contentType === "string" ?
-                  data.contentType :
-                  "content",
-              reason: typeof data.reason === "string" ? data.reason : "",
-            }),
-            data: isWall ?
-              {
-                route: "wall",
-                wall_id: data.targetFirestoreDocId,
-                report_id: report.id,
-              } :
-              {route: "content_report", report_id: report.id},
+            title: "Content report needs review",
+            body: "A content report is waiting for review.",
+            data: {route: "content_report", report_id: report.id},
             modifier: adminEmail,
             channelId: "moderation",
             scoreKind: "moderation",

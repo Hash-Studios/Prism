@@ -1,7 +1,7 @@
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
-import {db as database, findUserByEmail, str} from "./common";
+import {db as database, findUserByEmail} from "./common";
 import {recordPushOutcome, scoreKindFor} from "./notificationScoreboard";
 import {
   isNativeLocalizationTopic,
@@ -29,8 +29,7 @@ export interface NotificationPayload {
   /** If true, only send FCM push; do not write an in-app notification doc.
    *  Use for e.g. follower broadcasts where one doc per recipient would not scale. */
   pushOnly?: boolean;
-  /** Pushes with the same key replace each other on the device, so one event
-   *  sent to both the uid topic and the legacy email topic shows once. */
+  /** Pushes with the same key replace each other on the device during retry or duplicate delivery. */
   collapseKey?: string;
   /** Fixed inbox doc id, so a retried or repeated event rewrites one doc instead of adding another. */
   docId?: string;
@@ -127,13 +126,29 @@ async function sendPush(
   fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>,
 ): Promise<boolean> {
   const messaging = admin.messaging();
+  if ("topic" in fcmTarget && fcmTarget.topic.startsWith("u_")) {
+    logger.warn("Refusing to send a personal notification to a UID topic.", {
+      route: payload.data.route,
+    });
+    return false;
+  }
+  if (
+    "condition" in fcmTarget &&
+    (payload.modifier.includes("@") || /['"]u_[^'"]*['"]\s+in\s+topics/.test(fcmTarget.condition))
+  ) {
+    logger.warn("Refusing a personal or UID-topic condition target.", {
+      route: payload.data.route,
+    });
+    return false;
+  }
   if ("topic" in fcmTarget && payload.modifier.includes("@")) {
     const legacyTopic = isNativeLocalizationTopic(fcmTarget.topic) ?
       fcmTarget.topic.slice(0, -"_loc_v1".length) :
       fcmTarget.topic;
-    if (legacyTopic === emailToTopic(payload.modifier)) {
+    const isFollowerTopic = legacyTopic.endsWith("_posts") || legacyTopic.startsWith("posts_");
+    if (legacyTopic === emailToTopic(payload.modifier) || !isFollowerTopic) {
       logger.warn(
-        "Refusing to push a personal notification to an email-prefix topic.",
+        "Refusing to push a personal notification to an audience topic.",
         {route: payload.data.route},
       );
       return true;
@@ -158,7 +173,12 @@ async function sendPush(
     if (kind) await recordPushOutcome(kind, "sends");
     const messageId = await messaging.send(message);
     if (kind) await recordPushOutcome(kind, "accepts");
-    logger.info("FCM push sent.", {messageId, route: payload.data.route, kind, target: fcmTarget});
+    logger.info("FCM push sent.", {
+      messageId,
+      route: payload.data.route,
+      kind,
+      targetType: "token" in fcmTarget ? "token" : "topic" in fcmTarget ? "topic" : "condition",
+    });
     return true;
   } catch (err) {
     if (kind) await recordPushOutcome(kind, "fails");
@@ -254,7 +274,7 @@ export interface PushRecipient {
   uid?: string;
   email: string;
   loggedOut?: boolean;
-  /** `usersv2.fcmToken`, which builds before the private session doc wrote. */
+  /** Deprecated legacy token input. Kept for caller compatibility; never used for delivery. */
   legacyToken?: unknown;
 }
 
@@ -263,12 +283,15 @@ export interface UserPushToken {
   nativeLocalization: boolean;
 }
 
-/** The app stores the token in private/session; older builds wrote usersv2.fcmToken. */
+export const FCM_TOKEN_BINDING_VERSION = 1;
+
+/** Reads only string tokens from private/session. */
 export function pickFcmToken(
   sessionToken: unknown,
   legacyToken: unknown,
 ): string {
-  return str(sessionToken) || str(legacyToken);
+  void legacyToken;
+  return typeof sessionToken === "string" ? sessionToken.trim() : "";
 }
 
 export async function userPushTokens(
@@ -283,8 +306,12 @@ export async function userPushTokens(
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
   }
-  const sessionToken = str(session?.fcmToken);
+  const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
   if (sessionToken) {
+    if (
+      session?.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
+      session?.fcmTokenBindingToken !== sessionToken
+    ) return [];
     return [
       {
         token: sessionToken,
@@ -294,11 +321,20 @@ export async function userPushTokens(
       },
     ];
   }
-  const legacy = pickFcmToken("", legacyToken);
-  return legacy ? [{token: legacy, nativeLocalization: false}] : [];
+  return [];
 }
 
-/** Same key on every push of one event, so a device that gets the topic and the token push shows it once. */
+async function userCanReceivePersonalPush(uid: string): Promise<boolean> {
+  try {
+    const user = (await database.doc(`usersv2/${uid}`).get()).data();
+    return Boolean(user) && user?.loggedIn !== false;
+  } catch (err) {
+    logger.warn("Could not confirm the personal push recipient account.", {uid, err});
+    return false;
+  }
+}
+
+/** Same key on every push of one event, so a retry replaces the existing device notification. */
 function personalCollapseKey(payload: PersonalPayload): string {
   const hash = createHash("sha1")
     .update(JSON.stringify([payload.title, payload.body, payload.data]))
@@ -308,17 +344,32 @@ function personalCollapseKey(payload: PersonalPayload): string {
 }
 
 /**
- * Writes the in-app doc (unless pushOnly), then pushes to the user's uid topic and FCM token. The email-prefix
- * topic is shared by every address with the same prefix, so personal payloads never go there: a recipient with
- * no uid gets the inbox doc and no push. Returns false when every push failed.
+ * Writes the in-app doc (unless pushOnly), then pushes only to the user's private session FCM token. The email-prefix
+ * topic is shared by every address with the same prefix, so personal payloads never go there. Returns false when a
+ * push failed; an account without a private session token keeps its inbox entry and receives no push.
  */
 export async function sendToUser(
   payload: PersonalPayload,
   recipient: PushRecipient,
   pushEnabled = true,
 ): Promise<boolean> {
-  await sendNotification(payload);
+  const inboxPayload = {...payload, fcmTarget: undefined};
+  await sendNotification(inboxPayload);
   if (!pushEnabled || recipient.loggedOut) return true;
+
+  let pushPayload: PersonalPayload = inboxPayload;
+  if (scoreKindFor(payload) === "moderation") {
+    const reportId = typeof payload.data.report_id === "string" ? payload.data.report_id : "";
+    pushPayload = {
+      ...inboxPayload,
+      title: reportId ? "Content report needs review" : "Moderation update",
+      body: reportId ? "A content report is waiting for review." : "Open Prism to review.",
+      message: undefined,
+      imageUrl: undefined,
+      data: {route: "content_report", ...(reportId ? {report_id: reportId} : {})},
+      nativeLocalization: false,
+    };
+  }
 
   if (!recipient.uid) {
     logger.warn("No uid for the recipient, skipping the personal push.", {
@@ -326,12 +377,12 @@ export async function sendToUser(
     });
     return true;
   }
+  if (!(await userCanReceivePersonalPush(recipient.uid))) return true;
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets: Array<{
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
     nativeLocalization?: boolean;
   }> = [
-    {fcmTarget: {topic: userIdToTopic(recipient.uid)}},
     ...(await userPushTokens(recipient.uid, recipient.legacyToken)).map(
       ({token, nativeLocalization}) => ({
         fcmTarget: {token},
@@ -342,7 +393,7 @@ export async function sendToUser(
   const results = await Promise.all(
     targets.map(({fcmTarget, nativeLocalization}) =>
       sendNotification({
-        ...payload,
+        ...pushPayload,
         collapseKey,
         fcmTarget,
         nativeLocalization,
@@ -350,6 +401,7 @@ export async function sendToUser(
       }),
     ),
   );
+  if (targets.length === 0) return true;
   return results.some(Boolean);
 }
 
