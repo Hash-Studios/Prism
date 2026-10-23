@@ -1,6 +1,6 @@
 ---
 name: prism-release
-description: Ship a Prism release. Covers deploying Cloud Functions and Firestore indexes/rules, running one-off data migrations, bumping the pubspec version and build number, building a signed Android app bundle and uploading it to Google Play, building and uploading a signed iOS build to TestFlight and App Store Connect, uploading Sentry symbols, and smoke-testing the build before it goes to a store. Use when the user asks to release Prism, ship a build, cut a build, push to Play, push to TestFlight, deploy Prism functions, run a Prism migration, or bump the Prism version.
+description: Ship a Prism release. Covers deploying Cloud Functions and Firestore indexes/rules, running one-off data migrations, bumping the pubspec version and build number, building a signed Android app bundle and uploading it to Google Play, building and uploading a signed iOS build to TestFlight and App Store Connect, uploading Sentry symbols, smoke-testing the build, and preparing an approved Telegram release announcement. Use when the user asks to release Prism, ship a build, cut a build, push to Play, push to TestFlight, deploy Prism functions, run a Prism migration, or bump the Prism version.
 ---
 
 # Prism Release
@@ -120,11 +120,11 @@ reach that step.
 
 ## Flags
 
-- *(no flags)*: full release. Preflight, then backend deploy, then migrations (dry run only unless
-  the human says apply), then version bump, then Android build plus Play upload, then iOS build
-  plus TestFlight upload, then Sentry symbol upload, then smoke test, then summary. Store
-  submission (App Store review, Play track promotion, rules tightening) is never automatic. See
-  "Human-only steps".
+- *(no flags)*: full release. Preflight, backend deploy, migrations (dry run unless approved),
+  version bump, release notes and Telegram draft, Android/iOS builds, smoke test before store
+  uploads, then approved uploads and Sentry symbols. Post the Telegram announcement only after
+  confirmed public availability and approval. Store submission (App Store review, Play track
+  promotion, rules tightening) is never automatic. See "Human-only steps".
 - `--backend-only`: deploy functions plus Firestore indexes/rules only. Skips version bump and
   both client builds.
 - `--android-only`: bump (unless `--skip-bump`), build the aab, upload via fastlane or hand off
@@ -220,7 +220,7 @@ doppler secrets set <NAME> --project prism --config prd
 - `REVENUECAT_SECRET_KEY`: RevenueCat, Project settings, API keys, new secret key, **API
   version V1** (`sk_...`). `syncSubscription` calls the v1 API.
 - `STUDIO_SECRET`: shared secret for the Prism Studio pipeline (`functions/src/studio/process.ts`).
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`: Studio review alerts (`functions/src/studio/telegram.ts`).
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`: Studio approved-wall posts (`functions/src/studio/telegram.ts`), also used for an explicitly approved release announcement. Read both from Doppler `prd`; never print or put their values in argv or logs.
 - `FAL_API_KEY`: fal.ai key for the Depth Effect detector (`functions/src/wallDepth.ts`).
 - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`: Cloudflare R2 S3 token for the private and preview wall buckets (`functions/src/r2Storage.ts`). The R2 routing names (`R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL`) are plain env vars: set them in Doppler `prd` too, because `make functions-env` ships them and a function with partial R2 config fails closed.
 
@@ -370,6 +370,11 @@ python3 -c 'import json,sys; print(json.dumps([{"language":"en-GB","text":open(s
 Show the human both versions before any upload. The full note goes to TestFlight What to Test
 and the App Store "What's New" (4000 characters max).
 
+Also draft separate Telegram copy from the same release diff. Use only user-visible changes and
+claims supported by the release. Keep the draft pending until public availability and store links
+are confirmed. Show the exact copy and selected images for feedback before posting. See
+[references/telegram-release.md](references/telegram-release.md).
+
 ### 8. Android: upload (human decides the track and the rollout)
 
 Preferred: `gplay`. It already has Release manager access to `com.hash.prism`.
@@ -453,6 +458,13 @@ a rewarded ad, upload a wallpaper, restore purchases, receive a notification, de
 account. Use the **`verify-prism`** skill (owned by another agent in this project) to drive the
 simulator/emulator for this if it is available; otherwise do it manually and say so in the summary.
 
+While smoke-testing, record the run id and paths of feature screenshots that show released
+changes. Reuse reviewed originals from `.claude/skills/verify-prism/artifacts/<run_id>/` where
+they fit. Record platform, app version/build, commit SHA, feature, and source path for each image.
+Review every selected image at full size for private data. If it needs cropping, resizing, or
+another publishing change, keep the verification original and save a separate publish copy beside
+the release artifacts. Missing screenshots block the Telegram post, not the store workflow.
+
 ### 11b. Tag and GitHub release (after the store uploads)
 
 Tag the commit you built (the version bump commit), then publish a GitHub release on that tag.
@@ -468,6 +480,21 @@ Before you attach the aab, check that it is this build:
 `bundletool dump manifest --bundle=<aab> --xpath=/manifest/@android:versionCode` must print `<N>`.
 Pass `--notes-start-tag` so the notes list only the PRs since the last release. The repo is public, so
 the release reaches an audience: get the human's yes first.
+
+### 11c. Telegram release announcement (after public store availability)
+
+Skip this for `--backend-only` unless the human asks for an announcement. A Play upload, App Store
+Connect upload, or TestFlight availability is not public availability. Wait until the relevant
+store listing offers the released version, then verify the version and platform availability in
+each listing. Source links from `lib/core/constants/app_constants.dart` and verify that each opens
+the correct Prism listing; do not copy website links without checking them.
+
+Prepare final copy and reviewed images, then show the channel, copy, image order, platform
+availability, links, and image provenance to the human. Post only after explicit approval of
+that exact announcement. Approval of the release or a draft is not posting approval. If the human
+approved the exact same copy, images, and channel earlier, do not ask them again. Any material
+change needs approval. Follow [references/telegram-release.md](references/telegram-release.md).
+Never invoke the Studio approval hook or alter its daily claim records.
 
 ### 12. Summary
 
@@ -485,6 +512,7 @@ Prism release: version <VERSION>, build <N>.
   App Store:          not submitted this run (human decides)
   Sentry symbols:     uploaded (Android) / not uploaded (iOS build-ipa doesn't wire this)
   Smoke test:         <what was verified, or "not run, do this before shipping">
+  Telegram:           <posted message ids and image sources, or "draft only" / "skipped">
   Version bump commit: <sha, merged to master in PR #<n> (or "not merged, human decides")>
   GitHub release:     v<VERSION>+<N> with app-release.aab           (or "not created")
 ```
@@ -499,6 +527,7 @@ Prism release: version <VERSION>, build <N>.
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
 - Pushing the version-bump commit and merging its PR to `master`
 - Pushing the release tag and `gh release create`
+- Posting a Telegram release announcement (approval must cover the exact copy, images, and channel)
 
 ## Known gaps
 
