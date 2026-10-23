@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -17,17 +18,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FavouriteWallpaperCard extends StatelessWidget {
-  const FavouriteWallpaperCard({super.key, required this.item, required this.child, this.enabled = true});
+  const FavouriteWallpaperCard({
+    super.key,
+    required this.item,
+    required this.child,
+    this.enabled = true,
+    this.onShowLessLikeThis,
+  });
 
   final FeedItemEntity item;
   final Widget child;
   final bool enabled;
+  final VoidCallback? onShowLessLikeThis;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Expanded(child: child),
+      Expanded(
+        child: enabled
+            ? WallpaperQuickActionRegion(item: item, onShowLessLikeThis: onShowLessLikeThis, child: child)
+            : child,
+      ),
       if (enabled) FavouriteWallpaperFooter(item: item) else const SizedBox(height: favouriteFooterHeight),
     ],
   );

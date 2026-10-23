@@ -14,7 +14,6 @@ import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
@@ -239,10 +238,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                         heroTag: prismHeroTag(this, index, wallId),
                       ),
                     );
-                  },
-                  onLongPress: () {
-                    PrismHaptics.impact();
-                    unawaited(showWallpaperQuickActions(context, entity));
                   },
                 ),
               ),

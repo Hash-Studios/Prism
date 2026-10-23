@@ -30,7 +30,7 @@ class FeedWallTile extends StatelessWidget {
   final int memCacheHeight;
   final VoidCallback? onVisible;
 
-  /// Adds "Show less like this" to the quick actions sheet.
+  /// Offers the personalized feed's real dismiss and undo flow.
   final VoidCallback? onShowLessLikeThis;
 
   @override
@@ -40,7 +40,6 @@ class FeedWallTile extends StatelessWidget {
       index: index,
       crossAxisCount: crossAxisCount,
       memCacheHeight: memCacheHeight,
-      quickActions: true,
       onShowLessLikeThis: onShowLessLikeThis,
       onVisible: onVisible,
     );

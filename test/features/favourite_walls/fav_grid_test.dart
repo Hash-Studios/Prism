@@ -100,6 +100,17 @@ void main() {
     );
   }
 
+  Future<void> selectWithHold(WidgetTester tester, Finder target) async {
+    await tester.tap(find.byTooltip('More favourites actions'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('0 selected'), findsOneWidget);
+    await tester.longPress(target);
+  }
+
   List<String> recordHaptics(WidgetTester tester) {
     const MethodChannel channel = MethodChannel('prism/haptics');
     final bool wasEnabled = PrismHaptics.enabled;
@@ -282,7 +293,7 @@ void main() {
       ]);
       await pumpLoaded(tester);
 
-      await tester.longPress(find.bySemanticsLabel('Wallpaper by Ada'));
+      await selectWithHold(tester, find.bySemanticsLabel('Wallpaper by Ada'));
       await tester.pump();
       await tester.tap(find.bySemanticsLabel('Wallpaper by Grace'));
       await tester.pump();
@@ -344,7 +355,7 @@ void main() {
       await tester.pump();
       expect(shown.single, contains('older version'));
 
-      await tester.longPress(find.byType(FavouriteTileImage));
+      await selectWithHold(tester, find.byType(FavouriteTileImage));
       await tester.pump();
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.bySemanticsLabel('Remove from favourites'), findsOneWidget);
@@ -481,7 +492,7 @@ void main() {
       testWidgets('selected Set keeps ${wall.id} identity', (tester) async {
         createToolsBloc(<FavouriteWallEntity>[wall]);
         await pumpLoaded(tester);
-        await tester.longPress(find.byType(FavouriteTileImage));
+        await selectWithHold(tester, find.byType(FavouriteTileImage));
         await tester.pump();
 
         final button = tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton));
@@ -547,7 +558,7 @@ void main() {
         ),
       ]);
       await pumpLoaded(tester);
-      await tester.longPress(find.byType(FavouriteTileImage));
+      await selectWithHold(tester, find.byType(FavouriteTileImage));
       await tester.pump();
       await tester.tap(find.bySemanticsLabel('Share'));
       await settle(tester);
@@ -583,7 +594,7 @@ void main() {
       createToolsBloc(<FavouriteWallEntity>[starter, prismFav('a', author: 'Ada')]);
       await pumpLoaded(tester);
 
-      await tester.longPress(find.bySemanticsLabel('Wallpaper by Prism'));
+      await selectWithHold(tester, find.bySemanticsLabel('Wallpaper by Prism'));
       await tester.pump();
       await tester.tap(find.bySemanticsLabel('Wallpaper by Ada'));
       await tester.pump();
@@ -610,7 +621,8 @@ void main() {
         pexelsFav('external', author: 'External'),
       ]);
       await pumpLoaded(tester);
-      await tester.longPress(
+      await selectWithHold(
+        tester,
         find.descendant(
           of: find.byKey(const ValueKey<String>('legacy-prism')),
           matching: find.byType(FavouriteTileImage),

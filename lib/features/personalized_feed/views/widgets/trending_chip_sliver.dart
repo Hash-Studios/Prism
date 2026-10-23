@@ -61,7 +61,6 @@ class TrendingChipSliver extends StatelessWidget {
               index: index,
               crossAxisCount: crossAxisCount,
               memCacheHeight: tileMemCacheHeight,
-              quickActions: true,
               sourceContext: 'home_trending_grid',
               overlay: boostedTagFor(wall),
             ),

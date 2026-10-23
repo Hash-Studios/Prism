@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
-import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_hold_region.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
@@ -16,60 +16,44 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
-enum _QuickAction { favourite, share, set, showLess }
+class WallpaperQuickActionRegion extends StatelessWidget {
+  const WallpaperQuickActionRegion({super.key, required this.item, required this.child, this.onShowLessLikeThis});
 
-/// The long-press menu for a wallpaper tile. Every grid opens this one sheet.
-///
-/// [onShowLessLikeThis] adds the "Show less like this" row. Only the home feed passes it.
-Future<void> showWallpaperQuickActions(
-  BuildContext context,
-  FeedItemEntity item, {
-  VoidCallback? onShowLessLikeThis,
-  String? requestId,
-}) async {
-  final bool isFavourite = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
-  final _QuickAction? action = await showPrismSheet<_QuickAction>(
-    context,
-    builder: (BuildContext sheetContext) => PrismSheetBody(
-      // The body already pads 24 on each side, so the rows drop their own inset and line up with the header.
-      child: ListTileTheme.merge(
-        contentPadding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            ListTile(
-              leading: Icon(isFavourite ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-              title: Text(isFavourite ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite),
-              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.favourite),
-            ),
-            ListTile(
-              leading: const Icon(Icons.link_rounded),
-              title: Text(context.l10n.wallpaperShareLink),
-              onTap: () => Navigator.of(sheetContext).pop(_QuickAction.share),
-            ),
-            if (!hideSetWallpaperUi)
-              ListTile(
-                leading: const Icon(Icons.wallpaper_rounded),
-                title: Text(context.l10n.wallpaperSetAsWallpaper),
-                onTap: () => Navigator.of(sheetContext).pop(_QuickAction.set),
-              ),
-            if (onShowLessLikeThis != null)
-              ListTile(
-                leading: const Icon(Icons.visibility_off_outlined),
-                title: Text(context.l10n.wallpaperShowLessLikeThis),
-                subtitle: Text(context.l10n.wallpaperFewerLikeThisConfirmation),
-                onTap: () => Navigator.of(sheetContext).pop(_QuickAction.showLess),
-              ),
-          ],
-        ),
+  final FeedItemEntity item;
+  final Widget child;
+  final VoidCallback? onShowLessLikeThis;
+
+  @override
+  Widget build(BuildContext context) {
+    return WallpaperHoldRegion(
+      identity: (item.source, item.id, item.thumbnailUrl),
+      favouriteLabel: context.l10n.wallpaperFavourite,
+      unfavouriteLabel: context.l10n.wallpaperUnfavourite,
+      shareLabel: context.l10n.wallpaperShareLink,
+      showLessLabel: onShowLessLikeThis == null ? null : context.l10n.wallpaperShowLessLikeThis,
+      readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
+      preview: PrismImageTile(
+        url: item.thumbnailUrl,
+        fallbackUrl: item.fullUrl,
+        borderRadius: PrismWallGrid.tileRadius,
       ),
-    ),
-  );
-  if (action == null || !context.mounted) return;
+      onAction: (action) => unawaited(_dispatch(context, item, action, onShowLessLikeThis: onShowLessLikeThis)),
+      child: child,
+    );
+  }
+}
+
+Future<void> _dispatch(
+  BuildContext context,
+  FeedItemEntity item,
+  WallpaperQuickAction action, {
+  VoidCallback? onShowLessLikeThis,
+}) async {
   switch (action) {
-    case _QuickAction.favourite:
-      await _toggleFavourite(context, item, favourite: !isFavourite);
-    case _QuickAction.share:
+    case WallpaperQuickAction.favourite:
+      final bool saved = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
+      await _toggleFavourite(context, item, favourite: !saved);
+    case WallpaperQuickAction.share:
       unawaited(
         copyWallpaperLink(
           item.id,
@@ -81,21 +65,7 @@ Future<void> showWallpaperQuickActions(
           l10n: context.l10n,
         ),
       );
-    case _QuickAction.set:
-      try {
-        await SetWallpaperFlow.run(
-          context,
-          url: item.fullUrl,
-          thumbnailUrl: item.thumbnailUrl,
-          wallpaperId: item.id,
-          wallpaperSource: item.source,
-          entryPoint: 'wallpaper_quick_actions',
-          requestId: requestId,
-        );
-      } catch (error, stackTrace) {
-        logger.e('Set wallpaper from the tile menu failed', error: error, stackTrace: stackTrace);
-      }
-    case _QuickAction.showLess:
+    case WallpaperQuickAction.showLess:
       onShowLessLikeThis?.call();
   }
 }

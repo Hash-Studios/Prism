@@ -166,12 +166,7 @@ class _Depth {
                       final PrismWallpaper wall = walls[index];
                       final PrismFeedItem item = PrismFeedItem(id: wall.id, wallpaper: wall);
                       if (wall.boostedUntil != null) {
-                        return WallpaperTile(
-                          item: item,
-                          index: index,
-                          quickActions: true,
-                          overlay: boostedTagFor(wall),
-                        );
+                        return WallpaperTile(item: item, index: index, overlay: boostedTagFor(wall));
                       }
                       return FeedWallTile(item: item, index: index, crossAxisCount: 3, memCacheHeight: 700);
                     }, childCount: walls.length),

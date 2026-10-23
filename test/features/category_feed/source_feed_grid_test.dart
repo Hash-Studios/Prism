@@ -295,7 +295,14 @@ void main() {
       final tiles = tester.widgetList<WallpaperTile>(find.byType(WallpaperTile)).toList();
       expect(tiles.map((tile) => tile.item.id), <String>['last-wallpaper', 'wh-1']);
       expect(tiles.map((tile) => tile.sourceContext), <String?>['category_prism_first', null]);
-      expect(tiles.every((tile) => tile.quickActions), isTrue);
+      for (final tile in tiles) {
+        final gesture = await tester.startGesture(tester.getCenter(find.byWidget(tile)));
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+        await gesture.up();
+        await tester.pump();
+        expect(find.bySemanticsLabel('Share link'), findsNothing);
+      }
     });
 
     testWidgets('without the flag a Wallhaven grid still hides other sources', (tester) async {

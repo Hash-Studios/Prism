@@ -260,7 +260,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a long press on a rounded tile opens the quick actions sheet', (tester) async {
+  testWidgets('a rounded collection tile keeps quick actions open for the held pointer only', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     final originalHttpOverrides = HttpOverrides.current;
@@ -305,11 +305,14 @@ void main() {
     expect(tester.widget<PrismWallTile>(tileFinder).borderRadius, PrismWallGrid.tileRadius);
     expect(tester.widget<PrismWallTile>(tileFinder).fallbackUrl, 'https://example.test/wall.jpg');
 
-    await tester.longPress(tileFinder);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Share link'), findsOneWidget);
-    expect(find.text('Favourite'), findsOneWidget);
+    final gesture = await tester.startGesture(tester.getCenter(tileFinder));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
+    expect(find.text('Set as wallpaper'), findsNothing);
+    await gesture.up();
+    await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsNothing);
   });
 
   testWidgets('a tap opens the wall from the loaded data, with no second fetch', (tester) async {

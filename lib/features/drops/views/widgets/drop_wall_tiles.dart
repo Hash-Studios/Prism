@@ -9,6 +9,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/painters/foil_sheen_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
@@ -79,6 +80,7 @@ class DropWallGrid extends StatelessWidget {
             wall: wall,
             serial: dropSerial(index, drop.walls.length),
             busy: busyKey == wall.id,
+            quickActionItem: unlock == null ? null : dropWallFeedItem(wall, unlock),
             unlocked: unlock != null,
             missed: unlock == null && !canBuy,
             onTap: unlock != null
@@ -134,6 +136,7 @@ class DropWallTile extends StatefulWidget {
     required this.missed,
     required this.busy,
     required this.onTap,
+    this.quickActionItem,
   });
 
   final DropWall wall;
@@ -142,6 +145,7 @@ class DropWallTile extends StatefulWidget {
   final bool missed;
   final bool busy;
   final VoidCallback? onTap;
+  final FeedItemEntity? quickActionItem;
 
   @override
   State<DropWallTile> createState() => _DropWallTileState();
@@ -169,7 +173,14 @@ class _DropWallTileState extends State<DropWallTile> {
     final String label = widget.wall.by.isEmpty
         ? l10n.economyDropWallSemantics(state, widget.serial)
         : l10n.economyDropWallBySemantics(state, widget.serial, widget.wall.by);
-    return PrismWallTile(url: widget.wall.thumb, semanticLabel: label, onTap: widget.onTap, overlay: _overlay());
+    final Widget tile = PrismWallTile(
+      url: widget.wall.thumb,
+      semanticLabel: label,
+      onTap: widget.onTap,
+      overlay: _overlay(),
+    );
+    final FeedItemEntity? item = widget.quickActionItem;
+    return item == null ? tile : WallpaperQuickActionRegion(item: item, child: tile);
   }
 
   Widget _overlay() {

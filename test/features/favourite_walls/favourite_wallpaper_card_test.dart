@@ -206,7 +206,6 @@ void main() {
               child: WallpaperTile(
                 item: _item(WallpaperSource.prism),
                 index: 0,
-                quickActions: true,
                 overlay: const Align(alignment: Alignment.topRight, child: Text('premium badge')),
               ),
             ),
@@ -220,7 +219,7 @@ void main() {
     expect(find.text('premium badge'), findsOneWidget);
     final image = tester.widget<PrismWallTile>(find.byType(PrismWallTile));
     expect(image.onTap, isNotNull);
-    expect(image.onLongPress, isNotNull);
+    expect(image.onLongPress, isNull);
     expect(
       find.descendant(of: find.byType(PrismWallTile), matching: find.byIcon(Icons.favorite_border_rounded)),
       findsNothing,

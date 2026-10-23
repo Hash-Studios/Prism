@@ -2,34 +2,28 @@ import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../support/in_memory_local_store.dart';
 import '../../support/favourite_test_scope.dart';
-
-class _MockStackRouter extends Mock implements StackRouter {}
+import '../../support/in_memory_local_store.dart';
 
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
@@ -94,7 +88,7 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpTile(WidgetTester tester, {bool quickActions = true, VoidCallback? onShowLess}) {
+  Future<void> pumpTile(WidgetTester tester, {VoidCallback? onShowLess}) {
     return tester.pumpWidget(
       MaterialApp(
         builder: favouriteTestBuilder,
@@ -107,7 +101,7 @@ void main() {
             body: SizedBox(
               width: 120,
               height: 240,
-              child: WallpaperTile(item: _item, index: 0, quickActions: quickActions, onShowLessLikeThis: onShowLess),
+              child: WallpaperTile(item: _item, index: 0, onShowLessLikeThis: onShowLess),
             ),
           ),
         ),
@@ -115,105 +109,72 @@ void main() {
     );
   }
 
-  testWidgets('a long press opens the sheet with favourite, share and set on Android', (tester) async {
+  Future<TestGesture> hold(WidgetTester tester) async {
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(PrismImageTile)));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 180));
+    return gesture;
+  }
+
+  testWidgets('all tiles offer favourite and share while held, never set or fake see less', (tester) async {
     await pumpTile(tester);
-
-    await tester.longPress(find.byType(WallpaperTile));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Favourite'), findsOneWidget);
-    expect(find.text('Share link'), findsOneWidget);
-    expect(find.text('Set as wallpaper'), findsOneWidget);
+    final gesture = await hold(tester);
+    expect(find.bySemanticsLabel('Favourite'), findsNWidgets(2));
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    expect(find.text('Set as wallpaper'), findsNothing);
     expect(find.text('Show less like this'), findsNothing);
+    await gesture.up();
+    await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsNothing);
+    expect(events, isEmpty);
   });
 
-  testWidgets('iOS has no set row, because the app cannot set a wallpaper there', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    try {
-      await pumpTile(tester);
-
-      await tester.longPress(find.byType(WallpaperTile));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Share link'), findsOneWidget);
-      expect(find.text('Set as wallpaper'), findsNothing);
-    } finally {
-      debugDefaultTargetPlatformOverride = null;
-    }
-  });
-
-  testWidgets('Show less like this appears only when the grid passes a callback, and calls it', (tester) async {
-    int calls = 0;
-    await pumpTile(tester, onShowLess: () => calls++);
-
-    await tester.longPress(find.byType(WallpaperTile));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Show less like this'));
-    await tester.pumpAndSettle();
-
-    expect(calls, 1);
-    expect(find.text('Show less like this'), findsNothing);
-  });
-
-  testWidgets('a tile without the flag opens no sheet on a long press', (tester) async {
-    registerFallbackValue(WallpaperDetailRoute());
-    final router = _MockStackRouter();
-    when(() => router.push(any())).thenAnswer((_) async => null);
-    await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        home: StackRouterScope(
-          controller: router,
-          stateHash: 0,
-          child: const Scaffold(
-            body: SizedBox(width: 120, height: 240, child: WallpaperTile(item: _item, index: 0)),
-          ),
-        ),
-      ),
+  testWidgets('release on see less calls the real callback once after the overlay is gone', (tester) async {
+    var calls = 0;
+    await pumpTile(
+      tester,
+      onShowLess: () {
+        expect(find.bySemanticsLabel('Share link'), findsNothing);
+        calls++;
+      },
     );
-
-    await tester.longPress(find.byType(WallpaperTile));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Share link'), findsNothing);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Show less like this')));
+    await tester.pump();
+    expect(find.text('Show less like this'), findsOneWidget);
+    await gesture.up();
+    await tester.pump();
+    expect(calls, 1);
   });
 
-  testWidgets('the Favourite row asks for a favourite, and the row reads Unfavourite for a favourite', (tester) async {
+  testWidgets('favourite and unfavourite release map to adapter desired state, not detail or set', (tester) async {
     await pumpTile(tester);
-    await tester.longPress(find.byType(WallpaperTile));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Favourite'));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 5));
-
-    final FavouriteWallsEvent event = events.single;
-    expect(event.mapOrNull(toggleRequested: (e) => e.desired), isTrue);
-    expect(event.mapOrNull(toggleRequested: (e) => e.wall.id), 'wall-1');
+    var gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Favourite').last));
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(events.single.mapOrNull(toggleRequested: (e) => e.desired), isTrue);
+    expect(events.single.mapOrNull(toggleRequested: (e) => e.wall.id), 'wall-1');
 
     await favourites.setWallFavourite('u', 'wall-1', true);
-    await tester.longPress(find.byType(WallpaperTile));
-    await tester.pumpAndSettle();
-    expect(find.text('Unfavourite'), findsOneWidget);
-    await tester.tap(find.text('Unfavourite'));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 5));
+    gesture = await hold(tester);
+    expect(find.bySemanticsLabel('Unfavourite'), findsOneWidget);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Unfavourite')));
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(events.last.mapOrNull(toggleRequested: (e) => e.desired), isFalse);
+    await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('a favourite has a labelled interactive footer outside the image', (tester) async {
+  testWidgets('the labelled interactive favourite footer stays outside the image', (tester) async {
     await favourites.setWallFavourite('u', 'wall-1', true);
     current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
-    final SemanticsHandle semantics = tester.ensureSemantics();
+    final semantics = tester.ensureSemantics();
     await pumpTile(tester);
-
-    final String label = AppLocalizationsEn().wallpaperUnfavourite;
+    final label = AppLocalizationsEn().wallpaperUnfavourite;
     expect(find.byTooltip(label), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp(label)), findsOneWidget);
-    expect(find.ancestor(of: find.byIcon(Icons.favorite_rounded), matching: find.byType(InkWell)), findsOneWidget);
     expect(
       tester.getRect(find.byIcon(Icons.favorite_rounded)).top,
       greaterThan(tester.getRect(find.byType(PrismImageTile)).bottom),
@@ -221,39 +182,39 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('the footer stays visible even when long-press quick actions are disabled', (tester) async {
+  testWidgets('guest favourite keeps the adapter path without a sign-in gate', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    current = current.copyWith(userId: '');
     await pumpTile(tester);
-    expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
-    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
-
-    await favourites.setWallFavourite('u', 'wall-1', true);
-    current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
-    states.add(current);
-    await pumpTile(tester, quickActions: false);
-    expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
-    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Favourite').last));
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(events.single.mapOrNull(toggleRequested: (e) => e.desired), isTrue);
+    expect(find.text('Sign in'), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('showWallpaperQuickActions can be opened straight from a grid', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        home: BlocProvider<FavouriteWallsBloc>.value(
-          value: bloc,
-          child: Builder(
-            builder: (context) =>
-                TextButton(onPressed: () => showWallpaperQuickActions(context, _item), child: const Text('open')),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Share link'), findsOneWidget);
+  testWidgets('share release uses the existing clipboard link flow and does not share the original URL', (
+    tester,
+  ) async {
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') clipboard = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pumpTile(tester);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share link')));
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pump(const Duration(seconds: 5));
+    expect(clipboard, contains('id=wall-1'));
+    expect(clipboard, contains('source=prism'));
+    expect(clipboard, isNot(contains('https://example.test/wall-1.jpg')));
+    expect(events, isEmpty);
   });
 }

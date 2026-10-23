@@ -644,10 +644,11 @@ void main() {
   testWidgets('Show less like this gives an Undo that brings the wallpaper back', (tester) async {
     await pumpScreen(tester);
     final int before = find.byType(WallpaperTile).evaluate().length;
-    await tester.longPress(find.byType(WallpaperTile).first);
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(WallpaperTile).first));
+    await tester.pump(const Duration(milliseconds: 600));
     await _settle(tester);
-
-    await tester.tap(find.text('Show less like this'));
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Show less like this')));
+    await gesture.up();
     await _settle(tester);
 
     expect(find.byType(WallpaperTile).evaluate().length, lessThan(before));
