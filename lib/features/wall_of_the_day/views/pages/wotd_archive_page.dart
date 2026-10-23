@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -85,7 +86,12 @@ class _PicksGrid extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
       itemCount: picks.length,
-      gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: 0.45),
+      gridDelegate: PrismWallGrid.delegate(
+        context,
+        footerHeight: favouriteFooterHeight,
+        columns: columns,
+        aspectRatio: 0.45,
+      ),
       itemBuilder: (context, index) => _PickTile(pick: picks[index], index: index),
     );
   }
@@ -118,17 +124,20 @@ class _PickTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Expanded(
-          child: PrismWallTile(
-            url: pick.wallpaper.thumbnailUrl,
-            fallbackUrl: pick.wallpaper.fullUrl,
-            memCacheHeight: decodeHeight,
-            heroTag: heroTag,
-            semanticLabel: context.l10n.wallpaperWotdPickedOn(
-              wallpaperSemanticLabel(pick.wallpaper.core.authorName, context.l10n),
-              dateLabel,
+          child: FavouriteWallpaperCard(
+            item: PrismFeedItem(id: pick.wallpaper.id, wallpaper: pick.wallpaper),
+            child: PrismWallTile(
+              url: pick.wallpaper.thumbnailUrl,
+              fallbackUrl: pick.wallpaper.fullUrl,
+              memCacheHeight: decodeHeight,
+              heroTag: heroTag,
+              semanticLabel: context.l10n.wallpaperWotdPickedOn(
+                wallpaperSemanticLabel(pick.wallpaper.core.authorName, context.l10n),
+                dateLabel,
+              ),
+              overlay: depthTagFor(pick.wallpaper.depthTier),
+              onTap: () => _open(context, heroTag),
             ),
-            overlay: depthTagFor(pick.wallpaper.depthTier),
-            onTap: () => _open(context, heroTag),
           ),
         ),
         Padding(

@@ -27,6 +27,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
@@ -50,6 +51,7 @@ import 'package:mocktail/mocktail.dart';
 import '../support/fake_app_analytics.dart';
 import '../support/in_memory_local_store.dart';
 import 'home_render_support.dart';
+import '../support/favourite_test_scope.dart';
 
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
@@ -155,7 +157,11 @@ class _Depth {
                 SliverPadding(
                   padding: PrismFeedLayout.gridPadding,
                   sliver: SliverGrid(
-                    gridDelegate: PrismWallGrid.delegate(context, spacing: PrismFeedLayout.gridSpacing),
+                    gridDelegate: PrismWallGrid.delegate(
+                      context,
+                      spacing: PrismFeedLayout.gridSpacing,
+                      footerHeight: favouriteFooterHeight,
+                    ),
                     delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
                       final PrismWallpaper wall = walls[index];
                       final PrismFeedItem item = PrismFeedItem(id: wall.id, wallpaper: wall);
@@ -303,6 +309,7 @@ class _Depth {
 }
 
 void main() {
+  setUpFavouriteCounts();
   final List<String> results = <String>[];
 
   setUpAll(() async {

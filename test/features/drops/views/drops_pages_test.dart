@@ -21,12 +21,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../drop_fixtures.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBloc {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
 void main() {
+  setUpFavouriteCounts();
   late _MockDropsBloc bloc;
   late _MockStackRouter router;
 
@@ -58,6 +60,7 @@ void main() {
     whenListen(bloc, const Stream<DropsState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -119,6 +122,39 @@ void main() {
   const DropUnlock ownedA = DropUnlock(wallId: 'A', weekKey: '2026-W42', url: 'https://full.test/A.jpg');
 
   group('DropsPage', () {
+    testWidgets('unlocking a grid wall keeps its tile and plays the thaw before removing the seal', (tester) async {
+      final unlocked = ValueNotifier<Map<String, DropUnlock>>({});
+      addTearDown(unlocked.dispose);
+      final drop = dropWithin(const Duration(days: 3));
+      await pump(
+        tester,
+        at(drop),
+        Scaffold(
+          body: ValueListenableBuilder<Map<String, DropUnlock>>(
+            valueListenable: unlocked,
+            builder: (context, owned, _) => CustomScrollView(
+              slivers: [DropWallGrid(drop: drop, unlocked: owned, canBuy: true, onLockedTap: (_) {})],
+            ),
+          ),
+        ),
+      );
+      final tile = find.byKey(const ValueKey<String>('A'));
+      final originalState = tester.state(tile);
+      final seal = find.descendant(of: tile, matching: find.byType(DropSeal));
+      expect(seal, findsOneWidget);
+
+      unlocked.value = {'A': ownedA};
+      await tester.pump();
+
+      expect(tester.state(tile), same(originalState));
+      expect(seal, findsOneWidget);
+      expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+      expect(seal, findsNothing);
+      expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+    });
+
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {
       await pump(tester, DropsState.initial(), const DropsPage());
 
@@ -280,6 +316,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
@@ -302,6 +339,7 @@ void main() {
       tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       Widget tile({required bool unlocked}) => MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -25,6 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -45,6 +48,7 @@ const FeedItemEntity _item = PrismFeedItem(
 );
 
 void main() {
+  setUpFavouriteCounts();
   late FavoritesLocalDataSource favourites;
   late _MockFavouriteWallsBloc bloc;
   late StreamController<FavouriteWallsState> states;
@@ -93,6 +97,7 @@ void main() {
   Future<void> pumpTile(WidgetTester tester, {bool quickActions = true, VoidCallback? onShowLess}) {
     return tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -156,6 +161,7 @@ void main() {
     when(() => router.push(any())).thenAnswer((_) async => null);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -198,30 +204,41 @@ void main() {
     expect(events.last.mapOrNull(toggleRequested: (e) => e.desired), isFalse);
   });
 
-  testWidgets('a heart badge with a label marks a favourite tile, and never takes the tap', (tester) async {
+  testWidgets('a favourite has a labelled interactive footer outside the image', (tester) async {
     await favourites.setWallFavourite('u', 'wall-1', true);
+    current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
     final SemanticsHandle semantics = tester.ensureSemantics();
     await pumpTile(tester);
 
-    final String label = AppLocalizationsEn().wallpaperFavouriteStatus;
+    final String label = AppLocalizationsEn().wallpaperUnfavourite;
     expect(find.byTooltip(label), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp(label)), findsOneWidget);
-    expect(find.ancestor(of: find.byIcon(Icons.favorite_rounded), matching: find.byType(IgnorePointer)), findsWidgets);
+    expect(find.ancestor(of: find.byIcon(Icons.favorite_rounded), matching: find.byType(InkWell)), findsOneWidget);
+    expect(
+      tester.getRect(find.byIcon(Icons.favorite_rounded)).top,
+      greaterThan(tester.getRect(find.byType(PrismImageTile)).bottom),
+    );
     semantics.dispose();
   });
 
-  testWidgets('no heart badge for a wallpaper that is not a favourite, or on a tile without the flag', (tester) async {
+  testWidgets('the footer stays visible even when long-press quick actions are disabled', (tester) async {
     await pumpTile(tester);
     expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
 
     await favourites.setWallFavourite('u', 'wall-1', true);
+    current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
+    states.add(current);
     await pumpTile(tester, quickActions: false);
     expect(find.byTooltip(AppLocalizationsEn().wallpaperFavouriteStatus), findsNothing);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
   });
 
   testWidgets('showWallpaperQuickActions can be opened straight from a grid', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

@@ -12,10 +12,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
 void main() {
+  setUpFavouriteCounts();
   late _MockPublicProfileBloc bloc;
 
   setUp(() {
@@ -26,6 +28,7 @@ void main() {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -79,6 +82,7 @@ void main() {
     whenListen(bloc, states.stream, initialState: loading);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

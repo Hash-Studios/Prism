@@ -8,6 +8,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/favourite_test_scope.dart';
 
 const FeedItemEntity _item = WallhavenFeedItem(
   id: 'wall',
@@ -23,12 +24,14 @@ const FeedItemEntity _item = WallhavenFeedItem(
 );
 
 void main() {
+  setUpFavouriteCounts();
   testWidgets('defaults decode to the laid-out height in physical pixels and keeps its hero', (tester) async {
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -54,6 +57,7 @@ void main() {
     // A landscape box, as on the Wall of the Day card. Both sizes would squash a portrait wallpaper into it.
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -75,6 +79,7 @@ void main() {
   testWidgets('WallpaperTile forwards its retained decode-height argument', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -95,6 +100,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WallpaperTile(item: _item, index: 0, crossAxisCount: 3),

@@ -15,6 +15,7 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -152,7 +153,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
             bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
           itemCount: walls.length + (state.hasMore ? 1 : 0),
-          gridDelegate: PrismWallGrid.delegate(context),
+          gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
           itemBuilder: (context, index) {
             if (index == walls.length) {
               return SeeMoreButton(

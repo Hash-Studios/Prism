@@ -1,6 +1,7 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
@@ -68,6 +69,7 @@ class PagedChipSliver extends StatelessWidget {
               sliver: SliverGrid(
                 gridDelegate: PrismWallGrid.delegate(
                   context,
+                  footerHeight: favouriteFooterHeight,
                   columns: crossAxisCount,
                   spacing: PrismFeedLayout.gridSpacing,
                 ),

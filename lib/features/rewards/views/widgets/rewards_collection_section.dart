@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/streak/streak_unlock.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -123,7 +124,8 @@ class _CollectionGrid extends StatelessWidget {
       builder: (context, constraints) {
         final double cell = (constraints.maxWidth - PrismWallGrid.spacing * (_kColumns - 1)) / _kColumns;
         // The tile, then room for a two line caption.
-        final double extent = cell / _kTileAspect + PrismSpace.xs + MediaQuery.textScalerOf(context).scale(32);
+        final double extent =
+            cell / _kTileAspect + PrismSpace.xs + MediaQuery.textScalerOf(context).scale(32) + favouriteFooterHeight;
         return ValueListenableBuilder<StreakStatus>(
           valueListenable: CoinsService.instance.streakNotifier,
           builder: (context, streak, _) => ValueListenableBuilder<int>(
@@ -213,47 +215,51 @@ class _CollectionCard extends StatelessWidget {
         ? l10n.wallpaperImageSemanticLabel
         : wallpaper.core.category!;
     final String caption = _caption(l10n);
-    return Semantics(
-      button: true,
-      label: l10n.economyCollectionItemSemantics(category, unlocked.toString(), caption),
-      excludeSemantics: true,
-      onTap: () => _onTap(context),
-      child: PressScale(
-        scale: unlocked ? 0.96 : 0.98,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _onTap(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: PrismWallTile(
-                  url: wallpaper.thumbnailUrl,
-                  overlay: unlocked
-                      ? null
-                      : ClipRRect(
-                          borderRadius: PrismWallGrid.tileRadius,
-                          child: ColoredBox(
-                            color: cs.scrim.withValues(alpha: 0.42),
-                            child: Center(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: cs.scrim.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(PrismSpace.xs + 1),
-                                  child: Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
+    return FavouriteWallpaperCard(
+      item: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+      enabled: unlocked,
+      child: Semantics(
+        button: true,
+        label: l10n.economyCollectionItemSemantics(category, unlocked.toString(), caption),
+        excludeSemantics: true,
+        onTap: () => _onTap(context),
+        child: PressScale(
+          scale: unlocked ? 0.96 : 0.98,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _onTap(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: PrismWallTile(
+                    url: wallpaper.thumbnailUrl,
+                    overlay: unlocked
+                        ? null
+                        : ClipRRect(
+                            borderRadius: PrismWallGrid.tileRadius,
+                            child: ColoredBox(
+                              color: cs.scrim.withValues(alpha: 0.42),
+                              child: Center(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: cs.scrim.withValues(alpha: 0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(PrismSpace.xs + 1),
+                                    child: Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: PrismSpace.xs - 2),
-              Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
-            ],
+                const SizedBox(height: PrismSpace.xs - 2),
+                Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
+              ],
+            ),
           ),
         ),
       ),

@@ -29,6 +29,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_user_block_repository.dart';
+import '../../support/favourite_test_scope.dart';
 import '../../support/profile_user_fixture.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
@@ -109,6 +110,7 @@ const PublicProfileEntity _ana = PublicProfileEntity(
 );
 
 void main() {
+  setUpFavouriteCounts();
   late _MockPublicProfileBloc bloc;
   late _FakeProfileRepository repository;
   late FakeUserBlockRepository blocks;
@@ -148,6 +150,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(profileIdentifier: identifier),
+        builder: favouriteTestBuilder,
       ),
     );
     // Glint and skeletons loop, so pump a bounded time instead of settling.

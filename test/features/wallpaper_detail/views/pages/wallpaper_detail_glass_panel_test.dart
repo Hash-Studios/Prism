@@ -42,6 +42,7 @@ import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -93,6 +94,7 @@ Future<void> _waitForCachedImage(WidgetTester tester) async {
 }
 
 void main() {
+  setUpFavouriteCounts();
   String? copied;
   late OfflineAssetFixture offlineAssets;
 

@@ -34,6 +34,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
@@ -56,6 +57,7 @@ WallpaperSearchPage _page(
 }) => (provider: provider, results: results, prismResults: prismResults, isLocal: isLocal);
 
 void main() {
+  setUpFavouriteCounts();
   late _MockWallpaperSearchService service;
   late InMemoryLocalStore store;
   late FakeAppAnalytics analytics;
@@ -92,6 +94,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: SearchScreen(),
@@ -109,6 +112,7 @@ void main() {
   Future<void> submit(WidgetTester tester, String query) async {
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: SearchScreen(),
@@ -356,6 +360,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: SearchScreen(),
@@ -380,6 +385,7 @@ void main() {
     );
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: SearchScreen(),
@@ -470,6 +476,7 @@ void main() {
     Future<List<String>> openTags() async {
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           key: UniqueKey(),
@@ -536,6 +543,7 @@ void main() {
     Future<void> tapSwatch(WidgetTester tester, String name) async {
       await tester.pumpWidget(
         const MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: SearchScreen(),
@@ -643,6 +651,7 @@ void main() {
       answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
       await tester.pumpWidget(
         const MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: SearchScreen(),
@@ -679,6 +688,7 @@ void main() {
       answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
       await tester.pumpWidget(
         const MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: SearchScreen(),

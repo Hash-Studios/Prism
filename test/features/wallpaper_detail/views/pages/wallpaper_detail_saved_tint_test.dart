@@ -43,6 +43,7 @@ import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -76,6 +77,7 @@ const _prismWallpaper = FeedItemEntity.prism(
 );
 
 void main() {
+  setUpFavouriteCounts();
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => registerFallbackValue(WallpaperFilterRoute(filePath: 'unused')));
 

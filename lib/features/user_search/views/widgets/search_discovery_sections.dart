@@ -9,6 +9,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -95,26 +96,29 @@ class _TrendingList extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<WallhavenWallpaper> items = walls.take(10).toList(growable: false);
     return _hRow(
-      height: _trendingHeight,
+      height: _trendingHeight + favouriteFooterHeight,
       count: items.length,
       builder: (context, index) {
         final WallhavenWallpaper wall = items[index];
         return SizedBox(
           width: _trendingWidth,
-          child: PrismWallTile(
-            url: wall.thumbnailUrl,
-            fallbackUrl: wall.core.fullUrl,
-            memCacheHeight: _decodeHeight(context, _trendingWidth),
-            semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),
-            onTap: () {
-              PrismHaptics.tap();
-              context.router.push(
-                WallpaperDetailRoute(
-                  entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
-                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                ),
-              );
-            },
+          child: FavouriteWallpaperCard(
+            item: WallhavenFeedItem(id: wall.id, wallpaper: wall),
+            child: PrismWallTile(
+              url: wall.thumbnailUrl,
+              fallbackUrl: wall.core.fullUrl,
+              memCacheHeight: _decodeHeight(context, _trendingWidth),
+              semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),
+              onTap: () {
+                PrismHaptics.tap();
+                context.router.push(
+                  WallpaperDetailRoute(
+                    entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
+                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                  ),
+                );
+              },
+            ),
           ),
         );
       },

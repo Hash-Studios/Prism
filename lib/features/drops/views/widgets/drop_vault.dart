@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,7 @@ class DropVault extends StatelessWidget {
             child: Text(drop.displayTitle(context.l10n), style: PrismTextStyles.caption(context)),
           ),
           SizedBox(
-            height: _tileHeight,
+            height: _tileHeight + favouriteFooterHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: PrismWallGrid.padding,
@@ -45,13 +46,16 @@ class DropVault extends StatelessWidget {
                 final DropWall wall = drop.walls.where((w) => unlocked.containsKey(w.id)).elementAt(index);
                 return SizedBox(
                   width: _tileWidth,
-                  child: PrismWallTile(
-                    url: wall.thumb,
-                    semanticLabel: wall.by.isEmpty
-                        ? l10n.economyDropUnlockedWall
-                        : l10n.economyDropUnlockedWallBy(wall.by),
-                    onTap: () => openDropWall(context, wall, unlocked[wall.id]!),
-                    overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
+                  child: FavouriteWallpaperCard(
+                    item: dropWallFeedItem(wall, unlocked[wall.id]!),
+                    child: PrismWallTile(
+                      url: wall.thumb,
+                      semanticLabel: wall.by.isEmpty
+                          ? l10n.economyDropUnlockedWall
+                          : l10n.economyDropUnlockedWallBy(wall.by),
+                      onTap: () => openDropWall(context, wall, unlocked[wall.id]!),
+                      overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
+                    ),
                   ),
                 );
               },

@@ -25,6 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -32,6 +33,7 @@ class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWal
     implements FavouriteWallsBloc {}
 
 void main() {
+  setUpFavouriteCounts();
   setUpAll(() => registerFallbackValue(const CategoryFeedEvent.started()));
   setUp(() => getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore())));
   tearDown(getIt.reset);
@@ -62,6 +64,7 @@ void main() {
   }
 
   Widget host(_MockCategoryFeedBloc bloc) => MaterialApp(
+    builder: favouriteTestBuilder,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
 
@@ -80,6 +83,7 @@ void main() {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -119,6 +123,7 @@ void main() {
     WallpaperImpressionSession? current;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -176,6 +181,7 @@ void main() {
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -261,6 +267,7 @@ void main() {
       when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
       await tester.pumpWidget(
         MaterialApp(
+          builder: favouriteTestBuilder,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 

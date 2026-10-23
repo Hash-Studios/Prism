@@ -3,6 +3,7 @@ import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 /// The one wallpaper grid layout. Every grid of wallpapers in the app uses these numbers, so the feed, search,
 /// collections, favourites and profiles line up.
@@ -27,14 +28,47 @@ abstract final class PrismWallGrid {
     int? columns,
     double? aspectRatio,
     double spacing = PrismWallGrid.spacing,
+    double footerHeight = 0,
   }) {
-    return SliverGridDelegateWithFixedCrossAxisCount(
+    return _FooterGridDelegate(
       crossAxisCount: columns ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width),
       mainAxisSpacing: spacing,
       crossAxisSpacing: spacing,
       childAspectRatio: aspectRatio ?? PrismFeedLayout.gridTileAspectRatio,
+      footerHeight: footerHeight,
     );
   }
+}
+
+class _FooterGridDelegate extends SliverGridDelegateWithFixedCrossAxisCount {
+  const _FooterGridDelegate({
+    required super.crossAxisCount,
+    required super.mainAxisSpacing,
+    required super.crossAxisSpacing,
+    required super.childAspectRatio,
+    required this.footerHeight,
+  });
+
+  final double footerHeight;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final width =
+        (constraints.crossAxisExtent - crossAxisSpacing * (crossAxisCount - 1)).clamp(0.0, double.infinity) /
+        crossAxisCount;
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: crossAxisCount,
+      mainAxisSpacing: mainAxisSpacing,
+      crossAxisSpacing: crossAxisSpacing,
+      mainAxisExtent: width / childAspectRatio + footerHeight,
+    ).getLayout(constraints);
+  }
+
+  @override
+  bool shouldRelayout(SliverGridDelegateWithFixedCrossAxisCount oldDelegate) =>
+      oldDelegate is! _FooterGridDelegate ||
+      footerHeight != oldDelegate.footerHeight ||
+      super.shouldRelayout(oldDelegate);
 }
 
 /// One wallpaper in a grid: rounded image, hairline outline, press feedback and a slot for a badge.

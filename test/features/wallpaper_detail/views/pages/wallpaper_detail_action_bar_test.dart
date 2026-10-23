@@ -46,6 +46,7 @@ import '../../../../support/coins_test_backend.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
   _DetailTestAssetStore({required super.directory, required this.sourceFile});
@@ -149,6 +150,7 @@ Future<Uint8List> _redAndBluePng() async {
 }
 
 void main() {
+  setUpFavouriteCounts();
   setUpAll(() => registerFallbackValue(const SelectAccentColor(color: Colors.black)));
 
   late DownloadedWallIndex downloaded;

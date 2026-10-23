@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -70,7 +71,7 @@ class UserProfileGrid extends StatelessWidget {
             SliverPadding(
               padding: PrismWallGrid.padding,
               sliver: SliverGrid.builder(
-                gridDelegate: PrismWallGrid.delegate(context),
+                gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == walls.length) {
@@ -87,25 +88,28 @@ class UserProfileGrid extends StatelessWidget {
                     wall.collections ?? const <String>[],
                   );
                   final Widget? depthTag = depthTagFor(wall.depthTier);
-                  return PrismWallTile(
-                    key: ValueKey<String>(wall.id),
-                    memCacheHeight: decodeHeight,
-                    url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
-                    heroTag: heroTag,
-                    semanticLabel: wallpaperSemanticLabel(wall.by, context.l10n),
-                    overlay: !viewerPremium && premiumWall
-                        ? Stack(fit: StackFit.expand, children: <Widget>[const _PremiumMark(), ?depthTag])
-                        : depthTag,
-                    onTap: () {
-                      PrismHaptics.tap();
-                      context.router.push(
-                        WallpaperDetailRoute(
-                          entity: wall.toFeedItem(),
-                          analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
-                          heroTag: heroTag,
-                        ),
-                      );
-                    },
+                  return FavouriteWallpaperCard(
+                    item: wall.toFeedItem(),
+                    child: PrismWallTile(
+                      key: ValueKey<String>(wall.id),
+                      memCacheHeight: decodeHeight,
+                      url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
+                      heroTag: heroTag,
+                      semanticLabel: wallpaperSemanticLabel(wall.by, context.l10n),
+                      overlay: !viewerPremium && premiumWall
+                          ? Stack(fit: StackFit.expand, children: <Widget>[const _PremiumMark(), ?depthTag])
+                          : depthTag,
+                      onTap: () {
+                        PrismHaptics.tap();
+                        context.router.push(
+                          WallpaperDetailRoute(
+                            entity: wall.toFeedItem(),
+                            analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
+                            heroTag: heroTag,
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),

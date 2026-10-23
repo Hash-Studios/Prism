@@ -64,6 +64,7 @@ import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 
@@ -118,6 +119,7 @@ class _FakeDropsRepository implements DropsRepository {
 }
 
 void main() {
+  setUpFavouriteCounts();
   List<String> recordHaptics(WidgetTester tester) {
     const MethodChannel channel = MethodChannel('prism/haptics');
     final bool wasEnabled = PrismHaptics.enabled;
@@ -244,7 +246,7 @@ void main() {
 
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
-          child: child!,
+          child: favouriteTestBuilder(context, child),
         ),
         home: Scaffold(
           body: TickerMode(
@@ -777,6 +779,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

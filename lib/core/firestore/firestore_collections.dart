@@ -10,6 +10,7 @@ class FirebaseCollections {
   static const String aiGenerations = 'aiGenerations';
   static const String coinTransactions = 'coinTransactions';
   static const String wallOfTheDay = 'wall_of_the_day';
+  static const String wallpaperStats = 'wallpaper_stats';
   static const String notificationRequests = 'notificationRequests';
   static const String economyConfig = 'economyConfig';
   static const String drops = 'drops';

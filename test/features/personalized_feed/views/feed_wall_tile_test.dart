@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/favourite_test_scope.dart';
 import '../../../support/in_memory_local_store.dart';
 
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
@@ -28,6 +29,7 @@ const FeedItemEntity _item = FeedItemEntity.prism(
 );
 
 void main() {
+  setUpFavouriteCounts();
   setUp(() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));

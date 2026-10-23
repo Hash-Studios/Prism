@@ -24,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
 import 'support/guest_store_fixture.dart';
 
@@ -34,6 +35,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
 void main() {
+  setUpFavouriteCounts();
+
   setUpAll(() {
     registerFallbackValue(const FetchFavouriteWallsParams(userId: 'user_1'));
     registerFallbackValue(

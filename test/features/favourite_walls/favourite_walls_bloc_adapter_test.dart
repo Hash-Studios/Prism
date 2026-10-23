@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'support/fav_fixtures.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockFetch extends Mock implements FetchFavouriteWallsUseCase {}
 
@@ -23,6 +24,7 @@ class _MockToggle extends Mock implements ToggleFavouriteWallUseCase {}
 class _MockClear extends Mock implements ClearFavouriteWallsUseCase {}
 
 void main() {
+  setUpFavouriteCounts();
   late _MockFetch fetch;
   late _MockToggle toggle;
   late _MockClear clear;

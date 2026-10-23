@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -48,6 +49,7 @@ FeedItemEntity _item(String id) => FeedItemEntity.prism(
 );
 
 void main() {
+  setUpFavouriteCounts();
   late OfflineAssetFixture offlineAssets;
 
   setUp(() async {

@@ -24,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
+import '../../../support/favourite_test_scope.dart';
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
@@ -47,6 +48,7 @@ PrismWallpaper _wall(String id, {int? days, int? cost}) => PrismWallpaper(
 );
 
 Widget _host(Widget child, Brightness brightness) => MaterialApp(
+  builder: favouriteTestBuilder,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
 
@@ -55,6 +57,7 @@ Widget _host(Widget child, Brightness brightness) => MaterialApp(
 );
 
 void main() {
+  setUpFavouriteCounts();
   tearDown(() async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.streakNotifier.value = StreakStatus.empty;
@@ -191,6 +194,7 @@ void main() {
     late TextStyle style;
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -228,6 +232,7 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(firestore);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

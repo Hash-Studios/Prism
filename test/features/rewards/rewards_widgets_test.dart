@@ -27,6 +27,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/favourite_test_scope.dart';
 import '../quests/fake_quests_repository.dart';
 
 class _MockBadgesBloc extends MockBloc<BadgesEvent, BadgesState> implements BadgesBloc {}
@@ -66,6 +67,7 @@ Future<void> _pump(WidgetTester tester, ThemeData theme, Widget child) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpFavouriteCounts();
   final CoinsService svc = CoinsService.instance;
   final int balance = svc.balanceNotifier.value;
 
@@ -140,6 +142,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: kDarkTheme,
+        builder: favouriteTestBuilder,
         home: const RewardsPage(showBack: false),
       ),
     );
@@ -177,6 +180,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
 
         theme: kLightTheme,
+        builder: favouriteTestBuilder,
         home: RewardsPage(showBack: false, scrollToEarn: scrollToEarn),
       ),
     );
@@ -282,7 +286,7 @@ void main() {
           theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
-            child: child!,
+            child: favouriteTestBuilder(context, child),
           ),
           home: const RewardsPage(showBack: false),
         ),

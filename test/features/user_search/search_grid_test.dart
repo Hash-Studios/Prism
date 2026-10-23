@@ -27,6 +27,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/favourite_test_scope.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
@@ -51,6 +52,7 @@ FeedItemEntity _wallpaper(int index) {
 }
 
 void main() {
+  setUpFavouriteCounts();
   late _MockWallpaperSearchService search;
 
   setUp(() {
@@ -75,6 +77,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -89,6 +92,8 @@ void main() {
     );
 
     expect(find.bySemanticsLabel('Wallpaper by Author 23'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsWidgets);
+    expect(find.byTooltip('Favourite'), findsWidgets);
     expect(find.byType(SeeMoreButton), findsOneWidget);
     semantics.dispose();
   });
@@ -129,6 +134,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -152,6 +158,7 @@ void main() {
   testWidgets('does not show See more for an empty first page', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -177,6 +184,7 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(100)]);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -210,6 +218,7 @@ void main() {
     ).thenThrow(StateError('offline'));
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -236,6 +245,7 @@ void main() {
   testWidgets('labels local search results and does not offer remote pagination', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -274,6 +284,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -303,6 +314,7 @@ void main() {
   testWidgets('shows the From Prism row above the provider results', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -332,6 +344,7 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(200), _wallpaper(201)]);
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -364,6 +377,7 @@ void main() {
   testWidgets('a Prism-only page never asks the external providers for more or a refresh', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -409,6 +423,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -453,6 +468,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -499,6 +515,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -528,6 +545,7 @@ void main() {
   testWidgets('a loaded grid runs no skeleton ticker behind it', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -562,6 +580,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -591,6 +610,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 

@@ -31,6 +31,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -86,6 +87,7 @@ Future<void> _waitForImageDecode(WidgetTester tester, ImageProvider provider) as
 }
 
 void main() {
+  setUpFavouriteCounts();
   setUpAll(() {
     registerFallbackValue(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: File('unused')));
   });
