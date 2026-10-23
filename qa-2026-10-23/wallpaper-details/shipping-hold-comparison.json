@@ -1,0 +1,67 @@
+{
+  "ref_energy": 0.00959,
+  "cand_energy": 0.09391,
+  "energy_ratio": 0.102,
+  "temporal_corr": null,
+  "ref_moving": true,
+  "cand_moving": true,
+  "motion_status": "compared",
+  "motion_score": 10.2,
+  "motion_energy_score": 10.2,
+  "motion_score_meaning": "motion_energy_similarity_only",
+  "timing_diagnostics": {
+    "status": "inconclusive",
+    "reason": "unequal_length",
+    "score": null,
+    "cadence_verified": false,
+    "sampled_profile": {
+      "status": "inconclusive",
+      "reason": "unequal_length",
+      "correlation": null
+    },
+    "recommendation": "Recapture equal-length sequences over independently verified matching windows; do not truncate or stretch their signatures to infer timing. These inputs contain no timestamps. Independently verify cadence, duration and interaction alignment using source timestamps before judging temporal fidelity."
+  },
+  "ref_signature": [
+    0.0001,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.0045,
+    0.0035,
+    0.0009,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.0088,
+    0.0281,
+    0.0508,
+    0.0646,
+    0.0591
+  ],
+  "cand_signature": [
+    0.1594,
+    0.3327,
+    0.0038,
+    0.004,
+    0.0001,
+    0.2323,
+    0.0886,
+    0.0204,
+    0.004
+  ],
+  "frames": {
+    "reference": 24,
+    "candidate": 10
+  },
+  "critique_rubric": "Motion comparison (both animate; motion energy ratio 0.10). `motion_status` is compared. A null `motion_score` is inconclusive (static or capture_unreliable), not a perfect 100. `motion_energy_score` aliases `motion_score` and measures energy similarity only, not animation fidelity. Read timing_diagnostics status, reason and recommendation: without timestamps timing is inconclusive and cadence is not verified. sampled_profile and its temporal_corr alias are optional frame-index correlation, not rhythm or elapsed-time alignment. The motion_signature chart (green=reference, blue=candidate) shows sampled intensity against frame index, not guaranteed capture cadence. A one-shot animation may have finished before capture. Confirm capture state before attributing a low energy score to the product.",
+  "stub": false,
+  "visuals": []
+}
