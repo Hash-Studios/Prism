@@ -6,12 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _Counts implements FavouriteCountsRepository {
   final calls = <Set<String>>[];
-  final pending = <Completer<Map<String, int>>>[];
+  final pending = <Completer<Map<String, PrismWallpaperStats>>>[];
 
   @override
-  Future<Map<String, int>> fetch(Set<String> ids) {
+  Future<Map<String, PrismWallpaperStats>> fetch(Set<String> ids) {
     calls.add(ids);
-    final result = Completer<Map<String, int>>();
+    final result = Completer<Map<String, PrismWallpaperStats>>();
     pending.add(result);
     return result.future;
   }
@@ -28,18 +28,18 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pump(const Duration(seconds: 7));
     expect(repository.calls, hasLength(1));
-    repository.pending.first.complete({'A': 3});
+    repository.pending.first.complete({'A': const PrismWallpaperStats(favourites: 3)});
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1));
     expect(repository.calls, [
       <String>{'A'},
       <String>{'A'},
     ]);
-    expect(cubit.state, {'A': 3});
-    repository.pending.last.complete({'A': 4});
+    expect(cubit.state, {'A': const PrismWallpaperStats(favourites: 3)});
+    repository.pending.last.complete({'A': const PrismWallpaperStats(favourites: 4)});
     await tester.pump();
     await tester.pump(const Duration(seconds: 10));
-    expect(cubit.state, {'A': 4});
+    expect(cubit.state, {'A': const PrismWallpaperStats(favourites: 4)});
     expect(repository.calls, hasLength(2));
   });
 
@@ -52,7 +52,9 @@ void main() {
     await tester.pump(Duration.zero);
     for (var batch = 0; batch < 20; batch++) {
       if (batch < 18) {
-        repository.pending[batch].complete({for (final id in repository.calls[batch]) id: 1});
+        repository.pending[batch].complete({
+          for (final id in repository.calls[batch]) id: const PrismWallpaperStats(favourites: 1),
+        });
       } else {
         repository.pending[batch].completeError(StateError('offline'));
       }
@@ -73,13 +75,19 @@ void main() {
     cubit.request('EXTRA');
     await tester.pump(Duration.zero);
     expect(repository.calls, hasLength(1));
-    repository.pending[0].complete({for (final id in repository.calls[0]) id: 1});
+    repository.pending[0].complete({
+      for (final id in repository.calls[0]) id: const PrismWallpaperStats(favourites: 1),
+    });
     await tester.pump(Duration.zero);
     expect(repository.calls[1], hasLength(30));
-    repository.pending[1].complete({for (final id in repository.calls[1]) id: 1});
+    repository.pending[1].complete({
+      for (final id in repository.calls[1]) id: const PrismWallpaperStats(favourites: 1),
+    });
     await tester.pump(Duration.zero);
     expect(repository.calls[2], hasLength(6));
-    repository.pending[2].complete({for (final id in repository.calls[2]) id: 1});
+    repository.pending[2].complete({
+      for (final id in repository.calls[2]) id: const PrismWallpaperStats(favourites: 1),
+    });
     await tester.pump(Duration.zero);
     cubit.request('W0');
     await tester.pump(Duration.zero);
@@ -102,13 +110,19 @@ void main() {
       <String>{'A', 'B'},
     ]);
     expect(cubit.state, isEmpty);
-    repository.pending[0].complete({'A': 7, 'B': 0});
+    repository.pending[0].complete({
+      'A': const PrismWallpaperStats(favourites: 7),
+      'B': const PrismWallpaperStats(favourites: 0),
+    });
     await tester.pump(const Duration(seconds: 6));
     expect(repository.calls, hasLength(2));
-    repository.pending[1].complete({'A': 7, 'B': 0});
+    repository.pending[1].complete({
+      'A': const PrismWallpaperStats(favourites: 7),
+      'B': const PrismWallpaperStats(favourites: 0),
+    });
     await tester.pump(const Duration(minutes: 5));
     expect(repository.calls, hasLength(2));
-    expect(cubit.state, {'A': 7, 'B': 0});
+    expect(cubit.state, {'A': const PrismWallpaperStats(favourites: 7), 'B': const PrismWallpaperStats(favourites: 0)});
     await cubit.close();
   });
 
@@ -141,9 +155,15 @@ void main() {
       <String>{'ABC', 'DEF'},
     ]);
     cubit.request('ABC');
-    repository.pending.single.complete({'ABC': 8, 'DEF': 0});
+    repository.pending.single.complete({
+      'ABC': const PrismWallpaperStats(favourites: 8),
+      'DEF': const PrismWallpaperStats(favourites: 0),
+    });
     await Future<void>.delayed(Duration.zero);
-    expect(cubit.state, {'ABC': 8, 'DEF': 0});
+    expect(cubit.state, {
+      'ABC': const PrismWallpaperStats(favourites: 8),
+      'DEF': const PrismWallpaperStats(favourites: 0),
+    });
     cubit.request('ABC');
     await Future<void>.delayed(Duration.zero);
     expect(repository.calls, hasLength(1));
@@ -160,13 +180,13 @@ void main() {
     expect(cubit.state['ABC'], isNull);
     cubit.request('ABC', force: true);
     await Future<void>.delayed(Duration.zero);
-    repository.pending.last.complete({'ABC': 4});
+    repository.pending.last.complete({'ABC': const PrismWallpaperStats(favourites: 4)});
     await Future<void>.delayed(Duration.zero);
     cubit.request('ABC', force: true);
     await Future<void>.delayed(Duration.zero);
     repository.pending.last.completeError(StateError('offline'));
     await Future<void>.delayed(Duration.zero);
-    expect(cubit.state['ABC'], 4);
+    expect(cubit.state['ABC']?.favourites, 4);
   });
 
   test('closing ignores late requests and responses', () async {
@@ -175,7 +195,7 @@ void main() {
     cubit.request('ABC');
     await Future<void>.delayed(Duration.zero);
     await cubit.close();
-    repository.pending.single.complete({'ABC': 8});
+    repository.pending.single.complete({'ABC': const PrismWallpaperStats(favourites: 8)});
     cubit.request('DEF');
     await Future<void>.delayed(Duration.zero);
     expect(repository.calls, hasLength(1));

@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_counts_repository_impl.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -33,7 +34,7 @@ void main() {
     final counts = await repository.fetch({for (var i = 0; i < 65; i++) 'wall-$i', ' WALL-0 ', 'bad/id', ''});
     expect(firestore.batches.map((batch) => batch.length), [30, 30, 5]);
     expect(counts, hasLength(65));
-    expect(counts.values, everyElement(0));
+    expect(counts.values, everyElement(const PrismWallpaperStats(favourites: 0, views: 0)));
     expect(firestore.batches.first.first, 'WALL-0');
   });
 
@@ -47,7 +48,33 @@ void main() {
         'E': {'favs': double.nan},
       });
     final counts = await FavouriteCountsRepositoryImpl(firestore).fetch({'A', 'B', 'C', 'D', 'E', 'MISSING'});
-    expect(counts, {'A': 42, 'B': 0, 'C': 12, 'D': 0, 'E': 0, 'MISSING': 0});
+    expect(counts, {
+      'A': const PrismWallpaperStats(favourites: 42, views: 0),
+      'B': const PrismWallpaperStats(favourites: 0, views: 0),
+      'C': const PrismWallpaperStats(favourites: 12, views: 0),
+      'D': const PrismWallpaperStats(favourites: 0, views: 0),
+      'E': const PrismWallpaperStats(favourites: 0, views: 0),
+      'MISSING': const PrismWallpaperStats(favourites: 0, views: 0),
+    });
+  });
+
+  test('reads optional views from the same stats document and preserves unknown versus zero', () async {
+    final firestore = _Firestore()
+      ..docs.addAll({
+        'KNOWN': {'favs': 17, 'views': 0},
+        'UNKNOWN': {'favs': 3},
+        'BAD': {'favs': 1, 'views': -4},
+        'MALFORMED': {'favs': 1, 'views': 'bad'},
+      });
+    final counts = await FavouriteCountsRepositoryImpl(
+      firestore,
+    ).fetch({'KNOWN', 'UNKNOWN', 'BAD', 'MALFORMED', 'MISSING'});
+    expect(counts['KNOWN'], const PrismWallpaperStats(favourites: 17, views: 0));
+    expect(counts['UNKNOWN'], const PrismWallpaperStats(favourites: 3, views: 0));
+    expect(counts['BAD'], const PrismWallpaperStats(favourites: 1));
+    expect(counts['MALFORMED'], const PrismWallpaperStats(favourites: 1));
+    expect(counts['MISSING'], const PrismWallpaperStats(favourites: 0, views: 0));
+    expect(firestore.batches, hasLength(1));
   });
 
   test('read failure throws instead of manufacturing zero', () async {

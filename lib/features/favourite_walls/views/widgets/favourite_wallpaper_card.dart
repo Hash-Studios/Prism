@@ -12,6 +12,7 @@ import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -105,17 +106,21 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
           ? state.items.any((wall) => wall.id == widget.item.id && wall.source == widget.item.source)
           : getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, widget.item.id);
       if (widget.item.source == WallpaperSource.prism) {
-        return BlocSelector<FavouriteCountsCubit, Map<String, int>, int?>(
+        return BlocSelector<FavouriteCountsCubit, Map<String, PrismWallpaperStats>, PrismWallpaperStats?>(
           bloc: getIt<FavouriteCountsCubit>(),
           selector: (counts) => counts[prismStatsId(widget.item.id)],
-          builder: (context, count) => _row(saved, count),
+          builder: (context, stats) => _row(saved, stats?.favourites, stats?.views),
         );
       }
-      return _row(saved, widget.item.wallpaperCore.favourites);
+      final views = widget.item is WallhavenFeedItem ? (widget.item as WallhavenFeedItem).wallpaper.views : null;
+      final favourites = widget.item is WallhavenFeedItem
+          ? (widget.item as WallhavenFeedItem).wallpaper.favorites ?? widget.item.wallpaperCore.favourites
+          : widget.item.wallpaperCore.favourites;
+      return _row(saved, favourites, views);
     },
   );
 
-  Widget _row(bool saved, int? published) {
+  Widget _row(bool saved, int? published, int? views) {
     final count = displayedFavouriteCount(widget.item.source, published: published, saved: saved);
     final scheme = Theme.of(context).colorScheme;
     final label = saved ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite;
@@ -123,44 +128,15 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
       height: favouriteFooterHeight,
       child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: Tooltip(
-          message: label,
-          child: Semantics(
-            button: true,
-            toggled: saved,
-            label: label,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: _pending ? null : () => unawaited(_toggle(saved)),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 18,
-                        color: saved ? scheme.primary : scheme.onSurfaceVariant,
-                      ),
-                      if (count != null) ...[
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            '$count',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+        child: WallpaperStatsRow(
+          favourites: count,
+          views: views,
+          favouriteActionLabel: label,
+          favouriteSaved: saved,
+          favouriteIcon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          favouriteIconColor: saved ? scheme.primary : scheme.onSurfaceVariant,
+          favouriteEnabled: !_pending,
+          onFavouriteTap: () => unawaited(_toggle(saved)),
         ),
       ),
     );
@@ -168,9 +144,9 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
 }
 
 class PrismFavouriteCount extends StatefulWidget {
-  const PrismFavouriteCount({super.key, required this.id, required this.builder});
+  const PrismFavouriteCount({super.key, required this.id, this.views});
   final String id;
-  final Widget Function(BuildContext, int) builder;
+  final int? views;
 
   @override
   State<PrismFavouriteCount> createState() => _PrismFavouriteCountState();
@@ -190,11 +166,14 @@ class _PrismFavouriteCountState extends State<PrismFavouriteCount> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocSelector<FavouriteCountsCubit, Map<String, int>, int?>(
-    bloc: getIt<FavouriteCountsCubit>(),
-    selector: (counts) => counts[prismStatsId(widget.id)],
-    builder: (context, count) {
-      return count == null ? const SizedBox.shrink() : widget.builder(context, count);
-    },
-  );
+  Widget build(BuildContext context) =>
+      BlocSelector<FavouriteCountsCubit, Map<String, PrismWallpaperStats>, PrismWallpaperStats?>(
+        bloc: getIt<FavouriteCountsCubit>(),
+        selector: (stats) => stats[prismStatsId(widget.id)],
+        builder: (context, stats) {
+          final views = widget.views ?? stats?.views;
+          if (stats == null && views == null) return const SizedBox.shrink();
+          return WallpaperStatsRow(favourites: stats?.favourites, views: views);
+        },
+      );
 }

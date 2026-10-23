@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
-class FavouriteCountsCubit extends Cubit<Map<String, int>> {
+class FavouriteCountsCubit extends Cubit<Map<String, PrismWallpaperStats>> {
   FavouriteCountsCubit(this._repository, {@ignoreParam DateTime Function()? now})
     : _now = now ?? DateTime.now,
       super(const {});
@@ -69,7 +69,7 @@ class FavouriteCountsCubit extends Cubit<Map<String, int>> {
     try {
       final counts = await _repository.fetch(ids);
       if (isClosed) return;
-      final next = Map<String, int>.of(state)..addAll(counts);
+      final next = Map<String, PrismWallpaperStats>.of(state)..addAll(counts);
       for (final id in ids) {
         _expires.remove(id);
         _expires[id] = _now().add(_ttl);
@@ -93,7 +93,11 @@ class FavouriteCountsCubit extends Cubit<Map<String, int>> {
         _expires.remove(_expires.keys.first);
       }
       if (!isClosed && state.keys.any((id) => !_expires.containsKey(id))) {
-        emit(Map.unmodifiable(Map<String, int>.of(state)..removeWhere((id, _) => !_expires.containsKey(id))));
+        emit(
+          Map.unmodifiable(
+            Map<String, PrismWallpaperStats>.of(state)..removeWhere((id, _) => !_expires.containsKey(id)),
+          ),
+        );
       }
       if (!isClosed && _pending.isNotEmpty) _batchTimer ??= Timer(Duration.zero, _flush);
     }
