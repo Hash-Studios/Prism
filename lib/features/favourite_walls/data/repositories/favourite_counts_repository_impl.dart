@@ -13,9 +13,9 @@ class FavouriteCountsRepositoryImpl implements FavouriteCountsRepository {
   final FirestoreClient _firestore;
 
   @override
-  Future<Map<String, int>> fetch(Set<String> ids) async {
+  Future<Map<String, PrismWallpaperStats>> fetch(Set<String> ids) async {
     final normalized = ids.map(prismStatsId).whereType<String>().toSet().toList();
-    final result = <String, int>{};
+    final result = <String, PrismWallpaperStats>{};
     for (var start = 0; start < normalized.length; start += 30) {
       final batch = normalized.sublist(start, math.min(start + 30, normalized.length));
       final rows = await _firestore.query(
@@ -26,12 +26,27 @@ class FavouriteCountsRepositoryImpl implements FavouriteCountsRepository {
           filters: [FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.whereIn, value: batch)],
         ),
         (data, id) {
-          final raw = data['favs'];
-          final count = raw is num && raw.isFinite ? raw.toInt() : int.tryParse('$raw') ?? 0;
-          return MapEntry(id, math.max(0, count));
+          final int? rawFavourites = switch (data['favs']) {
+            final num count when count.isFinite => count.toInt(),
+            final String count => int.tryParse(count),
+            _ => null,
+          };
+          final int? rawViews = switch (data['views']) {
+            final num count when count.isFinite => count.toInt(),
+            final String count => int.tryParse(count),
+            null => 0,
+            _ => null,
+          };
+          return MapEntry(
+            id,
+            PrismWallpaperStats(
+              favourites: math.max(0, rawFavourites ?? 0),
+              views: rawViews != null && rawViews >= 0 ? rawViews : null,
+            ),
+          );
         },
       );
-      result.addAll({for (final id in batch) id: 0});
+      result.addAll({for (final id in batch) id: const PrismWallpaperStats(favourites: 0, views: 0)});
       result.addEntries(rows);
     }
     return result;
