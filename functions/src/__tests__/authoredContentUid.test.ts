@@ -68,3 +68,16 @@ test("re-reads content after Auth resolution and does not write when ownership e
 
   assert.equal(store.get("walls/race")?.creatorUid, "old");
 });
+
+test("maps Prism Studio walls to the Studio profile, which has no Auth user", async (t) => {
+  const store = installFakeDb(t, {
+    "walls/studio": {email: "studio@prismwalls.com"},
+    "usersv2/prism-studio": {email: "studio@prismwalls.com"},
+  });
+  t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw Object.assign(new Error("not found"), {code: "auth/user-not-found"});
+  });
+
+  assert.equal(await syncAuthoredContentUid("walls", "studio", "studio@prismwalls.com"), "assigned");
+  assert.equal(store.get("walls/studio")?.creatorUid, "prism-studio");
+});
