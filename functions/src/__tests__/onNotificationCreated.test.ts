@@ -10,14 +10,14 @@ import {onNotificationCreated, topicForModifier} from "../onNotificationCreated"
 type Sent = {
   topic?: string;
   token?: string;
-  notification?: {title?: string};
+  notification?: {title?: string; body?: string};
   data?: Record<string, string>;
   android?: {notification?: {tag?: string}};
 };
 
 async function run(
   doc: Record<string, unknown>, t: test.TestContext,
-  {deliveries = 1, loggedIn = true, retryClaim = false, token = ""} = {},
+  {deliveries = 1, loggedIn = true, retryClaim = false, token = "test-token"} = {},
 ): Promise<Sent[]> {
   installFakeDb(t);
   const document = db.doc.bind(db);
@@ -36,7 +36,12 @@ async function run(
   });
   const ref = db.doc("notifications/n1");
   t.mock.method(db, "doc", (path: string) => path.endsWith("/private/session") ?
-    ({get: async () => ({data: () => (token ? {fcmToken: token} : {})})}) : document(path));
+    ({get: async () => ({data: () => (token ? {
+      fcmToken: token,
+      fcmTokenBindingVersion: 1,
+      fcmTokenBindingToken: token,
+    } : {})})}) : path === "usersv2/u1" ?
+      ({get: async () => ({data: () => ({loggedIn})})}) : document(path));
   let stored = {...doc};
   let transactions = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<boolean>) => {
@@ -84,30 +89,25 @@ test("inbox audiences map to the topics the app subscribes to", () => {
   assert.equal(topicForModifier("3.1.0"), undefined);
 });
 
-test("an admin-written inbox entry also goes out as a push", async (t) => {
+test("an admin-written inbox entry also goes to a bound session token", async (t) => {
   const sent = await run({
     modifier: "artist@example.com",
     notification: {title: "Wallpaper Rejected", body: "Low quality"},
     data: {route: "announcement", imageUrl: "", arguments: []},
   }, t);
-  assert.equal(sent.length, 2);
-  assert.equal(sent[0].topic, "u_u1");
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, "test-token");
   assert.equal(sent[0].notification?.title, "Wallpaper Rejected");
-  assert.equal(sent[1].topic, "u_u1_loc_v1");
-  assert.equal(sent[1].notification?.title, "Wallpaper Rejected");
   assert.equal(sent[0].data?.route, "announcement");
 });
 
-test("an admin-written inbox entry reaches the user's uid topic and token once per device", async (t) => {
+test("an admin-written inbox entry does not use UID topics", async (t) => {
   const sent = await run({
     modifier: "artist@example.com",
     notification: {title: "Wallpaper Rejected", body: "Low quality"},
   }, t, {token: "tok-1"});
-  assert.deepEqual(sent.map((m) => m.topic ?? "token"), ["u_u1", "u_u1_loc_v1", "token"]);
-  assert.equal(sent[2].token, "tok-1");
-  assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
-  assert.equal(sent[1].android?.notification?.tag, sent[2].android?.notification?.tag);
-  assert.ok(sent[0].android?.notification?.tag);
+  assert.deepEqual(sent.map((m) => m.topic ?? m.token), ["tok-1"]);
+  assert.equal(sent[0].android?.notification?.tag?.startsWith("p_"), true);
 });
 
 test("entries written by sendNotification are not pushed twice", async (t) => {
@@ -142,6 +142,29 @@ test("a direct inbox entry does not push to a logged-out artist", async (t) => {
     notification: {title: "Wallpaper Rejected", body: "Low quality"},
   }, t, {loggedIn: false});
   assert.equal(sent.length, 0);
+});
+
+test("a moderation inbox entry is sanitized before its push", async (t) => {
+  const sent = await run({
+    modifier: "artist@example.com",
+    notification: {title: "Spam report: private reason", body: "Reporter uid secret-user"},
+    data: {
+      route: "wall", report_id: "r1", wall_id: "secret-wall", reason: "private reason",
+      reporter_uid: "secret-user", imageUrl: "https://example.com/private.jpg",
+    },
+  }, t);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, "test-token");
+  assert.deepEqual(sent[0].data, {
+    route: "content_report",
+    report_id: "r1",
+    channel_id: "posts",
+    push_kind: "moderation",
+  });
+  assert.deepEqual(sent[0].notification, {
+    title: "Content report needs review",
+    body: "A content report is waiting for review.",
+  });
 });
 
 test("sendNotification marks its inbox entries so the trigger skips them", async (t) => {

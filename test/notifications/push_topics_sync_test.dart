@@ -70,7 +70,6 @@ void main() {
         'drops_loc_v1',
         '${wotdBucketTopic()}_loc_v1',
         'free_loc_v1',
-        'u_uid1_loc_v1',
         'ana_loc_v1',
         'lee_posts_loc_v1',
       ]),
@@ -85,6 +84,7 @@ void main() {
         'premium',
         'premium_loc_v1',
         'u_uid1',
+        'u_uid1_loc_v1',
         'ana',
         'lee_posts',
         'wall_of_the_day',
@@ -135,7 +135,8 @@ void main() {
 
     messaging.failSubscribe = false;
     await sync();
-    expect(messaging.subscribed, contains('u_uid1_loc_v1'));
+    expect(messaging.subscribed, isNot(contains('u_uid1_loc_v1')));
+    expect(messaging.unsubscribed, containsAll(<String>['u_uid1', 'u_uid1_loc_v1']));
   });
 
   group('wall of the day buckets', () {

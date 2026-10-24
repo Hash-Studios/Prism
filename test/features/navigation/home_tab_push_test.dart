@@ -208,9 +208,14 @@ void main() {
       'fcmToken': 'initial-token',
       'notificationLocalizationVersion': 1,
       'notificationLocalizationToken': 'initial-token',
+      'fcmTokenBindingVersion': 1,
+      'fcmTokenBindingToken': 'initial-token',
     });
-    expect(subscribed, containsAll(<String>['u_u1_loc_v1', 'user_loc_v1']));
+    expect(subscribed, contains('user_loc_v1'));
+    expect(subscribed, isNot(contains('u_u1_loc_v1')));
+    expect(unsubscribed, containsAll(<String>['u_u1', 'u_u1_loc_v1']));
     subscribed.clear();
+    unsubscribed.clear();
 
     await refresh(tester);
 
@@ -218,8 +223,12 @@ void main() {
       'fcmToken': 'refreshed-token',
       'notificationLocalizationVersion': 1,
       'notificationLocalizationToken': 'refreshed-token',
+      'fcmTokenBindingVersion': 1,
+      'fcmTokenBindingToken': 'refreshed-token',
     });
-    expect(subscribed, containsAll(<String>['u_u1_loc_v1', 'user_loc_v1']));
+    expect(subscribed, contains('user_loc_v1'));
+    expect(subscribed, isNot(contains('u_u1_loc_v1')));
+    expect(unsubscribed, containsAll(<String>['u_u1', 'u_u1_loc_v1']));
     await tester.pumpWidget(const SizedBox());
   }, variant: _ios);
 

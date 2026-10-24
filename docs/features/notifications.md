@@ -58,7 +58,7 @@ Tombstone limits (`lib/data/notifications/notification_tombstones.dart`):
 | Setup link | Home tab, and the toast "Home screen setups are no longer available." |
 | Anything else, or a lookup error | Fallback. |
 
-Push taps also record the event `push_opened` with `kind`: `streak_reminder`, `follower`, `post` (route `wall`), `wotd` or `moderation` (route `content_report`, or route `wall` with a `report_id`). `fromPayload` records the tap. `fromRoute`, which the inbox uses, does not. The older event `wotd_opened_from_push` stays.
+Push taps also record the event `push_opened` with `kind`: `streak_reminder`, `follower`, `post` (route `wall`), `wotd` or `moderation` (route `content_report` with a `report_id`). Report moderation pushes contain only that route and report ID plus generic copy; admins load report details from the admin-only report screen. `fromPayload` records the tap. `fromRoute`, which the inbox uses, does not. The older event `wotd_opened_from_push` stays.
 
 The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is not empty, the app shows the toast "That item is no longer available". The mapper then never returns null.
 
@@ -94,7 +94,7 @@ The uid comes from the caller when it knows it. Else the app reads the public pr
 
 ### Foreground pushes
 
-`LocalNotification.showPushNotification` shows a banner for a push that arrives while the app is open. The id is the hash of the Android `tag` of the push. When there is no tag, it is the hash of title, body and data. It is masked to 31 bits. The server sends a personal push twice (user topic and token). Both get the same id and tag, so the second banner replaces the first. `onlyAlertOnce` stops a second sound.
+`LocalNotification.showPushNotification` shows a banner for a push that arrives while the app is open. The id is the hash of the Android `tag` of the push. When there is no tag, it is the hash of title, body and data. It is masked to 31 bits. The server sends a personal push to one bound session token. Retries share a collapse key, so an earlier banner is replaced. `onlyAlertOnce` stops a second sound.
 
 ### Notification copy and adding a language
 
@@ -118,7 +118,7 @@ For each new notification template, add its English copy to `lib/l10n/app_en.arb
 After the first wallpaper step in onboarding, `NotificationPermissionPromptService.maybePromptAfterValueAction` runs (`lib/features/onboarding_v2/src/views/onboarding_v2_shell.dart`). It also runs after a download or a wallpaper set.
 
 - It asks once. The flag is `notificationPermissionPromptedV2`.
-- When the user grants permission, it subscribes to the Wall of the Day bucket (if that switch is on). For a signed-in user it also subscribes to the uid topic and the followers topic.
+- When the user grants permission, it subscribes to the Wall of the Day bucket (if that switch is on). For a signed-in user it also subscribes to the followers topic and unsubscribes from the old uid topic.
 
 ### Push data path
 
@@ -127,8 +127,7 @@ Cloud Function event
    |
    +-- inbox doc in Firestore `notifications` (unless push only)
    |
-   +-- personal push -> topic u_<uid> and u_<uid>_loc_v1, plus FCM token(s) from
-   |                    usersv2/{uid}/private/session (fallback usersv2.fcmToken)
+   +-- personal push -> bound FCM token from usersv2/{uid}/private/session
    |
    +-- Wall of the Day -> topic wall_of_the_day_utc_<p|m><hh><mm> (every 15 min)
                        -> legacy topic wall_of_the_day (03:30 UTC, old clients)
@@ -138,9 +137,12 @@ Cloud Function event
 
 | Rule | Detail |
 |---|---|
-| Personal pushes | `sendToUser` sends each topic-targeted notification to `u_<uid>` and `u_<uid>_loc_v1`, and sends to the current FCM token. All deliveries for one event share one `collapseKey`, so one device replaces duplicate deliveries. |
-| Email topic | Used only when no user doc matches the email. The topic is shared by every address with the same prefix. |
-| Who uses it | Follow, wall approved, wall submitted (admins), content report (admins), win-back, campaign with an email, inbox entry with an email. |
+| Personal pushes | `sendToUser` sends only to a token in `usersv2/{uid}/private/session`. The token must be a string and have `fcmTokenBindingVersion: 1` and `fcmTokenBindingToken` equal to `fcmToken`. No UID or email-prefix topics carry personal payloads. If no valid token exists, the inbox entry is kept and the legacy inbox nudge is sent. |
+| Legacy tokens | `usersv2.fcmToken` is not used for delivery. Old private-session tokens without the binding marker fail closed. There is no safe server backfill because a stored token cannot prove which signed-in account currently owns the device. Users need a client version that rotates and binds the token before full personal pushes resume. |
+| Legacy inbox nudge | Temporary, for builds up to v3.9.0. When a recipient has no bound token, `sendInboxNudge` sends one push to the condition `'u_<uid>' in topics \|\| 'u_<uid>_loc_v1' in topics`. It has the text "Prism" and "You have a new notification.", only `route: announcement` as data, and the collapse key `prism_inbox_nudge`. It carries no payload content, so a topic listener learns only the timing. It is not counted on the scoreboard. Remove it after a release or two of adoption. |
+| Delivery rollout | The token-binding client and this backend gate must both ship. No function deploy or app release has been run as part of this change. Older app registrations receive only the legacy inbox nudge until an updated app refreshes its token and writes the binding marker. In-app inbox writes and public broadcast topics remain available. |
+| Push envelope | Personal delivery changes only the target. Android notification channels, iOS/APNs sound and collapse headers, localization markers, and the existing envelope format remain in use. |
+| Who uses it | Follow, gifts, draw winners, wall approvals, wall submissions and reports for admins, Wall of the Day creators, win-back, streak reminders, email campaigns, and personal inbox entries. |
 | Badge | The server no longer sets `aps.badge`. The iOS app clears the badge on its own. |
 | Approval push | `onWallApproved` stamps `approvedNotifiedAt` in a transaction. A retried event sends nothing. |
 | Followers push | `onWallApproved` sends the new-wall push to both generations of the legacy topic `<email prefix>_posts` and uid topic `posts_<uid>`. Each pair shares a collapse key, and all deliveries for one event use `posts_<hash>`. The email prefix topic is shared by creators with the same prefix. |

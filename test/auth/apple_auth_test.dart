@@ -102,6 +102,9 @@ class _Messaging extends Fake implements FirebaseMessaging {
   Future<String?> getAPNSToken() async => 'apns';
   @override
   Future<void> unsubscribeFromTopic(String topic) async => _calls.add('fcm.unsubscribe $topic');
+
+  @override
+  Future<void> deleteToken() async => _calls.add('fcm.deleteToken');
 }
 
 void main() {

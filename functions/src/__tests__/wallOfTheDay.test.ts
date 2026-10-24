@@ -120,6 +120,7 @@ type Harness = {
   sets: Array<Record<string, unknown>>;
   updates: Array<Record<string, unknown>>;
   topics: string[];
+  tokens: string[];
   deliveries: Record<string, unknown>;
   inboxIds: string[];
   state: {current?: Record<string, unknown>};
@@ -144,6 +145,7 @@ function harness(t: TestContext, options: {
     sets: [],
     updates: [],
     topics: [],
+    tokens: [],
     deliveries: {...options.deliveries},
     inboxIds: [],
     state,
@@ -216,11 +218,23 @@ function harness(t: TestContext, options: {
     }
     throw new Error(`Unexpected collection ${name}`);
   });
-  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
+  t.mock.method(db, "doc", (path: string) => ({get: async () => ({data: () => {
+    const uid = path.split("/")[1];
+    if (path.endsWith("/private/session")) {
+      return options.creator && uid === options.creator.id ? {
+        fcmToken: `token-${uid}`, fcmTokenBindingVersion: 1, fcmTokenBindingToken: `token-${uid}`,
+      } : undefined;
+    }
+    if (options.creator && uid === options.creator.id) return options.creator.data;
+    return {};
+  }})}));
+  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; token?: string}) => {
     options.onSend?.(result);
     if (options.sendFails) throw new Error("fcm down");
-    result.topics.push(message.topic ?? "");
+    if (message.topic) {
+      result.topics.push(message.topic);
+    }
+    if (message.token) result.tokens.push(message.token);
     return "id";
   });
   return result;
@@ -542,7 +556,8 @@ test("the creator gets one personal notice with a fixed inbox id when their wall
     deliveries: {[bucket]: entry("w1", "2026-01-02")},
   });
   await wallOfTheDay.run(scheduled());
-  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day", "u_maker1"]);
+  assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
+  assert.deepEqual(h.tokens, ["token-maker1"]);
   assert.deepEqual(h.inboxIds, ["wotd_2026-01-02", "wotd_creator_2026-01-02"]);
 });
 

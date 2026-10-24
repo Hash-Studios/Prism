@@ -114,7 +114,11 @@ void main() {
         .where((call) => call.method == 'Messaging#subscribeToTopic')
         .map((call) => (call.arguments as Map<Object?, Object?>)['topic']);
     expect(topics, containsAll(<String>['drops_loc_v1', 'creator_loc_v1']));
-    expect(topics.any((topic) => topic.toString().contains('creator-123')), isTrue);
+    expect(topics.any((topic) => topic.toString().contains('creator-123')), isFalse);
+    final unsubscribed = calls
+        .where((call) => call.method == 'Messaging#unsubscribeFromTopic')
+        .map((call) => (call.arguments as Map<Object?, Object?>)['topic']);
+    expect(unsubscribed, contains('u_creator-123'));
     expect(find.text('Turn on notifications'), findsNothing);
     final before = calls.length;
     await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'download');

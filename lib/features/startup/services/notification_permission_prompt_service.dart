@@ -162,9 +162,9 @@ class NotificationPermissionPromptService {
     }
 
     if (app_state.prismUser.loggedIn) {
-      final String? userTopic = userTopicFromId(app_state.prismUser.id);
-      if (userTopic != null) {
-        await subscribeToTopicSafely(messaging, userTopic, sourceTag: '$sourceTag.user_topic');
+      final String? legacyUserTopic = userTopicFromId(app_state.prismUser.id);
+      if (legacyUserTopic != null) {
+        await unsubscribeFromTopicSafely(messaging, legacyUserTopic, sourceTag: '$sourceTag.user_topic_cleanup');
       }
       final String? followersTopic = followersTopicFromEmail(app_state.prismUser.email);
       if (followersTopic != null) {
