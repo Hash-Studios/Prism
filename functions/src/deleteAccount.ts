@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str} from "./common";
 import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
+import {removeUidFollowGraph} from "./profiles";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -101,6 +102,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
 
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
+  await removeUidFollowGraph(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

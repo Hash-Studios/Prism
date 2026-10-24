@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -17,10 +18,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// screens are identical apart from terminology, which bloc state fields
 /// they read and which events they dispatch; [kind] drives all of that.
 class UserRelationListBody extends StatefulWidget {
-  const UserRelationListBody({super.key, required this.kind, required this.emails});
+  const UserRelationListBody({super.key, required this.kind, required this.profileUid});
 
-  /// Full list of email addresses (all pages). Passed from profile screen.
-  final List<String> emails;
+  /// Uid of the profile whose edge ids are loaded when this body opens.
+  final String profileUid;
 
   final UserRelationKind kind;
 
@@ -38,6 +39,10 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   // relation list (and back) never clobbers this screen's state.
   late final PublicProfileBloc _bloc;
 
+  // Edge ids, loaded once from the subcollection. Null while loading.
+  List<String>? _userIds;
+  bool _idsFailed = false;
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
@@ -46,7 +51,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   RelationList _list(PublicProfileState state) => state.relation(widget.kind);
 
   PublicProfileEvent _fetchPageEvent(int page) =>
-      PublicProfileEvent.relationPageRequested(kind: widget.kind, allEmails: widget.emails, page: page);
+      PublicProfileEvent.relationPageRequested(kind: widget.kind, userIds: _userIds ?? const <String>[], page: page);
 
   String _title(AppLocalizations l10n) => _isFollowers ? l10n.accountFollowers : l10n.accountFollowing;
 
@@ -85,8 +90,23 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     _bloc = getIt<PublicProfileBloc>();
     _scrollController.addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
-    // Load first page.
-    if (widget.emails.isNotEmpty) {
+    unawaited(_loadIds());
+  }
+
+  Future<void> _loadIds() async {
+    if (mounted && _idsFailed) setState(() => _idsFailed = false);
+    final result = await getIt<PublicProfileRepository>().fetchRelationIds(
+      profileUid: widget.profileUid,
+      kind: widget.kind,
+    );
+    if (!mounted) return;
+    final ids = result.data;
+    if (result.isFailure || ids == null) {
+      setState(() => _idsFailed = true);
+      return;
+    }
+    setState(() => _userIds = ids);
+    if (ids.isNotEmpty) {
       _bloc.add(_fetchPageEvent(0));
     }
   }
@@ -126,7 +146,13 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     _debounce = Timer(const Duration(milliseconds: _searchDebounceMs), () {
       if (!mounted) return;
       setState(() => _isSearchActive = true);
-      _bloc.add(PublicProfileEvent.relationSearchRequested(kind: widget.kind, query: query, allEmails: widget.emails));
+      _bloc.add(
+        PublicProfileEvent.relationSearchRequested(
+          kind: widget.kind,
+          query: query,
+          userIds: _userIds ?? const <String>[],
+        ),
+      );
     });
   }
 
@@ -144,6 +170,18 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
             buildWhen: (prev, curr) => _list(prev) != _list(curr),
             builder: (context, state) {
               final list = _list(state);
+              if (_idsFailed) {
+                return GlintState(
+                  kind: GlintStateKind.error,
+                  title: _loadFailedTitle(context.l10n),
+                  body: context.l10n.accountConnectionTryAgain,
+                  actionLabel: context.l10n.accountTryAgain,
+                  onAction: _loadIds,
+                );
+              }
+              if (_userIds == null) {
+                return PrismSkeleton.rows();
+              }
               // Search mode.
               if (_isSearchActive) {
                 if (list.isSearching) {
@@ -166,7 +204,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                 return PrismSkeleton.rows();
               }
               if (summaries.isEmpty) {
-                if (widget.emails.isEmpty) {
+                if (_userIds!.isEmpty) {
                   return GlintState(
                     kind: GlintStateKind.empty,
                     title: _emptyTitle(context.l10n),
@@ -236,7 +274,7 @@ class _UserList extends StatelessWidget {
         final user = users[index];
         return UserSummaryTile(
           user: user,
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: user.email)),
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: user.id)),
         );
       },
     );

@@ -142,25 +142,32 @@ class _DelayedBlockRepository extends FakeUserBlockRepository {
   final Completer<Set<String>> snapshot = Completer<Set<String>>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) => waitForInitialLoad
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) => waitForInitialLoad
       ? snapshot.future.then((blocked) {
           completeInitial(blocked);
           return blocked;
         })
-      : super.getBlockedCreatorEmails();
+      : super.getBlockedCreatorUids();
 }
 
-PrismWallpaper _wall(String id, {String? url, String? thumbnailUrl, String? documentId, bool? review = true}) =>
-    PrismWallpaper(
-      core: WallpaperCore(
-        id: id,
-        source: WallpaperSource.prism,
-        fullUrl: url ?? 'https://example.com/$id.jpg',
-        thumbnailUrl: thumbnailUrl ?? 'https://example.com/$id-thumb.jpg',
-      ),
-      review: review,
-      firestoreDocumentId: documentId,
-    );
+PrismWallpaper _wall(
+  String id, {
+  String? url,
+  String? thumbnailUrl,
+  String? documentId,
+  String? authorUid,
+  bool? review = true,
+}) => PrismWallpaper(
+  core: WallpaperCore(
+    id: id,
+    source: WallpaperSource.prism,
+    fullUrl: url ?? 'https://example.com/$id.jpg',
+    thumbnailUrl: thumbnailUrl ?? 'https://example.com/$id-thumb.jpg',
+    authorUid: authorUid,
+  ),
+  review: review,
+  firestoreDocumentId: documentId,
+);
 
 void main() {
   late FakeFirestoreClient firestoreClient;
@@ -207,6 +214,21 @@ void main() {
     expect(fetched?.featuredDayUtc, online.featuredDayUtc);
   });
 
+  test('current picks hide a blocked creator by UID', () async {
+    final day = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': day,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', documentId: 'wall-doc-1', authorUid: 'blocked-uid')));
+    final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked-uid'});
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks);
+
+    expect((await repo.fetchToday()).data, isNull);
+  });
+
   test('a cached yesterday pointer retains yesterday and a missing date never becomes today', () async {
     final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
     firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
@@ -237,7 +259,7 @@ void main() {
             source: WallpaperSource.prism,
             fullUrl: 'https://example.com/wall-1.jpg',
             thumbnailUrl: 'https://example.com/wall-1-thumb.jpg',
-            authorEmail: 'creator@example.com',
+            authorUid: 'creator-uid',
           ),
           review: true,
         ),
@@ -251,7 +273,7 @@ void main() {
 
     // The caller blocks the creator; a later screen visit re-fetches WOTD, hitting the
     // repo's own day-scoped cache (no further prismRepository.fetchByDocumentId call).
-    blockRepo.completeInitial(<String>{'creator@example.com'});
+    blockRepo.completeInitial(<String>{'creator-uid'});
     final secondFetch = await repo.fetchToday();
 
     expect(secondFetch.data, isNull, reason: 'the cached pick must disappear once its creator is blocked');
@@ -355,7 +377,7 @@ void main() {
             source: WallpaperSource.prism,
             fullUrl: 'https://example.com/wall-1.jpg',
             thumbnailUrl: 'https://example.com/wall-1-thumb.jpg',
-            authorEmail: 'blocked@example.test',
+            authorUid: 'blocked-uid',
           ),
           review: true,
         ),
@@ -375,7 +397,7 @@ void main() {
     );
     final Future<Result<WallOfTheDayEntity?>> pending = restarted.fetchToday();
     await Future<void>.delayed(Duration.zero);
-    blocks.snapshot.complete(<String>{'blocked@example.test'});
+    blocks.snapshot.complete(<String>{'blocked-uid'});
 
     expect((await pending).data, isNull);
   });
@@ -663,7 +685,7 @@ void main() {
             source: WallpaperSource.prism,
             fullUrl: 'https://example.com/wall-1.jpg',
             thumbnailUrl: 'https://example.com/wall-1-thumb.jpg',
-            authorEmail: 'creator@example.com',
+            authorUid: 'creator-uid',
           ),
           review: true,
         ),
@@ -675,7 +697,7 @@ void main() {
     expect((await repo.fetchToday()).data, isNotNull);
 
     final pending = repo.readCachedToday();
-    blockRepo.completeInitial(<String>{'creator@example.com'});
+    blockRepo.completeInitial(<String>{'creator-uid'});
     cache.release.complete();
 
     expect(await pending, isNull);
@@ -693,7 +715,7 @@ void main() {
             source: WallpaperSource.prism,
             fullUrl: 'https://example.com/wall-1.jpg',
             thumbnailUrl: '',
-            authorEmail: 'creator@example.com',
+            authorUid: 'creator-uid',
           ),
           review: true,
         ),
@@ -716,7 +738,7 @@ void main() {
         });
     await Future<void>.delayed(Duration.zero);
     expect(returned, isFalse);
-    blocks.completeInitial(<String>{'creator@example.com'});
+    blocks.completeInitial(<String>{'creator-uid'});
 
     expect(await pending, isNull);
   });
@@ -1374,7 +1396,7 @@ void main() {
               source: WallpaperSource.prism,
               fullUrl: 'https://example.com/wall-a.jpg',
               thumbnailUrl: 'https://example.com/wall-a-thumb.jpg',
-              authorEmail: 'creator@example.com',
+              authorUid: 'creator-uid',
             ),
             review: true,
             firestoreDocumentId: 'doc-a',
@@ -1406,7 +1428,7 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(completed, isFalse);
-      hydratedBlocks.snapshot.complete(<String>{'creator@example.com'});
+      hydratedBlocks.snapshot.complete(<String>{'creator-uid'});
 
       expect((await pending).data, isEmpty);
       expect(((cache.snapshots['wotd/archive']!.payload! as Map<String, dynamic>)['picks'] as List), hasLength(1));

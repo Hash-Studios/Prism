@@ -6,9 +6,9 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:injectable/injectable.dart';
 
 class FetchPublicProfileWallsParams {
-  const FetchPublicProfileWallsParams({required this.email, required this.refresh});
+  const FetchPublicProfileWallsParams({required this.userId, required this.refresh});
 
-  final String email;
+  final String userId;
   final bool refresh;
 }
 
@@ -21,7 +21,7 @@ class FetchPublicProfileWallsUseCase
 
   @override
   Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> call(FetchPublicProfileWallsParams params) {
-    return _repository.fetchWalls(email: params.email, refresh: params.refresh);
+    return _repository.fetchWalls(userId: params.userId, refresh: params.refresh);
   }
 }
 
@@ -88,9 +88,9 @@ class UnfollowUserUseCase implements UseCase<void, UnfollowUserParams> {
 }
 
 class FetchUserSummariesPageParams {
-  const FetchUserSummariesPageParams({required this.allEmails, required this.page});
+  const FetchUserSummariesPageParams({required this.userIds, required this.page});
 
-  final List<String> allEmails;
+  final List<String> userIds;
   final int page;
 }
 
@@ -103,15 +103,15 @@ class FetchUserSummariesPageUseCase
 
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> call(FetchUserSummariesPageParams params) {
-    return _repository.fetchUserSummariesPage(allEmails: params.allEmails, page: params.page);
+    return _repository.fetchUserSummariesPage(userIds: params.userIds, page: params.page);
   }
 }
 
 class SearchUsersByUsernameParams {
-  const SearchUsersByUsernameParams({required this.query, required this.scopeEmails});
+  const SearchUsersByUsernameParams({required this.query, required this.scopeUserIds});
 
   final String query;
-  final List<String> scopeEmails;
+  final List<String> scopeUserIds;
 }
 
 @lazySingleton
@@ -122,6 +122,6 @@ class SearchUsersByUsernameUseCase implements UseCase<List<UserSummaryEntity>, S
 
   @override
   Future<Result<List<UserSummaryEntity>>> call(SearchUsersByUsernameParams params) {
-    return _repository.searchUsersByUsername(query: params.query, scopeEmails: params.scopeEmails);
+    return _repository.searchUsersByUsername(query: params.query, scopeUserIds: params.scopeUserIds);
   }
 }

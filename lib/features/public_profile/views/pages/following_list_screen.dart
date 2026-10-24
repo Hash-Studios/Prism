@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class FollowingListScreen extends StatelessWidget {
-  const FollowingListScreen({super.key, required this.following});
+  const FollowingListScreen({super.key, required this.userId});
 
-  /// Full list of email addresses that the current user follows (all pages).
-  final List<String> following;
+  /// Uid of the profile whose following edges are loaded when the screen opens.
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
-    return UserRelationListBody(kind: UserRelationKind.following, emails: following);
+    return UserRelationListBody(kind: UserRelationKind.following, profileUid: userId);
   }
 }

@@ -94,8 +94,15 @@ class _RetryFailingStore extends DurableJsonStore {
   Future<Map<String, Object?>?> read(String key) async => null;
 }
 
-FakeDocRow _blocked(String uid, String email, {Object? createdAt, String? username}) =>
-    (id: uid, data: <String, dynamic>{'blockedEmail': email, 'blockedUsername': ?username, 'createdAt': ?createdAt});
+FakeDocRow _blocked(String uid, String email, {Object? createdAt, String? username}) => (
+  id: uid,
+  data: <String, dynamic>{
+    'blockedEmail': email,
+    'blockedUid': uid,
+    'blockedUsername': ?username,
+    'createdAt': ?createdAt,
+  },
+);
 
 Future<void> _waitForWatchCount(_WatchingClient client, int count) async {
   final DateTime deadline = DateTime.now().add(const Duration(seconds: 2));
@@ -155,16 +162,16 @@ void main() {
 
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previousFunctions);
 
-  test('a signed-in user gets a live, lowercased set from their blockedUsers collection', () async {
+  test('a signed-in user gets blocked UIDs from document IDs, regardless of legacy email fields', () async {
     final repo = createRepository();
 
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked('u1', ' Bad@X.com '), _blocked('u2', ''), _blocked('u3', 'b@x.com')]);
 
-    expect(await repo.getBlockedCreatorEmails(waitForInitialLoad: true), <String>{'bad@x.com', 'b@x.com'});
+    expect(await repo.getBlockedCreatorUids(waitForInitialLoad: true), <String>{'u1', 'u2', 'u3'});
     expect(client.watchSpecs.single.collection, 'usersv2/me/blockedUsers');
-    expect(repo.cachedBlockedCreatorEmails, <String>{'bad@x.com', 'b@x.com'});
+    expect(repo.cachedBlockedCreatorUids, <String>{'u1', 'u2', 'u3'});
   });
 
   test('a stream error keeps the last known set and ends the initial wait', () async {
@@ -172,21 +179,21 @@ void main() {
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
 
-    final Future<Set<String>> afterInitialError = repo.watchBlockedCreatorEmails().skip(1).first;
+    final Future<Set<String>> afterInitialError = repo.watchBlockedCreatorUids().skip(1).first;
     client.snapshots.addError(StateError('permission-denied'));
 
     await afterInitialError;
-    expect(await repo.getBlockedCreatorEmails(waitForInitialLoad: true), isEmpty);
+    expect(await repo.getBlockedCreatorUids(waitForInitialLoad: true), isEmpty);
 
-    final Future<Set<String>> afterSnapshot = repo.watchBlockedCreatorEmails().skip(1).first;
+    final Future<Set<String>> afterSnapshot = repo.watchBlockedCreatorUids().firstWhere((uids) => uids.isNotEmpty);
     client.snapshots.add(<FakeDocRow>[_blocked('u1', 'bad@x.com')]);
-    expect(await afterSnapshot, <String>{'bad@x.com'});
+    expect(await afterSnapshot, <String>{'u1'});
 
-    final Future<Set<String>> afterLaterError = repo.watchBlockedCreatorEmails().skip(1).first;
+    final Future<Set<String>> afterLaterError = repo.watchBlockedCreatorUids().skip(1).first;
     client.snapshots.addError(StateError('unavailable'));
-    expect(await afterLaterError, <String>{'bad@x.com'});
+    expect(await afterLaterError, <String>{'u1'});
 
-    expect(repo.cachedBlockedCreatorEmails, <String>{'bad@x.com'});
+    expect(repo.cachedBlockedCreatorUids, <String>{'u1'});
   });
 
   test('a new account does not complete the initial block load with an unknown empty snapshot', () async {
@@ -196,14 +203,14 @@ void main() {
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     var completed = false;
-    final Future<Set<String>> waiting = repo.getBlockedCreatorEmails(waitForInitialLoad: true).then((emails) {
+    final Future<Set<String>> waiting = repo.getBlockedCreatorUids(waitForInitialLoad: true).then((uids) {
       completed = true;
-      return emails;
+      return uids;
     });
     await expectLater(waiting.timeout(const Duration(milliseconds: 50)), throwsA(isA<TimeoutException>()));
     expect(completed, isFalse);
     client.snapshots.add(<FakeDocRow>[_blocked('blocked-id', 'blocked@x.com')]);
-    expect(await waiting, <String>{'blocked@x.com'});
+    expect(await waiting, <String>{'blocked-id'});
     expect(completed, isTrue);
   });
 
@@ -211,7 +218,7 @@ void main() {
     final repo = createRepository();
     fakeAsync((async) {
       Set<String>? result;
-      unawaited(repo.getBlockedCreatorEmails(waitForInitialLoad: true).then((value) => result = value));
+      unawaited(repo.getBlockedCreatorUids(waitForInitialLoad: true).then((value) => result = value));
       async.elapse(const Duration(seconds: 2));
       expect(result, isNull);
       async.elapse(const Duration(seconds: 2));
@@ -226,14 +233,14 @@ void main() {
     sessionUsers.add(profileUser(id: 'me'));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked('u1', 'bad@x.com')]);
-    await repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.contains('bad@x.com'));
-    expect(repo.cachedBlockedCreatorEmails, isNotEmpty);
+    await repo.watchBlockedCreatorUids().firstWhere((uids) => uids.contains('u1'));
+    expect(repo.cachedBlockedCreatorUids, isNotEmpty);
 
-    final Future<Set<String>> signedOut = repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.isEmpty);
+    final Future<Set<String>> signedOut = repo.watchBlockedCreatorUids().firstWhere((emails) => emails.isEmpty);
     sessionUsers.add(profileUser(id: 'me', loggedIn: false));
     await signedOut;
 
-    expect(repo.cachedBlockedCreatorEmails, isEmpty);
+    expect(repo.cachedBlockedCreatorUids, isEmpty);
   });
 
   test('dispose waits for local hydration and stops lifecycle writes', () async {
@@ -245,7 +252,7 @@ void main() {
     await readStarted.future;
 
     sessionUsers.add(profileUser(id: 'me', loggedIn: false));
-    await repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.isEmpty);
+    await repo.watchBlockedCreatorUids().firstWhere((emails) => emails.isEmpty);
     var disposed = false;
     final Future<void> disposing = repo.dispose().then((_) => disposed = true);
     await Future<void>.delayed(Duration.zero);
@@ -256,7 +263,7 @@ void main() {
     } finally {
       if (!releaseRead.isCompleted) releaseRead.complete();
     }
-    expect(repo.cachedBlockedCreatorEmails, isEmpty);
+    expect(repo.cachedBlockedCreatorUids, isEmpty);
     expect(sessionUsers.hasListener, isFalse);
     expect(client.snapshots.hasListener, isFalse);
     expect(await store.readAll(), isEmpty);
@@ -327,8 +334,8 @@ void main() {
       when(() => session.currentUser).thenReturn(profileUser(id: 'other-owner'));
       sessionUsers.add(profileUser(id: 'other-owner'));
       await _waitForWatchCount(client, 2);
-      final Future<Set<String>> returnedOwnerSnapshot = repo.watchBlockedCreatorEmails().firstWhere(
-        (emails) => emails.contains('target@example.com'),
+      final Future<Set<String>> returnedOwnerSnapshot = repo.watchBlockedCreatorUids().firstWhere(
+        (uids) => uids.contains('target'),
       );
       when(() => session.currentUser).thenReturn(profileUser(id: owner));
       sessionUsers.add(profileUser(id: owner));
@@ -395,7 +402,7 @@ void main() {
 
     expect(await store.read('$owner::existing'), isNull);
     expect(await store.read('other-owner::existing'), isNotNull);
-    final blocked = await repo.blockUser(targetUserId: 'late-target', targetEmail: 'late@x.com');
+    final blocked = await repo.blockUser(targetUserId: 'late-target');
     expect(blocked.isSuccess, isFalse);
     expect(await store.read('$owner::late-target'), isNull);
   });
@@ -505,21 +512,34 @@ void main() {
     });
   });
 
-  test('last known blocked emails restore after a repository restart before network refresh', () async {
-    const String owner = 'blocked-email-restart-owner';
+  test('last known blocked UIDs restore after a repository restart before network refresh', () async {
+    const String owner = 'blocked-uid-restart-owner';
     when(() => session.currentUser).thenReturn(profileUser(id: owner));
     final first = createRepository();
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked('saved-target', 'Saved@Example.com')]);
-    await first.watchBlockedCreatorEmails().firstWhere((emails) => emails.contains('saved@example.com'));
-    expect(first.cachedBlockedCreatorEmails, <String>{'saved@example.com'});
+    await first.watchBlockedCreatorUids().firstWhere((uids) => uids.contains('saved-target'));
+    expect(first.cachedBlockedCreatorUids, <String>{'saved-target'});
 
     final restarted = createRepository();
     sessionUsers.add(profileUser(id: owner));
-    expect(await restarted.getBlockedCreatorEmails(waitForInitialLoad: true), <String>{'saved@example.com'});
+    expect(await restarted.getBlockedCreatorUids(waitForInitialLoad: true), <String>{'saved-target'});
 
-    expect(restarted.cachedBlockedCreatorEmails, <String>{'saved@example.com'});
+    expect(restarted.cachedBlockedCreatorUids, <String>{'saved-target'});
+  });
+
+  test('legacy email cache snapshots are not interpreted as blocked UIDs', () async {
+    const String owner = 'legacy-email-cache-owner';
+    when(() => session.currentUser).thenReturn(profileUser(id: owner));
+    final store = DurableJsonStore('user_blocks');
+    await store.write('$owner::server_emails', <String, Object?>{'emailsJson': '["private@example.com"]'});
+    final repo = createRepository(store);
+    sessionUsers.add(profileUser(id: owner));
+    await client.watchStarted.future;
+    client.snapshots.add(<FakeDocRow>[]);
+
+    expect(await repo.getBlockedCreatorUids(waitForInitialLoad: true), isEmpty);
   });
 
   test('block and unblock reject a blank user id before calling the server', () async {
@@ -583,7 +603,7 @@ void main() {
         sessionUsers.add(profileUser(id: 'me'));
         await client.watchStarted.future;
         client.snapshots.add(<FakeDocRow>[]);
-        await repo.getBlockedCreatorEmails(waitForInitialLoad: true);
+        await repo.getBlockedCreatorUids(waitForInitialLoad: true);
         final calls = <String>[];
         fakeFunctions.onCall = (name, parameters) {
           calls.add(name);
@@ -591,7 +611,7 @@ void main() {
           return Future<dynamic>.error(error);
         };
         final result = block
-            ? await repo.blockUser(targetUserId: ' target ', targetEmail: ' Target@Example.com ')
+            ? await repo.blockUser(targetUserId: ' target ')
             : await repo.unblockUser(targetUserId: ' target ');
         final permanent = error is cf.FirebaseFunctionsException && error.code == 'permission-denied';
         expect(result.failure!.message, permanent ? 'Target denied' : startsWith('Pending sync:'));
@@ -601,7 +621,7 @@ void main() {
         expect(record['status'], permanent ? 'rejected' : 'pending');
         expect(calls, everyElement(block ? 'blockUser' : 'unblockUser'));
         expect(calls, isNotEmpty);
-        if (block) expect(record['email'], 'target@example.com');
+        if (block) expect(record.containsKey('email'), isFalse);
       });
     }
   }
@@ -635,7 +655,6 @@ void main() {
     final offline = (await repo.fetchBlockedUsersList()).data!;
     expect(offline.map((row) => row.blockedUid), <String>['keep', 'add']);
     expect(offline.last.syncStatus, 'rejected');
-    expect(offline.last.blockedEmail, 'add@example.com');
   });
 
   for (final Object retryError in <Object>[
@@ -693,15 +712,15 @@ void main() {
     sessionUsers.add(profileUser(id: owner));
     await client.watchStarted.future;
     client.snapshots.add(<FakeDocRow>[_blocked(target, 'target@example.com')]);
-    await repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.contains('target@example.com'));
+    await repo.watchBlockedCreatorUids().firstWhere((uids) => uids.contains(target));
 
-    final Future<dynamic> oldBlock = repo.blockUser(targetUserId: target, targetEmail: 'target@example.com');
+    final Future<dynamic> oldBlock = repo.blockUser(targetUserId: target);
     await sendStarted.future;
 
-    final Future<Set<String>> unblockedEmail = repo.watchBlockedCreatorEmails().firstWhere((emails) => emails.isEmpty);
+    final Future<Set<String>> unblockedUid = repo.watchBlockedCreatorUids().firstWhere((uids) => uids.isEmpty);
     final Future<dynamic> newUnblock = repo.unblockUser(targetUserId: target);
     try {
-      await unblockedEmail.timeout(const Duration(seconds: 10));
+      await unblockedUid.timeout(const Duration(seconds: 10));
       final results = await Future.wait<Object?>(<Future<Object?>>[
         DurableJsonStore('user_blocks').read('$owner::$target'),
         repo.fetchBlockedUsersList(),

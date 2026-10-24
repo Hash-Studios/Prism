@@ -18,7 +18,6 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
@@ -31,6 +30,7 @@ import 'package:Prism/features/leaderboard/views/pages/leaderboard_page.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
@@ -42,6 +42,7 @@ import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -117,11 +118,15 @@ class _ProfileRepository implements PublicProfileRepository {
   Stream<PublicProfileEntity?> watchProfile(String identifier) => profiles.stream;
 
   @override
+  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> clearForUser(String userId) async {}
 
   @override
   Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> fetchWalls({
-    required String email,
+    required String userId,
     required bool refresh,
   }) => throw UnimplementedError();
 
@@ -143,14 +148,14 @@ class _ProfileRepository implements PublicProfileRepository {
 
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({
-    required List<String> allEmails,
+    required List<String> userIds,
     required int page,
   }) => throw UnimplementedError();
 
   @override
   Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({
     required String query,
-    required List<String> scopeEmails,
+    required List<String> scopeUserIds,
   }) => throw UnimplementedError();
 }
 
@@ -346,7 +351,7 @@ void main() {
           whenListen(
             bloc,
             const Stream<PublicProfileState>.empty(),
-            initialState: PublicProfileState.initial().copyWith(email: 'ana@example.com', status: LoadStatus.success),
+            initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
           );
           getIt
             ..registerFactory<PublicProfileBloc>(() => bloc)
@@ -357,7 +362,7 @@ void main() {
         },
         (QaShot shot) async {
           addTearDown(AnalyticsRuntime.reset);
-          await shot.pump(const ProfileScreen(profileIdentifier: 'ana@example.com'));
+          await shot.pump(const ProfileScreen(profileIdentifier: 'u2'));
           (getIt<PublicProfileRepository>() as _ProfileRepository).profiles.add(
             const PublicProfileEntity(
               id: 'u2',
@@ -366,8 +371,6 @@ void main() {
               username: 'ana_rivera',
               profilePhoto: '',
               bio: 'Makes calm gradients.',
-              followers: <String>['a', 'b', 'c'],
-              following: <String>['d'],
               links: <String, String>{},
               coverPhoto: '',
               frameId: 'frame_aurora',

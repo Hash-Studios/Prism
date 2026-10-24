@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
-import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
-import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -25,168 +25,85 @@ String? followersTopicFromEmail(String email) {
   return sanitizedLocalPart;
 }
 
-/// New-post pushes for a creator go to this topic (see onWallApproved). Older builds and older servers use it.
-String? _creatorPostsTopicFromEmail(String email) {
-  final String? base = followersTopicFromEmail(email);
-  return base == null ? null : '${base}_posts';
-}
-
 /// The same pushes also go to `posts_<creator uid>` (see onWallApproved). Unlike the email prefix, a uid is unique.
 String? creatorPostsTopicFromUid(String uid) {
-  final String sanitized = uid.trim().replaceAll(_invalidFcmTopicCharacters, '');
+  final String value = uid.trim();
+  if (value.isEmpty || value.contains('@')) return null;
+  final String sanitized = value.replaceAll(_invalidFcmTopicCharacters, '');
   return sanitized.isEmpty ? null : 'posts_$sanitized';
+}
+
+Future<bool> setCreatorPostsTopicForUid(
+  FirebaseMessaging messaging,
+  String uid, {
+  required bool subscribed,
+  required String sourceTag,
+  bool Function()? isCurrent,
+}) async {
+  final String? topic = creatorPostsTopicFromUid(uid);
+  if (topic == null) return false;
+  return _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag, isCurrent: isCurrent);
 }
 
 bool get creatorPostsAlertsEnabled =>
     getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.posts, defaultValue: true);
 
-/// Returns the uid for a creator email, null when no such user exists, and throws when the read fails.
-typedef CreatorUidResolver = Future<String?> Function(String email);
-
-const String _creatorUidCacheKey = 'creatorUidByEmail';
-const int _creatorUidResolveBatch = 10;
-
-Future<String?> _resolveCreatorUidFromProfile(String email) async {
-  final PublicProfileEntity? profile = await getIt<PublicProfileRepository>()
-      .watchProfile(email)
-      .first
-      .timeout(const Duration(seconds: 8));
-  return profile?.id;
-}
-
-Map<String, String> _readCreatorUidCache(SettingsLocalDataSource? settings) {
-  if (settings == null) return <String, String>{};
-  try {
-    final Object? decoded = jsonDecode(settings.get<String>(_creatorUidCacheKey, defaultValue: '{}'));
-    if (decoded is Map<String, dynamic>) {
-      return decoded.map((String email, dynamic uid) => MapEntry<String, String>(email, uid.toString()));
-    }
-  } on FormatException {
-    // A broken cache is rebuilt from the next reads.
-  }
-  return <String, String>{};
-}
-
-/// Follows store creator emails only. The uid of each creator comes from [knownUids], then from the local cache, then
-/// from one profile read. Every uid that a read finds is cached, so each creator costs at most one read.
-Future<({Map<String, String> uids, bool complete})> _creatorUids(
-  Iterable<String> emails, {
-  required Map<String, String> knownUids,
-  required SettingsLocalDataSource? settings,
-  required CreatorUidResolver? resolver,
-  bool Function()? isCurrent,
-}) async {
-  if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
-  final Map<String, String> cache = _readCreatorUidCache(settings)..addAll(knownUids);
-  final Map<String, String> uids = <String, String>{};
-  final List<String> missing = <String>[];
-  for (final String email in emails) {
-    final String uid = cache[email] ?? '';
-    if (uid.isEmpty) {
-      missing.add(email);
-    } else {
-      uids[email] = uid;
-    }
-  }
-  bool complete = true;
-  final CreatorUidResolver? resolve =
-      resolver ?? (getIt.isRegistered<PublicProfileRepository>() ? _resolveCreatorUidFromProfile : null);
-  if (resolve != null) {
-    for (int start = 0; start < missing.length; start += _creatorUidResolveBatch) {
-      if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
-      final List<String> batch = missing.skip(start).take(_creatorUidResolveBatch).toList();
-      await Future.wait(
-        batch.map((String email) async {
-          try {
-            if (!(isCurrent?.call() ?? true)) return;
-            final String? uid = await resolve(email);
-            if (!(isCurrent?.call() ?? true)) return;
-            if (uid != null && uid.isNotEmpty) uids[email] = uid;
-          } catch (error, stackTrace) {
-            complete = false;
-            logger.w(
-              'Could not resolve a creator uid for the posts topic.',
-              tag: 'Push',
-              error: error,
-              stackTrace: stackTrace,
-            );
-          }
-        }),
-      );
-    }
-  }
-  if (!(isCurrent?.call() ?? true)) return (uids: <String, String>{}, complete: false);
-  final Map<String, String> learned = <String, String>{
-    for (final MapEntry<String, String> entry in uids.entries)
-      if (cache[entry.key] != entry.value) entry.key: entry.value,
-  };
-  if (settings != null && learned.isNotEmpty) {
-    await settings.set(_creatorUidCacheKey, jsonEncode(<String, String>{...cache, ...learned}));
-  }
-  return (uids: uids, complete: complete);
-}
-
-/// Subscribes to or leaves the posts topics of [creatorEmails]: the legacy `<local>_posts` topic and `posts_<uid>`.
-/// Returns false when a topic call or a uid read failed. Pass [knownUids] (email to uid) when the caller has them.
-/// [isCurrent] stops subsequent work after ownership changes; dispatched native calls cannot be cancelled.
+/// Subscribes to or leaves the posts topics for creator UIDs. [isCurrent] stops after ownership changes.
 Future<bool> _changeCreatorPostsTopics(
   FirebaseMessaging messaging,
-  Iterable<String> creatorEmails, {
+  Iterable<String> creatorUids, {
   required bool subscribed,
   required String sourceTag,
-  Map<String, String> knownUids = const <String, String>{},
-  SettingsLocalDataSource? settings,
-  CreatorUidResolver? resolver,
   bool Function()? isCurrent,
 }) async {
   if (!(isCurrent?.call() ?? true)) return false;
-  final Map<String, String> emailByKey = <String, String>{
-    for (final String email in creatorEmails)
-      if (email.trim().isNotEmpty) email.trim().toLowerCase(): email.trim(),
-  };
-  final SettingsLocalDataSource? store =
-      settings ?? (getIt.isRegistered<SettingsLocalDataSource>() ? getIt<SettingsLocalDataSource>() : null);
+  final Set<String> uids = creatorUids
+      .map((String uid) => uid.trim())
+      .where((uid) => uid.isNotEmpty && !uid.contains('@'))
+      .toSet();
   Future<bool> change(String? topic) => topic == null
       ? Future<bool>.value(true)
       : _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag, isCurrent: isCurrent);
   final List<bool> results = await Future.wait(<Future<bool>>[
-    ...emailByKey.values.map((String email) => change(_creatorPostsTopicFromEmail(email))),
-    _creatorUids(
-      emailByKey.keys,
-      knownUids: <String, String>{
-        for (final MapEntry<String, String> entry in knownUids.entries) entry.key.trim().toLowerCase(): entry.value,
-      },
-      settings: store,
-      resolver: resolver,
-      isCurrent: isCurrent,
-    ).then((({Map<String, String> uids, bool complete}) found) async {
-      if (!(isCurrent?.call() ?? true)) return false;
-      final List<bool> changed = await Future.wait(
-        found.uids.values.map((String uid) => change(creatorPostsTopicFromUid(uid))),
-      );
-      return found.complete && changed.every((bool ok) => ok);
-    }),
+    for (final String uid in uids) change(creatorPostsTopicFromUid(uid)),
   ]);
   return results.every((bool ok) => ok);
 }
 
-/// What the Posts switch controls: every followed creator's posts topics.
-Future<void> setCreatorPostsTopics(
-  FirebaseMessaging messaging,
-  Iterable<String> creatorEmails, {
+Future<bool> syncCreatorPostsTopicsForUser(
+  FirebaseMessaging messaging, {
+  required String userId,
   required bool subscribed,
   required String sourceTag,
-  Map<String, String> knownUids = const <String, String>{},
   bool Function()? isCurrent,
 }) async {
-  await _changeCreatorPostsTopics(
-    messaging,
-    creatorEmails,
-    subscribed: subscribed,
-    sourceTag: sourceTag,
-    knownUids: knownUids,
-    isCurrent: isCurrent,
-  );
+  final String ownerUid = userId.trim();
+  if (ownerUid.isEmpty || !(isCurrent?.call() ?? true)) return false;
+  try {
+    final List<String> followingUids = await firestoreClient.query<String>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.profileFollowing(ownerUid),
+        sourceTag: 'push_topics.following_uids',
+      ),
+      (_, docId) => docId,
+    );
+    if (!(isCurrent?.call() ?? true)) return false;
+    return await _changeCreatorPostsTopics(
+      messaging,
+      followingUids,
+      subscribed: subscribed,
+      sourceTag: sourceTag,
+      isCurrent: isCurrent,
+    );
+  } catch (error, stackTrace) {
+    logger.w(
+      'Could not load followed creator UIDs for posts topics.',
+      tag: 'Push',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    return false;
+  }
 }
 
 String? userTopicFromId(String uid) {
@@ -195,6 +112,7 @@ String? userTopicFromId(String uid) {
 }
 
 const String _pushTopicsSyncedKey = 'pushTopicsSyncedForLocV2';
+const String _creatorPostsMigrationKey = 'creatorPostsUidMigrationV2';
 const String _nativeLocalizationTopicSuffix = '_loc_v1';
 const String _legacyWotdTopic = 'wall_of_the_day';
 const String _wotdBucketKey = 'wotdBucketTopic';
@@ -310,14 +228,28 @@ Future<void> syncPushTopics(
     return;
   }
   if (token == null || token.isEmpty) return;
-  final String tier = premium ? 'premium' : 'free';
-  final String syncKey = '$token|$userId|$tier';
-  if (settings.get<String>(_pushTopicsSyncedKey, defaultValue: '') == syncKey) return;
-
   const String sourceTag = 'push_topics.sync';
+  final String migrationKey = '$token|$userId|uid_v2';
+  bool migratedCreatorTopics = settings.get<String>(_creatorPostsMigrationKey, defaultValue: '') == migrationKey;
+  if (!migratedCreatorTopics) {
+    final bool cleaned = await unsubscribeLegacyCreatorPostsTopics(
+      messaging,
+      following,
+      sourceTag: '$sourceTag.creator_uid_migration',
+    );
+    if (cleaned) {
+      await settings.set(_creatorPostsMigrationKey, migrationKey);
+      migratedCreatorTopics = true;
+    }
+  }
+  final String tier = premium ? 'premium' : 'free';
+  final String syncKey = '$token|$userId|$tier|uid_v2';
+  if (settings.get<String>(_pushTopicsSyncedKey, defaultValue: '') == syncKey && migratedCreatorTopics) return;
+
   Future<bool> subscribe(String? topic) =>
       topic == null ? Future<bool>.value(true) : subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
   final List<bool> results = await Future.wait(<Future<bool>>[
+    migratedCreatorTopics ? Future<bool>.value(true) : Future<bool>.value(false),
     if (settings.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true)) subscribe('recommendations'),
     if (settings.get<bool>(NotificationPrefKeys.drops, defaultValue: true)) subscribe('drops'),
     if (settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true))
@@ -331,9 +263,31 @@ Future<void> syncPushTopics(
       subscribe(followersTopicFromEmail(email)),
     ],
     if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))
-      _changeCreatorPostsTopics(messaging, following, subscribed: true, sourceTag: sourceTag, settings: settings),
+      syncCreatorPostsTopicsForUser(messaging, userId: userId, subscribed: true, sourceTag: sourceTag),
   ]);
   if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);
+}
+
+/// Removes email-derived creator topics left by older app versions. Email-only creator identifiers are never used
+/// to subscribe to a topic; they are accepted here only to clean up that legacy subscription.
+Future<bool> unsubscribeLegacyCreatorPostsTopics(
+  FirebaseMessaging messaging,
+  Iterable<String> legacyFollowing, {
+  required String sourceTag,
+  bool Function()? isCurrent,
+}) async {
+  final Set<String> topics = <String>{};
+  for (final String identifier in legacyFollowing) {
+    final String email = identifier.trim();
+    if (!email.contains('@')) continue;
+    final String? localPart = followersTopicFromEmail(email);
+    if (localPart != null) topics.add('${localPart}_posts');
+  }
+  final List<bool> results = await Future.wait(<Future<bool>>[
+    for (final String topic in topics)
+      _changeTopic(messaging, topic, subscribe: false, sourceTag: sourceTag, isCurrent: isCurrent),
+  ]);
+  return results.every((bool result) => result);
 }
 
 Future<bool> subscribeToTopicSafely(

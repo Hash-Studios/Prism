@@ -11,9 +11,9 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:get_it/get_it.dart';
 
 class OfflineWallpaperCatalog {
-  OfflineWallpaperCatalog({DurableJsonStore? store, FutureOr<Set<String>> Function()? blockedEmails})
+  OfflineWallpaperCatalog({DurableJsonStore? store, FutureOr<Set<String>> Function()? blockedUids})
     : _store = store ?? DurableJsonStore('wallpaper_catalog'),
-      _blockedEmails = blockedEmails ?? _currentBlockedEmails;
+      _blockedUids = blockedUids ?? _currentBlockedUids;
 
   static final OfflineWallpaperCatalog _instance = OfflineWallpaperCatalog();
   static OfflineWallpaperCatalog get instance => _instance;
@@ -22,7 +22,7 @@ class OfflineWallpaperCatalog {
   static const int maxBytes = 2 * 1024 * 1024;
 
   final DurableJsonStore _store;
-  final FutureOr<Set<String>> Function() _blockedEmails;
+  final FutureOr<Set<String>> Function() _blockedUids;
   final Map<String, _CatalogRecord> _records = <String, _CatalogRecord>{};
   Future<void>? _loading;
   Future<void> _mutationTail = Future<void>.value();
@@ -47,7 +47,7 @@ class OfflineWallpaperCatalog {
     await _ensureLoaded();
     if (!_isPublicCatalogSource(source) || id.trim().isEmpty) return null;
     final FeedItemEntity? item = _records[_key(source, id)]?.item;
-    return item != null && !BlockedCreatorsFilter.hidesFeedItem(item, await _blockedEmails()) ? item : null;
+    return item != null && !BlockedCreatorsFilter.hidesFeedItem(item, await _blockedUids()) ? item : null;
   }
 
   Future<List<FeedItemEntity>> search(String query, {int limit = 100}) async {
@@ -57,7 +57,7 @@ class OfflineWallpaperCatalog {
     final List<_CatalogRecord> matches =
         _records.values.where((record) => record.searchText.contains(normalizedQuery)).toList(growable: false)
           ..sort((a, b) => b.savedAtUtc.compareTo(a.savedAtUtc));
-    final Set<String> blocked = await _blockedEmails();
+    final Set<String> blocked = await _blockedUids();
     return matches
         .where((record) => !BlockedCreatorsFilter.hidesFeedItem(record.item, blocked))
         .take(limit)
@@ -121,8 +121,8 @@ class OfflineWallpaperCatalog {
     return result;
   }
 
-  static Future<Set<String>> _currentBlockedEmails() => GetIt.instance.isRegistered<UserBlockRepository>()
-      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true)
+  static Future<Set<String>> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true)
       : Future<Set<String>>.value(const <String>{});
 
   static bool _isPublicCatalogSource(WallpaperSource source) =>

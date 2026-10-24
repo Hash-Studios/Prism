@@ -18,7 +18,6 @@ class PublicProfileSnapshotCodec {
               .map(
                 (item) => <String, Object?>{
                   'id': item.id,
-                  'email': item.email,
                   'name': item.name,
                   'username': item.username,
                   'profilePhoto': item.profilePhoto,
@@ -36,7 +35,7 @@ class PublicProfileSnapshotCodec {
           .map(
             (item) => UserSummaryEntity(
               id: item['id'] as String,
-              email: item['email'] as String,
+              email: '',
               name: item['name'] as String,
               username: item['username'] as String,
               profilePhoto: item['profilePhoto'] as String,
@@ -87,6 +86,7 @@ class PublicProfileSnapshotCodec {
         size: dto.size,
         resolution: dto.resolution,
         email: dto.email,
+        creatorUid: dto.creatorUid.isEmpty ? null : dto.creatorUid,
         source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
         wallpaperThumb: dto.wallpaperThumb,
         wallpaperUrl: dto.wallpaperUrl,

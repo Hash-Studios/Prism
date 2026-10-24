@@ -27,7 +27,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     // Blocking a creator removes their walls from the home feed at once (App Review 1.2).
     _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorEmails()
+        .watchBlockedCreatorUids()
         .skip(1)
         .listen((blocked) => add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked)));
   }

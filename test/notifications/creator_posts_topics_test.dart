@@ -36,52 +36,48 @@ class _FakeMessaging implements FirebaseMessaging {
 }
 
 void main() {
-  test('the Posts switch toggles each followed creator topic that onWallApproved sends to', () async {
+  test('UID topic helper toggles the canonical creator topic and rejects email identifiers', () async {
     final messaging = _FakeMessaging();
-    const creators = <String>['ana@example.com', 'j.doe+art@example.com', '@broken'];
 
-    await setCreatorPostsTopics(messaging, creators, subscribed: false, sourceTag: 'test');
-    await setCreatorPostsTopics(messaging, creators, subscribed: true, sourceTag: 'test');
-
+    expect(await setCreatorPostsTopicForUid(messaging, 'creator-uid', subscribed: false, sourceTag: 'test'), isTrue);
+    expect(await setCreatorPostsTopicForUid(messaging, 'creator-uid', subscribed: true, sourceTag: 'test'), isTrue);
     expect(
-      messaging.unsubscribed,
-      containsAll(<String>['ana_posts', 'ana_posts_loc_v1', 'j.doeart_posts', 'j.doeart_posts_loc_v1']),
+      await setCreatorPostsTopicForUid(messaging, 'ana@example.com', subscribed: true, sourceTag: 'test'),
+      isFalse,
     );
-    expect(messaging.subscribed, <String>['ana_posts_loc_v1', 'j.doeart_posts_loc_v1']);
+
+    expect(messaging.unsubscribed, <String>['posts_creator-uid', 'posts_creator-uid_loc_v1', 'posts_creator-uid']);
+    expect(messaging.subscribed, <String>['posts_creator-uid_loc_v1']);
   });
 
-  test('starts all creator topic unsubscriptions without waiting for each one', () async {
+  test('starts all UID topic unsubscriptions without waiting for each one', () async {
     final messaging = _FakeMessaging()..unsubscribeGate = Completer<void>();
 
-    final Future<void> unsubscribe = setCreatorPostsTopics(
-      messaging,
-      <String>['ana@example.com', 'lee@example.com'],
-      subscribed: false,
-      sourceTag: 'test',
-    );
+    final Future<void> unsubscribe = Future.wait(<Future<bool>>[
+      for (final String uid in <String>['ana', 'lee'])
+        setCreatorPostsTopicForUid(messaging, uid, subscribed: false, sourceTag: 'test'),
+    ]).then((_) {});
     await Future<void>.delayed(Duration.zero);
 
-    expect(messaging.unsubscribed, <String>['ana_posts', 'lee_posts']);
+    expect(messaging.unsubscribed, <String>['posts_ana', 'posts_lee']);
 
     messaging.unsubscribeGate!.complete();
     await unsubscribe;
     expect(
       messaging.unsubscribed,
-      unorderedEquals(<String>['ana_posts', 'ana_posts_loc_v1', 'lee_posts', 'lee_posts_loc_v1']),
+      unorderedEquals(<String>['posts_ana', 'posts_ana_loc_v1', 'posts_lee', 'posts_lee_loc_v1']),
     );
   });
 
-  test('continues creator topic unsubscriptions when one topic fails', () async {
-    final messaging = _FakeMessaging()..failingUnsubscribeTopic = 'ana_posts';
+  test('continues creator topic unsubscriptions when one UID topic fails', () async {
+    final messaging = _FakeMessaging()..failingUnsubscribeTopic = 'posts_ana';
 
-    await setCreatorPostsTopics(
-      messaging,
-      <String>['ana@example.com', 'lee@example.com'],
-      subscribed: false,
-      sourceTag: 'test',
-    );
+    await Future.wait(<Future<bool>>[
+      for (final String uid in <String>['ana', 'lee'])
+        setCreatorPostsTopicForUid(messaging, uid, subscribed: false, sourceTag: 'test'),
+    ]);
 
-    expect(messaging.unsubscribed, <String>['ana_posts', 'lee_posts', 'lee_posts_loc_v1']);
+    expect(messaging.unsubscribed, <String>['posts_ana', 'posts_lee', 'posts_lee_loc_v1']);
   });
 
   test('missing APNS token bounds many creator unsubscriptions to one retry window', () {
@@ -90,12 +86,10 @@ void main() {
     bool completed = false;
 
     fakeAsync((async) {
-      setCreatorPostsTopics(
-        messaging,
-        List<String>.generate(20, (int index) => 'creator$index@example.com'),
-        subscribed: false,
-        sourceTag: 'test',
-      ).then((_) => completed = true);
+      Future.wait(<Future<bool>>[
+        for (int index = 0; index < 20; index++)
+          setCreatorPostsTopicForUid(messaging, 'creator$index', subscribed: false, sourceTag: 'test'),
+      ]).then((_) => completed = true);
       async.flushMicrotasks();
       expect(completed, isFalse);
 

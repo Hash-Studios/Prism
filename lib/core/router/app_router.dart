@@ -72,7 +72,6 @@ import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:github/github.dart' show Contributor;

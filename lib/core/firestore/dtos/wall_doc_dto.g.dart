@@ -14,6 +14,7 @@ _WallDocDto _$WallDocDtoFromJson(Map<String, dynamic> json) => _WallDocDto(
   size: json['size'] == null ? '' : const FirestoreStringConverter().fromJson(json['size']),
   resolution: json['resolution'] == null ? '' : const FirestoreStringConverter().fromJson(json['resolution']),
   email: json['email'] == null ? '' : const FirestoreStringConverter().fromJson(json['email']),
+  creatorUid: json['creatorUid'] == null ? '' : const FirestoreStringConverter().fromJson(json['creatorUid']),
   wallpaperProvider: json['wallpaper_provider'] == null
       ? ''
       : const FirestoreStringConverter().fromJson(json['wallpaper_provider']),
@@ -37,6 +38,7 @@ Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynami
   'size': const FirestoreStringConverter().toJson(instance.size),
   'resolution': const FirestoreStringConverter().toJson(instance.resolution),
   'email': const FirestoreStringConverter().toJson(instance.email),
+  'creatorUid': const FirestoreStringConverter().toJson(instance.creatorUid),
   'wallpaper_provider': const FirestoreStringConverter().toJson(instance.wallpaperProvider),
   'wallpaper_thumb': const FirestoreStringConverter().toJson(instance.wallpaperThumb),
   'wallpaper_url': const FirestoreStringConverter().toJson(instance.wallpaperUrl),

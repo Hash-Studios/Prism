@@ -29,7 +29,7 @@ class UserSummaryTile extends StatelessWidget {
       onTap();
     }
 
-    final bool isOwnAccount = user.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
+    final bool isOwnAccount = user.id == app_state.prismUser.id;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
       child: Row(
@@ -148,7 +148,7 @@ class _FollowPill extends StatelessWidget {
         currentUserId: app_state.prismUser.id,
         currentUserEmail: app_state.prismUser.email,
         targetUserId: user.id,
-        targetUserEmail: user.email,
+        targetUserEmail: '',
         targetName: user.name,
       ),
     );

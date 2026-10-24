@@ -1,6 +1,4 @@
 import 'package:Prism/core/constants/app_functions.dart';
-import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 
 /// Canonical usernames are published only by the server's reservation transaction.
@@ -28,34 +26,7 @@ class UsernameService {
       (data, _) => data['uid'] is String ? data['uid'] as String : '',
       sourceTag: 'profile.edit.usernameReservation',
     );
-    if (owner != null && owner != uid) {
-      if (owner.isEmpty) return false;
-      final bool? deleted = await firestoreClient.getById<bool>(
-        FirebaseCollections.usersV2,
-        owner,
-        (data, _) => data['deleted'] == true,
-        sourceTag: 'profile.edit.usernameReservationOwner',
-      );
-      if (deleted != true) return false;
-    }
-    for (final String field in <String>['username', 'usernameLower']) {
-      final List<bool> conflicts = await firestoreClient.query<bool>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.usersV2,
-          sourceTag: 'profile.edit.usernameAvailability.$field',
-          filters: <FirestoreFilter>[
-            FirestoreFilter(
-              field: field,
-              op: FirestoreFilterOp.isEqualTo,
-              value: field == 'username' ? username : username.toLowerCase(),
-            ),
-          ],
-        ),
-        (data, docId) => docId != uid && data['deleted'] != true,
-      );
-      if (conflicts.any((conflict) => conflict)) return false;
-    }
-    return true;
+    return owner == null || owner == uid;
   }
 
   static Future<Object?> _call(Map<String, Object?> data) async =>

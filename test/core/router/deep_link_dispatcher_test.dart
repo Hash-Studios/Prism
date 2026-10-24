@@ -275,7 +275,7 @@ void main() {
     final requests = <Future<DeepLinkDispatchResult>>[
       dispatcher.openPush(<String, dynamic>{'route': '/downloads'}),
       dispatcher.openPush(<String, dynamic>{'route': 'wall', 'wall_id': 'wall-1'}),
-      dispatcher.openPush(<String, dynamic>{'route': 'follower', 'follower_email': 'creator@example.com'}),
+      dispatcher.openPush(<String, dynamic>{'route': 'follower', 'follower_uid': 'creator_uid'}),
     ];
     await tester.pump();
     final receipts = events.whereType<DeepLinkReceivedEvent>().toList();

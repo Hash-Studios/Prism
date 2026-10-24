@@ -264,9 +264,7 @@ Future<PageRouteInfo?> _relationRoute(
   try {
     final PublicProfileEntity? profile = await (profileLookup ?? _lookupProfile)(identifier);
     if (profile == null) return null;
-    final PageRouteInfo route = followers
-        ? FollowersRoute(followers: List<String>.unmodifiable(profile.followers))
-        : FollowingListRoute(following: List<String>.unmodifiable(profile.following));
+    final PageRouteInfo route = followers ? FollowersRoute(userId: profile.id) : FollowingListRoute(userId: profile.id);
     return route;
   } catch (_) {
     return null;

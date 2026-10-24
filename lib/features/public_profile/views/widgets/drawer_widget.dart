@@ -50,8 +50,7 @@ class ProfileDrawer extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     // The drawer sits on the user's own profile, so its loaded walls feed the link preview card.
     final PublicProfileState profile = context.read<PublicProfileBloc>().state;
-    final bool ownWalls =
-        profile.status == LoadStatus.success && profile.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
+    final bool ownWalls = profile.status == LoadStatus.success && profile.profileId == app_state.prismUser.id;
     try {
       await createUserDynamicLink(
         app_state.prismUser.name,
@@ -60,7 +59,6 @@ class ProfileDrawer extends StatelessWidget {
         app_state.prismUser.bio,
         app_state.prismUser.profilePhoto,
         context: context,
-        followerCount: app_state.prismUser.followers.length,
         wallpaperCount: ownWalls && !profile.hasMoreWalls ? profile.walls.length : null,
         gallery: ownWalls
             ? profile.walls.map((wall) => wall.wallpaperThumb ?? wall.wallpaperUrl).toList()

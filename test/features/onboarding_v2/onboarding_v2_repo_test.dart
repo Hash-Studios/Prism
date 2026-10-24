@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo_impl.dart';
+import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -47,11 +48,14 @@ void main() {
 
   test('protected creator previews use thumbnails and never fall back to an original', () async {
     final config = _MockRemoteConfig();
-    when(() => config.getString(any())).thenReturn('[{"email":"artist@example.test","rank":1}]');
+    when(() => config.getString(any())).thenReturn('[{"uid":"creator-1","rank":1}]');
     repository = OnboardingV2RepositoryImpl(firestore, settings, remoteConfig: config);
+    firestore.docs[FirebaseCollections.profiles] = <String, Map<String, dynamic>>{
+      'creator-1': <String, dynamic>{'name': 'Artist', 'profilePhoto': 'photo', 'followerCount': 42},
+    };
     firestore.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{
       'safe': <String, dynamic>{
-        'email': 'artist@example.test',
+        'creatorUid': 'creator-1',
         'review': true,
         'originalProtected': true,
         'wallpaper_url': '',
@@ -59,7 +63,7 @@ void main() {
             'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img',
       },
       'missing-thumb': <String, dynamic>{
-        'email': 'artist@example.test',
+        'creatorUid': 'creator-1',
         'review': true,
         'originalProtected': true,
         'wallpaper_url': 'https://legacy.example.test/original.jpg',
@@ -69,9 +73,65 @@ void main() {
         ? firestore.docs[FirebaseCollections.walls]!.entries.map((entry) => (id: entry.key, data: entry.value)).toList()
         : <FakeDocRow>[];
     final result = await repository.fetchStarterPack();
+    expect(result.data!.single.userId, 'creator-1');
+    expect(result.data!.single.followerCount, 42);
     expect(result.data!.single.previewUrls, <String>[
       'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img',
     ]);
+  });
+
+  test('starter pack entries without a public profile are omitted', () async {
+    final config = _MockRemoteConfig();
+    when(() => config.getString(any())).thenReturn('[{"userId":"missing-profile","rank":1}]');
+    repository = OnboardingV2RepositoryImpl(firestore, settings, remoteConfig: config);
+
+    final result = await repository.fetchStarterPack();
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data, isEmpty);
+  });
+
+  test('starter pack skips Remote Config entries that only carry an email', () async {
+    final config = _MockRemoteConfig();
+    when(() => config.getString(any())).thenReturn('[{"email":"artist@example.test","rank":1}]');
+    repository = OnboardingV2RepositoryImpl(firestore, settings, remoteConfig: config);
+
+    final result = await repository.fetchStarterPack();
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data, isEmpty);
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('starter pack follows creators through the UID callable', () async {
+    final followed = <String>[];
+    repository = OnboardingV2RepositoryImpl(
+      firestore,
+      settings,
+      remoteConfig: _MockRemoteConfig(),
+      setFollow: (String uid, bool following) async {
+        expect(following, isTrue);
+        followed.add(uid);
+      },
+    );
+    final result = await repository.followCreators(
+      currentUserId: 'owner',
+      currentUserEmail: 'owner@example.test',
+      creators: [
+        const OnboardingStarterCreatorEntity(
+          userId: 'creator-1',
+          email: 'creator-1',
+          name: 'Artist',
+          photoUrl: '',
+          previewUrls: <String>[],
+          rank: 1,
+          followerCount: 0,
+        ),
+      ],
+    );
+    expect(result.isSuccess, isTrue);
+    expect(followed, <String>['creator-1']);
+    expect(firestore.writes, isEmpty);
   });
 
   test('a user doc without the onboarding map is not completed', () async {

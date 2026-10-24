@@ -68,20 +68,14 @@ void main() {
   Future<FeedItemEntity> profileEntry(Map<String, dynamic> data) async {
     final client = FakeFirestoreClient(onQuery: (_) => <FakeDocRow>[(id: documentId, data: data)]);
     final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
-    final result = await PublicProfileRepositoryImpl(
-      client,
-      blocks,
-    ).fetchWalls(email: 'creator@prism.test', refresh: true);
+    final result = await PublicProfileRepositoryImpl(client, blocks).fetchWalls(userId: 'creatorUid', refresh: true);
     return result.data!.items.single.toFeedItem();
   }
 
   Future<FeedItemEntity> restoredProfileEntry() async {
     final client = FakeFirestoreClient()..queryError = StateError('offline after restart');
     final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
-    final result = await PublicProfileRepositoryImpl(
-      client,
-      blocks,
-    ).fetchWalls(email: 'creator@prism.test', refresh: true);
+    final result = await PublicProfileRepositoryImpl(client, blocks).fetchWalls(userId: 'creatorUid', refresh: true);
     return result.data!.items.single.toFeedItem();
   }
 
@@ -181,7 +175,7 @@ void main() {
   test('a wall from a cache written before document ids were stored still restores and opens by its id', () async {
     final Map<String, dynamic> data = wallData('');
     final PrismWallpaper stored = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-    await DurableJsonStore('public_profiles').write('viewer::walls:creator@prism.test', <String, Object?>{
+    await DurableJsonStore('public_profiles').write('v2::viewer::walls:creatorUid', <String, Object?>{
       'itemsJson': jsonEncode(<Object?>[
         <String, dynamic>{...data, 'id': documentId},
       ]),

@@ -51,7 +51,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
 
   @override
   Future<Result<WallOfTheDayEntity?>> fetchToday() async {
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
     try {
       final WallOfTheDayFirestorePointer? pointer = await _firestoreClient.getById<WallOfTheDayFirestorePointer>(
         FirebaseCollections.wallOfTheDay,
@@ -74,7 +74,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         // Re-check against the caller's blocked creators on every call (not just on
         // fetch) so a since-blocked creator's pick disappears instantly, without
         // waiting for the day-scoped cache to expire.
-        return Result.success(_visibleForCaller(cached.entity, cached.authorEmail, blocked));
+        return Result.success(_visibleForCaller(cached.entity, cached.authorUid, blocked));
       }
 
       final wallResult = await _prismWallpaperRepository.fetchByDocumentId(pointer.wallDocumentId);
@@ -93,10 +93,10 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
             entity: entity,
             wallDocumentId: pointer.wallDocumentId,
             featuredDayUtc: featuredUtc,
-            authorEmail: wallpaper.core.authorEmail,
+            authorUid: wallpaper.core.authorUid,
           );
           await _rememberToday(featuredUtc, pointer.wallDocumentId, wallpaper);
-          return Result.success(_visibleForCaller(entity, wallpaper.core.authorEmail, blocked));
+          return Result.success(_visibleForCaller(entity, wallpaper.core.authorUid, blocked));
         },
         onFailure: (failure) async {
           if (_isTransientFailure(failure)) {
@@ -129,7 +129,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
     bool blockSnapshotReady = false;
     try {
-      await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       blockSnapshotReady = true;
       final query = await _queryRecentRows(
         FirestoreQuerySpec(
@@ -191,9 +191,9 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed', 'no-app'}.contains(failure.code);
 
   List<WotdPastPick> _visiblePicks(List<WotdPastPick> picks) {
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorUids;
     return picks
-        .where((pick) => !BlockedCreatorsFilter.hidesCreatorEmail(pick.wallpaper.core.authorEmail, blocked))
+        .where((pick) => !BlockedCreatorsFilter.hidesCreatorUid(pick.wallpaper.core.authorUid, blocked))
         .toList(growable: false);
   }
 
@@ -313,8 +313,8 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       );
       return _visibleForCaller(
         entity,
-        item.wallpaper.core.authorEmail,
-        blocked ?? await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true),
+        item.wallpaper.core.authorUid,
+        blocked ?? await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
       );
     } catch (error) {
       logger.w('[WallOfTheDayRepository] today snapshot read failed: $error');
@@ -409,11 +409,11 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   }
 
   /// Hides the pick if its creator is on the caller's blocked list.
-  WallOfTheDayEntity? _visibleForCaller(WallOfTheDayEntity? entity, String? authorEmail, Set<String> blocked) {
+  WallOfTheDayEntity? _visibleForCaller(WallOfTheDayEntity? entity, String? authorUid, Set<String> blocked) {
     if (entity == null) {
       return null;
     }
-    return BlockedCreatorsFilter.hidesCreatorEmail(authorEmail, blocked) ? null : entity;
+    return BlockedCreatorsFilter.hidesCreatorUid(authorUid, blocked) ? null : entity;
   }
 }
 
@@ -422,11 +422,11 @@ class _CachedPick {
     required this.entity,
     required this.wallDocumentId,
     required this.featuredDayUtc,
-    required this.authorEmail,
+    required this.authorUid,
   });
 
   final WallOfTheDayEntity entity;
   final String wallDocumentId;
   final DateTime featuredDayUtc;
-  final String? authorEmail;
+  final String? authorUid;
 }

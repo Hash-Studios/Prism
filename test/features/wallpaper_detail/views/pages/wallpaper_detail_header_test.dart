@@ -57,7 +57,7 @@ FeedItemEntity _prism({
   String id = 'prism-1',
   String? title,
   String? authorName = 'Akshay',
-  String? authorEmail = 'creator@example.com',
+  String? authorUid = 'creator-uid',
   String? docId = 'doc-1',
   int? width,
   int? height,
@@ -70,7 +70,7 @@ FeedItemEntity _prism({
       fullUrl: 'https://img.test/full.jpg',
       thumbnailUrl: 'https://img.test/thumb.jpg',
       authorName: authorName,
-      authorEmail: authorEmail,
+      authorUid: authorUid,
       width: width,
       height: height,
     ),
@@ -468,7 +468,7 @@ void main() {
 
     testWidgets('is hidden on your own wall', (tester) async {
       app_state.prismUser = profileUser();
-      final FeedItemEntity entity = _prism(authorEmail: 'User@Example.com');
+      final FeedItemEntity entity = _prism(authorUid: 'u1');
       await pump(
         tester,
         WallpaperDetailLoaded(
@@ -484,7 +484,7 @@ void main() {
 
     testWidgets('is hidden when the creator is unknown', (tester) async {
       app_state.prismUser = profileUser();
-      final FeedItemEntity entity = _prism(authorEmail: null);
+      final FeedItemEntity entity = _prism(authorUid: null);
       await pump(
         tester,
         WallpaperDetailLoaded(

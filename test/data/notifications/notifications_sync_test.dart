@@ -239,10 +239,12 @@ void main() {
         url: '',
         createdAt: recent,
         read: false,
-        followerEmail: 'blocked@example.com',
+        followerUid: 'blocked_uid',
       ),
     ];
-    (getIt<UserBlockRepository>() as FakeUserBlockRepository).completeInitial(<String>{'blocked@example.com'});
+    final FakeUserBlockRepository blocks = getIt<UserBlockRepository>() as FakeUserBlockRepository
+      ..completeInitial(<String>{'blocked_uid'});
+    blocks.blockedRows = const <BlockedUserListRow>[BlockedUserListRow(blockedUid: 'blocked_uid')];
 
     await syncInAppNotificationsFromRemote();
 

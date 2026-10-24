@@ -11,7 +11,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
@@ -60,7 +59,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  late final String _profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.email;
+  late final String _profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.id;
   late Stream<PublicProfileEntity?> _profileStream = _watchProfile();
 
   Stream<PublicProfileEntity?> _watchProfile() => getIt<PublicProfileRepository>().watchProfile(_profileIdentifier);
@@ -70,21 +69,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (identifier.isEmpty) {
       return true;
     }
-    return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
+    return identifier == app_state.prismUser.id || identifier == app_state.prismUser.username;
   }
 
-  PublicProfileEntity _ownProfile({List<String>? badges}) => PublicProfileEntity(
+  PublicProfileEntity _ownProfile({PublicProfileEntity? graphProfile, List<String>? badges}) => PublicProfileEntity(
     id: app_state.prismUser.id,
     name: app_state.prismUser.name,
-    email: app_state.prismUser.email,
+    email: '',
     username: app_state.prismUser.username,
     profilePhoto: app_state.prismUser.profilePhoto,
     bio: app_state.prismUser.bio,
-    followers: app_state.prismUser.followers,
-    following: app_state.prismUser.following,
     links: app_state.prismUser.links,
     coverPhoto: app_state.prismUser.coverPhoto ?? '',
     badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
+    followerCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followerCount : 0,
+    followingCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followingCount : 0,
   );
 
   @override
@@ -137,9 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               builder: (BuildContext context, AsyncSnapshot<PublicProfileEntity?> snapshot) => _ProfileChild(
                 ownProfile: true,
                 onProfileEdited: () => setState(() {}),
-                profile: _ownProfile(
-                  badges: snapshot.data?.id == app_state.prismUser.id ? snapshot.data?.badges : null,
-                ),
+                profile: _ownProfile(graphProfile: snapshot.data),
               ),
             )
           : StreamBuilder<PublicProfileEntity?>(
@@ -200,19 +197,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 }
                 return StreamBuilder<Set<String>>(
-                  stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
-                  builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
-                    if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
+                  stream: getIt<UserBlockRepository>().watchBlockedCreatorUids(),
+                  builder: (BuildContext context, AsyncSnapshot<Set<String>> snapshot) {
+                    final bool isBlocked = snapshot.data?.contains(profile.id) == true;
+                    if (isBlocked) {
                       final String display = creatorLabel(
                         name: profile.name,
                         username: profile.username,
                         fallback: context.l10n.accountCreatorFallback,
                       );
-                      return BlockedUserProfileShell(
-                        targetUserId: profile.id,
-                        targetEmail: profile.email,
-                        displayName: display,
-                      );
+                      return BlockedUserProfileShell(targetUserId: profile.id, displayName: display);
                     }
                     return _ProfileChild(ownProfile: false, profile: profile);
                   },
@@ -340,7 +334,7 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserId: app_state.prismUser.id,
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
-        targetUserEmail: _profile.email,
+        targetUserEmail: '',
         targetName: creatorLabel(
           name: _profile.name,
           username: _profile.username,
@@ -351,19 +345,17 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 
   bool _isFollowing(PublicProfileState state) {
-    final String me = app_state.prismUser.email.trim().toLowerCase();
-    return state.followOverrides[_profile.email.trim().toLowerCase()] ??
-        _profile.followers.any((String e) => e.trim().toLowerCase() == me);
+    return state.followOverrides[_profile.id] ?? _profile.isFollowedByCurrentUser;
   }
 
   void _openFollowingList() {
     PrismHaptics.tap();
-    context.router.push(FollowingListRoute(following: _profile.following));
+    context.router.push(FollowingListRoute(userId: _profile.id));
   }
 
   void _openFollowersList() {
     PrismHaptics.tap();
-    context.router.push(FollowersRoute(followers: _profile.followers));
+    context.router.push(FollowersRoute(userId: _profile.id));
   }
 
   void _openGiftSheet() {
@@ -390,14 +382,12 @@ class _ProfileChildState extends State<_ProfileChild> {
         }
         await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
       case _ProfileMenuAction.block:
-        final String email = _profile.email.trim();
-        if (uid.isEmpty || email.isEmpty) {
+        if (uid.isEmpty) {
           return;
         }
         await confirmAndBlockUser(
           context: context,
           targetUserId: uid,
-          targetEmail: email,
           displayName: creatorLabel(
             name: _profile.name,
             username: _profile.username,
@@ -727,7 +717,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               child: Semantics(
                                 excludeSemantics: true,
                                 label: context.l10n.accountFollowingCountLabel(
-                                  _compactCount(context, _profile.following.length),
+                                  _compactCount(context, _profile.followingCount),
                                 ),
                                 button: ownProfile,
                                 onTap: ownProfile ? _openFollowingList : null,
@@ -735,7 +725,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   excludeFromSemantics: true,
                                   onTap: ownProfile ? _openFollowingList : null,
                                   child: _StatPill(
-                                    count: _profile.following.length,
+                                    count: _profile.followingCount,
                                     label: context.l10n.accountFollowing,
                                   ),
                                 ),
@@ -751,17 +741,14 @@ class _ProfileChildState extends State<_ProfileChild> {
                               child: Semantics(
                                 excludeSemantics: true,
                                 label: context.l10n.accountFollowersCountLabel(
-                                  _compactCount(context, _profile.followers.length),
+                                  _compactCount(context, _profile.followerCount),
                                 ),
                                 button: true,
                                 onTap: _openFollowersList,
                                 child: GestureDetector(
                                   excludeFromSemantics: true,
                                   onTap: _openFollowersList,
-                                  child: _StatPill(
-                                    count: _profile.followers.length,
-                                    label: context.l10n.accountFollowers,
-                                  ),
+                                  child: _StatPill(count: _profile.followerCount, label: context.l10n.accountFollowers),
                                 ),
                               ),
                             ),
@@ -825,7 +812,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                   ),
                 ),
               ),
-            UserProfileLoader(email: _profile.email, ownProfile: ownProfile),
+            UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
             SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
           ],
         ),

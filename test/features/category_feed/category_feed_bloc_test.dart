@@ -29,7 +29,7 @@ const CategoryEntity _home = CategoryEntity(
   image2: '',
 );
 
-FeedItemEntity _prismItem(String id, {required String authorEmail}) {
+FeedItemEntity _prismItem(String id, {required String authorUid}) {
   return FeedItemEntity.prism(
     id: id,
     wallpaper: PrismWallpaper(
@@ -38,7 +38,7 @@ FeedItemEntity _prismItem(String id, {required String authorEmail}) {
         source: WallpaperSource.prism,
         fullUrl: 'https://example.com/$id.jpg',
         thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-        authorEmail: authorEmail,
+        authorUid: authorUid,
       ),
     ),
   );
@@ -55,7 +55,7 @@ void main() {
       calls++;
       if (calls == 1) {
         return Future.value(
-          Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('old', authorEmail: 'a')], hasMore: true)),
+          Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('old', authorUid: 'a')], hasMore: true)),
         );
       }
       return calls == 2 ? oldPage.future : refresh.future;
@@ -72,12 +72,12 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     final callsDuringRefresh = calls;
     refresh.complete(
-      Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorEmail: 'a')], hasMore: true)),
+      Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorUid: 'a')], hasMore: true)),
     );
     await Future<void>.delayed(Duration.zero);
     oldPage.complete(
       Result.success(
-        CategoryFeedPage(items: <FeedItemEntity>[_prismItem('stale-page', authorEmail: 'a')], hasMore: false),
+        CategoryFeedPage(items: <FeedItemEntity>[_prismItem('stale-page', authorUid: 'a')], hasMore: false),
       ),
     );
     await Future<void>.delayed(Duration.zero);
@@ -94,7 +94,7 @@ void main() {
       if (++calls == 1) return old.future;
       return Future.value(
         Result.success(
-          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh-$calls', authorEmail: 'a')], hasMore: true),
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('fresh-$calls', authorUid: 'a')], hasMore: true),
         ),
       );
     });
@@ -163,8 +163,8 @@ void main() {
       (_) async => Result.success(
         CategoryFeedPage(
           items: <FeedItemEntity>[
-            _prismItem('1', authorEmail: 'blocked@example.com'),
-            _prismItem('2', authorEmail: 'kept@example.com'),
+            _prismItem('1', authorUid: 'blocked-uid'),
+            _prismItem('2', authorUid: 'kept-uid'),
           ],
           hasMore: false,
         ),
@@ -182,7 +182,7 @@ void main() {
 
     blockRepo.completeInitial(<String>{});
     await Future<void>.delayed(Duration.zero);
-    blockRepo.completeInitial(<String>{'blocked@example.com'});
+    blockRepo.completeInitial(<String>{'blocked-uid'});
     await Future<void>.delayed(Duration.zero);
 
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
@@ -197,7 +197,7 @@ void main() {
       final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
       return Result.success(
         CategoryFeedPage(
-          items: <FeedItemEntity>[_prismItem(params.refresh ? '1' : '2', authorEmail: 'kept@example.com')],
+          items: <FeedItemEntity>[_prismItem(params.refresh ? '1' : '2', authorUid: 'kept-uid')],
           hasMore: params.refresh,
         ),
       );
@@ -237,9 +237,7 @@ void main() {
       calls++;
       if (calls < 3) {
         return Future.value(
-          Result.success(
-            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@example.com')], hasMore: true),
-          ),
+          Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'a-uid')], hasMore: true)),
         );
       }
       return pending.future;
@@ -286,7 +284,7 @@ void main() {
         final String id = params.category.name == 'Home' ? 'home-1' : 'space-1';
         return Future.value(
           Result.success(
-            CategoryFeedPage(items: <FeedItemEntity>[_prismItem(id, authorEmail: 'a@x.com')], hasMore: true),
+            CategoryFeedPage(items: <FeedItemEntity>[_prismItem(id, authorUid: 'a@x.com')], hasMore: true),
           ),
         );
       });
@@ -306,7 +304,7 @@ void main() {
 
       latePage.complete(
         Result.success(
-          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-2', authorEmail: 'a@x.com')], hasMore: false),
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-2', authorUid: 'a@x.com')], hasMore: false),
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -327,7 +325,7 @@ void main() {
         if (params.category.name == 'Home') return slowHome.future;
         return Future.value(
           Result.success(
-            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('space-1', authorEmail: 'a@x.com')], hasMore: false),
+            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('space-1', authorUid: 'a@x.com')], hasMore: false),
           ),
         );
       });
@@ -340,7 +338,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 10));
       slowHome.complete(
         Result.success(
-          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-1', authorEmail: 'a@x.com')], hasMore: true),
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-1', authorUid: 'a@x.com')], hasMore: true),
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));

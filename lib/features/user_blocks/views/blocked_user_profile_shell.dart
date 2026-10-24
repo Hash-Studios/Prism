@@ -7,15 +7,9 @@ import 'package:flutter/material.dart';
 
 /// Shown when the signed-in viewer has blocked this profile’s account.
 class BlockedUserProfileShell extends StatefulWidget {
-  const BlockedUserProfileShell({
-    super.key,
-    required this.targetUserId,
-    required this.targetEmail,
-    required this.displayName,
-  });
+  const BlockedUserProfileShell({super.key, required this.targetUserId, required this.displayName});
 
   final String targetUserId;
-  final String targetEmail;
   final String displayName;
 
   @override

@@ -1,37 +1,31 @@
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
-/// Filters Prism-hosted content by blocked creator email (normalized lowercase).
+/// Filters Prism-hosted content by blocked creator UID.
 class BlockedCreatorsFilter {
   BlockedCreatorsFilter._();
 
-  static String normalizeEmail(String? email) => (email ?? '').trim().toLowerCase();
-
-  static bool hidesCreatorEmail(String? creatorEmail, Set<String> blockedEmailsLowercase) {
-    if (blockedEmailsLowercase.isEmpty) {
+  static bool hidesCreatorUid(String? creatorUid, Set<String> blockedUids) {
+    if (blockedUids.isEmpty) {
       return false;
     }
-    final String n = normalizeEmail(creatorEmail);
-    return n.isNotEmpty && blockedEmailsLowercase.contains(n);
+    final String uid = (creatorUid ?? '').trim();
+    return uid.isNotEmpty && blockedUids.contains(uid);
   }
 
   /// Whether a [FeedItemEntity] should be hidden because its creator is
-  /// blocked. Only Prism-hosted items carry a creator email; other sources
-  /// are never hidden.
-  static bool hidesFeedItem(FeedItemEntity item, Set<String> blockedEmailsLowercase) {
-    if (blockedEmailsLowercase.isEmpty) {
+  /// blocked. Other sources are never hidden.
+  static bool hidesFeedItem(FeedItemEntity item, Set<String> blockedUids) {
+    if (blockedUids.isEmpty) {
       return false;
     }
-    return item.maybeWhen(
-      prism: (_, wall) => hidesCreatorEmail(wall.core.authorEmail, blockedEmailsLowercase),
-      orElse: () => false,
-    );
+    return item.maybeWhen(prism: (_, wall) => hidesCreatorUid(wall.core.authorUid, blockedUids), orElse: () => false);
   }
 
   /// Filters a feed list, dropping items from blocked creators.
-  static List<FeedItemEntity> filterFeedItems(List<FeedItemEntity> items, Set<String> blockedEmailsLowercase) {
-    if (blockedEmailsLowercase.isEmpty) {
+  static List<FeedItemEntity> filterFeedItems(List<FeedItemEntity> items, Set<String> blockedUids) {
+    if (blockedUids.isEmpty) {
       return items;
     }
-    return items.where((FeedItemEntity item) => !hidesFeedItem(item, blockedEmailsLowercase)).toList(growable: false);
+    return items.where((FeedItemEntity item) => !hidesFeedItem(item, blockedUids)).toList(growable: false);
   }
 }

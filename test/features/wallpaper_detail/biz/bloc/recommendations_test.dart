@@ -224,7 +224,7 @@ void main() {
       when(() => views.call(any())).thenAnswer((_) async => Result.error(const UnknownFailure('offline')));
       when(() => count.call(any())).thenAnswer((_) async => Result.error(const UnknownFailure('offline')));
       when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const UnknownFailure('none')));
-      when(() => blocks.getBlockedCreatorEmails(waitForInitialLoad: true)).thenAnswer((_) async => <String>{});
+      when(() => blocks.getBlockedCreatorUids(waitForInitialLoad: true)).thenAnswer((_) async => <String>{});
       detail = WallpaperDetailBloc(
         prism,
         _Wallhaven(),

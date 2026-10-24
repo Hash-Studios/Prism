@@ -7,11 +7,11 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Starts loading the wallpapers of [email] and shows a skeleton, then the grid. It is a sliver.
+/// Starts loading the wallpapers of [userId] and shows a skeleton, then the grid. It is a sliver.
 class UserProfileLoader extends StatefulWidget {
-  const UserProfileLoader({super.key, required this.email, this.ownProfile = false});
+  const UserProfileLoader({super.key, required this.userId, this.ownProfile = false});
 
-  final String email;
+  final String userId;
   final bool ownProfile;
 
   @override
@@ -28,25 +28,25 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
   @override
   void didUpdateWidget(UserProfileLoader oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.email != widget.email) {
+    if (oldWidget.userId != widget.userId) {
       _startIfNeeded();
     }
   }
 
   void _startIfNeeded() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || widget.email.isEmpty) return;
+      if (!mounted || widget.userId.isEmpty) return;
 
       final bloc = context.read<PublicProfileBloc>();
       final state = bloc.state;
-      if (state.email == widget.email && state.status != LoadStatus.initial) return;
-      bloc.add(PublicProfileEvent.started(email: widget.email));
+      if (state.profileId == widget.userId && state.status != LoadStatus.initial) return;
+      bloc.add(PublicProfileEvent.started(identifier: widget.userId));
     });
   }
 
   bool _showLoading(PublicProfileState state) {
-    if (widget.email.isEmpty) return false;
-    return state.email != widget.email ||
+    if (widget.userId.isEmpty) return false;
+    return state.profileId != widget.userId ||
         state.status == LoadStatus.initial ||
         (state.status == LoadStatus.loading && state.walls.isEmpty);
   }
@@ -56,7 +56,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
     return BlocBuilder<PublicProfileBloc, PublicProfileState>(
       buildWhen: (previous, current) =>
           previous.status != current.status ||
-          previous.email != current.email ||
+          previous.profileId != current.profileId ||
           previous.walls.isEmpty != current.walls.isEmpty,
       builder: (context, state) {
         if (_showLoading(state)) {

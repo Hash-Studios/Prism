@@ -10,6 +10,7 @@ class FakeUserBlockRepository implements UserBlockRepository {
   final Completer<Set<String>> _initialLoad = Completer<Set<String>>();
 
   Set<String> _cached = <String>{};
+  List<BlockedUserListRow> blockedRows = const <BlockedUserListRow>[];
   bool _hasLoaded = false;
 
   void completeInitial(Set<String> blocked) {
@@ -22,20 +23,19 @@ class FakeUserBlockRepository implements UserBlockRepository {
   }
 
   @override
-  Set<String> get cachedBlockedCreatorEmails => _cached;
+  Set<String> get cachedBlockedCreatorUids => _cached;
 
   @override
   Future<void> clearForUser(String userId) async {}
 
   @override
-  Future<Result<void>> blockUser({required String targetUserId, String? targetEmail}) async => Result.success(null);
+  Future<Result<void>> blockUser({required String targetUserId}) async => Result.success(null);
 
   @override
-  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async =>
-      Result.success(const <BlockedUserListRow>[]);
+  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async => Result.success(blockedRows);
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
     if (waitForInitialLoad && !_hasLoaded) {
       return _initialLoad.future;
     }
@@ -46,5 +46,5 @@ class FakeUserBlockRepository implements UserBlockRepository {
   Future<Result<void>> unblockUser({required String targetUserId}) async => Result.success(null);
 
   @override
-  Stream<Set<String>> watchBlockedCreatorEmails() => _controller.stream;
+  Stream<Set<String>> watchBlockedCreatorUids() => _controller.stream;
 }

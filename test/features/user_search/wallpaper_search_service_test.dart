@@ -150,7 +150,7 @@ WallpaperSearchService _service({
 Map<String, dynamic> _prismDoc(
   String id, {
   String resolution = '1080x2400',
-  String email = 'a@example.com',
+  String creatorUid = 'creator-id',
   List<String> colors = const <String>[],
   String? depthTier,
   String? category,
@@ -160,7 +160,7 @@ Map<String, dynamic> _prismDoc(
   'wallpaper_thumb': 'https://prism/$id-thumb.jpg',
   'wallpaper_provider': 'prism',
   'resolution': resolution,
-  'email': email,
+  'creatorUid': creatorUid,
   'review': true,
   'colors': colors,
   'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
@@ -230,7 +230,7 @@ void main() {
     final Completer<Set<String>> blocked = Completer<Set<String>>();
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
-      blockedEmails: () => blocked.future,
+      blockedUids: () => blocked.future,
     );
     await catalog.remember(<FeedItemEntity>[WallhavenFeedItem(id: 'saved', wallpaper: _wallhaven('saved'))]);
     final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('remote')]));
@@ -292,9 +292,9 @@ void main() {
     });
 
     test('unblocking a creator restores Prism results excluded before caching', () async {
-      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'creator@example.com'});
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'creator-id'});
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', email: 'creator@example.com'))],
+        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
       );
       GetIt.instance.registerSingleton<UserBlockRepository>(blocks);
       final service = WallpaperSearchService(
@@ -342,7 +342,7 @@ void main() {
       final initialBlocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
       GetIt.instance.registerSingleton<UserBlockRepository>(initialBlocks);
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', email: 'creator@example.com'))],
+        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
       );
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
@@ -361,7 +361,7 @@ void main() {
       });
       await Future<void>.delayed(Duration.zero);
       final bool returnedBeforeBlocks = returned;
-      pendingBlocks.completeInitial(<String>{'creator@example.com'});
+      pendingBlocks.completeInitial(<String>{'creator-id'});
       final page = await result;
 
       expect(returnedBeforeBlocks, isFalse);
@@ -424,7 +424,7 @@ void main() {
 
     test('a cached hit hides creators blocked after it was stored', () async {
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', email: 'later@example.com'))],
+        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', creatorUid: 'later-id'))],
       );
       Set<String> blocked = <String>{};
       final service = WallpaperSearchService(
@@ -437,7 +437,7 @@ void main() {
       );
 
       expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
-      blocked = <String>{'later@example.com'};
+      blocked = <String>{'later-id'};
 
       expect((await service.search('nature')).prismResults, isEmpty);
     });
@@ -960,13 +960,13 @@ void main() {
 
     test('hides walls from blocked creators', () async {
       final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('w1', email: 'blocked@example.com'))],
+        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('w1', creatorUid: 'blocked-id'))],
       );
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
         _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
         SettingsLocalDataSource(InMemoryLocalStore()),
-        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked@example.com'})),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked-id'})),
       );
 
       expect((await service.search('nature')).prismResults, isEmpty);

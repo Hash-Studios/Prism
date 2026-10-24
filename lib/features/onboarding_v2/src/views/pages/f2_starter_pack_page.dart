@@ -59,9 +59,9 @@ class F2StarterPackPage extends StatelessWidget {
                                 height: OnboardingLayout.creatorHeight * sy,
                                 child: CreatorCard(
                                   creator: creator,
-                                  isSelected: selectedEmails.contains(creator.email),
+                                  isSelected: selectedEmails.contains(creator.userId),
                                   onToggle: () => context.read<OnboardingV2Bloc>().add(
-                                    OnboardingV2Event.creatorFollowToggled(creator.email),
+                                    OnboardingV2Event.creatorFollowToggled(creator.userId),
                                   ),
                                 ),
                               );

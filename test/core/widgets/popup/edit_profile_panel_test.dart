@@ -235,7 +235,9 @@ void main() {
     });
 
     testWidgets('a name another user holds shows an inline error', (tester) async {
-      firestore.onQuery = (_) => <FakeDocRow>[(id: 'someone-else', data: <String, dynamic>{})];
+      firestore.docs[FirebaseCollections.usernames] = <String, Map<String, dynamic>>{
+        'taken_name': <String, dynamic>{'uid': 'someone-else'},
+      };
       await pumpPanel(tester);
 
       await tester.enterText(usernameField(), 'taken_name');

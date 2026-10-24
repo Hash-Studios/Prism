@@ -47,7 +47,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
       );
       final List<String> ids = _wallIds(doc?['wallIds']);
       final List<PrismWallpaper> walls = await _loadWalls(ids);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       final List<PrismWallpaper> visible = _visible(walls, blocked);
       await _writeCache(walls);
       return Result.success(visible);
@@ -93,7 +93,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
         .where(
           (wall) =>
               hasPrismPreview(wall) &&
-              !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked) &&
+              !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked) &&
               (showAnime || !AnimeContentFilter.isAnime(wall)),
         )
         .toList(growable: false);
@@ -130,7 +130,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
           .whereType<PrismFeedItem>()
           .map((item) => item.wallpaper)
           .toList(growable: false);
-      final blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      final blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       return _visible(walls, blocked);
     } catch (error) {
       logger.w('[TrendingRepository] cache read failed: $error');

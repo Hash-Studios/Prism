@@ -80,7 +80,7 @@ void main() {
     wallhaven = _Wallhaven();
     pexels = _Pexels();
     blocks = _Blocks();
-    when(() => blocks.getBlockedCreatorEmails(waitForInitialLoad: true)).thenAnswer((_) async => {'blocked@x.com'});
+    when(() => blocks.getBlockedCreatorUids(waitForInitialLoad: true)).thenAnswer((_) async => {'blocked-uid'});
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     local = [];
     repository = WallpaperRecommendationRepositoryImpl(
@@ -100,7 +100,7 @@ void main() {
           'id': '$i',
           'category': 'Nature',
           'review': true,
-          'email': i == 23 ? 'blocked@x.com' : '',
+          'creatorUid': i == 23 ? 'blocked-uid' : '',
           'tags': i == 22 ? ['anime'] : <String>[],
         },
     ];

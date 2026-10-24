@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -53,27 +53,15 @@ class _MetadataFirestoreClient extends FakeFirestoreClient {
 
 const String _week = '2026-W42';
 
-FakeDocRow _user(
-  String uid, {
-  int? weekXp,
-  String week = _week,
-  int xp = 0,
-  bool deleted = false,
-  String? frame,
-  bool premium = false,
-}) => (
-  id: uid,
-  data: <String, dynamic>{
-    'name': 'Name $uid',
-    'username': 'user_$uid',
-    'profilePhoto': 'https://x/$uid.jpg',
-    'xp': xp,
-    if (weekXp != null) 'xpWeek': <String, dynamic>{'weekKey': week, 'xp': weekXp},
-    if (deleted) 'deleted': true,
-    if (frame != null) 'cosmetics': <String, dynamic>{'frame': frame},
-    if (premium) 'premium': true,
-  },
-);
+FakeDocRow _follow(String uid) => (id: uid, data: <String, dynamic>{'targetUid': uid});
+
+Map<String, dynamic> _boardRow(String uid, int xp) => <String, dynamic>{
+  'uid': uid,
+  'name': 'Name $uid',
+  'username': 'user_$uid',
+  'xp': xp,
+  'rank': 'silver',
+};
 
 class _BlockingFriendStore extends DurableJsonStore {
   _BlockingFriendStore(Directory directory) : super('leaderboard', directory: directory);
@@ -84,7 +72,7 @@ class _BlockingFriendStore extends DurableJsonStore {
 
   @override
   Future<void> write(String key, Map<String, Object?> value) async {
-    if (key.startsWith('friends:') && !_blocked) {
+    if (key.startsWith('friends-public-v2:') && !_blocked) {
       _blocked = true;
       writeStarted.complete();
       await allowWrite.future;
@@ -159,51 +147,47 @@ void main() {
   });
 
   group('fetchFriends', () {
-    test('sorts by weekly xp then uid, zeroes stale weeks, skips deleted and adds my row', () async {
-      firestore.onQuery = (_) => <FakeDocRow>[
-        _user('c', weekXp: 80),
-        _user('b', weekXp: 80),
-        _user('d', weekXp: 500, week: '2026-W41', xp: 600),
-        _user('e', weekXp: 999, deleted: true),
-        _user('a', weekXp: 10, frame: 'frame_ring', premium: true),
-      ];
+    test('uses UID follow edges and only matching public snapshot rows', () async {
+      firestore.onQuery = (FirestoreQuerySpec spec) =>
+          spec.collection == 'profiles/me/following' ? <FakeDocRow>[_follow('a'), _follow('b')] : const <FakeDocRow>[];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'weekKey': _week,
+          'entries': <Map<String, dynamic>>[_boardRow('a', 10), _boardRow('b', 80), _boardRow('stranger', 999)],
+        },
+      };
 
       final Result<List<LeaderboardEntry>> result = await repository.fetchFriends(<String>['x@x.com'], _week);
       final List<LeaderboardEntry> entries = result.data!;
 
-      expect(entries.map((e) => (e.uid, e.xp)), <(String, int)>[('b', 80), ('c', 80), ('me', 50), ('a', 10), ('d', 0)]);
+      expect(entries.map((e) => (e.uid, e.xp)), <(String, int)>[('b', 80), ('me', 50), ('a', 10)]);
       expect(entries.firstWhere((e) => e.uid == 'me').isMe, isTrue);
       expect(entries.firstWhere((e) => e.uid == 'me').rank, 'silver');
-      expect(entries.firstWhere((e) => e.uid == 'a').frameId, 'frame_ring');
-      expect(entries.firstWhere((e) => e.uid == 'a').premium, isTrue);
-      expect(entries.firstWhere((e) => e.uid == 'b').premium, isFalse);
-      expect(entries.firstWhere((e) => e.uid == 'd').rank, 'silver');
+      expect(firestore.querySpecs.map((spec) => spec.collection), contains('profiles/me/following'));
+      expect(firestore.querySpecs.map((spec) => spec.collection), isNot(contains('usersv2')));
+      expect(firestore.querySpecs.map((spec) => spec.collection), contains('leaderboards'));
     });
 
-    test('reads at most 90 emails in chunks of 30', () async {
-      firestore.onQuery = (_) => const <FakeDocRow>[];
-      final List<String> emails = <String>[for (int i = 0; i < 120; i++) 'u$i@x.com'];
-
-      await repository.fetchFriends(<String>[...emails, 'u0@x.com', ' '], _week);
-
-      expect(firestore.querySpecs, hasLength(3));
-      for (final FirestoreQuerySpec spec in firestore.querySpecs) {
-        expect(spec.sourceTag, 'leaderboard.friends');
-        expect(spec.collection, 'usersv2');
-        expect(spec.filters.single.field, 'email');
-        expect(spec.filters.single.op, FirestoreFilterOp.whereIn);
-        expect(spec.filters.single.value! as List<Object?>, hasLength(30));
-      }
-      final List<Object?> sent = firestore.querySpecs.expand((s) => s.filters.single.value! as List<Object?>).toList();
-      expect(sent, emails.take(90));
-    });
-
-    test('with nobody followed it still returns my own row and reads nothing', () async {
+    test('with nobody followed it returns my own row after reading the follow graph', () async {
       final List<LeaderboardEntry> entries = (await repository.fetchFriends(const <String>[], _week)).data!;
 
       expect(entries.single.isMe, isTrue);
       expect(entries.single.xp, 50);
-      expect(firestore.querySpecs, isEmpty);
+      expect(firestore.querySpecs.map((spec) => spec.collection), <String>['profiles/me/following']);
+    });
+
+    test('rejects a published snapshot from a different week', () async {
+      firestore.onQuery = (spec) => spec.collection == 'profiles/me/following' ? [_follow('a')] : const [];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'weekKey': '2026-W41',
+          'entries': <Map<String, dynamic>>[_boardRow('a', 300)],
+        },
+      };
+
+      final List<LeaderboardEntry> entries = (await repository.fetchFriends(const <String>[], _week)).data!;
+
+      expect(entries.map((entry) => entry.uid), <String>['me']);
     });
 
     test('a read error becomes a failure', () async {
@@ -214,8 +198,14 @@ void main() {
       expect(result.isFailure, isTrue);
     });
 
-    test('friends snapshot survives restart only for the same owner, week and query, then clears', () async {
-      firestore.onQuery = (_) => [_user('a', weekXp: 30)];
+    test('friends snapshot survives restart for the same owner and week, then clears', () async {
+      firestore.onQuery = (spec) => spec.collection == 'profiles/me/following' ? [_follow('a')] : const [];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'weekKey': _week,
+          'entries': <Map<String, dynamic>>[_boardRow('a', 30)],
+        },
+      };
       expect((await repository.fetchFriends(<String>['a@x.com'], _week)).data!.any((e) => e.uid == 'a'), isTrue);
 
       final FakeFirestoreClient offline = _MetadataFirestoreClient()
@@ -236,37 +226,71 @@ void main() {
       expect((await restarted.fetchFriends(<String>['a@x.com'], _week)).isFailure, isTrue);
     });
 
+    test('does not accept the old email-keyed snapshot format', () async {
+      final DurableJsonStore store = DurableJsonStore('leaderboard', directory: directory);
+      await store.write('friends:me', <String, Object?>{
+        'weekKey': _week,
+        'uids': <String>['a@x.com'],
+        'entries': <Map<String, Object?>>[
+          <String, Object?>{'uid': 'private-old', 'xp': 999},
+        ],
+      });
+      final LeaderboardRepositoryImpl offline = LeaderboardRepositoryImpl(
+        _MetadataFirestoreClient()..queryError = FirestoreError(code: 'unavailable', message: 'offline'),
+        store: store,
+      );
+
+      expect((await offline.fetchFriends(<String>['a@x.com'], _week)).isFailure, isTrue);
+    });
+
     test('clearForUser removes the owner-keyed friends snapshot', () async {
-      firestore.onQuery = (_) => [_user('a', weekXp: 30)];
+      firestore.onQuery = (spec) => spec.collection == 'profiles/me/following' ? [_follow('a')] : const [];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'weekKey': _week,
+          'entries': <Map<String, dynamic>>[_boardRow('a', 30)],
+        },
+      };
       await repository.fetchFriends(<String>['a@x.com'], _week);
       final DurableJsonStore store = DurableJsonStore('leaderboard', directory: directory);
-      expect(await store.read('friends:me'), isNotNull);
+      expect(await store.read('friends-public-v2:me'), isNotNull);
       await LeaderboardRepositoryImpl.clearForUser('me', store: store);
-      expect(await store.read('friends:me'), isNull);
+      expect(await store.read('friends-public-v2:me'), isNull);
     });
 
     test('clear is serialized with friend writes and preserves a newer same-owner read', () async {
-      List<FakeDocRow> rows = <FakeDocRow>[_user('old', weekXp: 20)];
-      firestore.onQuery = (_) => rows;
+      List<Map<String, dynamic>> rows = <Map<String, dynamic>>[_boardRow('old', 20)];
+      firestore.onQuery = (spec) =>
+          spec.collection == 'profiles/me/following' ? [_follow('old'), _follow('new')] : const [];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{'weekKey': _week, 'entries': rows},
+      };
       final _BlockingFriendStore store = _BlockingFriendStore(directory);
       final LeaderboardRepositoryImpl racing = LeaderboardRepositoryImpl(firestore, store: store);
 
       final Future<Result<List<LeaderboardEntry>>> oldRead = racing.fetchFriends(<String>['a@x.com'], _week);
       await store.writeStarted.future;
       final Future<void> clearing = LeaderboardRepositoryImpl.clearForUser('me', store: store);
-      rows = <FakeDocRow>[_user('new', weekXp: 80)];
+      rows = <Map<String, dynamic>>[_boardRow('new', 80)];
+      firestore.docs['leaderboards']!['current']!['entries'] = rows;
       final Future<Result<List<LeaderboardEntry>>> newRead = racing.fetchFriends(<String>['a@x.com'], _week);
       store.allowWrite.complete();
 
       expect((await oldRead).isFailure, isTrue);
       await clearing;
       expect((await newRead).data!.any((entry) => entry.uid == 'new'), isTrue);
-      final Map<String, Object?>? snapshot = await store.read('friends:me');
+      final Map<String, Object?>? snapshot = await store.read('friends-public-v2:me');
       expect((snapshot!['entries'] as List).whereType<Map>().any((entry) => entry['uid'] == 'new'), isTrue);
     });
 
     test('repository timeout falls back to the saved friends snapshot', () async {
-      firestore.onQuery = (_) => [_user('a', weekXp: 30)];
+      firestore.onQuery = (spec) => spec.collection == 'profiles/me/following' ? [_follow('a')] : const [];
+      firestore.docs['leaderboards'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'weekKey': _week,
+          'entries': <Map<String, dynamic>>[_boardRow('a', 30)],
+        },
+      };
       await repository.fetchFriends(<String>['a@x.com'], _week);
       final LeaderboardRepositoryImpl timedOut = LeaderboardRepositoryImpl(
         _NeverQueryClient(),

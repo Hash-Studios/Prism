@@ -12,6 +12,7 @@ String _nativeTopic(String topic) => '${topic}_loc_v1';
 class _FakeMessaging implements FirebaseMessaging {
   final List<String> subscribed = <String>[];
   final List<String> unsubscribed = <String>[];
+  final List<String> unsubscribeAttempts = <String>[];
   String? token = 'fcm-token';
   Object? tokenError;
   bool failSubscribe = false;
@@ -34,6 +35,7 @@ class _FakeMessaging implements FirebaseMessaging {
 
   @override
   Future<void> unsubscribeFromTopic(String topic) async {
+    unsubscribeAttempts.add(topic);
     if (failUnsubscribeFor.contains(topic)) throw StateError('network');
     unsubscribed.add(topic);
   }
@@ -46,9 +48,10 @@ void main() {
   late SettingsLocalDataSource settings;
   late _FakeMessaging messaging;
 
-  setUp(() {
+  setUp(() async {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     messaging = _FakeMessaging();
+    await settings.set(NotificationPrefKeys.posts, false);
   });
 
   Future<void> sync({String userId = 'uid1', bool premium = false}) => syncPushTopics(
@@ -71,7 +74,6 @@ void main() {
         '${wotdBucketTopic()}_loc_v1',
         'free_loc_v1',
         'ana_loc_v1',
-        'lee_posts_loc_v1',
       ]),
     );
     expect(
@@ -87,6 +89,7 @@ void main() {
         'u_uid1_loc_v1',
         'ana',
         'lee_posts',
+        'lee_posts_loc_v1',
         'wall_of_the_day',
         'wall_of_the_day_loc_v1',
       ]),
@@ -110,6 +113,32 @@ void main() {
       ..token = 'new-token';
     await sync(premium: true);
     expect(messaging.subscribed, isNotEmpty);
+  });
+
+  test('retries legacy creator topic cleanup before recording migration complete', () async {
+    messaging.failUnsubscribeFor.add('lee_posts');
+
+    await sync();
+    expect(messaging.unsubscribeAttempts, contains('lee_posts'));
+    expect(messaging.unsubscribed, isNot(contains('lee_posts')));
+
+    messaging.failUnsubscribeFor.clear();
+    final int beforeRetry = messaging.unsubscribeAttempts.where((topic) => topic == 'lee_posts').length;
+    await sync();
+    expect(messaging.unsubscribeAttempts.where((topic) => topic == 'lee_posts'), hasLength(beforeRetry + 1));
+
+    final int afterSuccess = messaging.unsubscribeAttempts.length;
+    await sync();
+    expect(messaging.unsubscribeAttempts, hasLength(afterSuccess));
+  });
+
+  test('an old completed sync marker does not skip the UID-topic migration sync', () async {
+    await settings.set('pushTopicsSyncedForLocV2', 'fcm-token|uid1|free');
+
+    await sync();
+
+    expect(messaging.subscribed, contains('recommendations_loc_v1'));
+    expect(messaging.unsubscribeAttempts, contains('lee_posts'));
   });
 
   test('respects switched-off preferences and signed-out state', () async {
