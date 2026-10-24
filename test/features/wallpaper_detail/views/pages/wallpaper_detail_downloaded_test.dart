@@ -7,6 +7,8 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -135,6 +137,36 @@ void main() {
     verify(
       () => bloc.add(LoadFromId(wallId: 'wall', source: WallpaperSource.pexels, localFilePath: file.path)),
     ).called(1);
+  });
+
+  testWidgets('a downloaded catalogue wallpaper asks for recommendations like any other visit', (tester) async {
+    getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+    final bloc = _MockWallpaperDetailBloc();
+    whenListen(
+      bloc,
+      Stream<WallpaperDetailState>.value(WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false)),
+      initialState: const WallpaperDetailLoading(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: WallpaperDetailScreen(
+            wallId: 'pexels-1',
+            source: WallpaperSource.pexels,
+            localFile: File('assets/images/prism.webp'),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // The same request as a feed visit: the wallpaper's own category or tags decide what is related.
+    verify(() => bloc.add(const LoadRecommendations())).called(1);
   });
 
   testWidgets('downloaded detail uses the local file for set, clock, and color swatches', (tester) async {

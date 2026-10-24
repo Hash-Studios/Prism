@@ -77,7 +77,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         final page = await _recommendations.load(
           current: entity,
           sessionKey: _recommendationSession,
-          discoveryOnly: event.discoveryOnly || BundledWallpapers.isStarter(entity),
           cursor: before.recommendations.cursor,
         );
         final latest = state;

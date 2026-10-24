@@ -55,7 +55,6 @@ class _Recommendations implements WallpaperRecommendationRepository {
     required FeedItemEntity current,
     required String sessionKey,
     RecommendationCursor? cursor,
-    bool discoveryOnly = false,
   }) async => RecommendationPage(items: [], kind: RecommendationKind.related);
 
   @override

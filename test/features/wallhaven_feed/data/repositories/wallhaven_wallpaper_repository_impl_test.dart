@@ -157,6 +157,51 @@ void main() {
     expect(repository.hasMoreForCategory('forest'), isTrue);
   });
 
+  test('a detail visit pages in memory only, while the main feed keeps its durable snapshot', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    const detailKey = 'detail:7:wallhaven';
+    // A snapshot an older build or launch left under this visit's scope must never come back.
+    cache.snapshots['wallhaven/forest_detail_7_wallhaven.100.100.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'pages': <Object?>[jsonDecode(_page(9).body)],
+        'nextPage': 10,
+        'hasMore': true,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        final repository = WallhavenWallpaperRepositoryImpl(cache);
+        await repository.fetchFeed(categoryName: 'forest', refresh: true);
+        final first = await repository.fetchFeed(categoryName: 'forest', refresh: true, paginationKey: detailKey);
+        final next = await repository.fetchFeed(categoryName: 'forest', refresh: false, paginationKey: detailKey);
+        expect(first.data!.single.id, 'wall-1');
+        expect(next.data!.single.id, 'wall-2');
+        expect(repository.hasMoreForCategory('forest', paginationKey: detailKey), isTrue);
+      },
+      () => MockClient((request) async {
+        pages.add(int.parse(request.url.queryParameters['page']!));
+        return _page(pages.last);
+      }),
+    );
+    expect(pages, <int>[1, 1, 2], reason: 'the visit pages from its own cursor in memory');
+    expect(cache.scopes, <String>['wallhaven/forest.100.100.portrait'], reason: 'only the main feed is written');
+
+    final relaunched = WallhavenWallpaperRepositoryImpl(cache);
+    for (final Future<http.Response> Function() fail in <Future<http.Response> Function()>[
+      () async => throw const SocketException('offline'),
+      () async => http.Response('offline', 503),
+    ]) {
+      await http.runWithClient(() async {
+        final detail = await relaunched.fetchFeed(categoryName: 'forest', refresh: true, paginationKey: detailKey);
+        expect(detail.isFailure, isTrue, reason: 'a failed first page falls back to local discovery, not old pages');
+        expect((await relaunched.fetchFeed(categoryName: 'forest', refresh: true)).data!.single.id, 'wall-1');
+      }, () => MockClient((_) => fail()));
+    }
+  });
+
   test('single lookup maps a successful response and malformed data to distinct outcomes', () async {
     final repository = WallhavenWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
     await http.runWithClient(

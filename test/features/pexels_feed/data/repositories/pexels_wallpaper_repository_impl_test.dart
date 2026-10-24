@@ -137,6 +137,51 @@ void main() {
     }, () => MockClient((_) async => throw const SocketException('offline')));
   });
 
+  test('a detail visit pages in memory only, while the curated feed keeps its durable snapshot', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    const detailKey = 'detail:7:pexels';
+    // A snapshot an older build or launch left under this visit's scope must never come back.
+    cache.snapshots['pexels/curated_detail_7_pexels.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'pages': <Object?>[jsonDecode(_page(9).body)],
+        'nextPage': 10,
+        'hasMore': true,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    final pages = <int>[];
+    await http.runWithClient(
+      () async {
+        final repository = PexelsWallpaperRepositoryImpl(cache);
+        await repository.fetchFeed(categoryName: 'Curated', refresh: true);
+        final first = await repository.fetchFeed(categoryName: 'Curated', refresh: true, paginationKey: detailKey);
+        final next = await repository.fetchFeed(categoryName: 'Curated', refresh: false, paginationKey: detailKey);
+        expect(first.data!.single.id, '1');
+        expect(next.data!.single.id, '2');
+        expect(repository.hasMoreForCategory('Curated', paginationKey: detailKey), isTrue);
+      },
+      () => MockClient((request) async {
+        pages.add(int.parse(request.url.queryParameters['page']!));
+        return _page(pages.last);
+      }),
+    );
+    expect(pages, <int>[1, 1, 2], reason: 'the visit pages from its own cursor in memory');
+    expect(cache.scopes, <String>['pexels/curated.portrait'], reason: 'only the curated feed is written');
+
+    final relaunched = PexelsWallpaperRepositoryImpl(cache);
+    for (final Future<http.Response> Function() fail in <Future<http.Response> Function()>[
+      () async => throw const SocketException('offline'),
+      () async => http.Response('offline', 503),
+    ]) {
+      await http.runWithClient(() async {
+        final detail = await relaunched.fetchFeed(categoryName: 'Curated', refresh: true, paginationKey: detailKey);
+        expect(detail.isFailure, isTrue, reason: 'a failed first page falls back to local discovery, not old pages');
+        expect((await relaunched.fetchFeed(categoryName: 'Curated', refresh: true)).data!.single.id, '1');
+      }, () => MockClient((_) => fail()));
+    }
+  });
+
   group('fetchById failures', () {
     Future<Result<PexelsWallpaper?>> fetchWith(http.Client client) {
       final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());

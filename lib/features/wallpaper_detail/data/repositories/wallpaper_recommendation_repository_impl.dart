@@ -52,8 +52,8 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     if (visit == null) return;
     visit.active = false;
     for (final repo in visit.providers) {
-      repo.releasePaginationKey('detail:$sessionKey:wallhaven');
-      repo.releasePaginationKey('detail:$sessionKey:pexels');
+      repo.releasePaginationKey('$ephemeralPaginationPrefix$sessionKey:wallhaven');
+      repo.releasePaginationKey('$ephemeralPaginationPrefix$sessionKey:pexels');
     }
   }
 
@@ -61,18 +61,16 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
   Future<RecommendationPage> load({
     required FeedItemEntity current,
     required String sessionKey,
-    required bool discoveryOnly,
     RecommendationCursor? cursor,
   }) async {
     final category = current.wallpaperCore.category?.trim() ?? '';
     final tags = wallpaperTags(current);
-    final related =
-        !discoveryOnly &&
-        switch (current) {
-          PrismFeedItem() => category.isNotEmpty,
-          WallhavenFeedItem() => tags.isNotEmpty,
-          PexelsFeedItem() => false,
-        };
+    // Only the wallpaper's own category or tags make a related query; without them the visit is discovery.
+    final related = switch (current) {
+      PrismFeedItem() => category.isNotEmpty,
+      WallhavenFeedItem() => tags.isNotEmpty,
+      PexelsFeedItem() => false,
+    };
     final visit = _visits.putIfAbsent(
       sessionKey,
       () => _RecommendationVisit(
@@ -143,7 +141,7 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
   ) async {
     final repo = wallhaven();
     if (repo is PaginationSession) visit.providers.add(repo as PaginationSession);
-    final key = 'detail:$sessionKey:wallhaven';
+    final key = '$ephemeralPaginationPrefix$sessionKey:wallhaven';
     final result = await repo.fetchFeed(
       categoryName: visit.query,
       refresh: cursor == null,
@@ -184,7 +182,7 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
   ) async {
     final repo = pexels();
     if (repo is PaginationSession) visit.providers.add(repo as PaginationSession);
-    final key = 'detail:$sessionKey:pexels';
+    final key = '$ephemeralPaginationPrefix$sessionKey:pexels';
     final result = await repo.fetchFeed(
       categoryName: 'Curated',
       refresh: cursor == null,

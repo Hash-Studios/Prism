@@ -10,7 +10,7 @@ String feedCacheSlug(String value) => value.trim().toLowerCase().replaceAll(RegE
 
 /// Page cursor, "has more" flag and on-disk snapshot of a paged remote feed, keyed by category.
 class PagedFeedCache {
-  PagedFeedCache(this._local, {required this.source});
+  PagedFeedCache(this._local, {required this.source, this.durable = true});
 
   static const int ttlHours = 6;
   static const int _maxPages = 8;
@@ -19,6 +19,9 @@ class PagedFeedCache {
 
   final FeedCacheLocalDataSource _local;
   final String source;
+
+  /// False keeps only the cursor, in memory: [write] stores no snapshot and [read] finds none.
+  final bool durable;
   final Map<String, int> _pageNumbers = <String, int>{};
   final Map<String, bool> _hasMoreMap = <String, bool>{};
 
@@ -43,6 +46,10 @@ class PagedFeedCache {
     bool append = false,
     bool Function()? isCurrent,
   }) async {
+    if (!durable) {
+      if (isCurrent == null || isCurrent()) advance(key, nextPage: nextPage, hasMore: hasMore);
+      return;
+    }
     final List<Object?> pages = <Object?>[];
     if (append) {
       final FeedSnapshot? snapshot = await _local.read(source: source, scope: scope);
@@ -110,6 +117,7 @@ class PagedFeedCache {
     required String scope,
     required List<T> Function(Map<String, dynamic> payload) decode,
   }) async {
+    if (!durable) return null;
     final FeedSnapshot? snapshot = await _local.read(source: source, scope: scope);
     final Map<String, dynamic> map = toJsonMap(snapshot?.payload);
     final Object? rawPages = map['pages'];

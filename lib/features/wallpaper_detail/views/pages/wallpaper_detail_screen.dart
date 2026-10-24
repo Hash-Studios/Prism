@@ -163,7 +163,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
 
   void _loadMoreRecommendations() {
-    context.read<WallpaperDetailBloc>().add(LoadRecommendations(discoveryOnly: widget.localFile != null));
+    context.read<WallpaperDetailBloc>().add(const LoadRecommendations());
   }
 
   void _onDiscoveryScroll() {
@@ -1355,17 +1355,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             ),
           );
     final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
-    // Read as "7 favourites", not a bare number.
-    Widget favouriteCount(int count) => Semantics(
-      container: true,
-      label: context.l10n.wallpaperFavouriteCount(count),
-      child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
-          child: Text('$count', style: countStyle),
-        ),
-      ),
-    );
+    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
+    // Shown compact like the stats rows ("12.3K") and read as "12,345 favourites". An invalid total stays hidden.
+    Widget favouriteCount(int count) => count < 0
+        ? const SizedBox.shrink()
+        : Semantics(
+            container: true,
+            label: context.l10n.wallpaperFavouriteCount(count),
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
+                child: Text(compactCount.format(count), style: countStyle),
+              ),
+            ),
+          );
     return WallpaperActionBar(
       primary: primary,
       secondary: [
@@ -1387,7 +1390,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               // The published total sits beside the heart.
               ...entity.when(
                 prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, count) => favouriteCount(count))],
-                wallhaven: (_, wall) => [if (wall.core.favourites case final int count) favouriteCount(count)],
+                wallhaven: (_, wall) => [
+                  if (wall.favorites ?? wall.core.favourites case final int count) favouriteCount(count),
+                ],
                 pexels: (_, _) => const <Widget>[],
               ),
             ],

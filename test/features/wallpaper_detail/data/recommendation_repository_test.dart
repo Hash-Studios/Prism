@@ -104,18 +104,13 @@ void main() {
           'tags': i == 22 ? ['anime'] : <String>[],
         },
     ];
-    final page = await repository.load(current: _item('current'), sessionKey: 'a', discoveryOnly: false);
+    final page = await repository.load(current: _item('current'), sessionKey: 'a');
     expect(page.items.map((item) => item.id), [for (var i = 0; i < 22; i++) '$i']);
     expect(page.nextCursor, const PrismRecommendationCursor('doc-23'));
     firestore.rows = [
       {'id': 'next', 'category': 'Nature', 'review': true},
     ];
-    final next = await repository.load(
-      current: _item('current'),
-      sessionKey: 'a',
-      discoveryOnly: false,
-      cursor: page.nextCursor,
-    );
+    final next = await repository.load(current: _item('current'), sessionKey: 'a', cursor: page.nextCursor);
     expect(next.items.map((item) => item.id), ['next']);
     expect(next.nextCursor, isNull);
     expect(firestore.specs.last.startAfterDocId, 'doc-23');
@@ -144,14 +139,9 @@ void main() {
     });
     when(() => wallhaven.hasMoreForCategory('space', paginationKey: any(named: 'paginationKey'))).thenReturn(true);
     final current = _item('current', source: WallpaperSource.wallhaven, tags: [' space ', 'SPACE']);
-    final page = await repository.load(current: current, sessionKey: 'visit-a', discoveryOnly: false);
-    await repository.load(current: current, sessionKey: 'visit-b', discoveryOnly: false);
-    final next = await repository.load(
-      current: current,
-      sessionKey: 'visit-a',
-      discoveryOnly: false,
-      cursor: page.nextCursor,
-    );
+    final page = await repository.load(current: current, sessionKey: 'visit-a');
+    await repository.load(current: current, sessionKey: 'visit-b');
+    final next = await repository.load(current: current, sessionKey: 'visit-a', cursor: page.nextCursor);
     expect(next.items.map((item) => item.id), ['found']);
     expect(keys, ['detail:visit-a:wallhaven', 'detail:visit-b:wallhaven', 'detail:visit-a:wallhaven']);
     expect(refreshes, [true, true, false]);
@@ -170,7 +160,6 @@ void main() {
     final page = await repository.load(
       current: _item('current', source: WallpaperSource.pexels),
       sessionKey: 'p',
-      discoveryOnly: false,
     );
     expect(page.items.map((item) => item.id), ['photo']);
     expect(page.kind, RecommendationKind.discovery);
@@ -180,31 +169,26 @@ void main() {
   test('initial network failure uses local discovery but append failure remains retryable', () async {
     firestore.fail = true;
     local = [_item('saved')];
-    final page = await repository.load(current: _item('current'), sessionKey: 'a', discoveryOnly: false);
+    final page = await repository.load(current: _item('current'), sessionKey: 'a');
     expect(page.items.map((item) => item.id), ['saved']);
     expect(page.kind, RecommendationKind.offline);
     expect(page.nextCursor, isNull);
     await expectLater(
-      repository.load(
-        current: _item('current'),
-        sessionKey: 'a',
-        discoveryOnly: false,
-        cursor: const PrismRecommendationCursor('last'),
-      ),
+      repository.load(current: _item('current'), sessionKey: 'a', cursor: const PrismRecommendationCursor('last')),
       throwsStateError,
     );
     local = [];
-    await expectLater(
-      repository.load(current: _item('current'), sessionKey: 'b', discoveryOnly: false),
-      throwsStateError,
-    );
+    await expectLater(repository.load(current: _item('current'), sessionKey: 'b'), throwsStateError);
   });
 
-  test('download discovery does not claim a same-category match', () async {
+  test('a wall without its own category gets discovery, never an invented match', () async {
     firestore.rows = [
       {'id': 'general', 'review': true},
     ];
-    final page = await repository.load(current: _item('download'), sessionKey: 'local', discoveryOnly: true);
+    final page = await repository.load(
+      current: _item('uncategorised', category: '  '),
+      sessionKey: 'plain',
+    );
     expect(page.kind, RecommendationKind.discovery);
     expect(page.items.map((item) => item.id), ['general']);
     expect(firestore.specs.single.filters.map((filter) => filter.field), ['review']);
@@ -229,12 +213,10 @@ void main() {
     final first = await repository.load(
       current: _item('wall', source: WallpaperSource.wallhaven),
       sessionKey: 'visit',
-      discoveryOnly: false,
     );
     final next = await repository.load(
       current: _item('wall', source: WallpaperSource.wallhaven, tags: ['space']),
       sessionKey: 'visit',
-      discoveryOnly: false,
       cursor: first.nextCursor,
     );
     expect(queries, ['', '']);
@@ -273,12 +255,10 @@ void main() {
     final first = await repository.load(
       current: _item('wall', source: WallpaperSource.wallhaven),
       sessionKey: 'fallback',
-      discoveryOnly: false,
     );
     final next = await repository.load(
       current: _item('wall', source: WallpaperSource.wallhaven, tags: ['new tag']),
       sessionKey: 'fallback',
-      discoveryOnly: false,
       cursor: first.nextCursor,
     );
     expect(wallhavenCalls, 1);
@@ -296,7 +276,7 @@ void main() {
       _item('people', source: WallpaperSource.wallhaven, category: 'people'),
       _item('tag-anime', source: WallpaperSource.wallhaven, tags: ['anime']),
     ];
-    final page = await repository.load(current: _item('wall'), sessionKey: 'offline', discoveryOnly: false);
+    final page = await repository.load(current: _item('wall'), sessionKey: 'offline');
     expect(page.items.map((item) => item.id), ['general']);
     expect(page.kind, RecommendationKind.offline);
   });
@@ -309,27 +289,16 @@ void main() {
       _item('saved-pexels', source: WallpaperSource.pexels),
     ];
     await settings.set('WHpurity', 111);
-    final unrestricted = await repository.load(
-      current: _item('wall'),
-      sessionKey: 'unrestricted',
-      discoveryOnly: false,
-    );
+    final unrestricted = await repository.load(current: _item('wall'), sessionKey: 'unrestricted');
     expect(unrestricted.items.map((item) => item.id), ['cached-wallhaven', 'saved-prism', 'saved-pexels']);
     for (final purity in [100, 110]) {
       await settings.set('WHpurity', purity);
-      final restricted = await repository.load(
-        current: _item('wall'),
-        sessionKey: 'restricted-$purity',
-        discoveryOnly: false,
-      );
+      final restricted = await repository.load(current: _item('wall'), sessionKey: 'restricted-$purity');
       expect(restricted.items.map((item) => item.id), ['saved-prism', 'saved-pexels']);
       expect(restricted.kind, RecommendationKind.offline);
     }
     local = [local.first];
-    await expectLater(
-      repository.load(current: _item('wall'), sessionKey: 'only-unverifiable', discoveryOnly: false),
-      throwsStateError,
-    );
+    await expectLater(repository.load(current: _item('wall'), sessionKey: 'only-unverifiable'), throwsStateError);
   });
 
   for (final source in [WallpaperSource.wallhaven, WallpaperSource.pexels]) {
@@ -351,7 +320,6 @@ void main() {
           final pending = repo.load(
             current: _item('wall', source: source),
             sessionKey: 'late',
-            discoveryOnly: false,
           );
           final failure = expectLater(pending, throwsStateError);
           await started.future;

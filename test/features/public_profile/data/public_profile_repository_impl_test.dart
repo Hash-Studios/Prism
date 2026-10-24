@@ -633,11 +633,7 @@ void main() {
         localSearch: (_) async => const [],
       );
       for (final result in [fresh, restored]) {
-        await similar.load(
-          current: result.data!.items.single.toFeedItem(),
-          sessionKey: 'profile',
-          discoveryOnly: false,
-        );
+        await similar.load(current: result.data!.items.single.toFeedItem(), sessionKey: 'profile');
         expect(similarClient.querySpecs.last.filters.map((f) => (f.field, f.value)), contains(('category', 'Nature')));
       }
     });

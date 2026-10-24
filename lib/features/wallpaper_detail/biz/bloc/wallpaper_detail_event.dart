@@ -37,10 +37,7 @@ final class FetchViews extends WallpaperDetailEvent {
 }
 
 final class LoadRecommendations extends WallpaperDetailEvent {
-  const LoadRecommendations({this.discoveryOnly = false});
-  final bool discoveryOnly;
-  @override
-  List<Object?> get props => [discoveryOnly];
+  const LoadRecommendations();
 }
 
 final class FetchSetCount extends WallpaperDetailEvent {

@@ -6,7 +6,6 @@ abstract interface class WallpaperRecommendationRepository {
   Future<RecommendationPage> load({
     required FeedItemEntity current,
     required String sessionKey,
-    required bool discoveryOnly,
     RecommendationCursor? cursor,
   });
 }

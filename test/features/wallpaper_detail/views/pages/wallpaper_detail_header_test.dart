@@ -79,7 +79,7 @@ FeedItemEntity _prism({
   ),
 );
 
-FeedItemEntity _wallhaven() => const FeedItemEntity.wallhaven(
+FeedItemEntity _wallhaven({int? favorites = 24, int? coreFavourites = 24}) => FeedItemEntity.wallhaven(
   id: 'wallhaven-1',
   wallpaper: WallhavenWallpaper(
     core: WallpaperCore(
@@ -87,10 +87,10 @@ FeedItemEntity _wallhaven() => const FeedItemEntity.wallhaven(
       source: WallpaperSource.wallhaven,
       fullUrl: 'https://img.test/full.jpg',
       thumbnailUrl: 'https://img.test/thumb.jpg',
-      favourites: 24,
+      favourites: coreFavourites,
     ),
     views: 1234,
-    favorites: 24,
+    favorites: favorites,
   ),
 );
 
@@ -255,6 +255,43 @@ void main() {
       expect(find.text('1.2K'), findsOneWidget);
       expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
       expect(find.textContaining('views'), findsNothing);
+    });
+
+    Future<void> pumpWallhavenTotal(WidgetTester tester, {required int favorites, int? coreFavourites}) async {
+      final entity = _wallhaven(favorites: favorites, coreFavourites: coreFavourites);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+        source: WallpaperSource.wallhaven,
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('the heart total is compact and falls back to the Wallhaven total', (tester) async {
+      await pumpWallhavenTotal(tester, favorites: 12345);
+
+      final Finder favourite = find
+          .ancestor(of: find.byType(FavouriteWallpaperButton), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: favourite, matching: find.text('12.3K')), findsOneWidget);
+      expect(find.text('12345'), findsNothing);
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('12,345 favourites'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('an invalid heart total stays hidden', (tester) async {
+      await pumpWallhavenTotal(tester, favorites: -1, coreFavourites: -1);
+
+      expect(find.text('-1'), findsNothing);
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel(RegExp('favourites')), findsNothing);
+      semantics.dispose();
     });
 
     testWidgets('a narrow headline keeps the set count while views are unknown', (tester) async {

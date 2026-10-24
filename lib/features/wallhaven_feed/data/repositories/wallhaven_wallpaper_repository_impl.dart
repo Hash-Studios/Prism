@@ -38,7 +38,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, 
 
   PagedFeedCache _cacheFor(String key, {bool refresh = false}) {
     if (!refresh && _feedCaches.containsKey(key)) return _feedCaches[key]!;
-    return _feedCaches[key] = PagedFeedCache(_local, source: 'wallhaven');
+    return _feedCaches[key] = PagedFeedCache(_local, source: 'wallhaven', durable: !isEphemeralPaginationKey(key));
   }
 
   static const String _host = 'wallhaven.cc';

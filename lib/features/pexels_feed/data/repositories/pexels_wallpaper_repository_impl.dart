@@ -36,7 +36,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository, Pagina
 
   PagedFeedCache _cacheFor(String key, {bool refresh = false}) {
     if (!refresh && _feedCaches.containsKey(key)) return _feedCaches[key]!;
-    return _feedCaches[key] = PagedFeedCache(_local, source: 'pexels');
+    return _feedCaches[key] = PagedFeedCache(_local, source: 'pexels', durable: !isEphemeralPaginationKey(key));
   }
 
   static const String _host = 'api.pexels.com';
