@@ -47,22 +47,6 @@ service cloud.firestore {
           && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels'];
     }
 
-    // A follow that is already in place (arrayUnion of a present email) is a no-op write; allow it so a
-    // batch of follows does not fail on one creator the user already follows.
-    function canToggleFollowersOnly() {
-      let affected = request.resource.data.diff(resource.data).affectedKeys();
-      return hasAuthEmail() && request.auth.token.email_verified == true
-          && affected.hasOnly(['followers'])
-          && (affected.size() == 0
-              || (resource.data.followers is list
-                  && request.resource.data.followers is list
-                  && request.resource.data.followers.removeAll([authEmail()])
-                      == resource.data.followers.removeAll([authEmail()])
-                  && ((!resource.data.followers.hasAny([authEmail()])
-                        && request.resource.data.followers.size() == resource.data.followers.size() + 1)
-                      || !request.resource.data.followers.hasAny([authEmail()]))));
-    }
-
     // New profiles start empty: coins, premium and coinState are server-owned.
     function canCreateUserDoc(userId) {
       return isOwner(userId)
@@ -228,20 +212,16 @@ service cloud.firestore {
       allow write: if isConfiguredAdmin();
     }
 
-    // User profiles + private user state.
-    // Signed-in users can read social profiles. ponytail: field-level private
-    // coins/email needs a profiles collection plus a migration.
-    // Read stays open for shipped clients until the follow-up tightening to owner/admin.
+    // Private account state. Other users read the public projection in profiles/{uid}.
     match /usersv2/{userId} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(userId) || isConfiguredAdmin();
       allow create: if canCreateUserDoc(userId) || isConfiguredAdmin();
       allow update: if (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
-            'following', 'interestCategories', 'onboardingV2', 'uploadsWeekStart',
+            'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
             'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes'
           ]) && ownerCoinStateOk() && ownerAppOpenOk())
-          || canToggleFollowersOnly()
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
