@@ -13,6 +13,7 @@ const _artKey = ValueKey<String>('detail-art');
 const _bodyKey = ValueKey<String>('detail-body');
 const _otherTileKey = ValueKey<String>('other-tile');
 const _pictureTileKey = ValueKey<String>('picture-tile');
+const _testZoomCurve = Cubic(0.45, 0.3, 0.1, 1);
 
 int _tileDecodes = 0;
 
@@ -135,23 +136,26 @@ class _TestRouter extends RootStackRouter {
           builder: (_) => Builder(
             builder: (context) {
               detailRoute = ModalRoute.of(context);
-              return Scaffold(
-                body: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      height: 300,
-                      child: HeroMode(
-                        enabled: !context.reduceMotion,
-                        child: WallpaperDetailHero(
-                          tag: tag,
-                          radius: 20,
-                          image: const ColoredBox(key: _artKey, color: Colors.blue),
+              return PopScope(
+                canPop: allowPop,
+                child: Scaffold(
+                  body: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 300,
+                        child: HeroMode(
+                          enabled: !context.reduceMotion,
+                          child: WallpaperDetailHero(
+                            tag: tag,
+                            radius: 20,
+                            image: const ColoredBox(key: _artKey, color: Colors.blue),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(key: _bodyKey, height: 100, child: _Counter()),
-                  ],
+                      const SizedBox(key: _bodyKey, height: 100, child: _Counter()),
+                    ],
+                  ),
                 ),
               );
             },
@@ -199,6 +203,18 @@ Future<_TestRouter> _pumpRouter(
   );
   await tester.pumpAndSettle();
   return router;
+}
+
+void _expectScrimAlpha(WidgetTester tester, _TestRouter router, {required bool reverse}) {
+  final Animation<double> animation = router.detailRoute!.animation!;
+  final Curve curve = reverse ? const FlippedCurve(_testZoomCurve) : _testZoomCurve;
+  final double alpha = 0.3 * curve.transform(animation.value);
+  final Finder body = find.byKey(_bodyKey);
+  final Finder transition = find.ancestor(of: body, matching: find.byType(Stack)).first;
+  final Finder ignorePointer = find.descendant(of: transition, matching: find.byType(IgnorePointer)).first;
+  final ColoredBox scrim = tester.widget(find.descendant(of: ignorePointer, matching: find.byType(ColoredBox)).first);
+  final Color expected = Theme.of(tester.element(body)).colorScheme.scrim.withValues(alpha: alpha);
+  expect(scrim.color, expected);
 }
 
 void main() {
@@ -292,6 +308,7 @@ void main() {
         expect(body.width, closeTo(art.width, 0.01), reason: 'frame $frames');
         expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
         expect(body.top, lessThanOrEqualTo(art.bottom + 0.01), reason: 'frame $frames');
+        _expectScrimAlpha(tester, router, reverse: false);
         // The grid behind zooms with the card, so its other tile maps the same way as the tile does.
         if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
           final Rect other = tester.getRect(find.byKey(_otherTileKey));
@@ -328,6 +345,7 @@ void main() {
           expect(body.width, closeTo(art.width, 0.01), reason: 'pop frame $popFrames');
           expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'pop frame $popFrames');
           expect(body.width, lessThanOrEqualTo(lastWidth + 0.01), reason: 'pop frame $popFrames');
+          _expectScrimAlpha(tester, router, reverse: true);
           lastWidth = body.width;
           if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
             final Rect other = tester.getRect(find.byKey(_otherTileKey));
@@ -419,6 +437,46 @@ void main() {
     expect(router.stack.map((page) => page.name), ['Grid', 'Zoom']);
   });
 
+  testWidgets('a detail below another detail retains its unkeyed state across delegated wrapper changes', (
+    tester,
+  ) async {
+    final router = await _pumpRouter(tester);
+    unawaited(router.push<void>(const PageRouteInfo<void>('Detail')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('count 0').first);
+    await tester.pumpAndSettle();
+    expect(find.text('count 1'), findsOneWidget);
+
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    await tester.pumpAndSettle();
+    expect(find.text('count 1', skipOffstage: false), findsOneWidget);
+
+    unawaited(router.maybePop<void>());
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Detail');
+    expect(find.text('count 1'), findsOneWidget);
+  });
+
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    for (final routeName in ['Lone', 'Zoom']) {
+      testWidgets('$platform taps outside $routeName during pop do not open another route', (tester) async {
+        final router = await _pumpRouter(tester);
+        unawaited(router.push<void>(PageRouteInfo<void>(routeName)));
+        await tester.pumpAndSettle();
+
+        unawaited(router.maybePop<void>());
+        await tester.pump();
+        expect(router.detailRoute!.animation!.status, AnimationStatus.reverse);
+        if (routeName == 'Zoom') await tester.pump(const Duration(milliseconds: 40));
+        await tester.tapAt(const Offset(650, 470));
+        await tester.pumpAndSettle();
+
+        expect(router.current.name, 'Grid');
+        expect(router.stack.map((page) => page.name), ['Grid']);
+      }, variant: TargetPlatformVariant({platform}));
+    }
+  }
+
   testWidgets('iOS back during the opening shrinks the page back into the tile instead of sliding', (tester) async {
     final router = await _pumpRouter(tester);
     final tile = tester.getRect(find.byKey(_tileKey));
@@ -446,6 +504,66 @@ void main() {
     expect(tester.getRect(find.byKey(_tileKey)), tile);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+  testWidgets('iOS Zoom edge back slides the foreground and keeps the page behind unscaled', (tester) async {
+    final router = await _pumpRouter(tester);
+    final Rect tile = tester.getRect(find.byKey(_tileKey));
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    await tester.pumpAndSettle();
+
+    final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
+    final double nativeParallaxX = tester.getRect(previousTile).left;
+    expect(nativeParallaxX, closeTo(600 - 800 / 3, 1));
+    expect(tester.getRect(previousTile).width, 100);
+
+    final cancel = await tester.startGesture(const Offset(1, 250));
+    await cancel.moveBy(const Offset(100, 0));
+    await tester.pump();
+    await cancel.moveBy(const Offset(80, 0));
+    await tester.pump();
+    expect(router.navigatorKey.currentState!.userGestureInProgress, isTrue);
+    expect(tester.getRect(find.byKey(_bodyKey)).left, closeTo(180, 1));
+    expect(tester.getRect(previousTile).left, closeTo(600 - 800 / 3 * router.detailRoute!.animation!.value, 1));
+    expect(tester.getRect(previousTile).width, 100);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await cancel.up();
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Zoom');
+    expect(tester.getRect(find.byKey(_bodyKey)).left, 0);
+    expect(tester.getRect(previousTile).left, nativeParallaxX);
+    expect(tester.getRect(previousTile).width, 100);
+
+    final complete = await tester.startGesture(const Offset(1, 250));
+    await complete.moveBy(const Offset(500, 0));
+    await tester.pump();
+    await complete.moveBy(const Offset(100, 0));
+    await tester.pump();
+    expect(tester.getRect(find.byKey(_bodyKey)).left, greaterThan(400));
+    expect(tester.getRect(previousTile).width, 100);
+    await complete.up();
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Grid');
+    expect(tester.getRect(find.byKey(_tileKey)), tile);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS PopScope blocks Zoom while opening without leaving a stale behind-page transform', (tester) async {
+    final router = await _pumpRouter(tester, allowPop: false);
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    for (var i = 0; i < 4 && router.detailRoute == null; i++) {
+      await tester.pump();
+    }
+    expect(router.detailRoute, isNotNull);
+    expect(router.detailRoute!.animation!.isAnimating, isTrue);
+    expect(await router.maybePop<void>(), isTrue);
+    await tester.pumpAndSettle();
+
+    expect(router.current.name, 'Zoom');
+    expect(router.detailRoute!.animation!.isCompleted, isTrue);
+    final Rect otherTile = tester.getRect(find.byKey(_otherTileKey, skipOffstage: false));
+    expect(otherTile.left, closeTo(600 - 800 / 3, 1));
+    expect(otherTile.width, 100);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   testWidgets('reduced motion opens a card Hero page in place, without a zoom', (tester) async {
     final router = await _pumpRouter(tester, reduceMotion: true);
     unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
@@ -471,6 +589,9 @@ void main() {
     final router = await _pumpRouter(tester);
     unawaited(router.push<void>(const PageRouteInfo<void>('Detail')));
     await tester.pumpAndSettle();
+    final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
+    final double nativeParallaxX = tester.getRect(previousTile).left;
+    expect(nativeParallaxX, closeTo(600 - 800 / 3, 1));
     await tester.tap(find.text('count 0'));
     await tester.pump();
 
@@ -481,6 +602,7 @@ void main() {
     await tester.pump();
     expect(router.navigatorKey.currentState!.userGestureInProgress, isTrue);
     expect(tester.getTopLeft(find.byKey(_bodyKey)).dx, closeTo(180, 1));
+    expect(tester.getRect(previousTile).left, closeTo(600 - 800 / 3 * router.detailRoute!.animation!.value, 1));
     await tester.pump(const Duration(milliseconds: 500));
     await cancel.up();
     await tester.pumpAndSettle();

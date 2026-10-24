@@ -3,7 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -207,8 +207,18 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
       final Offset shift = card.topLeft - zoom.source.topLeft * scale;
       transform = Matrix4.translationValues(shift.dx, shift.dy, 0)..scaleByDouble(scale, scale, 1, 1);
     }
-    // One widget shape for every case, so the page behind is never re-parented when a zoom starts or ends.
-    return Transform(transform: transform, child: child);
+
+    Widget content = child ?? const SizedBox.shrink();
+    if (isIOS) {
+      // Delegation replaces Cupertino's secondary transition. Restore its native parallax when no zoom is active.
+      content = cupertino.CupertinoPageTransition(
+        primaryRouteAnimation: kAlwaysCompleteAnimation,
+        secondaryRouteAnimation: zoom == null && !context.reduceMotion ? secondaryAnimation : kAlwaysDismissedAnimation,
+        linearTransition: popGestureInProgress,
+        child: content,
+      );
+    }
+    return Transform(transform: transform, child: content);
   }
 
   @override
@@ -244,7 +254,7 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
 
     // Keep Flutter's native edge detector in the tree, but suppress its lateral entry motion.
     // The real route animation still drives Hero flights. Back swipes use the native slide.
-    return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
+    return cupertino.CupertinoRouteTransitionMixin.buildPageTransitions<T>(
       this,
       context,
       returning && !reduceMotion ? animation : kAlwaysCompleteAnimation,
@@ -278,6 +288,7 @@ class _DetailTransition extends AnimatedWidget {
   Widget build(BuildContext context) {
     final _Zoom? zoom = this.zoom;
     final double t = zoom == null ? 1 : curve.transform((listenable as Animation<double>).value);
+    final bool blockBackground = zoom != null || (listenable as Animation<double>).status.isAnimating;
     final Color scrim = Theme.of(context).colorScheme.scrim;
     return LayoutBuilder(
       builder: (context, box) {
@@ -288,10 +299,9 @@ class _DetailTransition extends AnimatedWidget {
         return Stack(
           fit: StackFit.expand,
           children: [
-            // While the page grows, the dim takes every tap outside its window, so the page behind cannot open
-            // another route.
+            // Keep taps off the page behind for both the zoom and its fade fallback, including while the route pops.
             IgnorePointer(
-              ignoring: zoom == null,
+              ignoring: !blockBackground,
               child: ColoredBox(color: scrim.withValues(alpha: zoom == null ? 0 : _zoomDim * t)),
             ),
             ClipRRect(
