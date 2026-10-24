@@ -401,8 +401,28 @@ export async function sendToUser(
       }),
     ),
   );
-  if (targets.length === 0) return true;
+  if (targets.length === 0) return sendInboxNudge(recipient.uid, payload.data.route);
   return results.some(Boolean);
+}
+
+/** Temporary: builds up to v3.9.0 lack token binding and only hear UID topics. Remove after adoption. */
+async function sendInboxNudge(uid: string, route: string): Promise<boolean> {
+  const topic = userIdToTopic(uid);
+  const collapseKey = "prism_inbox_nudge";
+  try {
+    await admin.messaging().send({
+      condition: `'${topic}' in topics || '${topic}_loc_v1' in topics`,
+      notification: {title: "Prism", body: "You have a new notification."},
+      data: {route: "announcement"},
+      android: {collapseKey, notification: {tag: collapseKey}},
+      apns: {headers: {"apns-collapse-id": collapseKey}},
+    });
+    logger.info("Sent the inbox nudge to an unbound recipient.", {route});
+    return true;
+  } catch (err) {
+    logger.warn("Failed to send the inbox nudge.", {err, route});
+    return false;
+  }
 }
 
 /** Like sendToUser, for a recipient known only by email (admins, campaign and inbox audiences). */

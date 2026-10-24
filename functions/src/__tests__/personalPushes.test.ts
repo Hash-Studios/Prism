@@ -14,7 +14,7 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
   const document = db.doc.bind(db);
   const inbox: unknown[] = [];
   const topics: string[] = [];
-  const messages: Array<{topic?: string; token?: string}> = [];
+  const messages: Array<{topic?: string; token?: string; condition?: string}> = [];
   let userLookups = 0;
   const usersCollection = {
     where: (_field: string, _op: string, email: string) => {
@@ -77,9 +77,9 @@ test("campaign email target skips signed-out users and keeps inbox", async (t) =
 
 for (const [email, user, topic, state] of [
   ["in@example.com", {loggedIn: true, sessionToken: "signed-in-token"}, "signed-in-token", "signed-in"],
-  ["old@example.com", {}, "", "legacy"],
+  ["old@example.com", {}, "'u_uid-old' in topics || 'u_uid-old_loc_v1' in topics", "legacy"],
 ] as const) {
-  test(`campaign email target for ${state} user uses only an available bound token`, async (t) => {
+  test(`campaign email target for ${state} user uses only an available bound token or the inbox nudge`, async (t) => {
     const {inbox, topics, messages} = setup(t, user ? {[email]: user} : {});
     await onCampaignNotificationRequested.run({
       params: {requestId: "r1"},
@@ -87,7 +87,7 @@ for (const [email, user, topic, state] of [
     } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
     assert.equal(inbox.length, 1);
     assert.deepEqual(topics, []);
-    assert.deepEqual(messages.map((message) => message.topic ?? message.token), topic ? [topic] : []);
+    assert.deepEqual(messages.map((message) => message.topic ?? message.token ?? message.condition), [topic]);
   });
 }
 

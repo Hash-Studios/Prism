@@ -408,10 +408,12 @@ test("personal topic lookup failure prevents FCM delivery", async (t) => {
 type Sent = {
   topic?: string;
   token?: string;
+  condition?: string;
   imageUrl?: string;
   notification?: { title?: string; body?: string };
   data?: Record<string, string>;
   android?: {
+    collapseKey?: string;
     notification?: {
       tag?: string;
       titleLocKey?: string;
@@ -419,6 +421,7 @@ type Sent = {
       imageUrl?: string;
     };
   };
+  apns?: { headers?: Record<string, string> };
 };
 
 function personalSetup(
@@ -650,7 +653,9 @@ test("sendToUser strips a runtime delivery target from an untyped payload", asyn
   const injected = {...personal, fcmTarget: {topic: "recommendations"}};
   await sendToUser(injected as unknown as typeof personal, {uid: "u1", email: "sam@example.com"});
   assert.equal(inbox.length, 1);
-  assert.deepEqual(sent, []);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].topic, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
 });
 
 test("moderation pushes expose only the report route and ID with generic copy", async (t) => {
@@ -793,31 +798,77 @@ test("scoreboard write failures do not fail an accepted push", async (t) => {
   }
 });
 
-test("an account without a private session token keeps its inbox without pushing", async (t) => {
-  const {sent} = personalSetup(t);
-  await sendToUser(personal, {
+test("an account without a private session token keeps its inbox and gets only the nudge", async (t) => {
+  const {inbox, sent} = personalSetup(t);
+  const ok = await sendToUser(personal, {
     uid: "u1",
     email: "sam@example.com",
     legacyToken: "legacy-token",
   });
-  assert.deepEqual(
-    sent.map((m) => m.topic ?? m.token),
-    [],
-  );
+  assert.equal(ok, true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
 });
 
-test("an invalid private session token fails closed and keeps the inbox", async (t) => {
+test("an unbound legacy session token gets one content-free nudge", async (t) => {
+  const {sent} = personalSetup(t, "old-token", false, "old-token", {});
+  const ok = await sendToUser(
+    {...personal, title: "Secret title", body: "Secret body", data: {route: "wall", wall_id: "w9", email: "a@b.c"}},
+    {uid: "u1", email: "sam@example.com"},
+  );
+  assert.equal(ok, true);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].topic, undefined);
+  assert.deepEqual(sent[0].notification, {title: "Prism", body: "You have a new notification."});
+  assert.deepEqual(sent[0].data, {route: "announcement"});
+  assert.equal(sent[0].android?.collapseKey, "prism_inbox_nudge");
+  assert.equal(sent[0].android?.notification?.tag, "prism_inbox_nudge");
+  assert.equal(sent[0].apns?.headers?.["apns-collapse-id"], "prism_inbox_nudge");
+});
+
+test("a bound token gets the token push and no nudge", async (t) => {
+  const {sent} = personalSetup(t, "session-token");
+  await sendToUser(personal, {uid: "u1", email: "sam@example.com"});
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, "session-token");
+  assert.equal(sent[0].condition, undefined);
+});
+
+test("a moderation nudge for an unbound admin carries no report details", async (t) => {
+  const {sent} = personalSetup(t, "old-token", false, "old-token", {});
+  await sendToUser({
+    ...personal,
+    data: {route: "wall", report_id: "r1", reporter_uid: "secret-user", reason: "private reason"},
+    modifier: "admin@example.com",
+    scoreKind: "moderation",
+  }, {uid: "u1", email: "admin@example.com"});
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].data, {route: "announcement"});
+  assert.deepEqual(sent[0].notification, {title: "Prism", body: "You have a new notification."});
+  assert.ok(!JSON.stringify(sent[0]).includes("r1"));
+  assert.ok(!JSON.stringify(sent[0]).includes("secret-user"));
+  assert.ok(!JSON.stringify(sent[0]).includes("private reason"));
+});
+
+test("an invalid private session token falls back to the nudge and keeps the inbox", async (t) => {
   const {inbox, sent} = personalSetup(t, {token: "not-an-fcm-token"});
   assert.equal(await sendToUser(personal, {uid: "u1", email: "sam@example.com", legacyToken: "legacy-token"}), true);
   assert.equal(inbox.length, 1);
-  assert.equal(sent.length, 0);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
 });
 
-test("a private session token without the current account binding fails closed", async (t) => {
+test("a private session token without the current account binding falls back to the nudge", async (t) => {
   const {inbox, sent} = personalSetup(t, "old-token", false, "old-token", {version: 1, token: "stale-token"});
   assert.equal(await sendToUser(personal, {uid: "u1", email: "sam@example.com"}), true);
   assert.equal(inbox.length, 1);
-  assert.equal(sent.length, 0);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
 });
 
 test("a stored signed-out profile blocks personal push even if the caller omitted loggedOut", async (t) => {
