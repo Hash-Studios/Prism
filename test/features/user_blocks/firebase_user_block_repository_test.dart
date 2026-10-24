@@ -185,7 +185,7 @@ void main() {
     await afterInitialError;
     expect(await repo.getBlockedCreatorUids(waitForInitialLoad: true), isEmpty);
 
-    final Future<Set<String>> afterSnapshot = repo.watchBlockedCreatorUids().skip(1).first;
+    final Future<Set<String>> afterSnapshot = repo.watchBlockedCreatorUids().firstWhere((uids) => uids.isNotEmpty);
     client.snapshots.add(<FakeDocRow>[_blocked('u1', 'bad@x.com')]);
     expect(await afterSnapshot, <String>{'u1'});
 
