@@ -346,7 +346,7 @@ function personalCollapseKey(payload: PersonalPayload): string {
 /**
  * Writes the in-app doc (unless pushOnly), then pushes only to the user's private session FCM token. The email-prefix
  * topic is shared by every address with the same prefix, so personal payloads never go there. Returns false when a
- * push failed; an account without a private session token keeps its inbox entry and receives no push.
+ * push failed; an account without a bound session token keeps its inbox entry and gets only the legacy inbox nudge.
  */
 export async function sendToUser(
   payload: PersonalPayload,

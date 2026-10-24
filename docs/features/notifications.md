@@ -118,7 +118,7 @@ For each new notification template, add its English copy to `lib/l10n/app_en.arb
 After the first wallpaper step in onboarding, `NotificationPermissionPromptService.maybePromptAfterValueAction` runs (`lib/features/onboarding_v2/src/views/onboarding_v2_shell.dart`). It also runs after a download or a wallpaper set.
 
 - It asks once. The flag is `notificationPermissionPromptedV2`.
-- When the user grants permission, it subscribes to the Wall of the Day bucket (if that switch is on). For a signed-in user it also subscribes to the uid topic and the followers topic.
+- When the user grants permission, it subscribes to the Wall of the Day bucket (if that switch is on). For a signed-in user it also subscribes to the followers topic and unsubscribes from the old uid topic.
 
 ### Push data path
 
@@ -137,9 +137,10 @@ Cloud Function event
 
 | Rule | Detail |
 |---|---|
-| Personal pushes | `sendToUser` sends only to a token in `usersv2/{uid}/private/session`. The token must be a string and have `fcmTokenBindingVersion: 1` and `fcmTokenBindingToken` equal to `fcmToken`. No UID or email-prefix topics are used for personal delivery. If no valid token exists, the inbox entry is kept and no push is sent. |
-| Legacy tokens | `usersv2.fcmToken` is not used for delivery. Old private-session tokens without the binding marker fail closed. There is no safe server backfill because a stored token cannot prove which signed-in account currently owns the device. Users need a client version that rotates and binds the token before personal pushes resume. |
-| Delivery rollout | The token-binding client and this backend gate must both ship. No function deploy or app release has been run as part of this change. Older app registrations receive no personal push until an updated app refreshes its token and writes the binding marker. In-app inbox writes and public broadcast topics remain available. |
+| Personal pushes | `sendToUser` sends only to a token in `usersv2/{uid}/private/session`. The token must be a string and have `fcmTokenBindingVersion: 1` and `fcmTokenBindingToken` equal to `fcmToken`. No UID or email-prefix topics carry personal payloads. If no valid token exists, the inbox entry is kept and the legacy inbox nudge is sent. |
+| Legacy tokens | `usersv2.fcmToken` is not used for delivery. Old private-session tokens without the binding marker fail closed. There is no safe server backfill because a stored token cannot prove which signed-in account currently owns the device. Users need a client version that rotates and binds the token before full personal pushes resume. |
+| Legacy inbox nudge | Temporary, for builds up to v3.9.0. When a recipient has no bound token, `sendInboxNudge` sends one push to the condition `'u_<uid>' in topics \|\| 'u_<uid>_loc_v1' in topics`. It has the text "Prism" and "You have a new notification.", only `route: announcement` as data, and the collapse key `prism_inbox_nudge`. It carries no payload content, so a topic listener learns only the timing. It is not counted on the scoreboard. Remove it after a release or two of adoption. |
+| Delivery rollout | The token-binding client and this backend gate must both ship. No function deploy or app release has been run as part of this change. Older app registrations receive only the legacy inbox nudge until an updated app refreshes its token and writes the binding marker. In-app inbox writes and public broadcast topics remain available. |
 | Push envelope | Personal delivery changes only the target. Android notification channels, iOS/APNs sound and collapse headers, localization markers, and the existing envelope format remain in use. |
 | Who uses it | Follow, gifts, draw winners, wall approvals, wall submissions and reports for admins, Wall of the Day creators, win-back, streak reminders, email campaigns, and personal inbox entries. |
 | Badge | The server no longer sets `aps.badge`. The iOS app clears the badge on its own. |
