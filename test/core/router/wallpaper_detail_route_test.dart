@@ -60,6 +60,7 @@ class _TestRouter extends RootStackRouter {
                   onTap: () => push(const PageRouteInfo<void>('Zoom')),
                   child: const Hero(
                     tag: 'wall',
+                    createRectTween: wallpaperHeroRectTween,
                     child: ColoredBox(key: _tileKey, color: Colors.blue),
                   ),
                 ),
@@ -212,13 +213,13 @@ void main() {
 
       expect(tester.getRect(find.byKey(_artKey)).width, closeTo(tile.width, 1));
       expect(tester.getTopLeft(find.byKey(_bodyKey)), const Offset(0, 300));
-      expect(router.detailRoute!.transitionDuration, PrismDurations.base);
+      expect(router.detailRoute!.transitionDuration, PrismDurations.fast);
       expect(router.detailRoute!.settings, same(router.stack.last));
       expect(router.current.animationCompletion, isNotNull);
 
       double lastWidth = tile.width;
       for (var i = 0; i < 3; i++) {
-        await tester.pump(const Duration(milliseconds: 60));
+        await tester.pump(const Duration(milliseconds: 40));
         final flying = tester.getRect(find.byKey(_artKey));
         expect(flying.width, greaterThan(lastWidth));
         expect(flying.width, lessThanOrEqualTo(800));
@@ -226,7 +227,7 @@ void main() {
         final fade = tester.widget<FadeTransition>(
           find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
         );
-        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 60 + 1) / 240), 0.001));
+        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 40 + 1) / 160), 0.001));
         lastWidth = flying.width;
       }
       await tester.pumpAndSettle();
@@ -277,6 +278,7 @@ void main() {
       // follows the picture's left edge, top edge and width: its card slot starts under the picture and its body
       // starts where that slot ends, which is never below the picture.
       var frames = 0;
+      var behindFrames = 0;
       while (router.detailRoute!.animation!.isAnimating) {
         final art = tester.getRect(find.byKey(_artKey));
         final body = tester.getRect(find.byKey(_bodyKey));
@@ -290,28 +292,60 @@ void main() {
         expect(body.width, closeTo(art.width, 0.01), reason: 'frame $frames');
         expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
         expect(body.top, lessThanOrEqualTo(art.bottom + 0.01), reason: 'frame $frames');
+        // The grid behind zooms with the card, so its other tile maps the same way as the tile does.
+        if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
+          final Rect other = tester.getRect(find.byKey(_otherTileKey));
+          final double s = art.width / tile.width;
+          expect(other.left, closeTo(art.left + (600 - tile.left) * s, 0.01), reason: 'frame $frames');
+          expect(other.top, closeTo(art.top + (400 - tile.top) * s, 0.01), reason: 'frame $frames');
+          expect(other.width, closeTo(100 * s, 0.01), reason: 'frame $frames');
+          behindFrames++;
+        }
         frames++;
         await tester.pump(const Duration(milliseconds: 20));
       }
       expect(frames, greaterThan(5));
+      expect(behindFrames, greaterThan(3));
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byKey(_artKey)), const Rect.fromLTWH(0, 0, 800, 300));
       expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
-      // The card flies on the strong ease-out that matches the reference opening, set on the Hero itself.
+      // The card flies on the curve measured from the reference closeup, set on the Hero itself.
       final Hero card = tester.widget<Hero>(
         find.descendant(of: find.byType(WallpaperDetailHero), matching: find.byType(Hero)),
       );
-      expect(card.curve, PrismCurves.enter);
+      expect(card.curve, const Cubic(0.45, 0.3, 0.1, 1));
 
-      // Going back never zooms: Android fades, iOS slides natively.
+      // Going back shrinks the page into its tile, and the grid behind zooms back out with it.
       unawaited(router.maybePop<int>(3));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
-      expect(tester.getSize(find.byKey(_bodyKey)), const Size(800, 100));
+      var popFrames = 0;
+      double lastWidth = 800;
+      while (router.detailRoute!.animation!.isAnimating) {
+        if (tester.getRect(find.byKey(_bodyKey)).width < 799) {
+          final Rect art = tester.getRect(find.byKey(_artKey));
+          final Rect body = tester.getRect(find.byKey(_bodyKey));
+          expect(body.left, closeTo(art.left, 0.01), reason: 'pop frame $popFrames');
+          expect(body.width, closeTo(art.width, 0.01), reason: 'pop frame $popFrames');
+          expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'pop frame $popFrames');
+          expect(body.width, lessThanOrEqualTo(lastWidth + 0.01), reason: 'pop frame $popFrames');
+          lastWidth = body.width;
+          if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
+            final Rect other = tester.getRect(find.byKey(_otherTileKey));
+            final double s = art.width / tile.width;
+            expect(other.left, closeTo(art.left + (600 - tile.left) * s, 0.01), reason: 'pop frame $popFrames');
+            expect(other.top, closeTo(art.top + (400 - tile.top) * s, 0.01), reason: 'pop frame $popFrames');
+            expect(other.width, closeTo(100 * s, 0.01), reason: 'pop frame $popFrames');
+          }
+          popFrames++;
+        }
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(popFrames, greaterThan(3));
       await tester.pumpAndSettle();
       expect(await result, 3);
       expect(router.current.name, 'Grid');
       expect(tester.getRect(find.byKey(_tileKey)), tile);
+      expect(tester.getRect(find.byKey(_otherTileKey)), const Rect.fromLTWH(600, 400, 100, 140));
     }, variant: TargetPlatformVariant({platform}));
 
     testWidgets('$platform card flies and lands on the decoded picture of its tile, under its own picture', (
@@ -360,7 +394,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     for (var i = 0; i < 3; i++) {
-      await tester.pump(const Duration(milliseconds: 60));
+      await tester.pump(const Duration(milliseconds: 40));
       expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
       final fade = tester.widget<FadeTransition>(
         find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
@@ -420,6 +454,17 @@ void main() {
     expect(router.detailRoute!.animation!.isCompleted, isTrue);
     expect(tester.getRect(find.byKey(_artKey)), const Rect.fromLTWH(0, 0, 800, 300));
     expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
+  });
+
+  testWidgets('reduced motion leaves the page behind in place', (tester) async {
+    final router = await _pumpRouter(tester, reduceMotion: true);
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    await tester.pump();
+    await tester.pump();
+    unawaited(router.maybePop<void>());
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byKey(_otherTileKey)), const Rect.fromLTWH(600, 400, 100, 140));
+    expect(router.current.name, 'Grid');
   });
 
   testWidgets('iOS edge back follows the finger, cancels without losing state, and completes', (tester) async {
