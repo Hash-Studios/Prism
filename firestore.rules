@@ -123,11 +123,11 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -181,9 +181,11 @@ service cloud.firestore {
       allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       allow create: if isSignedIn()
           && isEmailOwner(request.resource.data.email)
+          && !('creatorUid' in request.resource.data)
           && request.resource.data.review != true;
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
+              && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid'])
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
               && request.resource.data.review != true);
@@ -229,6 +231,7 @@ service cloud.firestore {
     // User profiles + private user state.
     // Signed-in users can read social profiles. ponytail: field-level private
     // coins/email needs a profiles collection plus a migration.
+    // Read stays open for shipped clients until the follow-up tightening to owner/admin.
     match /usersv2/{userId} {
       allow read: if isSignedIn();
       allow create: if canCreateUserDoc(userId) || isConfiguredAdmin();
@@ -266,6 +269,23 @@ service cloud.firestore {
 
       match /setups/{docId} {
         allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
+      }
+    }
+
+    // Public profile documents contain only the server-projected profile allowlist.
+    // Writes use the Admin SDK, which bypasses these client rules.
+    match /profiles/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+
+      match /followers/{followerUid} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+
+      match /following/{targetUid} {
+        allow read: if isSignedIn();
+        allow write: if false;
       }
     }
 
