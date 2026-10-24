@@ -120,24 +120,34 @@ class WallpaperDetailHero extends StatelessWidget {
   }
 }
 
-class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
+/// The Material mixin only makes the route a type that auto_route's Android pages agree to transition to, so they take
+/// [delegatedTransition]. This class overrides the mixin's timing and transitions.
+class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransitionMixin<T> {
   _WallpaperDetailPageRoute({
     required AutoRoutePage<T> page,
-    required Widget child,
+    required this.child,
     required this.isIOS,
-    required Duration duration,
-  }) : super(
-         settings: page,
-         maintainState: page.maintainState,
-         fullscreenDialog: page.fullscreenDialog,
-         allowSnapshotting: page.allowSnapshotting,
-         opaque: page.opaque,
-         transitionDuration: duration,
-         reverseTransitionDuration: duration,
-         pageBuilder: (_, _, _) => Semantics(scopesRoute: true, explicitChildNodes: true, child: child),
-       );
+    required this.duration,
+  }) : super(settings: page, fullscreenDialog: page.fullscreenDialog, allowSnapshotting: page.allowSnapshotting);
 
+  final Widget child;
   final bool isIOS;
+  final Duration duration;
+
+  @override
+  Widget buildContent(BuildContext context) => child;
+
+  @override
+  Duration get transitionDuration => duration;
+
+  @override
+  Duration get reverseTransitionDuration => duration;
+
+  @override
+  bool get maintainState => _page.maintainState;
+
+  @override
+  bool get opaque => _page.opaque;
 
   /// Set when the card Hero starts a flight in or home, cleared when the transition settles.
   _Zoom? _zoom;

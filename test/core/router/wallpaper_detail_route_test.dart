@@ -41,7 +41,13 @@ class _TestRouter extends RootStackRouter {
   ModalRoute<dynamic>? detailRoute;
 
   @override
-  RouteType get defaultRouteType => const RouteType.adaptive();
+  // Mirrors the app: Cupertino pages on iOS, auto_route's custom fade pages on Android.
+  RouteType get defaultRouteType => defaultTargetPlatform == TargetPlatform.iOS
+      ? const RouteType.adaptive()
+      : RouteType.custom(
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+        );
 
   @override
   List<AutoRoute> get routes => [
@@ -423,7 +429,7 @@ void main() {
     }
     await tester.pumpAndSettle();
     expect(router.current.name, 'Lone');
-  }, variant: TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}));
+  }, variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('a second tap while the page grows cannot open another page', (tester) async {
     final router = await _pumpRouter(tester);
