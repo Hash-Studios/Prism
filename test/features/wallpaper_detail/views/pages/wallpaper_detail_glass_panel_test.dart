@@ -84,6 +84,7 @@ void main() {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state ?? _loaded('parent'));
     await tester.pumpWidget(
       MaterialApp(
+        builder: favouriteTestBuilder,
         navigatorKey: navigatorKey,
         theme: theme,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -3,7 +3,7 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -47,7 +47,7 @@ class WallpaperRecommendations extends StatelessWidget {
             padding: PrismWallGrid.padding,
             sliver: PulsePlaceholder(
               builder: (context, _) => SliverGrid(
-                gridDelegate: PrismWallGrid.delegate(context),
+                gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const PulseFill(borderRadius: PrismWallGrid.tileRadius),
                   childCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width) * 2,
@@ -58,11 +58,11 @@ class WallpaperRecommendations extends StatelessWidget {
         SliverPadding(
           padding: PrismWallGrid.padding,
           sliver: SliverGrid(
-            gridDelegate: PrismWallGrid.delegate(context),
+            gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
             delegate: SliverChildBuilderDelegate((context, index) {
               final item = state.items[index];
               final hero = prismHeroTag(heroScope, index, '${item.source.name}:${item.id}');
-              return WallpaperQuickActionRegion(
+              return FavouriteWallpaperCard(
                 key: ValueKey((item.source, item.id)),
                 item: item,
                 child: PrismWallTile(

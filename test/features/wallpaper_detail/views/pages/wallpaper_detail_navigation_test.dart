@@ -100,6 +100,7 @@ void main() {
     final config = router.config(deepLinkBuilder: initialRoute == null ? null : (_) => DeepLink.single(initialRoute));
     await tester.pumpWidget(
       MaterialApp.router(
+        builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: config,

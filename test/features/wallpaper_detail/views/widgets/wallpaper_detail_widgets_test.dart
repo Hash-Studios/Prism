@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
@@ -19,9 +20,12 @@ import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../support/favourite_test_scope.dart';
+
 Widget _host(Widget child) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
+  builder: favouriteTestBuilder,
   home: Scaffold(body: child),
 );
 
@@ -34,6 +38,7 @@ const List<_TagScene> _tagScenes = <_TagScene>[
 ];
 
 void main() {
+  setUpFavouriteCounts();
   group('WallpaperActionBar', () {
     testWidgets('shows the labelled primary action and an icon action with a tooltip for each button', (tester) async {
       await tester.pumpWidget(
@@ -238,6 +243,35 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       await tester.tap(find.byType(TextButton));
       expect(retries, 1);
+    });
+
+    testWidgets('recommendations use the feed footer without changing image aspect ratio', (tester) async {
+      final item = WallhavenFeedItem(
+        id: 'stats-wall',
+        wallpaper: WallhavenWallpaper(
+          core: WallpaperCore(
+            id: 'stats-wall',
+            source: WallpaperSource.wallhaven,
+            thumbnailUrl: '',
+            fullUrl: '',
+            favourites: 24,
+          ),
+          views: 1234,
+        ),
+      );
+      final semantics = tester.ensureSemantics();
+      await pumpRecommendations(tester, RecommendationState(items: [item], status: RecommendationStatus.exhausted));
+      expect(find.byType(FavouriteWallpaperCard), findsOneWidget);
+      expect(find.byType(FavouriteWallpaperFooter), findsOneWidget);
+      expect(find.text('24'), findsOneWidget);
+      expect(find.text('1.2K'), findsOneWidget);
+      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsOneWidget);
+      final image = tester.getRect(find.byType(PrismWallTile));
+      final footer = tester.getRect(find.byType(FavouriteWallpaperFooter));
+      expect(footer.top, image.bottom);
+      expect(footer.height, favouriteFooterHeight);
+      expect(image.width / image.height, closeTo(0.5, 0.001));
+      semantics.dispose();
     });
 
     testWidgets('append retry retains tiles and protected Prism tiles never use original fallback', (tester) async {
