@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {db, str} from "../common";
 import {verifiedUidForEmail} from "../authoredContentUid";
 import {applyFollowEdge, syncPublicProfile} from "../profiles";
-import {parseConcurrency, runChunked} from "./runChunked";
+import {parseConcurrency, runChunked, runPool} from "./runChunked";
 
 const PAGE_SIZE = 200;
 
@@ -70,19 +70,24 @@ export async function backfillPublicProfiles(
   }
 
   if (apply) {
-    // Shuffled so one chunk rarely holds many edges into the same popular profile, which would contend on its
-    // counts. A failed edge gets one more try alone below.
-    const queue = [...edges.values()];
-    for (let i = queue.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [queue[i], queue[j]] = [queue[j], queue[i]];
+    // Every edge rewrites its target profile's followerCount, and one document takes about one write a second.
+    // So each target gets one lane that applies its edges in turn, the busiest lanes start first, and lanes for
+    // different targets run in parallel. A failed edge gets one more try alone below.
+    const lanes = new Map<string, Array<{followerUid: string; targetUid: string}>>();
+    for (const edge of edges.values()) {
+      const lane = lanes.get(edge.targetUid) ?? [];
+      lane.push(edge);
+      lanes.set(edge.targetUid, lane);
     }
+    const ordered = [...lanes.values()].sort((a, b) => b.length - a.length);
     const failed: Array<{followerUid: string; targetUid: string}> = [];
-    await runChunked(queue, concurrency, async (edge) => {
-      try {
-        if (await applyFollowEdge({...edge, follow: true, notify: false}) === "created") counts.created += 1;
-      } catch {
-        failed.push(edge);
+    await runPool(ordered, concurrency, async (lane) => {
+      for (const edge of lane) {
+        try {
+          if (await applyFollowEdge({...edge, follow: true, notify: false}) === "created") counts.created += 1;
+        } catch {
+          failed.push(edge);
+        }
       }
     });
     for (const edge of failed) {

@@ -3,6 +3,15 @@ export async function runChunked<T>(items: readonly T[], concurrency: number, fn
   for (let i = 0; i < items.length; i += concurrency) await Promise.all(items.slice(i, i + concurrency).map(fn));
 }
 
+/** Runs fn over items with `concurrency` workers; a worker takes the next item as soon as it is free. */
+export async function runPool<T>(items: readonly T[], concurrency: number, fn: (item: T) => Promise<void>) {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) await fn(items[next++]);
+  };
+  await Promise.all(Array.from({length: Math.min(concurrency, items.length)}, worker));
+}
+
 /** Parses `--concurrency=N` (1 to 50). Missing means 1. */
 export function parseConcurrency(argv: string[]): number {
   const args = argv.filter((arg) => arg.startsWith("--concurrency"));

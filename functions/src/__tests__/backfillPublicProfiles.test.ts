@@ -3,6 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {backfillPublicProfiles} from "../scripts/backfillPublicProfiles";
+import {runPool} from "../scripts/runChunked";
 import {installFakeDb} from "./fakeDb";
 
 const seed = () => ({
@@ -97,4 +98,19 @@ test("edges-only skips the profile pass and still applies each follow once", asy
   assert.equal(store.get("profiles/alice")?.name, "Old");
   assert.equal(store.get("profiles/bob")?.followerCount, 1);
   assert.equal(lookups, 3);
+});
+
+test("runPool keeps at most N calls in flight and visits every item once", async () => {
+  let active = 0;
+  let peak = 0;
+  const seen: number[] = [];
+  await runPool([1, 2, 3, 4, 5, 6, 7], 3, async (item) => {
+    active += 1;
+    peak = Math.max(peak, active);
+    await new Promise((resolve) => setTimeout(resolve, item % 3));
+    seen.push(item);
+    active -= 1;
+  });
+  assert.equal(peak, 3);
+  assert.deepEqual(seen.sort(), [1, 2, 3, 4, 5, 6, 7]);
 });
