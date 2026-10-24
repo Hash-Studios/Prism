@@ -387,11 +387,17 @@ class GoogleAuth {
             sourceTag: 'auth.signout.followers_topic',
             isCurrent: () => operation.isCurrent,
           ),
-        setCreatorPostsTopics(
+        syncCreatorPostsTopicsForUser(
           messaging,
-          following,
+          userId: userId,
           subscribed: false,
           sourceTag: 'auth.signout.posts_topics',
+          isCurrent: () => operation.isCurrent,
+        ),
+        unsubscribeLegacyCreatorPostsTopics(
+          messaging,
+          following,
+          sourceTag: 'auth.signout.legacy_posts_topics',
           isCurrent: () => operation.isCurrent,
         ),
       ]);

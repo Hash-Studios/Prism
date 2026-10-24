@@ -85,7 +85,7 @@ PrismUsersV2 _user({required String id, required bool loggedIn, bool premium = f
 
 OnboardingStarterCreatorEntity _creator(int i) => OnboardingStarterCreatorEntity(
   userId: 'creator-$i',
-  email: 'creator-$i@example.com',
+  email: 'creator-$i',
   name: 'Creator $i',
   photoUrl: '',
   previewUrls: const <String>[],
@@ -239,13 +239,13 @@ void main() {
     act: (bloc) async {
       bloc.add(const OnboardingV2Event.started());
       await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
-      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-0@example.com'));
-      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-4@example.com'));
+      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-0'));
+      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-4'));
     },
     verify: (bloc) {
       final pack = bloc.state.starterPackData;
       expect(pack.creators.map((c) => c.rank), <int>[0, 1, 2, 3, 4]);
-      expect(pack.selectedEmails, <String>{'creator-1@example.com', 'creator-2@example.com', 'creator-4@example.com'});
+      expect(pack.selectedEmails, <String>{'creator-1', 'creator-2', 'creator-4'});
     },
   );
 
@@ -277,9 +277,9 @@ void main() {
     },
     verify: (bloc) {
       expect(bloc.state.starterPackData.creators.map((creator) => creator.email), <String>[
-        'creator-0@example.com',
-        'creator-1@example.com',
-        'creator-2@example.com',
+        'creator-0',
+        'creator-1',
+        'creator-2',
       ]);
       expect(bloc.state.starterPackData.canContinue, isTrue);
       expect(bloc.state.starterPackData.selectedEmails.length, OnboardingV2Config.minFollows);
@@ -470,7 +470,7 @@ void main() {
         expect(bloc.state.completionFailed, isFalse);
         expect(bloc.state.navRequest, isNull);
         expect(bloc.state.starterPackData.selectedEmails, <String>{
-          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i',
         });
         expect(trackedNames(), isNot(contains('onboarding_v2_starter_pack_completed')));
       },
@@ -504,7 +504,7 @@ void main() {
         expect(bloc.state.completionFailed, isFalse);
         expect(bloc.state.navRequest, isNull);
         expect(bloc.state.starterPackData.selectedEmails, <String>{
-          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i',
         });
         expect(trackedNames(), isNot(contains('onboarding_v2_starter_pack_completed')));
       },
@@ -759,7 +759,7 @@ void main() {
         final followVerification = verify(() => followStarterPackUseCase(captureAny()));
         followVerification.called(1);
         final followed = followVerification.captured.single as FollowStarterPackParams;
-        expect(followed.creators.map((creator) => creator.email).toSet(), bloc.state.starterPackData.selectedEmails);
+        expect(followed.creators.map((creator) => creator.userId).toSet(), bloc.state.starterPackData.selectedEmails);
         verify(() => completeOnboardingUseCase(any())).called(2);
         expect(bloc.state.completionFailed, isFalse);
       },
@@ -913,7 +913,7 @@ void main() {
       expect(event.toWireParameters(), <String, Object?>{'followed_count': OnboardingV2Config.minFollows});
       final followed = verify(() => followStarterPackUseCase(captureAny())).captured.single as FollowStarterPackParams;
       expect(followed.creators.map((c) => c.email), <String>[
-        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i',
       ]);
     },
   );
@@ -946,7 +946,7 @@ void main() {
       expect(bloc.state.actionStatus, ActionStatus.idle);
       expect(bloc.state.starterPackData.canContinue, isTrue);
       expect(bloc.state.starterPackData.selectedEmails, <String>{
-        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i',
       });
     },
   );

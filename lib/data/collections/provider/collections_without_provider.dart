@@ -208,9 +208,9 @@ Future<CachedCollectionWalls?> _readCollectionWalls(String name) async {
 
 Future<List<Map<String, dynamic>>> _filterBlockedWalls(List<Map<String, dynamic>> walls) async {
   if (!getIt.isRegistered<UserBlockRepository>()) return walls;
-  final Set<String> blocked = await getIt<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true);
+  final Set<String> blocked = await getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
   return walls
-      .where((wall) => !BlockedCreatorsFilter.hidesCreatorEmail(wall['email']?.toString(), blocked))
+      .where((wall) => !BlockedCreatorsFilter.hidesCreatorUid(wall['creatorUid']?.toString(), blocked))
       .toList(growable: false);
 }
 

@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
-import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -26,12 +26,15 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
     this._firestoreClient,
     this._settingsLocal, {
     @ignoreParam FirebaseRemoteConfig? remoteConfig,
-  }) : _remoteConfigOverride = remoteConfig;
+    @ignoreParam Future<void> Function(String, bool)? setFollow,
+  }) : _remoteConfigOverride = remoteConfig,
+       _setFollow = setFollow ?? _callSetFollow;
 
   final FirebaseRemoteConfig? _remoteConfigOverride;
   FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
   final FirestoreClient _firestoreClient;
   final SettingsLocalDataSource _settingsLocal;
+  final Future<void> Function(String targetUid, bool following) _setFollow;
 
   @override
   Future<Result<List<OnboardingStarterCreatorEntity>>> fetchStarterPack() async {
@@ -45,11 +48,11 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         return Result.success(<OnboardingStarterCreatorEntity>[]);
       }
 
-      // Remote Config only carries email + rank; profile data comes from Firestore.
+      // Remote Config carries public profile UIDs + rank; profile data comes from profiles/{uid}.
       final curationEntries = decoded
           .whereType<Map<String, dynamic>>()
-          .map(OnboardingStarterCreatorEntity.fromCurationMap)
-          .where((e) => e.email.isNotEmpty)
+          .map(_creatorFromCurationMap)
+          .where((e) => e.userId.isNotEmpty)
           .toList(growable: false);
 
       if (curationEntries.isEmpty) {
@@ -59,7 +62,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       // Fetch profile + latest wallpapers for every creator in parallel.
       final enriched = await Future.wait(curationEntries.map((entry) => _enrichCreator(entry)));
 
-      return Result.success(enriched);
+      return Result.success(enriched.whereType<OnboardingStarterCreatorEntity>().toList(growable: false));
     } catch (error) {
       return Result.error(ServerFailure('Failed to fetch starter pack: $error'));
     }
@@ -67,53 +70,45 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
 
   /// Fetches live profile data and the last 5 wallpapers for [entry] from Firestore.
   /// Gracefully falls back to the original (empty) entry values on any error.
-  Future<OnboardingStarterCreatorEntity> _enrichCreator(OnboardingStarterCreatorEntity entry) async {
-    final (profile, previewUrls) = await (_fetchUserProfile(entry.email), _fetchPreviewUrls(entry.email)).wait;
+  Future<OnboardingStarterCreatorEntity?> _enrichCreator(OnboardingStarterCreatorEntity entry) async {
+    final (profile, previewUrls) = await (_fetchUserProfile(entry.userId), _fetchPreviewUrls(entry.userId)).wait;
+    if (profile == null) return null;
 
     return OnboardingStarterCreatorEntity(
-      userId: profile?.userId ?? entry.userId,
+      userId: profile.userId,
       email: entry.email,
-      name: profile?.name ?? entry.name,
-      photoUrl: profile?.photoUrl ?? entry.photoUrl,
-      followerCount: profile?.followerCount ?? entry.followerCount,
+      name: profile.name,
+      photoUrl: profile.photoUrl,
+      followerCount: profile.followerCount,
       previewUrls: previewUrls,
       rank: entry.rank,
     );
   }
 
-  Future<_CreatorProfile?> _fetchUserProfile(String email) async {
+  Future<_CreatorProfile?> _fetchUserProfile(String userId) async {
     try {
-      final rows = await _firestoreClient.query<_CreatorProfile?>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.usersV2,
-          sourceTag: 'onboarding_v2.fetch_creator_profile',
-          filters: [FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email)],
-          limit: 1,
-          cachePolicy: FirestoreCachePolicy.staleWhileRevalidate,
-          dedupeWindowMs: 60000,
-        ),
-        (data, docId) {
-          final name = data['name']?.toString() ?? '';
-          final photoUrl = data['profilePhoto']?.toString() ?? '';
-          final rawFollowers = data['followers'];
-          final followerCount = rawFollowers is List ? rawFollowers.length : 0;
-          return _CreatorProfile(userId: docId, name: name, photoUrl: photoUrl, followerCount: followerCount);
-        },
-      );
-      return rows.firstOrNull;
+      return await _firestoreClient.getById<_CreatorProfile>(FirebaseCollections.profiles, userId, (data, docId) {
+        final followerCount = data['followerCount'];
+        return _CreatorProfile(
+          userId: docId,
+          name: data['name']?.toString() ?? '',
+          photoUrl: data['profilePhoto']?.toString() ?? '',
+          followerCount: followerCount is num ? followerCount.toInt() : 0,
+        );
+      }, sourceTag: 'onboarding_v2.fetch_creator_profile');
     } catch (_) {
       return null;
     }
   }
 
-  Future<List<String>> _fetchPreviewUrls(String email) async {
+  Future<List<String>> _fetchPreviewUrls(String userId) async {
     try {
       final rows = await _firestoreClient.query<String>(
         FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
           sourceTag: 'onboarding_v2.fetch_creator_walls',
           filters: [
-            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+            FirestoreFilter(field: 'creatorUid', op: FirestoreFilterOp.isEqualTo, value: userId),
             const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
           ],
           orderBy: [const FirestoreOrderBy(field: 'createdAt', descending: true)],
@@ -179,22 +174,15 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
   }) async {
     bool followedOnServer = false;
     try {
-      await _firestoreClient.runBatch((batch) async {
-        batch.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-          'following': FirestoreSentinels.arrayUnion(creators.map((c) => c.email).toList()),
-        });
-        for (final creator in creators) {
-          if (creator.userId.isEmpty) {
-            continue;
-          }
-          batch.updateDoc(FirebaseCollections.usersV2, creator.userId, <String, dynamic>{
-            'followers': FirestoreSentinels.arrayUnion([currentUserEmail]),
-          });
-        }
-      }, sourceTag: 'onboarding_v2.follow_creators');
+      if (currentUserId.trim().isEmpty) {
+        return Result.error(const ServerFailure('Failed to follow creators: invalid user id'));
+      }
+      await Future.wait(
+        creators.where((creator) => creator.userId.isNotEmpty).map((creator) => _setFollow(creator.userId, true)),
+      );
       followedOnServer = true;
       _trackCreatorFollows(creators, 'success');
-      final followed = creators.map((c) => c.email).join(',');
+      final followed = creators.map((c) => c.userId).where((id) => id.isNotEmpty).join(',');
       await _settingsLocal.set(OnboardingV2Keys.followedCreators, followed);
       return Result.success(null);
     } catch (error) {
@@ -227,17 +215,31 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         _,
       ) {
         final interests = data['interestCategories'];
-        final following = data['following'];
         final interestCount = interests is List ? interests.length : 0;
-        final followCount = following is List ? following.length : 0;
         final onboarding = data['onboardingV2'];
         return OnboardingUserStatus(
           hasInterests: interestCount >= OnboardingV2Config.minInterests,
-          hasFollows: followCount >= OnboardingV2Config.minFollows,
+          hasFollows: false,
           completed: onboarding is Map && onboarding['completed'] == true,
         );
       }, sourceTag: 'onboarding_v2.fetch_user_status');
-      return Result.success(status ?? const OnboardingUserStatus(hasInterests: false, hasFollows: false));
+      final follows = await _firestoreClient.query<String>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.profileFollowing(userId),
+          sourceTag: 'onboarding_v2.fetch_user_follows',
+          limit: OnboardingV2Config.minFollows,
+          cachePolicy: FirestoreCachePolicy.memoryFirst,
+        ),
+        (_, docId) => docId,
+      );
+      final resolved = status ?? const OnboardingUserStatus(hasInterests: false, hasFollows: false);
+      return Result.success(
+        OnboardingUserStatus(
+          hasInterests: resolved.hasInterests,
+          hasFollows: follows.length >= OnboardingV2Config.minFollows,
+          completed: resolved.completed,
+        ),
+      );
     } catch (error) {
       return Result.error(ServerFailure('Failed to fetch user completion status: $error'));
     }
@@ -256,6 +258,26 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       return Result.error(ServerFailure('Failed to complete onboarding: $error', code: mapFirestoreError(error).code));
     }
   }
+}
+
+OnboardingStarterCreatorEntity _creatorFromCurationMap(Map<String, dynamic> map) {
+  final String userId = (map['uid'] ?? map['userId'] ?? '').toString().trim();
+  return OnboardingStarterCreatorEntity(
+    userId: userId,
+    email: map['email']?.toString() ?? '',
+    name: '',
+    photoUrl: '',
+    previewUrls: const <String>[],
+    rank: (map['rank'] as num?)?.toInt() ?? 0,
+    followerCount: 0,
+  );
+}
+
+Future<void> _callSetFollow(String targetUid, bool following) async {
+  await appFunctions.httpsCallable('setFollow').call<Object?>(<String, Object?>{
+    'targetUid': targetUid,
+    'following': following,
+  });
 }
 
 class _CreatorProfile {

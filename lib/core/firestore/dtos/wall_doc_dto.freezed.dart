@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WallDocDto {
 
-@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get by;@FirestoreStringConverter() String get desc;@FirestoreStringConverter() String get category;@FirestoreStringConverter() String get size;@FirestoreStringConverter() String get resolution;@FirestoreStringConverter() String get email;@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String get wallpaperProvider;@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String get wallpaperThumb;@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String get wallpaperUrl;@FirestoreStringListConverter() List<String> get collections;@FirestoreDateTimeConverter() DateTime? get createdAt; bool get review;@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> get depth;
+@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get by;@FirestoreStringConverter() String get desc;@FirestoreStringConverter() String get category;@FirestoreStringConverter() String get size;@FirestoreStringConverter() String get resolution;@FirestoreStringConverter() String get email;@JsonKey(name: 'creatorUid')@FirestoreStringConverter() String get creatorUid;@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String get wallpaperProvider;@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String get wallpaperThumb;@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String get wallpaperUrl;@FirestoreStringListConverter() List<String> get collections;@FirestoreDateTimeConverter() DateTime? get createdAt; bool get review;@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> get depth;
 /// Create a copy of WallDocDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $WallDocDtoCopyWith<WallDocDto> get copyWith => _$WallDocDtoCopyWithImpl<WallDoc
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other.depth, depth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other.depth, depth));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,by,desc,category,size,resolution,email,wallpaperProvider,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review,const DeepCollectionEquality().hash(depth));
+int get hashCode => Object.hash(runtimeType,id,by,desc,category,size,resolution,email,creatorUid,wallpaperProvider,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review,const DeepCollectionEquality().hash(depth));
 
 @override
 String toString() {
-  return 'WallDocDto(id: $id, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, wallpaperProvider: $wallpaperProvider, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depth: $depth)';
+  return 'WallDocDto(id: $id, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, wallpaperProvider: $wallpaperProvider, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depth: $depth)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $WallDocDtoCopyWith<$Res>  {
   factory $WallDocDtoCopyWith(WallDocDto value, $Res Function(WallDocDto) _then) = _$WallDocDtoCopyWithImpl;
 @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String by,@FirestoreStringConverter() String desc,@FirestoreStringConverter() String category,@FirestoreStringConverter() String size,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String email,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt, bool review,@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> depth
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String by,@FirestoreStringConverter() String desc,@FirestoreStringConverter() String category,@FirestoreStringConverter() String size,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String email,@JsonKey(name: 'creatorUid')@FirestoreStringConverter() String creatorUid,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt, bool review,@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> depth
 });
 
 
@@ -65,7 +65,7 @@ class _$WallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of WallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = null,Object? desc = null,Object? category = null,Object? size = null,Object? resolution = null,Object? email = null,Object? wallpaperProvider = null,Object? wallpaperThumb = null,Object? wallpaperUrl = null,Object? collections = null,Object? createdAt = freezed,Object? review = null,Object? depth = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = null,Object? desc = null,Object? category = null,Object? size = null,Object? resolution = null,Object? email = null,Object? creatorUid = null,Object? wallpaperProvider = null,Object? wallpaperThumb = null,Object? wallpaperUrl = null,Object? collections = null,Object? createdAt = freezed,Object? review = null,Object? depth = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: null == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -74,6 +74,7 @@ as String,category: null == category ? _self.category : category // ignore: cast
 as String,size: null == size ? _self.size : size // ignore: cast_nullable_to_non_nullable
 as String,resolution: null == resolution ? _self.resolution : resolution // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,creatorUid: null == creatorUid ? _self.creatorUid : creatorUid // ignore: cast_nullable_to_non_nullable
 as String,wallpaperProvider: null == wallpaperProvider ? _self.wallpaperProvider : wallpaperProvider // ignore: cast_nullable_to_non_nullable
 as String,wallpaperThumb: null == wallpaperThumb ? _self.wallpaperThumb : wallpaperThumb // ignore: cast_nullable_to_non_nullable
 as String,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUrl // ignore: cast_nullable_to_non_nullable
@@ -166,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'creatorUid')@FirestoreStringConverter()  String creatorUid, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WallDocDto() when $default != null:
-return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
+return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
   return orElse();
 
 }
@@ -187,10 +188,10 @@ return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.res
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'creatorUid')@FirestoreStringConverter()  String creatorUid, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)  $default,) {final _that = this;
 switch (_that) {
 case _WallDocDto():
-return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
+return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -207,10 +208,10 @@ return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.res
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String by, @FirestoreStringConverter()  String desc, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String email, @JsonKey(name: 'creatorUid')@FirestoreStringConverter()  String creatorUid, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt,  bool review, @JsonKey(name: 'depth')@FirestoreJsonMapConverter()  Map<String, Object?> depth)?  $default,) {final _that = this;
 switch (_that) {
 case _WallDocDto() when $default != null:
-return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
+return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.wallpaperProvider,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depth);case _:
   return null;
 
 }
@@ -222,7 +223,7 @@ return $default(_that.id,_that.by,_that.desc,_that.category,_that.size,_that.res
 @JsonSerializable()
 
 class _WallDocDto implements WallDocDto {
-  const _WallDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.by = '', @FirestoreStringConverter() this.desc = '', @FirestoreStringConverter() this.category = '', @FirestoreStringConverter() this.size = '', @FirestoreStringConverter() this.resolution = '', @FirestoreStringConverter() this.email = '', @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() this.wallpaperProvider = '', @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() this.wallpaperThumb = '', @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() this.wallpaperUrl = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreDateTimeConverter() this.createdAt, this.review = false, @JsonKey(name: 'depth')@FirestoreJsonMapConverter() final  Map<String, Object?> depth = const <String, Object?>{}}): _collections = collections,_depth = depth;
+  const _WallDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.by = '', @FirestoreStringConverter() this.desc = '', @FirestoreStringConverter() this.category = '', @FirestoreStringConverter() this.size = '', @FirestoreStringConverter() this.resolution = '', @FirestoreStringConverter() this.email = '', @JsonKey(name: 'creatorUid')@FirestoreStringConverter() this.creatorUid = '', @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() this.wallpaperProvider = '', @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() this.wallpaperThumb = '', @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() this.wallpaperUrl = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreDateTimeConverter() this.createdAt, this.review = false, @JsonKey(name: 'depth')@FirestoreJsonMapConverter() final  Map<String, Object?> depth = const <String, Object?>{}}): _collections = collections,_depth = depth;
   factory _WallDocDto.fromJson(Map<String, dynamic> json) => _$WallDocDtoFromJson(json);
 
 @override@JsonKey()@FirestoreStringConverter() final  String id;
@@ -232,6 +233,7 @@ class _WallDocDto implements WallDocDto {
 @override@JsonKey()@FirestoreStringConverter() final  String size;
 @override@JsonKey()@FirestoreStringConverter() final  String resolution;
 @override@JsonKey()@FirestoreStringConverter() final  String email;
+@override@JsonKey(name: 'creatorUid')@FirestoreStringConverter() final  String creatorUid;
 @override@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() final  String wallpaperProvider;
 @override@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() final  String wallpaperThumb;
 @override@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() final  String wallpaperUrl;
@@ -265,16 +267,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other._depth, _depth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other._depth, _depth));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,by,desc,category,size,resolution,email,wallpaperProvider,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review,const DeepCollectionEquality().hash(_depth));
+int get hashCode => Object.hash(runtimeType,id,by,desc,category,size,resolution,email,creatorUid,wallpaperProvider,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review,const DeepCollectionEquality().hash(_depth));
 
 @override
 String toString() {
-  return 'WallDocDto(id: $id, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, wallpaperProvider: $wallpaperProvider, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depth: $depth)';
+  return 'WallDocDto(id: $id, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, wallpaperProvider: $wallpaperProvider, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depth: $depth)';
 }
 
 
@@ -285,7 +287,7 @@ abstract mixin class _$WallDocDtoCopyWith<$Res> implements $WallDocDtoCopyWith<$
   factory _$WallDocDtoCopyWith(_WallDocDto value, $Res Function(_WallDocDto) _then) = __$WallDocDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String by,@FirestoreStringConverter() String desc,@FirestoreStringConverter() String category,@FirestoreStringConverter() String size,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String email,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt, bool review,@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> depth
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String by,@FirestoreStringConverter() String desc,@FirestoreStringConverter() String category,@FirestoreStringConverter() String size,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String email,@JsonKey(name: 'creatorUid')@FirestoreStringConverter() String creatorUid,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt, bool review,@JsonKey(name: 'depth')@FirestoreJsonMapConverter() Map<String, Object?> depth
 });
 
 
@@ -302,7 +304,7 @@ class __$WallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of WallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = null,Object? desc = null,Object? category = null,Object? size = null,Object? resolution = null,Object? email = null,Object? wallpaperProvider = null,Object? wallpaperThumb = null,Object? wallpaperUrl = null,Object? collections = null,Object? createdAt = freezed,Object? review = null,Object? depth = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = null,Object? desc = null,Object? category = null,Object? size = null,Object? resolution = null,Object? email = null,Object? creatorUid = null,Object? wallpaperProvider = null,Object? wallpaperThumb = null,Object? wallpaperUrl = null,Object? collections = null,Object? createdAt = freezed,Object? review = null,Object? depth = null,}) {
   return _then(_WallDocDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: null == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -311,6 +313,7 @@ as String,category: null == category ? _self.category : category // ignore: cast
 as String,size: null == size ? _self.size : size // ignore: cast_nullable_to_non_nullable
 as String,resolution: null == resolution ? _self.resolution : resolution // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,creatorUid: null == creatorUid ? _self.creatorUid : creatorUid // ignore: cast_nullable_to_non_nullable
 as String,wallpaperProvider: null == wallpaperProvider ? _self.wallpaperProvider : wallpaperProvider // ignore: cast_nullable_to_non_nullable
 as String,wallpaperThumb: null == wallpaperThumb ? _self.wallpaperThumb : wallpaperThumb // ignore: cast_nullable_to_non_nullable
 as String,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUrl // ignore: cast_nullable_to_non_nullable

@@ -35,9 +35,9 @@ class _PendingBlockRepository extends FakeUserBlockRepository {
   final Completer<void> requested = Completer<void>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) {
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) {
     if (waitForInitialLoad && !requested.isCompleted) requested.complete();
-    return super.getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+    return super.getBlockedCreatorUids(waitForInitialLoad: waitForInitialLoad);
   }
 }
 
@@ -64,7 +64,7 @@ class _FirstFilterGated extends FakeUserBlockRepository {
   final Completer<Set<String>> gate = Completer<Set<String>>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) {
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) {
     if (!started.isCompleted) {
       started.complete();
       return gate.future;
@@ -96,7 +96,7 @@ FeedSnapshot _savedWalls(String id, {bool hasMore = true}) => FeedSnapshot(
   ttlHours: 24,
 );
 
-Map<String, dynamic> _wall(String id) => <String, dynamic>{'id': id, 'email': '$id@example.com'};
+Map<String, dynamic> _wall(String id) => <String, dynamic>{'id': id, 'creatorUid': id};
 
 void main() {
   late FakeFirestoreClient firestore;
@@ -548,7 +548,7 @@ void main() {
 
       final Future<void> opening = getCollectionWithName('space');
       await blocks.requested.future;
-      blocks.completeInitial(<String>{'blocked@example.com'});
+      blocks.completeInitial(<String>{'blocked'});
       try {
         await opening;
       } on Object {}

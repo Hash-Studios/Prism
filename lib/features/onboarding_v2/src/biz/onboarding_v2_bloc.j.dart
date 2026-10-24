@@ -407,7 +407,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedCreators = state.starterPackData.creators
-        .where((c) => state.starterPackData.selectedEmails.contains(c.email))
+        .where((c) => state.starterPackData.selectedEmails.contains(c.userId))
         .toList(growable: false);
 
     final result = await _followStarterPackUseCase(FollowStarterPackParams(creators: selectedCreators));
@@ -453,10 +453,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final List<OnboardingStarterCreatorEntity> creators = result.fold(
       onSuccess: (entities) => [...entities]
         ..sort((a, b) => a.rank.compareTo(b.rank))
-        ..removeWhere((creator) => !seenEmails.add(creator.email)),
+        ..removeWhere((creator) => !seenEmails.add(creator.userId)),
       onFailure: (_) => <OnboardingStarterCreatorEntity>[],
     );
-    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
+    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.userId).toSet();
     return OnboardingStarterPackData(creators: creators, selectedEmails: autoSelectedEmails);
   }
 

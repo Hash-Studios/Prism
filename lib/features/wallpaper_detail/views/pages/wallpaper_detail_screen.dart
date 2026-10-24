@@ -928,15 +928,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _buildPrismAuthorRow(BuildContext context, PrismWallpaper wallpaper) {
     final String nameTrimmed = wallpaper.core.authorName?.trim() ?? '';
     final String photoTrimmed = wallpaper.core.authorPhoto?.trim() ?? '';
-    final String emailTrimmed = wallpaper.core.authorEmail?.trim() ?? '';
+    final String creatorUid = wallpaper.core.authorUid?.trim() ?? '';
     final bool hasName = nameTrimmed.isNotEmpty;
     final bool hasPhoto = photoTrimmed.isNotEmpty;
 
-    final String? displayLabel = hasName
-        ? nameTrimmed
-        : emailTrimmed.isNotEmpty
-        ? emailTrimmed
-        : null;
+    final String? displayLabel = hasName ? nameTrimmed : null;
 
     if (displayLabel == null && !hasPhoto) {
       return const SizedBox.shrink();
@@ -969,8 +965,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             ),
     );
 
-    // Prefer email; fall back to name as username (getUserProfile handles both).
-    final String profileIdentifier = emailTrimmed.isNotEmpty ? emailTrimmed : nameTrimmed;
+    final String profileIdentifier = creatorUid;
     Widget tappable(Widget child) => profileIdentifier.isEmpty
         ? child
         : Material(

@@ -19,7 +19,7 @@ void main() {
     final bloc = _MockPublicProfileBloc();
     when(
       () => bloc.state,
-    ).thenReturn(PublicProfileState.initial().copyWith(email: 'a@x.com', status: LoadStatus.failure));
+    ).thenReturn(PublicProfileState.initial().copyWith(profileId: 'a@x.com', status: LoadStatus.failure));
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -28,7 +28,7 @@ void main() {
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,
-            child: const CustomScrollView(slivers: <Widget>[UserProfileLoader(email: 'a@x.com')]),
+            child: const CustomScrollView(slivers: <Widget>[UserProfileLoader(userId: 'a@x.com')]),
           ),
         ),
       ),

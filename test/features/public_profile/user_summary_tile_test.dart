@@ -54,10 +54,10 @@ void main() {
     isFollowedByCurrentUser: false,
   );
 
-  UserSummaryEntity user({bool following = false, String email = 'ana@example.com'}) => UserSummaryEntity(
-    id: 'u1',
+  UserSummaryEntity user({bool following = false, String id = 'u1'}) => UserSummaryEntity(
+    id: id,
     name: 'Ana Rivera',
-    email: email,
+    email: 'ana@example.com',
     username: 'ana_rivera',
     profilePhoto: '',
     isFollowedByCurrentUser: following,
@@ -96,7 +96,7 @@ void main() {
   });
 
   testWidgets("hides the follow button on the viewer's own account", (tester) async {
-    await pumpTile(tester, user(email: 'user@example.com'));
+    await pumpTile(tester, user(id: 'me'));
 
     expect(find.text('Follow'), findsNothing);
     expect(find.text('Following'), findsNothing);

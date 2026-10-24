@@ -22,7 +22,7 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
     on<_Started>(_onStarted);
     on<_RefreshRequested>((event, emit) => _load(emit));
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
-    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreatorEmails().listen(
+    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreatorUids().listen(
       (blocked) => add(TrendingEvent.blockedCreatorsChanged(blocked: blocked)),
     );
   }
@@ -48,7 +48,7 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   }
 
   List<PrismWallpaper> _withoutBlocked(List<PrismWallpaper> walls) => walls
-      .where((wall) => !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, _blocked))
+      .where((wall) => !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, _blocked))
       .toList(growable: false);
 
   @override

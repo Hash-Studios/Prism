@@ -207,7 +207,7 @@ void main() {
                     followerCount: 1000,
                   ),
                 ),
-                selectedEmails: <String>{'creator0@example.com', 'creator1@example.com', 'creator2@example.com'},
+                selectedEmails: <String>{'u0', 'u1', 'u2'},
               ),
             ),
             'continue',

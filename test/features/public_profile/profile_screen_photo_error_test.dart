@@ -59,7 +59,7 @@ void main() {
     whenListen(
       bloc,
       const Stream<PublicProfileState>.empty(),
-      initialState: PublicProfileState.initial().copyWith(email: 'user@example.com', status: LoadStatus.success),
+      initialState: PublicProfileState.initial().copyWith(profileId: 'user@example.com', status: LoadStatus.success),
     );
     final repo = _Repository();
     when(() => repo.watchProfile(any())).thenAnswer((_) => const Stream<PublicProfileEntity?>.empty());

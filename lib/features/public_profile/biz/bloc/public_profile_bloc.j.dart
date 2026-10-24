@@ -47,6 +47,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final Map<String, Future<void>> _followTails = <String, Future<void>>{};
   final Map<String, Object> _followIntents = <String, Object>{};
   final Map<String, bool> _confirmedFollowing = <String, bool>{};
+  final Map<String, bool> _baselineFollowing = <String, bool>{};
 
   final FetchPublicProfileWallsUseCase _fetchPublicProfileWallsUseCase;
   final FollowUserUseCase _followUserUseCase;
@@ -64,7 +65,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     // Clear previous user's walls immediately so UI never flashes stale grids.
     emit(
       state.copyWith(
-        email: event.email,
+        profileId: event.identifier,
         status: LoadStatus.loading,
         walls: const <PublicProfileWallEntity>[],
         hasMoreWalls: true,
@@ -80,8 +81,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
 
   Future<void> _loadAll({required Emitter<PublicProfileState> emit, required bool refresh}) async {
     final int generation = ++_wallGeneration;
-    final String email = state.email;
-    if (state.email.isEmpty) {
+    final String userId = state.profileId;
+    if (state.profileId.isEmpty) {
       emit(state.copyWith(status: LoadStatus.failure));
       return;
     }
@@ -89,7 +90,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     emit(state.copyWith(status: LoadStatus.loading, isFetchingMoreWalls: false));
 
     final wallsResult = await _fetchPublicProfileWallsUseCase(
-      FetchPublicProfileWallsParams(email: email, refresh: refresh),
+      FetchPublicProfileWallsParams(userId: userId, refresh: refresh),
     );
     if (_isClosing || isClosed || emit.isDone || generation != _wallGeneration) return;
 
@@ -107,14 +108,17 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _onFetchMoreWallsRequested(_FetchMoreWallsRequested event, Emitter<PublicProfileState> emit) async {
-    if (state.email.isEmpty || state.status == LoadStatus.loading || state.isFetchingMoreWalls || !state.hasMoreWalls) {
+    if (state.profileId.isEmpty ||
+        state.status == LoadStatus.loading ||
+        state.isFetchingMoreWalls ||
+        !state.hasMoreWalls) {
       return;
     }
     final int generation = _wallGeneration;
-    final String email = state.email;
+    final String userId = state.profileId;
     emit(state.copyWith(isFetchingMoreWalls: true));
 
-    final result = await _fetchPublicProfileWallsUseCase(FetchPublicProfileWallsParams(email: email, refresh: false));
+    final result = await _fetchPublicProfileWallsUseCase(FetchPublicProfileWallsParams(userId: userId, refresh: false));
     if (_isClosing || isClosed || emit.isDone || generation != _wallGeneration) return;
 
     result.fold(
@@ -148,7 +152,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     _emitRelation(kind, emit, (list) => list.copyWith(isFetching: true));
 
     final result = await _fetchUserSummariesPageUseCase(
-      FetchUserSummariesPageParams(allEmails: event.allEmails, page: event.page),
+      FetchUserSummariesPageParams(userIds: event.userIds, page: event.page),
     );
 
     result.fold(
@@ -156,9 +160,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         final merged = event.page == 0
             ? page.items
             : <UserSummaryEntity>[...state.relation(kind).summaries, ...page.items];
-        final deduped = <String, UserSummaryEntity>{
-          for (final s in merged) s.email.toLowerCase(): s,
-        }.values.toList(growable: false);
+        final deduped = <String, UserSummaryEntity>{for (final s in merged) s.id: s}.values.toList(growable: false);
         _emitRelation(
           kind,
           emit,
@@ -174,7 +176,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     _latestQuery[kind] = event.query;
     _emitRelation(kind, emit, (list) => list.copyWith(isSearching: true, searchResults: const <UserSummaryEntity>[]));
     final result = await _searchUsersByUsernameUseCase(
-      SearchUsersByUsernameParams(query: event.query, scopeEmails: event.allEmails),
+      SearchUsersByUsernameParams(query: event.query, scopeUserIds: event.userIds),
     );
     if (event.query != _latestQuery[kind]) return;
     final List<UserSummaryEntity> summaries = result.data ?? const <UserSummaryEntity>[];
@@ -197,16 +199,21 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         app_state.prismUser.id == event.currentUserId &&
         app_state.prismUser.email.trim().toLowerCase() == event.currentUserEmail.trim().toLowerCase();
     if (!ownsSession()) return;
-    final String targetKey = event.targetUserEmail.trim().toLowerCase();
+    final String targetKey = event.targetUserId.trim();
+    if (targetKey.isEmpty) return;
     final String queueKey = '${event.currentUserId}::$targetKey';
     final String operationKey = '$session::$queueKey';
+    if (!_confirmedFollowing.containsKey(operationKey) && !_baselineFollowing.containsKey(operationKey)) {
+      final bool? listed = _relationFollowState(state, targetKey);
+      if (listed != null) _baselineFollowing[operationKey] = listed;
+    }
     final Object intent = Object();
     _followIntents[targetKey] = intent;
     // A returning owner's new intent must still follow any already-dispatched transaction.
     final Future<void>? previous = _followTails[queueKey];
     final completion = Completer<void>();
     _followTails[queueKey] = completion.future;
-    emit(_withFollowApplied(state, event.targetUserEmail, follow: event.follow));
+    emit(_withFollowApplied(state, targetKey, follow: event.follow));
 
     try {
       if (previous != null) await previous;
@@ -248,11 +255,14 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       );
       if (result.isFailure) {
         if (!ownsIntent) return;
-        final bool following = app_state.prismUser.following.any((email) => email.trim().toLowerCase() == targetKey);
-        final PublicProfileState rolledBack = _withFollowApplied(state, event.targetUserEmail, follow: following);
+        final bool? confirmed = _confirmedFollowing[operationKey];
+        final bool? actual = confirmed ?? _baselineFollowing[operationKey];
+        final PublicProfileState rolledBack = actual == null
+            ? state
+            : _withFollowApplied(state, targetKey, follow: actual);
         final overrides = <String, bool>{...rolledBack.followOverrides};
-        if (_confirmedFollowing.containsKey(operationKey)) {
-          overrides[targetKey] = _confirmedFollowing[operationKey]!;
+        if (confirmed != null) {
+          overrides[targetKey] = confirmed;
         } else {
           overrides.remove(targetKey);
         }
@@ -261,9 +271,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       }
 
       _confirmedFollowing[operationKey] = event.follow;
-      await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
-      if (!ownsSession()) return;
-      await _syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow, isCurrent: ownsSession);
+      await _syncPostsTopic(event.targetUserId, follow: event.follow, isCurrent: ownsSession);
       if (!ownsSession() || !identical(_followIntents[targetKey], intent)) return;
       emit(state.copyWith(followOutcome: outcome.copyWith(id: (state.followOutcome?.id ?? 0) + 1)));
     } finally {
@@ -274,20 +282,14 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   /// Posts pushes for the creator follow the follow state.
-  Future<void> _syncPostsTopic(
-    String email,
-    String targetUserId, {
-    required bool follow,
-    required bool Function() isCurrent,
-  }) async {
+  Future<void> _syncPostsTopic(String targetUserId, {required bool follow, required bool Function() isCurrent}) async {
     try {
       if (follow && !creatorPostsAlertsEnabled) return;
-      await setCreatorPostsTopics(
+      await setCreatorPostsTopicForUid(
         FirebaseMessaging.instance,
-        <String>[email],
+        targetUserId,
         subscribed: follow,
         sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
-        knownUids: targetUserId.trim().isEmpty ? const <String, String>{} : <String, String>{email: targetUserId},
         isCurrent: isCurrent,
       );
     } catch (error, stackTrace) {
@@ -295,21 +297,23 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     }
   }
 
-  PublicProfileState _withFollowApplied(PublicProfileState from, String email, {required bool follow}) {
+  PublicProfileState _withFollowApplied(PublicProfileState from, String userId, {required bool follow}) {
     return from.copyWith(
-      followOverrides: <String, bool>{...from.followOverrides, email.trim().toLowerCase(): follow},
-      followers: from.followers.withFollowState(email, isFollowed: follow),
-      following: from.following.withFollowState(email, isFollowed: follow),
+      followOverrides: <String, bool>{...from.followOverrides, userId: follow},
+      followers: from.followers.withFollowState(userId, isFollowed: follow),
+      following: from.following.withFollowState(userId, isFollowed: follow),
     );
   }
 
-  Future<void> _syncSessionFollowing(String email, {required bool follow}) async {
-    final String key = email.trim().toLowerCase();
-    final List<String> next = app_state.prismUser.following
-        .where((String e) => e.trim().toLowerCase() != key)
-        .toList(growable: true);
-    if (follow) next.add(email);
-    app_state.prismUser.following = next;
-    await app_state.persistPrismUser();
+  bool? _relationFollowState(PublicProfileState from, String userId) {
+    for (final UserSummaryEntity user in <UserSummaryEntity>[
+      ...from.followers.summaries,
+      ...from.following.summaries,
+      ...?from.followers.searchResults,
+      ...?from.following.searchResults,
+    ]) {
+      if (user.id == userId) return user.isFollowedByCurrentUser;
+    }
+    return null;
   }
 }

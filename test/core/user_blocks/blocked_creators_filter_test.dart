@@ -5,7 +5,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-FeedItemEntity _prismItem(String id, {String? authorEmail}) {
+FeedItemEntity _prismItem(String id, {String? authorUid}) {
   return FeedItemEntity.prism(
     id: id,
     wallpaper: PrismWallpaper(
@@ -14,7 +14,7 @@ FeedItemEntity _prismItem(String id, {String? authorEmail}) {
         source: WallpaperSource.prism,
         fullUrl: 'https://example.com/$id.jpg',
         thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-        authorEmail: authorEmail,
+        authorUid: authorUid,
       ),
     ),
   );
@@ -36,32 +36,26 @@ FeedItemEntity _wallhavenItem(String id) {
 
 void main() {
   group('BlockedCreatorsFilter', () {
-    test('normalizeEmail lowercases and trims', () {
-      expect(BlockedCreatorsFilter.normalizeEmail('  A@B.COM '), 'a@b.com');
-      expect(BlockedCreatorsFilter.normalizeEmail(null), '');
+    test('hidesCreatorUid trims but keeps UID case-sensitive', () {
+      expect(BlockedCreatorsFilter.hidesCreatorUid(' uid-1 ', <String>{'uid-1'}), isTrue);
+      expect(BlockedCreatorsFilter.hidesCreatorUid('UID-1', <String>{'uid-1'}), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(null, <String>{'uid-1'}), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(null, <String>{}), isFalse);
     });
 
-    test('hidesCreatorEmail respects blocked set', () {
-      final Set<String> blocked = <String>{'a@b.com'};
-      expect(BlockedCreatorsFilter.hidesCreatorEmail('A@B.COM', blocked), isTrue);
-      expect(BlockedCreatorsFilter.hidesCreatorEmail('other@test.com', blocked), isFalse);
-      expect(BlockedCreatorsFilter.hidesCreatorEmail('', blocked), isFalse);
-      expect(BlockedCreatorsFilter.hidesCreatorEmail('a@b.com', <String>{}), isFalse);
-    });
-
-    test('hidesFeedItem only hides Prism items with a blocked creator email', () {
-      final Set<String> blocked = <String>{'a@b.com'};
-      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('1', authorEmail: 'a@b.com'), blocked), isTrue);
-      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('2', authorEmail: 'other@test.com'), blocked), isFalse);
-      // Non-Prism sources never carry a blockable creator email.
+    test('hidesFeedItem only hides Prism items with a blocked creator UID', () {
+      final Set<String> blocked = <String>{'uid-1'};
+      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('1', authorUid: 'uid-1'), blocked), isTrue);
+      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('2', authorUid: 'other'), blocked), isFalse);
+      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('3'), blocked), isFalse);
       expect(BlockedCreatorsFilter.hidesFeedItem(_wallhavenItem('3'), blocked), isFalse);
     });
 
     test('filterFeedItems drops only items from blocked creators', () {
-      final Set<String> blocked = <String>{'a@b.com'};
+      final Set<String> blocked = <String>{'uid-1'};
       final items = <FeedItemEntity>[
-        _prismItem('1', authorEmail: 'a@b.com'),
-        _prismItem('2', authorEmail: 'other@test.com'),
+        _prismItem('1', authorUid: 'uid-1'),
+        _prismItem('2', authorUid: 'other'),
         _wallhavenItem('3'),
       ];
 

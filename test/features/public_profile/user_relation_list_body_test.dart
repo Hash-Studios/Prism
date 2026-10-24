@@ -1,9 +1,11 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_relation_list_body.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -14,16 +16,21 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/profile_user_fixture.dart';
 
+class _MockRepo extends Mock implements PublicProfileRepository {}
+
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
 void main() {
   late _MockPublicProfileBloc bloc;
+  late _MockRepo repo;
 
   setUpAll(() => registerFallbackValue(const PublicProfileEvent.refreshRequested()));
 
   setUp(() {
     bloc = _MockPublicProfileBloc();
     getIt.registerFactory<PublicProfileBloc>(() => bloc);
+    repo = _MockRepo();
+    getIt.registerSingleton<PublicProfileRepository>(repo);
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = profileUser(id: 'me');
   });
@@ -42,13 +49,16 @@ void main() {
     final PublicProfileState state = kind == UserRelationKind.followers
         ? PublicProfileState.initial().copyWith(followers: followers)
         : PublicProfileState.initial().copyWith(following: followers);
+    when(
+      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: kind),
+    ).thenAnswer((_) async => Result.success<List<String>>(emails));
     whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: UserRelationListBody(kind: kind, emails: emails),
+        home: UserRelationListBody(kind: kind, profileUid: 'profile-uid'),
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -70,6 +80,15 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Search by username'), findsOneWidget);
     expect(find.bySemanticsLabel('Loading'), findsWidgets);
+  });
+
+  testWidgets('loads the edge ids for the profile uid and requests page 0', (tester) async {
+    await pumpBody(tester, followers: const RelationList(), emails: const <String>['a-id', 'b-id']);
+
+    verify(() => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers)).called(1);
+    final event = verify(() => bloc.add(captureAny())).captured.single as PublicProfileEvent;
+    expect(event.toString(), contains('a-id'));
+    expect(event.toString(), contains('b-id'));
   });
 
   testWidgets('lists people with a Follow button each', (tester) async {

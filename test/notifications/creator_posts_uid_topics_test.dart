@@ -1,14 +1,6 @@
-import 'dart:async';
-
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
-import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
-import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../support/in_memory_local_store.dart';
 
 class _FakeMessaging implements FirebaseMessaging {
   final List<String> subscribed = <String>[];
@@ -30,61 +22,12 @@ class _FakeMessaging implements FirebaseMessaging {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeProfiles implements PublicProfileRepository {
-  final Map<String, String> uidByEmail = <String, String>{};
-  final List<String> reads = <String>[];
-  bool failing = false;
-  Completer<void>? readGate;
-  final readStarted = Completer<void>();
-
-  @override
-  Future<void> clearForUser(String userId) async {}
-
-  @override
-  Stream<PublicProfileEntity?> watchProfile(String identifier) {
-    reads.add(identifier);
-    if (!readStarted.isCompleted) readStarted.complete();
-    if (failing) return Stream<PublicProfileEntity?>.error(StateError('offline'));
-    final String? uid = uidByEmail[identifier.toLowerCase()];
-    final PublicProfileEntity? profile = uid == null
-        ? null
-        : PublicProfileEntity(
-            id: uid,
-            name: 'Name',
-            email: identifier,
-            username: '',
-            profilePhoto: '',
-            bio: '',
-            followers: const <String>[],
-            following: const <String>[],
-            links: const <String, String>{},
-            coverPhoto: '',
-          );
-    return readGate == null
-        ? Stream<PublicProfileEntity?>.value(profile)
-        : Stream<PublicProfileEntity?>.fromFuture(readGate!.future.then((_) => profile));
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
-  late SettingsLocalDataSource settings;
   late _FakeMessaging messaging;
-  late _FakeProfiles profiles;
 
-  setUp(() async {
-    settings = SettingsLocalDataSource(InMemoryLocalStore());
+  setUp(() {
     messaging = _FakeMessaging();
-    profiles = _FakeProfiles()..uidByEmail['ana@example.com'] = 'uidAna';
-    await getIt.reset();
-    getIt
-      ..registerSingleton<SettingsLocalDataSource>(settings)
-      ..registerSingleton<PublicProfileRepository>(profiles);
   });
-
-  tearDown(() => getIt.reset());
 
   test('topic name from a uid keeps only FCM-safe characters', () {
     expect(creatorPostsTopicFromUid('uidAna'), 'posts_uidAna');
@@ -92,87 +35,13 @@ void main() {
     expect(creatorPostsTopicFromUid('  '), isNull);
   });
 
-  test('invalidated creator lookup neither caches its result nor dispatches UID topics or another batch', () async {
-    bool current = true;
-    profiles.readGate = Completer<void>();
-    final pending = setCreatorPostsTopics(
-      messaging,
-      <String>['ana@example.com', for (int i = 0; i < 10; i++) 'creator$i@example.com'],
-      subscribed: false,
-      sourceTag: 'test',
-      isCurrent: () => current,
-    );
-    await profiles.readStarted.future;
-    expect(profiles.reads, hasLength(10));
-    current = false;
-    profiles.readGate!.complete();
-    await pending;
-    expect(profiles.reads, hasLength(10));
-    expect(messaging.unsubscribed.where((topic) => topic.startsWith('posts_')), isEmpty);
-    expect(settings.get<String>('creatorUidByEmail', defaultValue: ''), isEmpty);
-  });
-
-  test('following joins the legacy topic and posts_<uid> using a uid the caller knows', () async {
-    await setCreatorPostsTopics(
-      messaging,
-      <String>['Ana@Example.com'],
-      subscribed: true,
-      sourceTag: 'test',
-      knownUids: <String, String>{'ana@example.com': 'uidAna'},
-    );
-
-    expect(messaging.subscribed, unorderedEquals(<String>['Ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
-    expect(profiles.reads, isEmpty);
-  });
-
-  test('without a known uid the profile is read once and the uid is cached', () async {
-    await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: true, sourceTag: 'test');
-    expect(messaging.subscribed, unorderedEquals(<String>['ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
-    expect(profiles.reads, <String>['ana@example.com']);
-
-    messaging.unsubscribed.clear();
-    await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: false, sourceTag: 'test');
+  test('creator topics require UIDs and never infer a topic from email', () async {
     expect(
-      messaging.unsubscribed,
-      unorderedEquals(<String>['ana_posts', 'ana_posts_loc_v1', 'posts_uidAna', 'posts_uidAna_loc_v1']),
+      await setCreatorPostsTopicForUid(messaging, 'ana@example.com', subscribed: true, sourceTag: 'test'),
+      isFalse,
     );
-    expect(profiles.reads, hasLength(1));
-  });
+    expect(await setCreatorPostsTopicForUid(messaging, 'uidAna', subscribed: true, sourceTag: 'test'), isTrue);
 
-  test('a creator without a profile keeps only the legacy topic', () async {
-    await setCreatorPostsTopics(messaging, <String>['ghost@example.com'], subscribed: true, sourceTag: 'test');
-
-    expect(messaging.subscribed, <String>['ghost_posts_loc_v1']);
-  });
-
-  test('a failed profile read does not block the legacy topic', () async {
-    profiles.failing = true;
-
-    await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: true, sourceTag: 'test');
-
-    expect(messaging.subscribed, <String>['ana_posts_loc_v1']);
-  });
-
-  test('sync is retried next launch when a uid read failed, and done once reads work', () async {
-    Future<void> sync() => syncPushTopics(
-      messaging,
-      settings,
-      userId: 'me',
-      email: 'me@example.com',
-      premium: false,
-      following: const <String>['ana@example.com'],
-    );
-
-    profiles.failing = true;
-    await sync();
-    messaging.subscribed.clear();
-
-    profiles.failing = false;
-    await sync();
-    expect(messaging.subscribed, containsAll(<String>['ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
-
-    messaging.subscribed.clear();
-    await sync();
-    expect(messaging.subscribed, isEmpty);
+    expect(messaging.subscribed, <String>['posts_uidAna_loc_v1']);
   });
 }

@@ -60,24 +60,23 @@ void main() {
     whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: PublicProfileState.initial());
     when(() => bloc.close()).thenAnswer((_) async {});
     final _MockPublicProfileRepository profileRepository = _MockPublicProfileRepository();
-    when(() => profileRepository.watchProfile('creator@example.com')).thenAnswer(
+    when(() => profileRepository.watchProfile('creatorUid')).thenAnswer(
       (_) => Stream<PublicProfileEntity?>.value(
         PublicProfileEntity(
-          id: 'creator',
+          id: 'creatorUid',
           name: 'Creator',
           email: 'creator@example.com',
           username: 'creator',
           profilePhoto: '',
           bio: '',
-          followers: following ? <String>['viewer@example.com'] : <String>[],
-          following: const <String>[],
           links: const <String, String>{},
           coverPhoto: '',
+          isFollowedByCurrentUser: following,
         ),
       ),
     );
     final _MockUserBlockRepository blockRepository = _MockUserBlockRepository();
-    when(() => blockRepository.watchBlockedCreatorEmails()).thenAnswer((_) => Stream<Set<String>>.value(<String>{}));
+    when(() => blockRepository.watchBlockedCreatorUids()).thenAnswer((_) => Stream<Set<String>>.value(<String>{}));
     getIt.registerSingleton<PublicProfileBloc>(bloc);
     getIt.registerSingleton<PublicProfileRepository>(profileRepository);
     getIt.registerSingleton<UserBlockRepository>(blockRepository);
@@ -87,7 +86,7 @@ void main() {
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ProfileScreen(profileIdentifier: 'creator@example.com'),
+        home: ProfileScreen(profileIdentifier: 'creatorUid'),
       ),
     );
     await tester.pump();

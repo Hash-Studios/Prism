@@ -63,12 +63,12 @@ class PrismWallSearch {
         ),
         _ => await _rankedTextMatches(terms, fetchLimit),
       };
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails();
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
       for (final PrismWallpaper wall in matches) {
         final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);
         final bool hasDepth = !depthOnly || (wall.depthTier?.supportsDepth ?? false);
-        if (hasColor && hasDepth && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
+        if (hasColor && hasDepth && !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
           unique.putIfAbsent(wall.id, () => wall);
         }
       }

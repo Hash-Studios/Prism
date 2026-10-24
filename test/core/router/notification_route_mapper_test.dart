@@ -103,11 +103,7 @@ void main() {
   });
 
   test('maps follower to profile route when identifier is present', () async {
-    final route = await mapper.routeForMetadata(
-      route: 'follower',
-      profileIdentifier: 'creator@example.com',
-      sourceTag: 'test',
-    );
+    final route = await mapper.routeForMetadata(route: 'follower', profileIdentifier: 'creator_uid', sourceTag: 'test');
     expect(route, isA<ProfileRoute>());
   });
 
@@ -116,10 +112,10 @@ void main() {
     expect(route, isA<NotificationRoute>());
   });
 
-  test('maps follower payload to profile route using follower_email', () async {
+  test('maps follower payload to profile route using follower_uid', () async {
     final route = await mapper.routeForPayload(<String, dynamic>{
       'route': 'follower',
-      'follower_email': 'user@example.com',
+      'follower_uid': 'user_uid',
     }, sourceTag: 'test');
     expect(route, isA<ProfileRoute>());
   });

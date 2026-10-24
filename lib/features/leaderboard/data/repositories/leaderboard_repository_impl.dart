@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -32,8 +30,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
   final DurableJsonStore _store;
   final Duration _readTimeout;
 
-  static const int _maxEmails = 90;
-  static const int _chunkSize = 30;
+  static const int _maxFollowedUids = 90;
   static const Duration _sdkReadTimeout = Duration(seconds: 5);
   static const String _globalKey = 'global';
   static const int _maxEntries = 100;
@@ -96,35 +93,49 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
   }
 
   @override
-  Future<Result<List<LeaderboardEntry>>> fetchFriends(List<String> followingEmails, String currentWeekKey) async {
+  Future<Result<List<LeaderboardEntry>>> fetchFriends(
+    List<String> _legacyFollowingEmails,
+    String currentWeekKey,
+  ) async {
     final String ownerAtStart = app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
     final int generationAtStart = _friendGenerations[ownerAtStart] ?? 0;
     try {
-      final List<String> emails = _normalizeEmails(followingEmails);
       final String myId = ownerAtStart;
       if (!app_state.prismUser.loggedIn || myId.isEmpty) {
         return Result.error(const ServerFailure("Couldn't load your friends' ranks: account is not signed in."));
       }
-      final List<List<LeaderboardEntry>> chunks = await Future.wait(<Future<List<LeaderboardEntry>>>[
-        for (int i = 0; i < emails.length; i += _chunkSize)
-          _firestoreClient
-              .queryFromServer<LeaderboardEntry?>(
-                FirestoreQuerySpec(
-                  collection: FirebaseCollections.usersV2,
-                  sourceTag: 'leaderboard.friends',
-                  filters: <FirestoreFilter>[
-                    FirestoreFilter(
-                      field: 'email',
-                      op: FirestoreFilterOp.whereIn,
-                      value: emails.sublist(i, min(i + _chunkSize, emails.length)),
-                    ),
-                  ],
-                ),
-                (data, docId) => _fromUserDoc(data, docId, currentWeekKey, myId),
-                timeout: _readTimeout,
-              )
-              .then((List<LeaderboardEntry?> rows) => rows.nonNulls.toList(growable: false)),
-      ]).timeout(_readTimeout);
+      final List<String> followedUids = await _firestoreClient
+          .queryFromServer<String>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.profileFollowing(myId),
+              sourceTag: 'leaderboard.following',
+            ),
+            (data, docId) => docId,
+            timeout: _readTimeout,
+          )
+          .timeout(_readTimeout)
+          .then(_normalizeUids);
+      final List<LeaderboardEntry> publishedEntries = followedUids.isEmpty
+          ? const <LeaderboardEntry>[]
+          : await _firestoreClient
+                    .getFromServer<List<LeaderboardEntry>>(
+                      FirebaseCollections.leaderboards,
+                      'current',
+                      (data, _) {
+                        if (data['weekKey'] != currentWeekKey) return const <LeaderboardEntry>[];
+                        final Object? raw = data['entries'];
+                        return raw is List
+                            ? raw
+                                  .map((Object? row) => _fromBoardEntry(toJsonMap(row), myId))
+                                  .where((LeaderboardEntry entry) => followedUids.contains(entry.uid))
+                                  .toList(growable: false)
+                            : const <LeaderboardEntry>[];
+                      },
+                      sourceTag: 'leaderboard.friends',
+                      timeout: _readTimeout,
+                    )
+                    .timeout(_readTimeout) ??
+                const <LeaderboardEntry>[];
       if (!app_state.prismUser.loggedIn ||
           app_state.prismUser.id != myId ||
           (_friendGenerations[myId] ?? 0) != generationAtStart) {
@@ -133,7 +144,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
         );
       }
       final List<LeaderboardEntry> friends = <LeaderboardEntry>[
-        for (final List<LeaderboardEntry> chunk in chunks) ...chunk.where((LeaderboardEntry e) => !e.isMe),
+        ...publishedEntries.where((LeaderboardEntry e) => !e.isMe),
         if (myId.isNotEmpty) _myEntry(myId),
       ]..sort(_byXpThenUid);
       if (!app_state.prismUser.loggedIn ||
@@ -146,9 +157,10 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       try {
         await _serializeFriendPersistence(myId, () async {
           if (!_isFriendRequestCurrent(myId, generationAtStart)) return;
-          await _store.write('friends:$myId', <String, Object?>{
+          await _store.write('friends-public-v2:$myId', <String, Object?>{
+            'cacheVersion': 2,
             'weekKey': currentWeekKey,
-            'emails': emails,
+            'uids': followedUids,
             'entries': friends.take(_maxEntries).map(_toMap).toList(growable: false),
           });
         });
@@ -175,7 +187,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       }
       Object? raw;
       try {
-        raw = await _store.read('friends:$activeUid');
+        raw = await _store.read('friends-public-v2:$activeUid');
       } on Object {
         return Result.error(ServerFailure("Couldn't load your friends' ranks: $e"));
       }
@@ -186,10 +198,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
           const ServerFailure("Couldn't load your friends' ranks: account changed during the request."),
         );
       }
-      if (_isTransient(e) &&
-          raw is Map &&
-          raw['weekKey'] == currentWeekKey &&
-          _sameEmails(raw['emails'], _normalizeEmails(followingEmails))) {
+      if (_isTransient(e) && raw is Map && raw['weekKey'] == currentWeekKey && raw['cacheVersion'] == 2) {
         final Object? rows = raw['entries'];
         if (rows is List) {
           return Result.success(
@@ -201,7 +210,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
         try {
           await _serializeFriendPersistence(activeUid, () async {
             if (_isFriendRequestCurrent(activeUid, generationAtStart)) {
-              await _store.delete('friends:$activeUid');
+              await _store.delete('friends-public-v2:$activeUid');
             }
           });
         } on Object {}
@@ -227,22 +236,6 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       frameId: _nonEmpty(raw['frame']),
       premium: raw['premium'] == true,
       isMe: uid.isNotEmpty && uid == myId,
-    );
-  }
-
-  static LeaderboardEntry? _fromUserDoc(Map<String, dynamic> data, String uid, String currentWeekKey, String myId) {
-    if (data['deleted'] == true) return null;
-    final Map<String, dynamic> week = toJsonMap(data['xpWeek']);
-    return LeaderboardEntry(
-      uid: uid,
-      name: data['name']?.toString() ?? '',
-      username: data['username']?.toString() ?? '',
-      photo: data['profilePhoto']?.toString() ?? '',
-      xp: week['weekKey'] == currentWeekKey ? parseIntOr(week['xp']) : 0,
-      rank: EconomyConfig.current.rankFor(parseIntOr(data['xp'])).id,
-      frameId: _nonEmpty(toJsonMap(data['cosmetics'])['frame']),
-      premium: data['premium'] == true,
-      isMe: uid == myId,
     );
   }
 
@@ -272,7 +265,9 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
     final int generation = _friendGenerations[uid]!;
     await _serializeFriendPersistence(uid, () async {
       if ((_friendGenerations[uid] ?? 0) == generation) {
-        await (store ?? DurableJsonStore('leaderboard_read_snapshots')).delete('friends:$uid');
+        final DurableJsonStore snapshots = store ?? DurableJsonStore('leaderboard_read_snapshots');
+        await snapshots.delete('friends-public-v2:$uid');
+        await snapshots.delete('friends:$uid');
       }
     });
   }
@@ -309,16 +304,11 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
     isMe: raw['uid'] == myId && myId.isNotEmpty,
   );
 
-  static bool _sameEmails(Object? saved, List<String> requested) =>
-      saved is List &&
-      saved.length == requested.length &&
-      saved.asMap().entries.every((e) => e.value == requested[e.key]);
-
-  static List<String> _normalizeEmails(List<String> emails) => emails
-      .map((String email) => email.trim())
-      .where((String email) => email.isNotEmpty)
+  static List<String> _normalizeUids(List<String> uids) => uids
+      .map((String uid) => uid.trim())
+      .where((String uid) => uid.isNotEmpty)
       .toSet()
-      .take(_maxEmails)
+      .take(_maxFollowedUids)
       .toList(growable: false);
 
   static bool _isTransient(Object error) =>

@@ -137,14 +137,14 @@ return followChangeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String email)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  List<String> userIds,  int page)?  relationPageRequested,TResult Function( UserRelationKind kind,  String query,  List<String> userIds)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.email);case _RefreshRequested() when refreshRequested != null:
+return started(_that.identifier);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested();case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
-return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared() when relationSearchCleared != null:
+return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return orElse();
@@ -164,14 +164,14 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String email)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)  relationPageRequested,required TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  List<String> userIds,  int page)  relationPageRequested,required TResult Function( UserRelationKind kind,  String query,  List<String> userIds)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.email);case _RefreshRequested():
+return started(_that.identifier);case _RefreshRequested():
 return refreshRequested();case _FetchMoreWallsRequested():
 return fetchMoreWallsRequested();case _RelationPageRequested():
-return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested():
-return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared():
+return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested():
+return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared():
 return relationSearchCleared(_that.kind);case _FollowChangeRequested():
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   throw StateError('Unexpected subclass');
@@ -190,14 +190,14 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String email)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  List<String> userIds,  int page)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String query,  List<String> userIds)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.email);case _RefreshRequested() when refreshRequested != null:
+return started(_that.identifier);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested();case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
-return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared() when relationSearchCleared != null:
+return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return null;
@@ -211,10 +211,10 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 
 
 class _Started implements PublicProfileEvent {
-  const _Started({required this.email});
+  const _Started({required this.identifier});
   
 
- final  String email;
+ final  String identifier;
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -226,16 +226,16 @@ _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&(identical(other.email, email) || other.email == email));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&(identical(other.identifier, identifier) || other.identifier == identifier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,email);
+int get hashCode => Object.hash(runtimeType,identifier);
 
 @override
 String toString() {
-  return 'PublicProfileEvent.started(email: $email)';
+  return 'PublicProfileEvent.started(identifier: $identifier)';
 }
 
 
@@ -246,7 +246,7 @@ abstract mixin class _$StartedCopyWith<$Res> implements $PublicProfileEventCopyW
   factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
 @useResult
 $Res call({
- String email
+ String identifier
 });
 
 
@@ -263,9 +263,9 @@ class __$StartedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? email = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? identifier = null,}) {
   return _then(_Started(
-email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+identifier: null == identifier ? _self.identifier : identifier // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -341,15 +341,15 @@ String toString() {
 
 
 class _RelationPageRequested implements PublicProfileEvent {
-  const _RelationPageRequested({required this.kind, required final  List<String> allEmails, required this.page}): _allEmails = allEmails;
+  const _RelationPageRequested({required this.kind, required final  List<String> userIds, required this.page}): _userIds = userIds;
   
 
  final  UserRelationKind kind;
- final  List<String> _allEmails;
- List<String> get allEmails {
-  if (_allEmails is EqualUnmodifiableListView) return _allEmails;
+ final  List<String> _userIds;
+ List<String> get userIds {
+  if (_userIds is EqualUnmodifiableListView) return _userIds;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_allEmails);
+  return EqualUnmodifiableListView(_userIds);
 }
 
  final  int page;
@@ -364,16 +364,16 @@ _$RelationPageRequestedCopyWith<_RelationPageRequested> get copyWith => __$Relat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationPageRequested&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other._allEmails, _allEmails)&&(identical(other.page, page) || other.page == page));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationPageRequested&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other._userIds, _userIds)&&(identical(other.page, page) || other.page == page));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,const DeepCollectionEquality().hash(_allEmails),page);
+int get hashCode => Object.hash(runtimeType,kind,const DeepCollectionEquality().hash(_userIds),page);
 
 @override
 String toString() {
-  return 'PublicProfileEvent.relationPageRequested(kind: $kind, allEmails: $allEmails, page: $page)';
+  return 'PublicProfileEvent.relationPageRequested(kind: $kind, userIds: $userIds, page: $page)';
 }
 
 
@@ -384,7 +384,7 @@ abstract mixin class _$RelationPageRequestedCopyWith<$Res> implements $PublicPro
   factory _$RelationPageRequestedCopyWith(_RelationPageRequested value, $Res Function(_RelationPageRequested) _then) = __$RelationPageRequestedCopyWithImpl;
 @useResult
 $Res call({
- UserRelationKind kind, List<String> allEmails, int page
+ UserRelationKind kind, List<String> userIds, int page
 });
 
 
@@ -401,10 +401,10 @@ class __$RelationPageRequestedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? allEmails = null,Object? page = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? userIds = null,Object? page = null,}) {
   return _then(_RelationPageRequested(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as UserRelationKind,allEmails: null == allEmails ? _self._allEmails : allEmails // ignore: cast_nullable_to_non_nullable
+as UserRelationKind,userIds: null == userIds ? _self._userIds : userIds // ignore: cast_nullable_to_non_nullable
 as List<String>,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int,
   ));
@@ -417,16 +417,16 @@ as int,
 
 
 class _RelationSearchRequested implements PublicProfileEvent {
-  const _RelationSearchRequested({required this.kind, required this.query, required final  List<String> allEmails}): _allEmails = allEmails;
+  const _RelationSearchRequested({required this.kind, required this.query, required final  List<String> userIds}): _userIds = userIds;
   
 
  final  UserRelationKind kind;
  final  String query;
- final  List<String> _allEmails;
- List<String> get allEmails {
-  if (_allEmails is EqualUnmodifiableListView) return _allEmails;
+ final  List<String> _userIds;
+ List<String> get userIds {
+  if (_userIds is EqualUnmodifiableListView) return _userIds;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_allEmails);
+  return EqualUnmodifiableListView(_userIds);
 }
 
 
@@ -440,16 +440,16 @@ _$RelationSearchRequestedCopyWith<_RelationSearchRequested> get copyWith => __$R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationSearchRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.query, query) || other.query == query)&&const DeepCollectionEquality().equals(other._allEmails, _allEmails));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationSearchRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.query, query) || other.query == query)&&const DeepCollectionEquality().equals(other._userIds, _userIds));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,query,const DeepCollectionEquality().hash(_allEmails));
+int get hashCode => Object.hash(runtimeType,kind,query,const DeepCollectionEquality().hash(_userIds));
 
 @override
 String toString() {
-  return 'PublicProfileEvent.relationSearchRequested(kind: $kind, query: $query, allEmails: $allEmails)';
+  return 'PublicProfileEvent.relationSearchRequested(kind: $kind, query: $query, userIds: $userIds)';
 }
 
 
@@ -460,7 +460,7 @@ abstract mixin class _$RelationSearchRequestedCopyWith<$Res> implements $PublicP
   factory _$RelationSearchRequestedCopyWith(_RelationSearchRequested value, $Res Function(_RelationSearchRequested) _then) = __$RelationSearchRequestedCopyWithImpl;
 @useResult
 $Res call({
- UserRelationKind kind, String query, List<String> allEmails
+ UserRelationKind kind, String query, List<String> userIds
 });
 
 
@@ -477,11 +477,11 @@ class __$RelationSearchRequestedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? query = null,Object? allEmails = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? query = null,Object? userIds = null,}) {
   return _then(_RelationSearchRequested(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
 as UserRelationKind,query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
-as String,allEmails: null == allEmails ? _self._allEmails : allEmails // ignore: cast_nullable_to_non_nullable
+as String,userIds: null == userIds ? _self._userIds : userIds // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
 }
@@ -634,7 +634,7 @@ as String,
 /// @nodoc
 mixin _$PublicProfileState {
 
- LoadStatus get status; String get email; List<PublicProfileWallEntity> get walls; bool get hasMoreWalls; bool get isFetchingMoreWalls; RelationList get followers; RelationList get following;/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+ LoadStatus get status; String get profileId; List<PublicProfileWallEntity> get walls; bool get hasMoreWalls; bool get isFetchingMoreWalls; RelationList get followers; RelationList get following;/// Follow state the user asked for, keyed by profile UID. It wins over the profile stream until the
 /// request fails, so the button flips at once.
  Map<String, bool> get followOverrides;/// Result of the latest follow request. The UI shows a toast once per [FollowOutcome.id].
  FollowOutcome? get followOutcome;
@@ -648,16 +648,16 @@ $PublicProfileStateCopyWith<PublicProfileState> get copyWith => _$PublicProfileS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other.walls, walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other.followOverrides, followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.profileId, profileId) || other.profileId == profileId)&&const DeepCollectionEquality().equals(other.walls, walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other.followOverrides, followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(followOverrides),followOutcome);
+int get hashCode => Object.hash(runtimeType,status,profileId,const DeepCollectionEquality().hash(walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(followOverrides),followOutcome);
 
 @override
 String toString() {
-  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
+  return 'PublicProfileState(status: $status, profileId: $profileId, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
 }
 
 
@@ -668,7 +668,7 @@ abstract mixin class $PublicProfileStateCopyWith<$Res>  {
   factory $PublicProfileStateCopyWith(PublicProfileState value, $Res Function(PublicProfileState) _then) = _$PublicProfileStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
+ LoadStatus status, String profileId, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
 });
 
 
@@ -685,10 +685,10 @@ class _$PublicProfileStateCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? profileId = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as LoadStatus,profileId: null == profileId ? _self.profileId : profileId // ignore: cast_nullable_to_non_nullable
 as String,walls: null == walls ? _self.walls : walls // ignore: cast_nullable_to_non_nullable
 as List<PublicProfileWallEntity>,hasMoreWalls: null == hasMoreWalls ? _self.hasMoreWalls : hasMoreWalls // ignore: cast_nullable_to_non_nullable
 as bool,isFetchingMoreWalls: null == isFetchingMoreWalls ? _self.isFetchingMoreWalls : isFetchingMoreWalls // ignore: cast_nullable_to_non_nullable
@@ -811,10 +811,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String profileId,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PublicProfileState() when $default != null:
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
+return $default(_that.status,_that.profileId,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   return orElse();
 
 }
@@ -832,10 +832,10 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String profileId,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileState():
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
+return $default(_that.status,_that.profileId,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -852,10 +852,10 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String profileId,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileState() when $default != null:
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
+return $default(_that.status,_that.profileId,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   return null;
 
 }
@@ -867,11 +867,11 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 
 
 class _PublicProfileState extends PublicProfileState {
-  const _PublicProfileState({required this.status, required this.email, required final  List<PublicProfileWallEntity> walls, required this.hasMoreWalls, required this.isFetchingMoreWalls, required this.followers, required this.following, final  Map<String, bool> followOverrides = const <String, bool>{}, this.followOutcome}): _walls = walls,_followOverrides = followOverrides,super._();
+  const _PublicProfileState({required this.status, required this.profileId, required final  List<PublicProfileWallEntity> walls, required this.hasMoreWalls, required this.isFetchingMoreWalls, required this.followers, required this.following, final  Map<String, bool> followOverrides = const <String, bool>{}, this.followOutcome}): _walls = walls,_followOverrides = followOverrides,super._();
   
 
 @override final  LoadStatus status;
-@override final  String email;
+@override final  String profileId;
  final  List<PublicProfileWallEntity> _walls;
 @override List<PublicProfileWallEntity> get walls {
   if (_walls is EqualUnmodifiableListView) return _walls;
@@ -883,10 +883,10 @@ class _PublicProfileState extends PublicProfileState {
 @override final  bool isFetchingMoreWalls;
 @override final  RelationList followers;
 @override final  RelationList following;
-/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+/// Follow state the user asked for, keyed by profile UID. It wins over the profile stream until the
 /// request fails, so the button flips at once.
  final  Map<String, bool> _followOverrides;
-/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+/// Follow state the user asked for, keyed by profile UID. It wins over the profile stream until the
 /// request fails, so the button flips at once.
 @override@JsonKey() Map<String, bool> get followOverrides {
   if (_followOverrides is EqualUnmodifiableMapView) return _followOverrides;
@@ -907,16 +907,16 @@ _$PublicProfileStateCopyWith<_PublicProfileState> get copyWith => __$PublicProfi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other._walls, _walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other._followOverrides, _followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.profileId, profileId) || other.profileId == profileId)&&const DeepCollectionEquality().equals(other._walls, _walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other._followOverrides, _followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(_walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(_followOverrides),followOutcome);
+int get hashCode => Object.hash(runtimeType,status,profileId,const DeepCollectionEquality().hash(_walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(_followOverrides),followOutcome);
 
 @override
 String toString() {
-  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
+  return 'PublicProfileState(status: $status, profileId: $profileId, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
 }
 
 
@@ -927,7 +927,7 @@ abstract mixin class _$PublicProfileStateCopyWith<$Res> implements $PublicProfil
   factory _$PublicProfileStateCopyWith(_PublicProfileState value, $Res Function(_PublicProfileState) _then) = __$PublicProfileStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
+ LoadStatus status, String profileId, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
 });
 
 
@@ -944,10 +944,10 @@ class __$PublicProfileStateCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? profileId = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
   return _then(_PublicProfileState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as LoadStatus,profileId: null == profileId ? _self.profileId : profileId // ignore: cast_nullable_to_non_nullable
 as String,walls: null == walls ? _self._walls : walls // ignore: cast_nullable_to_non_nullable
 as List<PublicProfileWallEntity>,hasMoreWalls: null == hasMoreWalls ? _self.hasMoreWalls : hasMoreWalls // ignore: cast_nullable_to_non_nullable
 as bool,isFetchingMoreWalls: null == isFetchingMoreWalls ? _self.isFetchingMoreWalls : isFetchingMoreWalls // ignore: cast_nullable_to_non_nullable

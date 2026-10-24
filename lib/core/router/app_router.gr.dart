@@ -965,11 +965,11 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
 class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
   FollowersRoute({
     Key? key,
-    required List<String> followers,
+    required String userId,
     List<PageRouteInfo>? children,
   }) : super(
          FollowersRoute.name,
-         args: FollowersRouteArgs(key: key, followers: followers),
+         args: FollowersRouteArgs(key: key, userId: userId),
          initialChildren: children,
        );
 
@@ -979,34 +979,32 @@ class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<FollowersRouteArgs>();
-      return FollowersScreen(key: args.key, followers: args.followers);
+      return FollowersScreen(key: args.key, userId: args.userId);
     },
   );
 }
 
 class FollowersRouteArgs {
-  const FollowersRouteArgs({this.key, required this.followers});
+  const FollowersRouteArgs({this.key, required this.userId});
 
   final Key? key;
 
-  final List<String> followers;
+  final String userId;
 
   @override
   String toString() {
-    return 'FollowersRouteArgs{key: $key, followers: $followers}';
+    return 'FollowersRouteArgs{key: $key, userId: $userId}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FollowersRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<String>().equals(followers, other.followers);
+    return key == other.key && userId == other.userId;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<String>().hash(followers);
+  int get hashCode => key.hashCode ^ userId.hashCode;
 }
 
 /// generated route for
@@ -1014,11 +1012,11 @@ class FollowersRouteArgs {
 class FollowingListRoute extends PageRouteInfo<FollowingListRouteArgs> {
   FollowingListRoute({
     Key? key,
-    required List<String> following,
+    required String userId,
     List<PageRouteInfo>? children,
   }) : super(
          FollowingListRoute.name,
-         args: FollowingListRouteArgs(key: key, following: following),
+         args: FollowingListRouteArgs(key: key, userId: userId),
          initialChildren: children,
        );
 
@@ -1028,34 +1026,32 @@ class FollowingListRoute extends PageRouteInfo<FollowingListRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<FollowingListRouteArgs>();
-      return FollowingListScreen(key: args.key, following: args.following);
+      return FollowingListScreen(key: args.key, userId: args.userId);
     },
   );
 }
 
 class FollowingListRouteArgs {
-  const FollowingListRouteArgs({this.key, required this.following});
+  const FollowingListRouteArgs({this.key, required this.userId});
 
   final Key? key;
 
-  final List<String> following;
+  final String userId;
 
   @override
   String toString() {
-    return 'FollowingListRouteArgs{key: $key, following: $following}';
+    return 'FollowingListRouteArgs{key: $key, userId: $userId}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FollowingListRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<String>().equals(following, other.following);
+    return key == other.key && userId == other.userId;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<String>().hash(following);
+  int get hashCode => key.hashCode ^ userId.hashCode;
 }
 
 /// generated route for

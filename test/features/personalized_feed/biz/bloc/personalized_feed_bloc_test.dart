@@ -33,7 +33,7 @@ class _MockPersonalizedFeedRepository extends Mock implements PersonalizedFeedRe
 
 class _MockDropsRepository extends Mock implements DropsRepository {}
 
-FeedItemEntity _prismItem(String id, {required String authorEmail, String? fullUrl}) {
+FeedItemEntity _prismItem(String id, {required String authorUid, String? fullUrl}) {
   return FeedItemEntity.prism(
     id: id,
     wallpaper: PrismWallpaper(
@@ -42,7 +42,7 @@ FeedItemEntity _prismItem(String id, {required String authorEmail, String? fullU
         source: WallpaperSource.prism,
         fullUrl: fullUrl ?? 'https://example.com/$id.jpg',
         thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-        authorEmail: authorEmail,
+        authorUid: authorUid,
       ),
     ),
   );
@@ -50,7 +50,7 @@ FeedItemEntity _prismItem(String id, {required String authorEmail, String? fullU
 
 void main() {
   setUpAll(() {
-    registerFallbackValue(_prismItem('fallback', authorEmail: 'f@example.com'));
+    registerFallbackValue(_prismItem('fallback', authorUid: 'f@example.com'));
     registerFallbackValue(
       const FetchPersonalizedFeedRequest(
         page: 1,
@@ -88,8 +88,8 @@ void main() {
       (_) async => Result.success(
         PersonalizedFeedPage(
           items: <FeedItemEntity>[
-            _prismItem('1', authorEmail: 'blocked@example.com'),
-            _prismItem('2', authorEmail: 'kept@example.com'),
+            _prismItem('1', authorUid: 'blocked-uid'),
+            _prismItem('2', authorUid: 'kept-uid'),
           ],
           hasMore: false,
         ),
@@ -105,7 +105,7 @@ void main() {
 
     blockRepo.completeInitial(<String>{});
     await Future<void>.delayed(Duration.zero);
-    blockRepo.completeInitial(<String>{'blocked@example.com'});
+    blockRepo.completeInitial(<String>{'blocked-uid'});
     await Future<void>.delayed(Duration.zero);
 
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
@@ -113,13 +113,13 @@ void main() {
   });
 
   test('less like this removes the item and reports it to the repository', () async {
-    final FeedItemEntity item1 = _prismItem('1', authorEmail: 'a@example.com');
+    final FeedItemEntity item1 = _prismItem('1', authorUid: 'a-uid');
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => Result.success(
         PersonalizedFeedPage(
           items: <FeedItemEntity>[
             item1,
-            _prismItem('2', authorEmail: 'b@example.com'),
+            _prismItem('2', authorUid: 'b-uid'),
           ],
           hasMore: false,
         ),
@@ -141,13 +141,9 @@ void main() {
 
   for (final bool emptyUrl in <bool>[false, true]) {
     test('less like this uses canonical identity with ${emptyUrl ? 'empty' : 'normalized'} URLs', () async {
-      final item = _prismItem('1', authorEmail: 'a@example.com', fullUrl: emptyUrl ? '' : 'https://example.com/1.jpg');
-      final selected = _prismItem(
-        '1',
-        authorEmail: 'a@example.com',
-        fullUrl: emptyUrl ? '' : ' HTTPS://EXAMPLE.COM/1.JPG ',
-      );
-      final kept = _prismItem('2', authorEmail: 'b@example.com', fullUrl: emptyUrl ? '' : null);
+      final item = _prismItem('1', authorUid: 'a-uid', fullUrl: emptyUrl ? '' : 'https://example.com/1.jpg');
+      final selected = _prismItem('1', authorUid: 'a-uid', fullUrl: emptyUrl ? '' : ' HTTPS://EXAMPLE.COM/1.JPG ');
+      final kept = _prismItem('2', authorUid: 'b-uid', fullUrl: emptyUrl ? '' : null);
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[item, kept], hasMore: false)),
       );
@@ -179,19 +175,13 @@ void main() {
 
     refreshed.complete(
       Result.success(
-        PersonalizedFeedPage(
-          items: <FeedItemEntity>[_prismItem('new', authorEmail: 'new@example.com')],
-          hasMore: false,
-        ),
+        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('new', authorUid: 'new@example.com')], hasMore: false),
       ),
     );
     await Future<void>.delayed(Duration.zero);
     initial.complete(
       Result.success(
-        PersonalizedFeedPage(
-          items: <FeedItemEntity>[_prismItem('old', authorEmail: 'old@example.com')],
-          hasMore: false,
-        ),
+        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('old', authorUid: 'old@example.com')], hasMore: false),
       ),
     );
     await Future<void>.delayed(Duration.zero);
@@ -208,7 +198,7 @@ void main() {
       final String id = calls == 1 ? 'initial' : 'fresh';
       return Future<Result<PersonalizedFeedPage>>.value(
         Result.success(
-          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem(id, authorEmail: '$id@example.com')], hasMore: true),
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem(id, authorUid: '$id@example.com')], hasMore: true),
         ),
       );
     });
@@ -226,7 +216,7 @@ void main() {
     loadMore.complete(
       Result.success(
         PersonalizedFeedPage(
-          items: <FeedItemEntity>[_prismItem('stale', authorEmail: 'stale@example.com')],
+          items: <FeedItemEntity>[_prismItem('stale', authorUid: 'stale@example.com')],
           hasMore: true,
         ),
       ),
@@ -242,7 +232,7 @@ void main() {
     AnalyticsRuntime.instance = analytics;
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => Result.success(
-        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'kept@example.com')], hasMore: false),
+        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'kept-uid')], hasMore: false),
       ),
     );
     final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
@@ -266,7 +256,7 @@ void main() {
       final ids = request.page == 1 ? <String>['1', '2'] : <String>['2', '3'];
       return Result.success(
         PersonalizedFeedPage(
-          items: <FeedItemEntity>[for (final id in ids) _prismItem(id, authorEmail: 'kept@example.com')],
+          items: <FeedItemEntity>[for (final id in ids) _prismItem(id, authorUid: 'kept-uid')],
           hasMore: request.page == 1,
           usedKeys: ids,
         ),
@@ -290,7 +280,7 @@ void main() {
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => ++calls == 1
           ? Result.success(
-              PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@x.com')], hasMore: true),
+              PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'a@x.com')], hasMore: true),
             )
           : Result.error(const NetworkFailure('offline')),
     );
@@ -310,7 +300,7 @@ void main() {
 
   group('instant home', () {
     PersonalizedFeedPage cachedPage({bool isStale = false}) => PersonalizedFeedPage(
-      items: <FeedItemEntity>[_prismItem('cached', authorEmail: 'c@x.com')],
+      items: <FeedItemEntity>[_prismItem('cached', authorUid: 'c@x.com')],
       hasMore: true,
       usedKeys: const <String>['cached'],
       isStale: isStale,
@@ -339,7 +329,7 @@ void main() {
 
       fresh.complete(
         Result.success(
-          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorEmail: 'f@x.com')], hasMore: true),
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorUid: 'f@x.com')], hasMore: true),
         ),
       );
       await Future<void>.delayed(Duration.zero);
@@ -393,7 +383,7 @@ void main() {
       when(() => repository.readCached()).thenThrow(StateError('disk'));
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(
-          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorEmail: 'f@x.com')], hasMore: false),
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorUid: 'f@x.com')], hasMore: false),
         ),
       );
       final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
@@ -414,7 +404,7 @@ void main() {
       (_) => ++calls == 1
           ? Future.value(
               Result.success(
-                PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('old', authorEmail: 'o@x.com')], hasMore: true),
+                PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('old', authorUid: 'o@x.com')], hasMore: true),
               ),
             )
           : fresh.future,
@@ -432,7 +422,7 @@ void main() {
 
     fresh.complete(
       Result.success(
-        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('new', authorEmail: 'n@x.com')], hasMore: true),
+        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('new', authorUid: 'n@x.com')], hasMore: true),
       ),
     );
     await Future<void>.delayed(Duration.zero);
@@ -464,7 +454,7 @@ void main() {
     test('a chip change does not reload the For you feed', () async {
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(
-          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@x.com')], hasMore: false),
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'a@x.com')], hasMore: false),
         ),
       );
       final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
@@ -483,14 +473,14 @@ void main() {
 
   group('undo less like this', () {
     test('puts the wallpaper back where it was and shows it again', () async {
-      final FeedItemEntity second = _prismItem('2', authorEmail: 'b@x.com');
+      final FeedItemEntity second = _prismItem('2', authorUid: 'b@x.com');
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(
           PersonalizedFeedPage(
             items: <FeedItemEntity>[
-              _prismItem('1', authorEmail: 'a@x.com'),
+              _prismItem('1', authorUid: 'a@x.com'),
               second,
-              _prismItem('3', authorEmail: 'c@x.com'),
+              _prismItem('3', authorUid: 'c@x.com'),
             ],
             hasMore: false,
           ),
@@ -557,7 +547,7 @@ void main() {
 
   group('refresh', () {
     PersonalizedFeedPage page(List<String> ids) => PersonalizedFeedPage(
-      items: ids.map((id) => _prismItem(id, authorEmail: '$id@example.com')).toList(),
+      items: ids.map((id) => _prismItem(id, authorUid: '$id@example.com')).toList(),
       hasMore: true,
     );
 
@@ -652,7 +642,7 @@ void main() {
     setUp(() {
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(
-          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@example.com')], hasMore: false),
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'a-uid')], hasMore: false),
         ),
       );
     });

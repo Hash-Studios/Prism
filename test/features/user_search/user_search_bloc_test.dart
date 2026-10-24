@@ -11,14 +11,8 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockSearchUsers extends Mock implements SearchUsersUseCase {}
 
-UserSearchUser _user(String name) => UserSearchUser(
-  id: name,
-  name: name,
-  username: name.toLowerCase(),
-  email: '$name@example.com',
-  profilePhoto: '',
-  followerCount: 0,
-);
+UserSearchUser _user(String name) =>
+    UserSearchUser(id: name, name: name, username: name.toLowerCase(), profilePhoto: '', followerCount: 0);
 
 void main() {
   late _MockSearchUsers search;

@@ -24,15 +24,6 @@ class _MockCollectionReference extends Mock implements CollectionReference<Map<S
 
 class _MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {}
 
-class _MockWriteBatch extends Mock implements WriteBatch {
-  final List<(Object, Object)> updates = <(Object, Object)>[];
-
-  @override
-  void update<T>(DocumentReference<T> documentReference, T data) {
-    updates.add((documentReference as Object, data as Object));
-  }
-}
-
 class _FirestoreTelemetrySink implements FirestoreTelemetrySink {
   const _FirestoreTelemetrySink();
 
@@ -57,7 +48,8 @@ void main() {
   late _MockCollectionReference users;
   late _MockDocumentReference user;
   late _MockDocumentReference creator;
-  late _MockWriteBatch batch;
+  late List<(String, bool)> followCalls;
+  late List<Object> followErrors;
   late _FirestoreTelemetrySink telemetry;
   late _MockFirebaseRemoteConfig remoteConfig;
   late InMemoryLocalStore store;
@@ -69,7 +61,8 @@ void main() {
     users = _MockCollectionReference();
     user = _MockDocumentReference();
     creator = _MockDocumentReference();
-    batch = _MockWriteBatch();
+    followCalls = <(String, bool)>[];
+    followErrors = <Object>[];
     telemetry = const _FirestoreTelemetrySink();
     remoteConfig = _MockFirebaseRemoteConfig();
     store = InMemoryLocalStore();
@@ -78,14 +71,16 @@ void main() {
     when(() => users.doc('user-1')).thenReturn(user);
     when(() => users.doc('creator-1')).thenReturn(creator);
     when(() => users.doc('missing-user')).thenReturn(user);
-    when(() => firestore.batch()).thenReturn(batch);
-    when(() => batch.commit()).thenAnswer((_) async {});
     when(() => remoteConfig.getString(any())).thenReturn('');
 
     repository = OnboardingV2RepositoryImpl(
       FirestoreTrackedClient(firestore, telemetry),
       SettingsLocalDataSource(store),
       remoteConfig: remoteConfig,
+      setFollow: (String uid, bool following) async {
+        followCalls.add((uid, following));
+        if (followErrors.isNotEmpty) throw followErrors.removeAt(0);
+      },
     );
   });
 
@@ -122,10 +117,8 @@ void main() {
     verifyNever(() => user.update(any()));
   });
 
-  test('followCreators preserves the Firebase batch commit error code', () async {
-    when(
-      () => batch.commit(),
-    ).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'unauthenticated', message: 'auth required'));
+  test('followCreators preserves the Firebase error code and writes no local completion', () async {
+    followErrors.add(FirebaseException(plugin: 'cloud_functions', code: 'unauthenticated', message: 'auth required'));
 
     final result = await repository.followCreators(
       currentUserId: 'user-1',
@@ -135,12 +128,10 @@ void main() {
 
     expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', 'unauthenticated'));
     expect(store.data, isEmpty);
-    verify(() => batch.commit()).called(1);
+    expect(followCalls, <(String, bool)>[('creator-1', true)]);
   });
 
-  test('followCreators returns an unmapped failure for an empty user id before batching writes', () async {
-    when(() => users.doc('')).thenThrow(ArgumentError.value('', 'path', 'must be nonempty'));
-
+  test('followCreators returns an unmapped failure for an empty user id before calling setFollow', () async {
     final result = await repository.followCreators(
       currentUserId: '',
       currentUserEmail: 'user@example.com',
@@ -149,20 +140,13 @@ void main() {
 
     expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', isNull));
     expect(store.data, isEmpty);
-    expect(batch.updates, isEmpty);
-    verifyNever(() => batch.commit());
+    expect(followCalls, isEmpty);
   });
 
-  test('a failed batch can be retried and only records local completion after success', () async {
+  test('a failed follow can be retried and only records local completion after success', () async {
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    int commitAttempts = 0;
-    when(() => batch.commit()).thenAnswer((_) async {
-      commitAttempts++;
-      if (commitAttempts == 1) {
-        throw FirebaseException(plugin: 'cloud_firestore', code: 'unavailable', message: 'try again');
-      }
-    });
+    followErrors.add(FirebaseException(plugin: 'cloud_functions', code: 'unavailable', message: 'try again'));
 
     final firstAttempt = await repository.followCreators(
       currentUserId: 'user-1',
@@ -185,18 +169,8 @@ void main() {
     expect(follows.map((event) => event.creatorId).toSet(), <String>{'creator-1'});
     expect(follows.map((event) => event.source).toSet(), <String>{'onboarding_starter_pack'});
     expect(follows.expand((event) => event.toWireParameters().values), isNot(contains('creator@example.com')));
-    expect(store.data.values, contains('creator@example.com'));
-    verify(() => batch.commit()).called(2);
-    expect(batch.updates, hasLength(4));
-    expect(batch.updates.map((update) => update.$1), <Object>[user, creator, user, creator]);
-    expect(batch.updates.map((update) => (update.$2 as Map<String, dynamic>).keys.toList()), <List<String>>[
-      <String>['following'],
-      <String>['followers'],
-      <String>['following'],
-      <String>['followers'],
-    ]);
-    expect((batch.updates[0].$2 as Map<String, dynamic>)['following'], isA<FieldValue>());
-    expect((batch.updates[2].$2 as Map<String, dynamic>)['following'], isA<FieldValue>());
+    expect(store.data.values, contains('creator-1'));
+    expect(followCalls, <(String, bool)>[('creator-1', true), ('creator-1', true)]);
   });
 
   test('an empty creator selection succeeds and stores an empty selection', () async {
@@ -208,8 +182,7 @@ void main() {
 
     expect(result.isSuccess, isTrue);
     expect(store.data.values, contains(''));
-    verify(() => batch.commit()).called(1);
-    expect(batch.updates, hasLength(1));
+    expect(followCalls, isEmpty);
   });
 
   test('completeOnboarding preserves the Firebase update error code', () async {
@@ -232,22 +205,5 @@ void main() {
     expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', isNull));
     expect(store.data, isEmpty);
     verifyNever(() => user.update(any()));
-  });
-
-  test('a not-found batch failure includes current user and creator without identifying which failed', () async {
-    when(
-      () => batch.commit(),
-    ).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'not-found', message: 'creator-1 does not exist'));
-
-    final result = await repository.followCreators(
-      currentUserId: 'user-1',
-      currentUserEmail: 'user@example.com',
-      creators: <OnboardingStarterCreatorEntity>[_creator()],
-    );
-
-    expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', 'not-found'));
-    expect(store.data, isEmpty);
-    expect(batch.updates.map((update) => update.$1), <Object>[user, creator]);
-    verify(() => batch.commit()).called(1);
   });
 }

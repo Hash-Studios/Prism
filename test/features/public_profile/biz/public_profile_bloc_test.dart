@@ -14,8 +14,6 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_wal
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
-import 'package:Prism/features/session/domain/entities/session_entity.dart';
-import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,8 +33,6 @@ class _MockUnfollow extends Mock implements UnfollowUserUseCase {}
 class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
 
 class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
-
-class _MockSession extends Mock implements SessionRepository {}
 
 class _Messaging {
   final List<(bool, String)> calls = <(bool, String)>[];
@@ -65,8 +61,8 @@ class _Messaging {
 
 PublicProfileWallEntity _wall(String id) => PublicProfileWallEntity(id: id, wallpaperUrl: 'https://x/$id');
 
-UserSummaryEntity _user(String email, {bool followed = false}) => UserSummaryEntity(
-  id: email,
+UserSummaryEntity _user(String email, {String? id, bool followed = false}) => UserSummaryEntity(
+  id: id ?? email,
   email: email,
   name: '',
   username: email,
@@ -88,9 +84,9 @@ void main() {
       messaging.handle,
     );
     registerFallbackValue(profileUser());
-    registerFallbackValue(const FetchPublicProfileWallsParams(email: '', refresh: false));
-    registerFallbackValue(const FetchUserSummariesPageParams(allEmails: <String>[], page: 0));
-    registerFallbackValue(const SearchUsersByUsernameParams(query: '', scopeEmails: <String>[]));
+    registerFallbackValue(const FetchPublicProfileWallsParams(userId: '', refresh: false));
+    registerFallbackValue(const FetchUserSummariesPageParams(userIds: <String>[], page: 0));
+    registerFallbackValue(const SearchUsersByUsernameParams(query: '', scopeUserIds: <String>[]));
     registerFallbackValue(
       const UnfollowUserParams(currentUserId: '', currentUserEmail: '', targetUserId: '', targetUserEmail: ''),
     );
@@ -135,7 +131,7 @@ void main() {
 
   PublicProfileBloc buildBloc() => PublicProfileBloc(walls, follow, unfollow, summaries, search);
 
-  final loading = PublicProfileState.initial().copyWith(email: 'a@x.com', status: LoadStatus.loading);
+  final loading = PublicProfileState.initial().copyWith(profileId: 'a@x.com', status: LoadStatus.loading);
 
   for (final bool failOld in <bool>[false, true]) {
     test('A → B → A ignores the old load ${failOld ? 'failure' : 'success'}', () async {
@@ -148,7 +144,7 @@ void main() {
       final bloc = buildBloc();
       addTearDown(bloc.close);
       for (final email in <String>['a@x.com', 'b@x.com', 'a@x.com']) {
-        bloc.add(PublicProfileEvent.started(email: email));
+        bloc.add(PublicProfileEvent.started(identifier: email));
         await pumpEventQueue();
       }
       requests[2].complete(Result.success<_Walls>((items: [_wall('new-a')], hasMore: true)));
@@ -160,7 +156,7 @@ void main() {
             : Result.success<_Walls>((items: [_wall('old-a')], hasMore: false)),
       );
       await pumpEventQueue();
-      expect(bloc.state.email, 'a@x.com');
+      expect(bloc.state.profileId, 'a@x.com');
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.walls.map((w) => w.id), ['new-a']);
       expect(bloc.state.hasMoreWalls, isTrue);
@@ -181,7 +177,7 @@ void main() {
     });
     final bloc = buildBloc();
     addTearDown(bloc.close);
-    bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+    bloc.add(const PublicProfileEvent.started(identifier: 'a@x.com'));
     await pumpEventQueue();
     bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
     await pumpEventQueue();
@@ -204,7 +200,7 @@ void main() {
     when(() => walls(any())).thenAnswer((_) => initial.future);
     final bloc = buildBloc();
     addTearDown(bloc.close);
-    bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+    bloc.add(const PublicProfileEvent.started(identifier: 'a@x.com'));
     await pumpEventQueue();
     bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
     await pumpEventQueue();
@@ -220,7 +216,7 @@ void main() {
       when(() => walls(any())).thenAnswer((_) async => Result.success<_Walls>((items: [_wall('w1')], hasMore: true)));
       return buildBloc();
     },
-    act: (bloc) => bloc.add(const PublicProfileEvent.started(email: 'a@x.com')),
+    act: (bloc) => bloc.add(const PublicProfileEvent.started(identifier: 'a@x.com')),
     expect: () => <Matcher>[
       equals(loading),
       isA<PublicProfileState>()
@@ -231,7 +227,7 @@ void main() {
     verify: (_) => verify(
       () => walls(
         any(
-          that: isA<FetchPublicProfileWallsParams>().having((p) => (p.email, p.refresh), 'email, refresh', (
+          that: isA<FetchPublicProfileWallsParams>().having((p) => (p.userId, p.refresh), 'email, refresh', (
             'a@x.com',
             true,
           )),
@@ -291,7 +287,7 @@ void main() {
       return buildBloc();
     },
     act: (bloc) async {
-      bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+      bloc.add(const PublicProfileEvent.started(identifier: 'a@x.com'));
       await pumpEventQueue();
       bloc.add(const PublicProfileEvent.refreshRequested());
     },
@@ -349,18 +345,24 @@ void main() {
       build: () {
         final pages = <_Summaries>[
           (items: [_user('a@x.com'), _user('b@x.com')], hasMore: true),
-          (items: [_user('B@x.com'), _user('c@x.com')], hasMore: false),
+          (
+            items: [
+              _user('B@x.com', id: 'b@x.com'),
+              _user('c@x.com'),
+            ],
+            hasMore: false,
+          ),
         ];
         when(() => summaries(any())).thenAnswer((_) async => Result.success<_Summaries>(pages.removeAt(0)));
         return buildBloc();
       },
       act: (bloc) async {
         bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, allEmails: ['x'], page: 0),
+          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['x'], page: 0),
         );
         await pumpEventQueue();
         bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, allEmails: ['x'], page: 1),
+          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['x'], page: 1),
         );
       },
       verify: (bloc) {
@@ -376,7 +378,7 @@ void main() {
       'a page after the last one is not requested',
       build: buildBloc,
       act: (bloc) => bloc.add(
-        const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.following, allEmails: ['x'], page: 1),
+        const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.following, userIds: ['x'], page: 1),
       ),
       expect: () => <PublicProfileState>[],
       verify: (_) => verifyNever(() => summaries(any())),
@@ -394,14 +396,14 @@ void main() {
           const PublicProfileEvent.relationSearchRequested(
             kind: UserRelationKind.following,
             query: 'ke',
-            allEmails: ['x'],
+            userIds: ['x'],
           ),
         )
         ..add(
           const PublicProfileEvent.relationSearchRequested(
             kind: UserRelationKind.following,
             query: 'kev',
-            allEmails: ['x'],
+            userIds: ['x'],
           ),
         );
       await Future<void>.delayed(Duration.zero);
@@ -429,7 +431,7 @@ void main() {
           const PublicProfileEvent.relationSearchRequested(
             kind: UserRelationKind.followers,
             query: 'ke',
-            allEmails: ['x'],
+            userIds: ['x'],
           ),
         );
         await Future<void>.delayed(Duration.zero);
@@ -469,38 +471,33 @@ void main() {
         when(() => unfollow(any())).thenAnswer((_) => last.future);
         when(
           () => summaries(any()),
-        ).thenAnswer((_) async => Result.success<_Summaries>((items: [_user('a@x.com')], hasMore: false)));
+        ).thenAnswer((_) async => Result.success<_Summaries>((items: [_user('A@x.com', id: 'a-id')], hasMore: false)));
         final bloc = buildBloc();
         addTearDown(bloc.close);
         bloc.add(
-          const PublicProfileEvent.relationPageRequested(
-            kind: UserRelationKind.followers,
-            allEmails: ['a@x.com'],
-            page: 0,
-          ),
+          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['a-id'], page: 0),
         );
         await pumpEventQueue();
         bloc.add(followEvent);
         await pumpEventQueue();
         bloc.add(unfollowEvent);
         await pumpEventQueue();
-        expect(bloc.state.followOverrides['a@x.com'], isFalse);
+        expect(bloc.state.followOverrides['a-id'], isFalse);
         verifyNever(() => unfollow(any()));
         first.complete(failFirst ? Result.error<void>(const ServerFailure('first')) : Result.success<void>(null));
         await pumpEventQueue();
         verify(() => unfollow(any())).called(1);
-        expect(bloc.state.followOverrides['a@x.com'], isFalse);
+        expect(bloc.state.followOverrides['a-id'], isFalse);
         expect(bloc.state.followOutcome, isNull);
         last.complete(failLast ? Result.error<void>(const ServerFailure('last')) : Result.success<void>(null));
         await pumpEventQueue();
         final bool expectedFollow = failLast && !failFirst;
-        expect(app_state.prismUser.following.contains('A@x.com'), expectedFollow);
-        expect(bloc.state.followOverrides['a@x.com'] ?? false, expectedFollow);
+        expect(app_state.prismUser.following, isEmpty);
+        expect(bloc.state.followOverrides['a-id'] ?? false, expectedFollow);
         expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
         expect(bloc.state.followOutcome?.follow, isFalse);
         expect(bloc.state.followOutcome?.success, !failLast);
         expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), expectedFollow);
-        expect(messaging.subscriptions.contains('A_posts_loc_v1'), expectedFollow);
       });
     }
   }
@@ -539,16 +536,13 @@ void main() {
         when(() => unfollow(any())).thenAnswer((_) => first.future);
         when(() => follow(any())).thenAnswer((_) => last.future);
         when(() => summaries(any())).thenAnswer(
-          (_) async => Result.success<_Summaries>((items: [_user('a@x.com', followed: true)], hasMore: false)),
+          (_) async =>
+              Result.success<_Summaries>((items: [_user('A@x.com', id: 'a-id', followed: true)], hasMore: false)),
         );
         final bloc = buildBloc();
         addTearDown(bloc.close);
         bloc.add(
-          const PublicProfileEvent.relationPageRequested(
-            kind: UserRelationKind.followers,
-            allEmails: ['a@x.com'],
-            page: 0,
-          ),
+          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['a-id'], page: 0),
         );
         await pumpEventQueue();
         bloc.add(unfollowEvent);
@@ -558,13 +552,13 @@ void main() {
         verifyNever(() => follow(any()));
         first.complete(failFirst ? Result.error<void>(const ServerFailure('first')) : Result.success<void>(null));
         await pumpEventQueue();
-        expect(bloc.state.followOverrides['a@x.com'], isTrue);
+        expect(bloc.state.followOverrides['a-id'], isTrue);
         expect(bloc.state.followOutcome, isNull);
         last.complete(failLast ? Result.error<void>(const ServerFailure('last')) : Result.success<void>(null));
         await pumpEventQueue();
         final bool expectedFollow = !failLast || failFirst;
-        expect(app_state.prismUser.following.contains('A@x.com'), expectedFollow);
-        expect(bloc.state.followOverrides['a@x.com'] ?? expectedFollow, expectedFollow);
+        expect(app_state.prismUser.following, ['A@x.com']);
+        expect(bloc.state.followOverrides['a-id'] ?? expectedFollow, expectedFollow);
         expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
         expect(bloc.state.followOutcome?.follow, isTrue);
         expect(bloc.state.followOutcome?.success, !failLast);
@@ -653,7 +647,7 @@ void main() {
     verify(() => unfollow(any())).called(1);
     expect(messaging.subscriptions, isEmpty);
     expect(app_state.prismUser.following, isEmpty);
-    expect(bloc.state.followOverrides['a@x.com'], isFalse);
+    expect(bloc.state.followOverrides['a-id'], isFalse);
     expect(bloc.state.followOutcome?.follow, isFalse);
   });
 
@@ -668,10 +662,10 @@ void main() {
         final bloc = buildBloc();
         bloc.add(followEvent);
         await messaging.subscribeStarted!.future;
-        // Both branches dispatch concurrently; drain their platform-channel delivery while held.
+        // Drain the platform-channel delivery while held.
         await pumpEventQueue();
         final dispatched = List<(bool, String)>.of(messaging.calls);
-        expect(dispatched, unorderedEquals(<(bool, String)>[(true, 'A_posts_loc_v1'), (true, 'posts_a-id_loc_v1')]));
+        expect(dispatched, <(bool, String)>[(true, 'posts_a-id_loc_v1')]);
         Future<void>? closing;
         if (closeInstead) {
           closing = bloc.close();
@@ -692,39 +686,20 @@ void main() {
         expect(bloc.state.followOutcome, isNull);
       },
     );
-
-    test('invalidation during session persistence suppresses topic/outcome; close=$closeInstead', () async {
-      final session = _MockSession();
-      var current = profileUser(id: 'me')..email = 'me@x.com';
-      when(() => session.currentUser).thenAnswer((_) => current);
-      final persisted = Completer<Result<SessionEntity>>();
-      when(() => session.replaceCurrentUser(any())).thenAnswer((_) => persisted.future);
-      getIt.registerSingleton<SessionRepository>(session);
-      when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
-      final bloc = buildBloc();
-      bloc.add(followEvent);
-      await pumpEventQueue();
-      expect(current.following, ['A@x.com']);
-      expect(messaging.calls, isEmpty);
-      Future<void>? closing;
-      if (closeInstead) {
-        closing = bloc.close();
-      } else {
-        current = profileUser(id: 'other');
-        CoinsService.instance.resetSession();
-      }
-      persisted.complete(Result.success(SessionEntity.guest));
-      await pumpEventQueue();
-      if (closing != null) {
-        await closing;
-      } else {
-        await bloc.close();
-        expect(current.following, isEmpty);
-      }
-      expect(messaging.calls, isEmpty);
-      expect(bloc.state.followOutcome, isNull);
-    });
   }
+
+  test('follow does not mutate legacy session email arrays', () async {
+    final current = profileUser(id: 'me')..email = 'me@x.com';
+    current.following = <String>['legacy@example.com'];
+    app_state.prismUser = current;
+    when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+    final bloc = buildBloc();
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    expect(current.following, ['legacy@example.com']);
+    expect(bloc.state.followOutcome?.success, isTrue);
+    await bloc.close();
+  });
 
   test('different targets do not block one another', () async {
     final first = Completer<Result<void>>();
@@ -746,25 +721,27 @@ void main() {
       ),
     );
     await pumpEventQueue();
-    expect(app_state.prismUser.following, ['b@x.com']);
+    expect(app_state.prismUser.following, isEmpty);
     first.complete(Result.success<void>(null));
     await pumpEventQueue();
-    expect(app_state.prismUser.following, ['b@x.com', 'A@x.com']);
+    expect(app_state.prismUser.following, isEmpty);
     expect(bloc.state.followOutcome?.id, 2);
   });
 
   blocTest<PublicProfileBloc, PublicProfileState>(
-    'follow flips the button first, then reports success and records it on the session',
+    'follow flips the UID row first, then reports success without mutating the legacy session array',
     setUp: () => app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com',
     build: () {
       when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
       return buildBloc();
     },
-    seed: () => loading.copyWith(followers: loading.followers.copyWith(summaries: [_user('a@x.com')])),
+    seed: () => loading.copyWith(
+      followers: loading.followers.copyWith(summaries: [_user('A@x.com', id: 'a-id')]),
+    ),
     act: (bloc) => bloc.add(followEvent),
     expect: () => <Matcher>[
       isA<PublicProfileState>()
-          .having((s) => s.followOverrides, 'overrides', <String, bool>{'a@x.com': true})
+          .having((s) => s.followOverrides, 'overrides', <String, bool>{'a-id': true})
           .having((s) => s.followers.summaries.single.isFollowedByCurrentUser, 'row', isTrue)
           .having((s) => s.followOutcome, 'outcome', isNull),
       isA<PublicProfileState>().having(
@@ -774,7 +751,7 @@ void main() {
       ),
     ],
     verify: (_) {
-      expect(app_state.prismUser.following, contains('A@x.com'));
+      expect(app_state.prismUser.following, isEmpty);
       verify(
         () => follow(
           any(
@@ -786,7 +763,7 @@ void main() {
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
-    'unfollow removes the creator from the session whatever the email case',
+    'unfollow updates the UID relation row without mutating the legacy session array',
     setUp: () => app_state.prismUser = profileUser(id: 'me')
       ..email = 'me@x.com'
       ..following = <String>['a@X.com', 'b@x.com'],
@@ -804,7 +781,7 @@ void main() {
       ),
     ),
     verify: (bloc) {
-      expect(app_state.prismUser.following, <String>['b@x.com']);
+      expect(app_state.prismUser.following, <String>['a@X.com', 'b@x.com']);
       expect(bloc.state.followOutcome?.success, isTrue);
     },
   );
@@ -816,7 +793,9 @@ void main() {
       when(() => follow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
       return buildBloc();
     },
-    seed: () => loading.copyWith(followers: loading.followers.copyWith(summaries: [_user('a@x.com')])),
+    seed: () => loading.copyWith(
+      followers: loading.followers.copyWith(summaries: [_user('A@x.com', id: 'a-id')]),
+    ),
     act: (bloc) => bloc.add(followEvent),
     expect: () => <Matcher>[
       isA<PublicProfileState>().having((s) => s.followers.summaries.single.isFollowedByCurrentUser, 'row', isTrue),
@@ -830,6 +809,49 @@ void main() {
       expect(app_state.prismUser.following, isEmpty);
       verifyNever(() => unfollow(any()));
     },
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed unfollow restores an initially-followed UID relation row',
+    build: () {
+      when(() => unfollow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
+      return buildBloc();
+    },
+    seed: () => loading.copyWith(
+      profileId: 'profileUid',
+      following: loading.following.copyWith(
+        summaries: <UserSummaryEntity>[
+          const UserSummaryEntity(
+            id: 'targetUid',
+            name: 'Target',
+            email: '',
+            username: 'target',
+            profilePhoto: '',
+            isFollowedByCurrentUser: true,
+          ),
+        ],
+      ),
+    ),
+    act: (bloc) => bloc.add(
+      const PublicProfileEvent.followChangeRequested(
+        follow: false,
+        currentUserId: 'me',
+        currentUserEmail: 'me@x.com',
+        targetUserId: 'targetUid',
+        targetUserEmail: '',
+      ),
+    ),
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having(
+        (state) => state.following.summaries.single.isFollowedByCurrentUser,
+        'row',
+        false,
+      ),
+      isA<PublicProfileState>()
+          .having((state) => state.following.summaries.single.isFollowedByCurrentUser, 'row', true)
+          .having((state) => state.followOverrides, 'overrides', isEmpty)
+          .having((state) => state.followOutcome?.success, 'success', false),
+    ],
   );
 
   group('follow_result analytics', () {
@@ -878,10 +900,16 @@ void main() {
     });
   });
 
-  test('withFollowState flips one user, matching the email in any case, in the list and its search results', () {
-    final list = RelationList(summaries: [_user('a@x.com'), _user('b@x.com')], searchResults: [_user('A@x.com')]);
+  test('withFollowState flips one UID in the list and its search results', () {
+    final list = RelationList(
+      summaries: [
+        _user('a@x.com', id: 'a-id'),
+        _user('b@x.com', id: 'b-id'),
+      ],
+      searchResults: [_user('A@x.com', id: 'a-id')],
+    );
 
-    final next = list.withFollowState('a@X.com', isFollowed: true);
+    final next = list.withFollowState('a-id', isFollowed: true);
 
     expect(next.summaries.map((u) => u.isFollowedByCurrentUser), <bool>[true, false]);
     expect(next.searchResults!.single.isFollowedByCurrentUser, isTrue);

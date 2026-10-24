@@ -274,9 +274,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
         const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
       );
       unawaited(
-        setCreatorPostsTopics(
+        syncCreatorPostsTopicsForUser(
           widget.permissions.messaging,
-          app_state.prismUser.following,
+          userId: app_state.prismUser.id,
           subscribed: false,
           sourceTag: 'notification.settings.posts.disable_from_followers',
         ),
@@ -289,9 +289,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     setState(() => _posts = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value));
     unawaited(
-      setCreatorPostsTopics(
+      syncCreatorPostsTopicsForUser(
         widget.permissions.messaging,
-        app_state.prismUser.following,
+        userId: app_state.prismUser.id,
         subscribed: value,
         sourceTag: value ? 'notification.settings.posts.enable' : 'notification.settings.posts.disable',
       ),

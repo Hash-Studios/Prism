@@ -2,6 +2,8 @@ class FirebaseCollections {
   const FirebaseCollections._();
 
   static const String usersV2 = 'usersv2';
+  static const String profiles = 'profiles';
+  static const String usernames = 'usernames';
   static const String walls = 'walls';
   static const String contentReports = 'contentReports';
   static const String rejectedWalls = 'rejectedWalls';
@@ -21,4 +23,8 @@ class FirebaseCollections {
 
   /// `usersv2/{uid}/private`, the owner-only subcollection that holds the `economy` doc.
   static String userPrivate(String uid) => '$usersV2/$uid/private';
+
+  static String profileFollowing(String uid) => '$profiles/$uid/following';
+
+  static String profileFollowers(String uid) => '$profiles/$uid/followers';
 }
