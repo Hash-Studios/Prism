@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "source": {
+    "path": "/private/tmp/prism-revision-evidence/ios-fixed-cold.mp4",
+    "sha256": "098313de2a7b6eb055764b98965f09759d21ed72ca61f1c85d1d3380b4f5f224",
+    "bytes": 3206819,
+    "codec": "h264",
+    "durationMs": 2461.667,
+    "width": 1206,
+    "height": 2622,
+    "rotationDegrees": 0,
+    "displayMatrix": null,
+    "displayWidth": 1206,
+    "displayHeight": 2622,
+    "timeBase": "1/600",
+    "firstPts": 0
+  },
+  "versions": {
+    "tool": "design-compare-mcp/0.12.0",
+    "node": "v26.12.1",
+    "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version 9.0.2 Copyright (c) 2007-2026 the FFmpeg developers"
+  },
+  "window": {
+    "startMs": 1200,
+    "durationMs": 1000,
+    "fps": 30
+  },
+  "policy": "first decoded PTS at or after request; half-open window; unique source frames; autorotate; square pixels not rescaled",
+  "sampling": "sparse",
+  "frames": [
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_000.png",
+      "actualMs": 1473.3333333333333,
+      "pts": 884
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_001.png",
+      "actualMs": 1556.6666666666667,
+      "pts": 934
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_002.png",
+      "actualMs": 1593.3333333333333,
+      "pts": 956
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_003.png",
+      "actualMs": 1626.6666666666667,
+      "pts": 976
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_004.png",
+      "actualMs": 1641.6666666666667,
+      "pts": 985
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_005.png",
+      "actualMs": 1675,
+      "pts": 1005
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_006.png",
+      "actualMs": 1708.3333333333333,
+      "pts": 1025
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_007.png",
+      "actualMs": 1741.6666666666667,
+      "pts": 1045
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_008.png",
+      "actualMs": 1775,
+      "pts": 1065
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_009.png",
+      "actualMs": 1808.3333333333333,
+      "pts": 1085
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_010.png",
+      "actualMs": 1841.6666666666667,
+      "pts": 1105
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_011.png",
+      "actualMs": 1875,
+      "pts": 1125
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_012.png",
+      "actualMs": 1908.3333333333333,
+      "pts": 1145
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_013.png",
+      "actualMs": 1941.6666666666667,
+      "pts": 1165
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_014.png",
+      "actualMs": 1975,
+      "pts": 1185
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_015.png",
+      "actualMs": 2008.3333333333333,
+      "pts": 1205
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_016.png",
+      "actualMs": 2041.6666666666667,
+      "pts": 1225
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_017.png",
+      "actualMs": 2075,
+      "pts": 1245
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_018.png",
+      "actualMs": 2108.3333333333335,
+      "pts": 1265
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_019.png",
+      "actualMs": 2141.6666666666665,
+      "pts": 1285
+    },
+    {
+      "path": "/private/var/folders/nd/g6xnd2650d5444zpkr29ppgm0000gn/T/dcm-video-kCg0B8/frame_020.png",
+      "actualMs": 2175,
+      "pts": 1305
+    }
+  ],
+  "samples": [
+    {
+      "kind": "selected",
+      "requestedMs": 1200,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1233.3333333333333,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1266.6666666666667,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1300,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1333.3333333333333,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1366.6666666666667,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1400,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1433.3333333333333,
+      "frameIndex": 0
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1466.6666666666667,
+      "frameIndex": 0
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1500,
+      "frameIndex": 1
+    },
+    {
+      "kind": "shared",
+      "requestedMs": 1533.3333333333333,
+      "frameIndex": 1
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1566.6666666666667,
+      "frameIndex": 2
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1600,
+      "frameIndex": 3
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1633.3333333333333,
+      "frameIndex": 4
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1666.6666666666667,
+      "frameIndex": 5
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1700,
+      "frameIndex": 6
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1733.3333333333335,
+      "frameIndex": 7
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1766.6666666666665,
+      "frameIndex": 8
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1800,
+      "frameIndex": 9
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1833.3333333333335,
+      "frameIndex": 10
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1866.6666666666665,
+      "frameIndex": 11
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1900,
+      "frameIndex": 12
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1933.3333333333335,
+      "frameIndex": 13
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 1966.6666666666665,
+      "frameIndex": 14
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2000,
+      "frameIndex": 15
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2033.3333333333335,
+      "frameIndex": 16
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2066.6666666666665,
+      "frameIndex": 17
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2100,
+      "frameIndex": 18
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2133.3333333333335,
+      "frameIndex": 19
+    },
+    {
+      "kind": "selected",
+      "requestedMs": 2166.6666666666665,
+      "frameIndex": 20
+    }
+  ]
+}
