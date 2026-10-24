@@ -11,6 +11,15 @@ export function isActiveContentOwner(
   return user.exists && user.data()?.deleted !== true && barrier.data()?.closed !== true;
 }
 
+/**
+ * Legacy creators whose usersv2 doc predates Firebase Auth have no Auth user. An admin maps them in
+ * legacyCreatorUids/{lowercase email} = {uid}. No client rule matches that collection, so only the Admin SDK reads it.
+ */
+async function legacyCreatorUid(email: string): Promise<string | null> {
+  const uid = (await db.collection("legacyCreatorUids").doc(email.toLowerCase()).get()).data()?.uid;
+  return typeof uid === "string" && uid ? uid : null;
+}
+
 /** Auth-verified UID for an email, or null. Never use usersv2.email for ownership. */
 export async function verifiedUidForEmail(email: string): Promise<string | null> {
   // Prism Studio posts as a Firestore-only account; it has no Auth user to look up.
@@ -19,7 +28,7 @@ export async function verifiedUidForEmail(email: string): Promise<string | null>
     const identity = await admin.auth().getUserByEmail(email);
     return identity.emailVerified ? identity.uid : null;
   } catch (err) {
-    if (err instanceof Error && "code" in err && err.code === "auth/user-not-found") return null;
+    if (err instanceof Error && "code" in err && err.code === "auth/user-not-found") return legacyCreatorUid(email);
     throw err;
   }
 }

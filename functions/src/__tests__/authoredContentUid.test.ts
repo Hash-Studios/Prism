@@ -81,3 +81,21 @@ test("maps Prism Studio walls to the Studio profile, which has no Auth user", as
   assert.equal(await syncAuthoredContentUid("walls", "studio", "studio@prismwalls.com"), "assigned");
   assert.equal(store.get("walls/studio")?.creatorUid, "prism-studio");
 });
+
+test("maps an admin-listed legacy creator with no Auth user, and ignores usersv2.email", async (t) => {
+  const store = installFakeDb(t, {
+    "walls/legacy": {email: "Legacy@Example.com"},
+    "walls/forged": {email: "forged@example.com"},
+    "legacyCreatorUids/legacy@example.com": {uid: "legacy-doc"},
+    "usersv2/legacy-doc": {email: "Legacy@Example.com"},
+    "usersv2/attacker": {email: "forged@example.com"},
+  });
+  t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw Object.assign(new Error("not found"), {code: "auth/user-not-found"});
+  });
+
+  assert.equal(await syncAuthoredContentUid("walls", "legacy", "Legacy@Example.com"), "assigned");
+  assert.equal(store.get("walls/legacy")?.creatorUid, "legacy-doc");
+  assert.equal(await syncAuthoredContentUid("walls", "forged", "forged@example.com"), "skipped");
+  assert.equal(store.get("walls/forged")?.creatorUid, undefined);
+});
