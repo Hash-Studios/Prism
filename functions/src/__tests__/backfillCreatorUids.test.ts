@@ -54,10 +54,15 @@ test("apply reconciles verified owners and removes stale UIDs for missing, delet
 });
 
 test("argument parsing rejects unknown and duplicate flags", () => {
-  assert.deepEqual(parseArgs([]), {help: false, apply: false});
-  assert.deepEqual(parseArgs(["--apply"]), {help: false, apply: true});
-  assert.deepEqual(parseArgs(["--help"]), {help: true, apply: false});
+  assert.deepEqual(parseArgs([]), {help: false, apply: false, concurrency: 1});
+  assert.deepEqual(parseArgs(["--apply"]), {help: false, apply: true, concurrency: 1});
+  assert.deepEqual(parseArgs(["--help"]), {help: true, apply: false, concurrency: 1});
   assert.throws(() => parseArgs(["--apply", "--apply"]));
   assert.throws(() => parseArgs(["--other"]));
   assert.throws(() => parseArgs(["--help", "--apply"]));
+  assert.equal(parseArgs(["--apply", "--concurrency=8"]).concurrency, 8);
+  for (const bad of ["--concurrency", "--concurrency=0", "--concurrency=51", "--concurrency=x", "--concurrencyx=2"]) {
+    assert.throws(() => parseArgs(["--apply", bad]), bad);
+  }
+  assert.throws(() => parseArgs(["--concurrency=2", "--concurrency=3"]));
 });
