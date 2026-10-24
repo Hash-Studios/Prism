@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.10.0
+- Wallpaper pages now flow into more wallpapers like the one you opened
+- Press and hold a wallpaper, then drag to favourite it, share it or see less like it
+- See likes and views under every wallpaper, and favourite it without opening it
+- Sharper previews when you open a wallpaper
+- Personal notifications now go only to the device you are signed in on
+- Share links and Google sign-in errors work more reliably
+- Security and stability fixes
+
 ### v3.9.0
 - Unlocked Weekly Drop wallpapers open and save again
 - Your profile name and photo follow your Google account, and a name or photo you set in Prism stays
