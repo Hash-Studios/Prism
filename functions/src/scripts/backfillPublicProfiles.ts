@@ -8,14 +8,14 @@ const PAGE_SIZE = 200;
 
 export type ProfileBackfillCounts = {users: number; profiles: number; edges: number; created: number; unresolved: number; refused: number};
 
-export const USAGE = `Usage: node lib/scripts/backfillPublicProfiles.js [--apply] [--concurrency=N]
+export const USAGE = `Usage: node lib/scripts/backfillPublicProfiles.js [--apply] [--concurrency=N] [--edges-only]
 
 Projects the allowlisted usersv2 fields to profiles/{uid}, then converts the legacy followers/following
 email arrays to UID edges with notify=false. Safe to re-run. Dry-run is the default.
 Credentials come from Application Default Credentials.`;
 
 export async function backfillPublicProfiles(
-  {apply, concurrency = 1}: {apply: boolean; concurrency?: number},
+  {apply, concurrency = 1, edgesOnly = false}: {apply: boolean; concurrency?: number; edgesOnly?: boolean},
   log: (line: string) => void = console.log,
 ): Promise<ProfileBackfillCounts> {
   const counts: ProfileBackfillCounts = {users: 0, profiles: 0, edges: 0, created: 0, unresolved: 0, refused: 0};
@@ -36,42 +36,62 @@ export async function backfillPublicProfiles(
     cursor = page.docs[page.docs.length - 1];
   }
 
-  // Profiles first, so every edge target has one.
+  // Profiles first, so every edge target has one. A re-run after a completed profile pass can skip it.
   await runChunked(users, concurrency, async (user) => {
     counts.users += 1;
-    if (apply) await syncPublicProfile(user.id);
+    if (apply && !edgesOnly) await syncPublicProfile(user.id);
     counts.profiles += 1;
   });
 
-  // Concurrent edges can contend on a popular profile's counts. A failed edge gets one more try alone below.
-  const failed: Array<{followerUid: string; targetUid: string}> = [];
-  await runChunked(users, concurrency, async (user) => {
+  const entries: Array<{userId: string; followerUid: string; targetUid: string; email: string}> = [];
+  for (const user of users) {
     const data = user.data();
-    const pairs: Array<[string, string, string]> = [];
-    for (const email of Array.isArray(data.following) ? data.following : []) pairs.push([user.id, "", str(email)]);
-    for (const email of Array.isArray(data.followers) ? data.followers : []) pairs.push(["", user.id, str(email)]);
-    for (const [followerUid, targetUid, email] of pairs) {
-      const other = email ? await lookup(email) : null;
-      if (!other || other === user.id) {
-        counts.unresolved += 1;
-        continue;
-      }
-      const edge = {followerUid: followerUid || other, targetUid: targetUid || other};
-      counts.edges += 1;
-      if (!apply) continue;
+    for (const email of Array.isArray(data.following) ? data.following : []) {
+      entries.push({userId: user.id, followerUid: user.id, targetUid: "", email: str(email)});
+    }
+    for (const email of Array.isArray(data.followers) ? data.followers : []) {
+      entries.push({userId: user.id, followerUid: "", targetUid: user.id, email: str(email)});
+    }
+  }
+  const emails = [...new Set(entries.map((entry) => entry.email).filter(Boolean))];
+  await runChunked(emails, concurrency, async (email) => void await lookup(email));
+
+  // Each follow usually appears twice (A.following and B.followers), so apply each edge once.
+  const edges = new Map<string, {followerUid: string; targetUid: string}>();
+  for (const entry of entries) {
+    const other = entry.email ? await lookup(entry.email) : null;
+    if (!other || other === entry.userId) {
+      counts.unresolved += 1;
+      continue;
+    }
+    const edge = {followerUid: entry.followerUid || other, targetUid: entry.targetUid || other};
+    counts.edges += 1;
+    edges.set(`${edge.followerUid}/${edge.targetUid}`, edge);
+  }
+
+  if (apply) {
+    // Shuffled so one chunk rarely holds many edges into the same popular profile, which would contend on its
+    // counts. A failed edge gets one more try alone below.
+    const queue = [...edges.values()];
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [queue[i], queue[j]] = [queue[j], queue[i]];
+    }
+    const failed: Array<{followerUid: string; targetUid: string}> = [];
+    await runChunked(queue, concurrency, async (edge) => {
       try {
         if (await applyFollowEdge({...edge, follow: true, notify: false}) === "created") counts.created += 1;
       } catch {
         failed.push(edge);
       }
-    }
-  });
-  for (const edge of failed) {
-    try {
-      if (await applyFollowEdge({...edge, follow: true, notify: false}) === "created") counts.created += 1;
-    } catch (err) {
-      counts.refused += 1;
-      log(`${edge.followerUid}->${edge.targetUid} refused: ${(err as Error).message}`);
+    });
+    for (const edge of failed) {
+      try {
+        if (await applyFollowEdge({...edge, follow: true, notify: false}) === "created") counts.created += 1;
+      } catch (err) {
+        counts.refused += 1;
+        log(`${edge.followerUid}->${edge.targetUid} refused: ${(err as Error).message}`);
+      }
     }
   }
   log(`done ${JSON.stringify(counts)} applied=${apply}`);
@@ -80,7 +100,7 @@ export async function backfillPublicProfiles(
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
-  const unknown = argv.filter((arg) => arg !== "--apply" && !arg.startsWith("--concurrency"));
+  const unknown = argv.filter((arg) => arg !== "--apply" && arg !== "--edges-only" && !arg.startsWith("--concurrency"));
   let concurrency = 1;
   try {
     concurrency = parseConcurrency(argv);
@@ -92,7 +112,7 @@ if (require.main === module) {
     process.exitCode = 2;
   } else {
     if (!admin.apps.length) admin.initializeApp();
-    backfillPublicProfiles({apply: argv.includes("--apply"), concurrency}).catch((err) => {
+    backfillPublicProfiles({apply: argv.includes("--apply"), concurrency, edgesOnly: argv.includes("--edges-only")}).catch((err) => {
       console.error(err);
       process.exitCode = 1;
     });

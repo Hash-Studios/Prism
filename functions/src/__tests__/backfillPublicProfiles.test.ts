@@ -80,3 +80,21 @@ test("an edge that fails once, for example on contention, is retried before it c
   assert.equal(store.get("profiles/bob/followers/alice")?.notify, false);
   assert.equal(store.get("profiles/bob")?.followerCount, 1);
 });
+
+test("edges-only skips the profile pass and still applies each follow once", async (t) => {
+  const store = installFakeDb(t, {...seed(), "profiles/alice": {name: "Old"}, "profiles/bob": {name: "Bob"}});
+  mockAuth(t);
+  let lookups = 0;
+  const original = admin.auth().getUserByEmail;
+  t.mock.method(admin.auth(), "getUserByEmail", async (email: string) => {
+    lookups += 1;
+    return original.call(admin.auth(), email);
+  });
+
+  const counts = await backfillPublicProfiles({apply: true, concurrency: 5, edgesOnly: true}, () => undefined);
+
+  assert.deepEqual(counts, {users: 2, profiles: 2, edges: 2, created: 1, unresolved: 1, refused: 0});
+  assert.equal(store.get("profiles/alice")?.name, "Old");
+  assert.equal(store.get("profiles/bob")?.followerCount, 1);
+  assert.equal(lookups, 3);
+});
