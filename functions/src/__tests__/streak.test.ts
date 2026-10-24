@@ -24,9 +24,9 @@ mock.method(db, "doc", (path: string) =>
   path === ECONOMY_CONFIG_DOC ? {get: async () => ({exists: false, data: (): undefined => undefined})} : realDoc(path));
 beforeEach(() => resetEconomyCache());
 
-test("streak reminders use the session token, then the legacy field", () => {
+test("streak reminders only use the private session token", () => {
   assert.equal(pickFcmToken("session-token", "legacy-token"), "session-token");
-  assert.equal(pickFcmToken(undefined, "legacy-token"), "legacy-token");
+  assert.equal(pickFcmToken(undefined, "legacy-token"), "");
   assert.equal(pickFcmToken(undefined, undefined), "");
 });
 
@@ -386,7 +386,11 @@ test("a signed-out reminder retries after 15 minutes and sends after sign-in", a
   };
   t.mock.method(db, "doc", (path: string) => {
     if (String(path).endsWith("/private/session")) tokenReads += 1;
-    return {get: async () => ({data: () => ({fcmToken: "session-token"})})};
+    return {get: async () => ({data: () => ({
+      fcmToken: "session-token",
+      fcmTokenBindingVersion: 1,
+      fcmTokenBindingToken: "session-token",
+    })})};
   });
   const query = {
     where: () => query,
@@ -426,7 +430,7 @@ test("a signed-out reminder retries after 15 minutes and sends after sign-in", a
   assert.equal(nextAt.toDate().toISOString(), "2026-01-03T20:00:00.000Z");
 });
 
-test("a legacy streak user without loggedIn still gets a reminder", async (t) => {
+test("a legacy streak profile without loggedIn gets a bound private-session reminder", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T20:00:00Z")});
   const yesterday = "2026-01-01";
   const now = admin.firestore.Timestamp.now();
@@ -446,7 +450,11 @@ test("a legacy streak user without loggedIn still gets a reminder", async (t) =>
       update: async () => undefined,
     },
   };
-  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({fcmToken: "legacy-token"})})}));
+  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({
+    fcmToken: "session-token",
+    fcmTokenBindingVersion: 1,
+    fcmTokenBindingToken: "session-token",
+  })})}));
   const query = {
     where: () => query,
     orderBy: () => query,
@@ -463,7 +471,7 @@ test("a legacy streak user without loggedIn still gets a reminder", async (t) =>
 
   await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
   assert.equal(send.mock.callCount(), 1);
-  assert.equal("token" in sentMessages[0] ? sentMessages[0].token : undefined, "legacy-token");
+  assert.equal("token" in sentMessages[0] ? sentMessages[0].token : undefined, "session-token");
 });
 
 const DAY_MS = 86_400_000;
@@ -619,7 +627,11 @@ function mockReminderRun(t: test.TestContext, docs: ReminderDoc[], inbox: Array<
     add: async (data: unknown) => inbox.push({data}),
     doc: (id: string) => ({set: async (data: unknown) => inbox.push({id, data})}),
   });
-  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
+  t.mock.method(db, "doc", (path: string) => ({get: async () => ({data: () => ({
+    fcmToken: `token-${path.split("/")[1]}`,
+    fcmTokenBindingVersion: 1,
+    fcmTokenBindingToken: `token-${path.split("/")[1]}`,
+  })})}));
   mockTransactions(t, docs);
 }
 

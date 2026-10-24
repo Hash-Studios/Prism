@@ -43,6 +43,22 @@ class _BlockingWriteClient extends FakeFirestoreClient {
   }
 }
 
+class _BlockingClearClient extends FakeFirestoreClient {
+  final Completer<void> clearGate = Completer<void>();
+
+  @override
+  Future<void> setDoc(
+    String collection,
+    String id,
+    Map<String, dynamic> data, {
+    bool merge = false,
+    required String sourceTag,
+  }) async {
+    if (sourceTag == 'fcm_token.clear_on_signout') await clearGate.future;
+    await super.setDoc(collection, id, data, merge: merge, sourceTag: sourceTag);
+  }
+}
+
 void main() {
   test('the Followers switch is stored where onFollowCreated reads it', () async {
     final client = _MergeRecordingClient();
@@ -105,11 +121,157 @@ void main() {
     expect(client.writes, isEmpty);
   });
 
+  test('does not bind a token to a new user until failed sign-out invalidation succeeds', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenSynced', 'old-user|old-token');
+    await settings.set('fcmTokenRotationV2', 'old-user');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    String currentToken = 'old-token';
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging();
+    messaging.getTokenHandler = () async => currentToken;
+    messaging.deleteTokenHandler = () => Future<void>.error(StateError('offline'));
+    final FakeFirestoreClient client = FakeFirestoreClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await expectLater(service.invalidateTokenForSignOut(messaging: messaging), throwsStateError);
+    await service.syncToken(userId: 'new-user', messaging: messaging, client: client);
+    expect(client.writes, isEmpty);
+    expect(settings.get<bool>('fcmTokenInvalidationPendingV1'), isTrue);
+    expect(settings.get<String>('fcmTokenRotationV2'), 'old-user');
+
+    messaging
+      ..deleteTokenHandler = () async {}
+      ..getTokenHandler = () async => currentToken = 'new-token';
+    await service.syncToken(userId: 'new-user', messaging: messaging, client: client);
+    expect(client.writes.single.data?['fcmToken'], 'new-token');
+  });
+
+  test('rotates a token before first-version binding or a different account binding', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenSynced', 'old-user|same-token');
+    await settings.set('fcmTokenRotationV2', 'old-user');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..getTokenHandler = () async => 'new-token';
+    final FakeFirestoreClient client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(userId: 'new-user', messaging: messaging, client: client);
+
+    expect(messaging.deleteTokenCalls, 1);
+    expect(client.writes.single.data?['fcmToken'], 'new-token');
+    expect(settings.get<String>('fcmTokenRotationV2'), 'new-user');
+  });
+
+  test('a new binding version rotates before registering after upgrade', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..getTokenHandler = () async => 'fresh-token';
+    final FakeFirestoreClient client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(userId: 'existing-user', messaging: messaging, client: client);
+
+    expect(messaging.deleteTokenCalls, 1);
+    expect(client.writes.single.data?['fcmToken'], 'fresh-token');
+  });
+
+  test('a new account waits for a delayed sign-out token invalidation', () async {
+    final Completer<void> deleteGate = Completer<void>();
+    final Completer<void> getStarted = Completer<void>();
+    final Completer<String?> token = Completer<String?>();
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging();
+    messaging.deleteTokenHandler = () => deleteGate.future;
+    messaging.getTokenHandler = () {
+      getStarted.complete();
+      return token.future;
+    };
+    final FakeFirestoreClient client = FakeFirestoreClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await service.cancelAndWait();
+    final Future<void> invalidation = service.invalidateTokenForSignOut(messaging: messaging);
+    final Future<void> sync = service.syncToken(userId: 'new-user', messaging: messaging, client: client);
+    await Future<void>.delayed(Duration.zero);
+    expect(client.writes, isEmpty);
+    expect(getStarted.isCompleted, isFalse);
+
+    deleteGate.complete();
+    await invalidation;
+    await getStarted.future;
+    token.complete('new-token');
+    await sync;
+    expect(client.writes.single.data?['fcmToken'], 'new-token');
+  });
+
+  test('a token refresh after APNs readiness completes the deferred user binding', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final StreamController<String> refreshes = StreamController<String>();
+    String? currentToken;
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()
+      ..tokenRefreshes = refreshes.stream
+      ..getTokenHandler = () async => currentToken;
+    final FakeFirestoreClient client = FakeFirestoreClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await service.syncToken(userId: 'ios-user', messaging: messaging, client: client);
+    service.listenForTokenRefresh(userId: 'ios-user', messaging: messaging, client: client);
+    currentToken = 'apns-ready-token';
+    refreshes.add(currentToken);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await service.cancelAndWait();
+    await refreshes.close();
+
+    expect(messaging.deleteTokenCalls, 1);
+    expect(client.writes.single.data?['fcmToken'], 'apns-ready-token');
+    expect(settings.get<String>('fcmTokenRotationV2'), 'ios-user');
+  });
+
+  test('a new user cannot register until delayed sign-out storage cleanup finishes', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final Completer<void> getStarted = Completer<void>();
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()
+      ..getTokenHandler = () async {
+        getStarted.complete();
+        return 'new-token';
+      };
+    final _BlockingClearClient client = _BlockingClearClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await service.cancelAndWait();
+    final Future<void> signOutCleanup = service.invalidateTokenForSignOut(
+      userId: 'old-user',
+      messaging: messaging,
+      client: client,
+    );
+    final Future<void> sync = service.syncToken(userId: 'new-user', messaging: messaging, client: client);
+    await Future<void>.delayed(Duration.zero);
+    expect(getStarted.isCompleted, isFalse);
+
+    client.clearGate.complete();
+    await signOutCleanup;
+    await getStarted.future;
+    await sync;
+    expect(client.writes.where((write) => write.collection == 'usersv2/new-user/private'), hasLength(1));
+  });
+
   test('waits for an already-started token refresh write before returning', () async {
     final StreamController<String> refreshes = StreamController<String>();
-    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..tokenRefreshes = refreshes.stream;
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()
+      ..tokenRefreshes = refreshes.stream
+      ..getTokenHandler = () async => 'initial-token';
     final _BlockingWriteClient client = _BlockingWriteClient();
     final FcmTokenService service = FcmTokenService.instance;
+    await service.syncToken(userId: 'uid1', messaging: messaging, client: FakeFirestoreClient());
     service.listenForTokenRefresh(userId: 'uid1', messaging: messaging, client: client);
     refreshes.add('refreshed-token');
     await Future<void>.delayed(Duration.zero);
@@ -128,6 +290,8 @@ void main() {
       'fcmToken': 'refreshed-token',
       'notificationLocalizationVersion': 1,
       'notificationLocalizationToken': 'refreshed-token',
+      'fcmTokenBindingVersion': 1,
+      'fcmTokenBindingToken': 'refreshed-token',
     });
   });
 

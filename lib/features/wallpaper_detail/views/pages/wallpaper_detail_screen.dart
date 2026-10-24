@@ -44,6 +44,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -974,10 +975,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildPrismMetadata(BuildContext context, PrismWallpaper wallpaper, WallpaperDetailLoaded state) {
     final secondary = Theme.of(context).colorScheme.secondary;
-    final divider = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-      child: Container(height: 16, color: secondary.withValues(alpha: 0.4), width: 1),
-    );
     final TextStyle dimmedHeadline = Theme.of(
       context,
     ).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: _secondaryAlpha));
@@ -1004,31 +1001,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
                   ),
                 ),
-                if (state.views != null) ...[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      divider,
-                      Flexible(
-                        child: Text(switch (int.tryParse(state.views!)) {
-                          final int views => context.l10n.wallpaperViewCount(views),
-                          _ => context.l10n.wallpaperViewCountUnavailable,
-                        }, style: dimmedHeadline),
-                      ),
-                    ],
-                  ),
-                ],
                 if (state.setCount case final int sets when sets >= _minSetCountShown) ...[
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (state.views != null) divider else const SizedBox(width: 6),
+                      const SizedBox(width: 6),
                       Flexible(child: Text(context.l10n.wallpaperSetCount(sets), style: dimmedHeadline)),
                     ],
                   ),
                 ],
               ],
             ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: PrismFavouriteCount(
+            id: wallpaper.id,
+            showFavourites: false,
+            views: switch (int.tryParse(state.views ?? '')) {
+              final int count when count >= 0 => count,
+              _ => null,
+            },
           ),
         ),
         if (collections != null && collections.isNotEmpty) ...[
@@ -1065,7 +1059,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return _metadataShell(
       left: [
         _buildInfoTitle(context, wallpaper.id.toUpperCase()),
-        if (views != null) ...[const SizedBox(height: 4), _buildInfoRow(context, JamIcons.eye, views.toString())],
+        WallpaperStatsRow(views: views),
         if (sizeBytes != null) ...[
           const SizedBox(height: 4),
           _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),

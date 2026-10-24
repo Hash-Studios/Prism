@@ -29,7 +29,7 @@ import {db, REGION, str} from "./common";
  *   modifier = "all"       → topic: "recommendations"  (all users are subscribed)
  *   modifier = "premium"   → topic: "premium"
  *   modifier = "free"      → topic: "free"
- *   modifier = {email}     → the user's uid topic and FCM token
+ *   modifier = {email}     → the user's bound private-session FCM token
  */
 export const onCampaignNotificationRequested = onDocumentCreated(
   {

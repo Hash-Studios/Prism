@@ -66,4 +66,23 @@ void main() {
 
     expect(dto.toJson()['depth'], <String, Object?>{'tier': 'auto'});
   });
+
+  test('a saved Wallhaven favourite restores its published favourite total on the core', () {
+    final mapped =
+        mapFavouriteWallDoc(
+              FavouriteWallDocDto.fromJson(<String, dynamic>{
+                'id': 'wallhaven-id',
+                'provider': 'Wallhaven',
+                'url': 'https://example.com/wallhaven.jpg',
+                'thumb': 'https://example.com/wallhaven-thumb.jpg',
+                'fav': '42',
+                'views': '1234',
+              }),
+              'wallhaven-id',
+            )
+            as WallhavenFavouriteWall;
+
+    expect(mapped.wallpaper.core.favourites, 42);
+    expect(mapped.wallpaper.views, 1234);
+  });
 }

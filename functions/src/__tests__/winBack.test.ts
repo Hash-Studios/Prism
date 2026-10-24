@@ -136,12 +136,12 @@ function makeUser(id: string, idleDays: number, extra: Partial<User> & Record<st
   return {...base, ...extra, id, coinState: extra.coinState ?? base.coinState};
 }
 
-function messageTopic(message: admin.messaging.Message): string | undefined {
-  return "topic" in message ? message.topic : undefined;
+function messageToken(message: admin.messaging.Message): string | undefined {
+  return "token" in message ? message.token : undefined;
 }
 
-function expectedLocalizedTopicTargets(legacyTopics: string[]): string[] {
-  return legacyTopics.flatMap((topic) => [topic, `${topic}_loc_v1`]).sort();
+function expectedTokens(tokens: string[]): string[] {
+  return [...tokens].sort();
 }
 
 async function runJob(users: User[], options: {
@@ -246,9 +246,13 @@ async function runJob(users: User[], options: {
       }
       const changedDedupe = options.dedupeChanges?.[uid];
       if (changedDedupe && current) state.set(uid, {...(state.get(uid) ?? current), winBack: changedDedupe});
+      const session = options.sessions?.[uid] ?? {};
+      const fcmToken = options.token ?? session.fcmToken ?? `session-${uid}`;
       return {data: () => ({
-        ...(options.token ? {fcmToken: options.token} : {}),
-        ...(options.sessions?.[uid] ?? {}),
+        fcmToken,
+        fcmTokenBindingVersion: 1,
+        fcmTokenBindingToken: fcmToken,
+        ...session,
       })};
     }}),
   });
@@ -279,29 +283,26 @@ async function runJob(users: User[], options: {
   }
 }
 
-test("job includes every exact inactivity boundary and excludes its N+2 boundary", async () => {
+test("job sends bound private-session tokens at each inactivity step and excludes its N+2 boundary", async () => {
   const users = WIN_BACK_STEPS.flatMap((step) => [
     makeUser(`exact-${step}`, step),
     makeUser(`missed-${step}`, step + 1.5),
     makeUser(`boundary-${step}`, step + 2),
   ]);
   const {sent} = await runJob(users);
-  assert.equal(sent.length, WIN_BACK_STEPS.length * 4);
-  const topics = new Set(sent.map(messageTopic));
+  assert.equal(sent.length, WIN_BACK_STEPS.length * 2);
+  const tokens = new Set(sent.map(messageToken));
   for (const step of WIN_BACK_STEPS) {
-    assert.ok(topics.has(`u_exact-${step}`));
-    assert.ok(topics.has(`u_exact-${step}_loc_v1`));
-    assert.ok(topics.has(`u_missed-${step}`));
-    assert.ok(topics.has(`u_missed-${step}_loc_v1`));
-    assert.ok(!topics.has(`u_boundary-${step}`));
+    assert.ok(tokens.has(`session-exact-${step}`));
+    assert.ok(tokens.has(`session-missed-${step}`));
+    assert.ok(!tokens.has(`session-boundary-${step}`));
   }
 });
 
 test("job sends the feed push on the recommendations channel", async () => {
   const {sent} = await runJob([makeUser("authoritative", 7.5, {uid: "wrong-uid"})]);
-  assert.equal(sent.length, 2);
-  assert.equal(messageTopic(sent[0]), "u_authoritative");
-  assert.equal(messageTopic(sent[1]), "u_authoritative_loc_v1");
+  assert.equal(sent.length, 1);
+  assert.equal(messageToken(sent[0]), "session-authoritative");
   assert.equal(sent[0].data?.route, "home");
   assert.equal(sent[0].data?.push_kind, "win_back");
   assert.equal(sent[0].data?.step, "7");
@@ -318,18 +319,18 @@ test("each step opens the screen its copy names", async () => {
     makeUser("month", 30.5),
     makeUser("two-months", 60.5),
   ], {wall: true});
-  const byTopic = new Map(sent.map((message) => [messageTopic(message), message]));
-  assert.equal(byTopic.get("u_week")?.data?.route, "home");
-  assert.equal(byTopic.get("u_fortnight")?.data?.route, "home");
-  assert.equal(byTopic.get("u_fortnight")?.notification?.title, "New walls are waiting");
-  assert.equal(byTopic.get("u_month")?.data?.route, "ai");
-  assert.equal(byTopic.get("u_month")?.data?.step, "30");
-  assert.equal(byTopic.get("u_month")?.notification?.title, "New AI styles to try");
-  assert.equal(byTopic.get("u_two-months")?.data?.route, "wall_of_the_day");
-  assert.equal(byTopic.get("u_two-months")?.data?.wall_id, "wall-1");
-  assert.equal(byTopic.get("u_two-months")?.data?.imageUrl, "https://image");
-  assert.equal(byTopic.get("u_two-months")?.notification?.title, "Prism misses you");
-  assert.equal(byTopic.get("u_week")?.data?.wall_id, undefined);
+  const byToken = new Map(sent.map((message) => [messageToken(message), message]));
+  assert.equal(byToken.get("session-week")?.data?.route, "home");
+  assert.equal(byToken.get("session-fortnight")?.data?.route, "home");
+  assert.equal(byToken.get("session-fortnight")?.notification?.title, "New walls are waiting");
+  assert.equal(byToken.get("session-month")?.data?.route, "ai");
+  assert.equal(byToken.get("session-month")?.data?.step, "30");
+  assert.equal(byToken.get("session-month")?.notification?.title, "New AI styles to try");
+  assert.equal(byToken.get("session-two-months")?.data?.route, "wall_of_the_day");
+  assert.equal(byToken.get("session-two-months")?.data?.wall_id, "wall-1");
+  assert.equal(byToken.get("session-two-months")?.data?.imageUrl, "https://image");
+  assert.equal(byToken.get("session-two-months")?.notification?.title, "Prism misses you");
+  assert.equal(byToken.get("session-week")?.data?.wall_id, undefined);
 });
 
 test("a user outside this slot's evening offset is not queried", async () => {
@@ -337,13 +338,13 @@ test("a user outside this slot's evening offset is not queried", async () => {
     makeUser("here", 7.5),
     makeUser("elsewhere", 7.5, {appOpenTimezoneOffsetMinutes: EVENING === 0 ? 15 : 0}),
   ]);
-  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_here"]));
+  assert.deepEqual(sent.map(messageToken).sort(), expectedTokens(["session-here"]));
 });
 
 test("a late run still uses its scheduled slot", async () => {
   const {sent} = await runJob([makeUser("late", 7.5)], {clock: NOW + 30 * MIN});
-  assert.equal(sent.length, 2);
-  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_late"]));
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent.map(messageToken).sort(), expectedTokens(["session-late"]));
 });
 
 test("activity that changes after the query is rechecked before sending", async () => {
@@ -372,12 +373,9 @@ test("a timezone offset that changes after the query is rechecked before sending
 
 test("job also pushes to the stored token with the same collapse key", async () => {
   const {sent} = await runJob([makeUser("tokened", 7.5)], {token: "tok-1"});
-  assert.equal(sent.length, 3);
-  assert.equal(messageTopic(sent[0]), "u_tokened");
-  assert.equal(messageTopic(sent[1]), "u_tokened_loc_v1");
-  assert.equal("token" in sent[2] ? sent[2].token : undefined, "tok-1");
-  assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
-  assert.equal(sent[1].android?.notification?.tag, sent[2].android?.notification?.tag);
+  assert.equal(sent.length, 1);
+  assert.equal(messageToken(sent[0]), "tok-1");
+  assert.equal(sent[0].android?.notification?.tag, "win_back_7");
 });
 
 test("fresh activity, day 3, deleted users and logged-out users are skipped", async () => {
@@ -392,19 +390,19 @@ test("fresh activity, day 3, deleted users and logged-out users are skipped", as
 
 test("completed sends dedupe reruns", async () => {
   const first = await runJob([makeUser("same", 7.5)]);
-  assert.equal(first.sent.length, 2);
+  assert.equal(first.sent.length, 1);
   const again = await runJob([...first.users.values()]);
   assert.equal(again.sent.length, 0);
 });
 
 test("failed FCM does not leave a completed stamp", async () => {
   const failed = await runJob([makeUser("retry", 7.5)], {failSend: true});
-  assert.equal(failed.sent.length, 2);
+  assert.equal(failed.sent.length, 1);
   const user = failed.users.get("retry");
   assert.ok(user);
   assert.equal(user.winBack?.step, undefined);
   const retry = await runJob([...failed.users.values()]);
-  assert.equal(retry.sent.length, 2);
+  assert.equal(retry.sent.length, 1);
 });
 
 test("varied timestamp pages with ties do not skip users after the 300-document boundary", async () => {
@@ -413,8 +411,8 @@ test("varied timestamp pages with ties do not skip users after the 300-document 
     7.2 + (i % 6) * 0.1,
   ));
   const {sent} = await runJob(users);
-  assert.equal(sent.length, 614);
-  assert.equal(new Set(sent.map((message) => JSON.stringify(message))).size, 614);
+  assert.equal(sent.length, 307);
+  assert.equal(new Set(sent.map(messageToken)).size, 307);
 });
 
 test("freshly missing or malformed last opens are skipped", async () => {
@@ -429,7 +427,7 @@ test("malformed completed dedupe timestamps do not crash or suppress an eligible
   const {sent} = await runJob([makeUser("bad-dedupe", 7.5, {
     winBack: {step: 60, openAt: {toMillis: "not-a-function"}},
   })]);
-  assert.equal(sent.length, 2);
+  assert.equal(sent.length, 1);
 });
 
 test("an old streak-claim stamp does not block a last-open sequence", async () => {
@@ -438,15 +436,15 @@ test("an old streak-claim stamp does not block a last-open sequence", async () =
     lastAppOpenAt: openAt,
     winBack: {step: 60, claimAt: openAt},
   })]);
-  assert.equal(sent.length, 2);
+  assert.equal(sent.length, 1);
 });
 
-test("the shared email-prefix topic is never used", async () => {
+test("the recipient document id selects the private token, not an email prefix or profile uid", async () => {
   const {sent} = await runJob([
     makeUser("uid-only", 7.5, {email: "###@example.com"}),
     makeUser("doc-uid", 7.5, {uid: "wrong", email: "Alice@example.com"}),
   ]);
-  assert.deepEqual(sent.map(messageTopic).sort(), expectedLocalizedTopicTargets(["u_doc-uid", "u_uid-only"]));
+  assert.deepEqual(sent.map(messageToken).sort(), expectedTokens(["session-doc-uid", "session-uid-only"]));
 });
 
 test("day 60 carries the current wall and a shorter step writes no inbox doc", async () => {
@@ -484,9 +482,22 @@ test("a user who turned marketing pushes off gets no win-back push and no stamp"
     makeUser("unset", 7.5),
   ], {token: "tok-1", sessions: {muted: {marketingPushes: false}, on: {marketingPushes: true}}});
   assert.deepEqual(
-    sent.map(messageTopic).filter(Boolean).sort(),
-    expectedLocalizedTopicTargets(["u_on", "u_unset"]),
+    sent.map(messageToken).filter(Boolean).sort(),
+    expectedTokens(["tok-1", "tok-1"]),
   );
-  assert.equal(sent.length, 6);
+  assert.equal(sent.length, 2);
   assert.equal(users.get("muted")?.winBack, undefined);
+});
+
+test("empty and unbound private tokens are skipped without a completion stamp", async () => {
+  const {sent, users} = await runJob([
+    makeUser("empty", 7.5),
+    makeUser("unbound", 7.5),
+  ], {sessions: {
+    empty: {fcmToken: ""},
+    unbound: {fcmToken: "unbound-token", fcmTokenBindingToken: undefined},
+  }});
+  assert.equal(sent.length, 0);
+  assert.equal(users.get("empty")?.winBack, undefined);
+  assert.equal(users.get("unbound")?.winBack, undefined);
 });

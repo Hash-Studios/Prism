@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -78,6 +79,21 @@ FeedItemEntity _prism({
   ),
 );
 
+FeedItemEntity _wallhaven() => const FeedItemEntity.wallhaven(
+  id: 'wallhaven-1',
+  wallpaper: WallhavenWallpaper(
+    core: WallpaperCore(
+      id: 'wallhaven-1',
+      source: WallpaperSource.wallhaven,
+      fullUrl: 'https://img.test/full.jpg',
+      thumbnailUrl: 'https://img.test/thumb.jpg',
+      favourites: 24,
+    ),
+    views: 1234,
+    favorites: 24,
+  ),
+);
+
 Future<void> _waitForCachedImage(WidgetTester tester) async {
   final Stopwatch timeout = Stopwatch()..start();
   while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
@@ -89,7 +105,7 @@ Future<void> _waitForCachedImage(WidgetTester tester) async {
 }
 
 void main() {
-  setUpFavouriteCounts(counts: const {'PRISM-1': 7});
+  setUpFavouriteCounts(counts: const {'PRISM-1': PrismWallpaperStats(favourites: 7, views: 0)});
   late _MockWallpaperDetailBloc bloc;
   late OfflineAssetFixture offlineAssets;
 
@@ -108,7 +124,12 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pump(WidgetTester tester, WallpaperDetailState state, {FeedItemEntity? entity}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    WallpaperDetailState state, {
+    FeedItemEntity? entity,
+    WallpaperSource source = WallpaperSource.prism,
+  }) async {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
@@ -121,11 +142,7 @@ void main() {
 
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
-          child: WallpaperDetailScreen(
-            entity: entity,
-            wallId: entity == null ? 'prism-1' : null,
-            source: WallpaperSource.prism,
-          ),
+          child: WallpaperDetailScreen(entity: entity, wallId: entity == null ? 'prism-1' : null, source: source),
         ),
       ),
     );
@@ -159,9 +176,11 @@ void main() {
       expect(find.bySemanticsLabel('7 favourites'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r'^7$')), findsNothing);
       semantics.dispose();
+      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.text('0'), findsOneWidget);
     });
 
-    testWidgets('unknown views have neither an inline spinner nor a separator', (tester) async {
+    testWidgets('unknown views are omitted without an inline spinner or duplicate label', (tester) async {
       final entity = _prism(id: 'unknown');
       await pump(
         tester,
@@ -176,14 +195,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.byIcon(JamIcons.heart_f), findsNothing);
-      expect(
-        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
-        findsNothing,
-      );
+      expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
+      expect(find.textContaining('views'), findsNothing);
     });
 
-    testWidgets('resolved zero views still show the count and separator', (tester) async {
+    testWidgets('fresh detail views override cached zero and render without cached stats', (tester) async {
       final entity = _prism();
       await pump(
         tester,
@@ -191,24 +207,61 @@ void main() {
           recommendations: const RecommendationState.exhausted(),
           entity: entity,
           paletteLoading: false,
-          views: '0',
+          views: '1234',
         ),
         entity: entity,
       );
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.text('0 views'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
-        findsOneWidget,
-      );
+      expect(find.text('1.2K'), findsOneWidget);
+      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.text('0 views'), findsNothing);
     });
 
-    testWidgets('a narrow headline keeps the set count but no separator while views are unknown', (tester) async {
+    testWidgets('fresh views render when favourite stats are unavailable', (tester) async {
+      final entity = _prism(id: 'uncached');
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          views: '45',
+        ),
+        entity: entity,
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('45'), findsOneWidget);
+      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel('7 favourites'), findsNothing);
+    });
+
+    testWidgets('Wallhaven metadata keeps favourite and view totals paired', (tester) async {
+      final entity = _wallhaven();
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+        source: WallpaperSource.wallhaven,
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('24'), findsOneWidget);
+      expect(find.text('1.2K'), findsOneWidget);
+      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.textContaining('views'), findsNothing);
+    });
+
+    testWidgets('a narrow headline keeps the set count while views are unknown', (tester) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      final entity = _prism(title: 'A long wallpaper title that fills the headline');
+      final entity = _prism(id: 'uncached-narrow', title: 'A long wallpaper title that fills the headline');
       await pump(
         tester,
         WallpaperDetailLoaded(
@@ -223,10 +276,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Set 12 times'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate((widget) => widget is Container && widget.constraints?.maxWidth == 1),
-        findsNothing,
-      );
+      expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 

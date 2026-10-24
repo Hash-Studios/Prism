@@ -145,6 +145,9 @@ class _FakeMessaging extends Fake implements FirebaseMessaging {
 
   @override
   Future<void> unsubscribeFromTopic(String topic) async => _log.add('fcm.unsubscribe $topic');
+
+  @override
+  Future<void> deleteToken() async => _log.add('fcm.deleteToken');
 }
 
 class _ThrowingAnalytics extends FakeAppAnalytics {
@@ -387,11 +390,13 @@ void main() {
     for (final String call in <String>[
       'firestore.update usersv2/u1 {loggedIn: false}',
       'fcm.unsubscribe u_u1',
+      'fcm.unsubscribe u_u1_loc_v1',
       'fcm.unsubscribe user',
       'fcm.unsubscribe creator_posts',
     ]) {
       expect(_log.indexOf(call), allOf(isNonNegative, lessThan(signOutAt)), reason: call);
     }
+    expect(_log.indexOf('fcm.deleteToken'), allOf(isNonNegative, lessThan(signOutAt)));
     expect(app_state.prismUser.id, isEmpty);
   });
 

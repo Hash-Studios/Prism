@@ -498,6 +498,9 @@ function walls2(t: TestContext, wall: Doc) {
     "usersv2/studio": {email: IDENTITY.email, name: "Someone Else", profilePhoto: "https://p/other.png", premium: true},
     "config/adminNotifications": {emails: ["admin@example.com"]},
     "usersv2/adm1": {email: "admin@example.com"},
+    "usersv2/adm1/private/session": {
+      fcmToken: "admin-token", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "admin-token",
+    },
   });
   const send = t.mock.method(admin.messaging(), "send", async () => "id");
   return {store, send};
@@ -539,7 +542,7 @@ test("a user wall that only claims origin studio still gets the owner sync", asy
       void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Someone Else");
-  assert.equal(send.mock.callCount(), 2, "the spoofed Studio wall notifies both legacy and localized topics");
+  assert.equal(send.mock.callCount(), 1, "the spoofed Studio wall gets one generic private-session alert");
 });
 
 test("onWallSubmitted stops before owner sync or notification when the candidate read fails", async (t) => {

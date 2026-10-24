@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,15 +10,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'in_memory_local_store.dart';
 
-class _CountsCubit extends MockCubit<Map<String, int>> implements FavouriteCountsCubit {}
+class _CountsCubit extends MockCubit<Map<String, PrismWallpaperStats>> implements FavouriteCountsCubit {}
 
 class _FavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
 /// Mocks the public count boundary. Unknown counts stay unknown, rather than inventing zeroes.
-void setUpFavouriteCounts({Map<String, int> counts = const {}}) {
+void setUpFavouriteCounts({Map<String, PrismWallpaperStats> counts = const {}}) {
   setUp(() {
     final cubit = _CountsCubit();
-    whenListen(cubit, const Stream<Map<String, int>>.empty(), initialState: counts);
+    whenListen(cubit, const Stream<Map<String, PrismWallpaperStats>>.empty(), initialState: counts);
     getIt.registerSingleton<FavouriteCountsCubit>(cubit, dispose: (cubit) => cubit.close());
   });
   tearDown(() async {

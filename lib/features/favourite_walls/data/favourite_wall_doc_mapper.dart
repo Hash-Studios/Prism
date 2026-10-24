@@ -45,6 +45,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
             sizeBytes: int.tryParse(dto.size),
             category: dto.category.isEmpty ? null : dto.category,
             createdAt: dto.createdAt,
+            favourites: int.tryParse(dto.fav),
           ),
           views: int.tryParse(dto.views),
           favorites: int.tryParse(dto.fav),

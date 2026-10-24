@@ -408,22 +408,29 @@ test("personal topic lookup failure prevents FCM delivery", async (t) => {
 type Sent = {
   topic?: string;
   token?: string;
+  condition?: string;
+  imageUrl?: string;
   notification?: { title?: string; body?: string };
   data?: Record<string, string>;
   android?: {
+    collapseKey?: string;
     notification?: {
       tag?: string;
       titleLocKey?: string;
       bodyLocKey?: string;
+      imageUrl?: string;
     };
   };
+  apns?: { headers?: Record<string, string> };
 };
 
 function personalSetup(
   t: test.TestContext,
-  sessionToken?: string,
+  sessionToken?: unknown,
   nativeLocalization = false,
   localizationToken = sessionToken,
+  binding: {version?: number; token?: unknown} = {version: 1, token: sessionToken},
+  profileLoggedIn = true,
 ) {
   const inbox: Array<{ id?: string; data: Record<string, unknown> }> = [];
   const document = db.doc.bind(db);
@@ -438,6 +445,8 @@ function personalSetup(
       data: () => (sessionToken ?
         {
           fcmToken: sessionToken,
+          ...(binding.version !== undefined ? {fcmTokenBindingVersion: binding.version} : {}),
+          ...(binding.token !== undefined ? {fcmTokenBindingToken: binding.token} : {}),
           ...(nativeLocalization ?
             {
               notificationLocalizationVersion: 1,
@@ -447,7 +456,7 @@ function personalSetup(
         } :
         {}),
     }),
-  }) : document(path));
+  }) : path.startsWith("usersv2/") ? ({get: async () => ({data: () => ({loggedIn: profileLoggedIn})})}) : document(path));
   const sent: Sent[] = [];
   t.mock.method(admin.messaging(), "send", async (message: Sent) => {
     sent.push(message);
@@ -476,9 +485,15 @@ function scoreboardSetup(
   t.mock.method(db, "doc", (path: string) =>
     path.endsWith("/private/session") ?
       {
-        get: async () => ({data: () => ({fcmToken: "session-token"})}),
+        get: async () => ({data: () => ({
+          fcmToken: "session-token",
+          fcmTokenBindingVersion: 1,
+          fcmTokenBindingToken: "session-token",
+        })}),
       } :
-      {path, firestore: db},
+      path.startsWith("usersv2/") ?
+        {get: async () => ({data: () => ({loggedIn: true})})} :
+        {path, firestore: db},
   );
   t.mock.method(
     db,
@@ -548,7 +563,7 @@ function scoreboardSetup(
   return {day, documents, attempts, inboxWrites, sent};
 }
 
-test("a personal push goes to the uid topic and the session token under one collapse key", async (t) => {
+test("a personal push goes only to the private session token under one collapse key", async (t) => {
   const {inbox, sent} = personalSetup(t, "session-token");
   const ok = await sendToUser(personal, {
     uid: "u1",
@@ -559,16 +574,12 @@ test("a personal push goes to the uid topic and the session token under one coll
   assert.equal(inbox.length, 1);
   assert.deepEqual(
     sent.map((m) => m.topic ?? m.token),
-    ["u_u1", "u_u1_loc_v1", "session-token"],
+    ["session-token"],
   );
   assert.ok(sent[0].android?.notification?.tag?.startsWith("p_"));
-  assert.equal(
-    sent[0].android?.notification?.tag,
-    sent[1].android?.notification?.tag,
-  );
 });
 
-test("a personal uid-topic and token each count as an FCM attempt", async (t) => {
+test("a personal session-token push counts as one FCM attempt", async (t) => {
   const {day, documents, sent} = scoreboardSetup(t);
   await sendToUser(
     {...personal, data: {route: "wall"}, scoreKind: "post"},
@@ -580,7 +591,7 @@ test("a personal uid-topic and token each count as an FCM attempt", async (t) =>
   );
   assert.deepEqual(
     sent.map((message) => message.topic ?? message.token),
-    ["u_u1", "u_u1_loc_v1", "session-token"],
+    ["session-token"],
   );
   const totals = {
     sends: {} as Record<string, number>,
@@ -596,7 +607,100 @@ test("a personal uid-topic and token each count as an FCM attempt", async (t) =>
     }
   }
   assert.equal(documents.has(day), false);
-  assert.deepEqual(totals, {sends: {post: 3}, accepts: {post: 3}});
+  assert.deepEqual(totals, {sends: {post: 1}, accepts: {post: 1}});
+});
+
+test("sendNotification refuses UID topics even when called directly", async (t) => {
+  const sent = t.mock.method(admin.messaging(), "send", async () => "id");
+  const ok = await sendNotification({
+    ...personal,
+    fcmTarget: {topic: userIdToTopic("u1")},
+    pushOnly: true,
+  });
+  assert.equal(ok, false);
+  assert.equal(sent.mock.callCount(), 0);
+});
+
+test("sendNotification refuses condition targets that could include private UID topics", async (t) => {
+  const sent = t.mock.method(admin.messaging(), "send", async () => "id");
+  const ok = await sendNotification({
+    ...personal,
+    modifier: "all",
+    fcmTarget: {condition: "'u_private-user' in topics || 'recommendations' in topics"},
+    pushOnly: true,
+  });
+  assert.equal(ok, false);
+  assert.equal(sent.mock.callCount(), 0);
+});
+
+test("broadcast condition targets remain available when they do not include UID topics", async (t) => {
+  const sent = t.mock.method(admin.messaging(), "send", async () => "id");
+  const ok = await sendNotification({
+    ...personal,
+    modifier: "all",
+    fcmTarget: {condition: "'recommendations' in topics || 'premium' in topics"},
+    pushOnly: true,
+  });
+  assert.equal(ok, true);
+  assert.equal(sent.mock.callCount(), 1);
+  const message = sent.mock.calls[0]?.arguments[0];
+  assert.ok(message && "condition" in message);
+  assert.equal(message.condition, "'recommendations' in topics || 'premium' in topics");
+});
+
+test("sendToUser strips a runtime delivery target from an untyped payload", async (t) => {
+  const {inbox, sent} = personalSetup(t);
+  const injected = {...personal, fcmTarget: {topic: "recommendations"}};
+  await sendToUser(injected as unknown as typeof personal, {uid: "u1", email: "sam@example.com"});
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].topic, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+});
+
+test("moderation pushes expose only the report route and ID with generic copy", async (t) => {
+  const {sent} = personalSetup(t, "admin-session-token");
+  await sendToUser({
+    ...notificationCopyPayload({kind: "newContentReport", contentType: "wall", reason: "private reason", targetId: "secret-target"}),
+    data: {route: "wall", wall_id: "secret-target", report_id: "r1", reporter_uid: "secret-user", reason: "private reason"},
+    imageUrl: "https://example.com/private-thumbnail.jpg",
+    modifier: "admin@example.com",
+    channelId: "moderation",
+    scoreKind: "moderation",
+  }, {uid: "u1", email: "admin@example.com"});
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].data, {
+    route: "content_report",
+    report_id: "r1",
+    channel_id: "moderation",
+    push_kind: "moderation",
+  });
+  assert.deepEqual(sent[0].notification, {
+    title: "Content report needs review",
+    body: "A content report is waiting for review.",
+  });
+  assert.equal(sent[0].android?.notification?.imageUrl, undefined);
+});
+
+test("moderation without a report ID uses generic review copy and no content identifiers", async (t) => {
+  const {inbox, sent} = personalSetup(t, "admin-session-token");
+  await sendToUser({
+    ...personal,
+    data: {route: "wall", wall_id: "wall-secret"},
+    modifier: "admin@example.com",
+    scoreKind: "moderation",
+  }, {uid: "u1", email: "admin@example.com"});
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].data, {
+    route: "content_report",
+    channel_id: "c",
+    push_kind: "moderation",
+  });
+  assert.deepEqual(sent[0].notification, {
+    title: "Moderation update",
+    body: "Open Prism to review.",
+  });
 });
 
 test("an inbox-only notification with a known kind does not count as a push", async (t) => {
@@ -694,21 +798,88 @@ test("scoreboard write failures do not fail an accepted push", async (t) => {
   }
 });
 
-test("a personal push falls back to the legacy token and never uses the email-prefix topic", async (t) => {
-  const {sent} = personalSetup(t);
-  await sendToUser(personal, {
+test("an account without a private session token keeps its inbox and gets only the nudge", async (t) => {
+  const {inbox, sent} = personalSetup(t);
+  const ok = await sendToUser(personal, {
     uid: "u1",
     email: "sam@example.com",
     legacyToken: "legacy-token",
   });
-  assert.deepEqual(
-    sent.map((m) => m.topic ?? m.token),
-    ["u_u1", "u_u1_loc_v1", "legacy-token"],
+  assert.equal(ok, true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+});
+
+test("an unbound legacy session token gets one content-free nudge", async (t) => {
+  const {sent} = personalSetup(t, "old-token", false, "old-token", {});
+  const ok = await sendToUser(
+    {...personal, title: "Secret title", body: "Secret body", data: {route: "wall", wall_id: "w9", email: "a@b.c"}},
+    {uid: "u1", email: "sam@example.com"},
   );
+  assert.equal(ok, true);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].topic, undefined);
+  assert.deepEqual(sent[0].notification, {title: "Prism", body: "You have a new notification."});
+  assert.deepEqual(sent[0].data, {route: "announcement"});
+  assert.equal(sent[0].android?.collapseKey, "prism_inbox_nudge");
+  assert.equal(sent[0].android?.notification?.tag, "prism_inbox_nudge");
+  assert.equal(sent[0].apns?.headers?.["apns-collapse-id"], "prism_inbox_nudge");
+});
+
+test("a bound token gets the token push and no nudge", async (t) => {
+  const {sent} = personalSetup(t, "session-token");
+  await sendToUser(personal, {uid: "u1", email: "sam@example.com"});
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, "session-token");
+  assert.equal(sent[0].condition, undefined);
+});
+
+test("a moderation nudge for an unbound admin carries no report details", async (t) => {
+  const {sent} = personalSetup(t, "old-token", false, "old-token", {});
+  await sendToUser({
+    ...personal,
+    data: {route: "wall", report_id: "r1", reporter_uid: "secret-user", reason: "private reason"},
+    modifier: "admin@example.com",
+    scoreKind: "moderation",
+  }, {uid: "u1", email: "admin@example.com"});
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].data, {route: "announcement"});
+  assert.deepEqual(sent[0].notification, {title: "Prism", body: "You have a new notification."});
+  assert.ok(!JSON.stringify(sent[0]).includes("r1"));
+  assert.ok(!JSON.stringify(sent[0]).includes("secret-user"));
+  assert.ok(!JSON.stringify(sent[0]).includes("private reason"));
+});
+
+test("an invalid private session token falls back to the nudge and keeps the inbox", async (t) => {
+  const {inbox, sent} = personalSetup(t, {token: "not-an-fcm-token"});
+  assert.equal(await sendToUser(personal, {uid: "u1", email: "sam@example.com", legacyToken: "legacy-token"}), true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+});
+
+test("a private session token without the current account binding falls back to the nudge", async (t) => {
+  const {inbox, sent} = personalSetup(t, "old-token", false, "old-token", {version: 1, token: "stale-token"});
+  assert.equal(await sendToUser(personal, {uid: "u1", email: "sam@example.com"}), true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, undefined);
+  assert.equal(sent[0].condition, "'u_u1' in topics || 'u_u1_loc_v1' in topics");
+});
+
+test("a stored signed-out profile blocks personal push even if the caller omitted loggedOut", async (t) => {
+  const {inbox, sent} = personalSetup(t, "session-token", false, "session-token", undefined, false);
+  assert.equal(await sendToUser(personal, {uid: "u1", email: "sam@example.com"}), true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 0);
 });
 
 test("a personal push keeps the caller's collapse key", async (t) => {
-  const {sent} = personalSetup(t);
+  const {sent} = personalSetup(t, "session-token");
   await sendToUser(
     {...personal, collapseKey: "follow_1"},
     {uid: "u1", email: "sam@example.com"},
@@ -756,7 +927,7 @@ test("a recipient lookup error gives no push and never falls back to the prefix 
 });
 
 test("sendToUser reports a failed delivery", async (t) => {
-  personalSetup(t);
+  personalSetup(t, "session-token");
   t.mock.method(admin.messaging(), "send", async () => {
     throw new Error("fcm down");
   });
@@ -813,8 +984,8 @@ test("structured copy stays beside legacy text in the inbox and push payload", a
   );
 });
 
-test("structured topic sends preserve English for legacy subscribers and localize capable subscribers", async (t) => {
-  const {sent} = personalSetup(t);
+test("structured personal sends localize a capable session token", async (t) => {
+  const {sent} = personalSetup(t, "session-token", true);
   const payload = {
     ...notificationCopyPayload({kind: "newFollower", followerName: "Asha"}),
     data: {route: "follower"},
@@ -822,15 +993,12 @@ test("structured topic sends preserve English for legacy subscribers and localiz
     channelId: "followers",
   };
 
-  await sendNotification({...payload, fcmTarget: {topic: "u_u1"}, pushOnly: true});
+  await sendToUser(payload, {uid: "u1", email: "sam@example.com"});
 
-  assert.deepEqual(sent.map((message) => message.topic), ["u_u1", "u_u1_loc_v1"]);
-  assert.deepEqual(sent[0].notification, {
-    title: "You have a new follower! 🎉",
-    body: "Asha is now following you.",
-  });
-  assert.equal(sent[1].notification, undefined);
-  assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].token, "session-token");
+  assert.equal(sent[0].notification, undefined);
+  assert.equal(sent[0].android?.notification?.bodyLocKey, "notif_push_new_follower_body");
 });
 
 test("a capable direct token omits English notification fields", async (t) => {
@@ -871,7 +1039,7 @@ test("a stale localization marker does not classify a replaced token as capable"
   assert.equal(direct.android?.notification?.titleLocKey, undefined);
 });
 
-test("new content report copy carries localized parameters with the English fallback", async (t) => {
+test("new content report inbox retains detail while its push stays generic", async (t) => {
   const {inbox, sent} = personalSetup(t, "session-token");
   const payload = {
     ...notificationCopyPayload({
@@ -894,16 +1062,21 @@ test("new content report copy carries localized parameters with the English fall
     (inbox[0].data.notification as Record<string, unknown>).body,
     "A new content report is ready for review.",
   );
-  assert.equal(sent[0].data?.notification_copy_kind, "newContentReport");
+  assert.equal(sent[0].data?.notification_copy_kind, undefined);
+  assert.deepEqual(sent[0].data, {route: "content_report", channel_id: "moderation", push_kind: "moderation"});
+  assert.deepEqual(sent[0].notification, {
+    title: "Moderation update",
+    body: "Open Prism to review.",
+  });
 });
 
-test("sendNotification returns false when the push fails and true when none was asked for", async (t) => {
+test("sendNotification returns false when the broadcast push fails and true when none was asked for", async (t) => {
   t.mock.method(db, "collection", () => ({add: async () => undefined}));
   t.mock.method(admin.messaging(), "send", async () => {
     throw new Error("fcm down");
   });
   assert.equal(
-    await sendNotification({...personal, fcmTarget: {topic: "x"}}),
+    await sendNotification({...personal, modifier: "all", fcmTarget: {topic: "x"}}),
     false,
   );
   assert.equal(await sendNotification(personal), true);
@@ -915,7 +1088,9 @@ test("pushes carry no app icon badge", () => {
   assert.equal(message.apns?.payload?.aps.sound, "default");
 });
 
-test("session token wins over the legacy one", () => {
+test("only string session tokens are accepted", () => {
   assert.equal(pickFcmToken(" s ", "l"), "s");
-  assert.equal(pickFcmToken("", "l"), "l");
+  assert.equal(pickFcmToken("", "l"), "");
+  assert.equal(pickFcmToken({token: "bad"}, "l"), "");
+  assert.equal(pickFcmToken(123, "l"), "");
 });
