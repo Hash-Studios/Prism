@@ -51,6 +51,13 @@ function fake(t: TestContext, options: Options = {}) {
         log.push(`barrier:${name}/${id}`);
       }})});
   t.mock.method(db, "collectionGroup", (name: string) => query(name));
+  t.mock.method(db, "doc", (path: string) => ({
+    path,
+    collection: (name: string) => ({
+      get: async () => ({docs: [], empty: true, size: 0}),
+      doc: (id: string) => ({path: `${path}/${name}/${id}`, get: async () => ({exists: false})}),
+    }),
+  }));
   const transaction = {get: async () => ({data: () => ({})}), delete: () => undefined};
   t.mock.method(db, "runTransaction", async (callback: (tx: typeof transaction) => Promise<unknown>) => callback(transaction));
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {

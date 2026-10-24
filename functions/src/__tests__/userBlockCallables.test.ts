@@ -54,6 +54,28 @@ test("blockUser leaves users that do not follow each other untouched", async (t)
   assert.deepEqual(store.get("usersv2/blocked")?.followers, ["y@x.com"]);
 });
 
+test("blockUser also removes the UID edges in both directions and fixes followerCount", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/caller": {email: "caller@x.com"}, "usersv2/blocked": {email: "b@x.com"},
+    "profiles/caller": {followerCount: 1}, "profiles/blocked": {followerCount: 1},
+    "profiles/caller/following/blocked": {targetUid: "blocked"},
+    "profiles/blocked/followers/caller": {followerUid: "caller"},
+    "profiles/blocked/following/caller": {targetUid: "caller"},
+    "profiles/caller/followers/blocked": {followerUid: "blocked"},
+  });
+  await blockUser.run({
+    auth: {uid: "caller"}, data: {targetUserId: "blocked"},
+  } as unknown as Parameters<typeof blockUser.run>[0]);
+
+  for (const path of ["profiles/caller/following/blocked", "profiles/blocked/followers/caller",
+    "profiles/blocked/following/caller", "profiles/caller/followers/blocked"]) {
+    assert.equal(store.has(path), false, path);
+  }
+  assert.equal(store.get("profiles/caller")?.followerCount, 0);
+  assert.equal(store.get("profiles/blocked")?.followerCount, 0);
+  assert.equal(store.get("usersv2/caller/blockedUsers/blocked")?.blockedEmail, "b@x.com");
+});
+
 const NOW = new Date("2026-01-10T12:00:00Z");
 const call = (targetUserId: unknown = "blocked") => ({auth: {uid: "caller"}, data: {targetUserId},
 } as Parameters<typeof blockUser.run>[0]);

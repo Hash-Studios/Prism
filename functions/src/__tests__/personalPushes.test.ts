@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {onCampaignNotificationRequested} from "../onCampaignNotificationRequested";
 import {onContentReportCreated} from "../onContentReportCreated";
-import {onFollowCreated} from "../onFollowCreated";
+import {onUidFollowCreated} from "../onUidFollowCreated";
 import {onWallApproved} from "../onWallApproved";
 import {onWallSubmitted} from "../onWallSubmitted";
 import {installFakeDb} from "./fakeDb";
@@ -115,20 +115,16 @@ for (const [modifier, expectedTopic] of [["all", "recommendations"], ["premium",
 }
 
 test("a stale follow event cannot push to a user who has since signed out", async (t) => {
-  const {inbox, topics} = setup(t, {"artist@example.com": {loggedIn: false}});
-  const followed = {email: "artist@example.com", username: "Artist", usernameLower: "artist"};
-  await onFollowCreated.run({
-    params: {userId: "artist-1"},
-    data: {
-      before: {data: () => ({...followed, followers: []})},
-      after: {
-        data: () => ({...followed, loggedIn: true, followers: ["new@example.com"]}),
-        ref: {update: async () => undefined},
-      },
-    },
-  } as unknown as Parameters<typeof onFollowCreated.run>[0]);
-  assert.equal(inbox.length, 1);
-  assert.deepEqual(topics, []);
+  const store = installFakeDb(t, {
+    "profiles/artist/followers/follower": {followerUid: "follower", notify: true},
+    "usersv2/artist": {email: "artist@example.com", username: "Artist", loggedIn: false},
+    "profiles/follower": {username: "Follower"},
+  });
+  await onUidFollowCreated.run({
+    params: {targetUid: "artist", followerUid: "follower"},
+    data: {data: () => ({notify: true, targetLoggedIn: true})},
+  } as unknown as Parameters<typeof onUidFollowCreated.run>[0]);
+  assert.equal([...store.keys()].filter((path) => path.startsWith("notifications/")).length, 1);
 });
 
 test("signed-out admins keep report inbox entries without report pushes", async (t) => {
