@@ -261,6 +261,11 @@ class GoogleAuth {
       _clearPersonalization(operation),
     ]);
     if (!operation.isCurrent) return false;
+    await _bounded(
+      () => FcmTokenService.instance.invalidateTokenForSignOut(userId: userId, messaging: _messaging),
+      'invalidate FCM token',
+    );
+    if (!operation.isCurrent) return false;
     try {
       await _ensureGoogleSignInInitialized();
       if (!operation.isCurrent) return false;
@@ -370,10 +375,9 @@ class GoogleAuth {
     }
     try {
       final FirebaseMessaging messaging = _messaging ?? FirebaseMessaging.instance;
-      final String? userTopic = userTopicFromId(userId);
       final String? followersTopic = followersTopicFromEmail(email);
       await Future.wait(<Future<void>>[
-        if (userTopic != null)
+        if (userTopicFromId(userId) case final String userTopic)
           unsubscribeFromTopicSafely(
             messaging,
             userTopic,

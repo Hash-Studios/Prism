@@ -14,13 +14,16 @@ function setup(t: TestContext, owner: Doc | null, wall: Doc) {
     ...(owner ? {"usersv2/maker": {email: "maker@example.com", ...owner}} : {}),
     "config/adminNotifications": {emails: ["admin@example.com"]},
     "usersv2/adm1": {email: "admin@example.com"},
+    "usersv2/adm1/private/session": {
+      fcmToken: "admin-token", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "admin-token",
+    },
   });
-  const topics: string[] = [];
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
-    topics.push(message.topic ?? "");
+  const pushes: Array<{token?: string; notification?: {title?: string; body?: string}; data?: Record<string, string>; android?: {notification?: {imageUrl?: string}}}> = [];
+  t.mock.method(admin.messaging(), "send", async (message: typeof pushes[number]) => {
+    pushes.push(message);
     return "id";
   });
-  return {store, topics};
+  return {store, pushes};
 }
 
 const fire = (store: Map<string, Doc>) => onWallSubmitted.run({
@@ -74,11 +77,14 @@ test("a wall of an unknown owner keeps its fields", async (t) => {
 test("a premium submission notifies the admins and a free one does not", async (t) => {
   const premium = setup(t, {name: "Maker", premium: true}, wall());
   await fire(premium.store);
-  assert.deepEqual(premium.topics.sort(), ["u_adm1", "u_adm1_loc_v1"]);
+  assert.deepEqual(premium.pushes.map((push) => push.token), ["admin-token"]);
+  assert.deepEqual(premium.pushes[0].data, {route: "content_report", channel_id: "posts", push_kind: "moderation"});
+  assert.deepEqual(premium.pushes[0].notification, {title: "Moderation update", body: "Open Prism to review."});
+  assert.equal(premium.pushes[0].android?.notification?.imageUrl, undefined);
 
   const free = setup(t, {name: "Maker", premium: false}, wall());
   await fire(free.store);
-  assert.deepEqual(free.topics, []);
+  assert.deepEqual(free.pushes, []);
 });
 
 test("an image link outside the GitHub raw host is logged and the wall is kept", async (t) => {
@@ -146,7 +152,7 @@ for (const id of ["AI2B83C297CF7C420FF33FA03823705EA95", "AIGENMLT7O22"]) {
 
 test("a failed receipt create does not stop premium admin notifications or owner sync", async (t) => {
   workerRecords(t, () => new Response(JSON.stringify(aiRecord), {status: 200}));
-  const {store, topics} = setup(t, {name: "Real Maker", premium: true}, aiWall());
+  const {store, pushes} = setup(t, {name: "Real Maker", premium: true}, aiWall());
   const collection = db.collection.bind(db);
   t.mock.method(db, "collection", (name: string) => {
     if (name !== "aiGenerationReceipts") return collection(name);
@@ -166,7 +172,8 @@ test("a failed receipt create does not stop premium admin notifications or owner
 
   assert.equal(store.has(`aiGenerationReceipts/${GEN}`), false);
   assert.equal(store.get("walls/w1")?.by, "Real Maker");
-  assert.deepEqual(topics.sort(), ["u_adm1", "u_adm1_loc_v1"]);
+  assert.deepEqual(pushes.map((push) => push.token), ["admin-token"]);
+  assert.deepEqual(pushes[0].data, {route: "content_report", channel_id: "posts", push_kind: "moderation"});
 });
 
 test("an AI wall without a Worker record, or with a failed read, gets no receipt and is still synced", async (t) => {

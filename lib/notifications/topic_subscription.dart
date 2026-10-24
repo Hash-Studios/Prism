@@ -111,7 +111,7 @@ String? userTopicFromId(String uid) {
   return sanitized.isEmpty ? null : 'u_$sanitized';
 }
 
-const String _pushTopicsSyncedKey = 'pushTopicsSyncedForLocV1';
+const String _pushTopicsSyncedKey = 'pushTopicsSyncedForLocV2';
 const String _creatorPostsMigrationKey = 'creatorPostsUidMigrationV2';
 const String _nativeLocalizationTopicSuffix = '_loc_v1';
 const String _legacyWotdTopic = 'wall_of_the_day';
@@ -209,7 +209,7 @@ Future<void> refreshWotdTopics(
   await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 'push_topics.wotd_refresh', offset: offset);
 }
 
-/// Subscribes this device to every topic the server sends to, once per FCM token, user and tier.
+/// Subscribes this device to broadcast topics, once per FCM token, user and tier.
 /// Topics belong to the token. iOS builds without the push entitlement never had one, so
 /// every earlier subscribe was skipped. This catches up those installs and fresh tokens.
 Future<void> syncPushTopics(
@@ -258,7 +258,8 @@ Future<void> syncPushTopics(
     subscribe(tier),
     _changeTopic(messaging, premium ? 'free' : 'premium', subscribe: false, sourceTag: sourceTag),
     if (userId.isNotEmpty) ...<Future<bool>>[
-      subscribe(userTopicFromId(userId)),
+      if (userTopicFromId(userId) case final String userTopic)
+        _changeTopic(messaging, userTopic, subscribe: false, sourceTag: sourceTag),
       subscribe(followersTopicFromEmail(email)),
     ],
     if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))

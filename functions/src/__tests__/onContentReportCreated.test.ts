@@ -17,15 +17,18 @@ function setup(t: TestContext, reports: Record<string, Doc>, accountAgesDays: Re
     "walls/w1": wall,
     "config/adminNotifications": {emails: ["admin@example.com"]},
     "usersv2/adm1": {email: "admin@example.com"},
+    "usersv2/adm1/private/session": {
+      fcmToken: "admin-session-token", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "admin-session-token",
+    },
     ...Object.fromEntries(Object.entries(reports).map(([id, data]) => [`contentReports/${id}`, data])),
   });
   t.mock.method(admin.auth(), "getUser", async (uid: string) => {
     if (!(uid in accountAgesDays)) throw new Error("auth/user-not-found");
     return {metadata: {creationTime: new Date(NOW.getTime() - accountAgesDays[uid] * DAY).toUTCString()}} as never;
   });
-  const pushes: string[] = [];
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
-    pushes.push(message.topic ?? "");
+  const pushes: Array<{topic?: string; token?: string; notification?: {title?: string; body?: string}; data?: Record<string, string>}> = [];
+  t.mock.method(admin.messaging(), "send", async (message: typeof pushes[number]) => {
+    pushes.push(message);
     return "id";
   });
   return {store, pushes};
@@ -43,7 +46,17 @@ test("3 different trusted reporters take an approved wall back to review", async
   assert.equal(wall?.review, false);
   assert.equal(wall?.heldForReview, true);
   assert.ok(wall?.heldAt instanceof admin.firestore.Timestamp);
-  assert.deepEqual(pushes.sort(), ["u_adm1", "u_adm1_loc_v1"]);
+  assert.deepEqual(pushes.map(({topic, token}) => topic ?? token), ["admin-session-token"]);
+  assert.deepEqual(pushes[0].data, {
+    route: "content_report",
+    report_id: "r3",
+    channel_id: "moderation",
+    push_kind: "moderation",
+  });
+  assert.deepEqual(pushes[0].notification, {
+    title: "Content report needs review",
+    body: "A content report is waiting for review.",
+  });
 });
 
 test("2 reporters do not hold the wall", async (t) => {
@@ -94,5 +107,11 @@ test("a user report is pushed to the admins and holds nothing", async (t) => {
   const userReport = {contentType: "user", targetFirestoreDocId: "u9", reason: "harassment", reporterUid: "a"};
   const {pushes} = setup(t, {r1: userReport}, {a: 30});
   await fire("r1", userReport);
-  assert.deepEqual(pushes.sort(), ["u_adm1", "u_adm1_loc_v1"]);
+  assert.deepEqual(pushes.map(({topic, token}) => topic ?? token), ["admin-session-token"]);
+  assert.deepEqual(pushes[0].data, {
+    route: "content_report",
+    report_id: "r1",
+    channel_id: "moderation",
+    push_kind: "moderation",
+  });
 });

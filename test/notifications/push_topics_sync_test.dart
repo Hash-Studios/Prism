@@ -73,7 +73,6 @@ void main() {
         'drops_loc_v1',
         '${wotdBucketTopic()}_loc_v1',
         'free_loc_v1',
-        'u_uid1_loc_v1',
         'ana_loc_v1',
       ]),
     );
@@ -87,6 +86,7 @@ void main() {
         'premium',
         'premium_loc_v1',
         'u_uid1',
+        'u_uid1_loc_v1',
         'ana',
         'lee_posts',
         'lee_posts_loc_v1',
@@ -133,11 +133,11 @@ void main() {
   });
 
   test('an old completed sync marker does not skip the UID-topic migration sync', () async {
-    await settings.set('pushTopicsSyncedForLocV1', 'fcm-token|uid1|free');
+    await settings.set('pushTopicsSyncedForLocV2', 'fcm-token|uid1|free');
 
     await sync();
 
-    expect(messaging.subscribed, contains('u_uid1_loc_v1'));
+    expect(messaging.subscribed, contains('recommendations_loc_v1'));
     expect(messaging.unsubscribeAttempts, contains('lee_posts'));
   });
 
@@ -164,7 +164,8 @@ void main() {
 
     messaging.failSubscribe = false;
     await sync();
-    expect(messaging.subscribed, contains('u_uid1_loc_v1'));
+    expect(messaging.subscribed, isNot(contains('u_uid1_loc_v1')));
+    expect(messaging.unsubscribed, containsAll(<String>['u_uid1', 'u_uid1_loc_v1']));
   });
 
   group('wall of the day buckets', () {

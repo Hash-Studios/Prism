@@ -165,6 +165,9 @@ class _Messaging extends Fake implements FirebaseMessaging {
   Future<void> subscribeToTopic(String topic) async => topics.add(topic);
   @override
   Future<void> unsubscribeFromTopic(String topic) async {}
+
+  @override
+  Future<void> deleteToken() async {}
 }
 
 class _DelayedAnalytics extends FakeAppAnalytics {

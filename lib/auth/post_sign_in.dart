@@ -186,12 +186,12 @@ Future<void> completeSignIn({
   await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: owner.premium ? '1' : '0');
   operation.requireCurrent();
   final FirebaseMessaging resolvedMessaging = messaging ?? FirebaseMessaging.instance;
-  final String? userTopic = userTopicFromId(user.uid);
-  if (userTopic != null) {
-    await subscribeToTopicSafely(
+  final String? legacyUserTopic = userTopicFromId(user.uid);
+  if (legacyUserTopic != null) {
+    await unsubscribeFromTopicSafely(
       resolvedMessaging,
-      userTopic,
-      sourceTag: '$sourceTagPrefix.user_topic',
+      legacyUserTopic,
+      sourceTag: '$sourceTagPrefix.user_topic_cleanup',
       isCurrent: () => operation.isCurrent,
     );
     operation.requireCurrent();
