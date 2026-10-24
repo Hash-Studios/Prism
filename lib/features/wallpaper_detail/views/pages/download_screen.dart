@@ -150,7 +150,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
 
   void _exitSelection() => setState(_selected.clear);
 
-  void _openFile(File file) {
+  void _openFile(File file, String heroTag) {
     PrismHaptics.tap();
     unawaited(
       analytics.track(
@@ -171,6 +171,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
               source: wall.source,
               localFile: file,
               analyticsSurface: AnalyticsSurfaceValue.downloadWallpaperScreen,
+              heroTag: heroTag,
             ),
     );
   }
@@ -335,13 +336,22 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: sorted.length,
           gridDelegate: PrismWallGrid.delegate(context),
-          itemBuilder: (context, index) => _DownloadTile(
-            key: ValueKey<String>(sorted[index].path),
-            file: sorted[index],
-            selected: _selected.contains(sorted[index].path),
-            onTap: () => _selecting ? _toggleSelected(sorted[index]) : _openFile(sorted[index]),
-            onLongPress: () => _toggleSelected(sorted[index]),
-          ),
+          itemBuilder: (context, index) {
+            final File file = sorted[index];
+            final String heroTag = prismHeroTag(
+              Scrollable.maybeOf(context) ?? context,
+              index,
+              'download-${p.basename(file.path)}-${file.path.hashCode}',
+            );
+            return _DownloadTile(
+              key: ValueKey<String>(sorted[index].path),
+              file: file,
+              selected: _selected.contains(file.path),
+              heroTag: _selecting ? null : heroTag,
+              onTap: () => _selecting ? _toggleSelected(file) : _openFile(file, heroTag),
+              onLongPress: () => _toggleSelected(file),
+            );
+          },
         );
     }
   }
@@ -401,18 +411,28 @@ class _DownloadTile extends StatelessWidget {
     super.key,
     required this.file,
     required this.selected,
+    required this.heroTag,
     required this.onTap,
     required this.onLongPress,
   });
 
   final File file;
   final bool selected;
+  final String? heroTag;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final Widget image = Image(
+      image: ResizeImage(FileImage(file), width: 400),
+      fit: BoxFit.cover,
+      frameBuilder: (context, child, frame, sync) =>
+          AnimatedOpacity(duration: context.motion(PrismDurations.fast), opacity: frame == null ? 0 : 1, child: child),
+      errorBuilder: (_, _, _) =>
+          Center(child: Icon(Icons.broken_image_rounded, color: cs.onSurface.withValues(alpha: 0.4))),
+    );
     return PressScale(
       scale: 0.97,
       child: Semantics(
@@ -430,17 +450,7 @@ class _DownloadTile extends StatelessWidget {
               fit: StackFit.expand,
               children: <Widget>[
                 ColoredBox(color: cs.surfaceContainerHigh),
-                Image(
-                  image: ResizeImage(FileImage(file), width: 400),
-                  fit: BoxFit.cover,
-                  frameBuilder: (context, child, frame, sync) => AnimatedOpacity(
-                    duration: context.motion(PrismDurations.fast),
-                    opacity: frame == null ? 0 : 1,
-                    child: child,
-                  ),
-                  errorBuilder: (_, _, _) =>
-                      Center(child: Icon(Icons.broken_image_rounded, color: cs.onSurface.withValues(alpha: 0.4))),
-                ),
+                if (heroTag == null) image else Hero(tag: heroTag!, child: image),
                 IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(

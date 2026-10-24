@@ -11,6 +11,9 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'एक्सपोर्ट नहीं हो सका';
 
   @override
@@ -7424,7 +7427,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'वॉलपेपर के मूल रंग';
 
   @override
-  String get wallpaperAccentResetHint => 'रीसेट करने के लिए देर तक दबाएँ';
+  String get wallpaperResetOriginal => 'मूल पर रीसेट करें';
+
+  @override
+  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
 
   @override
   String get wallpaperAll => 'सभी';
@@ -8419,7 +8425,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'ऐक्सेंट रंग बदलने के लिए टैप करें। रीसेट करने के लिए दबाकर रखें। जानकारी के लिए ऊपर स्वाइप करें।';
+      'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
 
   @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';

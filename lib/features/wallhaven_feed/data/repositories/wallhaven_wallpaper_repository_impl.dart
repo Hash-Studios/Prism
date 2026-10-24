@@ -8,18 +8,20 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
+import 'package:Prism/data/feed_cache/pagination_session.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
 import 'package:Prism/features/wallhaven_feed/data/mappers/wallhaven_dto_mapper.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallhavenWallpaperRepository)
-class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
+class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, PaginationSession {
   WallhavenWallpaperRepositoryImpl(FeedCacheLocalDataSource feedCacheLocal)
     : _local = feedCacheLocal,
       _cache = PagedFeedCache(feedCacheLocal, source: 'wallhaven');
@@ -28,9 +30,15 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   final FeedCacheLocalDataSource _local;
   final Map<String, PagedFeedCache> _feedCaches = <String, PagedFeedCache>{};
 
+  @visibleForTesting
+  int get activePaginationSessions => _feedCaches.length;
+
+  @override
+  void releasePaginationKey(String paginationKey) => _feedCaches.remove(paginationKey);
+
   PagedFeedCache _cacheFor(String key, {bool refresh = false}) {
     if (!refresh && _feedCaches.containsKey(key)) return _feedCaches[key]!;
-    return _feedCaches[key] = PagedFeedCache(_local, source: 'wallhaven');
+    return _feedCaches[key] = PagedFeedCache(_local, source: 'wallhaven', durable: !isEphemeralPaginationKey(key));
   }
 
   static const String _host = 'wallhaven.cc';
@@ -41,7 +49,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
-      _cacheFor(paginationKey ?? categoryName).hasMore(paginationKey ?? categoryName);
+      _feedCaches[paginationKey ?? categoryName]?.hasMore(paginationKey ?? categoryName) ?? true;
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({

@@ -188,6 +188,7 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
                               mode: _mode,
                               now: state.now,
                               height: height,
+                              heroTag: state.unlocked.containsKey(wall.id) ? _heroTag(drop, i, wall) : null,
                             ),
                           );
                         },
@@ -208,7 +209,9 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
                       isPro: isPro,
                       onUnlock: () => askToUnlock(context, state, wall),
                       onOpen: () {
-                        if (unlock != null) openDropWall(context, wall, unlock);
+                        if (unlock != null) {
+                          openDropWall(context, wall, unlock, heroTag: _heroTag(drop, i, wall));
+                        }
                       },
                     );
                   },
@@ -220,6 +223,9 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
       ),
     );
   }
+
+  String _heroTag(DropEntity drop, int index, DropWall wall) =>
+      prismHeroTag(this, index, 'drop-preview-${drop.weekKey}-${wall.id}');
 }
 
 class _PageScale extends StatelessWidget {

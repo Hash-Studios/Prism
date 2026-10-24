@@ -44,16 +44,22 @@ class DropVault extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: PrismWallGrid.spacing),
               itemBuilder: (context, index) {
                 final DropWall wall = drop.walls.where((w) => unlocked.containsKey(w.id)).elementAt(index);
+                final String heroTag = prismHeroTag(
+                  Scrollable.maybeOf(context) ?? context,
+                  index,
+                  'drop-vault-${drop.weekKey}-${wall.id}',
+                );
                 return SizedBox(
                   width: _tileWidth,
                   child: FavouriteWallpaperCard(
                     item: dropWallFeedItem(wall, unlocked[wall.id]!),
                     child: PrismWallTile(
                       url: wall.thumb,
+                      heroTag: heroTag,
                       semanticLabel: wall.by.isEmpty
                           ? l10n.economyDropUnlockedWall
                           : l10n.economyDropUnlockedWallBy(wall.by),
-                      onTap: () => openDropWall(context, wall, unlocked[wall.id]!),
+                      onTap: () => openDropWall(context, wall, unlocked[wall.id]!, heroTag: heroTag),
                       overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
                     ),
                   ),

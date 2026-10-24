@@ -15,18 +15,33 @@ void main() {
     expect(onColor(const Color(0xFF595959)), Colors.white);
   });
 
-  testWidgets('PrimaryActionPill uses the same foreground as onColor', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+  Future<void> pumpPill(WidgetTester tester, {required bool loading}) => tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
 
-        theme: ThemeData(colorScheme: const ColorScheme.light(primary: midGrey)),
-        home: const PrimaryActionPill(icon: Icons.check, label: 'Set', semanticLabel: 'Set', isLoading: false),
+      theme: ThemeData(colorScheme: const ColorScheme.light(primary: midGrey)),
+      home: Center(
+        child: PrimaryActionPill(label: 'Save', semanticLabel: 'Save', isLoading: loading),
       ),
-    );
+    ),
+  );
 
-    expect(tester.widget<Icon>(find.byIcon(Icons.check)).color, onColor(midGrey));
-    expect(tester.widget<Text>(find.text('Set')).style?.color, onColor(midGrey));
+  testWidgets('PrimaryActionPill uses the same foreground as onColor', (tester) async {
+    await pumpPill(tester, loading: false);
+    expect(tester.widget<Text>(find.text('Save')).style?.color, onColor(midGrey));
+
+    await pumpPill(tester, loading: true);
+    expect(tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator)).color, onColor(midGrey));
+  });
+
+  testWidgets('PrimaryActionPill keeps its width while the spinner replaces the label', (tester) async {
+    await pumpPill(tester, loading: false);
+    final Size idle = tester.getSize(find.byType(PrimaryActionPill));
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    await pumpPill(tester, loading: true);
+    expect(tester.getSize(find.byType(PrimaryActionPill)), idle);
+    expect(tester.widget<Opacity>(find.ancestor(of: find.text('Save'), matching: find.byType(Opacity))).opacity, 0);
   });
 }

@@ -11,6 +11,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -20,9 +21,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -74,7 +75,10 @@ void main() {
     whenListen(
       staleBloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _item('previous')),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _item('previous'),
+      ),
     );
 
     await tester.pumpWidget(
@@ -102,10 +106,24 @@ void main() {
   testWidgets('a covered detail route cannot replace the top route status bar style', (tester) async {
     final firstBloc = _MockDetailBloc();
     final firstStates = StreamController<WallpaperDetailState>();
-    whenListen(firstBloc, firstStates.stream, initialState: WallpaperDetailLoaded(entity: _item('first')));
+    whenListen(
+      firstBloc,
+      firstStates.stream,
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _item('first'),
+      ),
+    );
     final secondBloc = _MockDetailBloc();
     final secondStates = StreamController<WallpaperDetailState>();
-    whenListen(secondBloc, secondStates.stream, initialState: WallpaperDetailLoaded(entity: _item('second')));
+    whenListen(
+      secondBloc,
+      secondStates.stream,
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _item('second'),
+      ),
+    );
     addTearDown(firstStates.close);
     addTearDown(secondStates.close);
 
@@ -122,11 +140,15 @@ void main() {
         ),
       ),
     );
+    // At rest each detail's status icons sit on its own page, so the routes get different page colours.
     navigatorKey.currentState!.push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider<WallpaperDetailBloc>.value(
-          value: secondBloc,
-          child: WallpaperDetailScreen(entity: _item('second')),
+        builder: (_) => Theme(
+          data: ThemeData.dark(),
+          child: BlocProvider<WallpaperDetailBloc>.value(
+            value: secondBloc,
+            child: WallpaperDetailScreen(entity: _item('second')),
+          ),
         ),
       ),
     );
@@ -135,6 +157,7 @@ void main() {
 
     secondStates.add(
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _item('second'),
         paletteLoading: false,
         colors: const [Colors.white],
@@ -147,10 +170,11 @@ void main() {
         .widgetList<AnnotatedRegion<SystemUiOverlayStyle>>(find.byType(AnnotatedRegion<SystemUiOverlayStyle>))
         .map((region) => region.value.statusBarIconBrightness)
         .toList();
-    expect(detailStyles(), [Brightness.dark]);
+    expect(detailStyles(), [Brightness.light]);
 
     firstStates.add(
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _item('first'),
         paletteLoading: false,
         colors: const [Colors.black],
@@ -159,11 +183,11 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    expect(detailStyles(), [Brightness.dark]);
+    expect(detailStyles(), [Brightness.light]);
 
     navigatorKey.currentState!.pop();
     await tester.pumpAndSettle();
-    expect(detailStyles(), [Brightness.light]);
+    expect(detailStyles(), [Brightness.dark]);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -172,7 +196,10 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _item('dark-loading')),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _item('dark-loading'),
+      ),
     );
 
     await tester.pumpWidget(

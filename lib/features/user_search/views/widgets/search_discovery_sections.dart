@@ -100,6 +100,11 @@ class _TrendingList extends StatelessWidget {
       count: items.length,
       builder: (context, index) {
         final WallhavenWallpaper wall = items[index];
+        final String heroTag = prismHeroTag(
+          Scrollable.maybeOf(context) ?? context,
+          index,
+          'search-trending-${wall.id}',
+        );
         return SizedBox(
           width: _trendingWidth,
           child: FavouriteWallpaperCard(
@@ -108,12 +113,14 @@ class _TrendingList extends StatelessWidget {
               url: wall.thumbnailUrl,
               fallbackUrl: wall.core.fullUrl,
               memCacheHeight: _decodeHeight(context, _trendingWidth),
+              heroTag: heroTag,
               semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),
               onTap: () {
                 PrismHaptics.tap();
                 context.router.push(
                   WallpaperDetailRoute(
                     entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
+                    heroTag: heroTag,
                     analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
                   ),
                 );

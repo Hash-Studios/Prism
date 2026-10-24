@@ -1,4 +1,5 @@
 {
+  "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
   "@economyAiMatchingScreenSize": {
@@ -6145,7 +6146,8 @@
   "@wallpaperAccentColorsOriginal": {
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
-  "wallpaperAccentResetHint": "रीसेट करने के लिए देर तक दबाएँ",
+  "wallpaperResetOriginal": "मूल पर रीसेट करें",
+  "wallpaperAccentResetHint": "मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें",
   "@wallpaperAccentResetHint": {
     "description": "Toast hint explaining how to reset the selected wallpaper accent."
   },
@@ -7411,7 +7413,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "ऐक्सेंट रंग बदलने के लिए टैप करें। रीसेट करने के लिए दबाकर रखें। जानकारी के लिए ऊपर स्वाइप करें।",
+  "wallpaperImageSemanticHint": "रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },

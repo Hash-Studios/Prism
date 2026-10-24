@@ -21,6 +21,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
@@ -223,6 +224,7 @@ void main() {
         paletteLoading: false,
         colors: colors,
         accent: accent,
+        recommendations: const RecommendationState.exhausted(),
       );
       whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
       await tester.pumpWidget(
@@ -240,11 +242,9 @@ void main() {
     }
 
     Future<void> tapWallpaper() async {
-      final Finder gestureFinder = find.byWidgetPredicate(
-        (Widget widget) => widget is GestureDetector && widget.onTap != null && widget.onLongPress != null,
-      );
-      tester.widget<GestureDetector>(gestureFinder.first).onTap!();
+      await tester.tap(find.bySemanticsLabel('Wallpaper'));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
     }
 
     await pumpDetail(colors: <Color>[Colors.red, Colors.blue], accent: Colors.red);
@@ -283,7 +283,12 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: const WallpaperDetailLoaded(entity: entity, paletteLoading: false),
+      initialState: const WallpaperDetailLoaded(
+        entity: entity,
+        paletteLoading: false,
+        panelCollapsed: false,
+        recommendations: RecommendationState.exhausted(),
+      ),
     );
     await tester.pumpWidget(
       MaterialApp(
@@ -297,8 +302,11 @@ void main() {
         ),
       ),
     );
-    final Finder authorLink = find.ancestor(of: find.text('artist'), matching: find.byType(InkWell)).first;
-    tester.widget<InkWell>(authorLink).onTap!();
+    // The summary under the card names the creator too; the author link is the later one, in the open details.
+    expect(find.text('artist'), findsNWidgets(2));
+    final Finder authorLink = find.ancestor(of: find.text('artist').last, matching: find.byType(InkWell)).first;
+    await tester.scrollUntilVisible(authorLink, 400, scrollable: find.byType(Scrollable).first);
+    await tester.tap(authorLink);
     await tester.pump();
     await tester.pump();
 
@@ -320,7 +328,11 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: const WallpaperDetailLoaded(entity: entity, paletteLoading: false),
+      initialState: const WallpaperDetailLoaded(
+        entity: entity,
+        paletteLoading: false,
+        recommendations: RecommendationState.exhausted(),
+      ),
     );
     await tester.pumpWidget(
       MaterialApp(
@@ -335,11 +347,9 @@ void main() {
       ),
     );
 
-    final Finder gestureFinder = find.byWidgetPredicate(
-      (Widget widget) => widget is GestureDetector && widget.onTap != null && widget.onLongPress != null,
-    );
-    tester.widget<GestureDetector>(gestureFinder.first).onTap!();
+    await tester.tap(find.bySemanticsLabel('Wallpaper'));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(haptics, isEmpty);
   }, variant: android);
@@ -368,6 +378,8 @@ void main() {
           ),
         ),
         paletteLoading: false,
+        panelCollapsed: false,
+        recommendations: RecommendationState.exhausted(),
       ),
     );
     await tester.pumpWidget(
@@ -382,7 +394,9 @@ void main() {
         ),
       ),
     );
-    tester.widget<TextButton>(find.widgetWithText(TextButton, 'Report')).onPressed!();
+    final report = find.widgetWithText(TextButton, 'Report');
+    await tester.scrollUntilVisible(report, 400, scrollable: find.byType(Scrollable).first);
+    await tester.tap(report);
     // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));

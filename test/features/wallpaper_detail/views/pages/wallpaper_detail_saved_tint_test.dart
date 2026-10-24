@@ -27,6 +27,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -40,10 +41,10 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/coins_test_backend.dart';
 import '../../../../support/fake_app_analytics.dart';
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -177,7 +178,13 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: state ?? WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false),
+      initialState:
+          state ??
+          WallpaperDetailLoaded(
+            recommendations: const RecommendationState.exhausted(),
+            entity: _wallpaper(),
+            paletteLoading: false,
+          ),
     );
     await tester.pumpWidget(
       MaterialApp(
@@ -213,7 +220,11 @@ void main() {
       await pumpReopened(
         tester,
         file,
-        state: const WallpaperDetailLoaded(entity: _prismWallpaper, paletteLoading: false),
+        state: const WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prismWallpaper,
+          paletteLoading: false,
+        ),
       );
       expect(find.text('Saved'), findsOneWidget);
       final download = tester.widget<DownloadButton>(find.byType(DownloadButton));
@@ -265,7 +276,11 @@ void main() {
       await pumpReopened(
         tester,
         file,
-        state: const WallpaperDetailLoaded(entity: _prismWallpaper, paletteLoading: false),
+        state: const WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prismWallpaper,
+          paletteLoading: false,
+        ),
       );
       expect(find.text('Saved'), findsOneWidget);
       await tester.tap(find.byType(PrimaryActionPill));
@@ -380,6 +395,7 @@ void main() {
         tester,
         downloadedFile('full_tint-ff8800.png'),
         state: WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
           entity: _wallpaper(),
           paletteLoading: false,
           colors: const <Color>[Color(0xFF00FF00)],

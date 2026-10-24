@@ -11,6 +11,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -19,8 +20,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../support/in_memory_local_store.dart';
 import '../../../support/favourite_test_scope.dart';
+import '../../../support/in_memory_local_store.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -60,6 +61,37 @@ void main() {
     });
   }
 
+  testWidgets('a short split-screen window scrolls the loading card and placeholders instead of overflowing', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 260);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final bloc = _MockDetailBloc();
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: const WallpaperDetailScreen(wallId: 'wall', source: WallpaperSource.prism),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Loading wallpaper'), findsOneWidget);
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -200));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   group('colour variation', () {
     const FeedItemEntity entity = FeedItemEntity.prism(
       id: 'prism-1',
@@ -91,6 +123,7 @@ void main() {
         bloc,
         states.stream,
         initialState: const WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
           entity: entity,
           paletteLoading: false,
           colors: <Color>[Colors.teal],
@@ -103,7 +136,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
 
           home: MediaQuery(
-            data: MediaQueryData(disableAnimations: reduceMotion),
+            data: MediaQueryData(size: const Size(800, 600), disableAnimations: reduceMotion),
             child: BlocProvider<WallpaperDetailBloc>.value(
               value: bloc,
               child: const WallpaperDetailScreen(entity: entity),
@@ -116,6 +149,7 @@ void main() {
     }
 
     const WallpaperDetailLoaded tinted = WallpaperDetailLoaded(
+      recommendations: const RecommendationState.exhausted(),
       entity: entity,
       paletteLoading: false,
       colors: <Color>[Colors.teal],

@@ -144,9 +144,11 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
 }
 
 class PrismFavouriteCount extends StatefulWidget {
-  const PrismFavouriteCount({super.key, required this.id, this.views});
+  const PrismFavouriteCount({super.key, required this.id, this.views, this.builder, this.showFavourites = true});
   final String id;
   final int? views;
+  final Widget Function(BuildContext, int)? builder;
+  final bool showFavourites;
 
   @override
   State<PrismFavouriteCount> createState() => _PrismFavouriteCountState();
@@ -171,9 +173,12 @@ class _PrismFavouriteCountState extends State<PrismFavouriteCount> {
         bloc: getIt<FavouriteCountsCubit>(),
         selector: (stats) => stats[prismStatsId(widget.id)],
         builder: (context, stats) {
+          if (widget.builder case final builder?) {
+            return stats == null ? const SizedBox.shrink() : builder(context, stats.favourites);
+          }
           final views = widget.views ?? stats?.views;
           if (stats == null && views == null) return const SizedBox.shrink();
-          return WallpaperStatsRow(favourites: stats?.favourites, views: views);
+          return WallpaperStatsRow(favourites: widget.showFavourites ? stats?.favourites : null, views: views);
         },
       );
 }

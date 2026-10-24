@@ -630,6 +630,9 @@ void main() {
     expect(find.text('Show less like this'), findsNothing);
     await gesture.up();
     await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(find.bySemanticsLabel('Share link'), findsNothing);
   });
 }

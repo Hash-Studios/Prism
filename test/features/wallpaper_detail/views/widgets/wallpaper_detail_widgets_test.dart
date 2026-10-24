@@ -3,11 +3,15 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
-import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -16,21 +20,12 @@ import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-FeedItemEntity _wall(String id) => FeedItemEntity.prism(
-  id: id,
-  wallpaper: PrismWallpaper(
-    core: WallpaperCore(
-      id: id,
-      source: WallpaperSource.prism,
-      fullUrl: 'https://img.test/$id.jpg',
-      thumbnailUrl: 'https://img.test/$id-t.jpg',
-    ),
-  ),
-);
+import '../../../../support/favourite_test_scope.dart';
 
 Widget _host(Widget child) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
+  builder: favouriteTestBuilder,
   home: Scaffold(body: child),
 );
 
@@ -43,6 +38,7 @@ const List<_TagScene> _tagScenes = <_TagScene>[
 ];
 
 void main() {
+  setUpFavouriteCounts();
   group('WallpaperActionBar', () {
     testWidgets('shows the labelled primary action and an icon action with a tooltip for each button', (tester) async {
       await tester.pumpWidget(
@@ -71,12 +67,7 @@ void main() {
           const WallpaperActionBar(
             primary: WallpaperBarAction(
               label: 'Set as wallpaper',
-              child: PrimaryActionPill(
-                icon: Icons.image,
-                label: 'Set',
-                semanticLabel: 'Set as wallpaper',
-                isLoading: false,
-              ),
+              child: PrimaryActionPill(label: 'Set', semanticLabel: 'Set as wallpaper', isLoading: false),
             ),
             actions: <WallpaperBarAction>[
               WallpaperBarAction(
@@ -134,12 +125,7 @@ void main() {
             body: WallpaperActionBar(
               primary: WallpaperBarAction(
                 label: 'Set as wallpaper',
-                child: PrimaryActionPill(
-                  icon: Icons.image,
-                  label: 'Set',
-                  semanticLabel: 'Set as wallpaper',
-                  isLoading: false,
-                ),
+                child: PrimaryActionPill(label: 'Set', semanticLabel: 'Set as wallpaper', isLoading: false),
               ),
               actions: <WallpaperBarAction>[
                 WallpaperBarAction(
@@ -176,46 +162,140 @@ void main() {
     });
   });
 
-  group('SimilarWallpapersStrip', () {
-    testWidgets('is hidden when nothing similar exists', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          SimilarWallpapersStrip(entity: _wall('a'), loader: (_) async => const <FeedItemEntity>[], onOpen: (_) {}),
+  group('FlatMenuButtons', () {
+    Future<void> pumpRow(WidgetTester tester, Widget row) => tester.pumpWidget(_host(Center(child: row)));
+    double iconSize(WidgetTester tester, String label) => IconTheme.of(
+      tester.element(find.descendant(of: find.bySemanticsLabel(label), matching: find.byType(Icon))),
+    ).size!;
+    Size target(WidgetTester tester, String label) => tester.getSize(
+      find.ancestor(of: find.bySemanticsLabel(label), matching: find.byType(CircularMenuButton)).first,
+    );
+
+    testWidgets('a plain flat row keeps the old 20 point icon and 17 point padding', (tester) async {
+      await pumpRow(
+        tester,
+        const FlatMenuButtons(
+          child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
         ),
       );
-      await tester.pump();
-
-      expect(find.text('More like this'), findsNothing);
+      expect(iconSize(tester, 'Share'), 20);
+      expect(target(tester, 'Share'), const Size.square(54));
     });
 
-    testWidgets('is hidden when loading fails', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          SimilarWallpapersStrip(entity: _wall('a'), loader: (_) async => throw Exception('offline'), onOpen: (_) {}),
-        ),
-      );
-      await tester.pump();
-
-      expect(find.text('More like this'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('shows the walls and reports the tapped one', (tester) async {
-      FeedItemEntity? opened;
-      await tester.pumpWidget(
-        _host(
-          SimilarWallpapersStrip(
-            entity: _wall('a'),
-            loader: (_) async => <FeedItemEntity>[_wall('b'), _wall('c')],
-            onOpen: (item) => opened = item,
+    testWidgets('the detail row sets 24 and 13 points, and a button that sets its own padding keeps it', (
+      tester,
+    ) async {
+      await pumpRow(
+        tester,
+        const FlatMenuButtons(
+          iconSize: 24,
+          padding: EdgeInsets.all(13),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+              CircularMenuButton(label: 'Edit', isLoading: false, padding: EdgeInsets.zero, child: Icon(Icons.edit)),
+            ],
           ),
         ),
       );
-      await tester.pump();
+      expect(iconSize(tester, 'Share'), 24);
+      expect(target(tester, 'Share'), const Size.square(50));
+      expect(target(tester, 'Edit'), const Size.square(24));
+    });
 
-      expect(find.text('More like this'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey<String>('c')));
-      expect(opened?.id, 'c');
+    testWidgets('outside a flat row the round button ignores padding and stays a 48 point circle', (tester) async {
+      await pumpRow(tester, const CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)));
+      expect(target(tester, 'Share'), const Size.square(CircularMenuButton.size));
+    });
+  });
+
+  group('WallpaperRecommendations', () {
+    Future<void> pumpRecommendations(WidgetTester tester, RecommendationState state, {VoidCallback? onLoadMore}) =>
+        tester.pumpWidget(
+          _host(
+            CustomScrollView(
+              slivers: [
+                WallpaperRecommendations(
+                  state: state,
+                  heroScope: 'test-visit',
+                  onOpen: (_, _) {},
+                  onLoadMore: onLoadMore ?? () {},
+                ),
+              ],
+            ),
+          ),
+        );
+
+    testWidgets('successful exhausted empty results leave no orphan heading or footer', (tester) async {
+      await pumpRecommendations(tester, const RecommendationState.exhausted());
+      expect(find.byType(Text), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('initial loading shows tile placeholders and failed empty results can retry', (tester) async {
+      await pumpRecommendations(tester, const RecommendationState.initial());
+      expect(find.byType(PulseFill), findsWidgets);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      var retries = 0;
+      await pumpRecommendations(tester, const RecommendationState.initial().failure(), onLoadMore: () => retries++);
+      expect(find.byType(PulseFill), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.tap(find.byType(TextButton));
+      expect(retries, 1);
+    });
+
+    testWidgets('recommendations use the feed footer without changing image aspect ratio', (tester) async {
+      final item = WallhavenFeedItem(
+        id: 'stats-wall',
+        wallpaper: WallhavenWallpaper(
+          core: WallpaperCore(
+            id: 'stats-wall',
+            source: WallpaperSource.wallhaven,
+            thumbnailUrl: '',
+            fullUrl: '',
+            favourites: 24,
+          ),
+          views: 1234,
+        ),
+      );
+      final semantics = tester.ensureSemantics();
+      await pumpRecommendations(tester, RecommendationState(items: [item], status: RecommendationStatus.exhausted));
+      expect(find.byType(FavouriteWallpaperCard), findsOneWidget);
+      expect(find.byType(FavouriteWallpaperFooter), findsOneWidget);
+      expect(find.text('24'), findsOneWidget);
+      expect(find.text('1.2K'), findsOneWidget);
+      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsOneWidget);
+      final image = tester.getRect(find.byType(PrismWallTile));
+      final footer = tester.getRect(find.byType(FavouriteWallpaperFooter));
+      expect(footer.top, image.bottom);
+      expect(footer.height, favouriteFooterHeight);
+      expect(image.width / image.height, closeTo(0.5, 0.001));
+      semantics.dispose();
+    });
+
+    testWidgets('append retry retains tiles and protected Prism tiles never use original fallback', (tester) async {
+      final item = PrismFeedItem(
+        id: 'protected',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'protected',
+            source: WallpaperSource.prism,
+            thumbnailUrl: '',
+            fullUrl: 'https://protected.test/original.jpg',
+          ),
+        ),
+      );
+      var retries = 0;
+      await pumpRecommendations(
+        tester,
+        RecommendationState(items: [item], status: RecommendationStatus.failure),
+        onLoadMore: () => retries++,
+      );
+      expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile)).fallbackUrl, isNull);
+      await tester.tap(find.byType(TextButton));
+      expect(retries, 1);
+      expect(find.byKey(ValueKey((WallpaperSource.prism, 'protected'))), findsOneWidget);
     });
   });
 
@@ -225,9 +305,7 @@ void main() {
       await tester.pumpWidget(
         _host(WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (tag) => tapped = tag)),
       );
-
       await tester.tap(find.text('stars'));
-
       expect(tapped, 'stars');
     });
 

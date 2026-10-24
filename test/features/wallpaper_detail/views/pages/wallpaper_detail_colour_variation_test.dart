@@ -18,6 +18,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
@@ -32,10 +33,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -156,13 +157,14 @@ void main() {
 
   final Finder accentSwatch = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent color');
 
-  Future<void> openPanel(WidgetTester tester) async {
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pumpAndSettle();
+  Future<void> showPalette(WidgetTester tester) async {
+    await tester.ensureVisible(find.bySemanticsLabel('Original wallpaper colors'));
+    await tester.pump();
   }
 
   WallpaperDetailLoaded loaded({List<Color>? colors, Color? accent, bool colorChanged = false}) =>
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _prism(),
         paletteLoading: false,
         colors: colors,
@@ -266,9 +268,7 @@ void main() {
     List<AnalyticsActionValue> trackedActions() =>
         analytics.events.whereType<SurfaceActionTappedEvent>().map((event) => event.action).toList();
 
-    testWidgets('a tap tints the wallpaper with the next palette colour and a long press brings the original back', (
-      tester,
-    ) async {
+    testWidgets('a tap cycles tint and the shared hold-menu reset restores the original', (tester) async {
       final WallpaperDetailBloc bloc = await pumpWithRealBloc(tester, twoColours);
       expect(tintOnWallpaper(tester), isNull);
 
@@ -286,7 +286,19 @@ void main() {
       expect(tintOnWallpaper(tester), const ColorFilter.mode(Color(0xFFFF0000), BlendMode.hue));
       expect(trackedActions(), contains(AnalyticsActionValue.paletteCycleTapped));
 
-      await tester.longPressAt(const Offset(195, 300));
+      final finger = await tester.startGesture(const Offset(195, 300));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.bySemanticsLabel('Reset to original'), findsOneWidget);
+      await finger.moveTo(tester.getCenter(find.bySemanticsLabel('Reset to original')));
+      await tester.pump();
+      await finger.up();
+      await tester.pump();
+      await waitForRealIo(
+        tester,
+        () => bloc.state is WallpaperDetailLoaded && !(bloc.state as WallpaperDetailLoaded).colorChanged,
+        reason: 'the post-dismissal hold action to reset the selected tint',
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -295,9 +307,35 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
+    testWidgets('the metadata disclosure opens and closes without replacing the detail visit', (tester) async {
+      final bloc = await pumpWithRealBloc(tester, twoColours);
+      final entity = (bloc.state as WallpaperDetailLoaded).entity;
+      await tester.ensureVisible(find.byTooltip('Expand wallpaper details'));
+      await tester.tap(find.byTooltip('Expand wallpaper details'));
+      await tester.pump();
+      await waitForRealIo(
+        tester,
+        () => !(bloc.state as WallpaperDetailLoaded).panelCollapsed,
+        reason: 'the details disclosure to open',
+      );
+      await tester.pump();
+      expect(find.text('space'), findsOneWidget);
+      await tester.ensureVisible(find.byTooltip('Collapse wallpaper details'));
+      await tester.tap(find.byTooltip('Collapse wallpaper details'));
+      await tester.pump();
+      await waitForRealIo(
+        tester,
+        () => (bloc.state as WallpaperDetailLoaded).panelCollapsed,
+        reason: 'the details disclosure to close',
+      );
+      await tester.pump();
+      expect(find.text('space'), findsNothing);
+      expect((bloc.state as WallpaperDetailLoaded).entity, entity);
+    });
+
     testWidgets('the first swatch shows the untouched thumbnail and each other swatch its colour', (tester) async {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal, Colors.red], accent: Colors.teal));
-      await openPanel(tester);
+      await showPalette(tester);
       final Finder originalSwatch = find.bySemanticsLabel('Original wallpaper colors');
       final Finder swatchRow = find.ancestor(of: originalSwatch, matching: find.byType(Row));
       Finder fixtureSwatches() => find.descendant(of: swatchRow, matching: find.byType(CachedNetworkImage));
@@ -319,7 +357,7 @@ void main() {
 
     testWidgets('a long press on a swatch copies its hex colour', (tester) async {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
-      await openPanel(tester);
+      await showPalette(tester);
 
       await tester.longPress(accentSwatch);
       await tester.pump();
@@ -337,7 +375,7 @@ void main() {
       });
       addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null));
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
-      await openPanel(tester);
+      await showPalette(tester);
 
       await tester.tap(accentSwatch);
       await tester.tap(find.bySemanticsLabel('Original wallpaper colors'));

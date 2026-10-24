@@ -105,6 +105,12 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// No description provided for @wallpaperProviderWallhaven.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallhaven'**
+  String get wallpaperProviderWallhaven;
+
   /// Failed filter export action inserted before refund status.
   ///
   /// In en, this message translates to:
@@ -11293,10 +11299,16 @@ abstract class AppLocalizations {
   /// **'Original wallpaper colors'**
   String get wallpaperAccentColorsOriginal;
 
+  /// No description provided for @wallpaperResetOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to original'**
+  String get wallpaperResetOriginal;
+
   /// Toast hint explaining how to reset the selected wallpaper accent.
   ///
   /// In en, this message translates to:
-  /// **'Long press to reset'**
+  /// **'Hold for actions, including Reset to original'**
   String get wallpaperAccentResetHint;
 
   /// Filter option to show all wallpaper sources.
@@ -12886,7 +12898,7 @@ abstract class AppLocalizations {
   /// Accessibility hint describing wallpaper image gestures.
   ///
   /// In en, this message translates to:
-  /// **'Tap to cycle accent color. Long press to reset. Swipe up for details.'**
+  /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
 
   /// Accessibility label for the wallpaper image.

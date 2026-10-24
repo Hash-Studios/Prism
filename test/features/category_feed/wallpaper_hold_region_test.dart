@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_hold_region.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +15,7 @@ void main() {
     bool reduceMotion = false,
     VoidCallback? onTap,
     bool showLess = true,
+    bool resetOriginal = false,
     Object identity = 'wall',
     Size tileSize = const Size(160, 200),
     double textScale = 1,
@@ -34,6 +38,7 @@ void main() {
                 favouriteLabel: 'Favourite',
                 shareLabel: 'Share',
                 showLessLabel: showLess ? 'See less' : null,
+                resetOriginalLabel: resetOriginal ? 'Reset to original variation' : null,
                 onAction: actions.add,
                 preview: const ColoredBox(key: ValueKey('preview'), color: Colors.blue),
                 child: GestureDetector(
@@ -103,6 +108,8 @@ void main() {
     await tester.pump();
     expect(find.text('Share'), findsOneWidget);
     await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
     await tester.pump();
     expect(actions, [WallpaperQuickAction.share]);
     expect(outerSemanticsVisible(), isTrue);
@@ -210,10 +217,11 @@ void main() {
     'Favourite': WallpaperQuickAction.favourite,
     'Share': WallpaperQuickAction.share,
     'See less': WallpaperQuickAction.showLess,
+    'Reset to original variation': WallpaperQuickAction.resetOriginal,
   }.entries) {
     testWidgets('hold drag highlights ${entry.key}, release commits once after close', (tester) async {
       final actions = <WallpaperQuickAction>[];
-      await pumpRegion(tester, actions);
+      await pumpRegion(tester, actions, resetOriginal: entry.value == WallpaperQuickAction.resetOriginal);
       final gesture = await hold(tester);
       expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
       expect(
@@ -230,6 +238,8 @@ void main() {
       expect(actions, isEmpty);
       await gesture.up();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 180));
+      await tester.pump();
       expect(actions, <WallpaperQuickAction>[entry.value]);
       expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
     });
@@ -242,6 +252,8 @@ void main() {
     await gesture.moveTo(const Offset(20, 20));
     await gesture.up();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(actions, isEmpty);
     gesture = await hold(tester);
     await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Favourite')));
@@ -249,6 +261,156 @@ void main() {
     await tester.pump();
     expect(actions, isEmpty);
     expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
+  });
+
+  testWidgets('release outside reverses the lift before removing the overlay', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final gesture = await hold(tester);
+    await gesture.moveTo(const Offset(10, 10));
+    await gesture.up();
+    await tester.pump();
+    final scrim = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
+    final double openedAlpha = tester.widget<ColoredBox>(scrim).color.a;
+    await tester.pump(const Duration(milliseconds: 60));
+    final double exitingAlpha = tester.widget<ColoredBox>(scrim).color.a;
+    expect(exitingAlpha, lessThan(openedAlpha));
+    expect(exitingAlpha, greaterThan(0));
+    await tester.pump(const Duration(milliseconds: 120));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(actions, isEmpty);
+  });
+
+  testWidgets('release in the same frame as the hold timeout cleans up an initially exiting overlay', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final Offset position = tester.getCenter(find.byKey(const ValueKey('source')));
+    await tester.startGesture(position, pointer: 499);
+    var released = false;
+    Timer(const Duration(milliseconds: 501), () {
+      GestureBinding.instance.handlePointerEvent(
+        PointerUpEvent(pointer: 499, position: position, timeStamp: const Duration(milliseconds: 501)),
+      );
+      released = true;
+    });
+
+    // The long-press timer inserts the overlay at 500 ms; release at 501 ms, before that frame builds it.
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(released, isTrue);
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(
+      tester
+          .widget<Opacity>(
+            find.ancestor(of: find.byKey(const ValueKey('source')), matching: find.byType(Opacity)).first,
+          )
+          .opacity,
+      1,
+    );
+    expect(actions, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('release during entrance reverses continuously from the sampled visual state', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final gesture = await hold(tester, settle: false);
+    await tester.pump(const Duration(milliseconds: 80));
+
+    final scrim = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
+    final double scrimBefore = tester.widget<ColoredBox>(scrim).color.a;
+    final transformsBefore = tester
+        .widgetList<Transform>(
+          find.ancestor(of: find.byKey(const ValueKey('preview')), matching: find.byType(Transform)),
+        )
+        .map((transform) => transform.transform)
+        .toList();
+    final double actionOpacityBefore = tester
+        .widget<Opacity>(find.ancestor(of: find.bySemanticsLabel('Favourite'), matching: find.byType(Opacity)).first)
+        .opacity;
+
+    await gesture.moveTo(const Offset(10, 10));
+    await gesture.up();
+    await tester.pump();
+
+    expect(tester.widget<ColoredBox>(scrim).color.a, closeTo(scrimBefore, 0.01));
+    final transformsAfter = tester
+        .widgetList<Transform>(
+          find.ancestor(of: find.byKey(const ValueKey('preview')), matching: find.byType(Transform)),
+        )
+        .map((transform) => transform.transform)
+        .toList();
+    expect(transformsAfter, hasLength(transformsBefore.length));
+    for (var index = 0; index < transformsBefore.length; index++) {
+      expect(transformsAfter[index].entry(0, 0), closeTo(transformsBefore[index].entry(0, 0), 0.001));
+      expect(transformsAfter[index].entry(0, 1), closeTo(transformsBefore[index].entry(0, 1), 0.001));
+      expect(transformsAfter[index].entry(1, 3), closeTo(transformsBefore[index].entry(1, 3), 0.1));
+    }
+    final double actionOpacityAfter = tester
+        .widget<Opacity>(find.ancestor(of: find.bySemanticsLabel('Favourite'), matching: find.byType(Opacity)).first)
+        .opacity;
+    expect(actionOpacityAfter, closeTo(actionOpacityBefore, 0.01));
+
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(actions, isEmpty);
+  });
+
+  testWidgets('forced lifecycle cleanup interrupts an animated dismissal', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final gesture = await hold(tester);
+    await gesture.moveTo(const Offset(10, 10));
+    await gesture.up();
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(actions, isEmpty);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('forced cleanup before the closing frame suppresses queued action dispatch', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
+    await gesture.up();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(actions, isEmpty);
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('reduced-motion action dispatches once even though its overlay closes immediately', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions, reduceMotion: true);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
+    await gesture.up();
+    await tester.pump();
+    expect(actions, <WallpaperQuickAction>[WallpaperQuickAction.share]);
+    expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
+  });
+
+  testWidgets('lifecycle cancellation suppresses reduced-motion action after overlay removal', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions, reduceMotion: true);
+    final gesture = await hold(tester);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
+    await gesture.up();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+
+    expect(actions, isEmpty);
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   });
 
   testWidgets('ordinary tap and pre-hold drag stay with child and scroll', (tester) async {
@@ -277,9 +439,9 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final actions = <WallpaperQuickAction>[];
-      await pumpRegion(tester, actions, alignment: alignment);
+      await pumpRegion(tester, actions, alignment: alignment, resetOriginal: true);
       final gesture = await hold(tester);
-      for (final label in <String>['Favourite', 'Share', 'See less']) {
+      for (final label in <String>['Favourite', 'Share', 'See less', 'Reset to original variation']) {
         final rect = tester.getRect(find.bySemanticsLabel(label));
         expect(rect.width, 48);
         expect(rect.top, greaterThanOrEqualTo(0));
@@ -338,6 +500,8 @@ void main() {
     await pumpRegion(tester, actions);
     var gesture = await hold(tester);
     await Navigator.of(tester.element(find.byType(WallpaperHoldRegion))).maybePop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
     await tester.pump();
     await gesture.up();
     expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
@@ -404,6 +568,7 @@ void main() {
       SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: action.id),
     );
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
     expect(actions, <WallpaperQuickAction>[WallpaperQuickAction.share]);
     expect(find.bySemanticsLabel('Share'), findsNothing);
     semantics.dispose();

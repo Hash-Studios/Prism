@@ -20,10 +20,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// Opens an unlocked wall in the wallpaper detail page. The full url comes from the unlock, not from the Drop doc.
-void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock) {
+void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock, {String? heroTag}) {
   PrismHaptics.tap();
   final entity = dropWallFeedItem(wall, unlock);
-  unawaited(context.router.push(WallpaperDetailRoute(entity: entity)));
+  unawaited(context.router.push(WallpaperDetailRoute(entity: entity, heroTag: heroTag)));
 }
 
 PrismFeedItem dropWallFeedItem(DropWall wall, DropUnlock unlock) {
@@ -75,16 +75,18 @@ class DropWallGrid extends StatelessWidget {
         itemBuilder: (context, index) {
           final DropWall wall = drop.walls[index];
           final DropUnlock? unlock = unlocked[wall.id];
+          final String heroTag = prismHeroTag(context, index, 'drop-grid-${drop.weekKey}-${wall.id}');
           final tile = DropWallTile(
             key: ValueKey<String>(wall.id),
             wall: wall,
             serial: dropSerial(index, drop.walls.length),
             busy: busyKey == wall.id,
             quickActionItem: unlock == null ? null : dropWallFeedItem(wall, unlock),
+            heroTag: unlock == null ? null : heroTag,
             unlocked: unlock != null,
             missed: unlock == null && !canBuy,
             onTap: unlock != null
-                ? () => openDropWall(context, wall, unlock)
+                ? () => openDropWall(context, wall, unlock, heroTag: heroTag)
                 : canBuy
                 ? () => onLockedTap(wall)
                 : null,
@@ -137,6 +139,7 @@ class DropWallTile extends StatefulWidget {
     required this.busy,
     required this.onTap,
     this.quickActionItem,
+    this.heroTag,
   });
 
   final DropWall wall;
@@ -146,6 +149,7 @@ class DropWallTile extends StatefulWidget {
   final bool busy;
   final VoidCallback? onTap;
   final FeedItemEntity? quickActionItem;
+  final String? heroTag;
 
   @override
   State<DropWallTile> createState() => _DropWallTileState();
@@ -176,6 +180,7 @@ class _DropWallTileState extends State<DropWallTile> {
     final Widget tile = PrismWallTile(
       url: widget.wall.thumb,
       semanticLabel: label,
+      heroTag: widget.heroTag,
       onTap: widget.onTap,
       overlay: _overlay(),
     );

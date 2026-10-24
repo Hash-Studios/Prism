@@ -29,12 +29,14 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,10 +45,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/coins_test_backend.dart';
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
   _DetailTestAssetStore({required super.directory, required this.sourceFile});
@@ -175,7 +177,7 @@ void main() {
 
   Future<_MockWallpaperDetailBloc> pumpDetail(WidgetTester tester, WallpaperDetailLoaded state) async {
     final bloc = _MockWallpaperDetailBloc();
-    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
+    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state.copyWith(panelCollapsed: false));
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -194,7 +196,14 @@ void main() {
   testWidgets('Android shows a labelled Set action and icon actions with tooltips, on the details panel', (
     tester,
   ) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
 
     expect(find.text('Set'), findsOneWidget);
     expect(find.byType(SetWallpaperButton), findsOneWidget);
@@ -211,17 +220,24 @@ void main() {
     );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the action icons keep the current look: bare 20 point icons and the 30 point heart', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+  testWidgets('the action icons are bare 24 point glyphs beside the 30 point heart', (tester) async {
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
 
     for (final Type button in <Type>[EditButton, ShareButton, DownloadButton]) {
       final IconThemeData icon = IconTheme.of(
         tester.element(find.descendant(of: find.byType(button), matching: find.byType(Icon)).first),
       );
-      expect(icon.size, 20, reason: '$button');
+      expect(icon.size, 24, reason: '$button');
       expect(
         tester.getSize(find.descendant(of: find.byType(button), matching: find.byType(CircularMenuButton))),
-        const Size.square(54),
+        const Size.square(50),
       );
     }
     final FavoriteIcon heart = tester.widget<FavoriteIcon>(find.byType(FavoriteIcon));
@@ -230,62 +246,35 @@ void main() {
     expect(heart.iconColor, Theme.of(tester.element(find.byType(FavoriteIcon))).colorScheme.onSurface);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the action bar stays at the bottom when the details panel opens', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-    final Rect before = tester.getRect(find.byType(SetWallpaperButton));
-    final double chipTopBefore = tester.getRect(find.widgetWithText(ActionChip, 'space')).top;
-
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-
-    expect(tester.getRect(find.byType(SetWallpaperButton)), before);
-    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).top, lessThan(chipTopBefore));
-    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).bottom, lessThanOrEqualTo(before.top));
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('collapsed panel content is faded out and returns when the panel opens', (tester) async {
-    final SemanticsHandle semantics = tester.ensureSemantics();
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-
-    expect(find.bySemanticsLabel('Original wallpaper colors'), findsNothing);
-    final Opacity chipFade = tester.widget<Opacity>(
-      find.ancestor(of: find.widgetWithText(ActionChip, 'space'), matching: find.byType(Opacity)).first,
-    );
-    expect(chipFade.opacity, 0);
-    expect(tester.getSemantics(find.bySemanticsLabel('Expand wallpaper details')).rect.height, lessThan(100));
-
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-
-    expect(find.bySemanticsLabel('Original wallpaper colors'), findsOneWidget);
-    semantics.dispose();
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('collapsed palette ignores taps and an expanded palette selects its colour', (tester) async {
-    final _MockWallpaperDetailBloc bloc = await pumpDetail(
+  testWidgets('inline actions precede details and the palette stays interactive', (tester) async {
+    final bloc = await pumpDetail(
       tester,
-      WallpaperDetailLoaded(entity: _prism(), paletteLoading: false, colors: const <Color>[Colors.teal]),
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+        colors: const [Colors.teal],
+      ),
     );
-    final Finder tealSwatch = find.byWidgetPredicate(
-      (widget) => widget is Semantics && widget.properties.label == 'Accent color',
+    expect(
+      tester.getRect(find.byType(WallpaperActionBar)).bottom,
+      lessThan(tester.getRect(find.widgetWithText(ActionChip, 'space')).top),
     );
-
-    expect(tealSwatch, findsOneWidget);
-    await tester.tapAt(tester.getCenter(tealSwatch));
-    await tester.pump();
-    verifyNever(() => bloc.add(any(that: isA<SelectAccentColor>())));
-
-    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pumpAndSettle();
-    await tester.tap(tealSwatch);
-
+    final swatch = find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Accent color');
+    await tester.ensureVisible(swatch);
+    await tester.tap(swatch);
     verify(() => bloc.add(const SelectAccentColor(color: Colors.teal))).called(1);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('every button in the bar shrinks to 0.96 under the finger, not twice over', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
     Finder glyph(Type button) => find.descendant(of: find.byType(button), matching: find.byType(Icon)).first;
     final Map<String, Finder> buttons = <String, Finder>{
       'Set': find.byType(SetWallpaperButton),
@@ -309,29 +298,63 @@ void main() {
     }
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('dragging the collapsed handle opens the panel without moving the action bar', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-    final Rect actionBarBefore = tester.getRect(find.byType(WallpaperActionBar));
-
-    await tester.drag(find.bySemanticsLabel('Expand wallpaper details'), const Offset(0, -300));
-    await tester.pumpAndSettle();
-
-    expect(find.bySemanticsLabel('Original wallpaper colors'), findsOneWidget);
-    expect(tester.getRect(find.byType(WallpaperActionBar)), actionBarBefore);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
-
   testWidgets('iOS shows Save as the primary action and no Set action', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
 
     expect(find.text('Save'), findsOneWidget);
     expect(find.byType(SetWallpaperButton), findsNothing);
     expect(find.byType(DownloadButton), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+  testWidgets('actions sit under the card: icons first, then the labelled primary at the end', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+    final bool android = defaultTargetPlatform == TargetPlatform.android;
+    final Finder primary = find.byType(android ? SetWallpaperButton : DownloadButton);
+    final List<Finder> order = <Finder>[
+      find.byType(FavouriteWallpaperButton),
+      find.byType(ShareButton),
+      find.byType(EditButton),
+      if (android) find.byType(DownloadButton),
+      primary,
+    ];
+    double left(Finder finder) => tester.getRect(finder).left;
+    for (int i = 1; i < order.length; i++) {
+      expect(left(order[i]), greaterThan(left(order[i - 1])), reason: '${order[i]}');
+    }
+    final Rect card = tester.getRect(
+      find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
+    );
+    final Rect bar = tester.getRect(find.byType(WallpaperActionBar));
+    expect(bar.top, card.bottom);
+    expect(left(find.byType(FavouriteWallpaperButton)), card.left);
+    expect(tester.getRect(primary).right, bar.right - 8);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
   testWidgets('a wall in a premium collection is a premium download', (tester) async {
     await pumpDetail(
       tester,
-      WallpaperDetailLoaded(entity: _prism(collections: <String>['space']), paletteLoading: false),
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(collections: <String>['space']),
+        paletteLoading: false,
+      ),
     );
     final DownloadButton premium = tester.widget<DownloadButton>(find.byType(DownloadButton));
 
@@ -342,7 +365,11 @@ void main() {
   testWidgets('a wall in a free collection is a normal download', (tester) async {
     await pumpDetail(
       tester,
-      WallpaperDetailLoaded(entity: _prism(collections: <String>['Nature']), paletteLoading: false),
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(collections: <String>['Nature']),
+        paletteLoading: false,
+      ),
     );
 
     expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).isPremiumContent, isFalse);
@@ -353,6 +380,7 @@ void main() {
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _prism(),
         paletteLoading: false,
         colors: const <Color>[Colors.teal],
@@ -371,6 +399,7 @@ void main() {
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _prism(),
         paletteLoading: false,
         colors: const <Color>[Colors.teal],
@@ -421,6 +450,7 @@ void main() {
       await pumpDetail(
         tester,
         WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
           entity: entity,
           paletteLoading: false,
           colors: const <Color>[Color(0xFF00FF00)],
@@ -444,6 +474,7 @@ void main() {
       await pumpDetail(
         tester,
         WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
           entity: _prism(),
           paletteLoading: false,
           colors: const <Color>[Colors.teal],
@@ -605,6 +636,7 @@ void main() {
       await pumpDetail(
         tester,
         WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
           entity: _prism(),
           paletteLoading: false,
           colors: const <Color>[Color(0xFF00FF00)],
@@ -648,7 +680,14 @@ void main() {
     testWidgets(
       'an original download saves only the granted URL and remembers the stable identity after native success',
       (tester) async {
-        await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+        await pumpDetail(
+          tester,
+          WallpaperDetailLoaded(
+            recommendations: const RecommendationState.exhausted(),
+            entity: _prism(),
+            paletteLoading: false,
+          ),
+        );
         await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: true);
 
         expect(requests, hasLength(1));
@@ -677,7 +716,14 @@ void main() {
 
     testWidgets('a failed native save never records an acquisition', (tester) async {
       nativeSaveSucceeds = false;
-      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+      );
       await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: false);
 
       expect(requests, hasLength(1));
@@ -702,7 +748,14 @@ void main() {
         }
         return <String, Object>{'status': 'unavailable'};
       };
-      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+      );
       await tester.tap(find.byType(DownloadButton));
       for (int i = 0; i < 100 && !failureToast.isCompleted; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
@@ -720,26 +773,54 @@ void main() {
   });
 
   testWidgets('a wall smaller than the screen shows the low resolution note', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(width: 100, height: 100), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(width: 100, height: 100),
+        paletteLoading: false,
+      ),
+    );
 
     expect(find.text('Low resolution for your screen'), findsOneWidget);
   });
 
   testWidgets('a large wall shows no low resolution note', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(width: 9000, height: 9000), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(width: 9000, height: 9000),
+        paletteLoading: false,
+      ),
+    );
 
     expect(find.text('Low resolution for your screen'), findsNothing);
   });
 
   testWidgets('the tags show as chips', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
 
     expect(find.widgetWithText(ActionChip, 'space'), findsOneWidget);
     expect(find.widgetWithText(ActionChip, 'stars'), findsOneWidget);
   });
 
-  testWidgets('the similar strip stays hidden when it cannot load', (tester) async {
-    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+  testWidgets('an exhausted discovery feed does not invent similar results', (tester) async {
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('More like this'), findsNothing);

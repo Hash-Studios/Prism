@@ -7,16 +7,20 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -29,9 +33,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/wait_for_real_io.dart';
-import '../../../../support/favourite_test_scope.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -135,12 +139,47 @@ void main() {
     ).called(1);
   });
 
+  testWidgets('a downloaded catalogue wallpaper asks for recommendations like any other visit', (tester) async {
+    getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+    final bloc = _MockWallpaperDetailBloc();
+    whenListen(
+      bloc,
+      Stream<WallpaperDetailState>.value(WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false)),
+      initialState: const WallpaperDetailLoading(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: WallpaperDetailScreen(
+            wallId: 'pexels-1',
+            source: WallpaperSource.pexels,
+            localFile: File('assets/images/prism.webp'),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // The same request as a feed visit: the wallpaper's own category or tags decide what is related.
+    verify(() => bloc.add(const LoadRecommendations())).called(1);
+  });
+
   testWidgets('downloaded detail uses the local file for set, clock, and color swatches', (tester) async {
     final bloc = _MockWallpaperDetailBloc();
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false, colors: const [Colors.teal]),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _wallpaper(),
+        paletteLoading: false,
+        colors: const [Colors.teal],
+      ),
     );
     final file = File('assets/images/prism.webp');
     final router = _MockStackRouter();
@@ -183,7 +222,12 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false, colors: const [Colors.teal]),
+      initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _wallpaper(),
+        paletteLoading: false,
+        colors: const [Colors.teal],
+      ),
     );
     final file = File('${Directory.systemTemp.path}/deleted-loaded-wallpaper.jpg');
 
@@ -253,6 +297,7 @@ void main() {
       bloc,
       const Stream<WallpaperDetailState>.empty(),
       initialState: WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
         entity: _wallpaper(),
         paletteLoading: false,
         colors: const [Colors.teal, Colors.indigo],
@@ -287,6 +332,32 @@ void main() {
               .length ==
           4,
       reason: 'the retained original and its three swatch images to appear',
+    );
+    // Until the retained copy has a frame, the card keeps the network picture instead of going blank.
+    final Finder retainedCard = find.descendant(
+      of: find.byType(ShakeOnce),
+      matching: find.byWidgetPredicate((Widget widget) {
+        if (widget is! Image) return false;
+        final ImageProvider provider = widget.image is ResizeImage
+            ? (widget.image as ResizeImage).imageProvider
+            : widget.image;
+        return provider is FileImage && provider.file.path == setup.retained.path;
+      }),
+    );
+    final Image card = tester.widget<Image>(retainedCard.first);
+    final BuildContext cardContext = tester.element(retainedCard.first);
+    const Widget decoded = SizedBox(key: ValueKey<String>('decoded'));
+    expect(card.frameBuilder, isNotNull);
+    expect(card.frameBuilder!(cardContext, decoded, null, false), isNot(same(decoded)));
+    expect(card.frameBuilder!(cardContext, decoded, null, true), same(decoded));
+    expect(card.frameBuilder!(cardContext, decoded, 0, false), same(decoded));
+    await waitForRealIo(
+      tester,
+      () => find
+          .byWidgetPredicate((Widget widget) => widget is CachedNetworkImage && widget.imageUrl == url)
+          .evaluate()
+          .isEmpty,
+      reason: 'the decoded retained original to replace the network picture',
     );
     expect(
       find.byWidgetPredicate((Widget widget) => widget is CachedNetworkImage && widget.imageUrl == url),

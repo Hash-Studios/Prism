@@ -776,7 +776,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             isLoading: isLoading,
             child: const Icon(JamIcons.picture),
           )
-        : PrimaryActionPill(icon: JamIcons.picture, label: label, semanticLabel: semanticLabel, isLoading: isLoading);
+        : PrimaryActionPill(label: label, semanticLabel: semanticLabel, isLoading: isLoading);
     final Widget setTarget = GestureDetector(
       behavior: label == null && !widget.primary ? HitTestBehavior.deferToChild : HitTestBehavior.opaque,
       onTap: widget.primary ? null : _start,

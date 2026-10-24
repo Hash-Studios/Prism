@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show max, min, pi;
+import 'dart:math' show max, min;
 import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -9,11 +9,11 @@ import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
@@ -26,23 +26,22 @@ import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
-import 'package:Prism/core/widgets/prism/prism_card.dart' show PrismGroup;
-import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
@@ -51,7 +50,6 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
-import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -62,22 +60,22 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
-import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
+
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:equatable/equatable.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 @visibleForTesting
@@ -124,49 +122,72 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
-  static const double _sheetHPad = 24.0;
-
-  /// The glass floats this far from the left, right and bottom (the safe area comes on top of the bottom inset).
-  static const double _panelInset = 10.0;
-
-  /// Concentric with the 46 px Set pill, which sits 16 px inside the glass corner.
-  static const double _panelRadius = 40.0;
-  static const double _panelMaxFraction = 0.55;
-
-  /// Glass tint as a share of the theme primary colour, closed and open. The default is 0.2. The dock holds icon
-  /// buttons and the open panel holds text, so both need more to stay readable over a bright wallpaper. A light
-  /// theme paints dark icons on a pale tint, so it needs the most.
-  static const ({double dock, double open}) _glassAlphaLight = (dock: 0.55, open: 0.7);
-  static const ({double dock, double open}) _glassAlphaDark = (dock: 0.5, open: 0.6);
+  static const double _sheetHPad = PrismSpace.md;
 
   /// Text and icons in the panel that sit one step below the title.
   static const double _secondaryAlpha = 0.85;
 
-  /// The glass is lifted off the wallpaper by a soft shadow. It is drawn outside the glass only, so it never darkens
-  /// what the glass blurs.
-  static const BoxShadow _shadowLight = BoxShadow(color: Color(0x24000000), blurRadius: 24, offset: Offset(0, 8));
-  static const BoxShadow _shadowDark = BoxShadow(color: Color(0x59000000), blurRadius: 28, offset: Offset(0, 10));
+  /// The wallpaper is a card just under the status bar: a small side gap and large corners.
+  static const double _cardInset = PrismSpace.xxs;
+  static const double _cardRadius = PrismRadius.lg;
 
-  /// Panel content fades out over this height above the action bar, instead of ending in a hard edge.
-  static const double _contentFade = 24.0;
+  /// A tall card stops at this share of the screen, so the actions and the next wallpapers show on the first screen.
+  static const double _maxCardShare = 0.66;
 
-  /// Gap between the Live chip and the top edge of the glass.
-  static const double _chipGap = 12.0;
-  static const double _chromePad = 8.0;
-  static const double _handleHeight = 36.0;
-  static const double _handleHitWidth = 96.0;
-  static const double _handleHitHeight = 48.0;
+  /// The widest a card gets for its height. On a phone the card spans the screen. On a tablet or in landscape it
+  /// narrows and centres instead of cropping a tall wallpaper to a strip.
+  static const double _widestCardAspect = 0.85;
+
+  /// Back and the clock sit this far inside the top corners of the card.
+  static const double _chromePad = PrismSpace.xxs;
+  static const double _chromeSize = 44;
+
+  /// A colour variation swatch, and the 44 point target around it that holds its selection ring.
+  static const double _swatchSize = 36;
+  static const double _swatchTarget = 44;
 
   /// "Set N times" shows from this count, so a small number never reads as a poor wallpaper.
   static const int _minSetCountShown = 5;
 
   final ShakeController _shake = ShakeController();
-  final SimilarWallpapersLoader _similarLoader = SimilarWallpapersLoader.fromGetIt();
+  final ScrollController _scroll = ScrollController();
+  final Object _recommendationHeroScope = Object();
 
-  PanelController panelController = PanelController();
+  /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
+  /// them, on a fade of the page colour so the icons stay readable.
+  double _imageStatusStart = double.infinity;
+  double _imageStatusEnd = double.infinity;
+  bool _imageBehindStatusBar = false;
+  bool _feedBehindStatusBar = false;
 
-  /// 0 when the panel is collapsed, 1 when open. The collapsed panel sits under the action bar, so its content fades.
-  final ValueNotifier<double> _panelPosition = ValueNotifier<double>(0);
+  bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
+
+  void _loadMoreRecommendations() {
+    context.read<WallpaperDetailBloc>().add(const LoadRecommendations());
+  }
+
+  void _onDiscoveryScroll() {
+    if (_scroll.hasClients) {
+      final imageBehindStatusBar = _imageUnderStatusBar(_scroll.offset);
+      final feedBehindStatusBar = _scroll.offset >= _imageStatusEnd;
+      if (imageBehindStatusBar != _imageBehindStatusBar || feedBehindStatusBar != _feedBehindStatusBar) {
+        setState(() {
+          _imageBehindStatusBar = imageBehindStatusBar;
+          _feedBehindStatusBar = feedBehindStatusBar;
+        });
+      }
+    }
+    final state = context.read<WallpaperDetailBloc>().state;
+    if (_scroll.hasClients &&
+        _scroll.position.extentAfter < 600 &&
+        state is WallpaperDetailLoaded &&
+        !state.recommendations.loading &&
+        !state.recommendations.failed &&
+        state.recommendations.hasMore) {
+      _loadMoreRecommendations();
+    }
+  }
+
   bool _accentToastShown = false;
   bool _openRecorded = false;
   String? _offlinePreviewKey;
@@ -243,13 +264,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onDiscoveryScroll);
     _loadWallpaper(context);
   }
 
   @override
   void dispose() {
     _shake.dispose();
-    _panelPosition.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -270,10 +292,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     }
   }
 
-  double _topOverlayPadding(BuildContext context) {
-    final inset = app_state.notchSize ?? MediaQuery.paddingOf(context).top;
-    return inset + _chromePad;
-  }
+  /// The top of the card: just under the status bar.
+  double _statusInset(BuildContext context) => app_state.notchSize ?? MediaQuery.paddingOf(context).top;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +305,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           context.router.replace(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: widget.localFile!));
           return;
         }
+        if (state is WallpaperDetailLoaded && !state.recommendations.started) {
+          _loadMoreRecommendations();
+        }
         if (state is WallpaperDetailLoaded && !_openRecorded) {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
@@ -294,10 +317,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         builder: (context, state) {
           final entity = widget.entity;
           return switch (state) {
-            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
-            WallpaperDetailInitial() when entity != null => _buildLoadedState(
+            // Keep the destination Hero mounted while Prism resolves its canonical access policy.
+            WallpaperDetailInitial() || WallpaperDetailLoading() when entity != null => _buildLoadedState(
               context,
               WallpaperDetailLoaded(entity: entity),
+              canonicalLoading: true,
             ),
             WallpaperDetailInitial() || WallpaperDetailLoading() => _buildLoadingState(state),
             WallpaperDetailLoaded() => _buildLoadedState(context, state),
@@ -309,63 +333,115 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
-    final File? localFile = widget.localFile;
-    if (localFile != null) {
-      return Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.file(
-              localFile,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
-                  GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
-            ),
-            SafeArea(
-              child: Align(
-                alignment: AlignmentDirectional.topStart,
-                child: IconButton(
-                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(JamIcons.chevron_left),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
-      (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
+    final localFile = widget.localFile;
+    final thumbnail = normalizeWallpaperThumbnailUrl(
+      (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? widget.entity?.thumbnailUrl ?? '',
     );
-    if (thumbnailUrl.isEmpty) {
-      return Scaffold(
-        body: GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper),
+    final Size card = _cardSize(context, widget.entity?.wallpaperCore);
+    final Widget image;
+    if (localFile != null) {
+      image = Image.file(
+        localFile,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
       );
+    } else if (thumbnail.isNotEmpty) {
+      image = CachedNetworkImage(
+        cacheManager: PrismImageCache.instance,
+        imageUrl: thumbnail,
+        fit: BoxFit.cover,
+        fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+        fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+        placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
+        errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
+      );
+    } else {
+      image = GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper);
     }
     return Scaffold(
-      body: _withHero(
-        CachedNetworkImage(
-          cacheManager: PrismImageCache.instance,
-          imageUrl: thumbnailUrl,
-          fit: BoxFit.cover,
-          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-          width: double.infinity,
-          height: double.infinity,
-          placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
-          errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            bottom: false,
+            // Scrolls rather than overflowing a short or split-screen window.
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
+                    child: SizedBox.fromSize(size: card, child: _withHero(image)),
+                  ),
+                  _panelColumn(_buildPendingDetails()),
+                ],
+              ),
+            ),
+          ),
+          ..._pinnedChrome(state, card),
+        ],
+      ),
+    );
+  }
+
+  /// Back and, once the wallpaper is ready, the clock. Both stay in the top corners of the card while the page
+  /// scrolls under them, on a dark scrim that reads over any wallpaper.
+  List<Widget> _pinnedChrome(WallpaperDetailState state, Size card, {VoidCallback? onClock}) {
+    final EdgeInsets padding = MediaQuery.paddingOf(context);
+    final double top = _statusInset(context) + _chromePad;
+    // A narrowed card is centred, so its corners sit in from the side insets.
+    final double centring = max(0.0, (_availableCardWidth(context) - card.width) / 2);
+    return [
+      PositionedDirectional(
+        start: padding.left + _cardInset + centring + _chromePad,
+        top: top,
+        child: _chromeButton(
+          icon: JamIcons.chevron_left,
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () {
+            _trackAction(state, AnalyticsActionValue.backTapped);
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      if (onClock != null)
+        PositionedDirectional(
+          end: padding.right + _cardInset + centring + _chromePad,
+          top: top,
+          child: _chromeButton(icon: JamIcons.clock, tooltip: context.l10n.wallpaperClockPreview, onPressed: onClock),
+        ),
+    ];
+  }
+
+  Widget _chromeButton({required IconData icon, required String tooltip, required VoidCallback onPressed}) {
+    return PressScale(
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22),
+        color: PrismColors.onPrimary,
+        style: IconButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
+          minimumSize: const Size.square(_chromeSize),
+          fixedSize: const Size.square(_chromeSize),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
         ),
       ),
     );
   }
 
-  Widget _withHero(Widget child) => widget.heroTag == null
-      ? child
-      : HeroMode(
-          enabled: !context.reduceMotion,
-          child: Hero(tag: widget.heroTag!, child: child),
-        );
+  /// The card. From a tile it is the Hero that flies in, and the route grows the page out of the tile with it.
+  Widget _withHero(Widget image) {
+    if (widget.heroTag == null) {
+      return ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image);
+    }
+    return HeroMode(
+      enabled: !context.reduceMotion,
+      child: WallpaperDetailHero(tag: widget.heroTag!, radius: _cardRadius, image: image),
+    );
+  }
 
   Widget _buildErrorState(WallpaperDetailError state) {
     final theme = Theme.of(context);
@@ -408,195 +484,324 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
-  Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state) {
-    final paletteLoading = state.paletteLoading;
-    final backgroundColor = paletteLoading
-        ? Theme.of(context).primaryColor
-        : state.accent ?? Theme.of(context).scaffoldBackgroundColor;
-
+  Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state, {bool canonicalLoading = false}) {
+    final theme = Theme.of(context);
+    final Size card = _cardSize(context, state.entity.wallpaperCore);
+    final double statusInset = _statusInset(context);
+    // The status bar icons sit about half way down the inset. The card is under them from when its top edge passes
+    // them until its bottom edge does.
+    _imageStatusStart = statusInset / 2;
+    _imageStatusEnd = card.height + statusInset / 2;
+    _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
+    _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
+    final chromeBackground = _imageBehindStatusBar
+        ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
+        : theme.scaffoldBackgroundColor;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: edgeToEdgeOverlayStyle(
-        statusBarIconBrightness: onColor(backgroundColor) == Colors.black ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: onColor(chromeBackground) == Colors.black ? Brightness.dark : Brightness.light,
       ),
-      child: Scaffold(backgroundColor: backgroundColor, body: _buildPanelStack(context, state, paletteLoading)),
-    );
-  }
-
-  _PanelGeometry _panelGeometry(BuildContext context) {
-    final EdgeInsets safe = MediaQuery.paddingOf(context);
-    final double side = max(0.0, (MediaQuery.sizeOf(context).width - PrismLayout.panelWidth) / 2);
-    return _PanelGeometry(
-      collapsed: _handleHeight + WallpaperActionBar.height,
-      open: MediaQuery.sizeOf(context).height * _panelMaxFraction,
-      left: max(safe.left + _panelInset, side),
-      right: max(safe.right + _panelInset, side),
-      bottom: safe.bottom + _panelInset,
-    );
-  }
-
-  Widget _buildPanelStack(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
-    final _PanelGeometry geometry = _panelGeometry(context);
-    final Widget panel = SlidingUpPanel(
-      onPanelOpened: () => _handlePanelOpened(context, state),
-      onPanelClosed: () => _handlePanelClosed(context, state),
-      onPanelSlide: (double position) => _panelPosition.value = position,
-      // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-      borderRadius: BorderRadius.circular(_panelRadius),
-      boxShadow: const [],
-      margin: EdgeInsets.fromLTRB(geometry.left, 0, geometry.right, geometry.bottom),
-      minHeight: geometry.collapsed,
-      parallaxEnabled: true,
-      parallaxOffset: 0,
-      color: Colors.transparent,
-      maxHeight: geometry.open,
-      controller: panelController,
-      panel: _buildInfoPanel(context, state, geometry),
-      body: _buildImageBody(context, paletteLoading, state, geometry),
-    );
-    return Stack(
-      children: [
-        Positioned.fill(child: panel),
-        Positioned(
-          left: geometry.left,
-          right: geometry.right,
-          bottom: geometry.bottom,
-          child: _buildActionBar(context, state),
-        ),
-      ],
-    );
-  }
-
-  /// The panel child is laid out at its open height and the sliding panel clips it to the visible height, so the
-  /// glass is drawn here at the visible height itself. Its rounded bottom then shows in every position.
-  Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state, _PanelGeometry geometry) {
-    final entity = state.entity;
-    final ThemeData theme = Theme.of(context);
-    final ({double dock, double open}) alphas = theme.brightness == Brightness.light
-        ? _glassAlphaLight
-        : _glassAlphaDark;
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ValueListenableBuilder<double>(
-          valueListenable: _panelPosition,
-          builder: (BuildContext context, double position, Widget? _) => Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            height: geometry.heightAt(position),
-            child: PrismGlass(
-              borderRadius: _panelRadius,
-              glassColor: theme.primaryColor.withValues(alpha: lerpDouble(alphas.dock, alphas.open, position)),
-              child: const SizedBox.expand(),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: AbsorbPointer(
+                absorbing: canonicalLoading,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (canonicalLoading) return false;
+                    if (notification is ScrollStartNotification) {
+                      context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
+                    } else if (notification is ScrollEndNotification) {
+                      context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+                    }
+                    return false;
+                  },
+                  child: CustomScrollView(
+                    key: PageStorageKey<Object>(_recommendationHeroScope),
+                    controller: _scroll,
+                    slivers: [
+                      SliverSafeArea(
+                        top: false,
+                        bottom: false,
+                        sliver: SliverPadding(
+                          padding: EdgeInsets.fromLTRB(_cardInset, statusInset, _cardInset, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox.fromSize(
+                                size: card,
+                                child: _buildImageBody(
+                                  context,
+                                  state.paletteLoading,
+                                  state,
+                                  canonicalLoading: canonicalLoading,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (canonicalLoading)
+                        SliverToBoxAdapter(
+                          child: SafeArea(top: false, bottom: false, child: _panelColumn(_buildPendingDetails())),
+                        )
+                      else ...[
+                        SliverToBoxAdapter(
+                          child: SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: _panelColumn(_buildActionBar(context, state)),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: _panelColumn(_buildColorBar(context, state)),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: _panelColumn(_buildSummary(context, state)),
+                          ),
+                        ),
+                        if (!state.panelCollapsed)
+                          SliverToBoxAdapter(
+                            child: SafeArea(
+                              top: false,
+                              bottom: false,
+                              child: _panelColumn(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildMetadataRow(context, state.entity, state),
+                                    ..._buildPanelExtras(context, state),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        WallpaperRecommendations(
+                          state: state.recommendations,
+                          heroScope: _recommendationHeroScope,
+                          onLoadMore: _loadMoreRecommendations,
+                          onOpen: (item, hero) => context.router.push(
+                            WallpaperDetailRoute(entity: item, thumbnailUrl: item.thumbnailUrl, heroTag: hero),
+                          ),
+                        ),
+                        SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-        ValueListenableBuilder<double>(
-          valueListenable: _panelPosition,
-          builder: (BuildContext context, double position, Widget? content) => ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (Rect bounds) => _fadeAboveActionBar(bounds, geometry.heightAt(position)),
-            child: content,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: _handleHeight),
-              _fadeWithPanel(_buildColorBar(context, state)),
-              Expanded(
-                flex: 8,
-                child: _fadeWithPanel(
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollStartNotification) {
-                          context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
-                        } else if (notification is ScrollEndNotification) {
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            if (!context.mounted) return;
-                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
-                          });
-                        }
-                        return false;
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: statusInset + PrismSpace.sm,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  key: const ValueKey<String>('detail-status-fade'),
+                  opacity: _feedBehindStatusBar ? 1 : 0,
+                  duration: context.motion(PrismDurations.fast),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.6, 1],
+                        colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: WallpaperActionBar.height),
-            ],
-          ),
+            ),
+            ..._pinnedChrome(
+              state,
+              card,
+              onClock: canonicalLoading
+                  ? null
+                  : () {
+                      final entity = state.entity;
+                      _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
+                      pushClockPreview(
+                        context,
+                        link:
+                            widget.localFile?.path ??
+                            (entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl),
+                        file: widget.localFile != null,
+                        wallpaperId: entity.id,
+                        wallpaperSource: entity.source,
+                        thumbnailUrl: entity.thumbnailUrl,
+                        tint: state.tint,
+                      );
+                    },
+            ),
+          ],
         ),
-        Positioned(top: 0, left: 0, right: 0, height: _handleHitHeight, child: _buildCollapseHandle(context, state)),
-      ],
+      ),
     );
   }
 
-  /// Opaque down to [_contentFade] above the action bar, clear at the action bar. [glassHeight] is the visible height.
-  Shader _fadeAboveActionBar(Rect bounds, double glassHeight) {
-    final double edge = glassHeight - WallpaperActionBar.height;
-    return LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: const [Colors.black, Colors.black, Colors.transparent, Colors.transparent],
-      stops: [0, (edge - _contentFade) / bounds.height, edge / bounds.height, 1],
-    ).createShader(bounds);
+  /// The rows under the card keep to the panel width on a tablet, as the details panel did.
+  Widget _panelColumn(Widget child) => PrismMaxWidth(maxWidth: PrismLayout.panelWidth, child: child);
+
+  double _availableCardWidth(BuildContext context) =>
+      max(0.0, MediaQuery.sizeOf(context).width - MediaQuery.paddingOf(context).horizontal - 2 * _cardInset);
+
+  /// Card size: the wallpaper's own shape across the width, up to [_maxCardShare] of the screen height. A taller
+  /// wallpaper fills the card and crops at the top and bottom. The clock preview shows it whole.
+  Size _cardSize(BuildContext context, WallpaperCore? core) {
+    final viewport = MediaQuery.sizeOf(context);
+    final stableCore = widget.entity?.wallpaperCore ?? core;
+    final width = stableCore?.width;
+    final height = stableCore?.height;
+    final parts = stableCore?.resolution?.toLowerCase().split('x');
+    final parsed = width != null && height != null && width > 0 && height > 0
+        ? width / height
+        : parts?.length == 2
+        ? (double.tryParse(parts![0]) ?? 0) / (double.tryParse(parts[1]) ?? 1)
+        : 9 / 16;
+    final ratio = parsed.isFinite && parsed > 0 ? parsed : 9 / 16;
+    final maxHeight = viewport.height * _maxCardShare;
+    final cardWidth = min(
+      min(_availableCardWidth(context), PrismLayout.panelWidth),
+      maxHeight * max(ratio, _widestCardAspect),
+    );
+    return Size(cardWidth, min(cardWidth / ratio, maxHeight));
   }
 
-  Widget _fadeWithPanel(Widget child) => ValueListenableBuilder<double>(
-    valueListenable: _panelPosition,
-    child: child,
-    builder: (BuildContext context, double position, Widget? child) => IgnorePointer(
-      ignoring: position == 0,
-      child: Opacity(opacity: position, child: child),
-    ),
-  );
+  /// Placeholders in the shape of the actions and summary while Prism confirms the wallpaper, so nothing jumps when
+  /// they arrive.
+  Widget _buildPendingDetails() {
+    return Semantics(
+      label: context.l10n.wallpaperLoadingWallpaper,
+      child: ExcludeSemantics(
+        child: PrismSkeleton(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.sm, PrismSpace.xs + _cardInset, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    PrismBone.circle(size: 26),
+                    SizedBox(width: PrismSpace.lg),
+                    PrismBone.circle(size: 26),
+                    SizedBox(width: PrismSpace.lg),
+                    PrismBone.circle(size: 26),
+                    Spacer(),
+                    PrismBone(width: 88, height: 46, radius: PrismRadius.md),
+                  ],
+                ),
+                const SizedBox(height: PrismSpace.lg),
+                Row(
+                  children: [
+                    for (int i = 0; i < 4; i++) ...[
+                      const PrismBone.circle(size: _swatchSize),
+                      const SizedBox(width: PrismSpace.xs),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: PrismSpace.lg),
+                const PrismBone(width: 120),
+                const SizedBox(height: PrismSpace.xs),
+                const PrismBone(width: 200, height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-  /// One chevron that turns over as the panel opens. Its touch target is wider and taller than the glyph and reaches
-  /// down over the top of the action bar, whose buttons are above it and keep their own taps.
-  Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
-    final isCollapsed = state.panelCollapsed;
-    return Center(
-      child: Semantics(
-        // Its own node: the faded panel content drops out of semantics, and this label must not merge into the panel.
-        container: true,
-        button: true,
-        label: isCollapsed ? context.l10n.wallpaperExpandDetails : context.l10n.wallpaperCollapseDetails,
-        child: GestureDetector(
-          onTap: () {
-            if (state.panelScrollInProgress) return;
-            _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
-            if (panelController.isPanelOpen) {
-              panelController.close();
-            } else {
-              panelController.open();
-            }
-          },
-          behavior: HitTestBehavior.opaque,
-          child: SizedBox(
-            width: _handleHitWidth,
-            height: _handleHitHeight,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: _handleHitHeight - _handleHeight),
-              child: Center(
-                child: ValueListenableBuilder<double>(
-                  valueListenable: _panelPosition,
-                  builder: (BuildContext context, double position, Widget? icon) =>
-                      Transform.rotate(angle: pi * position, child: icon),
-                  child: Icon(
-                    JamIcons.chevron_up,
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+  void _toggleDetails(BuildContext context, WallpaperDetailLoaded state) {
+    if (state.panelScrollInProgress) return;
+    _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
+    state.panelCollapsed ? _handlePanelOpened(context, state) : _handlePanelClosed(context, state);
+  }
+
+  /// Who made the wallpaper and where it is from, then its title and the details disclosure. A tap anywhere on it
+  /// opens or closes the details.
+  Widget _buildSummary(BuildContext context, WallpaperDetailLoaded state) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final FeedItemEntity entity = state.entity;
+    final String name = entity.wallpaperCore.authorName?.trim() ?? '';
+    final String? creator = name.isEmpty || name.contains('@') ? null : name;
+    final String provider = entity.source == WallpaperSource.wallhaven
+        ? context.l10n.wallpaperProviderWallhaven
+        : entity.source.legacyProviderString;
+    final String photo = entity.maybeWhen(prism: (_, wall) => wall.core.authorPhoto?.trim(), orElse: () => null) ?? '';
+    return InkWell(
+      onTap: () => _toggleDetails(context, state),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.xs, PrismSpace.xxs + _cardInset, PrismSpace.xs),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      PrismAvatar(url: photo, name: creator ?? provider, size: 22),
+                      const SizedBox(width: PrismSpace.xs),
+                      if (creator != null) ...[
+                        Flexible(
+                          child: Text(
+                            creator,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: PrismTextStyles.body(context).copyWith(color: cs.onSurface),
+                          ),
+                        ),
+                        const SizedBox(width: PrismSpace.xs),
+                      ],
+                      Text(provider, maxLines: 1, style: PrismTextStyles.body(context)),
+                    ],
                   ),
+                  const SizedBox(height: PrismSpace.xxs + 2),
+                  Text(
+                    wallpaperPreviewTitle(context.l10n, entity),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: state.panelCollapsed
+                  ? context.l10n.wallpaperExpandDetails
+                  : context.l10n.wallpaperCollapseDetails,
+              onPressed: () => _toggleDetails(context, state),
+              icon: AnimatedRotation(
+                turns: state.panelCollapsed ? 0 : 0.5,
+                duration: context.motion(PrismDurations.fast),
+                curve: PrismCurves.move,
+                child: const Icon(Icons.expand_more_rounded, size: 22),
+              ),
+              color: cs.onSurface,
+              style: IconButton.styleFrom(
+                backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+                fixedSize: const Size.square(34),
+                minimumSize: const Size.square(34),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.padded,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(PrismRadius.xs + 2)),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -663,12 +868,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
     ];
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(_sheetHPad, _handleHitHeight - _handleHeight, _sheetHPad, 8),
-      height: 88,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Row(children: swatches.map((s) => Expanded(child: s)).toList()),
+    // A row of small round variations, the untouched wallpaper first. The ring sits inside each 44 point target.
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: _sheetHPad - (_swatchTarget - _swatchSize) / 2),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: swatches),
       ),
     );
   }
@@ -682,9 +887,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required VoidCallback? onTap,
     required VoidCallback? onLongPress,
   }) {
-    final secondary = Theme.of(context).colorScheme.secondary;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final label = color == null ? context.l10n.wallpaperAccentColorsOriginal : context.l10n.wallpaperAccentColor;
-    final placeholder = color ?? secondary.withValues(alpha: 0.1);
+    final placeholder = color ?? cs.onSurface.withValues(alpha: 0.08);
     final hint = color == null ? null : context.l10n.wallpaperCopyAccentHexHint;
     final BlendMode? blendMode = color == null ? null : BlendMode.hue;
     return Semantics(
@@ -701,56 +906,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               },
         onLongPress: onLongPress,
         behavior: HitTestBehavior.opaque,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (localFile != null)
-              Image.file(
-                localFile,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                color: color,
-                colorBlendMode: blendMode,
-                errorBuilder: (_, _, _) => ColoredBox(color: placeholder),
-              )
-            else if (thumbnailUrl.isNotEmpty)
-              CachedNetworkImage(
-                cacheManager: PrismImageCache.instance,
-                imageUrl: thumbnailUrl,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                memCacheWidth: 240,
-                color: color,
-                colorBlendMode: blendMode,
-                placeholder: (_, u) => ColoredBox(color: placeholder),
-                errorWidget: (_, u, e) => ColoredBox(color: placeholder),
-              )
-            else
-              ColoredBox(color: placeholder),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SizedBox(
-                height: 8,
-                width: double.infinity,
-                child: ColoredBox(color: color ?? secondary),
-              ),
+        child: SizedBox.square(
+          dimension: _swatchTarget,
+          child: AnimatedContainer(
+            duration: context.motion(PrismDurations.fast),
+            curve: PrismCurves.move,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: isSelected ? cs.onSurface : Colors.transparent, width: 2),
             ),
-            AnimatedOpacity(
-              duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
-              opacity: isSelected ? 1.0 : 0.0,
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.25),
-                alignment: Alignment.center,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: const Icon(JamIcons.check, size: 14, color: Colors.black),
-                ),
-              ),
+            child: ClipOval(
+              child: localFile != null
+                  ? Image.file(
+                      localFile,
+                      fit: BoxFit.cover,
+                      color: color,
+                      colorBlendMode: blendMode,
+                      errorBuilder: (_, _, _) => ColoredBox(color: placeholder),
+                    )
+                  : thumbnailUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      cacheManager: PrismImageCache.instance,
+                      imageUrl: thumbnailUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 120,
+                      color: color,
+                      colorBlendMode: blendMode,
+                      placeholder: (_, u) => ColoredBox(color: placeholder),
+                      errorWidget: (_, u, e) => ColoredBox(color: placeholder),
+                    )
+                  : ColoredBox(color: placeholder),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -830,6 +1018,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           padding: const EdgeInsets.only(bottom: 4),
           child: PrismFavouriteCount(
             id: wallpaper.id,
+            showFavourites: false,
             views: switch (int.tryParse(state.views ?? '')) {
               final int count when count >= 0 => count,
               _ => null,
@@ -863,7 +1052,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper) {
     final views = wallpaper.views;
-    final favourites = wallpaper.favorites ?? wallpaper.core.favourites;
     final sizeBytes = wallpaper.sizeBytes ?? wallpaper.core.sizeBytes;
     final author = wallpaper.core.authorName;
     final category = wallpaper.core.category;
@@ -871,7 +1059,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return _metadataShell(
       left: [
         _buildInfoTitle(context, wallpaper.id.toUpperCase()),
-        WallpaperStatsRow(favourites: favourites, views: views),
+        WallpaperStatsRow(views: views),
         if (sizeBytes != null) ...[
           const SizedBox(height: 4),
           _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
@@ -890,7 +1078,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           _buildInfoRow(context, JamIcons.set_square, resolution, reversed: true),
           const SizedBox(height: 4),
         ],
-        _buildInfoRow(context, JamIcons.database, 'Wallhaven', reversed: true),
+        _buildInfoRow(context, JamIcons.database, context.l10n.wallpaperProviderWallhaven, reversed: true),
       ],
     );
   }
@@ -1161,18 +1349,48 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               ),
             ),
           );
+    final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
+    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
+    // Shown compact like the stats rows ("12.3K") and read as "12,345 favourites". An invalid total stays hidden.
+    Widget favouriteCount(int count) => count < 0
+        ? const SizedBox.shrink()
+        : Semantics(
+            container: true,
+            label: context.l10n.wallpaperFavouriteCount(count),
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
+                child: Text(compactCount.format(count), style: countStyle),
+              ),
+            ),
+          );
     return WallpaperActionBar(
       primary: primary,
-      actions: [
+      secondary: [
         if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
+      ],
+      actions: [
         WallpaperBarAction(
           label: context.l10n.wallpaperFavourite,
-          child: PressScale(
-            child: FavouriteWallpaperButton(
-              wall: FavouriteWallEntity.fromFeedItem(entity),
-              trash: false,
-              onFavourited: () => _recordTaste(TasteAction.favourite, entity),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PressScale(
+                child: FavouriteWallpaperButton(
+                  wall: FavouriteWallEntity.fromFeedItem(entity),
+                  trash: false,
+                  onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+                ),
+              ),
+              // The published total sits beside the heart.
+              ...entity.when(
+                prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, count) => favouriteCount(count))],
+                wallhaven: (_, wall) => [
+                  if (wall.favorites ?? wall.core.favourites case final int count) favouriteCount(count),
+                ],
+                pexels: (_, _) => const <Widget>[],
+              ),
+            ],
           ),
         ),
         WallpaperBarAction(
@@ -1307,13 +1525,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       if (entity case PrismFeedItem(:final wallpaper) when canBoostWall(wallpaper))
         padded(PrismGroup(children: <Widget>[BoostWallRow(wall: wallpaper)])),
-      padded(
-        SimilarWallpapersStrip(
-          entity: entity,
-          loader: _similarLoader.load,
-          onOpen: (item) => context.router.push(WallpaperDetailRoute(entity: item, thumbnailUrl: item.thumbnailUrl)),
-        ),
-      ),
       if (reportWallDocId != null && reportWallDocId.isNotEmpty)
         padded(
           Align(
@@ -1351,119 +1562,50 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _buildImageBody(
     BuildContext context,
     bool paletteLoading,
-    WallpaperDetailLoaded state,
-    _PanelGeometry geometry,
-  ) {
+    WallpaperDetailLoaded state, {
+    bool canonicalLoading = false,
+  }) {
     final entity = state.entity;
-    final topPad = _topOverlayPadding(context);
+    final Widget image = _buildProgressiveWallpaperImage(
+      context: context,
+      entity: entity,
+      state: state,
+      paletteLoading: paletteLoading,
+      thumbnailOnly: canonicalLoading,
+    );
     return Stack(
+      fit: StackFit.expand,
       children: [
+        // A tap gives the card a short press: it shrinks a little and settles.
         ShakeOnce(
           controller: _shake,
-          distance: 48,
-          builder: (context, t, _) {
-            return Semantics(
+          distance: 0.03,
+          builder: (context, t, child) => Transform.scale(scale: 1 - t, child: child),
+          child: WallpaperQuickActionRegion(
+            item: entity,
+            onResetOriginal: () => _handleAccentLongPress(context, state),
+            preview: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image),
+            child: Semantics(
               label: context.l10n.wallpaperImageSemanticLabel,
               hint: context.l10n.wallpaperImageSemanticHint,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onPanUpdate: (details) {
-                  if (details.delta.dy < -10) panelController.open();
-                },
-                onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
-                child: Container(
-                  margin: EdgeInsets.symmetric(vertical: t * 1.25, horizontal: t / 2),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(t),
-                    child: _withHero(
-                      _buildProgressiveWallpaperImage(
-                        context: context,
-                        entity: entity,
-                        state: state,
-                        paletteLoading: paletteLoading,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        ValueListenableBuilder<double>(
-          valueListenable: _panelPosition,
-          builder: (BuildContext context, double position, Widget? _) => Positioned(
-            left: geometry.left,
-            right: geometry.right,
-            bottom: geometry.bottom,
-            height: geometry.heightAt(position),
-            child: IgnorePointer(
-              child: _GlassShadow(
-                radius: _panelRadius,
-                shadow: Theme.of(context).brightness == Brightness.light ? _shadowLight : _shadowDark,
+                child: _withHero(image),
               ),
             ),
           ),
         ),
-        Align(
-          alignment: AlignmentDirectional.topStart,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
-            child: IconButton(
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-              onPressed: () {
-                _trackAction(state, AnalyticsActionValue.backTapped);
-                Navigator.pop(context);
-              },
-              color: _chromeColor(context, paletteLoading, state),
-              icon: const Icon(JamIcons.chevron_left),
-            ),
-          ),
-        ),
-        Align(
-          alignment: AlignmentDirectional.topEnd,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
-            child: IconButton(
-              tooltip: context.l10n.wallpaperClockPreview,
-              onPressed: () {
-                _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
-                pushClockPreview(
-                  context,
-                  link:
-                      widget.localFile?.path ??
-                      (entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl),
-                  file: widget.localFile != null,
-                  wallpaperId: entity.id,
-                  wallpaperSource: entity.source,
-                  thumbnailUrl: entity.thumbnailUrl,
-                  tint: state.tint,
-                );
-              },
-              color: _chromeColor(context, paletteLoading, state),
-              icon: const Icon(JamIcons.clock),
-            ),
-          ),
-        ),
-        if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
-          ValueListenableBuilder<double>(
-            valueListenable: _panelPosition,
+        if (!canonicalLoading &&
+            !hideSetWallpaperUi &&
+            (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
+          PositionedDirectional(
+            start: _chromePad,
+            bottom: _chromePad,
             child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
-            builder: (BuildContext context, double position, Widget? chip) => PositionedDirectional(
-              start: geometry.left + _sheetHPad,
-              bottom:
-                  geometry.bottom +
-                  geometry.heightAt(position) +
-                  _chipGap -
-                  (MakeItLiveChip.hitSize - MakeItLiveChip.pillHeight) / 2,
-              child: IgnorePointer(
-                ignoring: position > 0,
-                child: Opacity(opacity: (1 - position * 2).clamp(0.0, 1.0), child: chip),
-              ),
-            ),
           ),
       ],
     );
@@ -1475,12 +1617,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required FeedItemEntity entity,
     required WallpaperDetailLoaded state,
     required bool paletteLoading,
+    bool thumbnailOnly = false,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
-    final String full = wallpaperDetailPreviewUrl(
-      entity,
-      projectId: Firebase.apps.isEmpty ? null : Firebase.app().options.projectId,
-    );
+    final String full = thumbnailOnly
+        ? thumb
+        : wallpaperDetailPreviewUrl(entity, projectId: Firebase.apps.isEmpty ? null : Firebase.app().options.projectId);
     final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
     final bool fullIsNetwork = isValidNetworkUrl(full);
     final bool thumbIsNetwork = isValidNetworkUrl(thumb);
@@ -1527,7 +1669,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
-            placeholder: (context, url) => Container(color: Theme.of(context).primaryColor),
+            // No placeholder fill: a card from a tile shows the tile's picture under this until it decodes.
             errorWidget: (context, url, error) {
               return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
             },
@@ -1557,7 +1699,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
       } else {
         imageLayer = CachedNetworkImage(
-          cacheManager: fullIsNetwork ? PrismFullImageCache.instance : PrismImageCache.instance,
+          cacheManager: fullIsNetwork && !thumbnailOnly ? PrismFullImageCache.instance : PrismImageCache.instance,
           imageUrl: url,
           memCacheWidth: cacheWidth,
           fadeInDuration: context.motion(const Duration(milliseconds: 180)),
@@ -1575,7 +1717,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       }
     }
 
-    final Widget offlineAwareImage = localFile != null || full.isEmpty || !fullIsNetwork
+    final Widget offlineAwareImage = thumbnailOnly || localFile != null || full.isEmpty || !fullIsNetwork
         ? imageLayer
         : FutureBuilder<File?>(
             future: _offlinePreviewFor(entity),
@@ -1585,10 +1727,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               }
               final File? retained = snapshot.data;
               if (retained == null || !retained.existsSync()) return imageLayer;
+              // The network picture stays until the saved copy has a frame, so the card never blanks while it decodes.
               return Image.file(
                 retained,
                 fit: BoxFit.cover,
                 cacheWidth: cacheWidth,
+                frameBuilder: (_, child, frame, wasSynchronouslyLoaded) =>
+                    frame == null && !wasSynchronouslyLoaded ? imageLayer : child,
                 errorBuilder: (_, _, _) => imageLayer,
               );
             },
@@ -1637,67 +1782,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       local,
     );
   }
-}
-
-/// Where the glass sits on the screen and how tall it is at each panel position.
-class _PanelGeometry extends Equatable {
-  const _PanelGeometry({
-    required this.collapsed,
-    required this.open,
-    required this.left,
-    required this.right,
-    required this.bottom,
-  });
-
-  /// Glass height with the panel closed and open.
-  final double collapsed;
-  final double open;
-
-  /// Distance from the screen edge to the glass edge: the safe area plus the inset.
-  final double left;
-  final double right;
-  final double bottom;
-
-  double heightAt(double position) => collapsed + (open - collapsed) * position;
-
-  @override
-  List<Object?> get props => [collapsed, open, left, right, bottom];
-}
-
-/// A soft shadow in the shape of the glass, painted outside it only. Inside, the glass blurs whatever is behind it, and
-/// a shadow there would darken the icons' backdrop.
-class _GlassShadow extends StatelessWidget {
-  const _GlassShadow({required this.radius, required this.shadow});
-
-  final double radius;
-  final BoxShadow shadow;
-
-  @override
-  Widget build(BuildContext context) {
-    final ShapeBorder shape = RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(radius));
-    return ClipPath(
-      clipper: _OutsideShapeClipper(shape),
-      child: DecoratedBox(
-        decoration: ShapeDecoration(shape: shape, shadows: [shadow]),
-      ),
-    );
-  }
-}
-
-class _OutsideShapeClipper extends CustomClipper<Path> {
-  _OutsideShapeClipper(this.shape);
-
-  final ShapeBorder shape;
-
-  @override
-  Path getClip(Size size) => Path.combine(
-    PathOperation.difference,
-    Path()..addRect(Rect.fromLTWH(-200, -200, size.width + 400, size.height + 400)),
-    shape.getOuterPath(Offset.zero & size),
-  );
-
-  @override
-  bool shouldReclip(_OutsideShapeClipper oldClipper) => oldClipper.shape != shape;
 }
 
 /// The tint [t] of the way from [a] to [b]. Colours blend in HSL space and the hue takes the short way round. A blend in

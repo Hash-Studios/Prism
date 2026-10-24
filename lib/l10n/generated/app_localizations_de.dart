@@ -11,6 +11,9 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
   String get economyExportFailedLabel => 'Export fehlgeschlagen';
 
   @override
@@ -7374,7 +7377,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperAccentColorsOriginal => 'Originalfarben des Hintergrundbilds';
 
   @override
-  String get wallpaperAccentResetHint => 'Zum Zurücksetzen lange drücken';
+  String get wallpaperResetOriginal => 'Zurück zum Original';
+
+  @override
+  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
 
   @override
   String get wallpaperAll => 'Alle';
@@ -8396,7 +8402,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Tippe, um die Akzentfarbe zu wechseln. Zum Zurücksetzen lange drücken. Für Details nach oben wischen.';
+      'Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
 
   @override
   String get wallpaperImageSemanticLabel => 'Hintergrundbild';

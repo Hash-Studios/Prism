@@ -2,18 +2,20 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/data/offline/bundled_wallpapers.dart';
-import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/repositories/wallpaper_recommendation_repository_impl.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/repositories/wallpaper_recommendation_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +32,9 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._paletteRepository,
     this._getWallpaperSetCountUseCase, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
+    @ignoreParam WallpaperRecommendationRepository? recommendations,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
+       _recommendations = recommendations ?? WallpaperRecommendationRepositoryImpl.fromGetIt(),
        super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
     on<LoadFromId>(_onLoadFromId);
@@ -43,6 +47,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<OnPanelClosed>(_onPanelClosed);
     on<OnPanelScrollStart>(_onPanelScrollStart);
     on<OnPanelScrollEnd>(_onPanelScrollEnd);
+    on<LoadRecommendations>(_onLoadRecommendations);
   }
 
   final PrismWallpaperRepository _prismRepository;
@@ -52,16 +57,64 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PaletteRepository _paletteRepository;
   final GetWallpaperSetCountUseCase _getWallpaperSetCountUseCase;
   final OfflineWallpaperCatalog _offlineCatalog;
+  final WallpaperRecommendationRepository _recommendations;
+  static int _nextVisit = 0;
+  final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
+
+  Future<void> _onLoadRecommendations(LoadRecommendations event, Emitter<WallpaperDetailState> emit) async {
+    if (_closing) return;
+    final initial = state;
+    if (initial is! WallpaperDetailLoaded || initial.recommendations.loading || !initial.recommendations.hasMore) {
+      return;
+    }
+    final entity = initial.entity;
+    emit(initial.copyWith(recommendations: initial.recommendations.loadingPage()));
+    try {
+      // Filtered pages still advance. Bound this burst so a hidden catalog cannot monopolize a visit.
+      for (var attempt = 0; attempt < 4; attempt++) {
+        final before = state as WallpaperDetailLoaded;
+        final page = await _recommendations.load(
+          current: entity,
+          sessionKey: _recommendationSession,
+          cursor: before.recommendations.cursor,
+        );
+        final latest = state;
+        if (emit.isDone ||
+            latest is! WallpaperDetailLoaded ||
+            latest.entity.source != entity.source ||
+            latest.entity.id != entity.id) {
+          return;
+        }
+        final next = latest.recommendations.append(page, entity);
+        final addedItems = next.items.length > before.recommendations.items.length;
+        if (addedItems || !next.hasMore || attempt == 3) {
+          emit(latest.copyWith(recommendations: next));
+          return;
+        }
+        emit(latest.copyWith(recommendations: next.loadingPage()));
+      }
+    } catch (_) {
+      final latest = state;
+      if (emit.isDone ||
+          latest is! WallpaperDetailLoaded ||
+          latest.entity.source != entity.source ||
+          latest.entity.id != entity.id) {
+        return;
+      }
+      emit(latest.copyWith(recommendations: latest.recommendations.failure()));
+    }
+  }
 
   static const String notFoundMessage = 'Wallpaper not found';
   static const Duration _cachedLookupDecisionBudget = Duration(seconds: 2);
   static const Duration _wallpaperLookupTimeout = Duration(seconds: 30);
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _closing = true;
-    return super.close();
+    _recommendations.release(_recommendationSession);
+    await super.close();
   }
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
@@ -152,8 +205,9 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded ||
         currentState.entity.source != WallpaperSource.prism ||
-        BundledWallpapers.isStarter(currentState.entity))
+        BundledWallpapers.isStarter(currentState.entity)) {
       return;
+    }
 
     final result = await _getWallpaperSetCountUseCase(currentState.entity.id);
     final latestState = state;

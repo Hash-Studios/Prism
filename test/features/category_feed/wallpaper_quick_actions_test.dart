@@ -125,16 +125,19 @@ void main() {
     expect(find.text('Show less like this'), findsNothing);
     await gesture.up();
     await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(find.bySemanticsLabel('Share link'), findsNothing);
     expect(events, isEmpty);
   });
 
-  testWidgets('release on see less calls the real callback once after the overlay is gone', (tester) async {
+  testWidgets('release on see less calls the real callback once on the closing frame', (tester) async {
     var calls = 0;
     await pumpTile(
       tester,
       onShowLess: () {
-        expect(find.bySemanticsLabel('Share link'), findsNothing);
+        expect(find.bySemanticsLabel('Share link'), findsOneWidget);
         calls++;
       },
     );
@@ -145,6 +148,10 @@ void main() {
     await gesture.up();
     await tester.pump();
     expect(calls, 1);
+    expect(find.bySemanticsLabel('Share link'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
+    expect(find.bySemanticsLabel('Share link'), findsNothing);
   });
 
   testWidgets('favourite and unfavourite release map to adapter desired state, not detail or set', (tester) async {
@@ -153,7 +160,8 @@ void main() {
     await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Favourite').last));
     await gesture.up();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(events.single.mapOrNull(toggleRequested: (e) => e.desired), isTrue);
     expect(events.single.mapOrNull(toggleRequested: (e) => e.wall.id), 'wall-1');
 
@@ -163,7 +171,8 @@ void main() {
     await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Unfavourite')));
     await gesture.up();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(events.last.mapOrNull(toggleRequested: (e) => e.desired), isFalse);
     await tester.pump(const Duration(seconds: 5));
   });

@@ -6,6 +6,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -14,12 +15,13 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
-import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
+import 'package:Prism/features/wallpaper_detail/data/repositories/wallpaper_recommendation_repository_impl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
+import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
 
 const Duration _profileSnapshotDiskObservationTimeout = Duration(seconds: 10);
@@ -580,13 +582,16 @@ void main() {
       expect((restored.data!.items.single.toFeedItem() as PrismFeedItem).wallpaper.core.category, 'Nature');
       expect(restored.data!.items.single.desc, 'A lake at dawn');
       final similarClient = FakeFirestoreClient();
-      final similar = SimilarWallpapersLoader(
+      final similar = WallpaperRecommendationRepositoryImpl(
         firestore: () => similarClient,
         blocks: () => blocks,
-        search: () => throw StateError('Prism category lookup does not use text search'),
+        wallhaven: () => throw StateError('Prism category lookup does not use Wallhaven'),
+        pexels: () => throw StateError('Prism category lookup does not use Pexels'),
+        settings: () => SettingsLocalDataSource(InMemoryLocalStore()),
+        localSearch: (_) async => const [],
       );
       for (final result in [fresh, restored]) {
-        await similar.load(result.data!.items.single.toFeedItem());
+        await similar.load(current: result.data!.items.single.toFeedItem(), sessionKey: 'profile');
         expect(similarClient.querySpecs.last.filters.map((f) => (f.field, f.value)), contains(('category', 'Nature')));
       }
     });
