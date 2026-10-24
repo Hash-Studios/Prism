@@ -152,6 +152,7 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   @override
   bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is PageRoute && !nextRoute.fullscreenDialog;
 
+  /// Whether the opening finished. A back before that reverses the fade instead of sliding.
   bool _hasEntered = false;
 
   /// Set when the card Hero starts a flight in or home, cleared when the transition settles.
