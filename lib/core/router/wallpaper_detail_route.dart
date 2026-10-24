@@ -149,6 +149,11 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   @override
   bool get opaque => _page.opaque;
 
+  @override
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is PageRoute && !nextRoute.fullscreenDialog;
+
+  bool _hasEntered = false;
+
   /// Set when the card Hero starts a flight in or home, cleared when the transition settles.
   _Zoom? _zoom;
 
@@ -167,6 +172,9 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   void install() {
     super.install();
     _page.routeData.setAnimation(animation);
+    controller!.addStatusListener((status) {
+      if (status == AnimationStatus.completed) _hasEntered = true;
+    });
     animation!.addStatusListener((status) {
       if (status.isAnimating) return;
       _zoom = null;
@@ -222,7 +230,8 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
     if (isIOS) {
       // Delegation replaces Cupertino's secondary transition. Restore its native parallax for a back that slides
       // natively. An opening without a tile fades in over a page that stays still.
-      final bool slidingBack = popGestureInProgress || secondaryAnimation.status == AnimationStatus.reverse;
+      final bool slidingBack =
+          popGestureInProgress || (_hasEntered && secondaryAnimation.status == AnimationStatus.reverse);
       content = cupertino.CupertinoPageTransition(
         primaryRouteAnimation: kAlwaysCompleteAnimation,
         secondaryRouteAnimation: zoom == null && slidingBack && !context.reduceMotion
@@ -252,7 +261,8 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
     final bool reduceMotion = context.reduceMotion;
     // Back shrinks the page into its tile. A swipe, or a back with no tile to go to, slides natively.
     final bool returning =
-        isIOS && (popGestureInProgress || (animation.status == AnimationStatus.reverse && _zoom == null));
+        isIOS &&
+        (popGestureInProgress || (_hasEntered && animation.status == AnimationStatus.reverse && _zoom == null));
     final _Zoom? zoom = returning ? null : _zoomFor(context);
     // One widget shape for every case, so the page is never re-parented when a zoom ends.
     final Widget body = _DetailTransition(

@@ -41,12 +41,24 @@ class _TestRouter extends RootStackRouter {
   ModalRoute<dynamic>? detailRoute;
 
   @override
-  // Mirrors the app: Cupertino pages on iOS, auto_route's custom fade pages on Android.
+  // Mirrors the app: adaptive pages on iOS, custom fade-and-slide pages on Android.
   RouteType get defaultRouteType => defaultTargetPlatform == TargetPlatform.iOS
       ? const RouteType.adaptive()
       : RouteType.custom(
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-              FadeTransition(opacity: animation, child: child),
+          duration: PrismDurations.base,
+          reverseDuration: const Duration(milliseconds: 200),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
+                child: child,
+              ),
+            );
+          },
         );
 
   @override
@@ -424,7 +436,6 @@ void main() {
         find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
       );
       expect(fade.opacity.value, lessThan(1));
-      // The grid behind stays still while the page fades in over it.
       expect(tester.getRect(find.byKey(_otherTileKey)), const Rect.fromLTWH(600, 400, 100, 140));
     }
     await tester.pumpAndSettle();
@@ -520,7 +531,6 @@ void main() {
 
     final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
     final double nativeParallaxX = tester.getRect(previousTile).left;
-    // The hidden page behind rests in place. It takes the native parallax once a back starts.
     expect(nativeParallaxX, 600);
     expect(tester.getRect(previousTile).width, 100);
 
@@ -600,7 +610,6 @@ void main() {
     await tester.pumpAndSettle();
     final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
     final double nativeParallaxX = tester.getRect(previousTile).left;
-    // The hidden page behind rests in place. It takes the native parallax once a back starts.
     expect(nativeParallaxX, 600);
     await tester.tap(find.text('count 0'));
     await tester.pump();

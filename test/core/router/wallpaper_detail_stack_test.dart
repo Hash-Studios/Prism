@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,7 +31,24 @@ class _StackRouter extends RootStackRouter {
   );
 
   @override
-  RouteType get defaultRouteType => const RouteType.adaptive();
+  RouteType get defaultRouteType => defaultTargetPlatform == TargetPlatform.iOS
+      ? const RouteType.adaptive()
+      : RouteType.custom(
+          duration: PrismDurations.base,
+          reverseDuration: const Duration(milliseconds: 200),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
+                child: child,
+              ),
+            );
+          },
+        );
 
   @override
   List<AutoRoute> get routes => [
