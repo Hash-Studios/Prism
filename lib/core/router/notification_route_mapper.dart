@@ -85,8 +85,8 @@ class NotificationRouteMapper {
     final String profileIdentifier = _firstPresent(data, const <String>[
       'profile_identifier',
       'profileIdentifier',
-      'follower_email',
-      'followerEmail',
+      'follower_uid',
+      'profile_uid',
       'username',
       'user',
     ]);

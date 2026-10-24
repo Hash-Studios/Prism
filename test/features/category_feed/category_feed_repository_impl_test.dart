@@ -88,8 +88,8 @@ class _DelayedUserBlockRepository extends FakeUserBlockRepository {
   final Completer<void> initialLoadRequested = Completer<void>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) {
-    if (!waitForInitialLoad) return super.getBlockedCreatorEmails();
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) {
+    if (!waitForInitialLoad) return super.getBlockedCreatorUids();
     if (!initialLoadRequested.isCompleted) initialLoadRequested.complete();
     return snapshot.future;
   }
@@ -224,7 +224,7 @@ void main() {
                   source: WallpaperSource.prism,
                   fullUrl: 'https://prism.test/blocked.jpg',
                   thumbnailUrl: 'https://prism.test/blocked-thumb.jpg',
-                  authorEmail: 'blocked@example.test',
+                  authorUid: 'blocked-uid',
                 ),
               ),
             ),
@@ -242,7 +242,7 @@ void main() {
     pending.then((_) => completed = true);
     await blocks.initialLoadRequested.future;
     expect(completed, isFalse);
-    blocks.snapshot.complete(<String>{'blocked@example.test'});
+    blocks.snapshot.complete(<String>{'blocked-uid'});
 
     expect((await pending).isFailure, isTrue);
   });

@@ -45,7 +45,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
     _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorEmails()
+        .watchBlockedCreatorUids()
         .skip(1)
         .listen((blocked) => add(PersonalizedFeedEvent.blockedCreatorsChanged(blocked: blocked)));
     _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;

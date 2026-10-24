@@ -81,7 +81,7 @@ class NotificationRow extends StatelessWidget {
       () => _routeMapper.actionFromRoute(
         route: route,
         wallId: notification.wallId,
-        profileIdentifier: notification.followerEmail,
+        profileIdentifier: notification.followerUid,
         sourceTag: 'notification.route_mapper',
         fallbackToInbox: false,
       ),

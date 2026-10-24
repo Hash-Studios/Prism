@@ -30,26 +30,26 @@ void main() {
       directory.deleteSync(recursive: true);
     });
 
-    test('waits for blocked creators and prunes cached blocked notifications before returning local data', () async {
+    test('prunes blocked creator IDs before returning local notifications', () async {
       final blocks = FakeUserBlockRepository.pending();
+      blocks.completeInitial(<String>{'blocked_uid'});
+      blocks.blockedRows = const <BlockedUserListRow>[BlockedUserListRow(blockedUid: 'blocked_uid')];
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
-        notification('blocked', followerEmail: 'blocked@example.com'),
-        notification('visible', followerEmail: 'visible@example.com'),
+        notification('blocked', followerUid: 'blocked_uid'),
+        notification('legacy-follower', kind: InAppNotificationKind.follower),
+        notification('visible', followerUid: 'visible_uid'),
+        notification('legacy-wall', kind: InAppNotificationKind.wallLive),
       ]);
       getIt.registerSingleton<UserBlockRepository>(blocks);
 
       final repo = NotificationsRepositoryImpl(local, tombstones);
-      final pending = repo.fetchNotifications(syncRemote: false);
-
-      await Future<void>.delayed(Duration.zero);
-      expect(local.readCount, 0);
-
-      blocks.completeInitial(<String>{'blocked@example.com'});
-
-      final result = await pending;
+      final result = await repo.fetchNotifications(syncRemote: false);
       expect(result.isSuccess, isTrue);
-      expect(result.data!.map((item) => item.id).toList(growable: false), <String>['visible']);
-      expect((await local.readAll()).map((item) => item.id).toList(growable: false), <String>['visible']);
+      expect(result.data!.map((item) => item.id).toList(growable: false), <String>['visible', 'legacy-wall']);
+      expect((await local.readAll()).map((item) => item.id).toList(growable: false), <String>[
+        'visible',
+        'legacy-wall',
+      ]);
     });
 
     test('lists newest first after every change', () async {

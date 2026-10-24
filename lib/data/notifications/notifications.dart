@@ -7,7 +7,6 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -83,28 +82,30 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
   );
 }
 
-bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, Set<String> blockedLowercaseEmails) {
-  if (blockedLowercaseEmails.isEmpty) {
-    return false;
-  }
-  final String? fe = e.followerEmail;
-  return BlockedCreatorsFilter.hidesCreatorEmail(fe, blockedLowercaseEmails);
+bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, Set<String> blockedUids) {
+  final String uid = e.followerUid?.trim() ?? '';
+  if (uid.isNotEmpty) return blockedUids.contains(uid);
+  final String route = (e.route ?? e.pageName).toLowerCase();
+  final String copyKind = e.copyKind?.toLowerCase() ?? '';
+  final bool followerNotification =
+      e.kind == InAppNotificationKind.follower ||
+      route == 'follower' ||
+      route.endsWith('/follower') ||
+      copyKind == 'follower';
+  return followerNotification;
 }
 
-List<InAppNotificationEntity> _filterBlockedActors(
-  List<InAppNotificationEntity> entities,
-  Set<String> blockedLowercaseEmails,
-) {
-  if (blockedLowercaseEmails.isEmpty) {
+List<InAppNotificationEntity> _filterBlockedActors(List<InAppNotificationEntity> entities, Set<String> blockedUids) {
+  if (blockedUids.isEmpty) {
     return entities;
   }
   return entities
-      .where((InAppNotificationEntity e) => !_isNotificationFromBlockedCreator(e, blockedLowercaseEmails))
+      .where((InAppNotificationEntity e) => !_isNotificationFromBlockedCreator(e, blockedUids))
       .toList(growable: false);
 }
 
-Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
-  return getIt<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+Future<Set<String>> _blockedCreatorUids() async {
+  return getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
 }
 
 Future<void> pruneBlockedNotificationsCache({
@@ -114,7 +115,7 @@ Future<void> pruneBlockedNotificationsCache({
   final NotificationsLocalDataSource local = notificationsLocal ?? getIt<NotificationsLocalDataSource>();
   final String owner = local.ownerId;
   final int generation = local.ownerGeneration;
-  final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+  final Set<String> blocked = await _blockedCreatorUids();
   if (local.ownerId != owner || local.ownerGeneration != generation) return;
   if (blocked.isEmpty) {
     return;
@@ -178,7 +179,7 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
     read: false,
     route: data['route']?.toString(),
     wallId: data['wall_id']?.toString(),
-    followerEmail: (data['follower_email'] ?? data['profile_identifier'] ?? data['username'])?.toString(),
+    followerUid: data['follower_uid']?.toString(),
     kind: kind,
     copyKind: message['kind']?.toString() ?? data['notification_copy_kind']?.toString(),
     copyArgs: toJsonMap(message['args']).cast<String, Object?>(),
@@ -257,7 +258,7 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
 
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = await notificationsLocal.lastFetchAtUtc();
-    final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+    final Set<String> blocked = await _blockedCreatorUids();
     if (!isCurrentSession()) return false;
 
     if (blocked.isNotEmpty) {

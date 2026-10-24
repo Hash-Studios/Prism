@@ -69,7 +69,7 @@ class SimilarWallpapersLoader {
         return PrismFeedItem(id: wall.id, wallpaper: wall);
       },
     );
-    final Set<String> blocked = await _blocks().getBlockedCreatorEmails(waitForInitialLoad: true);
+    final Set<String> blocked = await _blocks().getBlockedCreatorUids(waitForInitialLoad: true);
     return BlockedCreatorsFilter.filterFeedItems(rows, blocked);
   }
 

@@ -6,10 +6,11 @@ class PublicProfileEntity {
     required this.username,
     required this.profilePhoto,
     required this.bio,
-    required this.followers,
-    required this.following,
     required this.links,
     required this.coverPhoto,
+    this.followerCount = 0,
+    this.followingCount = 0,
+    this.isFollowedByCurrentUser = false,
     this.badges = const <String>[],
     this.frameId,
     this.nameGlowId,
@@ -23,10 +24,11 @@ class PublicProfileEntity {
   final String username;
   final String profilePhoto;
   final String bio;
-  final List<String> followers;
-  final List<String> following;
   final Map<String, String> links;
   final String coverPhoto;
+  final int followerCount;
+  final int followingCount;
+  final bool isFollowedByCurrentUser;
 
   /// Earned badge ids.
   final List<String> badges;

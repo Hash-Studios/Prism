@@ -123,7 +123,7 @@ class _ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     void openProfile() {
       PrismHaptics.tap();
-      context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+      context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id));
     }
 
     return Semantics(

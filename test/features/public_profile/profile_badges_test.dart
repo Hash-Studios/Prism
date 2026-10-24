@@ -32,12 +32,10 @@ class _MockProfileRepository extends Mock implements PublicProfileRepository {}
 PublicProfileEntity _profile(List<String> badges, {String id = 'u1'}) => PublicProfileEntity(
   id: id,
   name: 'Creator',
-  email: 'user@example.com',
+  email: '',
   username: 'creator',
   profilePhoto: '',
   bio: 'My wallpaper collection',
-  followers: const <String>[],
-  following: const <String>[],
   links: const <String, String>{},
   coverPhoto: '',
   badges: badges,
@@ -61,7 +59,7 @@ void main() {
       final bloc = _MockProfileBloc();
       when(
         () => bloc.state,
-      ).thenReturn(PublicProfileState.initial().copyWith(email: 'user@example.com', status: LoadStatus.success));
+      ).thenReturn(PublicProfileState.initial().copyWith(profileId: 'user-uid', status: LoadStatus.success));
       return bloc;
     });
     AnalyticsRuntime.instance = FakeAppAnalytics();
@@ -118,11 +116,22 @@ void main() {
     }
   }
 
-  testWidgets('an open own profile updates its server-awarded badges', (tester) async {
+  testWidgets('an open own profile renders session-owned badges after a public graph update', (tester) async {
     await pumpProfile(tester);
     expect(tester.widget<ProfileBadgeRow>(find.byType(ProfileBadgeRow)).badgeIds, isEmpty);
 
-    profiles.add(_profile(const <String>['week_warrior']));
+    app_state.prismUser.badges = <model.Badge>[
+      model.Badge(
+        id: 'week_warrior',
+        name: 'Week Warrior',
+        description: '',
+        awardedAt: '',
+        imageUrl: '',
+        color: '',
+        url: '',
+      ),
+    ];
+    profiles.add(_profile(const <String>['creator'], id: 'user-uid'));
     await tester.pump();
 
     expect(tester.widget<ProfileBadgeRow>(find.byType(ProfileBadgeRow)).badgeIds, <String>['week_warrior']);
@@ -140,9 +149,9 @@ void main() {
     await tester.pump();
     expect(tester.widget<ProfileBadgeRow>(find.byType(ProfileBadgeRow)).badgeIds, <String>['collector']);
 
-    profiles.add(_profile(const <String>['week_warrior']));
+    profiles.add(_profile(const <String>['week_warrior'], id: 'user-uid'));
     await tester.pump();
-    expect(tester.widget<ProfileBadgeRow>(find.byType(ProfileBadgeRow)).badgeIds, <String>['week_warrior']);
+    expect(tester.widget<ProfileBadgeRow>(find.byType(ProfileBadgeRow)).badgeIds, <String>['collector']);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

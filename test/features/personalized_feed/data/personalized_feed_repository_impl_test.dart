@@ -71,6 +71,7 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
     'wallpaper_provider': 'prism',
     'review': true,
     'email': 'creator@example.com',
+    'creatorUid': 'creator-id',
     'createdAt': '2026-09-01T00:00:00Z',
   };
 
@@ -167,6 +168,7 @@ class _PendingFreshFirestore extends Fake implements FirestoreClient {
     'wallpaper_provider': 'prism',
     'review': true,
     'email': 'creator@example.com',
+    'creatorUid': 'creator-id',
     'createdAt': '2026-09-01T00:00:00Z',
   };
   static const Map<String, dynamic> _newWall = <String, dynamic>{
@@ -175,6 +177,7 @@ class _PendingFreshFirestore extends Fake implements FirestoreClient {
     'wallpaper_provider': 'prism',
     'review': true,
     'email': 'new-creator@example.com',
+    'creatorUid': 'new-creator-id',
     'createdAt': '2026-09-01T00:00:00Z',
   };
 
@@ -410,10 +413,10 @@ class _EmptyBlocks extends Fake implements UserBlockRepository {
   Set<String> loaded = <String>{};
 
   @override
-  Set<String> get cachedBlockedCreatorEmails => cached;
+  Set<String> get cachedBlockedCreatorUids => cached;
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
     if (loadDelay > Duration.zero) {
       await Future<void>.delayed(loadDelay);
       return loaded;
@@ -433,7 +436,7 @@ class _PendingBlocks extends _EmptyBlocks {
   final Completer<Set<String>> initial = Completer<Set<String>>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) => initial.future;
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) => initial.future;
 }
 
 class _FailingFavourites extends Fake implements FavouriteWallsRepository {
@@ -944,7 +947,7 @@ void main() {
   test('creators from a slow blocked load are still filtered and never cached', () async {
     final _EmptyBlocks blocks = _EmptyBlocks()
       ..loadDelay = const Duration(milliseconds: 300)
-      ..loaded = <String>{'creator@example.com'};
+      ..loaded = <String>{'creator-id'};
     final _MemoryFeedCache cache = _MemoryFeedCache();
     app_state.prismUser = _signedInUser();
     final PersonalizedFeedRepository repository = _repository(
@@ -1169,7 +1172,7 @@ void main() {
     expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['visible-doc', 'wall-doc']);
   });
 
-  test('following is read from the session on every fetch, not only on refresh', () async {
+  test('following feed does not use the session email graph', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     final _RecordingFirestore firestore = _RecordingFirestore();
     app_state.prismUser = _signedInUser();
@@ -1192,7 +1195,7 @@ void main() {
       ),
     );
 
-    expect(firestore.sourceTags, contains('personalized.creator_chunk_1'));
+    expect(firestore.sourceTags, isNot(contains('personalized.creator_chunk_1')));
   });
 
   test('a fetch does not count wallpapers as shown. The screen reports the tiles it builds', () async {
@@ -1318,7 +1321,7 @@ void main() {
     test('a creator blocked after warmCache started is not in the page readCached returns', () async {
       app_state.prismUser = _signedInUser();
       final _CountingFeedCache cache = _CountingFeedCache()
-        ..snapshot = snapshot(<FeedItemEntity>[_prismItem('a', email: 'blocked@example.com'), _prismItem('b')]);
+        ..snapshot = snapshot(<FeedItemEntity>[_prismItem('a', authorUid: 'blocked-uid'), _prismItem('b')]);
       final _EmptyBlocks blocks = _EmptyBlocks();
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
@@ -1330,7 +1333,7 @@ void main() {
 
       repository.warmCache();
       await Future<void>.delayed(const Duration(milliseconds: 20));
-      blocks.cached = <String>{'blocked@example.com'};
+      blocks.cached = <String>{'blocked-uid'};
       final PersonalizedFeedPage? page = await repository.readCached();
 
       expect(_itemIds(page!.items), <String>['b']);
@@ -1376,7 +1379,7 @@ void main() {
       final repository = _repository(
         firestore: _EmptyFirestore(),
         cache: _MemoryFeedCache()
-          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('blocked', email: 'blocked@example.com')]),
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('blocked', authorUid: 'blocked-uid')]),
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
         favourites: _CountingFavourites(),
         blocks: blocks,
@@ -1389,7 +1392,7 @@ void main() {
       });
       await Future<void>.delayed(Duration.zero);
       expect(returned, isFalse);
-      blocks.initial.complete(<String>{'blocked@example.com'});
+      blocks.initial.complete(<String>{'blocked-uid'});
 
       final page = await pending;
       expect(page!.items.any((item) => item.id == 'blocked'), isFalse);
@@ -1501,12 +1504,12 @@ void main() {
         firestore: _EmptyFirestore(),
         cache: _MemoryFeedCache()
           ..snapshot = snapshot(<FeedItemEntity>[
-            _prismItem('keep', email: 'kept@example.com'),
-            _prismItem('drop', email: 'blocked@example.com'),
+            _prismItem('keep', authorUid: 'kept-uid'),
+            _prismItem('drop', authorUid: 'blocked-uid'),
           ]),
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
         favourites: _CountingFavourites(),
-        blocks: _EmptyBlocks()..cached = <String>{'blocked@example.com'},
+        blocks: _EmptyBlocks()..cached = <String>{'blocked-uid'},
       );
 
       expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
@@ -1653,9 +1656,52 @@ void main() {
   });
 
   group('fetchFollowing', () {
+    test('reads UID relation edges and queries walls by creatorUid, ignoring session email follows', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['private@example.test']);
+      final firestore = _FollowingGraphFirestore();
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.data!.items, hasLength(1));
+      expect(firestore.specs.first.collection, 'profiles/feed-test-user/following');
+      final wallQuery = firestore.specs.last;
+      expect(wallQuery.collection, 'walls');
+      expect(wallQuery.filters.map((filter) => filter.field), contains('creatorUid'));
+      expect(wallQuery.filters.map((filter) => filter.field), isNot(contains('email')));
+      expect(wallQuery.filters.last.value, <String>['creator-uid']);
+    });
+
+    test('refresh reads follow and unfollow changes from the UID graph, not session email follows', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['stale-session@example.test']);
+      final firestore = _FollowingGraphFirestore();
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.fetchFollowing(page: 1)).data!.items.single.id, 'wall-for-creator-uid');
+      firestore.followedUid = 'new-creator-uid';
+      expect((await repository.fetchFollowing(page: 1)).data!.items.single.id, 'wall-for-new-creator-uid');
+      firestore.followedUid = null;
+      expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
+      expect(firestore.followGraphReads, 3);
+      expect(
+        firestore.specs
+            .where((spec) => spec.collection == 'walls')
+            .every((spec) => spec.filters.every((filter) => filter.field != 'email')),
+        isTrue,
+      );
+    });
+
     test('equal timestamps use document identity as a stable global tie breaker', () async {
       app_state.prismUser = _signedInUser(
-        following: List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}@example.com'),
+        following: List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}'),
       );
       final repository = _repository(
         firestore: _ChunkedFollowingFirestore(sameDate: true),
@@ -1671,8 +1717,8 @@ void main() {
       expect(ids, List<String>.generate(62, (i) => 'W${61 - i}'));
     });
     test('uneven creator chunks merge globally ordered bounded pages without losing buffered rows', () async {
-      final emails = List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}@example.com');
-      app_state.prismUser = _signedInUser(following: emails);
+      final uids = List<String>.generate(11, (i) => 'c${i.toString().padLeft(2, '0')}');
+      app_state.prismUser = _signedInUser(following: uids);
       final firestore = _ChunkedFollowingFirestore();
       final repository = _repository(
         firestore: firestore,
@@ -1681,21 +1727,22 @@ void main() {
       );
       final ids = <String>[];
       for (int page = 1; page <= 10; page++) {
-        final calls = firestore.specs.length;
+        final calls = firestore.specs.where((spec) => spec.collection == 'walls').length;
         final result = (await repository.fetchFollowing(page: page)).data!;
         expect(result.items.length, lessThanOrEqualTo(12));
-        expect(firestore.specs.length - calls, lessThanOrEqualTo(3));
+        expect(firestore.specs.where((spec) => spec.collection == 'walls').length - calls, lessThanOrEqualTo(3));
         ids.addAll(result.items.map((item) => item.id));
         if (!result.hasMore) break;
       }
       expect(ids, List<String>.generate(62, (i) => 'W$i'));
-      expect(firestore.specs.every((spec) => spec.limit == 12), isTrue);
-      expect(firestore.specs.skip(2).every((spec) => spec.startAfterDocId != null), isTrue);
-      expect(firestore.specs.every((spec) => spec.orderBy.last.field == firestoreDocumentIdField), isTrue);
+      final wallSpecs = firestore.specs.where((spec) => spec.collection == 'walls').toList();
+      expect(wallSpecs.every((spec) => spec.limit == 12), isTrue);
+      expect(wallSpecs.skip(2).every((spec) => spec.startAfterDocId != null), isTrue);
+      expect(wallSpecs.every((spec) => spec.orderBy.last.field == firestoreDocumentIdField), isTrue);
     });
 
     test('a late first Following page cannot replace refreshed chunk cursors', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final firestore = _DelayedFollowingFirestore(rows: 57);
       final repository = _repository(
         firestore: firestore,
@@ -1711,7 +1758,7 @@ void main() {
       expect((await repository.fetchFollowing(page: 3)).data!.items.first.id, 'W24');
     });
     test('cursor pages reach all 57 walls once without growing query limits', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final firestore = _FollowingFirestore(rows: 57);
       final repository = _repository(
         firestore: firestore,
@@ -1730,7 +1777,7 @@ void main() {
     });
 
     test('loaded empty following is authoritative after bootstrap and owner changes', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser();
       final firestore = _FollowingFirestore(rows: 3);
       final repository = _repository(
         firestore: firestore,
@@ -1738,12 +1785,12 @@ void main() {
         favourites: _CountingFavourites(),
       );
       await repository.fetch(_firstPage);
-      app_state.prismUser = _signedInUser();
+      firestore.followed = const <String>[];
       final calls = firestore.limits.length;
       expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
       await repository.fetch(_firstPage);
       expect(firestore.limits, hasLength(calls));
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      firestore.followed = const <String>['a-uid'];
       await repository.fetch(_firstPage);
       final ownerCalls = firestore.limits.length;
       app_state.prismUser = _signedInUser(id: 'replacement-owner');
@@ -1753,7 +1800,7 @@ void main() {
       expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
     });
     test('returns the followed creators walls and reports that more may follow', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final _FollowingFirestore firestore = _FollowingFirestore(rows: 12);
       final PersonalizedFeedRepository repository = _repository(
         firestore: firestore,
@@ -1769,7 +1816,7 @@ void main() {
     });
 
     test('has no more pages when the creator has fewer walls than the page limit', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final PersonalizedFeedRepository repository = _repository(
         firestore: _FollowingFirestore(rows: 3),
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
@@ -1784,7 +1831,7 @@ void main() {
 
     test('is empty without a query when the user follows nobody', () async {
       app_state.prismUser = _signedInUser();
-      final _FollowingFirestore firestore = _FollowingFirestore(rows: 3);
+      final _FollowingFirestore firestore = _FollowingFirestore(rows: 3)..followed = const <String>[];
       final PersonalizedFeedRepository repository = _repository(
         firestore: firestore,
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
@@ -1798,13 +1845,13 @@ void main() {
     });
 
     test('hides blocked creators and reports a failed read', () async {
-      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final _FollowingFirestore firestore = _FollowingFirestore(rows: 2, email: 'blocked@example.com');
       final PersonalizedFeedRepository repository = _repository(
         firestore: firestore,
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
         favourites: _CountingFavourites(),
-        blocks: _BlockingBlocks(<String>{'blocked@example.com'}),
+        blocks: _BlockingBlocks(<String>{'a-uid'}),
       );
       expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
 
@@ -1944,20 +1991,19 @@ PrismFavouriteWall _favourite(String id) => PrismFavouriteWall(
   ),
 );
 
-FeedItemEntity _prismItem(String id, {String email = 'creator@example.com', List<String>? tags}) =>
-    FeedItemEntity.prism(
+FeedItemEntity _prismItem(String id, {String authorUid = 'creator-id', List<String>? tags}) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
       id: id,
-      wallpaper: PrismWallpaper(
-        core: WallpaperCore(
-          id: id,
-          source: WallpaperSource.prism,
-          fullUrl: 'https://example.com/$id.jpg',
-          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-          authorEmail: email,
-        ),
-        tags: tags,
-      ),
-    );
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/$id.jpg',
+      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+      authorUid: authorUid,
+    ),
+    tags: tags,
+  ),
+);
 
 FeedItemEntity _wallhavenItem(String id) => FeedItemEntity.wallhaven(
   id: id,
@@ -1977,7 +2023,29 @@ class _BlockingBlocks extends _EmptyBlocks {
   }
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async => cached;
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async => cached;
+}
+
+class _FollowingGraphFirestore extends _EmptyFirestore {
+  String? followedUid = 'creator-uid';
+  int followGraphReads = 0;
+  final List<FirestoreQuerySpec> specs = <FirestoreQuerySpec>[];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    specs.add(spec);
+    if (spec.collection == 'profiles/feed-test-user/following') {
+      followGraphReads++;
+      final String? uid = followedUid;
+      return uid == null ? <T>[] : <T>[map(<String, dynamic>{}, uid)];
+    }
+    if (spec.collection == 'walls') {
+      return <T>[
+        map(<String, dynamic>{..._OneWallFirestore._wall, 'creatorUid': followedUid}, 'wall-for-$followedUid'),
+      ];
+    }
+    return <T>[];
+  }
 }
 
 /// Answers the creator query with [rows] walls and records the limit it was asked for.
@@ -1987,10 +2055,14 @@ class _FollowingFirestore extends _EmptyFirestore {
   final int rows;
   final String email;
   bool fail = false;
+  List<String> followed = const <String>['a-uid'];
   final List<int> limits = <int>[];
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.collection == 'profiles/feed-test-user/following') {
+      return <T>[for (final uid in followed) map(<String, dynamic>{}, uid)];
+    }
     if (!spec.sourceTag.startsWith('personalized.creator_chunk_')) {
       return <T>[];
     }
@@ -2007,6 +2079,7 @@ class _FollowingFirestore extends _EmptyFirestore {
           'wallpaper_thumb': 'https://example.com/w$i-thumb.jpg',
           'wallpaper_provider': 'prism',
           'review': true,
+          'creatorUid': 'a-uid',
           'email': email,
           'createdAt': '2026-09-01T00:00:00Z',
         }, 'doc$i'),
@@ -2040,10 +2113,13 @@ class _ChunkedFollowingFirestore extends _EmptyFirestore {
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
     specs.add(spec);
-    final emails = spec.filters.firstWhere((filter) => filter.field == 'email').value! as List<String>;
+    if (spec.collection == 'profiles/feed-test-user/following') {
+      return <T>[for (int i = 0; i < 11; i++) map(<String, dynamic>{}, 'c${i.toString().padLeft(2, '0')}')];
+    }
+    final uids = spec.filters.firstWhere((filter) => filter.field == 'creatorUid').value! as List<String>;
     final all = <int>[
       for (int i = 0; i < 62; i++)
-        if (emails.contains(i % 13 == 0 ? 'c10@example.com' : 'c00@example.com')) i,
+        if (uids.contains(i % 13 == 0 ? 'c10' : 'c00')) i,
     ];
     if (sameDate) all.sort((a, b) => b.compareTo(a));
     final cursor = spec.startAfterDocId == null ? null : int.parse(spec.startAfterDocId!.substring(3));
@@ -2054,7 +2130,7 @@ class _ChunkedFollowingFirestore extends _EmptyFirestore {
           'id': 'W$i',
           'wallpaper_url': 'https://example.com/$i',
           'review': true,
-          'email': i % 13 == 0 ? 'c10@example.com' : 'c00@example.com',
+          'creatorUid': i % 13 == 0 ? 'c10' : 'c00',
           'createdAt': DateTime.utc(2026).subtract(Duration(minutes: sameDate ? 0 : i)).toIso8601String(),
         }, 'doc${i.toString().padLeft(3, '0')}'),
     ];

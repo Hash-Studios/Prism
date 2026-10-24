@@ -274,7 +274,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         app_state.prismUser.bio,
         app_state.prismUser.profilePhoto,
         context: context,
-        followerCount: app_state.prismUser.followers.length,
         l10n: l10n,
       );
     } catch (error, stackTrace) {
@@ -951,7 +950,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           SettingsAccountCard(
             onSignIn: _signIn,
-            onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
+            onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id)),
           ),
           if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
           _group(context.l10n.accountAppearance, _appearanceRows()),

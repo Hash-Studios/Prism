@@ -32,6 +32,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
         sizeBytes: fileSize,
         authorName: displayAuthor,
         authorEmail: email.isEmpty ? null : email,
+        authorUid: creatorUid.isEmpty ? null : creatorUid,
         authorPhoto: userPhoto.isEmpty ? null : userPhoto,
         category: category.isEmpty ? null : category,
         createdAt: createdAt,

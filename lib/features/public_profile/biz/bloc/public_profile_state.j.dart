@@ -4,14 +4,14 @@ part of 'public_profile_bloc.j.dart';
 abstract class PublicProfileState with _$PublicProfileState {
   const factory PublicProfileState({
     required LoadStatus status,
-    required String email,
+    required String profileId,
     required List<PublicProfileWallEntity> walls,
     required bool hasMoreWalls,
     required bool isFetchingMoreWalls,
     required RelationList followers,
     required RelationList following,
 
-    /// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+    /// Follow state the user asked for, keyed by profile UID. It wins over the profile stream until the
     /// request fails, so the button flips at once.
     @Default(<String, bool>{}) Map<String, bool> followOverrides,
 
@@ -23,7 +23,7 @@ abstract class PublicProfileState with _$PublicProfileState {
 
   factory PublicProfileState.initial() => const PublicProfileState(
     status: LoadStatus.initial,
-    email: '',
+    profileId: '',
     walls: <PublicProfileWallEntity>[],
     hasMoreWalls: true,
     isFetchingMoreWalls: false,
@@ -50,10 +50,9 @@ abstract class RelationList with _$RelationList {
 
   const RelationList._();
 
-  RelationList withFollowState(String email, {required bool isFollowed}) {
-    List<UserSummaryEntity> update(List<UserSummaryEntity> users) => users
-        .map((u) => u.email.toLowerCase() == email.toLowerCase() ? u.copyWith(isFollowedByCurrentUser: isFollowed) : u)
-        .toList(growable: false);
+  RelationList withFollowState(String userId, {required bool isFollowed}) {
+    List<UserSummaryEntity> update(List<UserSummaryEntity> users) =>
+        users.map((u) => u.id == userId ? u.copyWith(isFollowedByCurrentUser: isFollowed) : u).toList(growable: false);
     final List<UserSummaryEntity>? results = searchResults;
     return copyWith(summaries: update(summaries), searchResults: results == null ? null : update(results));
   }

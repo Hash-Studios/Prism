@@ -16,13 +16,13 @@ import '../../../support/fake_user_block_repository.dart';
 
 class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
-PrismWallpaper _wall(String id, {String? email}) => PrismWallpaper(
+PrismWallpaper _wall(String id, {String? uid}) => PrismWallpaper(
   core: WallpaperCore(
     id: id,
     source: WallpaperSource.prism,
     fullUrl: 'https://example.com/$id.jpg',
     thumbnailUrl: '',
-    authorEmail: email,
+    authorUid: uid,
   ),
 );
 
@@ -152,13 +152,12 @@ void main() {
   group('blocking a creator', () {
     test('removes their walls at once', () async {
       when(() => fetch(any())).thenAnswer(
-        (_) async =>
-            Result.success(<PrismWallpaper>[_wall('a', email: 'Bad@Example.com'), _wall('b', email: 'ok@x.com')]),
+        (_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
       );
       bloc.add(const TrendingEvent.started());
       await settle();
 
-      blocks.completeInitial(<String>{'bad@example.com'});
+      blocks.completeInitial(<String>{'bad-uid'});
       await settle();
 
       expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
@@ -171,9 +170,9 @@ void main() {
       bloc.add(const TrendingEvent.started());
       await settle();
 
-      blocks.completeInitial(<String>{'bad@example.com'});
+      blocks.completeInitial(<String>{'bad-uid'});
       await settle();
-      pending.complete(Result.success(<PrismWallpaper>[_wall('a', email: 'bad@example.com'), _wall('b')]));
+      pending.complete(Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b')]));
       await settle();
 
       expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
@@ -181,12 +180,11 @@ void main() {
 
     test('unblocking them loads the list again and brings their walls back', () async {
       when(() => fetch(any())).thenAnswer(
-        (_) async =>
-            Result.success(<PrismWallpaper>[_wall('a', email: 'bad@example.com'), _wall('b', email: 'ok@x.com')]),
+        (_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
       );
       bloc.add(const TrendingEvent.started());
       await settle();
-      blocks.completeInitial(<String>{'bad@example.com'});
+      blocks.completeInitial(<String>{'bad-uid'});
       await settle();
       expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
 
@@ -198,7 +196,7 @@ void main() {
     });
 
     test('unblocking them before the first load does not load the list', () async {
-      blocks.completeInitial(<String>{'bad@example.com'});
+      blocks.completeInitial(<String>{'bad-uid'});
       await settle();
       blocks.completeInitial(<String>{});
       await settle();
@@ -208,13 +206,13 @@ void main() {
     });
 
     test('leaves the list alone when the set is empty or hits no wall', () async {
-      when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a', email: 'a@x.com')]));
+      when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'a-uid')]));
       bloc.add(const TrendingEvent.started());
       await settle();
       final TrendingState before = bloc.state;
 
       blocks.completeInitial(<String>{});
-      blocks.completeInitial(<String>{'other@x.com'});
+      blocks.completeInitial(<String>{'other-uid'});
       await settle();
 
       expect(bloc.state, before);

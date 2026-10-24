@@ -196,7 +196,7 @@ class _CreatorRow extends StatelessWidget {
             searchId: searchId,
           ),
         );
-        context.router.push(ProfileRoute(profileIdentifier: user.email));
+        context.router.push(ProfileRoute(profileIdentifier: user.id));
       },
     );
   }

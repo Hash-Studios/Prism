@@ -6,7 +6,8 @@ InAppNotificationEntity notification(
   String body = 'b',
   DateTime? createdAt,
   bool read = false,
-  String? followerEmail,
+  String? followerUid,
+  InAppNotificationKind? kind,
 }) {
   return InAppNotificationEntity(
     id: id,
@@ -18,6 +19,7 @@ InAppNotificationEntity notification(
     url: '',
     createdAt: createdAt ?? DateTime.utc(2024),
     read: read,
-    followerEmail: followerEmail,
+    followerUid: followerUid,
+    kind: kind,
   );
 }

@@ -47,16 +47,16 @@ class WallpaperSearchService {
     this._settingsLocal,
     this._prismSearch, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
-    @ignoreParam FutureOr<Set<String>> Function()? blockedEmails,
+    @ignoreParam FutureOr<Set<String>> Function()? blockedUids,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
-       _blockedEmails = blockedEmails ?? _currentBlockedEmails;
+       _blockedUids = blockedUids ?? _currentBlockedUids;
 
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
-  final FutureOr<Set<String>> Function() _blockedEmails;
+  final FutureOr<Set<String>> Function() _blockedUids;
   final Map<String, _CachedSearch> _pageCache = <String, _CachedSearch>{};
   static const int _pageCacheSize = 16;
   static const Duration _pageCacheTtl = Duration(minutes: 10);
@@ -77,7 +77,7 @@ class WallpaperSearchService {
   }
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
-    final Set<String> blocked = await _blockedEmails();
+    final Set<String> blocked = await _blockedUids();
     if (filters.depthOnly) return _withoutHidden(await _depthSearch(query, filters));
     final String cacheKey = _cacheKey(query, filters, blocked);
     final _CachedSearch? hit = _pageCache.remove(cacheKey);
@@ -108,7 +108,7 @@ class WallpaperSearchService {
 
   /// Drops walls from blocked creators, and anime Prism walls when the user hides anime.
   Future<WallpaperSearchPage> _withoutHidden(WallpaperSearchPage page) async {
-    final Set<String> blocked = await _blockedEmails();
+    final Set<String> blocked = await _blockedUids();
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
     if (blocked.isEmpty && showAnime) return page;
     List<FeedItemEntity> visible(List<FeedItemEntity> items) =>
@@ -121,8 +121,8 @@ class WallpaperSearchService {
     );
   }
 
-  static FutureOr<Set<String>> _currentBlockedEmails() => GetIt.instance.isRegistered<UserBlockRepository>()
-      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true)
+  static FutureOr<Set<String>> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true)
       : const <String>{};
 
   Future<WallpaperSearchPage> _searchNetwork(String query, SearchFilters filters) async {

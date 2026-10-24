@@ -38,11 +38,11 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   final Set<String> _retryingBlockUsers = <String>{};
   final Map<String, Completer<void>> _retryCancellation = <String, Completer<void>>{};
   late final StreamSubscription<PrismUsersV2> _sessionSubscription;
-  StreamSubscription<Set<String>>? _blockedEmailsSubscription;
+  StreamSubscription<Set<String>>? _blockedUidsSubscription;
 
-  final BehaviorSubject<Set<String>> _blockedEmailsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
+  final BehaviorSubject<Set<String>> _blockedUidsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
   Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
-  bool _hasLoadedBlockedCreatorEmails = false;
+  bool _hasLoadedBlockedCreatorUids = false;
   String? _activeUserId;
   bool _disposed = false;
   Future<void>? _disposeFuture;
@@ -56,12 +56,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       if (!cancellation.isCompleted) cancellation.complete();
     }
     await _sessionSubscription.cancel();
-    await _blockedEmailsSubscription?.cancel();
-    _blockedEmailsSubscription = null;
+    await _blockedUidsSubscription?.cancel();
+    _blockedUidsSubscription = null;
     while (_lifecycleTasks.isNotEmpty) {
       await Future.wait<void>(List<Future<void>>.of(_lifecycleTasks));
     }
-    await _blockedEmailsSubject.close();
+    await _blockedUidsSubject.close();
   }
 
   void _trackLifecycle(Future<void> task) {
@@ -89,18 +89,18 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   @override
-  Set<String> get cachedBlockedCreatorEmails => _blockedEmailsSubject.value;
+  Set<String> get cachedBlockedCreatorUids => _blockedUidsSubject.value;
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
-    if (!waitForInitialLoad || _hasLoadedBlockedCreatorEmails) {
-      return _blockedEmailsSubject.value;
+  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
+    if (!waitForInitialLoad || _hasLoadedBlockedCreatorUids) {
+      return _blockedUidsSubject.value;
     }
-    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedEmailsSubject.value);
+    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedUidsSubject.value);
   }
 
   @override
-  Stream<Set<String>> watchBlockedCreatorEmails() => _blockedEmailsSubject.stream;
+  Stream<Set<String>> watchBlockedCreatorUids() => _blockedUidsSubject.stream;
 
   @override
   Future<void> clearForUser(String userId) async {
@@ -127,8 +127,8 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       final Completer<void>? cancellation = _retryCancellation.remove(previousUserId);
       if (cancellation != null && !cancellation.isCompleted) cancellation.complete();
     }
-    unawaited(_blockedEmailsSubscription?.cancel());
-    _blockedEmailsSubscription = null;
+    unawaited(_blockedUidsSubscription?.cancel());
+    _blockedUidsSubscription = null;
 
     if (nextUserId.isEmpty) {
       _publishSnapshot(<String>{});
@@ -136,13 +136,13 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     }
 
     _beginPendingInitialLoad();
-    _blockedEmailsSubject.add(const <String>{});
+    _blockedUidsSubject.add(const <String>{});
     _trackLifecycle(_loadLocalBlocks(nextUserId));
-    _blockedEmailsSubscription = _watchBlockedEmails(nextUserId).listen(
-      (emails) {
+    _blockedUidsSubscription = _watchBlockedUids(nextUserId).listen(
+      (uids) {
         if (_activeUserId != nextUserId || _session.currentUser.id != nextUserId) return;
         if (!_disposed) {
-          _trackLifecycle(_publishMergedSnapshot(nextUserId, serverEmails: emails));
+          _trackLifecycle(_publishMergedSnapshot(nextUserId, serverUids: uids));
           _startPendingBlockRetry(nextUserId);
         }
       },
@@ -165,54 +165,54 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   Future<void> _publishMergedSnapshot(
     String userId, {
-    Set<String>? serverEmails,
+    Set<String>? serverUids,
     bool completeInitialLoadWhenUnavailable = false,
   }) async {
-    if (serverEmails != null) {
+    if (serverUids != null) {
       if (_clearingBlockUsers.contains(userId)) return;
       await _serializeBlockOwner(userId, () async {
         if (_clearingBlockUsers.contains(userId)) return;
-        await _localBlocks.write('$userId::server_emails', UserBlockSnapshotCodec.encodeEmails(serverEmails));
+        await _localBlocks.write('$userId::server_uids_v2', UserBlockSnapshotCodec.encodeUids(serverUids));
       });
     }
     if (_disposed || _clearingBlockUsers.contains(userId)) return;
     final records = await _localBlocks.readAll();
     if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
-    final savedServerEmails = await _localBlocks.read('$userId::server_emails');
+    final savedServerUids = await _localBlocks.read('$userId::server_uids_v2');
     final savedServerRows = await _localBlocks.read('$userId::server_rows');
     if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
-    final bool hasKnownServerSnapshot = serverEmails != null || savedServerEmails != null || savedServerRows != null;
-    final Set<String> emails = <String>{
-      ...serverEmails ??
-          (savedServerEmails == null ? const <String>{} : UserBlockSnapshotCodec.decodeEmails(savedServerEmails)),
-      if (serverEmails == null && savedServerEmails == null && savedServerRows != null)
-        ...UserBlockSnapshotCodec.decodeRows(savedServerRows).map((row) => row.blockedEmail.trim().toLowerCase()),
-    }..removeWhere((email) => email.isEmpty);
+    final bool hasKnownServerSnapshot = serverUids != null || savedServerUids != null || savedServerRows != null;
+    final Set<String> uids = <String>{
+      ...serverUids ??
+          (savedServerUids == null ? const <String>{} : UserBlockSnapshotCodec.decodeUids(savedServerUids)),
+      if (serverUids == null && savedServerUids == null && savedServerRows != null)
+        ...UserBlockSnapshotCodec.decodeRows(savedServerRows).map((row) => row.blockedUid),
+    }..removeWhere((uid) => uid.isEmpty);
     for (final entry in records.entries.where((entry) => entry.key.startsWith('$userId::'))) {
       final operation = entry.value;
       if (operation['status'] == 'synced') continue;
-      final email = (operation['email']?.toString() ?? '').trim().toLowerCase();
-      if (email.isEmpty) continue;
+      final targetId = (operation['targetId']?.toString() ?? '').trim();
+      if (targetId.isEmpty) continue;
       if (operation['desired'] == true) {
-        emails.add(email);
+        uids.add(targetId);
       } else {
-        emails.remove(email);
+        uids.remove(targetId);
       }
     }
-    _publishSnapshot(emails, completeInitialLoad: hasKnownServerSnapshot || completeInitialLoadWhenUnavailable);
+    _publishSnapshot(uids, completeInitialLoad: hasKnownServerSnapshot || completeInitialLoadWhenUnavailable);
   }
 
   void _beginPendingInitialLoad() {
-    _hasLoadedBlockedCreatorEmails = false;
+    _hasLoadedBlockedCreatorUids = false;
     if (_initialLoadCompleter.isCompleted) {
       _initialLoadCompleter = Completer<Set<String>>();
     }
   }
 
-  void _publishSnapshot(Set<String> blockedEmails, {bool completeInitialLoad = true}) {
-    final Set<String> normalized = Set<String>.unmodifiable(blockedEmails);
-    _blockedEmailsSubject.add(normalized);
-    if (completeInitialLoad) _hasLoadedBlockedCreatorEmails = true;
+  void _publishSnapshot(Set<String> blockedUids, {bool completeInitialLoad = true}) {
+    final Set<String> normalized = Set<String>.unmodifiable(blockedUids);
+    _blockedUidsSubject.add(normalized);
+    if (completeInitialLoad) _hasLoadedBlockedCreatorUids = true;
     if (completeInitialLoad && !_initialLoadCompleter.isCompleted) {
       _initialLoadCompleter.complete(normalized);
     }
@@ -220,12 +220,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   String _blockedUsersPath(String userId) => '${FirebaseCollections.usersV2}/$userId/$_subcollection';
 
-  Future<Map<String, Object?>> _saveBlockIntent(
-    String userId,
-    String targetId, {
-    required bool desired,
-    required String email,
-  }) async {
+  Future<Map<String, Object?>> _saveBlockIntent(String userId, String targetId, {required bool desired}) async {
     if (_clearingBlockUsers.contains(userId)) throw StateError('This account was deleted.');
     late Map<String, Object?> operation;
     await _serializeBlockOwner(userId, () async {
@@ -237,12 +232,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         ...?previous,
         'owner': userId,
         'targetId': targetId,
-        'email': email.isEmpty ? (previous?['email']) : email,
         'revision': revision,
         'operationId': '$userId:$targetId:$revision',
         'desired': desired,
         'status': 'pending',
       };
+      operation.remove('email');
       await _localBlocks.write(key, operation);
     });
     return operation;
@@ -302,30 +297,29 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     });
   }
 
-  Stream<Set<String>> _watchBlockedEmails(String userId) {
+  Stream<Set<String>> _watchBlockedUids(String userId) {
     return _firestoreClient
         .watchQuery<String>(
           FirestoreQuerySpec(collection: _blockedUsersPath(userId), sourceTag: 'user_blocks.watch', isStream: true),
-          (data, docId) => parseString(data['blockedEmail']).trim().toLowerCase(),
+          (_, docId) => docId.trim(),
         )
-        .map((emails) => emails.where((email) => email.isNotEmpty).toSet());
+        .map((uids) => uids.where((uid) => uid.isNotEmpty).toSet());
   }
 
   @override
-  Future<Result<void>> blockUser({required String targetUserId, String? targetEmail}) async {
+  Future<Result<void>> blockUser({required String targetUserId}) async {
     final String tid = targetUserId.trim();
     if (tid.isEmpty) {
       return Result.error(const ValidationFailure('Invalid user.'));
     }
     final String uid = _session.currentUser.id.trim();
-    final String email = (targetEmail ?? '').trim().toLowerCase();
     if (uid.isEmpty) return Result.error(const ValidationFailure('Sign in to block users.'));
     late String operationId;
     try {
-      final operation = await _saveBlockIntent(uid, tid, desired: true, email: email);
+      final operation = await _saveBlockIntent(uid, tid, desired: true);
       operationId = operation['operationId']! as String;
-      if (_activeUserId == uid && _session.currentUser.id == uid && email.isNotEmpty) {
-        _publishSnapshot(<String>{..._blockedEmailsSubject.value, email});
+      if (_activeUserId == uid && _session.currentUser.id == uid) {
+        _publishSnapshot(<String>{..._blockedUidsSubject.value, tid});
       }
     } catch (error) {
       return Result.error(ServerFailure('Could not save block locally: $error'));
@@ -367,11 +361,10 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     if (uid.isEmpty) return Result.error(const ValidationFailure('Sign in to unblock users.'));
     late String operationId;
     try {
-      final operation = await _saveBlockIntent(uid, tid, desired: false, email: '');
+      final operation = await _saveBlockIntent(uid, tid, desired: false);
       operationId = operation['operationId']! as String;
-      final previousEmail = operation['email']?.toString().trim().toLowerCase() ?? '';
       if (_activeUserId == uid && _session.currentUser.id == uid) {
-        _publishSnapshot(_blockedEmailsSubject.value.where((item) => item != previousEmail).toSet());
+        _publishSnapshot(_blockedUidsSubject.value.where((item) => item != tid).toSet());
       }
       final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, () async {
         final cf.HttpsCallable callable = appFunctions.httpsCallable(
@@ -484,11 +477,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         (data, docId) {
           final String username = parseString(data['blockedUsername']).trim();
           return (
-            BlockedUserListRow(
-              blockedUid: docId,
-              blockedEmail: parseString(data['blockedEmail']).trim(),
-              blockedUsername: username.isEmpty ? null : username,
-            ),
+            BlockedUserListRow(blockedUid: docId, blockedUsername: username.isEmpty ? null : username),
             parseDateTime(data['createdAt']),
           );
         },
@@ -531,7 +520,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         if (entry.value['desired'] == true) {
           rows[target] = BlockedUserListRow(
             blockedUid: target,
-            blockedEmail: entry.value['email']?.toString() ?? rows[target]?.blockedEmail ?? '',
             blockedUsername: entry.value['username']?.toString() ?? rows[target]?.blockedUsername,
             syncStatus: entry.value['status']?.toString() ?? 'pending',
           );
@@ -569,7 +557,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
             if (entry.value['desired'] == true) {
               rows[target] = BlockedUserListRow(
                 blockedUid: target,
-                blockedEmail: entry.value['email']?.toString() ?? rows[target]?.blockedEmail ?? '',
                 blockedUsername: entry.value['username']?.toString() ?? rows[target]?.blockedUsername,
                 syncStatus: entry.value['status']?.toString() ?? 'pending',
               );

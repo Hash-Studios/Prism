@@ -115,7 +115,7 @@ void main() {
       final blockedRepo = PrismWallpaperRepositoryImpl(
         _walls(docs, matchIdField: true),
         FakeFeedCacheLocalDataSource(),
-        FakeUserBlockRepository.pending()..completeInitial(<String>{'creator1@example.com'}),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{'creator1'}),
       );
       expect((await blockedRepo.fetchCanonicalByDocumentId('doc-1')).data, isNull);
       data['originalProtected'] = false;
@@ -165,7 +165,7 @@ void main() {
 
       expect(firestore.querySpecs, isEmpty);
 
-      blocks.completeInitial(<String>{'creator1@example.com', 'creator2@example.com', 'creator3@example.com'});
+      blocks.completeInitial(<String>{'creator1', 'creator2', 'creator3'});
 
       final firstPage = await pending;
       expect(firstPage.isSuccess, isTrue);
@@ -326,7 +326,7 @@ void main() {
         final repo = PrismWallpaperRepositoryImpl(
           _walls(_buildWallDocs(count: 3)),
           FakeFeedCacheLocalDataSource(),
-          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator2@example.com'}),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator2'}),
         );
 
         final result = await repo.fetchByCategory('Nature');
@@ -385,6 +385,7 @@ List<({String docId, Map<String, dynamic> data})> _buildWallDocs({required int c
         'createdAt': DateTime.utc(2026).subtract(Duration(minutes: index)).toIso8601String(),
         'by': 'Creator $n',
         'email': 'creator$n@example.com',
+        'creatorUid': 'creator$n',
         'review': true,
       },
     );

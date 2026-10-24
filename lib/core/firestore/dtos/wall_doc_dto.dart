@@ -14,6 +14,7 @@ abstract class WallDocDto with _$WallDocDto {
     @FirestoreStringConverter() @Default('') String size,
     @FirestoreStringConverter() @Default('') String resolution,
     @FirestoreStringConverter() @Default('') String email,
+    @JsonKey(name: 'creatorUid') @FirestoreStringConverter() @Default('') String creatorUid,
     @JsonKey(name: 'wallpaper_provider') @FirestoreStringConverter() @Default('') String wallpaperProvider,
     @JsonKey(name: 'wallpaper_thumb') @FirestoreStringConverter() @Default('') String wallpaperThumb,
     @JsonKey(name: 'wallpaper_url') @FirestoreStringConverter() @Default('') String wallpaperUrl,

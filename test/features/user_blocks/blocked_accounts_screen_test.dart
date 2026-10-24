@@ -105,7 +105,7 @@ void main() {
 
     expect(find.text('Could not load blocked accounts'), findsOneWidget);
     repo.result = Result.success(const <BlockedUserListRow>[
-      BlockedUserListRow(blockedUid: 'u2', blockedEmail: 'ignored@example.com', blockedUsername: 'refreshed'),
+      BlockedUserListRow(blockedUid: 'u2', blockedUsername: 'refreshed'),
     ]);
     await tester.tap(find.text('Retry'));
     await tester.pump();
@@ -119,9 +119,7 @@ void main() {
     final List<Object?> played = captureHaptics(tester);
     final repo = await pumpScreen(
       tester,
-      Result.success(const <BlockedUserListRow>[
-        BlockedUserListRow(blockedUid: 'u9', blockedEmail: 'sam@example.com', blockedUsername: 'sam_k'),
-      ]),
+      Result.success(const <BlockedUserListRow>[BlockedUserListRow(blockedUid: 'u9', blockedUsername: 'sam_k')]),
     );
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -151,8 +149,8 @@ void main() {
     await pumpScreen(
       tester,
       Result.success(const <BlockedUserListRow>[
-        BlockedUserListRow(blockedUid: 'u1', blockedEmail: 'secret@example.com', blockedUsername: 'maya'),
-        BlockedUserListRow(blockedUid: 'u2', blockedEmail: 'hidden@example.com'),
+        BlockedUserListRow(blockedUid: 'u1', blockedUsername: 'maya'),
+        BlockedUserListRow(blockedUid: 'u2'),
       ]),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -165,9 +163,7 @@ void main() {
   testWidgets('unblock asks first and cancel keeps the account blocked', (tester) async {
     final repo = await pumpScreen(
       tester,
-      Result.success(const <BlockedUserListRow>[
-        BlockedUserListRow(blockedUid: 'u1', blockedEmail: 'secret@example.com', blockedUsername: 'maya'),
-      ]),
+      Result.success(const <BlockedUserListRow>[BlockedUserListRow(blockedUid: 'u1', blockedUsername: 'maya')]),
     );
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -192,7 +188,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: BlockedUserProfileShell(targetUserId: 'u9', targetEmail: 'sam@example.com', displayName: 'Sam K'),
+        home: BlockedUserProfileShell(targetUserId: 'u9', displayName: 'Sam K'),
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));

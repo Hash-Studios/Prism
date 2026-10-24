@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
@@ -36,16 +37,24 @@ class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileS
 
 class _FakeProfileRepository implements PublicProfileRepository {
   final StreamController<PublicProfileEntity?> profiles = StreamController<PublicProfileEntity?>.broadcast();
+  final List<String> watchedIdentifiers = <String>[];
 
   @override
-  Stream<PublicProfileEntity?> watchProfile(String identifier) => profiles.stream;
+  Stream<PublicProfileEntity?> watchProfile(String identifier) {
+    watchedIdentifiers.add(identifier);
+    return profiles.stream;
+  }
+
+  @override
+  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) =>
+      throw UnimplementedError();
 
   @override
   Future<void> clearForUser(String userId) async {}
 
   @override
   Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> fetchWalls({
-    required String email,
+    required String userId,
     required bool refresh,
   }) => throw UnimplementedError();
 
@@ -67,14 +76,14 @@ class _FakeProfileRepository implements PublicProfileRepository {
 
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({
-    required List<String> allEmails,
+    required List<String> userIds,
     required int page,
   }) => throw UnimplementedError();
 
   @override
   Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({
     required String query,
-    required List<String> scopeEmails,
+    required List<String> scopeUserIds,
   }) => throw UnimplementedError();
 }
 
@@ -99,12 +108,10 @@ class _ProfileSemanticsRouter extends AppRouter {
 const PublicProfileEntity _ana = PublicProfileEntity(
   id: 'u2',
   name: 'Ana Rivera',
-  email: 'ana@example.com',
+  email: '',
   username: 'ana_rivera',
   profilePhoto: '',
   bio: 'Makes calm gradients.',
-  followers: <String>[],
-  following: <String>[],
   links: <String, String>{},
   coverPhoto: '',
 );
@@ -129,7 +136,7 @@ void main() {
     whenListen(
       bloc,
       const Stream<PublicProfileState>.empty(),
-      initialState: PublicProfileState.initial().copyWith(email: 'user@example.com', status: LoadStatus.success),
+      initialState: PublicProfileState.initial().copyWith(profileId: 'me', status: LoadStatus.success),
     );
   });
 
@@ -188,6 +195,34 @@ void main() {
     expect(find.text('Complete your profile'), findsOneWidget);
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
+    expect(repository.watchedIdentifiers, <String>['me']);
+  });
+
+  testWidgets('own profile keeps private header data and uses UID public graph counts', (tester) async {
+    await pumpScreen(tester);
+    repository.profiles.add(
+      const PublicProfileEntity(
+        id: 'me',
+        name: 'Should not replace owner name',
+        email: 'private@example.com',
+        username: 'other_name',
+        profilePhoto: 'https://example.com/other.png',
+        bio: 'Should not replace owner bio',
+        followingCount: 2,
+        links: <String, String>{},
+        coverPhoto: '',
+        followerCount: 41,
+        badges: <String>['creator'],
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Me Myself'), findsOneWidget);
+    expect(find.text('Should not replace owner name'), findsNothing);
+    expect(find.text('@creator_01'), findsOneWidget);
+    expect(tester.getSemantics(find.bySemanticsLabel('2 Following')), isNotNull);
+    expect(tester.getSemantics(find.bySemanticsLabel('41 Followers')), isNotNull);
+    expect(repository.watchedIdentifiers, <String>['me']);
   });
 
   testWidgets('tappable profile counts expose button semantics', (tester) async {
@@ -243,7 +278,7 @@ void main() {
       bloc,
       const Stream<PublicProfileState>.empty(),
       initialState: PublicProfileState.initial().copyWith(
-        email: 'user@example.com',
+        profileId: 'me',
         status: LoadStatus.success,
         walls: <PublicProfileWallEntity>[
           const PublicProfileWallEntity(id: 'w1', wallpaperUrl: 'https://example.com/1'),
@@ -341,12 +376,10 @@ void main() {
     const PublicProfileEntity longProfile = PublicProfileEntity(
       id: 'u2',
       name: 'A very long profile display name for a narrow screen',
-      email: 'ana@example.com',
+      email: '',
       username: 'a_very_long_profile_username_for_a_narrow_screen',
       profilePhoto: '',
       bio: 'A long profile biography that should remain readable at larger text sizes.',
-      followers: <String>[],
-      following: <String>[],
       links: <String, String>{
         'github': 'https://github.com/a',
         'twitter': 'https://twitter.com/a',
@@ -358,14 +391,14 @@ void main() {
     whenListen(
       bloc,
       const Stream<PublicProfileState>.empty(),
-      initialState: PublicProfileState.initial().copyWith(email: 'ana@example.com', status: LoadStatus.success),
+      initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
     );
 
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ProfileScreen(profileIdentifier: 'ana@example.com'),
+        home: ProfileScreen(profileIdentifier: 'u2'),
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -400,7 +433,7 @@ void main() {
   });
 
   testWidgets('another profile shows a skeleton while loading, then the profile with Follow', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
     expect(find.bySemanticsLabel('Loading'), findsWidgets);
     expect(find.text('Ana Rivera'), findsNothing);
 
@@ -416,7 +449,7 @@ void main() {
   });
 
   testWidgets('the Follow button asks the bloc to follow, and shows Unfollow when already followed', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
     repository.profiles.add(_ana);
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -428,7 +461,7 @@ void main() {
           currentUserId: 'me',
           currentUserEmail: 'user@example.com',
           targetUserId: 'u2',
-          targetUserEmail: 'ana@example.com',
+          targetUserEmail: '',
           targetName: 'Ana Rivera',
         ),
       ),
@@ -438,13 +471,13 @@ void main() {
       bloc,
       const Stream<PublicProfileState>.empty(),
       initialState: PublicProfileState.initial().copyWith(
-        email: 'ana@example.com',
+        profileId: 'u2',
         status: LoadStatus.success,
-        followOverrides: <String, bool>{'ana@example.com': true},
+        followOverrides: <String, bool>{'u2': true},
       ),
     );
     await tester.pumpWidget(const SizedBox.shrink());
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
     repository.profiles.add(_ana);
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -453,17 +486,15 @@ void main() {
   });
 
   testWidgets('the first three links show as buttons and the rest open from a More links button', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
     repository.profiles.add(
       const PublicProfileEntity(
         id: 'u2',
         name: 'Ana Rivera',
-        email: 'ana@example.com',
+        email: '',
         username: 'ana_rivera',
         profilePhoto: '',
         bio: '',
-        followers: <String>[],
-        following: <String>[],
         links: <String, String>{
           'github': 'https://github.com/a',
           'twitter': 'https://twitter.com/a',
@@ -488,7 +519,7 @@ void main() {
   });
 
   testWidgets('another profile that has been deleted says it is not available', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
 
     repository.profiles.add(null);
     await tester.pump(const Duration(milliseconds: 400));
@@ -498,7 +529,7 @@ void main() {
   });
 
   testWidgets('a failed profile stream shows an error with a retry', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
 
     repository.profiles.addError(StateError('boom'));
     await tester.pump(const Duration(milliseconds: 400));
@@ -508,11 +539,11 @@ void main() {
   });
 
   testWidgets('a blocked user shows the unblock shell instead of the profile', (tester) async {
-    await pumpScreen(tester, identifier: 'ana@example.com');
+    await pumpScreen(tester, identifier: 'u2');
     repository.profiles.add(_ana);
     await tester.pump(const Duration(milliseconds: 400));
 
-    blocks.completeInitial(<String>{'ana@example.com'});
+    blocks.completeInitial(<String>{'u2'});
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('You blocked Ana Rivera'), findsOneWidget);
@@ -524,12 +555,10 @@ void main() {
     const PublicProfileEntity dressed = PublicProfileEntity(
       id: 'u2',
       name: 'Ana Rivera',
-      email: 'ana@example.com',
+      email: '',
       username: 'ana_rivera',
       profilePhoto: '',
       bio: '',
-      followers: <String>[],
-      following: <String>[],
       links: <String, String>{},
       coverPhoto: '',
       frameId: 'frame_aurora',
@@ -557,7 +586,7 @@ void main() {
     });
 
     testWidgets('another profile shows the rank tag, the frame and the glowing name', (tester) async {
-      await pumpScreen(tester, identifier: 'ana@example.com');
+      await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(dressed);
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -574,7 +603,7 @@ void main() {
     });
 
     testWidgets('a profile with no cosmetics keeps the plain ring and name', (tester) async {
-      await pumpScreen(tester, identifier: 'ana@example.com');
+      await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(_ana);
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -584,17 +613,15 @@ void main() {
     });
 
     testWidgets('a Pro frame draws only while the profile is premium', (tester) async {
-      await pumpScreen(tester, identifier: 'ana@example.com');
+      await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(
         const PublicProfileEntity(
           id: 'u2',
           name: 'Ana Rivera',
-          email: 'ana@example.com',
+          email: '',
           username: 'ana_rivera',
           profilePhoto: '',
           bio: '',
-          followers: <String>[],
-          following: <String>[],
           links: <String, String>{},
           coverPhoto: '',
           frameId: 'frame_prism',
@@ -607,12 +634,10 @@ void main() {
         const PublicProfileEntity(
           id: 'u2',
           name: 'Ana Rivera',
-          email: 'ana@example.com',
+          email: '',
           username: 'ana_rivera',
           profilePhoto: '',
           bio: '',
-          followers: <String>[],
-          following: <String>[],
           links: <String, String>{},
           coverPhoto: '',
           frameId: 'frame_prism',
@@ -639,7 +664,7 @@ void main() {
 
     testWidgets('another profile offers the gift sheet', (tester) async {
       CoinsService.instance.balanceNotifier.value = 500;
-      await pumpScreen(tester, identifier: 'ana@example.com');
+      await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(_ana);
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -658,7 +683,7 @@ void main() {
 
     testWidgets('the gift sheet offers Earn coins and blocks sending when the balance is short', (tester) async {
       CoinsService.instance.balanceNotifier.value = 0;
-      await pumpScreen(tester, identifier: 'ana@example.com');
+      await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(_ana);
       await tester.pump(const Duration(milliseconds: 400));
 

@@ -257,7 +257,7 @@ void main() {
         read: index.isOdd,
         route: 'route-$index-${List<String>.filled(index * 2, 'r').join()}',
         wallId: 'wall-$index',
-        followerEmail: 'creator$index@example.test',
+        followerUid: 'creator-$index',
       );
     });
 

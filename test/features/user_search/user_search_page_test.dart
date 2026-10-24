@@ -96,22 +96,8 @@ void main() {
         status: LoadStatus.success,
         query: 'ana',
         users: const <UserSearchUser>[
-          UserSearchUser(
-            id: 'u1',
-            name: 'Ana Silva',
-            username: 'anasilva',
-            email: 'ana@example.com',
-            profilePhoto: '',
-            followerCount: 12,
-          ),
-          UserSearchUser(
-            id: 'u2',
-            name: 'Anil',
-            username: 'anil',
-            email: 'anil@example.com',
-            profilePhoto: '',
-            followerCount: 1,
-          ),
+          UserSearchUser(id: 'u1', name: 'Ana Silva', username: 'anasilva', profilePhoto: '', followerCount: 12),
+          UserSearchUser(id: 'u2', name: 'Anil', username: 'anil', profilePhoto: '', followerCount: 1),
         ],
       ),
     );

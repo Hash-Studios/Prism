@@ -103,7 +103,7 @@ class _FakeMessaging extends Fake implements FirebaseMessaging {}
 
 OnboardingStarterCreatorEntity _creator(int i) => OnboardingStarterCreatorEntity(
   userId: 'creator-$i',
-  email: 'creator-$i@example.com',
+  email: 'creator-$i',
   name: 'Creator $i',
   photoUrl: '',
   previewUrls: const <String>[],
@@ -124,7 +124,7 @@ final OnboardingV2State _starterPack = _interests.copyWith(
   step: OnboardingV2Step.starterPack,
   starterPackData: OnboardingStarterPackData(
     creators: <OnboardingStarterCreatorEntity>[_creator(1), _creator(2), _creator(3)],
-    selectedEmails: <String>{'creator-1@example.com', 'creator-2@example.com', 'creator-3@example.com'},
+    selectedEmails: <String>{'creator-1', 'creator-2', 'creator-3'},
   ),
 );
 
@@ -587,7 +587,7 @@ void main() {
       final OnboardingV2State short = _starterPack.copyWith(
         starterPackData: OnboardingStarterPackData(
           creators: <OnboardingStarterCreatorEntity>[for (var i = 0; i < count; i++) _creator(i)],
-          selectedEmails: <String>{for (var i = 0; i < count; i++) 'creator-$i@example.com'},
+          selectedEmails: <String>{for (var i = 0; i < count; i++) 'creator-$i'},
         ),
       );
       final bloc = await pumpShell(tester, short, short);
@@ -606,7 +606,7 @@ void main() {
     final OnboardingV2State short = _starterPack.copyWith(
       starterPackData: OnboardingStarterPackData(
         creators: <OnboardingStarterCreatorEntity>[_creator(0), _creator(1)],
-        selectedEmails: <String>{'creator-0@example.com', 'creator-1@example.com'},
+        selectedEmails: <String>{'creator-0', 'creator-1'},
       ),
     );
     final bloc = await pumpShell(tester, short, short);

@@ -74,7 +74,7 @@ void main() {
   test('find and search hide Prism items from the current blocked set', () async {
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
-      blockedEmails: () => <String>{'blocked@example.test'},
+      blockedUids: () => <String>{'blocked-uid'},
     );
     final FeedItemEntity blocked = PrismFeedItem(
       id: 'blocked',
@@ -84,7 +84,8 @@ void main() {
           source: WallpaperSource.prism,
           fullUrl: 'https://example.test/blocked.jpg',
           thumbnailUrl: 'https://example.test/blocked-thumb.jpg',
-          authorEmail: 'blocked@example.test',
+          authorEmail: 'private@example.test',
+          authorUid: 'blocked-uid',
         ),
         title: 'blocked forest',
       ),
@@ -99,7 +100,7 @@ void main() {
     final Completer<Set<String>> blockSnapshot = Completer<Set<String>>();
     final catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
-      blockedEmails: () => blockSnapshot.future,
+      blockedUids: () => blockSnapshot.future,
     );
     await catalog.remember(<FeedItemEntity>[
       PrismFeedItem(
@@ -110,7 +111,8 @@ void main() {
             source: WallpaperSource.prism,
             fullUrl: 'https://example.test/blocked.jpg',
             thumbnailUrl: 'https://example.test/blocked-thumb.jpg',
-            authorEmail: 'blocked@example.test',
+            authorEmail: 'private@example.test',
+            authorUid: 'blocked-uid',
           ),
           title: 'blocked forest',
         ),
@@ -120,7 +122,7 @@ void main() {
     final Future<FeedItemEntity?> find = catalog.find(WallpaperSource.prism, 'blocked');
     final Future<List<FeedItemEntity>> search = catalog.search('forest');
     await Future<void>.delayed(Duration.zero);
-    blockSnapshot.complete(<String>{'blocked@example.test'});
+    blockSnapshot.complete(<String>{'blocked-uid'});
 
     expect(await find, isNull);
     expect(await search, isEmpty);

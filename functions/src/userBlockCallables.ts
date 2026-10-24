@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
+import {applyFollowEdge} from "./profiles";
 
 const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
@@ -205,6 +206,15 @@ export const blockUser = onCall(
       // within the same 24h moderation pipeline as a manual report.
       tx.set(contentReportRef, buildBlockContentReportDoc({blockedUid, callerUid, now}));
     });
+
+    // The block doc now refuses new follows, so removing the UID edges after the commit cannot race a re-follow.
+    for (const [followerUid, targetUid] of [[callerUid, blockedUid], [blockedUid, callerUid]]) {
+      try {
+        await applyFollowEdge({followerUid, targetUid, follow: false});
+      } catch (err) {
+        logger.error("blockUser: could not remove a follow edge.", {callerUid, blockedUid, err});
+      }
+    }
 
     logger.info("blockUser: success", {callerUid, blockedUid, contentReportId: contentReportRef.id});
 

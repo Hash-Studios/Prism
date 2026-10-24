@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class FollowersScreen extends StatelessWidget {
-  const FollowersScreen({super.key, required this.followers});
+  const FollowersScreen({super.key, required this.userId});
 
-  /// Full list of follower email addresses (all pages). Passed from profile screen.
-  final List<String> followers;
+  /// Uid of the profile whose followers edges are loaded when the screen opens.
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
-    return UserRelationListBody(kind: UserRelationKind.followers, emails: followers);
+    return UserRelationListBody(kind: UserRelationKind.followers, profileUid: userId);
   }
 }

@@ -90,6 +90,7 @@ class WallpaperCore {
     this.sizeBytes,
     this.authorName,
     this.authorEmail,
+    this.authorUid,
     this.authorPhoto,
     this.authorId,
     this.category,
@@ -111,6 +112,7 @@ class WallpaperCore {
   final int? sizeBytes;
   final String? authorName;
   final String? authorEmail;
+  final String? authorUid;
   final String? authorPhoto;
   final String? authorId;
   final String? category;

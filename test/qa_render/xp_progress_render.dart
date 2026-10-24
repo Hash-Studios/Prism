@@ -112,7 +112,7 @@ void main() {
       whenListen(
         bloc,
         const Stream<PublicProfileState>.empty(),
-        initialState: PublicProfileState.initial().copyWith(email: 'user@example.com', status: LoadStatus.success),
+        initialState: PublicProfileState.initial().copyWith(profileId: 'userUid', status: LoadStatus.success),
       );
       final _MockProfileRepository repository = _MockProfileRepository();
       when(() => repository.watchProfile(any())).thenAnswer((_) => const Stream<PublicProfileEntity?>.empty());

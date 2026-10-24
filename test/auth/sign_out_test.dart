@@ -6,14 +6,14 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
-import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
-import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -36,6 +36,17 @@ class _LoggingFirestore extends FakeFirestoreClient {
   Object? readError;
   Completer<void>? loggedOutWriteStarted;
   Completer<void>? loggedOutWriteGate;
+  Completer<void>? followingQueryStarted;
+  Completer<void>? followingQueryGate;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    if (spec.collection.startsWith('${FirebaseCollections.profiles}/')) {
+      followingQueryStarted?.complete();
+      await followingQueryGate?.future;
+    }
+    return super.query(spec, map);
+  }
 
   @override
   Future<T?> getById<T>(
@@ -201,17 +212,6 @@ class _DelayedTasteSignalStore extends TasteSignalStore {
   }
 }
 
-class _DelayedProfiles extends Fake implements PublicProfileRepository {
-  final started = Completer<void>();
-  final result = Completer<PublicProfileEntity?>();
-
-  @override
-  Stream<PublicProfileEntity?> watchProfile(String identifier) {
-    started.complete();
-    return Stream<PublicProfileEntity?>.fromFuture(result.future);
-  }
-}
-
 void main() {
   late _LoggingFirestore firestore;
   late SettingsLocalDataSource settings;
@@ -272,36 +272,23 @@ void main() {
     auth = GoogleAuth(auth: _FakeAuth(), googleSignIn: _FakeGoogleSignIn(), messaging: _FakeMessaging());
   });
 
-  test('Google rollback stops topic dispatch after an old creator UID lookup returns', () async {
+  test('Google rollback stops creator topic dispatch after the UID graph read returns', () async {
     app_state.prismUser = profileUser()..following = <String>['creator@example.com'];
     firestore.failReads = true;
+    firestore.followingQueryStarted = Completer<void>();
+    firestore.followingQueryGate = Completer<void>();
     final firebase = _FakeAuth();
-    final profiles = _DelayedProfiles();
-    getIt.registerSingleton<PublicProfileRepository>(profiles);
     final pending = GoogleAuth(
       auth: firebase,
       googleSignIn: _FakeGoogleSignIn(),
       messaging: _FakeMessaging(),
     ).signInWithGoogle();
     final rejected = expectLater(pending, throwsStateError);
-    await profiles.started.future;
+    await firestore.followingQueryStarted!.future;
     final replacement = profileUser(id: 'other');
     app_state.prismUser = replacement;
     firebase.user = _FakeUser(uid: 'other');
-    profiles.result.complete(
-      const PublicProfileEntity(
-        id: 'creator-id',
-        name: '',
-        email: 'creator@example.com',
-        username: '',
-        profilePhoto: '',
-        bio: '',
-        followers: <String>[],
-        following: <String>[],
-        links: <String, String>{},
-        coverPhoto: '',
-      ),
-    );
+    firestore.followingQueryGate!.complete();
     await rejected;
     expect(_log.where((call) => call.startsWith('fcm.unsubscribe posts_')), isEmpty);
     expect(_log, isNot(contains('auth.signOut')));

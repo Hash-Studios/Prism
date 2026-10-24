@@ -13,7 +13,7 @@ class InAppNotificationEntity {
     required this.read,
     this.route,
     this.wallId,
-    this.followerEmail,
+    this.followerUid,
     this.kind,
     this.copyKind,
     this.copyArgs = const <String, Object?>{},
@@ -30,7 +30,7 @@ class InAppNotificationEntity {
   final bool read;
   final String? route;
   final String? wallId;
-  final String? followerEmail;
+  final String? followerUid;
   final InAppNotificationKind? kind;
   final String? copyKind;
   final Map<String, Object?> copyArgs;
@@ -47,7 +47,7 @@ class InAppNotificationEntity {
     bool? read,
     String? route,
     String? wallId,
-    String? followerEmail,
+    String? followerUid,
     InAppNotificationKind? kind,
     String? copyKind,
     Map<String, Object?>? copyArgs,
@@ -64,7 +64,7 @@ class InAppNotificationEntity {
       read: read ?? this.read,
       route: route ?? this.route,
       wallId: wallId ?? this.wallId,
-      followerEmail: followerEmail ?? this.followerEmail,
+      followerUid: followerUid ?? this.followerUid,
       kind: kind ?? this.kind,
       copyKind: copyKind ?? this.copyKind,
       copyArgs: copyArgs ?? this.copyArgs,

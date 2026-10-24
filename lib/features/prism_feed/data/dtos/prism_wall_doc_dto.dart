@@ -17,6 +17,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @JsonKey(name: 'uploadedBy') @FirestoreStringConverter() @Default('') String uploadedBy,
     @FirestoreStringConverter() @Default('') String by,
     @FirestoreStringConverter() @Default('') String email,
+    @JsonKey(name: 'creatorUid') @FirestoreStringConverter() @Default('') String creatorUid,
     @JsonKey(name: 'userPhoto') @FirestoreStringConverter() @Default('') String userPhoto,
     String? title,
     @FirestoreStringConverter() @Default('') String desc,

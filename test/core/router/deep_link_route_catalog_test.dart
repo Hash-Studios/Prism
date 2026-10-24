@@ -33,8 +33,6 @@ void main() {
       username: 'alice',
       profilePhoto: '',
       bio: '',
-      followers: <String>['follower@example.com'],
-      following: <String>['following@example.com'],
       links: <String, String>{},
       coverPhoto: '',
     );
@@ -92,8 +90,6 @@ void main() {
       username: 'alice',
       profilePhoto: '',
       bio: '',
-      followers: <String>['bob-id'],
-      following: <String>['carol-id'],
       links: <String, String>{},
       coverPhoto: '',
     );
@@ -139,8 +135,6 @@ void main() {
       username: 'alice',
       profilePhoto: '',
       bio: '',
-      followers: <String>['bob-id', 'carol-id'],
-      following: <String>['dave-id'],
       links: <String, String>{},
       coverPhoto: '',
     );
@@ -170,7 +164,7 @@ void main() {
       parser.parse(Uri.parse('/user/alice/followers')) as PageLinkIntent,
       profileLookup: (String _) async => profile,
     ))!;
-    expect((relation.args! as FollowersRouteArgs).followers, <String>['bob-id', 'carol-id']);
+    expect((relation.args! as FollowersRouteArgs).userId, profile.id);
   });
 
   test('read-only wallpaper lookup maps provider repositories to source entities', () async {

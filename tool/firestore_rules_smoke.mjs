@@ -12,6 +12,11 @@ async function req(method, path, fields, auth, mask) {
   const r = await fetch(`${B}/${path}${q}`, { method, headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' }, body: fields ? JSON.stringify({ fields }) : undefined });
   return r.status;
 }
+async function profileHasNoEmail(path, auth) {
+  const r = await fetch(`${B}/${path}`, { headers: { Authorization: `Bearer ${auth}` } });
+  const body = await r.json();
+  return r.status === 200 && body.fields && !('email' in body.fields) ? 200 : -1;
+}
 async function transformFollowers(uid, operation, emails, auth) {
   const r = await fetch(`${B}:commit`, {
     method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
@@ -35,6 +40,14 @@ const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = ''
   });
   return r.status;
 };
+const runCollectionQuery = async (auth, collectionId, parent = '') => {
+  const r = await fetch(`${B}${parent ? `/${parent}` : ''}:runQuery`, {
+    method: 'POST',
+    headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId }] } }),
+  });
+  return r.status;
+};
 const documentIdFilter = (path) => ({
   fieldFilter: {
     field: { fieldPath: '__name__' },
@@ -52,7 +65,16 @@ const publicWall = {
   email: { stringValue: 'b@x.com' }, review: { booleanValue: true },
   originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, ...redactedProvenance,
 };
+const str = (v) => ({ stringValue: v });
 const seed = () => Promise.all([
+  req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
+  req('PATCH', 'profiles/a', {
+    name: str('A'), username: str('a'), profilePhoto: str(''), bio: str(''), links: { mapValue: { fields: {} } },
+    coverPhoto: str(''), badges: arr([]), xp: { integerValue: '0' }, cosmetics: { mapValue: { fields: {} } },
+    followerCount: { integerValue: '1' },
+  }, 'owner'),
+  req('PATCH', 'profiles/a/followers/c', { followedAt: str('x') }, 'owner'),
+  req('PATCH', 'profiles/a/following/c', { followedAt: str('x') }, 'owner'),
   req('PATCH', 'usersv2/multi', { followers: arr(['v1@x.com', 'v2@x.com']) }, 'owner'),
   req('PATCH', 'usersv2/removal', { followers: arr(['b@x.com', 'v1@x.com', 'v2@x.com']) }, 'owner'),
   req('PATCH', 'usersv2/duplicates', { followers: arr(['b@x.com', 'b@x.com', 'v1@x.com', 'v1@x.com']) }, 'owner'),
@@ -101,6 +123,37 @@ const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const cases = [
+  ['stranger can get a public profile', () => req('GET', 'profiles/a', null, Bu), 200],
+  ['public profile carries no email key', () => profileHasNoEmail('profiles/a', Bu), 200],
+  ['stranger can list public profiles', () => runCollectionQuery(Bu, 'profiles'), 200],
+  ['signed-out user cannot get a public profile', () => req('GET', 'profiles/a'), 403],
+  ['stranger can read a follower edge', () => req('GET', 'profiles/a/followers/c', null, Bu), 200],
+  ['stranger can list follower edges', () => runCollectionQuery(Bu, 'followers', 'profiles/a'), 200],
+  ['stranger can read a following edge', () => req('GET', 'profiles/a/following/c', null, Bu), 200],
+  ['stranger can list following edges', () => runCollectionQuery(Bu, 'following', 'profiles/a'), 200],
+  ['signed-out user cannot list follower edges', () => runCollectionQuery(undefined, 'followers', 'profiles/a'), 403],
+  ['stranger cannot update a public profile', () => req('PATCH', 'profiles/a', { name: str('x') }, Bu, ['name']), 403],
+  ['owner cannot update own public profile', () => req('PATCH', 'profiles/a', { name: str('x') }, A, ['name']), 403],
+  ['owner cannot create a public profile', () => req('PATCH', 'profiles/b', { name: str('B') }, Bu), 403],
+  ['owner cannot delete own public profile', () => req('DELETE', 'profiles/a', null, A), 403],
+  ['stranger cannot delete a public profile', () => req('DELETE', 'profiles/a', null, Bu), 403],
+  ['admin client cannot write a public profile', () => req('PATCH', 'profiles/a', { name: str('x') }, ADM, ['name']), 403],
+  ['owner cannot write own follower edge', () => req('PATCH', 'profiles/a/followers/b', { followedAt: str('x') }, A), 403],
+  ['follower cannot create own follower edge', () => req('PATCH', 'profiles/a/followers/b', { followedAt: str('x') }, Bu), 403],
+  ['follower cannot update a follower edge', () => req('PATCH', 'profiles/a/followers/c', { followedAt: str('y') }, tok('c', 'c@x.com'), ['followedAt']), 403],
+  ['follower cannot delete a follower edge', () => req('DELETE', 'profiles/a/followers/c', null, tok('c', 'c@x.com')), 403],
+  ['owner cannot write own following edge', () => req('PATCH', 'profiles/a/following/b', { followedAt: str('x') }, A), 403],
+  ['owner cannot update a following edge', () => req('PATCH', 'profiles/a/following/c', { followedAt: str('y') }, A, ['followedAt']), 403],
+  ['owner cannot delete a following edge', () => req('DELETE', 'profiles/a/following/c', null, A), 403],
+  ['shipped client: stranger can still get usersv2', () => req('GET', 'usersv2/a', null, Bu), 200],
+  ['shipped client: stranger can still list usersv2', () => runCollectionQuery(Bu, 'usersv2'), 200],
+  ['shipped client: stranger adds own email to followers', () => req('PATCH', 'usersv2/a', { followers: arr(['c@x.com', 'b@x.com']) }, Bu, ['followers']), 200],
+  ['shipped client: owner updates own following', () => req('PATCH', 'usersv2/a', { following: arr(['b@x.com']) }, A, ['following']), 200],
+  ['owner cannot set creatorUid on wall create', () => req('PATCH', 'walls/forged-creator', { email: str('b@x.com'), review: { booleanValue: false }, creatorUid: str('a') }, Bu), 403],
+  ['owner cannot change creatorUid on wall update', () => req('PATCH', 'walls/w8', { creatorUid: str('a') }, Bu, ['creatorUid']), 403],
+  ['admin may set creatorUid on a wall', () => req('PATCH', 'walls/admin-creator', { email: str('b@x.com'), review: { booleanValue: false }, creatorUid: str('b') }, ADM), 200],
+  ['owner cannot set creatorUid on setup create', () => req('PATCH', 'setups/forged-creator', { email: str('b@x.com'), review: { booleanValue: false }, creatorUid: str('a') }, Bu), 403],
+  ['owner cannot change creatorUid on setup update', () => req('PATCH', 'setups/s9', { creatorUid: str('a') }, Bu, ['creatorUid']), 403],
   ['foreign profile email rejected', () => req('PATCH', 'usersv2/forger', {
     id: { stringValue: 'forger' }, email: { stringValue: 'victim@x.com' },
   }, tok('forger', 'forger@x.com')), 403],

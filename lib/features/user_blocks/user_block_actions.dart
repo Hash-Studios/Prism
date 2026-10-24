@@ -7,7 +7,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/notifications/notifications.dart';
-import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -51,7 +50,6 @@ Future<bool> unblockUserWithFeedback(BuildContext context, String targetUserId) 
 Future<void> confirmAndBlockUser({
   required BuildContext context,
   required String targetUserId,
-  required String targetEmail,
   String? displayName,
 }) async {
   final AppLocalizations l10n = context.l10n;
@@ -71,7 +69,7 @@ Future<void> confirmAndBlockUser({
   PrismHaptics.tap();
 
   final UserBlockRepository blocks = getIt<UserBlockRepository>();
-  final Result<void> result = await blocks.blockUser(targetUserId: targetUserId, targetEmail: targetEmail);
+  final Result<void> result = await blocks.blockUser(targetUserId: targetUserId);
   if (!context.mounted) {
     return;
   }
@@ -82,20 +80,12 @@ Future<void> confirmAndBlockUser({
   }
 
   unawaited(syncInAppNotificationsFromRemote(force: true));
-  await setCreatorPostsTopics(
+  await setCreatorPostsTopicForUid(
     FirebaseMessaging.instance,
-    <String>[targetEmail],
+    targetUserId,
     subscribed: false,
     sourceTag: 'user_block.unsubscribe_posts',
   );
-
-  final SessionRepository session = getIt<SessionRepository>();
-  final List<String> following = session.currentUser.following;
-  final String targetNorm = targetEmail.trim().toLowerCase();
-  final List<String> next = following.where((String e) => e.trim().toLowerCase() != targetNorm).toList(growable: false);
-  if (next.length != following.length) {
-    await session.updateFollowing(next);
-  }
 
   if (!context.mounted) return;
   _showBlockResult(context, result, successMessage: l10n.accountUserBlocked(name));

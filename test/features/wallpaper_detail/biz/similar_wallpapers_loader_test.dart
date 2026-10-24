@@ -19,7 +19,7 @@ class _MockBlocks extends Mock implements UserBlockRepository {}
 
 class _MockSearch extends Mock implements WallpaperSearchService {}
 
-FeedItemEntity _prism(String id, {String? category = 'Nature', String? email}) => FeedItemEntity.prism(
+FeedItemEntity _prism(String id, {String? category = 'Nature', String? uid}) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(
@@ -28,7 +28,7 @@ FeedItemEntity _prism(String id, {String? category = 'Nature', String? email}) =
       fullUrl: 'https://img/$id.jpg',
       thumbnailUrl: 'https://img/$id-t.jpg',
       category: category,
-      authorEmail: email,
+      authorUid: uid,
     ),
   ),
 );
@@ -56,8 +56,8 @@ void main() {
     blocks = _MockBlocks();
     search = _MockSearch();
     when(
-      () => blocks.getBlockedCreatorEmails(waitForInitialLoad: any(named: 'waitForInitialLoad')),
-    ).thenAnswer((_) async => <String>{'blocked@x.com'});
+      () => blocks.getBlockedCreatorUids(waitForInitialLoad: any(named: 'waitForInitialLoad')),
+    ).thenAnswer((_) async => <String>{'blocked-uid'});
     loader = SimilarWallpapersLoader(firestore: () => firestore, blocks: () => blocks, search: () => search);
   });
 
@@ -87,7 +87,7 @@ void main() {
   });
 
   test('the current wall and blocked creators are left out', () async {
-    stubRows(<FeedItemEntity>[_prism('current'), _prism('a'), _prism('b', email: 'Blocked@x.com')]);
+    stubRows(<FeedItemEntity>[_prism('current'), _prism('a'), _prism('b', uid: 'blocked-uid')]);
     final result = await loader.load(_prism('current'));
 
     expect(result.map((e) => e.id), <String>['a']);

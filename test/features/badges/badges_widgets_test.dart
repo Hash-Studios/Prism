@@ -53,15 +53,11 @@ void main() {
     expect(badgeInfo('nope'), isNull);
   });
 
-  test('public user dto reads badge ids from the badges array and tolerates junk', () {
+  test('public user dto reads badge ids from the profiles badges list', () {
     final dto = PublicUserDocDto.fromJson(<String, dynamic>{
-      'badges': <Object?>[
-        <String, Object?>{'id': 'creator', 'name': 'Creator'},
-        <String, Object?>{'name': 'no id'},
-        'junk',
-      ],
+      'badges': <Object?>['creator', 'early_adopter'],
     });
-    expect(dto.badges, <String>['creator']);
+    expect(dto.badges, <String>['creator', 'early_adopter']);
     expect(PublicUserDocDto.fromJson(<String, dynamic>{}).badges, isEmpty);
   });
 

@@ -13,13 +13,13 @@ import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 
-Map<String, dynamic> _wall(String id, {String email = 'creator@example.com', String? category}) => <String, dynamic>{
+Map<String, dynamic> _wall(String id, {String creatorUid = 'creator-id', String? category}) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://example.com/$id.jpg',
   'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
   'wallpaper_provider': 'Prism',
   'by': 'Ana',
-  'email': email,
+  'creatorUid': creatorUid,
   'review': true,
   'category': ?category,
 };
@@ -126,11 +126,11 @@ void main() {
   test('drops walls that are missing, from blocked creators, or without an image', () async {
     walls = <String, Map<String, dynamic>>{
       'A': _wall('A'),
-      'B': _wall('B', email: 'blocked@example.com'),
+      'B': _wall('B', creatorUid: 'blocked-uid'),
       'D': <String, dynamic>{..._wall('D'), 'wallpaper_url': '', 'wallpaper_thumb': ''},
       'E': _wall('E'),
     };
-    blocks.completeInitial(<String>{'blocked@example.com'});
+    blocks.completeInitial(<String>{'blocked-uid'});
     setList('trending', <Object?>['A', 'B', 'MISSING', 'D', 'E']);
 
     final result = await repository.fetch();
@@ -187,13 +187,13 @@ void main() {
   });
 
   test('returns the saved list when the network fails, and hides creators blocked since', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A', 'B']);
     expect((await repository.fetch()).data, hasLength(2));
     expect(cache.scopes, <String>['trending/week']);
 
     client.queryError = Exception('offline');
-    blocks.completeInitial(<String>{'later@example.com'});
+    blocks.completeInitial(<String>{'later-uid'});
     final offline = await repository.fetch();
 
     expect(offline.isSuccess, isTrue);
@@ -201,11 +201,11 @@ void main() {
   });
 
   test('readCached returns the saved walls without a network read and hides blocked creators', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A', 'B']);
     await repository.fetch();
     client.queryError = Exception('offline');
-    blocks.completeInitial(<String>{'later@example.com'});
+    blocks.completeInitial(<String>{'later-uid'});
 
     final saved = await repository.readCached();
 
@@ -217,20 +217,20 @@ void main() {
   });
 
   test('readCached excludes creators blocked while the disk read was pending', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A', email: 'later@example.com')};
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A']);
     await repository.fetch();
     final delayed = _DelayedFeedCache()..snapshots.addAll(cache.snapshots);
     final pending = TrendingRepositoryImpl(client, delayed, blocks, settings).readCached();
 
-    blocks.completeInitial(<String>{'later@example.com'});
+    blocks.completeInitial(<String>{'later-uid'});
     delayed.release.complete();
 
     expect(await pending, isEmpty);
   });
 
   test('readCached waits for initial blocks before exposing cached creators', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A', email: 'later@example.com')};
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A']);
     await repository.fetch();
     final pendingBlocks = FakeUserBlockRepository.pending();
@@ -241,15 +241,15 @@ void main() {
     });
     await Future<void>.delayed(Duration.zero);
     expect(returned, isFalse);
-    pendingBlocks.completeInitial(<String>{'later@example.com'});
+    pendingBlocks.completeInitial(<String>{'later-uid'});
 
     expect(await pending, isEmpty);
   });
 
   test('saves the walls unfiltered, so a creator unblocked since gets their walls back offline', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A', 'B']);
-    blocks.completeInitial(<String>{'later@example.com'});
+    blocks.completeInitial(<String>{'later-uid'});
     expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['A']);
 
     client.queryError = Exception('offline');
