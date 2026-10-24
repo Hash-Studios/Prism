@@ -14,7 +14,7 @@ export function isActiveContentOwner(
 /** Auth-verified UID for an email, or null. Never use usersv2.email for ownership. */
 export async function verifiedUidForEmail(email: string): Promise<string | null> {
   // Prism Studio posts as a Firestore-only account; it has no Auth user to look up.
-  if (email === STUDIO_ACCOUNT.email) return STUDIO_ACCOUNT.id;
+  if (email.toLowerCase() === STUDIO_ACCOUNT.email) return STUDIO_ACCOUNT.id;
   try {
     const identity = await admin.auth().getUserByEmail(email);
     return identity.emailVerified ? identity.uid : null;
