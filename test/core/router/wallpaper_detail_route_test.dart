@@ -418,10 +418,12 @@ void main() {
         find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
       );
       expect(fade.opacity.value, lessThan(1));
+      // The grid behind stays still while the page fades in over it.
+      expect(tester.getRect(find.byKey(_otherTileKey)), const Rect.fromLTWH(600, 400, 100, 140));
     }
     await tester.pumpAndSettle();
     expect(router.current.name, 'Lone');
-  });
+  }, variant: TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('a second tap while the page grows cannot open another page', (tester) async {
     final router = await _pumpRouter(tester);
@@ -512,7 +514,8 @@ void main() {
 
     final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
     final double nativeParallaxX = tester.getRect(previousTile).left;
-    expect(nativeParallaxX, closeTo(600 - 800 / 3, 1));
+    // The hidden page behind rests in place. It takes the native parallax once a back starts.
+    expect(nativeParallaxX, 600);
     expect(tester.getRect(previousTile).width, 100);
 
     final cancel = await tester.startGesture(const Offset(1, 250));
@@ -560,7 +563,7 @@ void main() {
     expect(router.current.name, 'Zoom');
     expect(router.detailRoute!.animation!.isCompleted, isTrue);
     final Rect otherTile = tester.getRect(find.byKey(_otherTileKey, skipOffstage: false));
-    expect(otherTile.left, closeTo(600 - 800 / 3, 1));
+    expect(otherTile.left, 600);
     expect(otherTile.width, 100);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -591,7 +594,8 @@ void main() {
     await tester.pumpAndSettle();
     final Finder previousTile = find.byKey(_otherTileKey, skipOffstage: false);
     final double nativeParallaxX = tester.getRect(previousTile).left;
-    expect(nativeParallaxX, closeTo(600 - 800 / 3, 1));
+    // The hidden page behind rests in place. It takes the native parallax once a back starts.
+    expect(nativeParallaxX, 600);
     await tester.tap(find.text('count 0'));
     await tester.pump();
 

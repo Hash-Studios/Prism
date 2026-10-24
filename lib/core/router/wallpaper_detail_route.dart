@@ -210,10 +210,14 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
 
     Widget content = child ?? const SizedBox.shrink();
     if (isIOS) {
-      // Delegation replaces Cupertino's secondary transition. Restore its native parallax when no zoom is active.
+      // Delegation replaces Cupertino's secondary transition. Restore its native parallax for a back that slides
+      // natively. An opening without a tile fades in over a page that stays still.
+      final bool slidingBack = popGestureInProgress || secondaryAnimation.status == AnimationStatus.reverse;
       content = cupertino.CupertinoPageTransition(
         primaryRouteAnimation: kAlwaysCompleteAnimation,
-        secondaryRouteAnimation: zoom == null && !context.reduceMotion ? secondaryAnimation : kAlwaysDismissedAnimation,
+        secondaryRouteAnimation: zoom == null && slidingBack && !context.reduceMotion
+            ? secondaryAnimation
+            : kAlwaysDismissedAnimation,
         linearTransition: popGestureInProgress,
         child: content,
       );
