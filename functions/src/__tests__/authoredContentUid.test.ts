@@ -99,3 +99,22 @@ test("maps an admin-listed legacy creator with no Auth user, and ignores usersv2
   assert.equal(await syncAuthoredContentUid("walls", "forged", "forged@example.com"), "skipped");
   assert.equal(store.get("walls/forged")?.creatorUid, undefined);
 });
+
+test("an admin legacy mapping wins over a later Auth account and still needs an active owner", async (t) => {
+  const store = installFakeDb(t, {
+    "walls/legacy": {email: "legacy@example.com"},
+    "walls/gone": {email: "gone@example.com", creatorUid: "gone-doc"},
+    "legacyCreatorUids/legacy@example.com": {uid: "legacy-doc"},
+    "legacyCreatorUids/gone@example.com": {uid: "gone-doc"},
+    "usersv2/legacy-doc": {},
+    "usersv2/new-auth": {},
+    "usersv2/gone-doc": {deleted: true},
+  });
+  t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "new-auth", emailVerified: true} as admin.auth.UserRecord));
+
+  await syncAuthoredContentUid("walls", "legacy", "legacy@example.com");
+  await syncAuthoredContentUid("walls", "gone", "gone@example.com");
+
+  assert.equal(store.get("walls/legacy")?.creatorUid, "legacy-doc");
+  assert.equal(store.get("walls/gone")?.creatorUid, undefined);
+});
