@@ -140,11 +140,15 @@ void main() {
         ),
       ),
     );
+    // At rest each detail's status icons sit on its own page, so the routes get different page colours.
     navigatorKey.currentState!.push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider<WallpaperDetailBloc>.value(
-          value: secondBloc,
-          child: WallpaperDetailScreen(entity: _item('second')),
+        builder: (_) => Theme(
+          data: ThemeData.dark(),
+          child: BlocProvider<WallpaperDetailBloc>.value(
+            value: secondBloc,
+            child: WallpaperDetailScreen(entity: _item('second')),
+          ),
         ),
       ),
     );
@@ -166,7 +170,7 @@ void main() {
         .widgetList<AnnotatedRegion<SystemUiOverlayStyle>>(find.byType(AnnotatedRegion<SystemUiOverlayStyle>))
         .map((region) => region.value.statusBarIconBrightness)
         .toList();
-    expect(detailStyles(), [Brightness.dark]);
+    expect(detailStyles(), [Brightness.light]);
 
     firstStates.add(
       WallpaperDetailLoaded(
@@ -179,11 +183,11 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    expect(detailStyles(), [Brightness.dark]);
+    expect(detailStyles(), [Brightness.light]);
 
     navigatorKey.currentState!.pop();
     await tester.pumpAndSettle();
-    expect(detailStyles(), [Brightness.light]);
+    expect(detailStyles(), [Brightness.dark]);
     await tester.pumpWidget(const SizedBox());
   });
 

@@ -3,14 +3,23 @@ import 'package:flutter/material.dart';
 
 /// Makes every [CircularMenuButton] below it draw a bare icon button: no fill and no shadow. This is the look of the
 /// glass action bar on the wallpaper detail screen, and it keeps the metrics of the current app: a 20 point icon in the
-/// theme ink with [CircularMenuButton.padding] around it.
+/// theme ink with [CircularMenuButton.padding] around it. A row can set its own [iconSize] and [padding]; a button's
+/// own padding still wins.
 class FlatMenuButtons extends InheritedWidget {
-  const FlatMenuButtons({super.key, required super.child});
+  const FlatMenuButtons({super.key, this.iconSize = 20, this.padding = const EdgeInsets.all(17), required super.child});
 
-  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<FlatMenuButtons>() != null;
+  final double iconSize;
+
+  /// Space around each icon whose button sets no padding of its own.
+  final EdgeInsets padding;
+
+  static FlatMenuButtons? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<FlatMenuButtons>();
+
+  static bool of(BuildContext context) => maybeOf(context) != null;
 
   @override
-  bool updateShouldNotify(FlatMenuButtons oldWidget) => false;
+  bool updateShouldNotify(FlatMenuButtons oldWidget) => iconSize != oldWidget.iconSize || padding != oldWidget.padding;
 }
 
 /// Shared skeleton for the round action buttons of the wallpaper detail screen: a 48 point neutral circle around
@@ -23,7 +32,7 @@ class CircularMenuButton extends StatelessWidget {
     required this.child,
     this.onTap,
     required this.isLoading,
-    this.padding = const EdgeInsets.all(17),
+    this.padding,
     this.selected,
     this.caption,
     this.onImage = false,
@@ -35,8 +44,8 @@ class CircularMenuButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isLoading;
 
-  /// Space around [child] in the bare look.
-  final EdgeInsets padding;
+  /// Space around [child] in the bare look. Null takes the padding of the enclosing [FlatMenuButtons].
+  final EdgeInsets? padding;
 
   /// For toggle actions such as Favourite, so screen readers announce the current state.
   final bool? selected;
@@ -53,8 +62,8 @@ class CircularMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Color fg = onImage ? Colors.white : cs.onSurface;
-    final bool flat = FlatMenuButtons.of(context);
-    if (flat) return _flatButton(context);
+    final FlatMenuButtons? flat = FlatMenuButtons.maybeOf(context);
+    if (flat != null) return _flatButton(context, flat);
     final Color bg = onImage ? Colors.black.withValues(alpha: 0.38) : cs.onSurface.withValues(alpha: 0.08);
     final Widget face = Stack(
       alignment: Alignment.center,
@@ -114,13 +123,13 @@ class CircularMenuButton extends StatelessWidget {
   }
 
   /// The bare look of the glass action bar, as on the current app.
-  Widget _flatButton(BuildContext context) {
+  Widget _flatButton(BuildContext context, FlatMenuButtons flat) {
     final Widget button = Stack(
       children: <Widget>[
         Padding(
-          padding: padding,
+          padding: padding ?? flat.padding,
           child: IconTheme(
-            data: IconThemeData(color: Theme.of(context).colorScheme.secondary, size: 20),
+            data: IconThemeData(color: Theme.of(context).colorScheme.secondary, size: flat.iconSize),
             child: child,
           ),
         ),

@@ -288,7 +288,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
-      child: PrimaryActionPill(icon: JamIcons.download, label: text, semanticLabel: semantics, isLoading: isLoading),
+      child: PrimaryActionPill(label: text, semanticLabel: semantics, isLoading: isLoading),
     );
   }
 

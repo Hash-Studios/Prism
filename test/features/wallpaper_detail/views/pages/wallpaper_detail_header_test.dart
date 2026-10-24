@@ -8,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -133,7 +134,7 @@ void main() {
   }
 
   group('headline', () {
-    testWidgets('shows the published Prism favourite total in the metadata', (tester) async {
+    testWidgets('shows the published Prism favourite total beside the heart, not in the metadata', (tester) async {
       final entity = _prism();
       await pump(
         tester,
@@ -141,13 +142,23 @@ void main() {
           recommendations: const RecommendationState.exhausted(),
           entity: entity,
           paletteLoading: false,
+          panelCollapsed: false,
         ),
         entity: entity,
       );
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byIcon(JamIcons.heart_f), findsOneWidget);
+      final Finder favourite = find
+          .ancestor(of: find.byType(FavouriteWallpaperButton), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: favourite, matching: find.text('7')), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
+      expect(find.byIcon(JamIcons.heart_f), findsNothing);
+      // A screen reader hears the total as words, never the bare number.
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('7 favourites'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'^7$')), findsNothing);
+      semantics.dispose();
     });
 
     testWidgets('unknown views have neither an inline spinner nor a separator', (tester) async {

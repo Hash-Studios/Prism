@@ -1,6 +1,7 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
@@ -31,15 +32,29 @@ class WallpaperRecommendations extends StatelessWidget {
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.lg, PrismSpace.md, PrismSpace.sm),
           sliver: SliverToBoxAdapter(
             child: Text(switch (state.kind) {
               RecommendationKind.related => context.l10n.wallpaperMoreLikeThis,
               RecommendationKind.discovery => context.l10n.wallpaperFeedDiscovery,
               RecommendationKind.offline => context.l10n.wallpaperOffline,
-            }, style: Theme.of(context).textTheme.titleMedium),
+            }, style: PrismTextStyles.cardTitle(context)),
           ),
         ),
+        // Tile-shaped placeholders hold the grid's place until the first page arrives.
+        if (state.items.isEmpty && (state.loading || !state.started))
+          SliverPadding(
+            padding: PrismWallGrid.padding,
+            sliver: PulsePlaceholder(
+              builder: (context, _) => SliverGrid(
+                gridDelegate: PrismWallGrid.delegate(context),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => const PulseFill(borderRadius: PrismWallGrid.tileRadius),
+                  childCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width) * 2,
+                ),
+              ),
+            ),
+          ),
         SliverPadding(
           padding: PrismWallGrid.padding,
           sliver: SliverGrid(
@@ -69,7 +84,9 @@ class WallpaperRecommendations extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Center(
-              child: state.loading || !state.started
+              child: state.items.isEmpty && (state.loading || !state.started)
+                  ? const SizedBox.shrink()
+                  : state.loading || !state.started
                   ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
                   : state.failed
                   ? TextButton.icon(

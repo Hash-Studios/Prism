@@ -2,17 +2,11 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.da
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Filled accent pill with an icon and a label, used for the main action on the wallpaper detail screen.
+/// The labelled accent button at the end of the action row on the wallpaper detail screen. A spinner takes the place
+/// of the label while [isLoading], and the button keeps its width.
 class PrimaryActionPill extends StatelessWidget {
-  const PrimaryActionPill({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.semanticLabel,
-    required this.isLoading,
-  });
+  const PrimaryActionPill({super.key, required this.label, required this.semanticLabel, required this.isLoading});
 
-  final IconData icon;
   final String label;
   final String semanticLabel;
   final bool isLoading;
@@ -26,29 +20,36 @@ class PrimaryActionPill extends StatelessWidget {
       label: semanticLabel,
       excludeSemantics: true,
       child: DecoratedBox(
-        decoration: ShapeDecoration(color: background, shape: const StadiumBorder()),
+        decoration: ShapeDecoration(
+          color: background,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(PrismRadius.md))),
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
+            alignment: Alignment.center,
             children: <Widget>[
-              SizedBox(
-                height: 20,
-                width: 20,
-                child: isLoading
-                    ? CircularProgressIndicator(strokeWidth: 2, color: foreground)
-                    : Icon(icon, color: foreground, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: foreground,
-                  fontFamily: PrismFonts.proximaNova,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Opacity(
+                opacity: isLoading ? 0 : 1,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontFamily: PrismFonts.proximaNova,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              if (isLoading)
+                Positioned.fill(
+                  child: Center(
+                    child: SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

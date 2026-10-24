@@ -1,19 +1,42 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _tileKey = ValueKey<String>('tile');
 const _artKey = ValueKey<String>('detail-art');
 const _bodyKey = ValueKey<String>('detail-body');
+const _otherTileKey = ValueKey<String>('other-tile');
+const _pictureTileKey = ValueKey<String>('picture-tile');
+
+int _tileDecodes = 0;
+
+/// A grid tile's picture. It decodes once; the detail must paint that decode, not make its own.
+class _TilePicture extends ImageProvider<_TilePicture> {
+  const _TilePicture(this.image);
+
+  final ui.Image image;
+
+  @override
+  Future<_TilePicture> obtainKey(ImageConfiguration configuration) => SynchronousFuture<_TilePicture>(this);
+
+  @override
+  ImageStreamCompleter loadImage(_TilePicture key, ImageDecoderCallback decode) {
+    _tileDecodes++;
+    return OneFrameImageStreamCompleter(SynchronousFuture<ImageInfo>(ImageInfo(image: image.clone())));
+  }
+}
 
 class _TestRouter extends RootStackRouter {
-  _TestRouter({this.allowPop = true});
+  _TestRouter({this.allowPop = true, this.picture});
 
   final bool allowPop;
+  final ImageProvider? picture;
   ModalRoute<dynamic>? detailRoute;
 
   @override
@@ -25,7 +48,7 @@ class _TestRouter extends RootStackRouter {
       path: '/',
       page: PageInfo(
         'Grid',
-        builder: (_) => const Scaffold(
+        builder: (_) => Scaffold(
           body: Stack(
             children: [
               Positioned(
@@ -33,11 +56,38 @@ class _TestRouter extends RootStackRouter {
                 top: 120,
                 width: 100,
                 height: 140,
-                child: Hero(
-                  tag: 'wall',
-                  child: ColoredBox(key: _tileKey, color: Colors.blue),
+                child: GestureDetector(
+                  onTap: () => push(const PageRouteInfo<void>('Zoom')),
+                  child: const Hero(
+                    tag: 'wall',
+                    child: ColoredBox(key: _tileKey, color: Colors.blue),
+                  ),
                 ),
               ),
+              Positioned(
+                left: 600,
+                top: 400,
+                width: 100,
+                height: 140,
+                child: GestureDetector(
+                  onTap: () => push(const PageRouteInfo<void>('Lone')),
+                  child: const ColoredBox(key: _otherTileKey, color: Colors.red),
+                ),
+              ),
+              if (picture case final ImageProvider image)
+                Positioned(
+                  left: 200,
+                  top: 120,
+                  width: 100,
+                  height: 140,
+                  child: GestureDetector(
+                    onTap: () => push(const PageRouteInfo<void>('Picture')),
+                    child: Hero(
+                      tag: 'picture',
+                      child: Image(key: _pictureTileKey, image: image, fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -76,6 +126,38 @@ class _TestRouter extends RootStackRouter {
       ),
       customRouteBuilder: wallpaperDetailRouteBuilder,
     ),
+    for (final (name, tag) in [('Zoom', 'wall'), ('Lone', 'no-tile'), ('Picture', 'picture')])
+      CustomRoute(
+        path: '/${name.toLowerCase()}',
+        page: PageInfo(
+          name,
+          builder: (_) => Builder(
+            builder: (context) {
+              detailRoute = ModalRoute.of(context);
+              return Scaffold(
+                body: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: 300,
+                      child: HeroMode(
+                        enabled: !context.reduceMotion,
+                        child: WallpaperDetailHero(
+                          tag: tag,
+                          radius: 20,
+                          image: const ColoredBox(key: _artKey, color: Colors.blue),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(key: _bodyKey, height: 100, child: _Counter()),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        customRouteBuilder: wallpaperDetailRouteBuilder,
+      ),
   ];
 }
 
@@ -94,8 +176,13 @@ class _CounterState extends State<_Counter> {
       TextButton(onPressed: () => setState(() => count++), child: Text('count $count'));
 }
 
-Future<_TestRouter> _pumpRouter(WidgetTester tester, {bool reduceMotion = false, bool allowPop = true}) async {
-  final router = _TestRouter(allowPop: allowPop);
+Future<_TestRouter> _pumpRouter(
+  WidgetTester tester, {
+  bool reduceMotion = false,
+  bool allowPop = true,
+  ImageProvider? picture,
+}) async {
+  final router = _TestRouter(allowPop: allowPop, picture: picture);
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox());
     router.dispose();
@@ -172,6 +259,168 @@ void main() {
       expect(router.current.name, 'Grid');
     }, variant: TargetPlatformVariant({platform}));
   }
+
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets('$platform card Hero grows the whole page out of the tile, locked to the flying picture', (
+      tester,
+    ) async {
+      final router = await _pumpRouter(tester);
+      final tile = tester.getRect(find.byKey(_tileKey));
+      final result = router.push<int>(const PageRouteInfo<void>('Zoom'));
+      // The page lays out offstage first so the Hero can measure the card. Nothing of it shows until the flight starts.
+      for (var i = 0; i < 4 && find.byKey(_artKey).evaluate().isEmpty; i++) {
+        expect(find.byKey(_bodyKey), findsNothing);
+        await tester.pump();
+      }
+
+      // The picture starts as the tile itself and morphs into the card. The page is a small copy of itself that
+      // follows the picture's left edge, top edge and width: its card slot starts under the picture and its body
+      // starts where that slot ends, which is never below the picture.
+      var frames = 0;
+      while (router.detailRoute!.animation!.isAnimating) {
+        final art = tester.getRect(find.byKey(_artKey));
+        final body = tester.getRect(find.byKey(_bodyKey));
+        if (frames == 0) {
+          expect(art.left, closeTo(tile.left, 0.01));
+          expect(art.top, closeTo(tile.top, 0.01));
+          expect(art.size.width, closeTo(tile.width, 0.01));
+          expect(art.size.height, closeTo(tile.height, 0.01), reason: 'no snap to the card shape on the first frame');
+        }
+        expect(body.left, closeTo(art.left, 0.01), reason: 'frame $frames');
+        expect(body.width, closeTo(art.width, 0.01), reason: 'frame $frames');
+        expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
+        expect(body.top, lessThanOrEqualTo(art.bottom + 0.01), reason: 'frame $frames');
+        frames++;
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(frames, greaterThan(5));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.byKey(_artKey)), const Rect.fromLTWH(0, 0, 800, 300));
+      expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
+      // The card flies on the strong ease-out that matches the reference opening, set on the Hero itself.
+      final Hero card = tester.widget<Hero>(
+        find.descendant(of: find.byType(WallpaperDetailHero), matching: find.byType(Hero)),
+      );
+      expect(card.curve, PrismCurves.enter);
+
+      // Going back never zooms: Android fades, iOS slides natively.
+      unawaited(router.maybePop<int>(3));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(tester.getSize(find.byKey(_bodyKey)), const Size(800, 100));
+      await tester.pumpAndSettle();
+      expect(await result, 3);
+      expect(router.current.name, 'Grid');
+      expect(tester.getRect(find.byKey(_tileKey)), tile);
+    }, variant: TargetPlatformVariant({platform}));
+
+    testWidgets('$platform card flies and lands on the decoded picture of its tile, under its own picture', (
+      tester,
+    ) async {
+      final ui.Image decoded = (await tester.runAsync(() => createTestImage(width: 10, height: 14)))!;
+      final picture = _TilePicture(decoded);
+      _tileDecodes = 0;
+      final router = await _pumpRouter(tester, picture: picture);
+      final tile = tester.getRect(find.byKey(_pictureTileKey));
+      expect(_tileDecodes, 1);
+      unawaited(router.push<void>(const PageRouteInfo<void>('Picture')));
+      for (var i = 0; i < 4 && find.byKey(_artKey).evaluate().isEmpty; i++) {
+        await tester.pump();
+      }
+
+      // The tile is offstage while its Hero flies, so the only picture on screen is the one under the card's own. It
+      // paints from the first frame, at the tile's place.
+      final Finder shown = find.byType(RawImage);
+      var frames = 0;
+      while (router.detailRoute!.animation!.isAnimating) {
+        expect(tester.widget<RawImage>(shown).image!.isCloneOf(decoded), isTrue, reason: 'frame $frames');
+        expect(tester.getRect(shown), tester.getRect(find.byKey(_artKey)), reason: 'frame $frames');
+        if (frames == 0) expect(tester.getRect(shown), rectMoreOrLessEquals(tile, epsilon: 0.01));
+        frames++;
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(frames, greaterThan(5));
+      await tester.pumpAndSettle();
+
+      // The landed card keeps it under its own picture, which fades in over it once decoded.
+      expect(tester.widget<RawImage>(shown).image!.isCloneOf(decoded), isTrue);
+      expect(tester.getRect(shown), const Rect.fromLTWH(0, 0, 800, 300));
+      final Stack layers = tester.widget<Stack>(
+        find.ancestor(of: find.byKey(_artKey), matching: find.byType(Stack)).first,
+      );
+      expect((layers.children.first as Image).image, same(picture));
+      expect(layers.children.last.key, _artKey);
+      expect(_tileDecodes, 1, reason: 'The flight and the card reuse the decode the tile already has.');
+    }, variant: TargetPlatformVariant({platform}));
+  }
+
+  testWidgets('a card Hero with no tile to fly from keeps the plain fade', (tester) async {
+    final router = await _pumpRouter(tester);
+    unawaited(router.push<void>(const PageRouteInfo<void>('Lone')));
+    await tester.pump();
+    await tester.pump();
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
+      final fade = tester.widget<FadeTransition>(
+        find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
+      );
+      expect(fade.opacity.value, lessThan(1));
+    }
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Lone');
+  });
+
+  testWidgets('a second tap while the page grows cannot open another page', (tester) async {
+    final router = await _pumpRouter(tester);
+    await tester.tap(find.byKey(_tileKey));
+    for (var i = 0; i < 4 && find.byKey(_artKey).evaluate().isEmpty; i++) {
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(router.detailRoute!.animation!.isAnimating, isTrue);
+    // The other tile is outside the growing window.
+    await tester.tapAt(const Offset(650, 470));
+    await tester.pumpAndSettle();
+    expect(router.stack.map((page) => page.name), ['Grid', 'Zoom']);
+  });
+
+  testWidgets('iOS back during the opening shrinks the page back into the tile instead of sliding', (tester) async {
+    final router = await _pumpRouter(tester);
+    final tile = tester.getRect(find.byKey(_tileKey));
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    for (var i = 0; i < 4 && find.byKey(_artKey).evaluate().isEmpty; i++) {
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 60));
+    unawaited(router.maybePop<void>());
+    await tester.pump();
+    var frames = 0;
+    while (router.detailRoute!.animation!.isAnimating) {
+      final art = tester.getRect(find.byKey(_artKey));
+      final body = tester.getRect(find.byKey(_bodyKey));
+      expect(router.detailRoute!.animation!.status, AnimationStatus.reverse);
+      expect(body.left, closeTo(art.left, 0.01), reason: 'frame $frames');
+      expect(body.width, closeTo(art.width, 0.01), reason: 'frame $frames');
+      expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
+      frames++;
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(frames, greaterThan(2));
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Grid');
+    expect(tester.getRect(find.byKey(_tileKey)), tile);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('reduced motion opens a card Hero page in place, without a zoom', (tester) async {
+    final router = await _pumpRouter(tester, reduceMotion: true);
+    unawaited(router.push<void>(const PageRouteInfo<void>('Zoom')));
+    await tester.pump();
+    await tester.pump();
+    expect(router.detailRoute!.animation!.isCompleted, isTrue);
+    expect(tester.getRect(find.byKey(_artKey)), const Rect.fromLTWH(0, 0, 800, 300));
+    expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
+  });
 
   testWidgets('iOS edge back follows the finger, cancels without losing state, and completes', (tester) async {
     final router = await _pumpRouter(tester);

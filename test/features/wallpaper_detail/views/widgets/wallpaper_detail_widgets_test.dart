@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
@@ -61,12 +62,7 @@ void main() {
           const WallpaperActionBar(
             primary: WallpaperBarAction(
               label: 'Set as wallpaper',
-              child: PrimaryActionPill(
-                icon: Icons.image,
-                label: 'Set',
-                semanticLabel: 'Set as wallpaper',
-                isLoading: false,
-              ),
+              child: PrimaryActionPill(label: 'Set', semanticLabel: 'Set as wallpaper', isLoading: false),
             ),
             actions: <WallpaperBarAction>[
               WallpaperBarAction(
@@ -124,12 +120,7 @@ void main() {
             body: WallpaperActionBar(
               primary: WallpaperBarAction(
                 label: 'Set as wallpaper',
-                child: PrimaryActionPill(
-                  icon: Icons.image,
-                  label: 'Set',
-                  semanticLabel: 'Set as wallpaper',
-                  isLoading: false,
-                ),
+                child: PrimaryActionPill(label: 'Set', semanticLabel: 'Set as wallpaper', isLoading: false),
               ),
               actions: <WallpaperBarAction>[
                 WallpaperBarAction(
@@ -166,6 +157,54 @@ void main() {
     });
   });
 
+  group('FlatMenuButtons', () {
+    Future<void> pumpRow(WidgetTester tester, Widget row) => tester.pumpWidget(_host(Center(child: row)));
+    double iconSize(WidgetTester tester, String label) => IconTheme.of(
+      tester.element(find.descendant(of: find.bySemanticsLabel(label), matching: find.byType(Icon))),
+    ).size!;
+    Size target(WidgetTester tester, String label) => tester.getSize(
+      find.ancestor(of: find.bySemanticsLabel(label), matching: find.byType(CircularMenuButton)).first,
+    );
+
+    testWidgets('a plain flat row keeps the old 20 point icon and 17 point padding', (tester) async {
+      await pumpRow(
+        tester,
+        const FlatMenuButtons(
+          child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+        ),
+      );
+      expect(iconSize(tester, 'Share'), 20);
+      expect(target(tester, 'Share'), const Size.square(54));
+    });
+
+    testWidgets('the detail row sets 24 and 13 points, and a button that sets its own padding keeps it', (
+      tester,
+    ) async {
+      await pumpRow(
+        tester,
+        const FlatMenuButtons(
+          iconSize: 24,
+          padding: EdgeInsets.all(13),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+              CircularMenuButton(label: 'Edit', isLoading: false, padding: EdgeInsets.zero, child: Icon(Icons.edit)),
+            ],
+          ),
+        ),
+      );
+      expect(iconSize(tester, 'Share'), 24);
+      expect(target(tester, 'Share'), const Size.square(50));
+      expect(target(tester, 'Edit'), const Size.square(24));
+    });
+
+    testWidgets('outside a flat row the round button ignores padding and stays a 48 point circle', (tester) async {
+      await pumpRow(tester, const CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)));
+      expect(target(tester, 'Share'), const Size.square(CircularMenuButton.size));
+    });
+  });
+
   group('WallpaperRecommendations', () {
     Future<void> pumpRecommendations(WidgetTester tester, RecommendationState state, {VoidCallback? onLoadMore}) =>
         tester.pumpWidget(
@@ -189,11 +228,13 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('initial loading remains visible and failed empty results can retry', (tester) async {
+    testWidgets('initial loading shows tile placeholders and failed empty results can retry', (tester) async {
       await pumpRecommendations(tester, const RecommendationState.initial());
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(PulseFill), findsWidgets);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       var retries = 0;
       await pumpRecommendations(tester, const RecommendationState.initial().failure(), onLoadMore: () => retries++);
+      expect(find.byType(PulseFill), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       await tester.tap(find.byType(TextButton));
       expect(retries, 1);

@@ -36,6 +36,7 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -219,7 +220,7 @@ void main() {
     );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the action icons keep the current look: bare 20 point icons and the 30 point heart', (tester) async {
+  testWidgets('the action icons are bare 24 point glyphs beside the 30 point heart', (tester) async {
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
@@ -233,10 +234,10 @@ void main() {
       final IconThemeData icon = IconTheme.of(
         tester.element(find.descendant(of: find.byType(button), matching: find.byType(Icon)).first),
       );
-      expect(icon.size, 20, reason: '$button');
+      expect(icon.size, 24, reason: '$button');
       expect(
         tester.getSize(find.descendant(of: find.byType(button), matching: find.byType(CircularMenuButton))),
-        const Size.square(54),
+        const Size.square(50),
       );
     }
     final FavoriteIcon heart = tester.widget<FavoriteIcon>(find.byType(FavoriteIcon));
@@ -311,6 +312,40 @@ void main() {
     expect(find.byType(SetWallpaperButton), findsNothing);
     expect(find.byType(DownloadButton), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('actions sit under the card: icons first, then the labelled primary at the end', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+    final bool android = defaultTargetPlatform == TargetPlatform.android;
+    final Finder primary = find.byType(android ? SetWallpaperButton : DownloadButton);
+    final List<Finder> order = <Finder>[
+      find.byType(FavouriteWallpaperButton),
+      find.byType(ShareButton),
+      find.byType(EditButton),
+      if (android) find.byType(DownloadButton),
+      primary,
+    ];
+    double left(Finder finder) => tester.getRect(finder).left;
+    for (int i = 1; i < order.length; i++) {
+      expect(left(order[i]), greaterThan(left(order[i - 1])), reason: '${order[i]}');
+    }
+    final Rect card = tester.getRect(
+      find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
+    );
+    final Rect bar = tester.getRect(find.byType(WallpaperActionBar));
+    expect(bar.top, card.bottom);
+    expect(left(find.byType(FavouriteWallpaperButton)), card.left);
+    expect(tester.getRect(primary).right, bar.right - 8);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('a wall in a premium collection is a premium download', (tester) async {
     await pumpDetail(

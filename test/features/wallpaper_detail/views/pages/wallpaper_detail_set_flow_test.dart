@@ -406,10 +406,12 @@ void main() {
     final chip = tester.getRect(find.byType(MakeItLiveChip));
     expect(chip.bottom, lessThanOrEqualTo(image.bottom));
     expect(chip.top, greaterThan(image.top));
-    expect(image.height, closeTo(852 * 0.62, 0.01));
+    expect(image.height, closeTo(852 * 0.66, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('wide safe areas inset the inline actions without cropping the wallpaper header', (tester) async {
+  testWidgets('wide safe areas inset the inline actions, and a tall wall gets a centred card instead of a strip', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(844, 390);
     tester.view.devicePixelRatio = 1;
     tester.view.padding = const FakeViewPadding(left: 47, right: 47, bottom: 21);
@@ -423,16 +425,19 @@ void main() {
         paletteLoading: false,
       ),
     );
+    // The rows under the card keep the 560 point panel width, centred in the safe area.
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    expect(actions.left, 47);
-    expect(actions.right, 797);
-    expect(tester.getRect(find.byTooltip('Back')).left, greaterThanOrEqualTo(47));
-    expect(
-      tester
-          .getRect(find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'))
-          .width,
-      844,
+    expect(actions.width, 560);
+    expect(actions.center.dx, 844 / 2);
+    final card = tester.getRect(
+      find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
     );
+    // A 9:16 wall in landscape keeps a portrait card, at most 0.85 as wide as it is tall, centred in the safe area.
+    expect(card.height, closeTo(390 * 0.66, 0.01));
+    expect(card.width, closeTo(card.height * 0.85, 0.01));
+    expect(card.center.dx, closeTo(844 / 2, 0.01));
+    expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(4, 4));
+    expect(tester.getRect(find.byTooltip('Clock preview')).topRight, card.topRight + const Offset(-4, 4));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {

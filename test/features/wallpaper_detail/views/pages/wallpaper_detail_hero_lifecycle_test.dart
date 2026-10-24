@@ -11,6 +11,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
@@ -210,10 +211,27 @@ void main() {
       return rect;
     }
 
+    // The flying card widens its corners from the tile's 12 toward the detail card's 20.
+    double flightRadius() =>
+        (tester.widget<ClipRRect>(find.ancestor(of: flyingImage, matching: find.byType(ClipRRect)).first).borderRadius
+                as BorderRadius)
+            .topLeft
+            .x;
+
     await tester.pump(const Duration(milliseconds: 60));
     final before = flyingRect();
     expect(before.width, greaterThan(100));
     expect(before.width, lessThan(400));
+    final beforeRadius = flightRadius();
+    expect(beforeRadius, inExclusiveRange(12, 20));
+    // The whole page grows with the flight while Prism confirms the wallpaper. It follows the picture's left edge,
+    // top edge and width, so the placeholders start where the page's card slot ends, never below the picture.
+    final pendingBefore = tester.getRect(
+      find.descendant(of: find.byType(WallpaperDetailScreen), matching: find.byType(PrismSkeleton)),
+    );
+    expect(pendingBefore.top, closeTo(before.top + before.width * 528 / 392, 0.5));
+    expect(pendingBefore.top, lessThanOrEqualTo(before.bottom + 0.5));
+    expect(pendingBefore.width, closeTo(400 * before.width / 392, 0.5));
     final pixels = find.descendant(of: flyingImage, matching: find.byType(RawImage));
     bool hasDecodedImage() => tester.widgetList<RawImage>(pixels).any((image) => image.image != null);
     for (var attempt = 0; attempt < 20 && !hasDecodedImage(); attempt++) {
@@ -232,13 +250,21 @@ void main() {
     final after = flyingRect();
     expect(after.width, greaterThan(before.width));
     expect(after.width, lessThan(400));
+    expect(flightRadius(), inExclusiveRange(beforeRadius, 20));
+    final actions = tester.getRect(find.byType(WallpaperActionBar));
+    expect(actions.top, closeTo(after.top + after.width * 528 / 392, 0.5));
+    expect(actions.top, lessThanOrEqualTo(after.bottom + 0.5));
     final flightFade = tester.widget<FadeTransition>(
       find.ancestor(of: flyingImage, matching: find.byType(FadeTransition)).first,
     );
     expect(flightFade.opacity.value, 1, reason: 'The flight must not fade out after canonical hydration.');
     await tester.pumpAndSettle();
     expect(tester.state(destination), same(heroState));
-    expect(tester.getSize(destination), const Size(400, 496));
+    expect(tester.getSize(destination), const Size(392, 528));
+    expect(
+      tester.widget<ClipRRect>(find.descendant(of: destination, matching: find.byType(ClipRRect)).first).borderRadius,
+      const BorderRadius.all(Radius.circular(20)),
+    );
     verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
   });
 }

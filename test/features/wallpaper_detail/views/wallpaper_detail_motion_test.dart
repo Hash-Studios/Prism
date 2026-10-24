@@ -61,6 +61,37 @@ void main() {
     });
   }
 
+  testWidgets('a short split-screen window scrolls the loading card and placeholders instead of overflowing', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 260);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final bloc = _MockDetailBloc();
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: const WallpaperDetailScreen(wallId: 'wall', source: WallpaperSource.prism),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Loading wallpaper'), findsOneWidget);
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -200));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   group('colour variation', () {
     const FeedItemEntity entity = FeedItemEntity.prism(
       id: 'prism-1',

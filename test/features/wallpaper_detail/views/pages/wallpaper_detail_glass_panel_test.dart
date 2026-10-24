@@ -19,6 +19,7 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_s
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -101,7 +102,8 @@ void main() {
     await pump(tester);
     final image = tester.getRect(find.byType(ShakeOnce));
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    expect(image, const Rect.fromLTWH(0, 0, 390, 523.28));
+    // A 9:16 wall fills a rounded card under the status bar, 4 points in from each side, up to 66% of the screen.
+    expect(image, const Rect.fromLTRB(4, 47, 386, 47 + 844 * 0.66));
     expect(actions.top, image.bottom);
     expect(tester.getRect(find.byType(PrismWallTile).first).top, lessThan(844));
     expect(find.byType(CustomScrollView), findsOneWidget);
@@ -125,8 +127,43 @@ void main() {
     expect(find.byType(PrismWallTile).evaluate().length, lessThan(30));
   });
 
+  testWidgets('the card is rounded, and Back and the clock stay in its top corners while the feed scrolls', (
+    tester,
+  ) async {
+    await pump(tester);
+    final card = tester.getRect(find.byType(ShakeOnce));
+    final clip = tester.widget<ClipRRect>(
+      find.descendant(of: find.byType(ShakeOnce), matching: find.byType(ClipRRect)).first,
+    );
+    expect(clip.borderRadius, const BorderRadius.all(Radius.circular(20)));
+    final back = tester.getRect(find.byTooltip('Back'));
+    final clock = tester.getRect(find.byTooltip('Clock preview'));
+    expect(back, Rect.fromLTWH(card.left + 4, card.top + 4, 44, 44));
+    expect(clock, Rect.fromLTWH(card.right - 4 - 44, card.top + 4, 44, 44));
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byTooltip('Back')), back);
+    expect(tester.getRect(find.byTooltip('Clock preview')), clock);
+  });
+
+  testWidgets('Back and the clock sit on the theme scrim with the light on-scrim ink', (tester) async {
+    const Color scrim = Color(0xFF102030);
+    await pump(
+      tester,
+      theme: ThemeData(colorScheme: const ColorScheme.light(scrim: scrim)),
+    );
+    for (final String tooltip in <String>['Back', 'Clock preview']) {
+      final IconButton button = tester.widget<IconButton>(
+        find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton)),
+      );
+      expect(button.style!.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55), reason: tooltip);
+      expect(button.color, PrismColors.onPrimary, reason: tooltip);
+    }
+  });
+
   for (final brightness in Brightness.values) {
-    testWidgets('$brightness status icons follow the image then feed and restore on scroll back', (tester) async {
+    testWidgets('$brightness status icons follow the page, then the card under them, then the feed', (tester) async {
       final lightFeed = brightness == Brightness.light;
       await pump(
         tester,
@@ -140,24 +177,39 @@ void main() {
           )
           .first;
       AnnotatedRegion<SystemUiOverlayStyle> overlay() => tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(region);
-      final imageStyle = overlay();
       final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
-      final boundary = tester.getRect(find.byType(ShakeOnce)).height - 47;
-      expect(imageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.light : Brightness.dark);
+      // At rest the card starts under the status bar, so the icons sit on the page.
+      // The rows and the feed pass under the icons on a fade of the page colour; the card and the page do not.
+      double fade() => tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-status-fade'))).opacity;
+      final pageStyle = overlay();
+      expect(pageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.dark : Brightness.light);
+      expect(fade(), 0);
+      const iconLine = 47 / 2;
+      final cardHeight = tester.getRect(find.byType(ShakeOnce)).height;
 
-      scroll.jumpTo(boundary - 1);
+      scroll.jumpTo(iconLine - 1);
       await tester.pump();
-      expect(overlay(), same(imageStyle), reason: 'scrolling within the image must not rebuild the detail shell');
-      scroll.jumpTo(boundary + 1);
+      expect(overlay(), same(pageStyle), reason: 'the card has not reached the status bar icons');
+      scroll.jumpTo(iconLine + 1);
+      await tester.pump();
+      final imageStyle = overlay();
+      expect(imageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.light : Brightness.dark);
+      expect(fade(), 0);
+      scroll.jumpTo(cardHeight + iconLine - 1);
+      await tester.pump();
+      expect(overlay(), same(imageStyle), reason: 'scrolling within the card must not rebuild the detail shell');
+      scroll.jumpTo(cardHeight + iconLine + 1);
       await tester.pump();
       final feedStyle = overlay();
-      expect(feedStyle.value.statusBarIconBrightness, lightFeed ? Brightness.dark : Brightness.light);
-      scroll.jumpTo(boundary + 300);
+      expect(feedStyle.value.statusBarIconBrightness, pageStyle.value.statusBarIconBrightness);
+      expect(fade(), 1);
+      scroll.jumpTo(cardHeight + 300);
       await tester.pump();
       expect(overlay(), same(feedStyle), reason: 'scrolling within the feed must not rebuild the detail shell');
       scroll.jumpTo(0);
       await tester.pump();
-      expect(overlay().value.statusBarIconBrightness, imageStyle.value.statusBarIconBrightness);
+      expect(overlay().value.statusBarIconBrightness, pageStyle.value.statusBarIconBrightness);
+      expect(fade(), 0);
     });
   }
 
