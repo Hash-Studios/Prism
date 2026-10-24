@@ -57,7 +57,7 @@ When in doubt, assume it is a question. Answer first. Act when I say go.
 Optimize for wall-clock speed.
 
 - Parallelize. Independent tasks run at the same time: batch tool calls, spawn subagents concurrently.
-- Delegate by complexity: `fast-worker` (Sonnet) for routine work (search, bulk edits, boilerplate, verification), `deep-reasoner` (Opus, read-only) for hard reasoning.
+- Delegate by complexity: `fast-worker` (Haiku) for mechanical work (bulk edits, boilerplate, verification), `everyday-worker` (Sonnet) for everyday tasks and writing, `deep-reasoner` (Opus, read-only) for hard reasoning.
 - Keep working in the main thread while subagents run.
 - Enough info to act means act. No long option surveys for decisions with an obvious default.
 - Speed never trades away quality: same rigor, same verification, same "done means done".
