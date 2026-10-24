@@ -1,5 +1,6 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -61,7 +62,9 @@ class FavouriteTileImage extends StatelessWidget {
     Widget tile = SizedBox.expand(
       child: primary.trim().isEmpty ? _unavailable(context) : _image(context, primary, fallback: fallback),
     );
-    if (heroTag != null && !context.reduceMotion) tile = Hero(tag: heroTag!, child: tile);
+    if (heroTag != null && !context.reduceMotion) {
+      tile = Hero(tag: heroTag!, createRectTween: wallpaperHeroRectTween, child: tile);
+    }
     return tile;
   }
 }

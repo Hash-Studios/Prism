@@ -3,7 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -13,18 +13,33 @@ Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, Auto
       page: page,
       child: child,
       isIOS: defaultTargetPlatform == TargetPlatform.iOS,
-      duration: context.motion(PrismDurations.base),
+      duration: context.motion(PrismDurations.fast),
     );
 
-/// The card Hero flies, and the page grows, on this curve. Sharing it keeps the page under the picture. A strong
-/// ease-out: over 240 ms it follows the Pinterest opening, which covers about 70% of the way in the first 50 ms.
-const Curve _zoomCurve = PrismCurves.enter;
+/// The card Hero flies, and the page grows, on this curve. Sharing it keeps the page under the picture. Over 160 ms
+/// it follows frames measured from the Pinterest closeup: about 10% of the way at 17 ms, 55% at 50 ms, 95% at 100 ms.
+const Curve _zoomCurve = Cubic(0.45, 0.3, 0.1, 1);
+
+/// Going back, the card Hero flies home on the flipped curve, so the page shrinks with the same timing it grew with.
+const Curve _zoomOutCurve = FlippedCurve(_zoomCurve);
 
 /// How dark the page behind gets while the detail grows over it.
 const double _zoomDim = 0.3;
 
-/// Where a page grows from and the card it grows into, in the navigator's coordinates.
+/// A straight path for every wallpaper Hero. A tile's Hero sets the path of the flight home, and the page shrinks
+/// along a straight line, so a tile that kept the app's arc would leave the picture off the page.
+RectTween wallpaperHeroRectTween(Rect? begin, Rect? end) => RectTween(begin: begin, end: end);
+
+/// Where a page grows from and the card it grows into, in the coordinates of each route's page.
 typedef _Zoom = ({Rect source, Rect target});
+
+/// Where [hero] sits on the page of [route], without the route's transitions, as the Hero measures it.
+Rect? _rectOn(ModalRoute<dynamic>? route, BuildContext hero) {
+  final RenderObject? page = route?.subtreeContext?.findRenderObject();
+  final RenderObject? box = hero.findRenderObject();
+  if (page == null || box is! RenderBox || !box.hasSize) return null;
+  return MatrixUtils.transformRect(box.getTransformTo(page), Offset.zero & box.size);
+}
 
 /// The image a tile's Hero shows. The same provider finds the tile's decoded pixels in the image cache.
 ImageProvider? _pictureIn(BuildContext hero) {
@@ -45,9 +60,10 @@ ImageProvider? _pictureIn(BuildContext hero) {
   return picture;
 }
 
-/// The Hero for the wallpaper card on the detail screen. When a tile opens the detail, its flight tells the detail
-/// route where it starts and where the card lands. The route then grows the whole page out of the tile with the
-/// picture, as on the Pinterest closeup. Without a flight (reduce motion, a deep link) nothing changes.
+/// The Hero for the wallpaper card on the detail screen. When a tile opens the detail, or the detail goes back to its
+/// tile, the flight tells the detail route where the tile and the card are. The route then grows the whole page out of
+/// the tile with the picture, and shrinks it back the same way, as on the Pinterest closeup. Without a flight (reduce
+/// motion, a deep link, a card that changed wallpaper) nothing changes.
 class WallpaperDetailHero extends StatelessWidget {
   const WallpaperDetailHero({super.key, required this.tag, required this.radius, required this.image});
 
@@ -79,12 +95,14 @@ class WallpaperDetailHero extends StatelessWidget {
       tag: tag,
       curve: _zoomCurve,
       // A straight path, so the page can follow the same rectangle.
-      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+      createRectTween: wallpaperHeroRectTween,
       flightShuttleBuilder: (_, animation, direction, fromHero, toHero) {
-        // Going back, the tile's own picture flies home.
-        if (direction == HeroFlightDirection.pop) return (toHero.widget as Hero).child;
-        detailRoute?._startZoom(fromHero, toHero);
-        // The picture fills the flight, so it starts as the tile and morphs into the card.
+        if (direction == HeroFlightDirection.push) {
+          detailRoute?._startZoom(tile: fromHero, card: toHero, out: false);
+        } else {
+          detailRoute?._startZoom(tile: toHero, card: fromHero, out: true);
+        }
+        // The picture fills the flight, so it morphs between the tile and the card.
         return AnimatedBuilder(
           animation: animation,
           child: picture(),
@@ -102,30 +120,52 @@ class WallpaperDetailHero extends StatelessWidget {
   }
 }
 
-class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
+/// The Material mixin only makes the route a type that auto_route's Android pages agree to transition to, so they take
+/// [delegatedTransition]. This class overrides the mixin's timing and transitions.
+class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransitionMixin<T> {
   _WallpaperDetailPageRoute({
     required AutoRoutePage<T> page,
-    required Widget child,
+    required this.child,
     required this.isIOS,
-    required Duration duration,
-  }) : super(
-         settings: page,
-         maintainState: page.maintainState,
-         fullscreenDialog: page.fullscreenDialog,
-         allowSnapshotting: page.allowSnapshotting,
-         opaque: page.opaque,
-         transitionDuration: duration,
-         reverseTransitionDuration: duration,
-         pageBuilder: (_, _, _) => Semantics(scopesRoute: true, explicitChildNodes: true, child: child),
-       );
+    required this.duration,
+  }) : super(settings: page, fullscreenDialog: page.fullscreenDialog, allowSnapshotting: page.allowSnapshotting);
 
+  final Widget child;
   final bool isIOS;
+  final Duration duration;
 
-  /// Set when the card Hero starts its flight in, cleared when the transition settles. Later pops do not zoom.
+  @override
+  Widget buildContent(BuildContext context) => child;
+
+  @override
+  Duration get transitionDuration => duration;
+
+  @override
+  Duration get reverseTransitionDuration => duration;
+
+  @override
+  bool get maintainState => _page.maintainState;
+
+  @override
+  bool get opaque => _page.opaque;
+
+  @override
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is PageRoute && !nextRoute.fullscreenDialog;
+
+  /// Whether the opening finished. A back before that reverses the fade instead of sliding.
+  bool _hasEntered = false;
+
+  /// Set when the card Hero starts a flight in or home, cleared when the transition settles.
   _Zoom? _zoom;
+
+  /// Whether [_zoom] came from a flight home. A back that turns an opening around keeps the opening's curve.
+  bool _zoomingOut = false;
 
   /// The picture on the tile the card flew in from. Kept while the page is open.
   ImageProvider? _tilePicture;
+
+  /// The route under this one. Its page holds the tile, and it zooms with the card.
+  ModalRoute<dynamic>? _behind;
 
   AutoRoutePage<T> get _page => settings as AutoRoutePage<T>;
 
@@ -133,26 +173,76 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
   void install() {
     super.install();
     _page.routeData.setAnimation(animation);
+    controller!.addStatusListener((status) {
+      if (status == AnimationStatus.completed) _hasEntered = true;
+    });
     animation!.addStatusListener((status) {
-      if (!status.isAnimating) _zoom = null;
+      if (status.isAnimating) return;
+      _zoom = null;
+      _zoomingOut = false;
     });
   }
 
-  /// Keeps the tile's picture, and measures the tile and the card the way the Hero does, in the navigator's
-  /// coordinates.
-  void _startZoom(BuildContext fromHero, BuildContext toHero) {
-    _tilePicture = _pictureIn(fromHero);
-    final RenderObject? navigator = this.navigator?.context.findRenderObject();
-    Rect? rectOf(BuildContext hero) {
-      final RenderObject? box = hero.findRenderObject();
-      if (navigator == null || box is! RenderBox || !box.hasSize) return null;
-      return MatrixUtils.transformRect(box.getTransformTo(navigator), Offset.zero & box.size);
+  @override
+  void didChangePrevious(Route<dynamic>? previousRoute) {
+    _behind = previousRoute is ModalRoute<dynamic> ? previousRoute : null;
+    super.didChangePrevious(previousRoute);
+  }
+
+  /// Keeps the tile's picture, and measures the tile and the card the way the Hero does, each on its own page.
+  void _startZoom({required BuildContext tile, required BuildContext card, required bool out}) {
+    _tilePicture ??= _pictureIn(tile);
+    final Rect? source = _rectOn(_behind, tile);
+    final Rect? target = _rectOn(this, card);
+    if (source == null || target == null || source.isEmpty || !source.isFinite || target.isEmpty || !target.isFinite) {
+      return;
+    }
+    _zoom = (source: source, target: target);
+    _zoomingOut = out;
+  }
+
+  /// The zoom to show now. A swipe back and reduce motion never zoom.
+  _Zoom? _zoomFor(BuildContext context) => context.reduceMotion || popGestureInProgress ? null : _zoom;
+
+  Curve get _curve => _zoomingOut ? _zoomOutCurve : _zoomCurve;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition => _zoomBehind;
+
+  /// Zooms the page behind with the card, as the Pinterest feed does: the page scales and moves so its tile stays
+  /// under the card, toward the screen on the way in and back to its place on the way out.
+  Widget _zoomBehind(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    bool allowSnapshotting,
+    Widget? child,
+  ) {
+    final _Zoom? zoom = _zoomFor(context);
+    Matrix4 transform = Matrix4.identity();
+    if (zoom != null) {
+      final Rect card = Rect.lerp(zoom.source, zoom.target, _curve.transform(secondaryAnimation.value))!;
+      final double scale = card.width / zoom.source.width;
+      final Offset shift = card.topLeft - zoom.source.topLeft * scale;
+      transform = Matrix4.translationValues(shift.dx, shift.dy, 0)..scaleByDouble(scale, scale, 1, 1);
     }
 
-    final Rect? source = rectOf(fromHero);
-    final Rect? target = rectOf(toHero);
-    if (source == null || target == null || !source.isFinite || target.isEmpty || !target.isFinite) return;
-    _zoom = (source: source, target: target);
+    Widget content = child ?? const SizedBox.shrink();
+    if (isIOS) {
+      // Delegation replaces Cupertino's secondary transition. Restore its native parallax for a back that slides
+      // natively. An opening without a tile fades in over a page that stays still.
+      final bool slidingBack =
+          popGestureInProgress || (_hasEntered && secondaryAnimation.status == AnimationStatus.reverse);
+      content = cupertino.CupertinoPageTransition(
+        primaryRouteAnimation: kAlwaysCompleteAnimation,
+        secondaryRouteAnimation: zoom == null && slidingBack && !context.reduceMotion
+            ? secondaryAnimation
+            : kAlwaysDismissedAnimation,
+        linearTransition: popGestureInProgress,
+        child: content,
+      );
+    }
+    return Transform(transform: transform, child: content);
   }
 
   @override
@@ -170,14 +260,16 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
     Widget child,
   ) {
     final bool reduceMotion = context.reduceMotion;
-    // Back during the opening shrinks the page back into its tile; back after it, or a swipe, slides natively.
+    // Back shrinks the page into its tile. A swipe, or a back with no tile to go to, slides natively.
     final bool returning =
-        isIOS && (popGestureInProgress || (animation.status == AnimationStatus.reverse && _zoom == null));
-    final _Zoom? zoom = reduceMotion || returning ? null : _zoom;
+        isIOS &&
+        (popGestureInProgress || (_hasEntered && animation.status == AnimationStatus.reverse && _zoom == null));
+    final _Zoom? zoom = returning ? null : _zoomFor(context);
     // One widget shape for every case, so the page is never re-parented when a zoom ends.
     final Widget body = _DetailTransition(
       animation: animation,
       zoom: zoom,
+      curve: _curve,
       fade: zoom != null || reduceMotion || returning
           ? kAlwaysCompleteAnimation
           : animation.drive(CurveTween(curve: PrismCurves.enter)),
@@ -187,7 +279,7 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
 
     // Keep Flutter's native edge detector in the tree, but suppress its lateral entry motion.
     // The real route animation still drives Hero flights. Back swipes use the native slide.
-    return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
+    return cupertino.CupertinoRouteTransitionMixin.buildPageTransitions<T>(
       this,
       context,
       returning && !reduceMotion ? animation : kAlwaysCompleteAnimation,
@@ -197,26 +289,31 @@ class _WallpaperDetailPageRoute<T> extends PageRouteBuilder<T> {
   }
 }
 
-/// Fades the page in or, when the card Hero flies in from a tile, grows the page out of that tile. The page scales
-/// and moves with the flight's left edge, top edge and width, so its card sits under the flying picture, and shows
-/// through a rounded window that widens from the tile to the screen while the page behind dims. Without a zoom every
-/// transform here is the identity.
+/// Fades the page in or, when the card Hero flies between a tile and the card, grows the page out of that tile or
+/// shrinks it back. The page scales and moves with the flight's left edge, top edge and width, so its card sits under
+/// the flying picture, and shows through a rounded window between the tile and the screen while the page behind dims.
+/// Without a zoom every transform here is the identity.
 class _DetailTransition extends AnimatedWidget {
   const _DetailTransition({
     required Animation<double> animation,
     required this.zoom,
+    required this.curve,
     required this.fade,
     required this.child,
   }) : super(listenable: animation);
 
   final _Zoom? zoom;
+
+  /// The card Hero's curve for this flight.
+  final Curve curve;
   final Animation<double> fade;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final _Zoom? zoom = this.zoom;
-    final double t = zoom == null ? 1 : _zoomCurve.transform((listenable as Animation<double>).value);
+    final double t = zoom == null ? 1 : curve.transform((listenable as Animation<double>).value);
+    final bool blockBackground = zoom != null || (listenable as Animation<double>).status.isAnimating;
     final Color scrim = Theme.of(context).colorScheme.scrim;
     return LayoutBuilder(
       builder: (context, box) {
@@ -227,10 +324,9 @@ class _DetailTransition extends AnimatedWidget {
         return Stack(
           fit: StackFit.expand,
           children: [
-            // While the page grows, the dim takes every tap outside its window, so the page behind cannot open
-            // another route.
+            // Keep taps off the page behind for both the zoom and its fade fallback, including while the route pops.
             IgnorePointer(
-              ignoring: zoom == null,
+              ignoring: !blockBackground,
               child: ColoredBox(color: scrim.withValues(alpha: zoom == null ? 0 : _zoomDim * t)),
             ),
             ClipRRect(

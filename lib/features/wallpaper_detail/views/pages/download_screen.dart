@@ -9,6 +9,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -450,7 +451,10 @@ class _DownloadTile extends StatelessWidget {
               fit: StackFit.expand,
               children: <Widget>[
                 ColoredBox(color: cs.surfaceContainerHigh),
-                if (heroTag == null) image else Hero(tag: heroTag!, child: image),
+                if (heroTag == null)
+                  image
+                else
+                  Hero(tag: heroTag!, createRectTween: wallpaperHeroRectTween, child: image),
                 IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
