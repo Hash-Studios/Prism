@@ -8865,16 +8865,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'iPhone lets Shortcuts change the wallpaper for you. Make one automation. It runs on its own.';
+      'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Pick what Prism sends';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps => 'Pick when it runs: Time of Day, When I open an app, or Charger.';
+  String get wallpaperShortcutsChooseTriggerSteps =>
+      'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.';
 
   @override
-  String get wallpaperShortcutsDisableConfirmationSteps => 'Turn off \"Ask Before Running\". Tap Done.';
+  String get wallpaperShortcutsDisableConfirmationSteps =>
+      'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Change your wallpaper automatically';
@@ -8883,7 +8885,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperShortcutsOpenAction => 'Open Shortcuts';
 
   @override
-  String get wallpaperShortcutsOpenAutomationSteps => 'Open the Shortcuts app. Tap Automation, then New Automation.';
+  String get wallpaperShortcutsOpenAutomationSteps =>
+      'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Could not open Shortcuts. Open the app yourself.';
@@ -8893,13 +8896,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'A random wallpaper you hearted. It avoids the one it gave last. Heart some wallpapers first.';
+      'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Wall of the Day';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'Today\'s pick from Prism.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.';
 
   @override
   String get wallpaperShortcutsSteps => 'Steps';

@@ -9166,18 +9166,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'O iPhone permite que os atalhos alterem o papel de parede para você. Faça uma automação. Ele funciona sozinho.';
+      'Use Atalhos para definir um papel de parede por horário ou gatilho. Prepare a fonte abaixo antes de executá-lo.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Escolha o que o Prism envia';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'Escolha quando ele será executado: hora do dia, quando abro um aplicativo ou carregador.';
+      'No editor de atalhos, abra Automação se necessário. Escolha e configure um gatilho, como uma hora do dia, abrir um app ou conectar um carregador.';
 
   @override
   String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Desative \"Perguntar antes de executar\". Toque em Concluído.';
+      'Revise as opções de execução exibidas e salve o atalho ou a automação. Se aparecer \"Perguntar antes de executar\", desative a opção para executar automaticamente.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Mude seu papel de parede automaticamente';
@@ -9187,7 +9187,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abra o aplicativo Atalhos. Toque em Automação e depois em Nova Automação.';
+      'Abra Atalhos. Se houver uma aba Automação, toque nela e depois em Nova automação. Caso contrário, toque em Adicionar (+) e depois em Editar, se aparecer.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Não foi possível abrir os atalhos. Abra o aplicativo você mesmo.';
@@ -9197,13 +9197,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Um papel de parede aleatório dos seus favoritos. Evita repetir o último. Adicione alguns aos favoritos primeiro.';
+      'Um favorito aleatório disponível para Atalhos. Marque papéis de parede como favoritos no Prism primeiro. Alguns papéis de parede protegidos podem não estar disponíveis. Evita repetir o último se houver outro favorito disponível.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Papel de parede do dia';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'A escolha de hoje do Prism.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'A escolha de hoje do Prism. Baixe primeiro o original de hoje no Prism. Quando a escolha diária mudar, baixe o novo original antes de executar esta fonte.';
 
   @override
   String get wallpaperShortcutsSteps => 'Passos';
@@ -19142,18 +19143,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperShortcutsBody =>
-      'O iPhone permite que os atalhos alterem o papel de parede para você. Faça uma automação. Ele funciona sozinho.';
+      'Use Atalhos para definir um papel de parede por horário ou gatilho. Prepare a fonte abaixo antes de executá-lo.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Escolha o que o Prism envia';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'Escolha quando ele será executado: hora do dia, quando abro um aplicativo ou carregador.';
+      'No editor de atalhos, abra Automação se necessário. Escolha e configure um gatilho, como uma hora do dia, abrir um app ou conectar um carregador.';
 
   @override
   String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Desative \"Perguntar antes de executar\". Toque em Concluído.';
+      'Revise as opções de execução exibidas e salve o atalho ou a automação. Se aparecer \"Perguntar antes de executar\", desative a opção para executar automaticamente.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Mude seu papel de parede automaticamente';
@@ -19163,7 +19164,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abra o aplicativo Atalhos. Toque em Automação e depois em Nova Automação.';
+      'Abra Atalhos. Se houver uma aba Automação, toque nela e depois em Nova automação. Caso contrário, toque em Adicionar (+) e depois em Editar, se aparecer.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Não foi possível abrir os atalhos. Abra o aplicativo você mesmo.';
@@ -19173,13 +19174,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Um papel de parede aleatório dos seus favoritos. Evita repetir o último. Adicione alguns aos favoritos primeiro.';
+      'Um favorito aleatório disponível para Atalhos. Marque papéis de parede como favoritos no Prism primeiro. Alguns papéis de parede protegidos podem não estar disponíveis. Evita repetir o último se houver outro favorito disponível.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Papel de parede do dia';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'A escolha de hoje do Prism.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'A escolha de hoje do Prism. Baixe primeiro o original de hoje no Prism. Quando a escolha diária mudar, baixe o novo original antes de executar esta fonte.';
 
   @override
   String get wallpaperShortcutsSteps => 'Passos';

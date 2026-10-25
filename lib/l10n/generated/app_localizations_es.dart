@@ -8979,17 +8979,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'El iPhone permite que Atajos cambie el fondo de pantalla por ti. Crea una automatización y se ejecutará sola.';
+      'Usa Atajos para poner un fondo según un horario o activador. Prepara la fuente de abajo antes de ejecutarlo.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Elige qué datos envía Prism';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'Elige cuándo se ejecuta: A una hora del día, Al abrir una app o Al conectar el cargador.';
+      'En el editor de atajos, abre Automatización si hace falta. Elige y configura un activador, como una hora del día, abrir una app o conectar un cargador.';
 
   @override
-  String get wallpaperShortcutsDisableConfirmationSteps => 'Desactiva \"Preguntar antes de ejecutar\". Toca OK.';
+  String get wallpaperShortcutsDisableConfirmationSteps =>
+      'Revisa las opciones de ejecución que aparezcan y guarda el atajo o la automatización. Si aparece \"Preguntar antes de ejecutar\", desactívalo para que se ejecute automáticamente.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Cambia tu fondo de pantalla automáticamente';
@@ -8999,7 +9000,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abre la app Atajos. Toca Automatización y luego Nueva automatización.';
+      'Abre Atajos. Si hay una pestaña Automatización, tócala y luego Nueva automatización. Si no, toca Añadir (+) y después Editar si aparece.';
 
   @override
   String get wallpaperShortcutsOpenError => 'No se pudo abrir Atajos. Abre la app manualmente.';
@@ -9009,13 +9010,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Un fondo de pantalla aleatorio que marcaste como favorito. Evita repetir el último que te mostró. Marca algunos como favoritos primero.';
+      'Un favorito aleatorio disponible para Atajos. Marca fondos como favoritos en Prism primero. Algunos fondos protegidos pueden no estar disponibles. Evita repetir el último si hay otro favorito disponible.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Fondo del día';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'La selección de hoy de Prism.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'La selección de hoy de Prism. Descarga primero el original de hoy en Prism. Cuando cambie la selección diaria, descarga el nuevo original antes de ejecutar esta fuente.';
 
   @override
   String get wallpaperShortcutsSteps => 'Pasos';

@@ -8990,18 +8990,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'Mit Kurzbefehlen auf dem iPhone kannst du dein Hintergrundbild automatisch ändern. Erstelle eine Automation. Sie läuft dann von selbst.';
+      'Nutze Kurzbefehle, um ein Hintergrundbild nach Zeitplan oder Auslöser festzulegen. Bereite vorher die Quelle unten vor.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Wähle aus, was Prism sendet';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'Wähle den Auslöser: Tageszeit, wenn ich eine App öffne oder Ladegerät.';
+      'Öffne im Kurzbefehl-Editor bei Bedarf Automation. Wähle und konfiguriere einen Auslöser, etwa Tageszeit, Öffnen einer App oder Anschließen eines Ladegeräts.';
 
   @override
   String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Schalte „Vor Ausführen bestätigen“ aus. Tippe auf „Fertig“.';
+      'Prüfe die angezeigten Ausführungsoptionen und speichere den Kurzbefehl oder die Automation. Falls \"Vor Ausführen bestätigen\" erscheint, schalte es für automatische Ausführungen aus.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Hintergrundbild automatisch ändern';
@@ -9011,7 +9011,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsOpenAutomationSteps =>
-      'Öffne die App „Kurzbefehle“. Tippe auf „Automation“ und dann auf „Neue Automation“.';
+      'Öffne Kurzbefehle. Gibt es einen Tab \"Automation\", tippe darauf und dann auf \"Neue Automation\". Sonst tippe auf Hinzufügen (+) und auf Bearbeiten, falls es angezeigt wird.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Kurzbefehle konnten nicht geöffnet werden. Öffne die App selbst.';
@@ -9021,13 +9021,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Ein zufälliges Hintergrundbild, das du mit einem Herz markiert hast. Das zuletzt verwendete wird übersprungen. Markiere zuerst einige Hintergrundbilder mit einem Herz.';
+      'Ein zufälliger, für Kurzbefehle verfügbarer Favorit. Markiere zuerst Hintergrundbilder in Prism mit einem Herz. Manche geschützten Bilder sind nicht verfügbar. Wenn ein anderer Favorit verfügbar ist, wird die letzte Auswahl übersprungen.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Hintergrundbild des Tages';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'Die heutige Auswahl von Prism.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'Die heutige Prism-Auswahl. Lade zuerst das heutige Original in Prism herunter. Wenn die Tagesauswahl wechselt, lade vor der nächsten Nutzung dieser Quelle das neue Original herunter.';
 
   @override
   String get wallpaperShortcutsSteps => 'Schritte';

@@ -9001,17 +9001,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'iPhone पर Shortcuts आपके लिए वॉलपेपर बदल सकता है। एक ऑटोमेशन बनाएं। यह अपने-आप चलेगा।';
+      'Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'चुनें कि Prism क्या भेजे';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'चुनें कि यह कब चले: दिन का समय, कोई ऐप खोलने पर या चार्जर लगाने पर।';
+      'शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।';
 
   @override
-  String get wallpaperShortcutsDisableConfirmationSteps => '\"चलाने से पहले पूछें\" बंद करें। हो गया पर टैप करें।';
+  String get wallpaperShortcutsDisableConfirmationSteps =>
+      'दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।';
 
   @override
   String get wallpaperShortcutsHeadline => 'अपना वॉलपेपर अपने-आप बदलें';
@@ -9020,7 +9021,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShortcutsOpenAction => 'Shortcuts खोलें';
 
   @override
-  String get wallpaperShortcutsOpenAutomationSteps => 'Shortcuts ऐप खोलें। ऑटोमेशन पर टैप करें, फिर नया ऑटोमेशन पर।';
+  String get wallpaperShortcutsOpenAutomationSteps =>
+      'Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।';
 
   @override
   String get wallpaperShortcutsOpenError => 'Shortcuts नहीं खुल सका। ऐप खुद खोलें।';
@@ -9030,13 +9032,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'आपका पसंद किया हुआ कोई रैंडम वॉलपेपर। पिछली बार दिखाया गया वॉलपेपर दोबारा नहीं आएगा। पहले कुछ वॉलपेपर पसंद करें।';
+      'Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'आज का वॉलपेपर';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'आज का Prism का चुना हुआ वॉलपेपर।';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।';
 
   @override
   String get wallpaperShortcutsSteps => 'कदम';

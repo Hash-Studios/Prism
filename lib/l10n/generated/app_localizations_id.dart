@@ -8902,17 +8902,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsBody =>
-      'Di iPhone, app Pintasan dapat mengubah wallpaper secara otomatis. Buat satu automasi, lalu biarkan berjalan sendiri.';
+      'Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.';
 
   @override
   String get wallpaperShortcutsChoosePrismData => 'Pilih data yang dikirim Prism';
 
   @override
   String get wallpaperShortcutsChooseTriggerSteps =>
-      'Pilih pemicunya: Waktu, Saat saya membuka app, atau Pengisi Daya.';
+      'Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.';
 
   @override
-  String get wallpaperShortcutsDisableConfirmationSteps => 'Nonaktifkan \"Tanya Sebelum Menjalankan\". Ketuk Selesai.';
+  String get wallpaperShortcutsDisableConfirmationSteps =>
+      'Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.';
 
   @override
   String get wallpaperShortcutsHeadline => 'Ubah wallpaper secara otomatis';
@@ -8921,7 +8922,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperShortcutsOpenAction => 'Buka Pintasan';
 
   @override
-  String get wallpaperShortcutsOpenAutomationSteps => 'Buka app Pintasan. Ketuk Automasi, lalu Automasi Baru.';
+  String get wallpaperShortcutsOpenAutomationSteps =>
+      'Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Pintasan tidak dapat dibuka. Buka app secara manual.';
@@ -8931,13 +8933,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Wallpaper acak yang Anda sukai. Wallpaper yang sama tidak akan dipilih dua kali berturut-turut. Sukai beberapa wallpaper terlebih dahulu.';
+      'Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.';
 
   @override
   String get wallpaperShortcutsSourceWotd => 'Wallpaper Hari Ini';
 
   @override
-  String get wallpaperShortcutsSourceWotdDescription => 'Pilihan Prism hari ini.';
+  String get wallpaperShortcutsSourceWotdDescription =>
+      'Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.';
 
   @override
   String get wallpaperShortcutsSteps => 'Langkah-langkah';

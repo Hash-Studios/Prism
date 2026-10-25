@@ -8187,7 +8187,7 @@
   "@wallpaperShortcutsAddActionsSteps": {
     "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
   },
-  "wallpaperShortcutsBody": "iPhone पर Shortcuts आपके लिए वॉलपेपर बदल सकता है। एक ऑटोमेशन बनाएं। यह अपने-आप चलेगा।",
+  "wallpaperShortcutsBody": "Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।",
   "@wallpaperShortcutsBody": {
     "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
   },
@@ -8195,11 +8195,11 @@
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "चुनें कि यह कब चले: दिन का समय, कोई ऐप खोलने पर या चार्जर लगाने पर।",
+  "wallpaperShortcutsChooseTriggerSteps": "शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।",
   "@wallpaperShortcutsChooseTriggerSteps": {
     "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
   },
-  "wallpaperShortcutsDisableConfirmationSteps": "\"चलाने से पहले पूछें\" बंद करें। हो गया पर टैप करें।",
+  "wallpaperShortcutsDisableConfirmationSteps": "दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।",
   "@wallpaperShortcutsDisableConfirmationSteps": {
     "description": "Step to disable confirmation and save an iOS Shortcuts automation."
   },
@@ -8211,7 +8211,7 @@
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
   },
-  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts ऐप खोलें। ऑटोमेशन पर टैप करें, फिर नया ऑटोमेशन पर।",
+  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।",
   "@wallpaperShortcutsOpenAutomationSteps": {
     "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
@@ -8223,7 +8223,7 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "आपका पसंद किया हुआ कोई रैंडम वॉलपेपर। पिछली बार दिखाया गया वॉलपेपर दोबारा नहीं आएगा। पहले कुछ वॉलपेपर पसंद करें।",
+  "wallpaperShortcutsSourceFavouriteDescription": "Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।",
   "@wallpaperShortcutsSourceFavouriteDescription": {
     "description": "Description of the random favourite Shortcuts source."
   },
@@ -8231,7 +8231,7 @@
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
   },
-  "wallpaperShortcutsSourceWotdDescription": "आज का Prism का चुना हुआ वॉलपेपर।",
+  "wallpaperShortcutsSourceWotdDescription": "आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
   },
