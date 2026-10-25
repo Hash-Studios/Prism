@@ -33,12 +33,14 @@ class SignInSession {
   final int _generation;
   final String? Function()? _authenticatedUid;
   String? _expectedUid;
-  PrismUsersV2 _owner = app_state.prismUser;
+  String _ownerId = app_state.prismUser.id;
+  bool _ownerLoggedIn = app_state.prismUser.loggedIn;
   int _economySession = CoinsService.instance.economySession;
 
   bool get _ownsLocalSession =>
       _generation == _latestGeneration &&
-      identical(app_state.prismUser, _owner) &&
+      app_state.prismUser.id == _ownerId &&
+      app_state.prismUser.loggedIn == _ownerLoggedIn &&
       _economySession == CoinsService.instance.economySession;
 
   bool get isCurrent => _ownsLocalSession && (_authenticatedUid == null || _authenticatedUid() == _expectedUid);
@@ -57,7 +59,14 @@ class SignInSession {
 
   void publish(PrismUsersV2 profile) {
     requireCurrent();
-    app_state.prismUser = _owner = profile;
+    app_state.prismUser = profile;
+    _ownerId = profile.id;
+    _ownerLoggedIn = profile.loggedIn;
+  }
+
+  void _markFailed() {
+    requireCurrent();
+    app_state.prismUser.loggedIn = _ownerLoggedIn = false;
   }
 
   /// Only our own Firebase sign-out may rebind ownership to a guest session.
@@ -155,17 +164,18 @@ Future<void> completeSignIn({
     }, sourceTag: '$sourceTagPrefix.create_user');
   }
   operation.requireCurrent();
+  owner = app_state.prismUser;
 
   // Retry unfinished initial naming on the next sign-in too. A creation trigger may already have won.
   if (owner.username.isEmpty) {
-    final PrismUsersV2 profile = owner;
     try {
       final String claimed = await UsernameService.instance.claim(sanitizeUsername(displayName), initial: true);
       operation.requireCurrent();
-      profile.username = claimed;
+      owner = app_state.prismUser;
+      owner.username = claimed;
     } catch (_) {
       if (operation.isCurrent) {
-        profile.loggedIn = false;
+        operation._markFailed();
       }
       rethrow;
     }
