@@ -218,6 +218,7 @@ void main() {
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
     Size viewSize = const Size(600, 3000),
+    Size? mediaSize,
     double statusBar = 0,
   }) async {
     // Tall by default, so the header, the carousel and the first rows of tiles are all on screen.
@@ -245,7 +246,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
 
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
+          data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: disableAnimations),
           child: favouriteTestBuilder(context, child),
         ),
         home: Scaffold(
@@ -1084,6 +1085,56 @@ void main() {
     expect(tester.getSize(bone).width, 592);
     expect(tester.getSize(bone).height, closeTo(355.2, 0.01));
   });
+
+  for (final viewport in <({String name, Size size, double cardWidth, double cardHeight})>[
+    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 312, cardHeight: 187.2),
+    (
+      name: 'Android emulator',
+      size: const Size(1080 / 2.625, 2400 / 2.625),
+      cardWidth: 403.428571,
+      cardHeight: 242.057143,
+    ),
+  ]) {
+    for (final bool emptyMedia in <bool>[true, false]) {
+      testWidgets('${viewport.name} keeps its carousel slot with ${emptyMedia ? 'empty' : 'normal'} media size', (
+        tester,
+      ) async {
+        final firstPage = Completer<Result<PersonalizedFeedPage>>();
+        when(() => fetchUseCase(any())).thenAnswer((_) => firstPage.future);
+
+        await pumpScreen(tester, viewSize: viewport.size, mediaSize: emptyMedia ? Size.zero : null);
+
+        expect(tester.takeException(), isNull);
+        final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
+        final Rect placeholder = tester.getRect(bone);
+        expect(placeholder.left, 4);
+        expect(placeholder.width, closeTo(viewport.cardWidth, 0.01));
+        expect(placeholder.height, closeTo(viewport.cardHeight, 0.01));
+        expect(placeholder.top, greaterThanOrEqualTo(0));
+        expect(placeholder.bottom, lessThan(viewport.size.height));
+
+        firstPage.complete(Result.success(_page(<String>['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])));
+        await _settle(tester);
+
+        expect(tester.takeException(), isNull);
+        final Rect carousel = tester.getRect(find.byType(CarouselSlider));
+        expect(carousel.width, closeTo(viewport.size.width, 0.01));
+        expect(carousel.height, closeTo(viewport.cardHeight, 0.01));
+        expect(carousel.top, closeTo(placeholder.top, 0.01));
+        expect(find.byType(FeedWallTile), findsWidgets);
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, -200));
+        await tester.pump();
+        final double offset = tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels;
+        expect(offset, greaterThan(0));
+        if (emptyMedia) {
+          await pumpScreen(tester, viewSize: viewport.size);
+          expect(tester.takeException(), isNull);
+          expect(tester.getSize(find.byType(CarouselSlider)).height, closeTo(viewport.cardHeight, 0.01));
+          expect(tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels, closeTo(offset, 0.01));
+        }
+      });
+    }
+  }
 
   testWidgets('a failed first load offers Try again and loads again', (tester) async {
     int calls = 0;
