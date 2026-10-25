@@ -93,12 +93,14 @@ class FirestoreTrackedClient implements FirestoreClient {
   FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry)
     : _firestoreFactory = (() => firestore),
       _waitUntilReady = null,
+      _waitUntilStreamReady = null,
       _ready = true;
 
-  /// Every operation first waits for Firebase, so a read that starts before `Firebase.initializeApp` ends does not
-  /// fail with `no-app`. If Firebase never becomes ready the call proceeds and fails as before.
+  /// One-shot operations use the bounded startup wait. Streams wait for eventual initialization so a slow startup
+  /// does not permanently close their subscriptions with `no-app`.
   FirestoreTrackedClient.deferred(this._firestoreFactory, this._telemetry, {Future<bool> Function()? waitUntilReady})
     : _waitUntilReady = waitUntilReady ?? _waitForFirebaseInit,
+      _waitUntilStreamReady = waitUntilReady ?? _waitForFirebaseStreamInit,
       _ready = false;
 
   static Future<bool> _waitForFirebaseInit() async {
@@ -109,7 +111,16 @@ class FirestoreTrackedClient implements FirestoreClient {
     }
   }
 
+  static Future<bool> _waitForFirebaseStreamInit() async {
+    try {
+      return await FirebaseInit.readyFuture;
+    } catch (_) {
+      return false;
+    }
+  }
+
   final Future<bool> Function()? _waitUntilReady;
+  final Future<bool> Function()? _waitUntilStreamReady;
   bool _ready;
 
   final FirebaseFirestore Function() _firestoreFactory;
@@ -120,6 +131,14 @@ class FirestoreTrackedClient implements FirestoreClient {
       return;
     }
     _ready = await _waitUntilReady!();
+  }
+
+  Future<void> _ensureStreamReady() async {
+    if (_ready) return;
+    if (!await _waitUntilStreamReady!()) {
+      throw FirebaseException(plugin: 'core', code: 'unavailable');
+    }
+    _ready = true;
   }
 
   final FirestoreTelemetrySink _telemetry;
@@ -652,12 +671,11 @@ class FirestoreTrackedClient implements FirestoreClient {
         cancelled = true;
         return subscription?.cancel();
       };
-      await _ensureReady();
-      if (cancelled) {
-        return;
-      }
-      final DateTime start = DateTime.now();
+      var start = DateTime.now();
       try {
+        await _ensureStreamReady();
+        if (cancelled) return;
+        start = DateTime.now();
         final Query<Map<String, dynamic>> query = _applySpec(spec);
         final Stream<({List<T> items, bool isFromCache})> snapshots = query
             .snapshots(includeMetadataChanges: includeMetadataChanges)
@@ -711,6 +729,7 @@ class FirestoreTrackedClient implements FirestoreClient {
         controller.onPause = subscription.pause;
         controller.onResume = subscription.resume;
       } catch (error, stackTrace) {
+        if (cancelled) return;
         final FirestoreError mapped = mapFirestoreError(error);
         unawaited(
           _telemetry.emit(
