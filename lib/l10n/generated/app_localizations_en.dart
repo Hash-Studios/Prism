@@ -3052,6 +3052,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugAdminShortcuts => 'Admin shortcuts';
 
   @override
+  String get debugLiveActivityPreview => 'Preview Live Activity';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Runs a sample AI generation activity: ready after 8 seconds';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live Activities are off or not supported';
+
+  @override
   String get debugAllTags => 'All tags';
 
   @override
@@ -3728,6 +3737,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'Crop may differ slightly on your device.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Creating your wallpaper';
+
+  @override
+  String get aiLiveActivityReady => 'Your wallpaper is ready';
+
+  @override
+  String get aiLiveActivityFailed => 'Couldn\'t create it';
+
+  @override
+  String get aiLiveActivityStale => 'Still working on it';
+
+  @override
+  String get aiLiveActivityOpen => 'Open in Prism';
 
   @override
   String get economyAiDailyLimit => 'You reached today\'s AI limit.';

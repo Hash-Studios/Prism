@@ -2939,6 +2939,9 @@
   "coreWallpaperShareRetryFailed": "Wallpaper ini tidak dapat dibagikan. Coba lagi.",
   "debugAdminReviewDescription": "Alat moderasi konten dan notifikasi push",
   "debugAdminShortcuts": "Pintasan admin",
+  "debugLiveActivityPreview": "Pratinjau Live Activity",
+  "debugLiveActivityPreviewDescription": "Menjalankan contoh aktivitas: siap setelah 8 detik",
+  "debugLiveActivityUnavailable": "Live Activities nonaktif atau tidak didukung",
   "debugAllTags": "Semua tag",
   "debugAndroidVersion": "Versi Android",
   "debugAnimationSpeed": "Kecepatan animasi",
@@ -3266,6 +3269,26 @@
   "economyAiConnectToGenerate": "Tidak ada koneksi. Sambungkan ke internet, lalu coba lagi.",
   "economyAiCouldNotConfirmSubmission": "Pengiriman tidak dapat dikonfirmasi. Periksa Status Tinjauan sebelum mencoba lagi.",
   "economyAiCropMayDiffer": "Hasil potongan mungkin sedikit berbeda di perangkat Anda.",
+  "aiLiveActivityGenerating": "Membuat wallpaper kamu",
+  "@aiLiveActivityGenerating": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityReady": "Wallpaper kamu sudah siap",
+  "@aiLiveActivityReady": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityFailed": "Tidak dapat dibuat",
+  "@aiLiveActivityFailed": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityStale": "Masih mengerjakannya",
+  "@aiLiveActivityStale": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityOpen": "Buka di Prism",
+  "@aiLiveActivityOpen": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
   "economyAiDailyLimit": "Anda mencapai batas AI hari ini.",
   "economyAiDescribeChanges": "Sebutkan perubahan yang Anda inginkan, seperti warna, suasana, atau detail.",
   "economyAiDescribeScene": "Jelaskan adegan yang ingin dibuat.",

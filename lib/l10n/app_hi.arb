@@ -2832,6 +2832,9 @@
   "coreWallpaperShareRetryFailed": "यह वॉलपेपर साझा नहीं हो सका। फिर कोशिश करें।",
   "debugAdminReviewDescription": "कंटेंट मॉडरेशन और पुश नोटिफ़िकेशन टूल",
   "debugAdminShortcuts": "एडमिन शॉर्टकट",
+  "debugLiveActivityPreview": "Live Activity पूर्वावलोकन",
+  "debugLiveActivityPreviewDescription": "नमूना AI जनरेशन गतिविधि चलाता है: 8 सेकंड बाद तैयार",
+  "debugLiveActivityUnavailable": "Live Activities बंद हैं या समर्थित नहीं हैं",
   "debugAllTags": "सभी टैग",
   "debugAndroidVersion": "Android संस्करण",
   "debugAnimationSpeed": "ऐनिमेशन की गति",
@@ -3159,6 +3162,26 @@
   "economyAiConnectToGenerate": "कनेक्शन नहीं है। इंटरनेट से जुड़ें, फिर कोशिश करें।",
   "economyAiCouldNotConfirmSubmission": "सबमिशन की पुष्टि नहीं हो सकी। फिर कोशिश करने से पहले समीक्षा स्थिति देखें।",
   "economyAiCropMayDiffer": "आपके डिवाइस पर क्रॉप थोड़ा अलग हो सकता है।",
+  "aiLiveActivityGenerating": "आपका वॉलपेपर बनाया जा रहा है",
+  "@aiLiveActivityGenerating": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityReady": "आपका वॉलपेपर तैयार है",
+  "@aiLiveActivityReady": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityFailed": "बनाया नहीं जा सका",
+  "@aiLiveActivityFailed": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityStale": "अभी भी इस पर काम हो रहा है",
+  "@aiLiveActivityStale": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityOpen": "Prism में खोलें",
+  "@aiLiveActivityOpen": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
   "economyAiDailyLimit": "आज की AI सीमा पूरी हो गई।",
   "economyAiDescribeChanges": "बताएँ कि क्या बदलना है, जैसे रंग, मूड या बारीकियाँ।",
   "economyAiDescribeScene": "बनाने के लिए किसी दृश्य का वर्णन करें।",

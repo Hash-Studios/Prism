@@ -2810,6 +2810,9 @@
   "coreWallpaperShareRetryFailed": "Dieses Hintergrundbild konnte nicht geteilt werden. Versuch es erneut.",
   "debugAdminReviewDescription": "Tool zur Inhaltsmoderation und für Push-Benachrichtigungen",
   "debugAdminShortcuts": "Admin-Kurzbefehle",
+  "debugLiveActivityPreview": "Live-Activity-Vorschau",
+  "debugLiveActivityPreviewDescription": "Startet eine Beispiel-Aktivität: fertig nach 8 Sekunden",
+  "debugLiveActivityUnavailable": "Live-Aktivitäten sind aus oder nicht unterstützt",
   "debugAllTags": "Alle Tags",
   "debugAndroidVersion": "Android-Version",
   "debugAnimationSpeed": "Animationsgeschwindigkeit",
@@ -3137,6 +3140,26 @@
   "economyAiConnectToGenerate": "Keine Verbindung. Stell eine Internetverbindung her und versuche es erneut.",
   "economyAiCouldNotConfirmSubmission": "Die Einsendung konnte nicht bestätigt werden. Prüfe den Prüfstatus, bevor du es erneut versuchst.",
   "economyAiCropMayDiffer": "Der Zuschnitt kann auf deinem Gerät leicht abweichen.",
+  "aiLiveActivityGenerating": "Dein Wallpaper wird erstellt",
+  "@aiLiveActivityGenerating": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityReady": "Dein Wallpaper ist fertig",
+  "@aiLiveActivityReady": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityFailed": "Konnte nicht erstellt werden",
+  "@aiLiveActivityFailed": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityStale": "Arbeitet noch daran",
+  "@aiLiveActivityStale": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityOpen": "In Prism öffnen",
+  "@aiLiveActivityOpen": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
   "economyAiDailyLimit": "Du hast das heutige KI-Limit erreicht.",
   "economyAiDescribeChanges": "Beschreibe, was anders sein soll, zum Beispiel Farben, Stimmung oder Details.",
   "economyAiDescribeScene": "Beschreibe eine Szene, die erstellt werden soll.",

@@ -5337,6 +5337,24 @@ abstract class AppLocalizations {
   /// **'Admin shortcuts'**
   String get debugAdminShortcuts;
 
+  /// No description provided for @debugLiveActivityPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview Live Activity'**
+  String get debugLiveActivityPreview;
+
+  /// No description provided for @debugLiveActivityPreviewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs a sample AI generation activity: ready after 8 seconds'**
+  String get debugLiveActivityPreviewDescription;
+
+  /// No description provided for @debugLiveActivityUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Activities are off or not supported'**
+  String get debugLiveActivityUnavailable;
+
   /// No description provided for @debugAllTags.
   ///
   /// In en, this message translates to:
@@ -6584,6 +6602,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crop may differ slightly on your device.'**
   String get economyAiCropMayDiffer;
+
+  /// AI wallpaper Live Activity text shown on the lock screen and Dynamic Island.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your wallpaper'**
+  String get aiLiveActivityGenerating;
+
+  /// AI wallpaper Live Activity text shown on the lock screen and Dynamic Island.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper is ready'**
+  String get aiLiveActivityReady;
+
+  /// AI wallpaper Live Activity text shown on the lock screen and Dynamic Island.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create it'**
+  String get aiLiveActivityFailed;
+
+  /// AI wallpaper Live Activity text shown on the lock screen and Dynamic Island.
+  ///
+  /// In en, this message translates to:
+  /// **'Still working on it'**
+  String get aiLiveActivityStale;
+
+  /// AI wallpaper Live Activity text shown on the lock screen and Dynamic Island.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Prism'**
+  String get aiLiveActivityOpen;
 
   /// No description provided for @economyAiDailyLimit.
   ///

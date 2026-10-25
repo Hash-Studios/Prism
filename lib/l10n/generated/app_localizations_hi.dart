@@ -3076,6 +3076,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get debugAdminShortcuts => 'एडमिन शॉर्टकट';
 
   @override
+  String get debugLiveActivityPreview => 'Live Activity पूर्वावलोकन';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'नमूना AI जनरेशन गतिविधि चलाता है: 8 सेकंड बाद तैयार';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live Activities बंद हैं या समर्थित नहीं हैं';
+
+  @override
   String get debugAllTags => 'सभी टैग';
 
   @override
@@ -3750,6 +3759,21 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'आपके डिवाइस पर क्रॉप थोड़ा अलग हो सकता है।';
+
+  @override
+  String get aiLiveActivityGenerating => 'आपका वॉलपेपर बनाया जा रहा है';
+
+  @override
+  String get aiLiveActivityReady => 'आपका वॉलपेपर तैयार है';
+
+  @override
+  String get aiLiveActivityFailed => 'बनाया नहीं जा सका';
+
+  @override
+  String get aiLiveActivityStale => 'अभी भी इस पर काम हो रहा है';
+
+  @override
+  String get aiLiveActivityOpen => 'Prism में खोलें';
 
   @override
   String get economyAiDailyLimit => 'आज की AI सीमा पूरी हो गई।';

@@ -3062,6 +3062,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugAdminShortcuts => 'Pintasan admin';
 
   @override
+  String get debugLiveActivityPreview => 'Pratinjau Live Activity';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Menjalankan contoh aktivitas: siap setelah 8 detik';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live Activities nonaktif atau tidak didukung';
+
+  @override
   String get debugAllTags => 'Semua tag';
 
   @override
@@ -3739,6 +3748,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'Hasil potongan mungkin sedikit berbeda di perangkat Anda.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Membuat wallpaper kamu';
+
+  @override
+  String get aiLiveActivityReady => 'Wallpaper kamu sudah siap';
+
+  @override
+  String get aiLiveActivityFailed => 'Tidak dapat dibuat';
+
+  @override
+  String get aiLiveActivityStale => 'Masih mengerjakannya';
+
+  @override
+  String get aiLiveActivityOpen => 'Buka di Prism';
 
   @override
   String get economyAiDailyLimit => 'Anda mencapai batas AI hari ini.';

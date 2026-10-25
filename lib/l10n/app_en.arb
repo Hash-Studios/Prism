@@ -2818,6 +2818,9 @@
   "coreWallpaperShareRetryFailed": "Couldn't share this wallpaper. Try again.",
   "debugAdminReviewDescription": "Content moderation and push notification tool",
   "debugAdminShortcuts": "Admin shortcuts",
+  "debugLiveActivityPreview": "Preview Live Activity",
+  "debugLiveActivityPreviewDescription": "Runs a sample AI generation activity: ready after 8 seconds",
+  "debugLiveActivityUnavailable": "Live Activities are off or not supported",
   "debugAllTags": "All tags",
   "debugAndroidVersion": "Android Version",
   "debugAnimationSpeed": "Animation speed",
@@ -3145,6 +3148,26 @@
   "economyAiConnectToGenerate": "No connection. Connect to the internet, then try again.",
   "economyAiCouldNotConfirmSubmission": "Could not confirm the submission. Check Review Status before trying again.",
   "economyAiCropMayDiffer": "Crop may differ slightly on your device.",
+  "aiLiveActivityGenerating": "Creating your wallpaper",
+  "@aiLiveActivityGenerating": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityReady": "Your wallpaper is ready",
+  "@aiLiveActivityReady": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityFailed": "Couldn't create it",
+  "@aiLiveActivityFailed": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityStale": "Still working on it",
+  "@aiLiveActivityStale": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiLiveActivityOpen": "Open in Prism",
+  "@aiLiveActivityOpen": {
+    "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
   "economyAiDailyLimit": "You reached today's AI limit.",
   "economyAiDescribeChanges": "Say what you want different, such as colors, mood or details.",
   "economyAiDescribeScene": "Describe a scene to generate.",

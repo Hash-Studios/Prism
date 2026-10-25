@@ -11,6 +11,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
+import 'package:Prism/core/platform/live_activity_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
@@ -413,6 +415,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
     await _runGeneration(
+      prompt: prompt,
       style: style,
       qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generate(
@@ -454,6 +457,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = latest.qualityTier;
     await _runGeneration(
+      prompt: prompt,
       style: style,
       qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generateVariation(
@@ -470,6 +474,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _runGeneration({
+    required String prompt,
     required AiStylePreset style,
     required AiQualityTier qualityTier,
     required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId) request,
@@ -555,6 +560,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
 
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final AiGenerationActivity? liveActivity = await LiveActivityChannel.startAiGeneration(
+      AiActivityRequest(
+        prompt: prompt,
+        style: style.label,
+        accentArgb: colors.primary.toARGB32(),
+        swatchArgb: style.swatchColors.map((Color c) => c.toARGB32()).toList(),
+        generatingTitle: context.l10n.aiLiveActivityGenerating,
+        readyTitle: context.l10n.aiLiveActivityReady,
+        failedTitle: context.l10n.aiLiveActivityFailed,
+        staleTitle: context.l10n.aiLiveActivityStale,
+        openLabel: context.l10n.aiLiveActivityOpen,
+      ),
+    );
+
     bool generationSucceeded = false;
     try {
       analytics.track(
@@ -576,6 +596,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       // The repository handles persistence of the completed remote result for its original owner. Do not publish
       // it, report a commit against a replacement balance, or refund it in another sign-in session.
       if (!ownsSession()) return;
+      unawaited(liveActivity?.finish(generated.displayUrl(isPremium: app_state.prismUser.premium)));
 
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
@@ -668,8 +689,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ? message
             : context.l10n.economyAiFailureWithRefund(message, localizedRefundState);
         toasts.error(fullMessage);
+        unawaited(liveActivity?.fail(fullMessage));
       }
     } finally {
+      unawaited(liveActivity?.cancel());
       if (mounted) {
         setState(() => _loadingGeneration = false);
       }

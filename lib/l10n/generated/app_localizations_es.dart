@@ -3082,6 +3082,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get debugAdminShortcuts => 'Accesos directos de administración';
 
   @override
+  String get debugLiveActivityPreview => 'Vista previa de Live Activity';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Ejecuta una actividad de ejemplo: lista tras 8 segundos';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Las Live Activities están desactivadas o no son compatibles';
+
+  @override
   String get debugAllTags => 'Todas las etiquetas';
 
   @override
@@ -3760,6 +3769,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'El recorte puede variar ligeramente en tu dispositivo.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Creando tu fondo de pantalla';
+
+  @override
+  String get aiLiveActivityReady => 'Tu fondo de pantalla está listo';
+
+  @override
+  String get aiLiveActivityFailed => 'No se pudo crear';
+
+  @override
+  String get aiLiveActivityStale => 'Todavía trabajando en ello';
+
+  @override
+  String get aiLiveActivityOpen => 'Abrir en Prism';
 
   @override
   String get economyAiDailyLimit => 'Alcanzaste el límite diario de IA.';
