@@ -7,6 +7,7 @@ export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress
 export {onFollowCreated} from "./onFollowCreated";
 export {onUidFollowCreated} from "./onUidFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";
+export {registerReviewLiveActivity, onReviewQueueChanged} from "./reviewLiveActivity";
 export {onWallCategorize} from "./onWallCategorize";
 export {onWallSearchTerms} from "./wallSearchTerms";
 export {onWallModerate} from "./wallModeration";
