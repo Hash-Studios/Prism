@@ -12,6 +12,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class ShareButton extends StatefulWidget {
@@ -77,7 +78,15 @@ class _ShareButtonState extends State<ShareButton> {
     final WallpaperSource source = widget.source;
     final String? url = widget.url;
     final String thumbUrl = safeWallpaperShareThumbnail(id ?? '', source, widget.thumbUrl);
-    final String imageUrl = thumbUrl.trim();
+    // Link thumbnails have a stricter allowlist than the server-owned display derivative.
+    // Never use widget.url here: acquiring an original requires a separate authorization.
+    final String imageUrl =
+        source == WallpaperSource.prism && widget.thumbUrl.trim().isNotEmpty && Firebase.apps.isNotEmpty
+        ? Uri.https('us-central1-${Firebase.app().options.projectId}.cloudfunctions.net', '/wallpaperPreview', {
+            'id': id ?? '',
+            'thumb': widget.thumbUrl.trim(),
+          }).toString()
+        : thumbUrl.trim();
     final String? contextLine = widget.contextLine;
     final createLink = widget.createLink;
     final shareCard = widget.shareCard;

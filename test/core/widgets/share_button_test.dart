@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -6,20 +7,89 @@ import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/offline_asset_fixture.dart';
 import '../../support/wait_for_real_io.dart';
 
 void main() {
+  setUpAll(() async {
+    setupFirebaseCoreMocks();
+    await Firebase.initializeApp();
+  });
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
 
-  testWidgets('share calls the card share with only the thumbnail and context line, and tracks the format', (
-    tester,
-  ) async {
+  testWidgets('Prism shares render a real card from the display derivative, never an original', (tester) async {
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    const String thumb = 'https://legacy.test/thumb.jpg';
+    const String preview =
+        'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=wall-1&thumb=https%3A%2F%2Flegacy.test%2Fthumb.jpg';
+    late OfflineAssetFixture assets;
+    await tester.runAsync(() async {
+      assets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      assets.install();
+      final derivative = await assets.cachedImageFor(preview);
+      when(() => assets.cacheManager.getSingleFile(preview)).thenAnswer((_) async => derivative);
+    });
+    addTearDown(assets.dispose);
+    ShareCardResult? shared;
+    String? linkThumbnail;
+    String? renderedSource;
+    (int, int)? sentSize;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ShareButton(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://private.test/original.jpg?token=secret',
+            thumbUrl: thumb,
+            createLink: (id, source, url, thumbUrl) async {
+              linkThumbnail = thumbUrl;
+              return 'https://prismwalls.com/share?id=wall-1';
+            },
+            shareCard: (context, {required imageUrl, required link, contextLine}) async {
+              renderedSource = imageUrl;
+              return shared = await shareWallpaperCard(
+                context,
+                imageUrl: imageUrl,
+                link: link,
+                sendCard: ({required text, required file, required context}) async {
+                  final ui.Codec codec = await ui.instantiateImageCodec(await file.readAsBytes());
+                  final ui.Image image = (await codec.getNextFrame()).image;
+                  sentSize = (image.width, image.height);
+                  image.dispose();
+                  codec.dispose();
+                  return const ShareResult('', ShareResultStatus.success);
+                },
+                sendText: ({required text, required context}) async => const ShareResult('', ShareResultStatus.success),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await waitForRealIo(tester, () => shared != null, reason: 'Prism display derivative share card');
+    expect(renderedSource, preview);
+    expect(linkThumbnail, ''); // The untrusted legacy URL is still excluded from public links.
+    expect(shared, (format: ShareFormatValue.card, dismissed: false));
+    expect(sentSize, (1080, 1920));
+    expect(analytics.events.whereType<InviteShareResultEvent>().single.format, ShareFormatValue.card);
+  });
+
+  testWidgets('share uses the Prism display derivative and context line, and tracks the format', (tester) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -57,7 +127,10 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pumpAndSettle();
 
-    expect(calls, <String?>['', 'by Akshay']);
+    expect(calls, <String?>[
+      'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=wall-1&thumb=https%3A%2F%2Fimg.test%2Ffull.jpg',
+      'by Akshay',
+    ]);
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.format, ShareFormatValue.card);
     expect(result.toWireParameters()['format'], 'card');
@@ -199,7 +272,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(secondShare, isEmpty);
-    expect(firstShare, <String?>['', 'https://prismwalls.com/share?id=wall-1', 'by One']);
+    expect(firstShare, <String?>[
+      'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=wall-1&thumb=https%3A%2F%2Fimg.test%2Fone.jpg-thumb',
+      'https://prismwalls.com/share?id=wall-1',
+      'by One',
+    ]);
     expect(analytics.events.whereType<InviteShareResultEvent>().single.format, ShareFormatValue.card);
   });
 
