@@ -12,7 +12,7 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
   init() {
     Self.removeExpiredThumbnails()
     if #available(iOS 16.2, *) {
-      for activity in Activity<PrismAiGenerationAttributes>.activities {
+      for activity in Activity<PrismAiGenerationAttributes>.activities where activity.content.state.phase == .generating {
         let id = activity.id
         Task {
           await Self.end(id, content: nil, dismissalPolicy: .immediate)
