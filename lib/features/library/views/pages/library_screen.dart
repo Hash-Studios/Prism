@@ -52,11 +52,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     if (!hideSetWallpaperUi) LibraryTab.history,
   ];
   late final TabController _controller;
+  Object? _tabRequest;
   int _lastIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabRequest = _routeTabRequest;
     final int start = _tabs.indexOf(widget.initialTab);
     _lastIndex = start < 0 ? 0 : start;
     _controller = TabController(length: _tabs.length, vsync: this, initialIndex: _lastIndex)
@@ -68,6 +70,21 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     _lastIndex = _controller.index;
     unawaited(analytics.track(LibraryTabChangedEvent(tab: _tabs[_lastIndex].name)));
   }
+
+  @override
+  void didUpdateWidget(covariant LibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final Object? request = _routeTabRequest;
+    final bool newRequest = !identical(_tabRequest, request);
+    _tabRequest = request;
+    if (oldWidget.initialTab == widget.initialTab && !newRequest) return;
+    final int requested = _tabs.indexOf(widget.initialTab);
+    _lastIndex = requested < 0 ? 0 : requested;
+    _controller.index = _lastIndex;
+  }
+
+  // Typed navigation creates fresh args even for the same tab; rebuilds and push/pop retain them.
+  Object? get _routeTabRequest => context.findAncestorWidgetOfExactType<RouteDataScope>()?.routeData.args;
 
   @override
   void dispose() {
