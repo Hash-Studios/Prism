@@ -22,6 +22,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -439,14 +440,24 @@ _BOUNDS_RE = re.compile(r"\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
 
 
 def android_dump(serial: str) -> ET.Element:
-    device_path = "/sdcard/prism-verify-dump.xml"
-    r = _run(["adb", "-s", serial, "shell", "uiautomator", "dump", device_path], timeout=30)
-    if r.returncode != 0:
-        _die(f"uiautomator dump failed: {r.stderr.strip()}")
-    local = ARTIFACTS / "_dump.xml"
-    local.parent.mkdir(parents=True, exist_ok=True)
-    _run(["adb", "-s", serial, "pull", device_path, str(local)], timeout=30)
-    return ET.fromstring(local.read_text(encoding="utf-8", errors="replace"))
+    with tempfile.TemporaryDirectory(prefix="prism-verify-dump-") as temp_dir:
+        local = Path(temp_dir) / "hierarchy.xml"
+        device_path = f"/sdcard/{Path(temp_dir).name}.xml"
+        try:
+            r = _run(["adb", "-s", serial, "shell", "uiautomator", "dump", device_path], timeout=30)
+            if r.returncode != 0:
+                _die(f"uiautomator dump failed: {(r.stderr or r.stdout).strip()}")
+            r = _run(["adb", "-s", serial, "pull", device_path, str(local)], timeout=30)
+            if r.returncode != 0:
+                _die(f"uiautomator pull failed: {(r.stderr or r.stdout).strip()}")
+            return ET.fromstring(local.read_text(encoding="utf-8"))
+        except (OSError, subprocess.TimeoutExpired, UnicodeError, ET.ParseError) as error:
+            _die(f"Android UI tree capture failed: {error}")
+        finally:
+            try:
+                _run(["adb", "-s", serial, "shell", "rm", "-f", device_path], timeout=10)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
 
 
 def android_nodes(root: ET.Element) -> list[dict[str, str]]:
