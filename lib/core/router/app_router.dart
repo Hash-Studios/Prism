@@ -199,7 +199,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
-    AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page),
+    AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/daily-chest',
       page: DailyChestRoute.page,
