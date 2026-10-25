@@ -1,12 +1,13 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -22,12 +23,27 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: TrendingRepository)
 class TrendingRepositoryImpl implements TrendingRepository {
-  TrendingRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository, this._settingsLocal);
+  TrendingRepositoryImpl(
+    this._firestoreClient,
+    this._feedCacheLocal,
+    this._userBlockRepository,
+    this._settingsLocal, {
+    @ignoreParam Future<bool> Function()? initializationReady,
+  }) : _initializationReady = initializationReady ?? _firebaseReady;
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
   final UserBlockRepository _userBlockRepository;
   final SettingsLocalDataSource _settingsLocal;
+  final Future<bool> Function() _initializationReady;
+
+  static Future<bool> _firebaseReady() {
+    try {
+      return FirebaseInit.readyFuture;
+    } catch (_) {
+      return Future<bool>.value(false);
+    }
+  }
 
   static const int _whereInLimit = 30;
   static const int _cacheTtlHours = 3;
@@ -37,7 +53,8 @@ class TrendingRepositoryImpl implements TrendingRepository {
       "Couldn't load trending wallpapers. Check your connection and try again.";
 
   @override
-  Future<Result<List<PrismWallpaper>>> fetch() async {
+  Future<TrendingFetch> fetch() async {
+    final Future<bool> initialization = _initializationReady().catchError((Object _) => false);
     try {
       final Map<String, dynamic>? doc = await _firestoreClient.getById<Map<String, dynamic>>(
         'trending',
@@ -50,15 +67,16 @@ class TrendingRepositoryImpl implements TrendingRepository {
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       final List<PrismWallpaper> visible = _visible(walls, blocked);
       await _writeCache(walls);
-      return Result.success(visible);
+      return TrendingFetch.success(visible);
     } catch (error, stackTrace) {
+      final Future<bool>? retry = error is FirestoreError && error.code == 'no-app' ? initialization : null;
       final List<PrismWallpaper>? cached = await _readCached();
       if (cached != null) {
         logger.w('[TrendingRepository] fetch failed; returning the saved list', error: error, stackTrace: stackTrace);
-        return Result.success(cached);
+        return TrendingFetch.success(cached, retryAfterInitialization: retry);
       }
       logger.e('[TrendingRepository] fetch failed', error: error, stackTrace: stackTrace);
-      return Result.error(const ServerFailure(trendingLoadFailureMessage));
+      return TrendingFetch.error(const ServerFailure(trendingLoadFailureMessage), retryAfterInitialization: retry);
     }
   }
 

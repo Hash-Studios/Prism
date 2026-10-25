@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -44,7 +43,7 @@ void main() {
   Future<void> settle() => Future<void>.delayed(Duration.zero);
 
   test('started loads the trending list', () async {
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a')]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a')]));
 
     bloc.add(const TrendingEvent.started());
     await settle();
@@ -55,7 +54,7 @@ void main() {
   });
 
   test('started paints the saved walls before the network answers, then replaces them', () async {
-    final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+    final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
     when(() => fetch.readCached()).thenAnswer((_) async => <PrismWallpaper>[_wall('old')]);
     when(() => fetch(any())).thenAnswer((_) => pending.future);
 
@@ -65,7 +64,7 @@ void main() {
     expect(bloc.state.walls.map((wall) => wall.id), <String>['old']);
     expect(bloc.state.status, LoadStatus.loading);
 
-    pending.complete(Result.success(<PrismWallpaper>[_wall('new')]));
+    pending.complete(TrendingFetch.success(<PrismWallpaper>[_wall('new')]));
     await settle();
 
     expect(bloc.state.status, LoadStatus.success);
@@ -75,7 +74,7 @@ void main() {
   test('started begins the network fetch before the saved walls are read', () async {
     final Completer<List<PrismWallpaper>> cache = Completer<List<PrismWallpaper>>();
     when(() => fetch.readCached()).thenAnswer((_) => cache.future);
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('new')]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('new')]));
 
     bloc.add(const TrendingEvent.started());
     await settle();
@@ -88,7 +87,7 @@ void main() {
 
   test('a network failure after the saved walls painted keeps them on screen', () async {
     when(() => fetch.readCached()).thenAnswer((_) async => <PrismWallpaper>[_wall('old')]);
-    when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.error(const ServerFailure('offline')));
 
     bloc.add(const TrendingEvent.started());
     await settle();
@@ -98,7 +97,7 @@ void main() {
   });
 
   test('a failed first load keeps the failure, and a refresh retries', () async {
-    when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.error(const ServerFailure('offline')));
 
     bloc.add(const TrendingEvent.started());
     await settle();
@@ -106,7 +105,7 @@ void main() {
     expect(bloc.state.status, LoadStatus.failure);
     expect(bloc.state.failure, isA<ServerFailure>());
 
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a')]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a')]));
     bloc.add(const TrendingEvent.refreshRequested());
     await settle();
 
@@ -115,11 +114,11 @@ void main() {
   });
 
   test('refresh reloads the list and keeps the walls on screen while it runs and when it fails', () async {
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a')]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a')]));
     bloc.add(const TrendingEvent.started());
     await settle();
 
-    final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+    final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
     when(() => fetch(any())).thenAnswer((_) => pending.future);
     bloc.add(const TrendingEvent.refreshRequested());
     await settle();
@@ -127,7 +126,7 @@ void main() {
     expect(bloc.state.status, LoadStatus.loading);
     expect(bloc.state.walls.map((wall) => wall.id), <String>['a']);
 
-    pending.complete(Result.error(const ServerFailure('offline')));
+    pending.complete(TrendingFetch.error(const ServerFailure('offline')));
     await settle();
 
     expect(bloc.state.status, LoadStatus.failure);
@@ -135,15 +134,15 @@ void main() {
   });
 
   test('a late answer from an older request does not replace a newer one', () async {
-    final Completer<Result<List<PrismWallpaper>>> first = Completer<Result<List<PrismWallpaper>>>();
+    final Completer<TrendingFetch> first = Completer<TrendingFetch>();
     when(() => fetch(any())).thenAnswer((_) => first.future);
     bloc.add(const TrendingEvent.started());
     await settle();
 
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('new')]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('new')]));
     bloc.add(const TrendingEvent.refreshRequested());
     await settle();
-    first.complete(Result.success(<PrismWallpaper>[_wall('old')]));
+    first.complete(TrendingFetch.success(<PrismWallpaper>[_wall('old')]));
     await settle();
 
     expect(bloc.state.walls.single.id, 'new');
@@ -152,7 +151,7 @@ void main() {
   group('blocking a creator', () {
     test('removes their walls at once', () async {
       when(() => fetch(any())).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
+        (_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
       );
       bloc.add(const TrendingEvent.started());
       await settle();
@@ -165,14 +164,14 @@ void main() {
     });
 
     test('also hides their walls in a load that was already running', () async {
-      final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+      final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
       when(() => fetch(any())).thenAnswer((_) => pending.future);
       bloc.add(const TrendingEvent.started());
       await settle();
 
       blocks.completeInitial(<String>{'bad-uid'});
       await settle();
-      pending.complete(Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b')]));
+      pending.complete(TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b')]));
       await settle();
 
       expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
@@ -180,7 +179,7 @@ void main() {
 
     test('unblocking them loads the list again and brings their walls back', () async {
       when(() => fetch(any())).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
+        (_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
       );
       bloc.add(const TrendingEvent.started());
       await settle();
@@ -206,7 +205,9 @@ void main() {
     });
 
     test('leaves the list alone when the set is empty or hits no wall', () async {
-      when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a', uid: 'a-uid')]));
+      when(
+        () => fetch(any()),
+      ).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'a-uid')]));
       bloc.add(const TrendingEvent.started());
       await settle();
       final TrendingState before = bloc.state;

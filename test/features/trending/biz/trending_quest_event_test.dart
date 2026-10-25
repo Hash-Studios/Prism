@@ -2,7 +2,6 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
@@ -37,7 +36,7 @@ void main() {
 
   test('the bloc only loads data: starting and refreshing it report no quest event', () async {
     final _MockFetchTrending fetch = _MockFetchTrending();
-    when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[]));
+    when(() => fetch(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[]));
     final TrendingBloc bloc = TrendingBloc(fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
 

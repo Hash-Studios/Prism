@@ -186,7 +186,7 @@ void main() {
       () => fetchUseCase(any()),
     ).thenAnswer((_) async => Result.success(_page(<String>['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], hasMore: true)));
     fetchTrending = _MockFetchTrending();
-    when(() => fetchTrending(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[]));
+    when(() => fetchTrending(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[]));
     app_state.prismUser = _user(loggedIn: true);
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
@@ -356,7 +356,7 @@ void main() {
 
   testWidgets('the Trending tab shows the trending walls in the home grid, with no range switch', (tester) async {
     when(() => fetchTrending(any())).thenAnswer(
-      (_) async => Result.success(<PrismWallpaper>[
+      (_) async => TrendingFetch.success(<PrismWallpaper>[
         _wall('hot1', boostedUntil: DateTime.now().add(const Duration(hours: 3))),
         _wall('hot2'),
         _wall('hot3'),
@@ -394,8 +394,8 @@ void main() {
     int calls = 0;
     when(() => fetchTrending(any())).thenAnswer(
       (_) async => ++calls == 1
-          ? Result.error(const NetworkFailure('offline'))
-          : Result.success(<PrismWallpaper>[_wall('hot1')]),
+          ? TrendingFetch.error(const NetworkFailure('offline'))
+          : TrendingFetch.success(<PrismWallpaper>[_wall('hot1')]),
     );
     await pumpScreen(tester);
     await tapTab(tester, 'Trending');
@@ -414,7 +414,7 @@ void main() {
     await tapTab(tester, 'Trending');
     await _settle(tester);
     verify(() => fetchTrending(any())).called(1);
-    final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+    final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
     when(() => fetchTrending(any())).thenAnswer((_) => pending.future);
 
     bool refreshed = false;
@@ -427,7 +427,7 @@ void main() {
     verify(() => fetchTrending(any())).called(1);
     expect(refreshed, isFalse, reason: 'the spinner lasts as long as the load');
 
-    pending.complete(Result.success(<PrismWallpaper>[_wall('hot1')]));
+    pending.complete(TrendingFetch.success(<PrismWallpaper>[_wall('hot1')]));
     await refresh;
     await tester.pump();
 
@@ -891,7 +891,7 @@ void main() {
 
     testWidgets('follow the Wall of the Day in server order, each with a Boosted tag', (tester) async {
       when(() => fetchTrending(any())).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[
+        (_) async => TrendingFetch.success(<PrismWallpaper>[
           _wall('hot1', boostedUntil: inThreeHours()),
           _wall('hot2', boostedUntil: inThreeHours()),
           _wall('plain'),
@@ -921,7 +921,7 @@ void main() {
 
     testWidgets('leave out a boost that has ended', (tester) async {
       when(() => fetchTrending(any())).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[
+        (_) async => TrendingFetch.success(<PrismWallpaper>[
           _wall('old', boostedUntil: DateTime.now().subtract(const Duration(minutes: 1))),
           _wall('hot1', boostedUntil: inThreeHours()),
         ]),
@@ -937,7 +937,7 @@ void main() {
 
     testWidgets('a boosted wall that is also in the feed shows in the carousel only, not in the grid', (tester) async {
       when(() => fetchTrending(any())).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[_wall('a', boostedUntil: inThreeHours()), _wall('plain')]),
+        (_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', boostedUntil: inThreeHours()), _wall('plain')]),
       );
 
       await pumpScreen(tester, disableAnimations: true);
@@ -955,7 +955,7 @@ void main() {
     testWidgets('with no boosted walls the carousel starts with Wall of the Day and the grid keeps every wall', (
       tester,
     ) async {
-      when(() => fetchTrending(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('plain')]));
+      when(() => fetchTrending(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('plain')]));
 
       await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
 
@@ -965,14 +965,14 @@ void main() {
     });
 
     testWidgets('that arrive after the feed join after the Wall of the Day and do not move the grid', (tester) async {
-      final Completer<Result<List<PrismWallpaper>>> late = Completer<Result<List<PrismWallpaper>>>();
+      final Completer<TrendingFetch> late = Completer<TrendingFetch>();
       when(() => fetchTrending(any())).thenAnswer((_) => late.future);
       await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
       expect(find.text('Wall of the day'), findsOneWidget);
       final Rect carouselBefore = tester.getRect(find.byType(CarouselSlider));
       final double gridTopBefore = tester.getRect(find.byType(FeedWallTile).first).top;
 
-      late.complete(Result.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
+      late.complete(TrendingFetch.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
       await _settle(tester);
 
       expect(find.text('Wall of the day'), findsOneWidget);
@@ -989,7 +989,7 @@ void main() {
     testWidgets('stay out of the other tabs, which have no carousel', (tester) async {
       when(
         () => fetchTrending(any()),
-      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
+      ).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
       await pumpScreen(tester, disableAnimations: true);
 
       await tapTab(tester, 'Latest');
