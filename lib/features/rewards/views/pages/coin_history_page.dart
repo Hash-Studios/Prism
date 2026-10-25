@@ -291,6 +291,9 @@ String _historyDescription(CoinTransactionEntry entry) {
   final bool isInternalReason = switch (entry.action) {
     'aiGeneration' => description == 'ai_generation_reserved' || description == 'ai_generation',
     'premiumPreview24h' => description == 'premium_preview_unlock_24h',
+    'premiumFilter' =>
+      description == entry.action ||
+          RegExp(r'^filter_[A-Z0-9][A-Za-z0-9-]*(?:[ +][A-Z0-9][A-Za-z0-9-]*)*$').hasMatch(description),
     'wallpaperDownload' || 'premiumWallpaperDownload' =>
       description == entry.action || RegExp(r'^content_[A-Za-z0-9_-]+$').hasMatch(description),
     _ => false,

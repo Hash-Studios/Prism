@@ -582,6 +582,11 @@ void main() {
       (action: 'wallpaperDownload', reason: 'content_E3EI', label: 'Wallpaper download'),
       (action: 'wallpaperDownload', reason: 'wallpaperDownload', label: 'Wallpaper download'),
       (action: 'premiumWallpaperDownload', reason: 'content_E3EI', label: 'Premium wallpaper'),
+      (action: 'premiumFilter', reason: 'filter_AddictiveBlue', label: 'Premium filter'),
+      (action: 'premiumFilter', reason: 'filter_AddictiveBlue+1977+Lo-Fi+Adjust', label: 'Premium filter'),
+      (action: 'premiumFilter', reason: 'filter_X-Pro II+High Pass+Adjust', label: 'Premium filter'),
+      (action: 'premiumFilter', reason: 'filter_Adjust', label: 'Premium filter'),
+      (action: 'premiumFilter', reason: 'premiumFilter', label: 'Premium filter'),
     ]) {
       testWidgets('Spent hides ${sample.action} reason ${sample.reason} but keeps human copy', (tester) async {
         final semantics = tester.ensureSemantics();
@@ -597,7 +602,7 @@ void main() {
 
         expect(find.text(sample.label), findsNWidgets(2));
         expect(find.text(sample.reason), findsNothing);
-        expect(find.bySemanticsLabel(RegExp('.*${sample.reason}.*')), findsNothing);
+        expect(find.bySemanticsLabel(RegExp('.*${RegExp.escape(sample.reason)}.*')), findsNothing);
         expect(find.text('Sunset over the bay'), findsOneWidget);
         expect(find.bySemanticsLabel(RegExp('.*Sunset over the bay.*')), findsOneWidget);
         expect(find.text('-5'), findsNWidgets(2));
@@ -613,6 +618,9 @@ void main() {
         _row(1, description: 'premium_preview_unlock_24h'),
         _row(2, action: 'premiumPreview24h', description: 'content_E3EI'),
         _row(3, description: 'wallpaperDownload memories'),
+        _row(4, description: 'filter_AddictiveBlue'),
+        _row(5, action: 'premiumFilter', description: 'filter_my favourite wallpaper'),
+        _row(6, action: 'premiumFilter', description: 'filter_AddictiveBlue memories'),
       ];
 
       await pumpPage(tester);
@@ -622,10 +630,13 @@ void main() {
         'premium_preview_unlock_24h',
         'content_E3EI',
         'wallpaperDownload memories',
+        'filter_AddictiveBlue',
+        'filter_my favourite wallpaper',
+        'filter_AddictiveBlue memories',
       ]) {
         expect(find.text(description), findsOneWidget);
       }
-      expect(find.text('Wallpaper download'), findsNWidgets(3));
+      expect(find.text('Wallpaper download'), findsNWidgets(4));
     });
 
     testWidgets('filter chips narrow the loaded rows', (tester) async {
