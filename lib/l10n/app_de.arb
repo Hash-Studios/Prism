@@ -6139,6 +6139,10 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumGuestStorePurchaseActive": "Dein Store-Kauf ist auf diesem Gerät aktiv. Melde dich an, um kontobasierte Pro-Funktionen zu nutzen.",
+  "@premiumGuestStorePurchaseActive": {
+    "description": "A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation."
+  },
   "premiumPurchasePending": "Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."

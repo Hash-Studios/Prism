@@ -6268,6 +6268,7 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumGuestStorePurchaseActive": "Pembelian toko Anda aktif di perangkat ini. Masuk untuk menggunakan fitur Pro berbasis akun.",
   "premiumPurchasePending": "Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."

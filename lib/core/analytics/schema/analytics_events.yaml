@@ -29,6 +29,7 @@ enums:
       - cancelled
       - purchased
       - restored
+      - guest_sign_in_required
       - rc_error
       - unknown
   - name: subscription_entitlement_refresh_result

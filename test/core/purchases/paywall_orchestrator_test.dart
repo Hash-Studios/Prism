@@ -166,6 +166,30 @@ void main() {
     }
 
     for (final sdkResult in <String>['PURCHASED', 'RESTORED']) {
+      test('a guest $sdkResult acknowledges local access without server confirmation', () async {
+        final backend = await installPaywall(present: () async => sdkResult);
+        app_state.prismUser = profileUser(id: '', loggedIn: false);
+        var syncs = 0;
+        backend.onCall = (_, _) {
+          syncs++;
+          throw StateError('Guests cannot sync paid server access.');
+        };
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+        await AnalyticsRuntime.instance.flush();
+
+        expect(result, PaywallResultValue.guestSignInRequired);
+        expect(result.indicatesPurchase, isFalse);
+        expect(app_state.prismUser.premium, isTrue);
+        expect(syncs, 0);
+        expect(toasts, <String>[
+          'Your store purchase is active on this device. Sign in to use account-based Pro features.',
+        ]);
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.entitlementSynced, 0);
+      });
+    }
+
+    for (final sdkResult in <String>['PURCHASED', 'RESTORED']) {
       test('an unconfirmed $sdkResult does not report completion and keeps the receipt result once', () async {
         await installPaywall(present: () async => sdkResult, confirmed: false);
 

@@ -7299,6 +7299,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumPageViewPlans => 'View plans';
 
   @override
+  String get premiumGuestStorePurchaseActive =>
+      'Your store purchase is active on this device. Sign in to use account-based Pro features.';
+
+  @override
   String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
 
   @override

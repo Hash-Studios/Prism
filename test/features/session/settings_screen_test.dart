@@ -13,6 +13,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
@@ -195,6 +197,68 @@ void main() {
     expect(haptics, <String>['HapticFeedbackType.selectionClick']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+  testWidgets('a guest restore acknowledges local access and explains the sign-in limitation', (tester) async {
+    await getIt.unregister<SessionRepository>();
+    final backend = CoinsTestBackend();
+    await backend.install();
+    app_state.prismUser = testUser(loggedIn: false)..id = '';
+    final entitlement = <String, Object?>{
+      'identifier': 'prism_v3_pro_access',
+      'isActive': true,
+      'willRenew': true,
+      'latestPurchaseDate': '2026-10-01T00:00:00Z',
+      'originalPurchaseDate': '2026-10-01T00:00:00Z',
+      'productIdentifier': 'prism_pro_yearly',
+      'isSandbox': false,
+      'expirationDate': '2027-10-01T00:00:00Z',
+    };
+    final customer = <String, Object?>{
+      'entitlements': <String, Object?>{
+        'all': <String, Object?>{'prism_v3_pro_access': entitlement},
+        'active': <String, Object?>{'prism_v3_pro_access': entitlement},
+      },
+      'allPurchaseDates': <String, Object?>{},
+      'activeSubscriptions': <String>[],
+      'allPurchasedProductIdentifiers': <String>[],
+      'nonSubscriptionTransactions': <Object?>[],
+      'firstSeen': '',
+      'originalAppUserId': 'anonymous-store-user',
+      'allExpirationDates': <String, Object?>{},
+      'requestDate': '',
+    };
+    var syncs = 0;
+    backend.onCall = (_, _) {
+      syncs++;
+      throw StateError('A guest must not sync paid server access.');
+    };
+    messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
+      if (call.method == 'restorePurchases') return customer;
+      if (call.method == 'getCustomerInfo') throw StateError('Restore must use the store result.');
+      return null;
+    });
+    useTallSurface(tester);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
+    await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Restore purchases'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
+    await waitForRealIo(tester, () => messages.length > 1, reason: 'guest restore result');
+
+    expect(messages, <String>[
+      'Restoring purchases…',
+      'Your store purchase is active on this device. Sign in to use account-based Pro features.',
+    ]);
+    expect(app_state.prismUser.premium, isTrue);
+    expect(await tester.runAsync(PurchasesService.instance.restore), PurchaseEntitlementStatus.guestSignInRequired);
+    expect(syncs, 0);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   testWidgets('restore progress is silent and a failed restore plays only error', (tester) async {
     final pendingRestore = Completer<Object?>();
     messenger.setMockMethodCallHandler(purchasesChannel, (call) => pendingRestore.future);
@@ -262,6 +326,7 @@ void main() {
       await getIt.unregister<SessionRepository>();
       final backend = CoinsTestBackend();
       await backend.install();
+      app_state.prismUser.profilePhoto = '';
       final paid = outcome != 'empty';
       final entitlement = <String, Object?>{
         'identifier': 'prism_v3_pro_access',

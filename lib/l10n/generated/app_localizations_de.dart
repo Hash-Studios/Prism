@@ -7379,6 +7379,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumPageViewPlans => 'Abos ansehen';
 
   @override
+  String get premiumGuestStorePurchaseActive =>
+      'Dein Store-Kauf ist auf diesem Gerät aktiv. Melde dich an, um kontobasierte Pro-Funktionen zu nutzen.';
+
+  @override
   String get premiumPurchasePending =>
       'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
 

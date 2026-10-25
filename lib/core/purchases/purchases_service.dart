@@ -20,6 +20,9 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 enum _SubscriptionPersistResult { confirmed, mismatch, failed, stale }
 
+/// Local store access is separate from the server confirmation required for paid account actions.
+enum PurchaseEntitlementStatus { serverConfirmed, guestSignInRequired, pending, none }
+
 /// Singleton service that owns all RevenueCat SDK interactions.
 /// Use [checkAndPersistPremium] to sync premium status; use [prismUser.premium] as the single source of truth.
 class PurchasesService {
@@ -178,10 +181,10 @@ class PurchasesService {
         await _configure(targetUserId);
       } else if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
         _identityTransitionInProgress = true;
+        _identityRevision++;
         try {
           await _logIn(targetUserId);
           _configuredUserId = targetUserId;
-          _identityRevision++;
         } on PlatformException catch (e) {
           logger.w('RevenueCat login sync failed: $e');
           rethrow;
@@ -255,6 +258,7 @@ class PurchasesService {
       app_state.prismUser.subscriptionTier == tier.name;
 
   bool _matchesSubscriptionIdentity(String userId, int identityRevision, bool loggedIn) =>
+      !_identityTransitionInProgress &&
       userId == app_state.prismUser.id.trim() &&
       loggedIn == app_state.prismUser.loggedIn &&
       identityRevision == _identityRevision &&
@@ -344,11 +348,22 @@ class PurchasesService {
   /// [forceSync] waits for the server sync request even when the tier is unchanged, and returns true only once the
   /// server confirms the paid tier.
   Future<bool> checkAndPersistPremium({bool forceSync = false}) async {
+    final PurchaseEntitlementStatus status = await _checkAndPersistPremium(forceSync: forceSync);
+    return forceSync ? status == PurchaseEntitlementStatus.serverConfirmed : status != PurchaseEntitlementStatus.none;
+  }
+
+  /// Acknowledges fresh local guest access without treating it as server-confirmed paid access.
+  Future<PurchaseEntitlementStatus> checkPurchaseEntitlement() => _checkAndPersistPremium(forceSync: true);
+
+  PurchaseEntitlementStatus _cachedEntitlementStatus(bool forceSync) =>
+      !forceSync && app_state.prismUser.premium ? PurchaseEntitlementStatus.pending : PurchaseEntitlementStatus.none;
+
+  Future<PurchaseEntitlementStatus> _checkAndPersistPremium({required bool forceSync}) async {
     final String requestedUserId = app_state.prismUser.id.trim();
     try {
       await ensureConfigured(requestedUserId);
       if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) {
-        return !forceSync && app_state.prismUser.premium;
+        return _cachedEntitlementStatus(forceSync);
       }
       final int requestedIdentityRevision = _identityRevision;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
@@ -357,7 +372,7 @@ class PurchasesService {
           requestedUserId != _configuredUserId ||
           requestedUserId != app_state.prismUser.id.trim() ||
           requestedLoggedIn != app_state.prismUser.loggedIn) {
-        return !forceSync && app_state.prismUser.premium;
+        return _cachedEntitlementStatus(forceSync);
       }
       return await _applyCustomerInfo(
         info,
@@ -375,7 +390,7 @@ class PurchasesService {
         ),
       );
       logger.d('checkAndPersistPremium failed: $e');
-      return !forceSync && app_state.prismUser.premium;
+      return _cachedEntitlementStatus(forceSync);
     } catch (error, stackTrace) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -385,11 +400,11 @@ class PurchasesService {
         ),
       );
       logger.w('checkAndPersistPremium failed.', error: error, stackTrace: stackTrace);
-      return !forceSync && app_state.prismUser.premium;
+      return _cachedEntitlementStatus(forceSync);
     }
   }
 
-  Future<bool> _applyCustomerInfo(
+  Future<PurchaseEntitlementStatus> _applyCustomerInfo(
     CustomerInfo info, {
     bool forceSync = false,
     required String userId,
@@ -399,7 +414,7 @@ class PurchasesService {
     final SubscriptionTier tier = tierFromCustomerInfo(info);
     final bool isPremium = tier.isPaid;
     if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) {
-      return !forceSync && app_state.prismUser.premium;
+      return _cachedEntitlementStatus(forceSync);
     }
 
     app_state.prismUser.premium = isPremium;
@@ -415,14 +430,14 @@ class PurchasesService {
     );
     if (syncResult == _SubscriptionPersistResult.stale ||
         !_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
-      return !forceSync && app_state.prismUser.premium;
+      return _cachedEntitlementStatus(forceSync);
     }
     final bool syncFailed =
         syncResult == _SubscriptionPersistResult.failed ||
         (forceSync && syncResult != _SubscriptionPersistResult.confirmed);
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
     if (!_matchesSubscriptionRequest(userId, identityRevision, loggedIn, tier)) {
-      return !forceSync && app_state.prismUser.premium;
+      return _cachedEntitlementStatus(forceSync);
     }
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
@@ -438,21 +453,26 @@ class PurchasesService {
     if (kDebugMode) {
       logger.d('Premium status: $isPremium');
     }
-    // A purchase or restore completes only once the server, which gates paid actions, holds the same tier.
-    return forceSync ? isPremium && syncResult == _SubscriptionPersistResult.confirmed : isPremium;
+    if (!isPremium) return PurchaseEntitlementStatus.none;
+    if (!loggedIn && userId.isEmpty) return PurchaseEntitlementStatus.guestSignInRequired;
+    return syncResult == _SubscriptionPersistResult.confirmed
+        ? PurchaseEntitlementStatus.serverConfirmed
+        : PurchaseEntitlementStatus.pending;
   }
 
-  /// Restores store purchases and applies them to this account. Returns whether premium is now active.
-  Future<bool> restore() async {
+  /// Restores store purchases while distinguishing local guest access from server confirmation.
+  Future<PurchaseEntitlementStatus> restore() async {
     final String requestedUserId = app_state.prismUser.id.trim();
     try {
       await ensureConfigured(requestedUserId);
-      if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) return false;
+      if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) {
+        return PurchaseEntitlementStatus.none;
+      }
       final int requestedIdentityRevision = _identityRevision;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
       final CustomerInfo info = await Purchases.restorePurchases();
       if (!_matchesSubscriptionIdentity(requestedUserId, requestedIdentityRevision, requestedLoggedIn)) {
-        return false;
+        return PurchaseEntitlementStatus.none;
       }
       for (final event in restoredPurchaseEvents(info.entitlements.active.values.map((e) => e.productIdentifier))) {
         analytics.track(event);
@@ -496,18 +516,26 @@ class PurchasesService {
   /// Logs out the current RC user. No-op if the SDK has not been configured yet,
   /// since there is no session to end and calling logOut before configure
   /// triggers a native fatalError on iOS.
-  Future<void> logOut() async {
+  Future<void> logOut() => _serializeSetup<void>(() async {
     if (!_configured) return;
+    _identityTransitionInProgress = true;
+    _identityRevision++;
     try {
-      await Purchases.logOut();
-    } on PlatformException catch (e) {
-      final String details = e.details?.toString().toLowerCase() ?? '';
-      final String message = e.message?.toLowerCase() ?? '';
-      if (e.code == '22' || details.contains('logout_called_with_anonymous_user') || message.contains('anonymous')) {
+      try {
+        await Purchases.logOut();
+      } on PlatformException catch (e) {
+        final String details = e.details?.toString().toLowerCase() ?? '';
+        final String message = e.message?.toLowerCase() ?? '';
+        if (e.code != '22' &&
+            !details.contains('logout_called_with_anonymous_user') &&
+            !message.contains('anonymous')) {
+          rethrow;
+        }
         logger.w('Skipping RevenueCat logout for anonymous user.');
-        return;
       }
-      rethrow;
+      _configuredUserId = '';
+    } finally {
+      _identityTransitionInProgress = false;
     }
-  }
+  });
 }

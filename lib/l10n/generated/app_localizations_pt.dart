@@ -7556,6 +7556,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get premiumPageViewPlans => 'Ver planos';
 
   @override
+  String get premiumGuestStorePurchaseActive =>
+      'Sua compra na loja está ativa neste dispositivo. Entre para usar os recursos Pro vinculados à conta.';
+
+  @override
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
 
   @override
@@ -17526,6 +17530,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumGuestStorePurchaseActive =>
+      'Sua compra na loja está ativa neste dispositivo. Entre para usar os recursos Pro vinculados à conta.';
 
   @override
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';

@@ -463,6 +463,7 @@ void main() {
     await settings.set('onboarding_v2_interests', 'saved interests');
     await settings.set('onboarding_v2_followed_creators', 'saved creators');
     var signOutCalls = 0;
+    late Future<bool> signOut;
     var mountCalls = 0;
     final GoogleAuth auth = GoogleAuth(
       auth: _FakeAuth(user: _FakeUser(), signOutError: StateError('Firebase auth unavailable')),
@@ -478,11 +479,14 @@ void main() {
       settings: settings,
       signOutForRecovery: () {
         signOutCalls++;
-        return auth.signOutGoogle();
+        return signOut = auth.signOutGoogle();
       },
       onMount: () => mountCalls++,
     );
-    await tester.tap(find.text('sign in again'));
+    await tester.runAsync(() async {
+      await tester.tap(find.text('sign in again'));
+      expect(await signOut, isFalse);
+    });
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 2));
@@ -503,6 +507,7 @@ void main() {
     await settings.set('onboarding_v2_interests', 'saved interests');
     await settings.set('onboarding_v2_followed_creators', 'saved creators');
     var mountCalls = 0;
+    late Future<bool> signOut;
     final GoogleAuth auth = GoogleAuth(
       auth: _FakeAuth(user: _FakeUser()),
       googleSignIn: _FakeGoogleSignIn(),
@@ -515,10 +520,13 @@ void main() {
       _interests.copyWith(actionStatus: ActionStatus.inProgress),
       _interests.copyWith(actionStatus: ActionStatus.failure, sessionInvalid: true),
       settings: settings,
-      signOutForRecovery: auth.signOutGoogle,
+      signOutForRecovery: () => signOut = auth.signOutGoogle(),
       onMount: () => mountCalls++,
     );
-    await tester.tap(find.text('sign in again'));
+    await tester.runAsync(() async {
+      await tester.tap(find.text('sign in again'));
+      expect(await signOut, isTrue);
+    });
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 2));

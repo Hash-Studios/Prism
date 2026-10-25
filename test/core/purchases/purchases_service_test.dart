@@ -175,6 +175,166 @@ void main() {
     expect(loginCalls, <String>['user-1']);
   });
 
+  group('logout identity transition', () {
+    late Future<Object?> Function() logout;
+    late Future<Object?> Function() restore;
+
+    setUp(() {
+      logout = () async => _freeCustomerJson;
+      restore = () async => _proCustomerJson;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async {
+          if (call.method == 'setLogLevel') return null;
+          if (call.method == 'logOut') return logout();
+          if (call.method == 'restorePurchases') return restore();
+          throw StateError('Unexpected RevenueCat call: ${call.method}');
+        },
+      );
+    });
+
+    for (final bool alreadyAnonymous in <bool>[false, true]) {
+      test('signed-in logout permits guest restore when already anonymous is $alreadyAnonymous', () async {
+        if (alreadyAnonymous) {
+          logout = () async => throw PlatformException(code: '22');
+        }
+        final service = buildService(getCustomerInfo: () async => _proCustomer);
+        await service.ensureConfigured('u1');
+        app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+        await service.logOut();
+
+        expect(await service.restore(), PurchaseEntitlementStatus.guestSignInRequired);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+        expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.guestSignInRequired);
+        expect(await service.checkAndPersistPremium(forceSync: true), isFalse);
+        expect(syncCalls, 0);
+      });
+    }
+
+    test('logout waits for in-flight first configuration before ending the account session', () async {
+      final configuration = Completer<void>();
+      final service = buildService(configurePurchases: (_) => configuration.future);
+      final setup = service.ensureConfigured('u1');
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      final signOut = service.logOut();
+      configuration.complete();
+      await Future.wait(<Future<void>>[setup, signOut]);
+
+      expect(await service.restore(), PurchaseEntitlementStatus.guestSignInRequired);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(syncCalls, 0);
+    });
+
+    test('logout waits for an older login and leaves the SDK ready for guest restore', () async {
+      final login = Completer<void>();
+      final service = buildService(logIn: (_) => login.future);
+      await service.ensureConfigured('u1');
+      app_state.prismUser = profileUser(id: 'other-user');
+      final setup = service.ensureConfigured('other-user');
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      final signOut = service.logOut();
+      login.complete();
+      await Future.wait(<Future<void>>[setup, signOut]);
+
+      expect(await service.restore(), PurchaseEntitlementStatus.guestSignInRequired);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 0);
+    });
+
+    for (final String nextUserId in <String>['u1', 'other-user']) {
+      test('a newer login as $nextUserId waits for logout and reads that account from the SDK', () async {
+        final logoutReply = Completer<Object?>();
+        String sdkUserId = '';
+        logout = () async {
+          final result = await logoutReply.future;
+          sdkUserId = '';
+          return result;
+        };
+        final service = buildService(
+          configurePurchases: (configuration) async => sdkUserId = configuration.appUserID ?? '',
+          logIn: (userId) async => sdkUserId = userId,
+          getCustomerInfo: () async => sdkUserId == nextUserId ? _proCustomer : _freeCustomer,
+        );
+        await service.ensureConfigured('u1');
+        app_state.prismUser = profileUser(id: '', loggedIn: false);
+        final signOut = service.logOut();
+        await pumpEventQueue();
+        app_state.prismUser = profileUser(id: nextUserId);
+        final setup = service.ensureConfigured(nextUserId);
+        await pumpEventQueue();
+        logoutReply.complete(_freeCustomerJson);
+        await Future.wait(<Future<void>>[signOut, setup]);
+
+        expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.serverConfirmed);
+        expect(sdkUserId, nextUserId);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+        expect(syncCalls, 1);
+      });
+    }
+
+    test('customer-info reads and callbacks cannot apply while logout is pending', () async {
+      final logoutReply = Completer<Object?>();
+      final customerInfo = Completer<CustomerInfo>();
+      logout = () => logoutReply.future;
+      app_state.prismUser = profileUser();
+      final service = buildService(getCustomerInfo: () => customerInfo.future);
+      final pending = service.checkPurchaseEntitlement();
+      await pumpEventQueue();
+      final signOut = service.logOut();
+      await pumpEventQueue();
+      listeners.single(_proCustomer);
+      customerInfo.complete(_proCustomer);
+
+      expect(await pending, PurchaseEntitlementStatus.none);
+      await pumpEventQueue();
+      expect(app_state.prismUser.premium, isFalse);
+      expect(syncCalls, 0);
+      logoutReply.complete(_freeCustomerJson);
+      await signOut;
+    });
+
+    test('a failed logout invalidates older customer info without claiming a guest SDK identity', () async {
+      final customerInfo = Completer<CustomerInfo>();
+      logout = () async => throw PlatformException(code: 'offline');
+      app_state.prismUser = profileUser();
+      final service = buildService(getCustomerInfo: () => customerInfo.future);
+      final pending = service.checkPurchaseEntitlement();
+      await pumpEventQueue();
+      await expectLater(service.logOut(), throwsA(isA<PlatformException>()));
+      customerInfo.complete(_proCustomer);
+
+      expect(await pending, PurchaseEntitlementStatus.none);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(syncCalls, 0);
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      expect(await service.restore(), PurchaseEntitlementStatus.none);
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('a guest restore after logout cannot grant the account that signs in during restore', () async {
+      final restoreReply = Completer<Object?>();
+      restore = () => restoreReply.future;
+      final service = buildService(getCustomerInfo: () async => _proCustomer);
+      await service.ensureConfigured('u1');
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      await service.logOut();
+      final pending = service.restore();
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: 'other-user');
+      await service.ensureConfigured('other-user');
+      restoreReply.complete(_proCustomerJson);
+
+      expect(await pending, PurchaseEntitlementStatus.none);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(syncCalls, 0);
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.serverConfirmed);
+      expect(syncCalls, 1);
+    });
+  });
+
   test('a failed RevenueCat account switch is propagated to the caller', () async {
     final PurchasesService service = buildService(
       logIn: (String userId) async {
@@ -258,6 +418,49 @@ void main() {
 
     expect(await service.checkAndPersistPremium(), isTrue);
     expect(app_state.prismUser.premium, isTrue);
+    expect(syncCalls, 0);
+  });
+
+  test('fresh guest purchase status is local-only and the forced bool remains server-only', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    final PurchasesService service = buildService(getCustomerInfo: () async => _proCustomer);
+
+    expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.guestSignInRequired);
+    expect(await service.checkAndPersistPremium(forceSync: true), isFalse);
+    expect(app_state.prismUser.premium, isTrue);
+    expect(syncCalls, 0);
+  });
+
+  test('cached guest premium is not store success when the fresh customer-info request fails', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true);
+    final PurchasesService service = buildService(
+      getCustomerInfo: () async => throw PlatformException(code: 'offline'),
+    );
+
+    expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.none);
+    expect(app_state.prismUser.premium, isTrue);
+    expect(syncCalls, 0);
+  });
+
+  test('a guest without a paid store entitlement is not reported as local success', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true);
+    final PurchasesService service = buildService(getCustomerInfo: () async => _freeCustomer);
+
+    expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.none);
+    expect(app_state.prismUser.premium, isFalse);
+    expect(syncCalls, 0);
+  });
+
+  test('guest purchase status is discarded if the account changes during the store check', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    final customerInfo = Completer<CustomerInfo>();
+    final PurchasesService service = buildService(getCustomerInfo: () => customerInfo.future);
+    final pending = service.checkPurchaseEntitlement();
+    await pumpEventQueue();
+    app_state.prismUser = profileUser(premium: true);
+    customerInfo.complete(_proCustomer);
+
+    expect(await pending, PurchaseEntitlementStatus.none);
     expect(syncCalls, 0);
   });
 
@@ -725,12 +928,12 @@ void main() {
         apiKey: () => 'test-key',
       );
 
-      final Future<bool> pending = service.restore();
+      final Future<PurchaseEntitlementStatus> pending = service.restore();
       await pumpEventQueue();
       app_state.prismUser = profileUser(id: 'other-user');
       restoreResult.complete(_freeCustomerJson);
 
-      expect(await pending, isFalse);
+      expect(await pending, PurchaseEntitlementStatus.none);
       expect(syncCalls, 0);
       expect(app_state.prismUser.premium, isFalse);
     });
@@ -759,7 +962,7 @@ void main() {
         },
       );
 
-      expect(await service.restore(), isFalse);
+      expect(await service.restore(), PurchaseEntitlementStatus.none);
       expect(customerInfoReads, 0);
       expect(syncCalls, 1);
       expect(app_state.prismUser.subscriptionTier, 'free');
@@ -780,7 +983,7 @@ void main() {
         apiKey: () => 'test-key',
       );
 
-      final Future<bool> pending = service.restore();
+      final Future<PurchaseEntitlementStatus> pending = service.restore();
       await pumpEventQueue();
       for (final CustomerInfoUpdateListener listener in listeners) {
         listener(_proCustomer);
@@ -788,7 +991,7 @@ void main() {
       await pumpEventQueue();
       restoreResult.complete(_proCustomerJson);
 
-      expect(await pending, isTrue);
+      expect(await pending, PurchaseEntitlementStatus.serverConfirmed);
       expect(app_state.prismUser.premium, isTrue);
     });
   });

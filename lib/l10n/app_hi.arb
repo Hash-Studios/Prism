@@ -6135,6 +6135,10 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumGuestStorePurchaseActive": "स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।",
+  "@premiumGuestStorePurchaseActive": {
+    "description": "A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation."
+  },
   "premiumPurchasePending": "आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."

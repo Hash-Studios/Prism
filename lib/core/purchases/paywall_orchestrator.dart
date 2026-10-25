@@ -8,8 +8,8 @@ import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -225,9 +225,10 @@ class PaywallOrchestrator {
       }
 
       final bool completed = paywallResult == PaywallResult.purchased || paywallResult == PaywallResult.restored;
-      final bool isPremium =
-          isCurrentAccount() && completed && await PurchasesService.instance.checkAndPersistPremium(forceSync: true);
-      final bool confirmedForCurrentAccount = isCurrentAccount() && isPremium;
+      final PurchaseEntitlementStatus status = isCurrentAccount() && completed
+          ? await PurchasesService.instance.checkPurchaseEntitlement()
+          : PurchaseEntitlementStatus.none;
+      final bool confirmedForCurrentAccount = isCurrentAccount() && status == PurchaseEntitlementStatus.serverConfirmed;
       if (confirmedForCurrentAccount) {
         _resetAdWatchCounter();
       }
@@ -243,6 +244,12 @@ class PaywallOrchestrator {
         ),
       );
       if (!isCurrentAccount()) return PaywallResultValue.error;
+      if (completed && status == PurchaseEntitlementStatus.guestSignInRequired) {
+        final AppLocalizations l10n = await loadDeviceAppLocalizations();
+        if (!isCurrentAccount()) return PaywallResultValue.error;
+        toasts.info(l10n.premiumGuestStorePurchaseActive);
+        return PaywallResultValue.guestSignInRequired;
+      }
       if (completed && !confirmedForCurrentAccount) {
         final AppLocalizations l10n = await loadDeviceAppLocalizations();
         if (app_state.prismUser.premium) {
