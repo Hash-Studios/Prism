@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +58,44 @@ void main() {
     expect(locked, hasLength(shopItemsOf(ShopItemKind.theme).length));
     for (final PrismThemeOption option in locked) {
       expect(shopItem(option.shopItemId!)!.themeId, option.id);
+    }
+  });
+
+  test('the default app icon is injected outside the paid catalog', () {
+    expect(defaultAppIcon.kind, ShopItemKind.appIcon);
+    expect(defaultAppIcon.price, 0);
+    expect(shopItem(defaultAppIcon.id), isNull);
+    expect(shopCatalog, isNot(contains(defaultAppIcon)));
+    expect(shopItemsOf(ShopItemKind.appIcon).first, same(defaultAppIcon));
+    expect(shopItem('icon_noir'), isNotNull);
+    expect(shopItemsOf(ShopItemKind.appIcon), contains(shopItem('icon_noir')));
+    for (final ShopItemKind kind in ShopItemKind.values.where((ShopItemKind kind) => kind != ShopItemKind.appIcon)) {
+      expect(shopItemsOf(kind), shopCatalog.where((ShopItem item) => item.kind == kind).toList(), reason: '$kind');
+    }
+  });
+
+  test('default and paid icon names use generated localization for every ARB locale', () async {
+    final List<File> arbFiles = Directory(
+      'lib/l10n',
+    ).listSync().whereType<File>().where((File file) => file.path.endsWith('.arb')).toList();
+    expect(arbFiles, isNotEmpty);
+
+    for (final File file in arbFiles) {
+      final Map<String, dynamic> arb = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      final String locale = arb['@@locale'] as String;
+      final Object? defaultIconTranslation = arb['economyShopDefaultIcon'];
+      expect(defaultIconTranslation, isA<String>(), reason: locale);
+      expect(defaultIconTranslation, isNotEmpty, reason: locale);
+      final List<String> localeParts = locale.replaceAll('-', '_').split('_');
+      final AppLocalizations l10n = await loadAppLocalizations(
+        Locale.fromSubtags(
+          languageCode: localeParts.first,
+          countryCode: localeParts.length > 1 ? localeParts[1] : null,
+        ),
+      );
+      expect(shopItemName(defaultAppIcon, l10n), defaultIconTranslation, reason: locale);
+      expect(shopItemName(shopItem('icon_noir')!, l10n), l10n.economyShopNoir, reason: locale);
+      expect(shopItemName(defaultAppIcon, l10n), isNotEmpty, reason: locale);
     }
   });
 

@@ -105,6 +105,74 @@ void main() {
     expect(state.items, hasLength(5));
   });
 
+  test('the icon tab starts with the always-owned default, separate from paid ownership', () async {
+    bloc.add(const ShopEvent.kindChanged(ShopItemKind.appIcon));
+    await bloc.stream.firstWhere((ShopState state) => state.kind == ShopItemKind.appIcon);
+    bloc.add(const ShopEvent.started());
+    final ShopState state = await bloc.stream.firstWhere((ShopState state) => state.balance == 300);
+
+    expect(state.items.first, same(defaultAppIcon));
+    expect(state.owned, isEmpty);
+    expect(state.isOwned(defaultAppIcon), isTrue);
+    expect(state.isOwned(shopItem('icon_noir')!), isFalse);
+  });
+
+  test('inventory refreshes never add the default icon to owned or remove it from ownership', () async {
+    bloc.add(const ShopEvent.kindChanged(ShopItemKind.appIcon));
+    await bloc.stream.firstWhere((ShopState state) => state.kind == ShopItemKind.appIcon);
+    bloc.add(const ShopEvent.started());
+    await bloc.stream.firstWhere((ShopState state) => state.balance == 300);
+
+    coins.inventoryNotifier.value = const Inventory(owned: <String>{'icon_noir'});
+    final ShopState refreshed = await bloc.stream.firstWhere((ShopState state) => state.owned.contains('icon_noir'));
+    expect(refreshed.items.first, same(defaultAppIcon));
+    expect(refreshed.isOwned(defaultAppIcon), isTrue);
+    expect(refreshed.isOwned(shopItem('icon_noir')!), isTrue);
+    expect(refreshed.owned, <String>{'icon_noir'});
+
+    coins.inventoryNotifier.value = Inventory.empty;
+    final ShopState cleared = await bloc.stream.firstWhere((ShopState state) => state.owned.isEmpty);
+    expect(cleared.items.first, same(defaultAppIcon));
+    expect(cleared.isOwned(defaultAppIcon), isTrue);
+    expect(cleared.isOwned(shopItem('icon_noir')!), isFalse);
+    expect(cleared.owned, isEmpty);
+  });
+
+  test('the default icon cannot be purchased or equipped through shop events', () async {
+    bloc.add(const ShopEvent.started());
+    await bloc.stream.first;
+    final ShopState before = bloc.state;
+
+    bloc.add(const ShopEvent.purchaseRequested('icon_default'));
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, isEmpty);
+    expect(bloc.state, before);
+    expect(bloc.state.loadingItemId, isNull);
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
+
+    bloc.add(const ShopEvent.equipRequested(itemId: 'icon_default', equip: true));
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, isEmpty);
+    expect(bloc.state, before);
+    expect(bloc.state.loadingItemId, isNull);
+    expect(analytics.events, isEmpty);
+
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      calls.add((name, params));
+      return _reply(
+        after: 180,
+        extra: <String, Object?>{
+          'owned': <String>['frame_ring'],
+        },
+      );
+    };
+    final ShopState purchased = await settled(const ShopEvent.purchaseRequested('frame_ring'));
+    expect(calls.single.$1, 'purchaseShopItem');
+    expect(calls.single.$2['itemId'], 'frame_ring');
+    expect(purchased.owned, contains('frame_ring'));
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), hasLength(1));
+  });
+
   test('a purchase calls the server, stores the item and says so', () async {
     backend.onCall = (String name, Map<String, dynamic> params) async {
       calls.add((name, params));
