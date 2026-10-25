@@ -123,7 +123,7 @@ class _HeroRouter extends RootStackRouter {
 void main() {
   setUpFavouriteCounts();
 
-  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 240ms flight', (
+  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 160ms flight', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(400, 800);
@@ -177,7 +177,7 @@ void main() {
       matching: find.byType(Hero, skipOffstage: false),
     );
     final heroState = tester.state(destination);
-    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, const Duration(milliseconds: 240));
+    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, const Duration(milliseconds: 160));
     await tester.pump();
     expect(bloc.state, isA<WallpaperDetailLoading>());
     expect(tester.state(destination), same(heroState));
@@ -217,7 +217,7 @@ void main() {
             .topLeft
             .x;
 
-    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump(const Duration(milliseconds: 40));
     final before = flyingRect();
     expect(before.width, greaterThan(100));
     expect(before.width, lessThan(400));
@@ -245,7 +245,7 @@ void main() {
     expect(bloc.state, isA<WallpaperDetailLoaded>());
     expect(tester.state(destination), same(heroState));
     expect(find.byType(WallpaperActionBar), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump(const Duration(milliseconds: 40));
     final after = flyingRect();
     expect(after.width, greaterThan(before.width));
     expect(after.width, lessThan(400));
