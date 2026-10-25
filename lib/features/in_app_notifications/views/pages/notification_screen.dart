@@ -13,6 +13,7 @@ import 'package:Prism/features/in_app_notifications/domain/notification_grouping
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -156,7 +157,12 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                 onPressed: () => unawaited(_clearInbox(notifications.length)),
               ),
           ],
-          body: _body(context, state, initialLoading),
+          body: Stack(
+            children: <Widget>[
+              _body(context, state, initialLoading),
+              const Positioned(top: 0, left: 0, child: SpookyWeb()),
+            ],
+          ),
         );
       },
     );

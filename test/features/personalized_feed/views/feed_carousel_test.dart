@@ -16,6 +16,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dar
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -96,8 +97,10 @@ void main() {
   setUp(() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    spookyClock = () => DateTime(2026, 12);
   });
   tearDown(() async {
+    spookyClock = DateTime.now;
     if (getIt.isRegistered<StartupRepository>()) await getIt.unregister<StartupRepository>();
     AnalyticsRuntime.reset();
   });
@@ -739,5 +742,21 @@ void main() {
     expect(shownWallId(tester), 'a');
     expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 5);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 3);
+  });
+
+  group('Spooky theme card', () {
+    testWidgets('shows the card in the season when the theme is not Spooky', (tester) async {
+      spookyClock = () => DateTime(2026, 10, 31);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Spooky theme is here'), findsOneWidget);
+    });
+
+    testWidgets('hides the card once the season has ended', (tester) async {
+      spookyClock = () => DateTime(2026, 11, 3);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Spooky theme is here'), findsNothing);
+    });
   });
 }

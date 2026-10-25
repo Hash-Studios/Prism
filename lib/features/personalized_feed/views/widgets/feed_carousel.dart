@@ -19,10 +19,13 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +52,9 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
-/// The home carousel: Wall of the Day, the live Drop, boosted walls, the promo banner and the first wallpapers as
-/// rounded pages, with page dots over the bottom of the image.
+/// The home carousel: Wall of the Day, the live Drop, boosted walls, the Spooky theme card (season only, while the
+/// theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
+/// image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
@@ -150,6 +154,22 @@ class _FeedCarouselState extends State<FeedCarousel> {
     openPrismLink(context, app_state.bannerURL);
   }
 
+  void _trySpookyTheme() {
+    PrismHaptics.tap();
+    unawaited(
+      analytics.track(
+        const SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+          action: AnalyticsActionValue.bannerTapped,
+          sourceContext: 'spooky_theme_banner',
+        ),
+      ),
+    );
+    if (Theme.of(context).brightness == Brightness.light) context.setPrismThemeMode(ThemeMode.dark);
+    context.setPrismDarkTheme(prismSpookyThemeId);
+    unawaited(context.router.push(const ThemeViewRoute()));
+  }
+
   void _openWall(PrismFeedItem wall, int feedIndex, String sourceContext, String heroTag) {
     PrismHaptics.tap();
     unawaited(
@@ -198,6 +218,14 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
         (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
+      if (isSpookySeason() && !isSpookyActive(context))
+        (_) => FeedHeroCard(
+          image: const SpookyBannerArt(),
+          semanticLabel: context.l10n.spookyBannerTitle,
+          title: context.l10n.spookyBannerTitle,
+          subtitle: context.l10n.spookyBannerSubtitle,
+          onTap: _trySpookyTheme,
+        ),
       if (bannerImage.trim().isNotEmpty)
         (_) => FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),

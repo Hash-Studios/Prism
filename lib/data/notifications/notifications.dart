@@ -128,13 +128,16 @@ Future<void> _replaceAllPreservingReadState(
   List<InAppNotificationEntity> incoming,
   bool Function() isCurrentSession,
 ) async {
-  final Set<String> readIds = (await notificationsLocal.readAll())
-      .where((item) => item.read)
-      .map((item) => item.id)
-      .toSet();
+  final List<InAppNotificationEntity> current = await notificationsLocal.readAll();
+  final Set<String> readIds = current.where((item) => item.read).map((item) => item.id).toSet();
   if (!isCurrentSession()) return;
+  final Set<String> incomingIds = incoming.map((item) => item.id).toSet();
+  final List<InAppNotificationEntity> localOnly = current
+      .where((item) => item.id.startsWith('local_') && !incomingIds.contains(item.id))
+      .toList(growable: false);
+  final List<InAppNotificationEntity> combined = <InAppNotificationEntity>[...incoming, ...localOnly];
   final List<InAppNotificationEntity> merged =
-      incoming.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
+      combined.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   await notificationsLocal.writeAll(merged);
 }

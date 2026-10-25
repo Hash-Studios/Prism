@@ -148,6 +148,38 @@ void main() {
     expect(client.querySpecs, isEmpty);
   });
 
+  test('a forced sync keeps a local_ item but still drops a remote item that is gone', () async {
+    local.items = <InAppNotificationEntity>[
+      InAppNotificationEntity(
+        id: 'local_spooky_theme_2026',
+        title: 'announcement',
+        pageName: '',
+        body: 'body',
+        imageUrl: '',
+        arguments: const <Object>[],
+        url: '',
+        createdAt: recent,
+        read: false,
+        route: '/theme',
+      ),
+      InAppNotificationEntity(
+        id: 'remote-gone',
+        title: 'gone',
+        pageName: 'wall',
+        body: 'body',
+        imageUrl: '',
+        arguments: const <Object>[],
+        url: '',
+        createdAt: older,
+        read: false,
+      ),
+    ];
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(local.items.map((item) => item.title), unorderedEquals(<String>['announcement', 'first', 'second']));
+  });
+
   test('a deleted notification stays deleted after a forced sync', () async {
     tombstones.setOwner('user-1');
     await tombstones.addDeleted(<String>[_idFor('first', recent)]);
