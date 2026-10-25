@@ -1952,6 +1952,7 @@
   "premiumPageTitle": "Prism Premium",
   "premiumPageTryAgain": "Intentar de nuevo",
   "premiumPageViewPlans": "Ver planes",
+  "premiumGuestStorePurchaseActive": "Tu compra de la tienda está activa en este dispositivo. Inicia sesión para usar las funciones Pro vinculadas a tu cuenta.",
   "premiumPurchasePending": "Tu compra está guardada. Pro puede tardar un minuto en activarse.",
   "premiumPurchaseUnconfirmed": "No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.",
   "wallpaperAccentColor": "Color de acento",

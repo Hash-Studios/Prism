@@ -651,10 +651,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _restoring = true);
     toasts.success(l10n.accountRestoringPurchases, haptic: false);
     try {
-      final bool confirmed = await PurchasesService.instance.restore();
+      final PurchaseEntitlementStatus status = await PurchasesService.instance.restore();
       if (!mounted || !isCurrentAccount()) return;
-      if (confirmed) {
+      if (status == PurchaseEntitlementStatus.serverConfirmed) {
         toasts.success(l10n.accountPurchasesRestored);
+      } else if (status == PurchaseEntitlementStatus.guestSignInRequired) {
+        toasts.success(l10n.premiumGuestStorePurchaseActive);
       } else if (app_state.prismUser.premium) {
         toasts.success(l10n.accountPurchasesRestoredPending);
       } else {

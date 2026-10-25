@@ -11305,6 +11305,12 @@ abstract class AppLocalizations {
   /// **'View plans'**
   String get premiumPageViewPlans;
 
+  /// A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your store purchase is active on this device. Sign in to use account-based Pro features.'**
+  String get premiumGuestStorePurchaseActive;
+
   /// Toast after a purchase when the store has it but the server has not confirmed Pro yet.
   ///
   /// In en, this message translates to:

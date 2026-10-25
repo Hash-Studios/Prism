@@ -7429,6 +7429,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get premiumPageViewPlans => 'प्लान देखें';
 
   @override
+  String get premiumGuestStorePurchaseActive =>
+      'स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।';
+
+  @override
   String get premiumPurchasePending => 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।';
 
   @override

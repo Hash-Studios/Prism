@@ -58,6 +58,7 @@ enum PaywallResultValue {
   cancelled,
   purchased,
   restored,
+  guestSignInRequired,
   rcError,
   unknown;
 

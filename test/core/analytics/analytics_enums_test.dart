@@ -51,6 +51,7 @@ void main() {
         'cancelled',
         'purchased',
         'restored',
+        'guest_sign_in_required',
         'rc_error',
         'unknown',
       ],

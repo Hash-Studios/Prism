@@ -7326,6 +7326,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get premiumPageViewPlans => 'Lihat paket';
 
   @override
+  String get premiumGuestStorePurchaseActive =>
+      'Pembelian toko Anda aktif di perangkat ini. Masuk untuk menggunakan fitur Pro berbasis akun.';
+
+  @override
   String get premiumPurchasePending => 'Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.';
 
   @override
