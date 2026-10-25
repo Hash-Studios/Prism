@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -37,7 +38,6 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:collection/collection.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PersonalizedFeedRepository)
@@ -249,7 +249,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
             ? Future<void>.value()
             : _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
         _catalog = await PersonalizedInterestsCatalog.load(
-          remoteConfig: FirebaseRemoteConfig.instance,
+          remoteConfig: FirebaseInit.remoteConfigIfInitialized,
           settingsLocal: _settingsLocal,
         );
         final Map<String, dynamic> userDoc = await userDocFuture;

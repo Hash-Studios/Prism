@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -15,7 +16,6 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 
 final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0);
@@ -23,7 +23,7 @@ final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();
   final List<PersonalizedInterest> catalog = await PersonalizedInterestsCatalog.load(
-    remoteConfig: FirebaseRemoteConfig.instance,
+    remoteConfig: FirebaseInit.remoteConfigIfInitialized,
     settingsLocal: settingsLocal,
   );
   if (catalog.isEmpty || !context.mounted) {
