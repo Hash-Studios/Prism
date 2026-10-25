@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/search.sh"
+require_search_paths lib test
+
 if command -v rg >/dev/null 2>&1; then
   matches="$(
     rg -n --no-heading "String\\.fromEnvironment\\(" lib test \

@@ -27,22 +27,31 @@ for backend in "${backends[@]}"; do
     ln -s "$(command -v rg)" "$scratch/$backend/rg"
   fi
   export SEARCH_HELPER="$root/tool/lib/search.sh"
-  for scenario in match no-match missing invalid; do
+  for scenario in match no-match missing missing-dart mixed-missing invalid; do
     pattern=needle
     target="$scratch/work/lib"
     [[ $scenario != no-match ]] || pattern=absent
     [[ $scenario != missing ]] || target="$scratch/missing"
+    [[ $scenario != missing-dart ]] || target="$scratch/missing.dart"
+    [[ $scenario != mixed-missing ]] || target="$scratch/missing"
     [[ $scenario != invalid ]] || pattern='['
     search_status=0
-    PATH="$scratch/$backend" /bin/bash -c 'source "$SEARCH_HELPER"; search "$1" "$2"' \
-      _ "$pattern" "$target" > "$scratch/out" 2> "$scratch/err" || search_status=$?
+    PATH="$scratch/$backend" /bin/bash -c '
+      source "$SEARCH_HELPER"
+      if [[ $3 == mixed-missing ]]; then
+        search "$1" "${2%/missing}/work/lib" "$2"
+      else
+        search "$1" "$2"
+      fi
+    ' \
+      _ "$pattern" "$target" "$scenario" > "$scratch/out" 2> "$scratch/err" || search_status=$?
     case $scenario in
       match) [[ $search_status == 0 && -s "$scratch/out" ]] ;;
       no-match) [[ $search_status == 0 && ! -s "$scratch/out" && ! -s "$scratch/err" ]] ;;
-      missing|invalid)
-        [[ $search_status == 2 && -s "$scratch/err" ]]
+      missing|missing-dart|mixed-missing|invalid)
+        [[ $search_status == 2 && -s "$scratch/err" ]] || exit 1
         ! grep -q 'command not found' "$scratch/err"
-        if [[ $scenario == missing ]]; then
+        if [[ $scenario == *missing* ]]; then
           grep -Fq "$target" "$scratch/err"
           grep -Fq 'No such file or directory' "$scratch/err"
         else
