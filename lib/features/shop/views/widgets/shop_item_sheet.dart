@@ -61,7 +61,7 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
   }
 
   Future<void> _useIcon() async {
-    final bool changed = await AppIconChannel.setIcon(item.id);
+    final bool changed = await AppIconChannel.setIcon(item == defaultAppIcon ? null : item.id);
     if (!mounted) return;
     if (changed) {
       toasts.success(context.l10n.economyShopIconEnabled(shopItemName(item, context.l10n)));

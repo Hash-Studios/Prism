@@ -3,6 +3,8 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/app_icon_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_app_icon_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
@@ -149,8 +151,10 @@ void main() {
       await tester.pumpWidget(
         host(
           Builder(
-            builder: (context) =>
-                TextButton(onPressed: () => showShopItemSheet(context, shopItem(id)!), child: const Text('open')),
+            builder: (context) => TextButton(
+              onPressed: () => showShopItemSheet(context, id == defaultAppIcon.id ? defaultAppIcon : shopItem(id)!),
+              child: const Text('open'),
+            ),
           ),
         ),
       );
@@ -211,6 +215,94 @@ void main() {
       await tester.pumpAndSettle();
       await openSheet(tester, 'icon_noir');
       expect(find.text('Use icon'), findsOneWidget);
+    });
+
+    testWidgets('the default icon is free and owned, and Use icon resets the launcher icon', (tester) async {
+      final List<Object?> setCalls = <Object?>[];
+      final PrismAppIconHostApi previousApi = AppIconChannel.api;
+      const String channel = 'dev.flutter.pigeon.Prism.PrismAppIconHostApi.setAppIcon';
+      final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMessageHandler(channel, (ByteData? message) async {
+        setCalls.add((PrismAppIconHostApi.pigeonChannelCodec.decodeMessage(message)! as List<Object?>).first);
+        return PrismAppIconHostApi.pigeonChannelCodec.encodeMessage(<Object?>[true]);
+      });
+      addTearDown(() => messenger.setMockMessageHandler(channel, null));
+      addTearDown(() => AppIconChannel.api = previousApi);
+      AppIconChannel.api = PrismAppIconHostApi();
+      coins.balanceNotifier.value = 0;
+
+      expect(shopItemsOf(ShopItemKind.appIcon).first, defaultAppIcon);
+      await tester.pumpWidget(
+        host(
+          Builder(
+            builder: (context) =>
+                TextButton(onPressed: () => showShopItemSheet(context, defaultAppIcon), child: const Text('open')),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.textContaining('Buy for'), findsNothing);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_default.jpg')), findsOneWidget);
+
+      await tester.tap(find.text('Use icon'));
+      await tester.pumpAndSettle();
+      expect(setCalls, <Object?>[null]);
+      expect(calls, isEmpty);
+      expect(coins.balanceNotifier.value, 0);
+      expect(coins.inventoryNotifier.value, Inventory.empty);
+      expect(find.byType(ShopItemSheet), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('a failed default icon reset keeps the sheet open and can be retried', (tester) async {
+      final List<Object?> setCalls = <Object?>[];
+      final PrismAppIconHostApi previousApi = AppIconChannel.api;
+      const String channel = 'dev.flutter.pigeon.Prism.PrismAppIconHostApi.setAppIcon';
+      final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMessageHandler(channel, (ByteData? message) async {
+        setCalls.add((PrismAppIconHostApi.pigeonChannelCodec.decodeMessage(message)! as List<Object?>).first);
+        return PrismAppIconHostApi.pigeonChannelCodec.encodeMessage(<Object?>[setCalls.length > 1]);
+      });
+      addTearDown(() => messenger.setMockMessageHandler(channel, null));
+      addTearDown(() => AppIconChannel.api = previousApi);
+      AppIconChannel.api = PrismAppIconHostApi();
+      coins.balanceNotifier.value = 0;
+
+      await openSheet(tester, 'icon_default');
+
+      await tester.tap(find.text('Use icon'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ShopItemSheet), findsOneWidget);
+      expect(
+        toastCalls
+            .where((call) => call.method == 'showToast')
+            .map((call) => (call.arguments as Map<Object?, Object?>)['msg']),
+        <String>[AppLocalizationsEn().economyShopChangeIconFailed],
+      );
+
+      // Fluttertoast clears its Dart-side showing flag one second after the platform reply.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('Use icon'));
+      await tester.pumpAndSettle();
+
+      expect(setCalls, <Object?>[null, null]);
+      expect(find.byType(ShopItemSheet), findsNothing);
+      expect(
+        toastCalls
+            .where((call) => call.method == 'showToast')
+            .map((call) => (call.arguments as Map<Object?, Object?>)['msg']),
+        <String>[
+          AppLocalizationsEn().economyShopChangeIconFailed,
+          AppLocalizationsEn().economyShopIconEnabled('Default'),
+        ],
+      );
+      expect(calls, isEmpty);
+      expect(coins.balanceNotifier.value, 0);
+      expect(coins.inventoryNotifier.value, Inventory.empty);
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('an app icon sheet shows the real art and settles', (tester) async {
@@ -314,6 +406,61 @@ void main() {
   });
 
   group('ShopPage', () {
+    testWidgets('the default icon stays owned while paid icon ownership changes and tabs switch', (tester) async {
+      Finder itemTile(String name) => find.ancestor(of: find.text(name), matching: find.byType(ShopItemTile));
+
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      coins.balanceNotifier.value = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeData.light(),
+          home: const ShopPage(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Icons'));
+      await tester.pumpAndSettle();
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.descendant(of: itemTile('Default'), matching: find.text('Owned')), findsOneWidget);
+      expect(find.text('Noir'), findsOneWidget);
+      expect(find.descendant(of: itemTile('Noir'), matching: find.text('200')), findsOneWidget);
+
+      coins.inventoryNotifier.value = const Inventory(owned: <String>{'icon_noir'});
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Themes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Icons'));
+      await tester.pumpAndSettle();
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.descendant(of: itemTile('Default'), matching: find.text('Owned')), findsOneWidget);
+      expect(find.descendant(of: itemTile('Noir'), matching: find.text('Owned')), findsOneWidget);
+
+      coins.inventoryNotifier.value = Inventory.empty;
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.text('Noir'), findsOneWidget);
+      expect(find.descendant(of: itemTile('Default'), matching: find.text('Owned')), findsOneWidget);
+      expect(find.descendant(of: itemTile('Noir'), matching: find.text('Owned')), findsNothing);
+      expect(find.descendant(of: itemTile('Noir'), matching: find.text('200')), findsOneWidget);
+
+      await tester.tap(find.text('Default'));
+      await tester.pumpAndSettle();
+      expect(find.text('Use icon'), findsOneWidget);
+      expect(find.textContaining('Buy for'), findsNothing);
+      expect(find.textContaining('Watch a video'), findsNothing);
+      expect(find.text('Sync reward'), findsNothing);
+      expect(calls, isEmpty);
+    });
+
     testWidgets('shows the themes first and switches kind with the segmented control', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1;

@@ -5239,6 +5239,7 @@
   },
   "economyShopCottonBlue": "Biru Kapas",
   "economyShopDeepOcean": "Laut Dalam",
+  "economyShopDefaultIcon": "Bawaan",
   "economyShopEarnXp": "Dapatkan XP",
   "economyShopEarnedAtLifetimeXp": "Diperoleh pada peringkat {rank} dengan total XP.",
   "@economyShopEarnedAtLifetimeXp": {

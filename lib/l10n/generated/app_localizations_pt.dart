@@ -6174,6 +6174,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyShopDeepOcean => 'Oceano profundo';
 
   @override
+  String get economyShopDefaultIcon => 'Padrão';
+
+  @override
   String get economyShopEarnXp => 'Ganhar XP';
 
   @override
@@ -16149,6 +16152,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get economyShopDeepOcean => 'Oceano profundo';
+
+  @override
+  String get economyShopDefaultIcon => 'Padrão';
 
   @override
   String get economyShopEarnXp => 'Ganhar XP';

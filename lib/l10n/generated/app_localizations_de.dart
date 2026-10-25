@@ -6048,6 +6048,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyShopDeepOcean => 'Tiefsee';
 
   @override
+  String get economyShopDefaultIcon => 'Standard';
+
+  @override
   String get economyShopEarnXp => 'XP verdienen';
 
   @override

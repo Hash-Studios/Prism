@@ -5110,6 +5110,7 @@
   },
   "economyShopCottonBlue": "Baumwollblau",
   "economyShopDeepOcean": "Tiefsee",
+  "economyShopDefaultIcon": "Standard",
   "economyShopEarnXp": "XP verdienen",
   "economyShopEarnedAtLifetimeXp": "Mit Rang {rank} und deinen gesamten XP verdient.",
   "@economyShopEarnedAtLifetimeXp": {
