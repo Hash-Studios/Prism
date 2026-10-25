@@ -3117,6 +3117,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Live Activities estão desativadas ou não são compatíveis';
 
   @override
+  String get debugReviewActivityPreview => 'Pré-visualizar atividade da fila de revisão';
+
+  @override
+  String get debugReviewActivityPreviewDescription => 'Mostra a contagem de revisões admin na tela de bloqueio';
+
+  @override
   String get debugAllTags => 'Todas as tags';
 
   @override
@@ -13116,6 +13122,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get debugLiveActivityUnavailable => 'Live Activities estão desativadas ou não são compatíveis';
+
+  @override
+  String get debugReviewActivityPreview => 'Pré-visualizar atividade da fila de revisão';
+
+  @override
+  String get debugReviewActivityPreviewDescription => 'Mostra a contagem de revisões admin na tela de bloqueio';
 
   @override
   String get debugAllTags => 'Todas as tags';

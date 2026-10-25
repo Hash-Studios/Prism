@@ -2821,6 +2821,8 @@
   "debugLiveActivityPreview": "Preview Live Activity",
   "debugLiveActivityPreviewDescription": "Runs a sample AI generation activity: ready after 8 seconds",
   "debugLiveActivityUnavailable": "Live Activities are off or not supported",
+  "debugReviewActivityPreview": "Preview review queue activity",
+  "debugReviewActivityPreviewDescription": "Shows the admin review count on the Lock Screen",
   "debugAllTags": "All tags",
   "debugAndroidVersion": "Android Version",
   "debugAnimationSpeed": "Animation speed",

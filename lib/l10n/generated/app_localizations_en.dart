@@ -3061,6 +3061,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Live Activities are off or not supported';
 
   @override
+  String get debugReviewActivityPreview => 'Preview review queue activity';
+
+  @override
+  String get debugReviewActivityPreviewDescription => 'Shows the admin review count on the Lock Screen';
+
+  @override
   String get debugAllTags => 'All tags';
 
   @override

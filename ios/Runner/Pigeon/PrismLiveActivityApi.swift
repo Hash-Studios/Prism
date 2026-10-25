@@ -55,6 +55,10 @@ private func wrapError(_ error: Any) -> [Any?] {
   ]
 }
 
+private func createConnectionError(withChannelName channelName: String) -> PrismLiveActivityError {
+  return PrismLiveActivityError(code: "channel-error", message: "Unable to establish connection on channel: '\(channelName)'.", details: "")
+}
+
 enum PrismLiveActivityApiPigeonInternal {
   static func isNullish(_ value: Any?) -> Bool {
     guard let innerValue = value else {
@@ -306,6 +310,11 @@ protocol PrismLiveActivityHostApi {
   func failAiGeneration(activityId: String, detail: String) throws
   /// Removes the activity at once, for a generation that stopped without a result to show.
   func cancelAiGeneration(activityId: String) throws
+  /// Sends the latest review queue tokens to [PrismLiveActivityFlutterApi], then every change. The app watches the
+  /// tokens from launch, so each call replays the latest ones.
+  func startReviewTokenUpdates() throws
+  /// Starts a review queue activity from the app with the given content. False when Live Activities are off.
+  func startReviewQueue(pending: Int64, newestBy: String?, oldestAt: Double?) throws -> Bool
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -381,6 +390,96 @@ class PrismLiveActivityHostApiSetup {
       }
     } else {
       cancelAiGenerationChannel.setMessageHandler(nil)
+    }
+    /// Sends the latest review queue tokens to [PrismLiveActivityFlutterApi], then every change. The app watches the
+    /// tokens from launch, so each call replays the latest ones.
+    let startReviewTokenUpdatesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismLiveActivityHostApi.startReviewTokenUpdates\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      startReviewTokenUpdatesChannel.setMessageHandler { _, reply in
+        do {
+          try api.startReviewTokenUpdates()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      startReviewTokenUpdatesChannel.setMessageHandler(nil)
+    }
+    /// Starts a review queue activity from the app with the given content. False when Live Activities are off.
+    let startReviewQueueChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismLiveActivityHostApi.startReviewQueue\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      startReviewQueueChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let pendingArg = args[0] as! Int64
+        let newestByArg: String? = nilOrValue(args[1])
+        let oldestAtArg: Double? = nilOrValue(args[2])
+        do {
+          let result = try api.startReviewQueue(pending: pendingArg, newestBy: newestByArg, oldestAt: oldestAtArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      startReviewQueueChannel.setMessageHandler(nil)
+    }
+  }
+}
+
+/// The server starts and updates the admin review queue activity through APNs, so it needs the device's tokens.
+///
+/// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
+protocol PrismLiveActivityFlutterApiProtocol {
+  func onReviewPushToStartToken(token tokenArg: String, completion: @escaping (Result<Void, PrismLiveActivityError>) -> Void)
+  /// Null when no review queue activity is running.
+  func onReviewActivityToken(token tokenArg: String?, completion: @escaping (Result<Void, PrismLiveActivityError>) -> Void)
+}
+class PrismLiveActivityFlutterApi: PrismLiveActivityFlutterApiProtocol {
+  private let binaryMessenger: FlutterBinaryMessenger
+  private let messageChannelSuffix: String
+  init(binaryMessenger: FlutterBinaryMessenger, messageChannelSuffix: String = "") {
+    self.binaryMessenger = binaryMessenger
+    self.messageChannelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+  }
+  var codec: PrismLiveActivityApiPigeonCodec {
+    return PrismLiveActivityApiPigeonCodec.shared
+  }
+  func onReviewPushToStartToken(token tokenArg: String, completion: @escaping (Result<Void, PrismLiveActivityError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.Prism.PrismLiveActivityFlutterApi.onReviewPushToStartToken\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([tokenArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PrismLiveActivityError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  /// Null when no review queue activity is running.
+  func onReviewActivityToken(token tokenArg: String?, completion: @escaping (Result<Void, PrismLiveActivityError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.Prism.PrismLiveActivityFlutterApi.onReviewActivityToken\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([tokenArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PrismLiveActivityError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
     }
   }
 }

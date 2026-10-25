@@ -2942,6 +2942,8 @@
   "debugLiveActivityPreview": "Pratinjau Live Activity",
   "debugLiveActivityPreviewDescription": "Menjalankan contoh aktivitas: siap setelah 8 detik",
   "debugLiveActivityUnavailable": "Live Activities nonaktif atau tidak didukung",
+  "debugReviewActivityPreview": "Pratinjau aktivitas antrean tinjauan",
+  "debugReviewActivityPreviewDescription": "Menampilkan jumlah tinjauan admin di Layar Kunci",
   "debugAllTags": "Semua tag",
   "debugAndroidVersion": "Versi Android",
   "debugAnimationSpeed": "Kecepatan animasi",

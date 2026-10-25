@@ -2835,6 +2835,8 @@
   "debugLiveActivityPreview": "Live Activity पूर्वावलोकन",
   "debugLiveActivityPreviewDescription": "नमूना AI जनरेशन गतिविधि चलाता है: 8 सेकंड बाद तैयार",
   "debugLiveActivityUnavailable": "Live Activities बंद हैं या समर्थित नहीं हैं",
+  "debugReviewActivityPreview": "समीक्षा कतार गतिविधि का पूर्वावलोकन",
+  "debugReviewActivityPreviewDescription": "लॉक स्क्रीन पर एडमिन समीक्षा संख्या दिखाता है",
   "debugAllTags": "सभी टैग",
   "debugAndroidVersion": "Android संस्करण",
   "debugAnimationSpeed": "ऐनिमेशन की गति",

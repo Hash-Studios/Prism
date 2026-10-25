@@ -2813,6 +2813,8 @@
   "debugLiveActivityPreview": "Live-Activity-Vorschau",
   "debugLiveActivityPreviewDescription": "Startet eine Beispiel-Aktivität: fertig nach 8 Sekunden",
   "debugLiveActivityUnavailable": "Live-Aktivitäten sind aus oder nicht unterstützt",
+  "debugReviewActivityPreview": "Vorschau der Prüfwarteschlangen-Aktivität",
+  "debugReviewActivityPreviewDescription": "Zeigt die Anzahl der Prüfungen auf dem Sperrbildschirm",
   "debugAllTags": "Alle Tags",
   "debugAndroidVersion": "Android-Version",
   "debugAnimationSpeed": "Animationsgeschwindigkeit",

@@ -19,6 +19,7 @@ extension Color {
 struct PrismMark: View {
   var size: CGFloat
   var ringOpacity: Double = 1
+  var crystal = true
 
   static let ringColors: [Color] = [
     Color(argb: 0xFFB65CF0), Color(argb: 0xFF9FA6F5), Color(argb: 0xFF4FE3EE), Color(argb: 0xFF7CF0C0),
@@ -36,8 +37,10 @@ struct PrismMark: View {
         .inset(by: size * 5 / 160)
         .stroke(Self.ring, lineWidth: size * 10 / 160)
         .opacity(ringOpacity)
-      PrismCrystal()
-        .frame(width: size * 0.42, height: size * 0.44)
+      if crystal {
+        PrismCrystal()
+          .frame(width: size * 0.42, height: size * 0.44)
+      }
     }
     .frame(width: size, height: size)
   }

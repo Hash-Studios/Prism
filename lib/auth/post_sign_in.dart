@@ -9,6 +9,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
@@ -218,6 +219,7 @@ Future<void> completeSignIn({
   }
   unawaited(FcmTokenService.instance.syncToken(userId: user.uid, messaging: resolvedMessaging));
   FcmTokenService.instance.listenForTokenRefresh(userId: user.uid, messaging: resolvedMessaging);
+  unawaited(ReviewLiveActivitySync.start());
   Future<void> runBootstrap() async {
     operation.requireCurrent();
     final Future<void> favourites = _startFavouritesSync(user.uid);

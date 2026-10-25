@@ -39,9 +39,10 @@ import UserNotifications
       binaryMessenger: engineBridge.applicationRegistrar.messenger(),
       api: PrismAppIconHostApiImpl()
     )
+    let messenger = engineBridge.applicationRegistrar.messenger()
     PrismLiveActivityHostApiSetup.setUp(
-      binaryMessenger: engineBridge.applicationRegistrar.messenger(),
-      api: PrismLiveActivityHostApiImpl()
+      binaryMessenger: messenger,
+      api: PrismLiveActivityHostApiImpl(flutterApi: PrismLiveActivityFlutterApi(binaryMessenger: messenger))
     )
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,

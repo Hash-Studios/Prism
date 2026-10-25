@@ -3091,6 +3091,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Las Live Activities están desactivadas o no son compatibles';
 
   @override
+  String get debugReviewActivityPreview => 'Vista previa de la actividad de la cola de revisión';
+
+  @override
+  String get debugReviewActivityPreviewDescription =>
+      'Muestra el número de revisiones pendientes en la pantalla de bloqueo';
+
+  @override
   String get debugAllTags => 'Todas las etiquetas';
 
   @override

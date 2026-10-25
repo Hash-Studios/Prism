@@ -39,4 +39,20 @@ abstract class PrismLiveActivityHostApi {
 
   /// Removes the activity at once, for a generation that stopped without a result to show.
   void cancelAiGeneration(String activityId);
+
+  /// Sends the latest review queue tokens to [PrismLiveActivityFlutterApi], then every change. The app watches the
+  /// tokens from launch, so each call replays the latest ones.
+  void startReviewTokenUpdates();
+
+  /// Starts a review queue activity from the app with the given content. False when Live Activities are off.
+  bool startReviewQueue(int pending, String? newestBy, double? oldestAt);
+}
+
+/// The server starts and updates the admin review queue activity through APNs, so it needs the device's tokens.
+@FlutterApi()
+abstract class PrismLiveActivityFlutterApi {
+  void onReviewPushToStartToken(String token);
+
+  /// Null when no review queue activity is running.
+  void onReviewActivityToken(String? token);
 }

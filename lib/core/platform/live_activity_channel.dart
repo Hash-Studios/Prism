@@ -13,6 +13,8 @@ class LiveActivityChannel {
   @visibleForTesting
   static bool Function() isSupportedPlatform = () => !kIsWeb && Platform.isIOS;
 
+  static bool get isSupported => isSupportedPlatform();
+
   static Future<AiGenerationActivity?> startAiGeneration(AiActivityRequest request) async {
     if (!isSupportedPlatform()) return null;
     try {
@@ -21,6 +23,30 @@ class LiveActivityChannel {
       return AiGenerationActivity._(id);
     } on Object {
       return null;
+    }
+  }
+
+  /// Asks the native side to send the review queue tokens to [PrismLiveActivityFlutterApi] again.
+  static Future<void> startReviewTokenUpdates() async {
+    if (!isSupportedPlatform()) return;
+    try {
+      await api.startReviewTokenUpdates();
+    } on Object {
+      return;
+    }
+  }
+
+  /// Starts a review queue activity from the app. False when Live Activities are off or not supported.
+  static Future<bool> startReviewQueue({required int pending, String? newestBy, DateTime? oldestAt}) async {
+    if (!isSupportedPlatform()) return false;
+    try {
+      return await api.startReviewQueue(
+        pending,
+        newestBy,
+        oldestAt == null ? null : oldestAt.millisecondsSinceEpoch / 1000,
+      );
+    } on Object {
+      return false;
     }
   }
 }
