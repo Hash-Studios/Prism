@@ -10,6 +10,9 @@ class _DelayedMessaging extends Fake implements FirebaseMessaging {
   final gate = Completer<void>();
 
   @override
+  Future<String?> getAPNSToken() async => 'test-apns-token';
+
+  @override
   Future<void> unsubscribeFromTopic(String topic) async {
     calls.add(topic);
     started.complete();
@@ -22,6 +25,11 @@ void main() {
     final messaging = _DelayedMessaging();
     bool current = true;
     final pending = unsubscribeFromTopicSafely(messaging, 'u_old', sourceTag: 'test', isCurrent: () => current);
+    addTearDown(() async {
+      current = false;
+      if (!messaging.gate.isCompleted) messaging.gate.complete();
+      await pending;
+    });
     await messaging.started.future;
     current = false;
     messaging.gate.complete();

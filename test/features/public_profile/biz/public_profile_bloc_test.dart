@@ -15,6 +15,7 @@ import 'package:Prism/features/public_profile/domain/entities/user_relation_kind
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -41,6 +42,9 @@ class _Messaging {
   Completer<void>? subscribeStarted;
 
   Future<Object?> handle(MethodCall call) async {
+    if (call.method == 'Messaging#getAPNSToken') {
+      return <String, String>{'token': 'test-apns-token'};
+    }
     final arguments = call.arguments as Map<Object?, Object?>;
     final topic = arguments['topic']! as String;
     switch (call.method) {
@@ -109,6 +113,7 @@ void main() {
   late _MockSearch search;
 
   setUp(() {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     AnalyticsRuntime.reset();
     walls = _MockWalls();
     follow = _MockFollow();
@@ -124,6 +129,7 @@ void main() {
   });
 
   tearDown(() async {
+    debugDefaultTargetPlatformOverride = null;
     AnalyticsRuntime.reset();
     await getIt.reset();
     app_state.prismUser = profileUser(id: '', loggedIn: false);
@@ -635,7 +641,10 @@ void main() {
     when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
     when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
     final bloc = buildBloc();
-    addTearDown(bloc.close);
+    addTearDown(() async {
+      if (!gate.isCompleted) gate.complete();
+      await bloc.close();
+    });
     bloc.add(followEvent);
     await pumpEventQueue();
     expect(messaging.calls.any((call) => call.$1), isTrue);
@@ -660,6 +669,10 @@ void main() {
         messaging.subscribeStarted = Completer<void>();
         when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
         final bloc = buildBloc();
+        addTearDown(() async {
+          if (!gate.isCompleted) gate.complete();
+          await bloc.close();
+        });
         bloc.add(followEvent);
         await messaging.subscribeStarted!.future;
         // Drain the platform-channel delivery while held.
