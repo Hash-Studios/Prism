@@ -9,8 +9,11 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/session/data/repositories/session_repository_impl.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -240,6 +243,80 @@ void main() {
     firestore.writeGate.complete();
     await signIn;
     expect(completed, isTrue);
+  });
+
+  test('Google sign-in survives a same-account persisted session reload during its profile write', () async {
+    final repository = SessionRepositoryImpl(SessionLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<SessionRepository>(repository);
+    final firebase = _Auth();
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _GoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+    await firestore.writeStarted.future;
+    await app_state.persistPrismUser();
+    final published = repository.currentUser;
+    await repository.getSession();
+    expect(repository.currentUser, isNot(same(published)));
+    expect(repository.currentUser.id, 'u1');
+    expect(repository.currentUser.loggedIn, isTrue);
+    firestore.writeGate.complete();
+
+    expect(await pending, SignInOutcome.signedIn);
+    expect(app_state.prismUser.id, 'u1');
+    expect(app_state.prismUser.loggedIn, isTrue);
+    expect(firebase.currentUser?.uid, 'u1');
+    expect(analytics.userIds, <String>['u1']);
+    expect(analytics.events.last.toWireParameters()['result'], 'success');
+  });
+
+  test('initial naming applies to the reloaded same-account profile and survives persistence', () async {
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    final local = SessionLocalDataSource(InMemoryLocalStore());
+    final repository = SessionRepositoryImpl(local);
+    getIt.registerSingleton<SessionRepository>(repository);
+    final started = Completer<void>();
+    final claimed = Completer<Object?>();
+    UsernameService.instance = UsernameService(
+      request: (_) {
+        started.complete();
+        return claimed.future;
+      },
+    );
+    final pending = GoogleAuth(
+      auth: _Auth(),
+      googleSignIn: _GoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+    await started.future;
+    await app_state.persistPrismUser();
+    await repository.getSession();
+    claimed.complete(<String, Object?>{'username': 'ServerWinner'});
+
+    expect(await pending, SignInOutcome.signedIn);
+    expect(app_state.prismUser.username, 'ServerWinner');
+    expect(local.readCurrentUser().username, 'ServerWinner');
+  });
+
+  test('same-account logout during a profile write still stops sign-in', () async {
+    final firebase = _Auth();
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _GoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+    final rejected = expectLater(pending, throwsStateError);
+    await firestore.writeStarted.future;
+    app_state.prismUser = profileUser(loggedIn: false);
+    firestore.writeGate.complete();
+    await rejected;
+    expect(app_state.prismUser.id, 'u1');
+    expect(app_state.prismUser.loggedIn, isFalse);
+    expect(firebase.currentUser?.uid, 'u1');
   });
 
   test('sign-in reads the user document once for coins, not twice', () async {
