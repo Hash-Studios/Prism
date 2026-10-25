@@ -20,8 +20,8 @@ import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -51,11 +51,19 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(EconomyConfig.refreshIfStale());
-    unawaited(CoinsService.instance.refreshCreatorProgress());
-    WidgetsBinding.instance.addPostFrameCallback((_) => CoinsService.instance.refreshSpinWheelStatus());
+    _scheduleCreatorProgressRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) CoinsService.instance.refreshSpinWheelStatus();
+    });
     if (widget.scrollToEarn) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_earnKey));
     }
+  }
+
+  void _scheduleCreatorProgressRefresh() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(CoinsService.instance.refreshCreatorProgress());
+    });
   }
 
   @override
@@ -71,7 +79,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
     final TabsRouter? tabs = TabsRouterScope.of(context, watch: true)?.controller;
     if (widget.showBack || tabs == null) return;
     final bool active = tabs.current.name == RewardsTabRoute.name;
-    if (active && _tabWasActive == false) unawaited(CoinsService.instance.refreshCreatorProgress());
+    if (active && _tabWasActive == false) _scheduleCreatorProgressRefresh();
     _tabWasActive = active;
   }
 

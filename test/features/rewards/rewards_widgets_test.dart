@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -14,13 +17,15 @@ import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
+import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +38,42 @@ import '../quests/fake_quests_repository.dart';
 class _MockBadgesBloc extends MockBloc<BadgesEvent, BadgesState> implements BadgesBloc {}
 
 class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBloc {}
+
+class _RefreshTabsRouter extends RootStackRouter {
+  @override
+  List<AutoRoute> get routes => <AutoRoute>[
+    AutoRoute(
+      path: '/',
+      page: PageInfo(
+        'Shell',
+        builder: (_) => const AutoTabsRouter(routes: <PageRouteInfo>[RewardsTabRoute(), HomeTabRoute()]),
+      ),
+      children: <AutoRoute>[
+        AutoRoute(path: 'rewards', page: RewardsTabRoute.page),
+        AutoRoute(
+          path: 'home',
+          page: PageInfo(HomeTabRoute.name, builder: (_) => const Text('Home tab')),
+        ),
+      ],
+    ),
+  ];
+}
+
+Map<String, dynamic> _creatorEconomy(int approved) => <String, dynamic>{
+  'rev': approved,
+  'creator': <String, dynamic>{
+    'version': 1,
+    'trackedSinceMs': DateTime.utc(2026, 10, 2).millisecondsSinceEpoch,
+    'approvedWalls': approved,
+    'uniqueMembers': 7,
+    'awardedIds': <String>[],
+    'milestones': <Object?>[
+      <String, Object?>{'id': 'approved_5', 'metric': 'approvedWalls', 'target': 5, 'xp': 100},
+      <String, Object?>{'id': 'members_10', 'metric': 'uniqueMembers', 'target': 10, 'xp': 50},
+    ],
+    'weeks': <Object?>[],
+  },
+};
 
 /// The Rewards page builds the Today card and the Drop card, which each read a bloc from [getIt].
 void _registerEconomyBlocs() {
@@ -188,6 +229,113 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   }
+
+  Future<CoinsTestFirestore> prepareCreatorRefresh(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(400, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final CoinsTestBackend backend = CoinsTestBackend();
+    await backend.install();
+    getIt.registerFactory<StreakShopBloc>(() {
+      final _MockShopBloc shop = _MockShopBloc();
+      whenListen(shop, const Stream<StreakShopState>.empty(), initialState: const StreakShopState());
+      return shop;
+    });
+    getIt.registerFactory<BadgesBloc>(() {
+      final _MockBadgesBloc badges = _MockBadgesBloc();
+      whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
+      return badges;
+    });
+    _registerEconomyBlocs();
+    final CoinsTestFirestore firestore = CoinsTestFirestore()
+      ..userData = <String, dynamic>{'coins': 100}
+      ..docs['usersv2/${backend.userId}/private/economy'] = _creatorEconomy(2);
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    return firestore;
+  }
+
+  testWidgets('opening standalone Rewards refreshes both mounted pages and keeps the tab usable', (tester) async {
+    final CoinsTestFirestore firestore = await prepareCreatorRefresh(tester);
+    final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        builder: favouriteTestBuilder,
+        home: const RewardsPage(showBack: false),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Approved wallpapers: 2 / 5'), findsOneWidget);
+
+    final Completer<Map<String, dynamic>?> response = Completer<Map<String, dynamic>?>();
+    firestore.privateEconomyResponse = response.future;
+    unawaited(navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => const RewardsPage())));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(RewardsPage, skipOffstage: false), findsNWidgets(2));
+    expect(find.text('Approved wallpapers: 2 / 5'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    response.complete(_creatorEconomy(3));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Approved wallpapers: 3 / 5'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(RewardsPage), findsOneWidget);
+    expect(find.text('Approved wallpapers: 3 / 5'), findsOneWidget);
+    expect(find.byTooltip('Back'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('returning to the Rewards tab refreshes progress with another mounted consumer', (tester) async {
+    final CoinsTestFirestore firestore = await prepareCreatorRefresh(tester);
+    final _RefreshTabsRouter router = _RefreshTabsRouter();
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        routerConfig: router.config(),
+        builder: (context, child) => favouriteTestBuilder(
+          context,
+          Column(
+            children: <Widget>[
+              const CreatorProgressCard(),
+              Expanded(child: child!),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Approved wallpapers: 2 / 5'), findsNWidgets(2));
+
+    final TabsRouter tabs = router.innerRouterOf<TabsRouter>('Shell')!;
+    tabs.setActiveIndex(1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Home tab'), findsOneWidget);
+    final Completer<Map<String, dynamic>?> response = Completer<Map<String, dynamic>?>();
+    firestore.privateEconomyResponse = response.future;
+    tabs.setActiveIndex(0);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Approved wallpapers: 2 / 5'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+
+    response.complete(_creatorEconomy(3));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Approved wallpapers: 3 / 5'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('scrollToEarn brings the Earn coins section into view', (tester) async {
     await pumpRewardsPage(tester, scrollToEarn: true);
