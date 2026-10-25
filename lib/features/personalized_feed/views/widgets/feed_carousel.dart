@@ -19,10 +19,13 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +52,9 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
-/// The home carousel: Wall of the Day, the live Drop, boosted walls, the promo banner and the first wallpapers as
-/// rounded pages, with page dots over the bottom of the image.
+/// The home carousel: Wall of the Day, the live Drop, boosted walls, the Spooky theme card (season only, while the
+/// theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
+/// image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
@@ -77,33 +81,33 @@ class FeedCarousel extends StatefulWidget {
 
 class _FeedCarouselState extends State<FeedCarousel> {
   int _current = 0;
+  List<String> _pageIds = const <String>[];
   final CarouselSliderController _controller = CarouselSliderController();
 
   bool _showsDrop(DropEntity? drop) =>
       drop != null && EconomyConfig.notifier.value.flags.dropsEnabled && drop.isLiveAt(DateTime.now());
 
   Timer? _dropEndTimer;
-
-  int get _dropIndex => context.read<WotdBloc>().state.entity != null ? 1 : 0;
+  Timer? _spookyEndTimer;
 
   @override
   void initState() {
     super.initState();
     _scheduleDropEnd();
+    _scheduleSpookyEnd();
   }
 
   @override
   void didUpdateWidget(FeedCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.liveDrop?.endsAt != oldWidget.liveDrop?.endsAt) _scheduleDropEnd();
-    final bool shows = _showsDrop(widget.liveDrop);
-    final bool showed = _showsDrop(oldWidget.liveDrop);
-    if (shows != showed) _keepPage(appeared: shows);
+    _scheduleSpookyEnd();
   }
 
   @override
   void dispose() {
     _dropEndTimer?.cancel();
+    _spookyEndTimer?.cancel();
     super.dispose();
   }
 
@@ -116,18 +120,15 @@ class _FeedCarouselState extends State<FeedCarousel> {
     _dropEndTimer = Timer(left, () {
       if (!mounted) return;
       setState(() {});
-      _keepPage(appeared: false);
     });
   }
 
-  /// A Drop page that appears or goes shifts the pages after it. Keep the user on the wall they are looking at.
-  void _keepPage({required bool appeared}) {
-    final int dropIndex = _dropIndex;
-    final int target = appeared
-        ? (_current >= dropIndex ? _current + 1 : _current)
-        : (_current > dropIndex ? _current - 1 : _current);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.jumpToPage(target);
+  void _scheduleSpookyEnd() {
+    _spookyEndTimer?.cancel();
+    final Duration left = spookySeasonEnd.difference(spookyNow());
+    if (left <= Duration.zero) return;
+    _spookyEndTimer = Timer(left, () {
+      if (mounted) setState(() {});
     });
   }
 
@@ -148,6 +149,24 @@ class _FeedCarouselState extends State<FeedCarousel> {
       ),
     );
     openPrismLink(context, app_state.bannerURL);
+  }
+
+  void _trySpookyTheme() {
+    PrismHaptics.tap();
+    unawaited(
+      analytics.track(
+        const SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+          action: AnalyticsActionValue.bannerTapped,
+          sourceContext: 'spooky_theme_banner',
+        ),
+      ),
+    );
+    context.setPrismDarkTheme(
+      prismSpookyThemeId,
+      mode: Theme.of(context).brightness == Brightness.light ? ThemeMode.dark : null,
+    );
+    unawaited(context.router.push(const ThemeViewRoute()));
   }
 
   void _openWall(PrismFeedItem wall, int feedIndex, String sourceContext, String heroTag) {
@@ -187,6 +206,24 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
+    final bool showsSpooky = isSpookySeason() && !isSpookyActive(context);
+    final List<String> pageIds = <String>[
+      if (hasWotd) 'wotd',
+      if (_showsDrop(widget.liveDrop)) 'drop',
+      for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
+      if (showsSpooky) 'spooky',
+      if (bannerImage.trim().isNotEmpty) 'banner',
+      for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
+    ];
+    if (_pageIds.isNotEmpty && _current < _pageIds.length) {
+      final int preservedPage = pageIds.indexOf(_pageIds[_current]);
+      if (preservedPage >= 0 && preservedPage != _current) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _controller.jumpToPage(preservedPage);
+        });
+      }
+    }
+    _pageIds = pageIds;
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
       if (_showsDrop(widget.liveDrop))
@@ -198,6 +235,14 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
         (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
+      if (showsSpooky)
+        (_) => FeedHeroCard(
+          image: const SpookyBannerArt(),
+          semanticLabel: context.l10n.spookyBannerTitle,
+          title: context.l10n.spookyBannerTitle,
+          subtitle: context.l10n.spookyBannerSubtitle,
+          onTap: _trySpookyTheme,
+        ),
       if (bannerImage.trim().isNotEmpty)
         (_) => FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),

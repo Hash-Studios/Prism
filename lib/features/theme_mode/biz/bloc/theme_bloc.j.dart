@@ -23,7 +23,9 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     on<_LightAccentChanged>(
       (event, emit) => _update(UpdateThemeParams(lightAccentColorValue: event.accentColorValue), emit),
     );
-    on<_DarkThemeChanged>((event, emit) => _update(UpdateThemeParams(darkThemeId: event.themeId), emit));
+    on<_DarkThemeChanged>(
+      (event, emit) => _update(UpdateThemeParams(darkThemeId: event.themeId, mode: event.mode), emit),
+    );
     on<_DarkAccentChanged>(
       (event, emit) => _update(UpdateThemeParams(darkAccentColorValue: event.accentColorValue), emit),
     );

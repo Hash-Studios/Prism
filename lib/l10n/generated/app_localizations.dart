@@ -4983,6 +4983,36 @@ abstract class AppLocalizations {
   /// **'Steel'**
   String get coreThemeSteel;
 
+  /// No description provided for @coreThemeSpooky.
+  ///
+  /// In en, this message translates to:
+  /// **'Spooky'**
+  String get coreThemeSpooky;
+
+  /// No description provided for @spookyBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Spooky theme is here'**
+  String get spookyBannerTitle;
+
+  /// No description provided for @spookyBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange, black and a few spiders. Free. Tap to try it.'**
+  String get spookyBannerSubtitle;
+
+  /// No description provided for @spookyAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New: the Spooky theme 🎃'**
+  String get spookyAnnouncementTitle;
+
+  /// No description provided for @spookyAnnouncementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange, black and a few spiders. It is free. Tap to try it.'**
+  String get spookyAnnouncementBody;
+
   /// No description provided for @coreThisGoesOnHome.
   ///
   /// In en, this message translates to:

@@ -75,6 +75,38 @@ class NotificationsLocalDataSource {
     });
   }
 
+  Future<void> replaceAllPreservingReadState(
+    List<InAppNotificationEntity> incoming, {
+    required Future<List<InAppNotificationEntity>> Function(List<InAppNotificationEntity> items) filterRemoved,
+    required bool Function() isCurrentSession,
+  }) {
+    final String owner = _ownerId;
+    final int generation = _ownerGeneration;
+    final String key = _keyFor(owner);
+    return _serialize(() async {
+      if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
+      final record = await _store.read(key) ?? <String, Object?>{'schemaVersion': _schemaVersion};
+      if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
+      final List<InAppNotificationEntity> current = _decodeItems(record['items']);
+      final Set<String> readIds = current.where((item) => item.read).map((item) => item.id).toSet();
+      final Set<String> incomingIds = incoming.map((item) => item.id).toSet();
+      final List<InAppNotificationEntity> localOnly = current
+          .where((item) => item.id.startsWith('local_') && !incomingIds.contains(item.id))
+          .toList();
+      final List<InAppNotificationEntity> filtered = await filterRemoved(<InAppNotificationEntity>[
+        ...incoming,
+        ...localOnly,
+      ]);
+      if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
+      final List<InAppNotificationEntity> merged =
+          filtered.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
+      record['items'] = _boundedItems(merged, key, record);
+      await _store.write(key, record);
+    });
+  }
+
   Future<void> upsertAll(List<InAppNotificationEntity> incoming) {
     final String owner = _ownerId;
     final int generation = _ownerGeneration;

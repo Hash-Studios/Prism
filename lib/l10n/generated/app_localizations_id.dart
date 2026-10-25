@@ -2873,6 +2873,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreThemeSteel => 'Baja';
 
   @override
+  String get coreThemeSpooky => 'Seram';
+
+  @override
+  String get spookyBannerTitle => 'Tema Seram sudah hadir';
+
+  @override
+  String get spookyBannerSubtitle => 'Oranye, hitam, dan beberapa laba-laba. Gratis. Ketuk untuk mencoba.';
+
+  @override
+  String get spookyAnnouncementTitle => 'Baru: tema Seram 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'Oranye, hitam, dan beberapa laba-laba. Gratis. Ketuk untuk mencoba.';
+
+  @override
   String get coreThisGoesOnHome => 'Yang ini dipasang di layar utama.';
 
   @override

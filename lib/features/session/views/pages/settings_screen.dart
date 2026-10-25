@@ -34,6 +34,7 @@ import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -945,24 +946,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool loggedIn = app_state.prismUser.loggedIn;
     return PrismPage(
       title: context.l10n.accountSettings,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+      body: Stack(
         children: <Widget>[
-          SettingsAccountCard(
-            onSignIn: _signIn,
-            onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id)),
+          ListView(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+            children: <Widget>[
+              SettingsAccountCard(
+                onSignIn: _signIn,
+                onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id)),
+              ),
+              if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
+              _group(context.l10n.accountAppearance, _appearanceRows()),
+              if (_isAndroid || _iosShortcuts) _group(context.l10n.accountPersonalise, _personaliseRows()),
+              _group(context.l10n.accountContent, _contentRows()),
+              _group(context.l10n.accountNotifications, _notificationRows()),
+              _group(context.l10n.accountStorage, _storageRows()),
+              _group(context.l10n.accountPurchases, _purchaseRows()),
+              _group(context.l10n.accountPrivacyAndData, _privacyRows()),
+              if (app_state.isAdminUser()) _group(context.l10n.accountAdmin, _adminRows()),
+              _group(context.l10n.accountHelp, _helpRows()),
+              if (loggedIn) ...<Widget>[const SizedBox(height: PrismSpace.xl), PrismGroup(children: _sessionRows())],
+            ],
           ),
-          if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
-          _group(context.l10n.accountAppearance, _appearanceRows()),
-          if (_isAndroid || _iosShortcuts) _group(context.l10n.accountPersonalise, _personaliseRows()),
-          _group(context.l10n.accountContent, _contentRows()),
-          _group(context.l10n.accountNotifications, _notificationRows()),
-          _group(context.l10n.accountStorage, _storageRows()),
-          _group(context.l10n.accountPurchases, _purchaseRows()),
-          _group(context.l10n.accountPrivacyAndData, _privacyRows()),
-          if (app_state.isAdminUser()) _group(context.l10n.accountAdmin, _adminRows()),
-          _group(context.l10n.accountHelp, _helpRows()),
-          if (loggedIn) ...<Widget>[const SizedBox(height: PrismSpace.xl), PrismGroup(children: _sessionRows())],
+          const Positioned(top: 0, right: 0, child: SpookyWeb(right: true)),
+          const Positioned(top: 0, right: 36, child: SpookySpider(size: 22)),
         ],
       ),
     );

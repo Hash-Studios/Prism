@@ -2914,6 +2914,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreThemeSteel => 'Aço';
 
   @override
+  String get coreThemeSpooky => 'Assustador';
+
+  @override
+  String get spookyBannerTitle => 'O tema Assustador chegou';
+
+  @override
+  String get spookyBannerSubtitle => 'Laranja, preto e algumas aranhas. Grátis. Toque para experimentar.';
+
+  @override
+  String get spookyAnnouncementTitle => 'Novo: o tema Assustador 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'Laranja, preto e algumas aranhas. É grátis. Toque para experimentar.';
+
+  @override
   String get coreThisGoesOnHome => 'Este vai para a tela inicial.';
 
   @override
@@ -12869,6 +12884,21 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreThemeSteel => 'Aço';
+
+  @override
+  String get coreThemeSpooky => 'Assustador';
+
+  @override
+  String get spookyBannerTitle => 'O tema Assustador chegou';
+
+  @override
+  String get spookyBannerSubtitle => 'Laranja, preto e algumas aranhas. Grátis. Toque para experimentar.';
+
+  @override
+  String get spookyAnnouncementTitle => 'Novo: o tema Assustador 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'Laranja, preto e algumas aranhas. É grátis. Toque para experimentar.';
 
   @override
   String get coreThisGoesOnHome => 'Este vai para a tela inicial.';

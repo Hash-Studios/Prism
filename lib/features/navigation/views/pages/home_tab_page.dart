@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -16,9 +18,12 @@ import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
+import 'package:Prism/features/theme_mode/data/spooky_announcement.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -30,6 +35,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quick_actions/quick_actions.dart';
 
 const int _homeTabIndex = 0;
@@ -82,6 +88,19 @@ class HomeTabPage extends StatefulWidget {
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
+@visibleForTesting
+class HomeTabTickerMode extends StatelessWidget {
+  const HomeTabTickerMode({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool enabled = TabsRouterScope.of(context, watch: true)?.controller.activeIndex == _homeTabIndex;
+    return TickerMode(enabled: enabled, child: child);
+  }
+}
+
 class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
@@ -106,13 +125,50 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   void _showChangelogCheck() {
     final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
-    // A fresh install has no previous version: record it, but a list of fixes means nothing to a new user.
-    if (lastSeen != currentAppVersion) {
-      _settingsLocal.set('lastSeenVersion', currentAppVersion);
+    if (lastSeen != null && lastSeen != currentAppVersion) showChangelog(context, () {});
+    unawaited(_checkChangelogAndSpookyAnnouncement());
+  }
+
+  Future<void> _checkChangelogAndSpookyAnnouncement() async {
+    try {
+      await checkSpookyAnnouncementOnAppUpdate(
+        currentVersion: currentAppVersion,
+        currentBuild: currentAppVersionCode,
+        settings: _settingsLocal,
+        announce: _announceSpookyTheme,
+      );
+    } catch (error, stackTrace) {
+      logger.w('Failed to check the spooky theme announcement.', error: error, stackTrace: stackTrace);
     }
-    if (lastSeen != null && lastSeen != currentAppVersion) {
-      showChangelog(context, () {});
+  }
+
+  Future<bool> _announceSpookyTheme() async {
+    final AppLocalizations l10n = context.l10n;
+    final bool announced = await announceSpookyTheme(
+      now: spookyNow(),
+      l10n: l10n,
+      settings: _settingsLocal,
+      inbox: getIt<NotificationsLocalDataSource>(),
+      showPush: (String title, String body) => FlutterLocalNotificationsPlugin().show(
+        id: spookyAnnouncementId.hashCode & 0x7fffffff,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            'recommendations',
+            l10n.notifChannelRecommendations,
+            channelDescription: l10n.notifChannelRecommendationsDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+        payload: jsonEncode(<String, String>{'route': '/theme'}),
+      ),
+    );
+    if (announced && mounted) {
+      context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
     }
+    return announced;
   }
 
   void _trackQuickActionInvocation(String shortcutType) {
@@ -267,16 +323,20 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Stack(
-        children: <Widget>[
-          PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
-          Padding(
-            padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
-            child: ConnectivityWidget(offline: !_isOnline),
-          ),
-        ],
+    return HomeTabTickerMode(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Stack(
+          children: <Widget>[
+            PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
+            Padding(
+              padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
+              child: ConnectivityWidget(offline: !_isOnline),
+            ),
+            const Positioned(top: 0, right: 0, child: SpookyWeb(right: true, size: 84)),
+            Positioned(top: PersonalizedFeedScreen.headerHeight(context), right: 72, child: const SpookySpider()),
+          ],
+        ),
       ),
     );
   }

@@ -26,6 +26,7 @@ const Map<String, Color> _themeBackgrounds = <String, Color>{
   'kLCotton Blue': Color(0xFF8399BE),
   'kDMaterial Dark': Color(0xFF000000),
   'kDAMOLED': Color(0xFF000000),
+  'kDSpooky': Color(0xFF0B0806),
   'kDOlive': Color(0xFF202113),
   'kDDeep Ocean': Color(0xFF041B29),
   'kDJungle': Color(0xFF12210E),
@@ -92,7 +93,7 @@ void main() {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     final light = prismLightThemes[1].theme;
-    final dark = prismDarkThemes[2].theme;
+    final dark = prismThemeById(prismDarkThemes, 'kDOlive')!.theme;
     await pumpSplash(tester, ThemeMode.system, light, dark);
     expect(splashColor(tester), const Color(0xFFF7F1E3));
 
@@ -104,7 +105,7 @@ void main() {
 
   testWidgets('a theme update replaces the current splash background', (tester) async {
     final light = prismLightThemes.first.theme;
-    final olive = prismDarkThemes[2].theme;
+    final olive = prismThemeById(prismDarkThemes, 'kDOlive')!.theme;
     final amoled = prismDarkThemes[1].theme;
     await pumpSplash(tester, ThemeMode.dark, light, olive);
     expect(splashColor(tester), const Color(0xFF202113));
@@ -119,7 +120,7 @@ void main() {
     addTearDown(states.close);
     final failure = StartupState.initial().copyWith(status: LoadStatus.failure);
     whenListen(bloc, states.stream, initialState: failure);
-    final theme = prismDarkThemes[2].theme;
+    final theme = prismThemeById(prismDarkThemes, 'kDOlive')!.theme;
 
     await pumpSplash(tester, ThemeMode.dark, prismLightThemes.first.theme, theme);
     expect(find.text("Prism could not start"), findsOneWidget);

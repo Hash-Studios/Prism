@@ -2889,6 +2889,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreThemeSteel => 'Stahl';
 
   @override
+  String get coreThemeSpooky => 'Gruselig';
+
+  @override
+  String get spookyBannerTitle => 'Das Gruselig-Theme ist da';
+
+  @override
+  String get spookyBannerSubtitle => 'Orange, Schwarz und ein paar Spinnen. Kostenlos. Tippen zum Ausprobieren.';
+
+  @override
+  String get spookyAnnouncementTitle => 'Neu: das Gruselig-Theme 🎃';
+
+  @override
+  String get spookyAnnouncementBody =>
+      'Orange, Schwarz und ein paar Spinnen. Es ist kostenlos. Tippen zum Ausprobieren.';
+
+  @override
   String get coreThisGoesOnHome => 'Dieses Bild kommt auf den Startbildschirm.';
 
   @override

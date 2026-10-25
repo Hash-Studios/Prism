@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -122,6 +123,132 @@ void main() {
     await local.clearAll();
     expect(await local.readAll(), isEmpty);
     expect(await local.lastFetchAtUtc(), isNull);
+  });
+
+  test('a local announcement upsert queued during sync survives the replacement', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_merge_upsert_race', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    final Completer<void> filterStarted = Completer<void>();
+    final Completer<void> releaseFilter = Completer<void>();
+
+    final Future<void> replace = local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('remote', now)],
+      filterRemoved: (items) async {
+        filterStarted.complete();
+        await releaseFilter.future;
+        return items;
+      },
+      isCurrentSession: () => true,
+    );
+    await filterStarted.future;
+    final Future<void> upsert = local.upsertAll(<InAppNotificationEntity>[
+      notification('local_announcement', now.add(const Duration(minutes: 1))),
+    ]);
+    releaseFilter.complete();
+
+    await Future.wait(<Future<void>>[replace, upsert]);
+
+    expect((await local.readAll()).map((item) => item.id), <String>['local_announcement', 'remote']);
+  });
+
+  test('a local delete queued during sync is not undone by the replacement', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_merge_delete_race', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    await local.writeAll(<InAppNotificationEntity>[notification('local_announcement', now)]);
+    final Completer<void> filterStarted = Completer<void>();
+    final Completer<void> releaseFilter = Completer<void>();
+
+    final Future<void> replace = local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('remote', now)],
+      filterRemoved: (items) async {
+        filterStarted.complete();
+        await releaseFilter.future;
+        return items;
+      },
+      isCurrentSession: () => true,
+    );
+    await filterStarted.future;
+    final Future<void> delete = local.deleteById('local_announcement');
+    releaseFilter.complete();
+
+    await Future.wait(<Future<void>>[replace, delete]);
+
+    expect((await local.readAll()).map((item) => item.id), <String>['remote']);
+  });
+
+  test('a clear queued during sync is not undone by the replacement', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_merge_clear_race', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    await local.writeAll(<InAppNotificationEntity>[notification('local_announcement', now)]);
+    final Completer<void> filterStarted = Completer<void>();
+    final Completer<void> releaseFilter = Completer<void>();
+
+    final Future<void> replace = local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('remote', now)],
+      filterRemoved: (items) async {
+        filterStarted.complete();
+        await releaseFilter.future;
+        return items;
+      },
+      isCurrentSession: () => true,
+    );
+    await filterStarted.future;
+    final Future<void> clear = local.clearAll();
+    releaseFilter.complete();
+
+    await Future.wait(<Future<void>>[replace, clear]);
+
+    expect(await local.readAll(), isEmpty);
+  });
+
+  test('a replacement discarded after a session change does not write its snapshot', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_merge_session_race', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    await local.writeAll(<InAppNotificationEntity>[notification('local_announcement', now)]);
+    var currentSession = true;
+
+    await local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('remote', now)],
+      filterRemoved: (items) async {
+        currentSession = false;
+        return items;
+      },
+      isCurrentSession: () => currentSession,
+    );
+
+    expect((await local.readAll()).map((item) => item.id), <String>['local_announcement']);
+  });
+
+  test('a merged replacement keeps the 500-item cap and the existing read state', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_merge_cap', directory: directory),
+    )..setOwner('account-a');
+    final DateTime now = DateTime.utc(2026, 10, 20);
+    await local.writeAll(<InAppNotificationEntity>[
+      for (var index = 0; index < 500; index++) notification('local_$index', now.add(Duration(minutes: index))),
+      notification('remote', now, read: true),
+    ]);
+
+    await local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('remote', now.add(const Duration(days: 1)))],
+      filterRemoved: (items) async => items,
+      isCurrentSession: () => true,
+    );
+
+    final List<InAppNotificationEntity> retained = await local.readAll();
+    expect(retained, hasLength(500));
+    expect(retained.first.id, 'remote');
+    expect(retained.first.read, isTrue);
+    expect(retained.any((item) => item.id == 'local_0'), isFalse);
+    expect(retained.any((item) => item.id == 'local_499'), isTrue);
   });
 
   test('clearForUser removes only the selected owner record', () async {

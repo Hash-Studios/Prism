@@ -123,22 +123,6 @@ Future<void> pruneBlockedNotificationsCache({
   await local.removeWhere((InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked));
 }
 
-Future<void> _replaceAllPreservingReadState(
-  NotificationsLocalDataSource notificationsLocal,
-  List<InAppNotificationEntity> incoming,
-  bool Function() isCurrentSession,
-) async {
-  final Set<String> readIds = (await notificationsLocal.readAll())
-      .where((item) => item.read)
-      .map((item) => item.id)
-      .toSet();
-  if (!isCurrentSession()) return;
-  final List<InAppNotificationEntity> merged =
-      incoming.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  await notificationsLocal.writeAll(merged);
-}
-
 DateTime _createdAtFrom(Object? value) {
   if (value is Map && value.containsKey('_seconds')) {
     final int seconds = value['_seconds'] as int? ?? 0;
@@ -286,7 +270,11 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
         _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked),
       );
       if (!isCurrentSession()) return false;
-      await _replaceAllPreservingReadState(notificationsLocal, entities, isCurrentSession);
+      await notificationsLocal.replaceAllPreservingReadState(
+        entities,
+        filterRemoved: tombstones.withoutRemoved,
+        isCurrentSession: isCurrentSession,
+      );
       if (!isCurrentSession()) return false;
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
       if (!isCurrentSession()) return false;

@@ -7,6 +7,7 @@ import 'package:Prism/features/badges/domain/repositories/badge_repository.dart'
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
+import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -40,7 +41,12 @@ class _Router extends AppRouter {
           AutoRoute(
             path: route,
             initial: route == HomeTabRoute.name,
-            page: PageInfo(route, builder: (_) => Scaffold(body: Text('Page $route'))),
+            page: PageInfo(
+              route,
+              builder: (_) => route == HomeTabRoute.name
+                  ? HomeTabTickerMode(child: Scaffold(body: Text('Page $route')))
+                  : Scaffold(body: Text('Page $route')),
+            ),
           ),
       ],
     ),
@@ -87,13 +93,17 @@ void main() {
     verify(() => categories.add(const CategoryFeedEvent.started())).called(1);
 
     final tabs = AutoTabsRouter.of(tester.element(find.text('Page HomeTabRoute')));
+    expect(TickerMode.valuesOf(tester.element(find.text('Page HomeTabRoute'))).enabled, isTrue);
     tabs.setActiveIndex(1);
     await tester.pumpAndSettle();
     expect(find.text('Page SearchTabRoute'), findsOneWidget);
+    final homeFinder = find.text('Page HomeTabRoute', skipOffstage: false);
+    expect(TickerMode.valuesOf(tester.element(homeFinder)).enabled, isFalse);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(tabs.activeIndex, 0);
     expect(find.text('Page HomeTabRoute'), findsOneWidget);
+    expect(TickerMode.valuesOf(tester.element(find.text('Page HomeTabRoute'))).enabled, isTrue);
     verifyNever(() => categories.add(const CategoryFeedEvent.started()));
     verifyNever(() => notifications.add(const InAppNotificationsEvent.started()));
   });

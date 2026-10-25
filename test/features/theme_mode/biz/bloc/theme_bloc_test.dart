@@ -62,6 +62,37 @@ void main() {
     expect(bloc.state.status, LoadStatus.initial);
   });
 
+  test('one Spooky selection persists its dark theme and dark mode together', () async {
+    const ThemePreferences spooky = ThemePreferences(
+      light: _light,
+      dark: ThemeSelection(themeId: 'kDSpooky', accentColorValue: 0xff654321),
+      mode: ThemeMode.dark,
+    );
+    when(
+      () => repository.update(darkThemeId: 'kDSpooky', mode: ThemeMode.dark),
+    ).thenAnswer((_) async => Result.success(spooky));
+    final bloc = ThemeBloc(LoadThemeUseCase(repository), UpdateThemeUseCase(repository), repository);
+    addTearDown(bloc.close);
+    final states = expectLater(
+      bloc.stream,
+      emitsInOrder(<ThemeState>[
+        ThemeState.initial().copyWith(actionStatus: ActionStatus.inProgress),
+        ThemeState.initial().copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          light: _light,
+          dark: spooky.dark,
+          mode: ThemeMode.dark,
+        ),
+      ]),
+    );
+
+    bloc.add(const ThemeEvent.darkThemeChanged(themeId: 'kDSpooky', mode: ThemeMode.dark));
+    await states;
+
+    verify(() => repository.update(darkThemeId: 'kDSpooky', mode: ThemeMode.dark)).called(1);
+  });
+
   final updated = ThemeState.initial().copyWith(
     status: LoadStatus.success,
     actionStatus: ActionStatus.success,
@@ -126,6 +157,42 @@ void main() {
     expect: () => <ThemeState>[ThemeState.initial().copyWith(actionStatus: ActionStatus.inProgress), updated],
     verify: (_) => verify(
       () => updateUseCase(any(that: isA<UpdateThemeParams>().having((p) => p.darkThemeId, 'id', 'kDAMOLED'))),
+    ).called(1),
+  );
+
+  blocTest<ThemeBloc, ThemeState>(
+    'darkThemeChanged updates the dark theme and mode in one operation',
+    build: () {
+      when(() => updateUseCase(any())).thenAnswer(
+        (_) async => Result.success(
+          const ThemePreferences(
+            light: _light,
+            dark: ThemeSelection(themeId: 'kDSpooky', accentColorValue: 0xff654321),
+            mode: ThemeMode.dark,
+          ),
+        ),
+      );
+      return buildBloc();
+    },
+    act: (bloc) => bloc.add(const ThemeEvent.darkThemeChanged(themeId: 'kDSpooky', mode: ThemeMode.dark)),
+    expect: () => <ThemeState>[
+      ThemeState.initial().copyWith(actionStatus: ActionStatus.inProgress),
+      ThemeState.initial().copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.success,
+        light: _light,
+        dark: const ThemeSelection(themeId: 'kDSpooky', accentColorValue: 0xff654321),
+        mode: ThemeMode.dark,
+      ),
+    ],
+    verify: (_) => verify(
+      () => updateUseCase(
+        any(
+          that: isA<UpdateThemeParams>()
+              .having((p) => p.darkThemeId, 'dark theme id', 'kDSpooky')
+              .having((p) => p.mode, 'mode', ThemeMode.dark),
+        ),
+      ),
     ).called(1),
   );
 

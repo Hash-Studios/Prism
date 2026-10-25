@@ -134,13 +134,13 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
-return darkThemeChanged(_that.themeId);case _DarkAccentChanged() when darkAccentChanged != null:
+return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged() when modeChanged != null:
 return modeChanged(_that.mode);case _:
   return orElse();
@@ -160,13 +160,13 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId,  ThemeMode? mode)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _LightThemeChanged():
 return lightThemeChanged(_that.themeId);case _LightAccentChanged():
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged():
-return darkThemeChanged(_that.themeId);case _DarkAccentChanged():
+return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged():
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged():
 return modeChanged(_that.mode);case _:
   throw StateError('Unexpected subclass');
@@ -185,13 +185,13 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
-return darkThemeChanged(_that.themeId);case _DarkAccentChanged() when darkAccentChanged != null:
+return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged() when modeChanged != null:
 return modeChanged(_that.mode);case _:
   return null;
@@ -369,10 +369,11 @@ as int,
 
 
 class _DarkThemeChanged implements ThemeEvent {
-  const _DarkThemeChanged({required this.themeId});
+  const _DarkThemeChanged({required this.themeId, this.mode});
   
 
  final  String themeId;
+ final  ThemeMode? mode;
 
 /// Create a copy of ThemeEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -384,16 +385,16 @@ _$DarkThemeChangedCopyWith<_DarkThemeChanged> get copyWith => __$DarkThemeChange
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DarkThemeChanged&&(identical(other.themeId, themeId) || other.themeId == themeId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DarkThemeChanged&&(identical(other.themeId, themeId) || other.themeId == themeId)&&(identical(other.mode, mode) || other.mode == mode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,themeId);
+int get hashCode => Object.hash(runtimeType,themeId,mode);
 
 @override
 String toString() {
-  return 'ThemeEvent.darkThemeChanged(themeId: $themeId)';
+  return 'ThemeEvent.darkThemeChanged(themeId: $themeId, mode: $mode)';
 }
 
 
@@ -404,7 +405,7 @@ abstract mixin class _$DarkThemeChangedCopyWith<$Res> implements $ThemeEventCopy
   factory _$DarkThemeChangedCopyWith(_DarkThemeChanged value, $Res Function(_DarkThemeChanged) _then) = __$DarkThemeChangedCopyWithImpl;
 @useResult
 $Res call({
- String themeId
+ String themeId, ThemeMode? mode
 });
 
 
@@ -421,10 +422,11 @@ class __$DarkThemeChangedCopyWithImpl<$Res>
 
 /// Create a copy of ThemeEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? themeId = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? themeId = null,Object? mode = freezed,}) {
   return _then(_DarkThemeChanged(
 themeId: null == themeId ? _self.themeId : themeId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,mode: freezed == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
+as ThemeMode?,
   ));
 }
 

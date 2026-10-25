@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/cache/prism_image_cache.dart';
@@ -6,6 +7,8 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -16,8 +19,11 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
+import 'package:Prism/features/theme_mode/data/spooky_announcement.dart';
+import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -30,6 +36,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    show AndroidFlutterLocalNotificationsPlugin;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -51,6 +59,25 @@ class _WotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 class _FeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState> implements PersonalizedFeedBloc {}
 
 class _TrendingBloc extends MockBloc<TrendingEvent, TrendingState> implements TrendingBloc {}
+
+class _MemoryDurableStore extends DurableJsonStore {
+  _MemoryDurableStore() : super('home_spooky_announcement', directory: Directory.systemTemp);
+
+  final Map<String, Map<String, Object?>> _records = <String, Map<String, Object?>>{};
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async => _records[key];
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async {
+    _records[key] = Map<String, Object?>.from(value);
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    _records.remove(key);
+  }
+}
 
 class _Connectivity extends Fake implements ConnectivityService {
   @override
@@ -86,6 +113,7 @@ void main() {
   late _AdsBloc ads;
   late _NotificationsBloc notifications;
   late String token;
+  late NotificationsLocalDataSource localInbox;
   final subscribed = <String>[];
   final unsubscribed = <String>[];
   final quickActionCalls = <MethodCall>[];
@@ -117,6 +145,7 @@ void main() {
     PrismImageCache.testOverride = cache;
     app_state.prismUser = profileUser(profilePhoto: '');
     token = 'initial-token';
+    localInbox = NotificationsLocalDataSource.withStore(_MemoryDurableStore())..setOwner('u1');
     subscribed.clear();
     unsubscribed.clear();
     quickActionCalls.clear();
@@ -129,6 +158,7 @@ void main() {
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
     final settings = SettingsLocalDataSource(store);
     await settings.set('lastSeenVersion', currentAppVersion);
+    await settings.set('lastSeenBuildVersion', currentAppVersionCode);
     ads = _AdsBloc();
     notifications = _NotificationsBloc();
     final feed = _FeedBloc();
@@ -143,6 +173,7 @@ void main() {
       ..registerSingleton<FirestoreClient>(client)
       ..registerSingleton<FavouritesSyncService>(sync)
       ..registerSingleton<SettingsLocalDataSource>(settings)
+      ..registerSingleton<NotificationsLocalDataSource>(localInbox)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
       ..registerSingleton<TrendingBloc>(trending);
@@ -165,6 +196,8 @@ void main() {
     app_state.prismUser = createGuestPrismUser();
     messenger.setMockMethodCallHandler(_quickActions, null);
     messenger.setMockMethodCallHandler(_messaging, null);
+    messenger.setMockMethodCallHandler(const MethodChannel('dexterous.com/flutter/local_notifications'), null);
+    spookyClock = DateTime.now;
     await getIt.reset();
   });
 
@@ -371,6 +404,40 @@ void main() {
     expect(quickActionTabIndex('Downloads'), isNull);
     expect(quickActionTabIndex('nope'), isNull);
   });
+
+  testWidgets('an app update announces Spooky through the owned inbox and local notification', (tester) async {
+    const MethodChannel localNotifications = MethodChannel('dexterous.com/flutter/local_notifications');
+    final List<MethodCall> notificationCalls = <MethodCall>[];
+    final Completer<void> shown = Completer<void>();
+    messenger.setMockMethodCallHandler(localNotifications, (call) async {
+      notificationCalls.add(call);
+      if (call.method == 'show' && !shown.isCompleted) shown.complete();
+      return null;
+    });
+    AndroidFlutterLocalNotificationsPlugin.registerWith();
+    spookyClock = () => DateTime(2026, 10, 25, 12);
+    await getIt<SettingsLocalDataSource>().set('lastSeenVersion', 'previous-version');
+
+    await mount(tester);
+    await tester.runAsync(() => shown.future.timeout(const Duration(seconds: 5)));
+
+    final List<InAppNotificationEntity> items = (await tester.runAsync(localInbox.readAll))!;
+    expect(localInbox.ownerId, 'u1');
+    expect(items.map((item) => item.id), <String>[spookyAnnouncementId]);
+    expect(items.single.createdAt, DateTime(2026, 10, 25, 12).toUtc());
+    final MethodCall show = notificationCalls.singleWhere((call) => call.method == 'show');
+    final Map<Object?, Object?> arguments = show.arguments as Map<Object?, Object?>;
+    expect(jsonDecode(arguments['payload']! as String), <String, String>{'route': '/theme'});
+    final Map<Object?, Object?> platformSpecifics = arguments['platformSpecifics']! as Map<Object?, Object?>;
+    expect(platformSpecifics['channelId'], 'recommendations');
+
+    await tester.pumpWidget(const SizedBox());
+    await mount(tester);
+
+    expect(notificationCalls.where((call) => call.method == 'show'), hasLength(1));
+    expect(await tester.runAsync(localInbox.readAll), hasLength(1));
+    await tester.pump(const Duration(seconds: 3));
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.android}));
 
   testWidgets('a signed-in user starts the favourites sync and a sync update reaches the favourites bloc', (
     tester,
