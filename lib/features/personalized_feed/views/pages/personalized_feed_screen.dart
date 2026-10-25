@@ -228,6 +228,22 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final MediaQueryData media = MediaQuery.of(context);
+        if (media.size.isEmpty &&
+            (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight || constraints.biggest.isEmpty)) {
+          return const SizedBox.shrink();
+        }
+        return MediaQuery(
+          data: media.size.isEmpty ? media.copyWith(size: constraints.biggest) : media,
+          child: Builder(builder: _buildFeed),
+        );
+      },
+    );
+  }
+
+  Widget _buildFeed(BuildContext context) {
     final int crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     final int tileMemCacheHeight = gridTileDecodeHeight(context, crossAxisCount: crossAxisCount);
     final ColorScheme cs = Theme.of(context).colorScheme;
