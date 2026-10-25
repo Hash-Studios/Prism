@@ -16,10 +16,13 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dar
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -32,6 +35,8 @@ import '../../../support/fake_app_analytics.dart';
 import '../../drops/drop_fixtures.dart';
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
+
+class _MockThemeBloc extends MockBloc<ThemeEvent, ThemeState> implements ThemeBloc {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -117,8 +122,11 @@ void main() {
     WallOfTheDayEntity? wotdEntity,
     DropEntity? liveDrop,
     StackRouter? router,
+    ThemeData? theme,
+    ThemeBloc? themeBloc,
     GlobalKey<NavigatorState>? navigatorKey,
   }) async {
+    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
     tester.view
       ..physicalSize = size
       ..devicePixelRatio = 1
@@ -151,10 +159,14 @@ void main() {
             stateHash: 0,
             child: FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop),
           );
-    final Widget carouselWithBloc = BlocProvider<WotdBloc>.value(value: wotd, child: carousel);
+    Widget carouselWithBloc = BlocProvider<WotdBloc>.value(value: wotd, child: carousel);
+    if (themeBloc != null) {
+      carouselWithBloc = BlocProvider<ThemeBloc>.value(value: themeBloc, child: carouselWithBloc);
+    }
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigatorKey,
+        theme: theme,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
@@ -711,6 +723,19 @@ void main() {
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
   });
 
+  testWidgets('a Drop ending keeps the viewed wallpaper selected', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 1)));
+    await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
+    expect(shownWallId(tester), 'a');
+
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+
+    expect(shownWallId(tester), 'a');
+  });
+
   testWidgets('the last day of a Drop shows Last call', (tester) async {
     await pumpCarousel(tester, const <PrismFeedItem>[], liveDrop: dropEntity(endsIn: const Duration(hours: 5)));
 
@@ -757,6 +782,55 @@ void main() {
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
 
       expect(find.text('The Spooky theme is here'), findsNothing);
+    });
+
+    testWidgets('keeps the viewed wallpaper selected when the seasonal card disappears', (tester) async {
+      spookyClock = () => DateTime(2026, 10, 31);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
+      await swipeToNextPage(tester);
+      expect(shownWallId(tester), 'a');
+
+      spookyClock = () => DateTime(2026, 11, 3);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(shownWallId(tester), 'a');
+    });
+
+    testWidgets('removes the card at the season deadline without another parent rebuild', (tester) async {
+      Duration elapsed = Duration.zero;
+      spookyClock = () => DateTime(2026, 11, 2, 23, 59).add(elapsed);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      expect(find.text('The Spooky theme is here'), findsOneWidget);
+
+      elapsed = const Duration(minutes: 1);
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(find.text('The Spooky theme is here'), findsNothing);
+    });
+
+    testWidgets('hides the card when the Spooky theme is already active', (tester) async {
+      spookyClock = () => DateTime(2026, 10, 31);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme9);
+
+      expect(find.text('The Spooky theme is here'), findsNothing);
+    });
+
+    testWidgets('tap requests the Spooky dark theme and mode in one event', (tester) async {
+      spookyClock = () => DateTime(2026, 10, 31);
+      final _MockThemeBloc themeBloc = _MockThemeBloc();
+      when(() => themeBloc.state).thenReturn(ThemeState.initial());
+      registerFallbackValue(const ThemeViewRoute());
+      final _MockStackRouter router = _MockStackRouter();
+      when(() => router.push(any())).thenAnswer((_) async => null);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], router: router, themeBloc: themeBloc);
+
+      await tester.tap(find.byType(FeedHeroCard).first);
+
+      verify(
+        () => themeBloc.add(const ThemeEvent.darkThemeChanged(themeId: prismSpookyThemeId, mode: ThemeMode.dark)),
+      ).called(1);
+      verifyNever(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark)));
     });
   });
 }

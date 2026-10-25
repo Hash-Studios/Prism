@@ -71,8 +71,8 @@ extension PrismThemeContextX on BuildContext {
     read<ThemeBloc>().add(ThemeEvent.lightThemeChanged(themeId: themeId));
   }
 
-  void setPrismDarkTheme(String themeId) {
-    read<ThemeBloc>().add(ThemeEvent.darkThemeChanged(themeId: themeId));
+  void setPrismDarkTheme(String themeId, {ThemeMode? mode}) {
+    read<ThemeBloc>().add(ThemeEvent.darkThemeChanged(themeId: themeId, mode: mode));
   }
 
   void setPrismLightAccent(Color? accentColor) {

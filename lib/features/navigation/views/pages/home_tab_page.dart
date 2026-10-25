@@ -88,6 +88,19 @@ class HomeTabPage extends StatefulWidget {
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
+@visibleForTesting
+class HomeTabTickerMode extends StatelessWidget {
+  const HomeTabTickerMode({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool enabled = TabsRouterScope.of(context, watch: true)?.controller.activeIndex == _homeTabIndex;
+    return TickerMode(enabled: enabled, child: child);
+  }
+}
+
 class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
@@ -112,20 +125,27 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   void _showChangelogCheck() {
     final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
-    // A fresh install has no previous version: record it, but a list of fixes means nothing to a new user.
-    if (lastSeen != currentAppVersion) {
-      _settingsLocal.set('lastSeenVersion', currentAppVersion);
-    }
-    if (lastSeen != null && lastSeen != currentAppVersion) {
-      showChangelog(context, () {});
-      unawaited(_announceSpookyTheme());
+    if (lastSeen != null && lastSeen != currentAppVersion) showChangelog(context, () {});
+    unawaited(_checkChangelogAndSpookyAnnouncement());
+  }
+
+  Future<void> _checkChangelogAndSpookyAnnouncement() async {
+    try {
+      await checkSpookyAnnouncementOnAppUpdate(
+        currentVersion: currentAppVersion,
+        currentBuild: currentAppVersionCode,
+        settings: _settingsLocal,
+        announce: _announceSpookyTheme,
+      );
+    } catch (error, stackTrace) {
+      logger.w('Failed to check the spooky theme announcement.', error: error, stackTrace: stackTrace);
     }
   }
 
-  Future<void> _announceSpookyTheme() async {
+  Future<bool> _announceSpookyTheme() async {
     final AppLocalizations l10n = context.l10n;
     final bool announced = await announceSpookyTheme(
-      now: DateTime.now(),
+      now: spookyNow(),
       l10n: l10n,
       settings: _settingsLocal,
       inbox: getIt<NotificationsLocalDataSource>(),
@@ -148,6 +168,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     if (announced && mounted) {
       context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
     }
+    return announced;
   }
 
   void _trackQuickActionInvocation(String shortcutType) {
@@ -302,18 +323,20 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Stack(
-        children: <Widget>[
-          PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
-          Padding(
-            padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
-            child: ConnectivityWidget(offline: !_isOnline),
-          ),
-          const Positioned(top: 0, right: 0, child: SpookyWeb(right: true, size: 84)),
-          Positioned(top: PersonalizedFeedScreen.headerHeight(context), right: 72, child: const SpookySpider()),
-        ],
+    return HomeTabTickerMode(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Stack(
+          children: <Widget>[
+            PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
+            Padding(
+              padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
+              child: ConnectivityWidget(offline: !_isOnline),
+            ),
+            const Positioned(top: 0, right: 0, child: SpookyWeb(right: true, size: 84)),
+            Positioned(top: PersonalizedFeedScreen.headerHeight(context), right: 72, child: const SpookySpider()),
+          ],
+        ),
       ),
     );
   }

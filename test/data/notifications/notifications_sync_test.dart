@@ -29,6 +29,27 @@ class _MemoryNotificationsLocal extends NotificationsLocalDataSource {
   Future<void> writeAll(List<InAppNotificationEntity> value) async => items = List<InAppNotificationEntity>.from(value);
 
   @override
+  Future<void> replaceAllPreservingReadState(
+    List<InAppNotificationEntity> incoming, {
+    required Future<List<InAppNotificationEntity>> Function(List<InAppNotificationEntity> items) filterRemoved,
+    required bool Function() isCurrentSession,
+  }) async {
+    if (!isCurrentSession()) return;
+    final Set<String> readIds = items.where((item) => item.read).map((item) => item.id).toSet();
+    final Set<String> incomingIds = incoming.map((item) => item.id).toSet();
+    final List<InAppNotificationEntity> localOnly = items
+        .where((item) => item.id.startsWith('local_') && !incomingIds.contains(item.id))
+        .toList(growable: false);
+    final List<InAppNotificationEntity> filtered = await filterRemoved(<InAppNotificationEntity>[
+      ...incoming,
+      ...localOnly,
+    ]);
+    if (!isCurrentSession()) return;
+    items = filtered.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
   Future<void> upsertAll(List<InAppNotificationEntity> incoming) async {
     final byId = <String, InAppNotificationEntity>{for (final item in items) item.id: item};
     for (final item in incoming) {
@@ -178,6 +199,52 @@ void main() {
     await syncInAppNotificationsFromRemote(force: true);
 
     expect(local.items.map((item) => item.title), unorderedEquals(<String>['announcement', 'first', 'second']));
+  });
+
+  test('a forced sync does not restore a deleted local_ item', () async {
+    final localAnnouncement = InAppNotificationEntity(
+      id: 'local_spooky_theme_2026',
+      title: 'announcement',
+      pageName: '',
+      body: 'body',
+      imageUrl: '',
+      arguments: const <Object>[],
+      url: '',
+      createdAt: recent,
+      read: false,
+      route: '/theme',
+    );
+    local.items = <InAppNotificationEntity>[localAnnouncement];
+    tombstones.setOwner('user-1');
+    await tombstones.addDeleted(<String>[localAnnouncement.id]);
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(local.items.map((item) => item.title), unorderedEquals(<String>['first', 'second']));
+  });
+
+  test('a forced sync does not retain a local_ item older than Clear inbox', () async {
+    final DateTime announcementTime = DateTime.now().toUtc().subtract(const Duration(hours: 6));
+    local.items = <InAppNotificationEntity>[
+      InAppNotificationEntity(
+        id: 'local_spooky_theme_2026',
+        title: 'announcement',
+        pageName: '',
+        body: 'body',
+        imageUrl: '',
+        arguments: const <Object>[],
+        url: '',
+        createdAt: announcementTime,
+        read: false,
+        route: '/theme',
+      ),
+    ];
+    tombstones.setOwner('user-1');
+    await tombstones.markCleared(<String>[], DateTime.now().toUtc().subtract(const Duration(hours: 5)));
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(local.items.map((item) => item.title), unorderedEquals(<String>['first']));
   });
 
   test('a deleted notification stays deleted after a forced sync', () async {

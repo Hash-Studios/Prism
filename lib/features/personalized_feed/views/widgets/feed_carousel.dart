@@ -81,33 +81,33 @@ class FeedCarousel extends StatefulWidget {
 
 class _FeedCarouselState extends State<FeedCarousel> {
   int _current = 0;
+  List<String> _pageIds = const <String>[];
   final CarouselSliderController _controller = CarouselSliderController();
 
   bool _showsDrop(DropEntity? drop) =>
       drop != null && EconomyConfig.notifier.value.flags.dropsEnabled && drop.isLiveAt(DateTime.now());
 
   Timer? _dropEndTimer;
-
-  int get _dropIndex => context.read<WotdBloc>().state.entity != null ? 1 : 0;
+  Timer? _spookyEndTimer;
 
   @override
   void initState() {
     super.initState();
     _scheduleDropEnd();
+    _scheduleSpookyEnd();
   }
 
   @override
   void didUpdateWidget(FeedCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.liveDrop?.endsAt != oldWidget.liveDrop?.endsAt) _scheduleDropEnd();
-    final bool shows = _showsDrop(widget.liveDrop);
-    final bool showed = _showsDrop(oldWidget.liveDrop);
-    if (shows != showed) _keepPage(appeared: shows);
+    _scheduleSpookyEnd();
   }
 
   @override
   void dispose() {
     _dropEndTimer?.cancel();
+    _spookyEndTimer?.cancel();
     super.dispose();
   }
 
@@ -120,18 +120,15 @@ class _FeedCarouselState extends State<FeedCarousel> {
     _dropEndTimer = Timer(left, () {
       if (!mounted) return;
       setState(() {});
-      _keepPage(appeared: false);
     });
   }
 
-  /// A Drop page that appears or goes shifts the pages after it. Keep the user on the wall they are looking at.
-  void _keepPage({required bool appeared}) {
-    final int dropIndex = _dropIndex;
-    final int target = appeared
-        ? (_current >= dropIndex ? _current + 1 : _current)
-        : (_current > dropIndex ? _current - 1 : _current);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.jumpToPage(target);
+  void _scheduleSpookyEnd() {
+    _spookyEndTimer?.cancel();
+    final Duration left = spookySeasonEnd.difference(spookyNow());
+    if (left <= Duration.zero) return;
+    _spookyEndTimer = Timer(left, () {
+      if (mounted) setState(() {});
     });
   }
 
@@ -165,8 +162,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ),
       ),
     );
-    if (Theme.of(context).brightness == Brightness.light) context.setPrismThemeMode(ThemeMode.dark);
-    context.setPrismDarkTheme(prismSpookyThemeId);
+    context.setPrismDarkTheme(
+      prismSpookyThemeId,
+      mode: Theme.of(context).brightness == Brightness.light ? ThemeMode.dark : null,
+    );
     unawaited(context.router.push(const ThemeViewRoute()));
   }
 
@@ -207,6 +206,24 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
+    final bool showsSpooky = isSpookySeason() && !isSpookyActive(context);
+    final List<String> pageIds = <String>[
+      if (hasWotd) 'wotd',
+      if (_showsDrop(widget.liveDrop)) 'drop',
+      for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
+      if (showsSpooky) 'spooky',
+      if (bannerImage.trim().isNotEmpty) 'banner',
+      for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
+    ];
+    if (_pageIds.isNotEmpty && _current < _pageIds.length) {
+      final int preservedPage = pageIds.indexOf(_pageIds[_current]);
+      if (preservedPage >= 0 && preservedPage != _current) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _controller.jumpToPage(preservedPage);
+        });
+      }
+    }
+    _pageIds = pageIds;
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
       if (_showsDrop(widget.liveDrop))
@@ -218,7 +235,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
         (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
-      if (isSpookySeason() && !isSpookyActive(context))
+      if (showsSpooky)
         (_) => FeedHeroCard(
           image: const SpookyBannerArt(),
           semanticLabel: context.l10n.spookyBannerTitle,

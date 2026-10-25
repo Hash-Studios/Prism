@@ -10,7 +10,9 @@ final DateTime spookySeasonEnd = DateTime(2026, 11, 3);
 @visibleForTesting
 DateTime Function() spookyClock = DateTime.now;
 
-bool isSpookySeason([DateTime? now]) => (now ?? spookyClock()).isBefore(spookySeasonEnd);
+DateTime spookyNow() => spookyClock();
+
+bool isSpookySeason([DateTime? now]) => (now ?? spookyNow()).isBefore(spookySeasonEnd);
 
 /// True when the theme in [context] is Spooky. It reads the page colour, so it needs no theme bloc above it.
 bool isSpookyActive(BuildContext context) => Theme.of(context).colorScheme.surface == kDarkTheme9.colorScheme.surface;
@@ -21,8 +23,13 @@ const String _spiderSvg = '''
 <path d="M19 60 L8 51 L2 57 M29 60 L40 51 L46 57 M18 63 L5 60 L1 69 M30 63 L43 60 L47 69 M18 66 L6 71 L3 81 M30 66 L42 71 L45 81 M19 69 L10 79 L8 89 M29 69 L38 79 L40 89" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 <ellipse cx="24" cy="75" rx="9.5" ry="11.5" fill="currentColor"/>
 <circle cx="24" cy="61" r="6.5" fill="currentColor"/>
-<circle cx="21.6" cy="60.2" r="1.5" fill="#FF7A1A"/><circle cx="26.4" cy="60.2" r="1.5" fill="#FF7A1A"/>
+<circle cx="21.6" cy="60.2" r="1.5" fill="__EYE_ACCENT__"/><circle cx="26.4" cy="60.2" r="1.5" fill="__EYE_ACCENT__"/>
 </svg>''';
+
+String _spiderSvgWithAccent(Color accent) {
+  final String hex = (accent.toARGB32() & 0x00ffffff).toRadixString(16).padLeft(6, '0');
+  return _spiderSvg.replaceAll('__EYE_ACCENT__', '#$hex');
+}
 
 const String _webSvg = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-linecap="round">
@@ -88,7 +95,7 @@ class _SpookySpiderState extends State<SpookySpider> with SingleTickerProviderSt
       _bob.repeat(reverse: true);
     }
     final Widget spider = _svgCurrentColor(
-      _spiderSvg,
+      _spiderSvgWithAccent(Theme.of(context).colorScheme.primary),
       width: widget.size,
       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
     );
@@ -164,7 +171,11 @@ class SpookyBannerArt extends StatelessWidget {
               Positioned(
                 right: h * 0.86,
                 top: 0,
-                child: _svgCurrentColor(_spiderSvg, width: h * 0.16, color: _bone.withValues(alpha: 0.9)),
+                child: _svgCurrentColor(
+                  _spiderSvgWithAccent(const Color(0xFFFF7A1A)),
+                  width: h * 0.16,
+                  color: _bone.withValues(alpha: 0.9),
+                ),
               ),
               Positioned(
                 right: h * 0.22,
