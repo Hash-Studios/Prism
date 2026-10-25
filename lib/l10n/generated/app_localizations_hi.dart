@@ -2884,6 +2884,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreThemeSteel => 'स्टील';
 
   @override
+  String get coreThemeSpooky => 'डरावना';
+
+  @override
+  String get spookyBannerTitle => 'डरावना थीम आ गई है';
+
+  @override
+  String get spookyBannerSubtitle => 'नारंगी, काला और कुछ मकड़ियाँ। मुफ़्त। आज़माने के लिए टैप करें।';
+
+  @override
+  String get spookyAnnouncementTitle => 'नया: डरावना थीम 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'नारंगी, काला और कुछ मकड़ियाँ। यह मुफ़्त है। आज़माने के लिए टैप करें।';
+
+  @override
   String get coreThisGoesOnHome => 'यह होम स्क्रीन पर लगेगा।';
 
   @override

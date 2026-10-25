@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 const String prismDefaultLightThemeId = 'kLFrost White';
 const String prismDefaultDarkThemeId = 'kDMaterial Dark';
 const String prismAmoledDarkThemeId = 'kDAMOLED';
+const String prismSpookyThemeId = 'kDSpooky';
+const int prismSpookyAccentValue = 0xffff7a1a;
 const int prismDefaultAccentValue = 0xffe57697;
 
 /// A selectable app theme. [id] is the value stored in the settings, so it must not change.
@@ -41,6 +43,7 @@ String prismThemeDisplayName(PrismThemeOption option, AppLocalizations l10n) => 
   'kDPepper' => l10n.coreThemePepper,
   'kDSky' => l10n.coreThemeSky,
   'kDSteel' => l10n.coreThemeSteel,
+  prismSpookyThemeId => l10n.coreThemeSpooky,
   _ => l10n.coreThemeCustom,
 };
 
@@ -59,6 +62,7 @@ final List<PrismThemeOption> prismLightThemes = <PrismThemeOption>[
 final List<PrismThemeOption> prismDarkThemes = <PrismThemeOption>[
   PrismThemeOption(id: prismDefaultDarkThemeId, theme: kDarkTheme),
   PrismThemeOption(id: prismAmoledDarkThemeId, theme: kDarkTheme2, defaultAccentValue: 0xffffffff),
+  PrismThemeOption(id: prismSpookyThemeId, theme: kDarkTheme9, defaultAccentValue: prismSpookyAccentValue),
   PrismThemeOption(id: 'kDOlive', theme: kDarkTheme3, defaultAccentValue: 0xff767b45, shopItemId: 'theme_olive'),
   PrismThemeOption(
     id: 'kDDeep Ocean',

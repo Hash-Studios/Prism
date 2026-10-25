@@ -2863,6 +2863,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreThemeSteel => 'Steel';
 
   @override
+  String get coreThemeSpooky => 'Spooky';
+
+  @override
+  String get spookyBannerTitle => 'The Spooky theme is here';
+
+  @override
+  String get spookyBannerSubtitle => 'Orange, black and a few spiders. Free. Tap to try it.';
+
+  @override
+  String get spookyAnnouncementTitle => 'New: the Spooky theme 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'Orange, black and a few spiders. It is free. Tap to try it.';
+
+  @override
   String get coreThisGoesOnHome => 'This one goes on the home screen.';
 
   @override

@@ -2887,6 +2887,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreThemeSteel => 'Acero';
 
   @override
+  String get coreThemeSpooky => 'Terror';
+
+  @override
+  String get spookyBannerTitle => 'Llega el tema Terror';
+
+  @override
+  String get spookyBannerSubtitle => 'Naranja, negro y algunas arañas. Gratis. Toca para probarlo.';
+
+  @override
+  String get spookyAnnouncementTitle => 'Nuevo: el tema Terror 🎃';
+
+  @override
+  String get spookyAnnouncementBody => 'Naranja, negro y algunas arañas. Es gratis. Toca para probarlo.';
+
+  @override
   String get coreThisGoesOnHome => 'Este se usará en la pantalla de inicio.';
 
   @override

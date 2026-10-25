@@ -198,7 +198,7 @@ class _ThemeViewState extends State<ThemeView> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(17),
                         child: SvgPicture.string(
-                          changingLight
+                          showLight && (changingLight || !showDark)
                               ? _themePreviewSvg(context.prismLightTheme(), lightAccent)
                               : _themePreviewSvg(context.prismDarkTheme(), darkAccent),
                           fit: BoxFit.cover,

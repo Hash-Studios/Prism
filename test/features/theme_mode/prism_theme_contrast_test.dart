@@ -12,9 +12,9 @@ void main() {
   final List<PrismThemeOption> themes = <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes];
   const List<Color> picks = prismAccentSwatches;
 
-  test('the picker offers 22 colours and there are 12 themes', () {
+  test('the picker offers 22 colours and there are 13 themes', () {
     expect(picks, hasLength(22));
-    expect(themes, hasLength(12));
+    expect(themes, hasLength(13));
   });
 
   for (final PrismThemeOption option in themes) {

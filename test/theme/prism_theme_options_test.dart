@@ -9,6 +9,7 @@ void main() {
     expect(prismDarkThemes.map((o) => o.id), <String>[
       'kDMaterial Dark',
       'kDAMOLED',
+      'kDSpooky',
       'kDOlive',
       'kDDeep Ocean',
       'kDJungle',
@@ -32,6 +33,7 @@ void main() {
         'Cotton Blue',
         'Material Dark',
         'AMOLED',
+        'Spooky',
         'Olive',
         'Deep Ocean',
         'Jungle',
