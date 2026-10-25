@@ -5,6 +5,7 @@ import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -35,6 +36,21 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _LibraryRouter extends AppRouter {
+  @override
+  List<AutoRoute> get routes => <AutoRoute>[
+    AutoRoute(
+      path: '/',
+      page: PageInfo('Root', builder: (_) => const SizedBox()),
+    ),
+    AutoRoute(path: '/library', page: LibraryRoute.page),
+    AutoRoute(
+      path: '/detail',
+      page: PageInfo('Detail', builder: (_) => const SizedBox()),
+    ),
+  ];
+}
 
 const String _channelPrefix = 'dev.flutter.pigeon.Prism.PrismMediaHostApi';
 
@@ -238,6 +254,123 @@ void main() {
     expect(find.text('No downloads yet'), findsOneWidget);
     expect(tabEvents(), isEmpty);
   });
+
+  testWidgets('unchanged route arguments preserve a user tab on widget updates', (tester) async {
+    final rebuild = ValueNotifier<int>(0);
+    addTearDown(rebuild.dispose);
+    await pumpLibrary(
+      tester,
+      wrap: (_) => ValueListenableBuilder<int>(
+        valueListenable: rebuild,
+        builder: (context, value, child) => BlocProvider<FavouriteWallsBloc>.value(
+          value: bloc,
+          child: LibraryScreen(initialTab: value < 2 ? LibraryTab.favourites : LibraryTab.downloads),
+        ),
+      ),
+    );
+    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
+    await settle(tester);
+    rebuild.value = 1;
+    await settle(tester);
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads']);
+
+    rebuild.value = 2;
+    await settle(tester);
+    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
+    await settle(tester);
+    rebuild.value = 3;
+    await settle(tester);
+    expect(find.text('No favourites yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites']);
+  });
+
+  testWidgets('warm typed Library links update both directions without remounting', (tester) async {
+    final router = _LibraryRouter();
+    final dispatcher = DeepLinkDispatcher(router: router, whenReady: () async => true);
+    addTearDown(dispatcher.dispose);
+    addTearDown(router.dispose);
+    bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    await tester.pumpWidget(
+      BlocProvider<FavouriteWallsBloc>.value(
+        value: bloc,
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      ),
+    );
+    await settle(tester);
+
+    Future<void> open(String tab) async {
+      final result = dispatcher.openUri(Uri.parse('prism://library?tab=$tab'), source: DeepLinkSourceValue.appLinks);
+      await settle(tester);
+      expect(await result, DeepLinkDispatchResult.navigated);
+      expect(router.topRoute.args, LibraryRouteArgs(initialTab: LibraryTab.values.byName(tab)));
+    }
+
+    await open('downloads');
+    final state = tester.state(find.byType(LibraryScreen));
+    expect(find.text('No downloads yet'), findsOneWidget);
+    router.push(const PageRouteInfo<void>('Detail'));
+    await settle(tester);
+    await router.maybePop();
+    await settle(tester);
+    expect(find.text('No downloads yet'), findsOneWidget);
+
+    await open('favourites');
+    expect(tester.state(find.byType(LibraryScreen)), same(state));
+    expect(find.text('No favourites yet'), findsOneWidget);
+    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
+    await settle(tester);
+    expect(find.text('No downloads yet'), findsOneWidget);
+    await open('favourites');
+    expect(tester.state(find.byType(LibraryScreen)), same(state));
+    expect(find.text('No favourites yet'), findsOneWidget);
+    await open('downloads');
+    expect(tester.state(find.byType(LibraryScreen)), same(state));
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads']);
+
+    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
+    await settle(tester);
+    expect(find.text('No favourites yet'), findsOneWidget);
+    await open('downloads');
+    expect(tester.state(find.byType(LibraryScreen)), same(state));
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites']);
+
+    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
+    await settle(tester);
+    tester.element(find.byType(LibraryScreen)).markNeedsBuild();
+    await settle(tester);
+    expect(find.text('No favourites yet'), findsOneWidget);
+    router.push(const PageRouteInfo<void>('Detail'));
+    await settle(tester);
+    await router.maybePop();
+    await settle(tester);
+    expect(find.text('No favourites yet'), findsOneWidget);
+    await open('downloads');
+    expect(tester.state(find.byType(LibraryScreen)), same(state));
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites', 'favourites']);
+
+    await router.maybePop();
+    await settle(tester);
+    expect(find.byType(LibraryScreen), findsNothing);
+    await open('favourites');
+    final remountedState = tester.state(find.byType(LibraryScreen));
+    expect(remountedState, isNot(same(state)));
+    expect(find.text('No favourites yet'), findsOneWidget);
+    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
+    await settle(tester);
+    expect(find.text('No downloads yet'), findsOneWidget);
+    await open('favourites');
+    expect(tester.state(find.byType(LibraryScreen)), same(remountedState));
+    expect(find.text('No favourites yet'), findsOneWidget);
+    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites', 'favourites', 'downloads']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('the app bar shows an Offline chip only while offline', (tester) async {
     await pumpLibrary(tester);
