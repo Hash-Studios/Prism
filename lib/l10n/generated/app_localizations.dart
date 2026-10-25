@@ -9443,6 +9443,12 @@ abstract class AppLocalizations {
   /// **'Deep Ocean'**
   String get economyShopDeepOcean;
 
+  /// No description provided for @economyShopDefaultIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get economyShopDefaultIcon;
+
   /// No description provided for @economyShopEarnXp.
   ///
   /// In en, this message translates to:

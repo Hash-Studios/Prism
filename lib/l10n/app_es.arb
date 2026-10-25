@@ -1643,6 +1643,7 @@
   "economyShopCoinsShort": "Te faltan {count} monedas.",
   "economyShopCottonBlue": "Azul algodón",
   "economyShopDeepOcean": "Océano profundo",
+  "economyShopDefaultIcon": "Predeterminado",
   "economyShopEarnXp": "Gana XP",
   "economyShopEarnedAtLifetimeXp": "Obtenido al alcanzar el rango {rank} con XP de por vida.",
   "economyShopEmber": "Ascua",

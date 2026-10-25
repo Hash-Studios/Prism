@@ -6019,6 +6019,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyShopDeepOcean => 'Laut Dalam';
 
   @override
+  String get economyShopDefaultIcon => 'Bawaan';
+
+  @override
   String get economyShopEarnXp => 'Dapatkan XP';
 
   @override

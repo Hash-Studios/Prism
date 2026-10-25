@@ -3,6 +3,8 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/app_icon_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_app_icon_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
@@ -211,6 +213,39 @@ void main() {
       await tester.pumpAndSettle();
       await openSheet(tester, 'icon_noir');
       expect(find.text('Use icon'), findsOneWidget);
+    });
+
+    testWidgets('the default icon is free and owned, and Use icon resets the launcher icon', (tester) async {
+      final List<Object?> setCalls = <Object?>[];
+      const String channel = 'dev.flutter.pigeon.Prism.PrismAppIconHostApi.setAppIcon';
+      final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMessageHandler(channel, (ByteData? message) async {
+        setCalls.add((PrismAppIconHostApi.pigeonChannelCodec.decodeMessage(message)! as List<Object?>).first);
+        return PrismAppIconHostApi.pigeonChannelCodec.encodeMessage(<Object?>[true]);
+      });
+      addTearDown(() => messenger.setMockMessageHandler(channel, null));
+      AppIconChannel.api = PrismAppIconHostApi();
+
+      expect(shopItemsOf(ShopItemKind.appIcon).first, defaultAppIcon);
+      await tester.pumpWidget(
+        host(
+          Builder(
+            builder: (context) =>
+                TextButton(onPressed: () => showShopItemSheet(context, defaultAppIcon), child: const Text('open')),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.textContaining('Buy for'), findsNothing);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_default.jpg')), findsOneWidget);
+
+      await tester.tap(find.text('Use icon'));
+      await tester.pumpAndSettle();
+      expect(setCalls, <Object?>[null]);
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('an app icon sheet shows the real art and settles', (tester) async {
