@@ -1,13 +1,13 @@
 # iOS Shortcuts
 
-On iPhone, Prism can change your wallpaper on its own. Prism gives the Shortcuts app an action called "Get Prism Wallpaper". You add it to a Shortcuts automation. The automation then sets a new wallpaper on a schedule or a trigger. You do not open Prism.
+On iPhone, Shortcuts can set a wallpaper on a schedule or trigger. Add Prism's "Get Prism Wallpaper" action and Apple's wallpaper action to an automation. Prepare the selected source in Prism before running it.
 
 ## What it does
 
 - The action "Get Prism Wallpaper" returns one full-size image. It does not open the app.
 - You pick the source:
-  - Wall of the Day. Today's pick from Prism. The action reads it from Prism's servers, so it is current even if you did not open the app today.
-  - Random favourite. A random wallpaper from your favourites. It avoids the one it gave last, when you have two or more.
+  - Wall of the Day. Download today's original in Prism first. When the daily pick changes, download the new original before running this source. Downloads use Prism's existing access and payment rules.
+  - Random favourite. A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.
 - Apple's "Set Wallpaper" action takes the image and sets it.
 - The action also shows as an App Shortcut in Siri and Spotlight. Say "Get a wallpaper from Prism".
 
@@ -22,11 +22,11 @@ On iPhone, Prism can change your wallpaper on its own. Prism gives the Shortcuts
 
 1. Open Prism. Settings, then "Change automatically".
 2. Tap "Open Shortcuts".
-3. In Shortcuts, tap Automation, then New Automation.
-4. Pick when it runs: Time of Day, When I open an app, or Charger.
+3. If Shortcuts has an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.
+4. In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.
 5. Add the action "Get Prism Wallpaper". Pick a source.
 6. Add the action "Set Wallpaper".
-7. Turn off "Ask Before Running". Tap Done.
+7. Review the run options shown and save the shortcut or automation. If "Ask Before Running" appears, turn it off for automatic runs.
 
 If Shortcuts does not open, Prism shows "Could not open Shortcuts. Open the app yourself."
 
@@ -61,24 +61,27 @@ FavouriteWallsBloc / SessionBloc -> ShortcutsFavouritesListener
 
 ### Wall of the Day
 
-The Swift code reads Wall of the Day itself from the Firestore REST API. It does not need the user to sign in. It uses `API_KEY` and `PROJECT_ID` from `GoogleService-Info.plist`.
+The Swift code reads the current Wall of the Day identity from the Firestore REST API using `API_KEY` and `PROJECT_ID` from `GoogleService-Info.plist`. This metadata lookup does not acquire the original image. The action requires a retained local original for the current daily pick. Open Prism and download that original first. When the pick changes, prepare the new original.
+
+The retained metadata must match the current UTC day and wallpaper identity. During a network outage, the action can use a retained original for today. It rejects yesterday's original, a different wallpaper, or an invalid pointer. If the required original is unavailable, it asks the user to open Prism and download today's original. Shortcuts does not bypass original access or download charges.
 
 ## Limits
 
 - iOS 16 or later. The App Intents API does not exist on iOS 15.
 - Prism cannot set the wallpaper on iOS. Apple's "Set Wallpaper" action does that. The user must add it.
-- The user must turn off "Ask Before Running", or iOS asks each time.
-- iOS decides if and when an automation runs. Time of Day is exact. Other triggers can be late.
+- Run-confirmation controls depend on the Shortcuts version. If "Ask Before Running" appears, turn it off for automatic runs.
+- iOS decides if and when an automation runs.
+- Wall of the Day requires today's downloaded original. A previous day's download cannot supply the new daily pick.
 - "Random favourite" uses the list that Prism last wrote. Open Prism once after you change favourites on another device.
 - The list holds the 200 newest favourites.
 - The action fails for an image larger than 40 MiB. Prism saves the download to a temporary file first, so the whole image is not held in memory while it downloads.
 - With no favourites, "Random favourite" fails with a message: "No favourites yet. Open Prism and tap the heart on a wallpaper."
 - Prism does not have an iOS widget. That needs a WidgetKit extension with its own App ID and provisioning profile (`.github/workflows/testflight.yml`). It is not part of this feature.
-- The Swift code is built in CI. Nobody ran this feature on a device for this page.
+- The iOS 27 simulator flow was checked on 2026-10-25. The action was discoverable and returned the expected missing-original error. Successful original output, an enabled trigger, and wallpaper application were not verified. The sole test shortcut was deleted afterward.
 
 ## How to test
 
-1. Use an iPhone with iOS 16 or later. Sign in. Heart at least 3 wallpapers.
+1. Use an iPhone with iOS 16 or later. Sign in. Download today's Wall of the Day original through Prism's normal flow, and heart at least 3 wallpapers available to Shortcuts.
 2. Open Settings. Make sure PERSONALISE shows only "Change automatically". On an iPhone with iOS 15, make sure the row does not show.
 3. Tap it. Make sure the four steps and both sources show.
 4. Tap "Open Shortcuts". Make sure the Shortcuts app opens.

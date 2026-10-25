@@ -8317,7 +8317,7 @@
   "@wallpaperShortcutsAddActionsSteps": {
     "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
   },
-  "wallpaperShortcutsBody": "Di iPhone, app Pintasan dapat mengubah wallpaper secara otomatis. Buat satu automasi, lalu biarkan berjalan sendiri.",
+  "wallpaperShortcutsBody": "Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.",
   "@wallpaperShortcutsBody": {
     "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
   },
@@ -8325,11 +8325,11 @@
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Pilih pemicunya: Waktu, Saat saya membuka app, atau Pengisi Daya.",
+  "wallpaperShortcutsChooseTriggerSteps": "Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.",
   "@wallpaperShortcutsChooseTriggerSteps": {
     "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
   },
-  "wallpaperShortcutsDisableConfirmationSteps": "Nonaktifkan \"Tanya Sebelum Menjalankan\". Ketuk Selesai.",
+  "wallpaperShortcutsDisableConfirmationSteps": "Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.",
   "@wallpaperShortcutsDisableConfirmationSteps": {
     "description": "Step to disable confirmation and save an iOS Shortcuts automation."
   },
@@ -8341,7 +8341,7 @@
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
   },
-  "wallpaperShortcutsOpenAutomationSteps": "Buka app Pintasan. Ketuk Automasi, lalu Automasi Baru.",
+  "wallpaperShortcutsOpenAutomationSteps": "Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.",
   "@wallpaperShortcutsOpenAutomationSteps": {
     "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
@@ -8353,7 +8353,7 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Wallpaper acak yang Anda sukai. Wallpaper yang sama tidak akan dipilih dua kali berturut-turut. Sukai beberapa wallpaper terlebih dahulu.",
+  "wallpaperShortcutsSourceFavouriteDescription": "Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.",
   "@wallpaperShortcutsSourceFavouriteDescription": {
     "description": "Description of the random favourite Shortcuts source."
   },
@@ -8361,7 +8361,7 @@
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
   },
-  "wallpaperShortcutsSourceWotdDescription": "Pilihan Prism hari ini.",
+  "wallpaperShortcutsSourceWotdDescription": "Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
   },

@@ -13906,7 +13906,7 @@ abstract class AppLocalizations {
   /// Explanation of how iOS Shortcuts can change wallpapers automatically.
   ///
   /// In en, this message translates to:
-  /// **'iPhone lets Shortcuts change the wallpaper for you. Make one automation. It runs on its own.'**
+  /// **'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.'**
   String get wallpaperShortcutsBody;
 
   /// Section title for choosing wallpaper data in Shortcuts.
@@ -13918,13 +13918,13 @@ abstract class AppLocalizations {
   /// Step to choose a trigger for an iOS Shortcuts wallpaper automation.
   ///
   /// In en, this message translates to:
-  /// **'Pick when it runs: Time of Day, When I open an app, or Charger.'**
+  /// **'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.'**
   String get wallpaperShortcutsChooseTriggerSteps;
 
   /// Step to disable confirmation and save an iOS Shortcuts automation.
   ///
   /// In en, this message translates to:
-  /// **'Turn off \"Ask Before Running\". Tap Done.'**
+  /// **'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.'**
   String get wallpaperShortcutsDisableConfirmationSteps;
 
   /// Headline describing automatic wallpaper changes through Shortcuts.
@@ -13942,7 +13942,7 @@ abstract class AppLocalizations {
   /// First step in creating a wallpaper automation in iOS Shortcuts.
   ///
   /// In en, this message translates to:
-  /// **'Open the Shortcuts app. Tap Automation, then New Automation.'**
+  /// **'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.'**
   String get wallpaperShortcutsOpenAutomationSteps;
 
   /// Message shown when the Shortcuts app cannot be opened.
@@ -13960,7 +13960,7 @@ abstract class AppLocalizations {
   /// Description of the random favourite Shortcuts source.
   ///
   /// In en, this message translates to:
-  /// **'A random wallpaper you hearted. It avoids the one it gave last. Heart some wallpapers first.'**
+  /// **'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.'**
   String get wallpaperShortcutsSourceFavouriteDescription;
 
   /// Shortcuts source option for the daily wallpaper pick.
@@ -13972,7 +13972,7 @@ abstract class AppLocalizations {
   /// Description of the Wall of the Day Shortcuts source.
   ///
   /// In en, this message translates to:
-  /// **'Today\'s pick from Prism.'**
+  /// **'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.'**
   String get wallpaperShortcutsSourceWotdDescription;
 
   /// Section title for iOS Shortcuts setup instructions.

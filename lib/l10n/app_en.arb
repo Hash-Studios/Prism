@@ -8199,7 +8199,7 @@
   "@wallpaperShortcutsAddActionsSteps": {
     "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
   },
-  "wallpaperShortcutsBody": "iPhone lets Shortcuts change the wallpaper for you. Make one automation. It runs on its own.",
+  "wallpaperShortcutsBody": "Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.",
   "@wallpaperShortcutsBody": {
     "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
   },
@@ -8207,11 +8207,11 @@
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Pick when it runs: Time of Day, When I open an app, or Charger.",
+  "wallpaperShortcutsChooseTriggerSteps": "In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.",
   "@wallpaperShortcutsChooseTriggerSteps": {
     "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
   },
-  "wallpaperShortcutsDisableConfirmationSteps": "Turn off \"Ask Before Running\". Tap Done.",
+  "wallpaperShortcutsDisableConfirmationSteps": "Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.",
   "@wallpaperShortcutsDisableConfirmationSteps": {
     "description": "Step to disable confirmation and save an iOS Shortcuts automation."
   },
@@ -8223,7 +8223,7 @@
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
   },
-  "wallpaperShortcutsOpenAutomationSteps": "Open the Shortcuts app. Tap Automation, then New Automation.",
+  "wallpaperShortcutsOpenAutomationSteps": "Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.",
   "@wallpaperShortcutsOpenAutomationSteps": {
     "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
@@ -8235,7 +8235,7 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "A random wallpaper you hearted. It avoids the one it gave last. Heart some wallpapers first.",
+  "wallpaperShortcutsSourceFavouriteDescription": "A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.",
   "@wallpaperShortcutsSourceFavouriteDescription": {
     "description": "Description of the random favourite Shortcuts source."
   },
@@ -8243,7 +8243,7 @@
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
   },
-  "wallpaperShortcutsSourceWotdDescription": "Today's pick from Prism.",
+  "wallpaperShortcutsSourceWotdDescription": "Today's Prism pick. Download today's original in Prism first. When the daily pick changes, download the new original before running this source.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
   },

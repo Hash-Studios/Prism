@@ -8191,7 +8191,7 @@
   "@wallpaperShortcutsAddActionsSteps": {
     "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
   },
-  "wallpaperShortcutsBody": "Mit Kurzbefehlen auf dem iPhone kannst du dein Hintergrundbild automatisch ändern. Erstelle eine Automation. Sie läuft dann von selbst.",
+  "wallpaperShortcutsBody": "Nutze Kurzbefehle, um ein Hintergrundbild nach Zeitplan oder Auslöser festzulegen. Bereite vorher die Quelle unten vor.",
   "@wallpaperShortcutsBody": {
     "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
   },
@@ -8199,11 +8199,11 @@
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Wähle den Auslöser: Tageszeit, wenn ich eine App öffne oder Ladegerät.",
+  "wallpaperShortcutsChooseTriggerSteps": "Öffne im Kurzbefehl-Editor bei Bedarf Automation. Wähle und konfiguriere einen Auslöser, etwa Tageszeit, Öffnen einer App oder Anschließen eines Ladegeräts.",
   "@wallpaperShortcutsChooseTriggerSteps": {
     "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
   },
-  "wallpaperShortcutsDisableConfirmationSteps": "Schalte „Vor Ausführen bestätigen“ aus. Tippe auf „Fertig“.",
+  "wallpaperShortcutsDisableConfirmationSteps": "Prüfe die angezeigten Ausführungsoptionen und speichere den Kurzbefehl oder die Automation. Falls \"Vor Ausführen bestätigen\" erscheint, schalte es für automatische Ausführungen aus.",
   "@wallpaperShortcutsDisableConfirmationSteps": {
     "description": "Step to disable confirmation and save an iOS Shortcuts automation."
   },
@@ -8215,7 +8215,7 @@
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
   },
-  "wallpaperShortcutsOpenAutomationSteps": "Öffne die App „Kurzbefehle“. Tippe auf „Automation“ und dann auf „Neue Automation“.",
+  "wallpaperShortcutsOpenAutomationSteps": "Öffne Kurzbefehle. Gibt es einen Tab \"Automation\", tippe darauf und dann auf \"Neue Automation\". Sonst tippe auf Hinzufügen (+) und auf Bearbeiten, falls es angezeigt wird.",
   "@wallpaperShortcutsOpenAutomationSteps": {
     "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
@@ -8227,7 +8227,7 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Ein zufälliges Hintergrundbild, das du mit einem Herz markiert hast. Das zuletzt verwendete wird übersprungen. Markiere zuerst einige Hintergrundbilder mit einem Herz.",
+  "wallpaperShortcutsSourceFavouriteDescription": "Ein zufälliger, für Kurzbefehle verfügbarer Favorit. Markiere zuerst Hintergrundbilder in Prism mit einem Herz. Manche geschützten Bilder sind nicht verfügbar. Wenn ein anderer Favorit verfügbar ist, wird die letzte Auswahl übersprungen.",
   "@wallpaperShortcutsSourceFavouriteDescription": {
     "description": "Description of the random favourite Shortcuts source."
   },
@@ -8235,7 +8235,7 @@
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
   },
-  "wallpaperShortcutsSourceWotdDescription": "Die heutige Auswahl von Prism.",
+  "wallpaperShortcutsSourceWotdDescription": "Die heutige Prism-Auswahl. Lade zuerst das heutige Original in Prism herunter. Wenn die Tagesauswahl wechselt, lade vor der nächsten Nutzung dieser Quelle das neue Original herunter.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
   },
