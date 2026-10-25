@@ -12,6 +12,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_remote_config_platform_interface/firebase_remote_config_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../support/in_memory_local_store.dart';
 
 class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
+  String interests = '';
+
   @override
   FirebaseRemoteConfigPlatform delegateFor({required FirebaseApp app}) => this;
 
@@ -46,7 +50,7 @@ class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
   FirebaseRemoteConfigPlatform setInitialValues({required Map<Object?, Object?> remoteConfigValues}) => this;
 
   @override
-  String getString(String key) => '';
+  String getString(String key) => key == app_constants.personalizedInterestsRemoteConfigKey ? interests : '';
 }
 
 class _EmptyFirestore extends Fake implements FirestoreClient {
@@ -341,6 +345,32 @@ class _EmptyPexels extends Fake implements PexelsWallpaperRepository {
   }) async => Result.success(<PexelsWallpaper>[]);
 }
 
+class _InterestWallhaven extends _EmptyWallhaven {
+  @override
+  Future<Result<List<WallhavenWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int categories = 100,
+    int purity = 100,
+    int startPage = 1,
+    String? paginationKey,
+    bool portraitOnly = true,
+    String? minResolution,
+    String? sorting,
+    String? colors,
+  }) async => Result.success(<WallhavenWallpaper>[
+    WallhavenWallpaper(
+      core: WallpaperCore(
+        id: categoryName,
+        source: WallpaperSource.wallhaven,
+        fullUrl: 'https://example.com/$categoryName.jpg',
+        thumbnailUrl: 'https://example.com/$categoryName-thumb.jpg',
+        category: 'general',
+      ),
+    ),
+  ]);
+}
+
 class _ToggleWallhaven extends Fake implements WallhavenWallpaperRepository {
   bool fail = false;
   final List<String> queries = <String>[];
@@ -506,6 +536,7 @@ PrismUsersV2 _signedInUser({List<String> following = const <String>[], String id
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  late _FakeFirebaseRemoteConfigPlatform remoteConfig;
 
   setUp(TasteSignal.clearRememberedFeedTerms);
   tearDown(TasteSignal.clearRememberedFeedTerms);
@@ -513,7 +544,65 @@ void main() {
   setUpAll(() async {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
-    FirebaseRemoteConfigPlatform.instance = _FakeFirebaseRemoteConfigPlatform();
+    remoteConfig = _FakeFirebaseRemoteConfigPlatform();
+    FirebaseRemoteConfigPlatform.instance = remoteConfig;
+  });
+
+  test('delayed Firebase keeps live pools and local interests, then reloads the remote catalog', () async {
+    final previousUser = app_state.prismUser;
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final ready = Completer<bool>();
+    FirebaseInit.setFuture(ready.future);
+    final apps = MethodChannelFirebase.appInstances;
+    addTearDown(() async {
+      app_state.prismUser = previousUser;
+      remoteConfig.interests = '';
+      MethodChannelFirebase.appInstances = apps;
+      if (!ready.isCompleted) ready.complete(true);
+      await FirebaseInit.readyFuture;
+    });
+    MethodChannelFirebase.appInstances = {};
+    final cachedSettings = SettingsLocalDataSource(InMemoryLocalStore());
+    await cachedSettings.set(
+      app_constants.personalizedInterestsLocalCacheKey,
+      '[{"name":"Cached","query":"cached-landscapes","imageUrl":"https://example.com/cached.jpg",'
+      '"sources":["wallhaven"]}]',
+    );
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: cachedSettings,
+      wallhaven: _InterestWallhaven(),
+    );
+
+    final cachedInterests = await repository.fetch(_firstPage);
+
+    expect(_itemIds(cachedInterests.data?.items ?? const <FeedItemEntity>[]), <String>[
+      'cached-landscapes',
+      'visible-doc',
+      'wall-doc',
+    ]);
+    final defaults = await _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+    ).fetch(_firstPage);
+    expect(_itemIds(defaults.data?.items ?? const <FeedItemEntity>[]), <String>['visible-doc', 'wall-doc']);
+
+    MethodChannelFirebase.appInstances = apps;
+    remoteConfig.interests =
+        '[{"name":"Remote","query":"remote-space","imageUrl":"https://example.com/remote.jpg",'
+        '"sources":["wallhaven"]}]';
+    ready.complete(true);
+    await FirebaseInit.readyFuture;
+
+    final refreshed = await repository.fetch(_firstPage);
+
+    expect(_itemIds(refreshed.data?.items ?? const <FeedItemEntity>[]), <String>[
+      'remote-space',
+      'visible-doc',
+      'wall-doc',
+    ]);
   });
 
   test('less-like-this records remembered terms and hides a tagless external wall', () async {

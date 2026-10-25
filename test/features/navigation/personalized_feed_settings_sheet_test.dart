@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -6,6 +7,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -16,13 +18,16 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/home_feed_tab_bar.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_remote_config_platform_interface/firebase_remote_config_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +57,8 @@ class _FailingClearStore extends TasteSignalStore {
 }
 
 class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
+  String interests = '';
+
   @override
   FirebaseRemoteConfigPlatform delegateFor({required FirebaseApp app}) => this;
 
@@ -59,8 +66,18 @@ class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
   FirebaseRemoteConfigPlatform setInitialValues({required Map<Object?, Object?> remoteConfigValues}) => this;
 
   @override
-  String getString(String key) => '';
+  String getString(String key) => key == app_constants.personalizedInterestsRemoteConfigKey ? interests : '';
 }
+
+String _interestCatalogJson(List<String> names) => jsonEncode(<Map<String, Object>>[
+  for (final name in names)
+    <String, Object>{
+      'name': name,
+      'query': name.toLowerCase(),
+      'imageUrl': 'https://example.com/$name.jpg',
+      'sources': <String>['wallhaven'],
+    },
+]);
 
 /// Glint loops, so a screen that shows it never settles: pump a bounded time instead.
 Future<void> _settle(WidgetTester tester) async {
@@ -79,6 +96,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late TasteSignalStore store;
+  late _FakeFirebaseRemoteConfigPlatform remoteConfig;
   List<String>? savedInterests;
   FeedMix? savedMix;
 
@@ -86,7 +104,8 @@ void main() {
     registerFallbackValue(const SaveInterestsParams(interests: <String>[]));
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
-    FirebaseRemoteConfigPlatform.instance = _FakeFirebaseRemoteConfigPlatform();
+    remoteConfig = _FakeFirebaseRemoteConfigPlatform();
+    FirebaseRemoteConfigPlatform.instance = remoteConfig;
   });
 
   tearDown(() => toasts.overlayResolver = null);
@@ -160,6 +179,100 @@ void main() {
 
   FilledButton saveButton(WidgetTester tester) =>
       tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'));
+
+  testWidgets('For you settings save before Firebase readiness and load remote interests when reopened', (
+    tester,
+  ) async {
+    final previousUser = app_state.prismUser;
+    final apps = MethodChannelFirebase.appInstances;
+    final ready = Completer<bool>();
+    FirebaseInit.setFuture(ready.future);
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set(
+      app_constants.personalizedInterestsLocalCacheKey,
+      _interestCatalogJson(<String>['Alpha', 'Beta', 'Gamma', 'Delta']),
+    );
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(settings));
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    addTearDown(() async {
+      app_state.prismUser = previousUser;
+      MethodChannelFirebase.appInstances = apps;
+      remoteConfig.interests = '';
+      if (!ready.isCompleted) ready.complete(true);
+      await getIt.reset();
+    });
+    MethodChannelFirebase.appInstances = {};
+    tester.view.physicalSize = const Size(600, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DefaultTabController(
+          length: HomeFeedChip.values.length,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: HomeFeedTabBar(
+                controller: DefaultTabController.of(context),
+                selected: HomeFeedChip.forYou,
+                onSelected: (_) {},
+                onTuneTap: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    showToastsInTree(tester);
+    await tester.tap(find.text('For you'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tune your feed'), findsOneWidget);
+    await tester.ensureVisible(find.bySemanticsLabel('Interest: Delta, selected'));
+    await tester.tap(find.bySemanticsLabel('Interest: Delta, selected'));
+    await tester.ensureVisible(find.text('Adventurous'));
+    await tester.tap(find.text('Adventurous'));
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(PersonalizedInterestsCatalog.selectedFromLocal(settings), <String>['Alpha', 'Beta', 'Gamma']);
+    expect(settings.get<String>(app_constants.personalizedFeedMixLocalKey), 'adventurous');
+    expect(personalizedFeedSettingsRevision.value, 1);
+    expect(find.text('Tune your feed'), findsNothing);
+
+    await settings.set(app_constants.personalizedInterestsLocalCacheKey, '');
+    await settings.set('onboarding_v2_interests', '');
+    await tester.tap(find.text('For you'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Interest: Space, selected'), findsOneWidget);
+    await tester.ensureVisible(find.text('Familiar'));
+    await tester.tap(find.text('Familiar'));
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(PersonalizedInterestsCatalog.selectedFromLocal(settings), <String>[
+      'Space',
+      'Scenery',
+      'Vehicles',
+      'Animals',
+    ]);
+    expect(settings.get<String>(app_constants.personalizedFeedMixLocalKey), 'familiar');
+    expect(personalizedFeedSettingsRevision.value, 2);
+
+    MethodChannelFirebase.appInstances = apps;
+    remoteConfig.interests = _interestCatalogJson(<String>['Epsilon', 'Zeta', 'Eta']);
+    ready.complete(true);
+    await FirebaseInit.readyFuture;
+    await tester.tap(find.text('For you'));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Interest: Epsilon, not selected'), findsOneWidget);
+    expect(find.bySemanticsLabel('Interest: Space, selected'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Save needs at least three interests', (tester) async {
     await pumpSheet(tester);
