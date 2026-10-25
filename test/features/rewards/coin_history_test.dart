@@ -190,6 +190,82 @@ void main() {
       expect(analytics.events.whereType<CoinHistoryOpenedEvent>(), hasLength(1));
     });
 
+    for (final reason in <String>['ai_generation_reserved', 'ai_generation']) {
+      testWidgets('AI charge hides internal $reason copy without changing amounts', (tester) async {
+        firestore.onQuery = (_) => <FakeDocRow>[
+          (
+            id: 'ai-charge',
+            data: <String, dynamic>{
+              ..._row(0, action: 'aiGeneration', delta: -10, description: reason).data,
+              'reason': reason,
+              'balanceBefore': 21,
+              'balanceAfter': 11,
+            },
+          ),
+          _row(1, action: 'aiGeneration', delta: -10, description: 'Moonlit mountains'),
+        ];
+
+        await pumpPage(tester);
+
+        expect(find.text('AI wallpaper'), findsNWidgets(2));
+        expect(find.text(reason), findsNothing);
+        expect(find.text('Moonlit mountains'), findsOneWidget);
+        expect(find.text('-10'), findsNWidgets(2));
+        expect(find.text('Balance 11'), findsOneWidget);
+      });
+    }
+
+    for (final sample in <({String action, String reason, String label})>[
+      (action: 'premiumPreview24h', reason: 'premium_preview_unlock_24h', label: 'Collection preview, 24 h'),
+      (action: 'wallpaperDownload', reason: 'content_E3EI', label: 'Wallpaper download'),
+      (action: 'wallpaperDownload', reason: 'wallpaperDownload', label: 'Wallpaper download'),
+      (action: 'premiumWallpaperDownload', reason: 'content_E3EI', label: 'Premium wallpaper'),
+    ]) {
+      testWidgets('Spent hides ${sample.action} reason ${sample.reason} but keeps human copy', (tester) async {
+        final semantics = tester.ensureSemantics();
+        firestore.onQuery = (_) => <FakeDocRow>[
+          _row(0, action: sample.action, description: sample.reason),
+          _row(1, action: sample.action, description: 'Sunset over the bay'),
+          _row(2, action: 'dailyLogin', delta: 8),
+        ];
+
+        await pumpPage(tester);
+        await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+        await tester.pump();
+
+        expect(find.text(sample.label), findsNWidgets(2));
+        expect(find.text(sample.reason), findsNothing);
+        expect(find.bySemanticsLabel(RegExp('.*${sample.reason}.*')), findsNothing);
+        expect(find.text('Sunset over the bay'), findsOneWidget);
+        expect(find.bySemanticsLabel(RegExp('.*Sunset over the bay.*')), findsOneWidget);
+        expect(find.text('-5'), findsNWidgets(2));
+        expect(find.text('Balance 100'), findsNWidgets(2));
+        expect(find.text('+8'), findsNothing);
+        semantics.dispose();
+      });
+    }
+
+    testWidgets('reason-like human descriptions and unrelated actions stay intact', (tester) async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        _row(0, description: 'content_my favourite wallpaper'),
+        _row(1, description: 'premium_preview_unlock_24h'),
+        _row(2, action: 'premiumPreview24h', description: 'content_E3EI'),
+        _row(3, description: 'wallpaperDownload memories'),
+      ];
+
+      await pumpPage(tester);
+
+      for (final description in <String>[
+        'content_my favourite wallpaper',
+        'premium_preview_unlock_24h',
+        'content_E3EI',
+        'wallpaperDownload memories',
+      ]) {
+        expect(find.text(description), findsOneWidget);
+      }
+      expect(find.text('Wallpaper download'), findsNWidgets(3));
+    });
+
     testWidgets('filter chips narrow the loaded rows', (tester) async {
       firestore.onQuery = (_) => <FakeDocRow>[
         _row(0),
