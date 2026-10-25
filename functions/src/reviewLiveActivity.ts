@@ -187,9 +187,6 @@ export async function syncReviewLiveActivities(onlyUid?: string): Promise<void> 
               if (sendError !== undefined) {
                 const code = (sendError as {code?: unknown}).code;
                 logger.warn("syncReviewLiveActivities: send failed.", {uid, event: plan.event, code});
-                if (code === "messaging/registration-token-not-registered") {
-                  await clearInvalidFcmToken(uid, fcmToken);
-                }
                 if (typeof code !== "string" || !PERMANENT_SEND_CODES.has(code)) retryError = sendError;
               } else {
                 await recordSuccessfulSend(ref, leaseOwner, plan, state, now);
@@ -271,19 +268,6 @@ async function clearSavedTokens(ref: ActivityRef, owner: string, previous: Recor
       activityToken: null,
       lastStateKey: null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, {merge: true});
-  });
-}
-
-async function clearInvalidFcmToken(uid: string, token: string): Promise<void> {
-  const ref = db.doc(`usersv2/${uid}/private/session`);
-  await db.runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    if (snap.data()?.fcmToken !== token) return;
-    transaction.set(ref, {
-      fcmToken: admin.firestore.FieldValue.delete(),
-      fcmTokenBindingVersion: admin.firestore.FieldValue.delete(),
-      fcmTokenBindingToken: admin.firestore.FieldValue.delete(),
     }, {merge: true});
   });
 }

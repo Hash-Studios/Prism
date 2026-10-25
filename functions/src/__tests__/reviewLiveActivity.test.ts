@@ -515,7 +515,7 @@ test("invalid-argument does not erase the registered ActivityKit token", async (
   assert.equal(store.get("adminLiveActivities/admin")?.activityToken, TOKEN);
 });
 
-test("an unregistered FCM token clears only its current session binding", async (t) => {
+test("an unregistered FCM token leaves the shared session binding alone", async (t) => {
   const store = installFakeDb(t, {
     "adminLiveActivities/admin": {activityToken: TOKEN, lastStateKey: "old"},
     "usersv2/admin": {loggedIn: true},
@@ -535,7 +535,7 @@ test("an unregistered FCM token clears only its current session binding", async 
 
   await syncReviewLiveActivities();
 
-  assert.equal(store.get("usersv2/admin/private/session")?.fcmToken, undefined);
+  assert.equal(store.get("usersv2/admin/private/session")?.fcmToken, FCM);
   assert.equal(store.get("adminLiveActivities/admin")?.activityToken, TOKEN);
 });
 
