@@ -15,6 +15,7 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
   private var workIDs: [String: UUID] = [:]
   private var reviewPushToStartToken: String?
   private var reviewActivityTokens: [String: String] = [:]
+  private var endedReviewActivityIDs: Set<String> = []
   private var reportsReviewTokens = false
 
   init(flutterApi: PrismLiveActivityFlutterApi) {
@@ -189,10 +190,13 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
   private nonisolated static func watchReviewActivities(
     _ receive: @escaping @Sendable (_ id: String, _ token: String?) -> Void
   ) async {
+    var watchedIDs: Set<String> = []
     for activity in Activity<PrismReviewAttributes>.activities {
+      guard watchedIDs.insert(activity.id).inserted else { continue }
       watchReviewActivity(id: activity.id, receive)
     }
     for await activity in Activity<PrismReviewAttributes>.activityUpdates {
+      guard watchedIDs.insert(activity.id).inserted else { continue }
       watchReviewActivity(id: activity.id, receive)
     }
   }
@@ -226,7 +230,23 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
   }
 
   private func receiveReviewActivityToken(id: String, token: String?) {
-    reviewActivityTokens[id] = token
+    guard #available(iOS 16.2, *) else { return }
+    guard !endedReviewActivityIDs.contains(id) else { return }
+    if let token {
+      guard let activity = Activity<PrismReviewAttributes>.activities.first(where: { $0.id == id }),
+            activity.activityState != .ended, activity.activityState != .dismissed
+      else {
+        endedReviewActivityIDs.insert(id)
+        reviewActivityTokens.removeValue(forKey: id)
+        reportReviewActivityToken()
+        return
+      }
+      guard reviewActivityTokens[id] != token else { return }
+      reviewActivityTokens[id] = token
+    } else {
+      endedReviewActivityIDs.insert(id)
+      reviewActivityTokens.removeValue(forKey: id)
+    }
     reportReviewActivityToken()
   }
 
