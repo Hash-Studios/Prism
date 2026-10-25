@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -7,12 +11,47 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
 import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
+
+class _DelayedFirestore extends FakeFirestoreClient {
+  final List<Completer<List<FakeDocRow>>> pending = <Completer<List<FakeDocRow>>>[];
+  final Map<String, Future<List<FakeDocRow>>> _inflight = <String, Future<List<FakeDocRow>>>{};
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    querySpecs.add(spec);
+    final String key = spec.filtersHash;
+    final Future<List<FakeDocRow>>? inflight = _inflight[key];
+    if (inflight != null) {
+      return (await inflight).map((row) => map(row.data, row.id)).toList();
+    }
+    final request = Completer<List<FakeDocRow>>();
+    pending.add(request);
+    _inflight[key] = request.future;
+    try {
+      return (await request.future).map((row) => map(row.data, row.id)).toList();
+    } finally {
+      if (identical(_inflight[key], request.future)) _inflight.remove(key);
+    }
+  }
+}
+
+class _HistorySession extends Fake implements SessionRepository {
+  _HistorySession(this.currentUser);
+
+  @override
+  PrismUsersV2 currentUser;
+  final changes = StreamController<PrismUsersV2>.broadcast(sync: true);
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() => changes.stream;
+}
 
 FakeDocRow _row(int i, {String action = 'wallpaperDownload', int delta = -5, String description = ''}) => (
   id: 'tx-$i',
@@ -44,6 +83,21 @@ void main() {
   });
 
   group('CoinHistoryRepository', () {
+    test('the delayed client shares an identical in-flight query but not a settled one', () async {
+      final delayed = _DelayedFirestore();
+      final repository = CoinHistoryRepository(client: delayed);
+      final first = repository.fetchPage();
+      final shared = repository.fetchPage();
+      expect(delayed.pending, hasLength(1));
+      delayed.pending[0].complete(<FakeDocRow>[_row(0)]);
+      expect((await first).items.single.id, 'tx-0');
+      expect((await shared).items.single.id, 'tx-0');
+      final fresh = repository.fetchPage();
+      expect(delayed.pending, hasLength(2));
+      delayed.pending[1].complete(<FakeDocRow>[_row(1)]);
+      expect((await fresh).items.single.id, 'tx-1');
+    });
+
     test('reads the newest page for the user with the history source tag', () async {
       firestore.onQuery = (_) => <FakeDocRow>[_row(0), _row(1)];
 
@@ -169,6 +223,314 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
+    }
+
+    testWidgets('a refresh during an in-flight newest query waits for a fresh snapshot', (tester) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      await pumpPage(tester);
+      CoinsService.instance.balanceNotifier.value++;
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+
+      delayed.pending[0].complete(<FakeDocRow>[_row(0)]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('-5'), findsNothing);
+      expect(delayed.pending, hasLength(2));
+      delayed.pending[1].complete(<FakeDocRow>[_row(1, delta: -9), _row(0)]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('-5'), findsOneWidget);
+      expect(find.text('Try again'), findsNothing);
+    });
+
+    testWidgets('retained history refreshes newest rows and keeps the selected filter', (tester) async {
+      List<FakeDocRow> ledger = <FakeDocRow>[_row(0, delta: -2), _row(1, delta: 5)];
+      firestore.onQuery = (_) => ledger;
+      await pumpPage(tester);
+      final state = tester.state(find.byType(CoinHistoryPage));
+      await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+      unawaited(navigator.push<void>(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Wheel')))));
+      await tester.pumpAndSettle();
+      ledger = <FakeDocRow>[
+        (
+          id: 'spin',
+          data: <String, dynamic>{
+            ..._row(2, action: 'spinWheel', delta: -9).data,
+            'balanceAfter': 9,
+          },
+        ),
+        ...ledger,
+      ];
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      await tester.pump();
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(tester.state(find.byType(CoinHistoryPage)), same(state));
+      expect(firestore.querySpecs, hasLength(2));
+      expect(firestore.querySpecs.last.startAfterDocId, isNull);
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('Balance 9'), findsOneWidget);
+      expect(find.text('-2'), findsOneWidget);
+      expect(find.text('+5'), findsNothing);
+      expect(tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Spent')).selected, isTrue);
+    });
+
+    testWidgets('refresh resets pagination and a late older page cannot append or hide a newer refresh', (
+      tester,
+    ) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      await pumpPage(tester);
+      delayed.pending[0].complete(<FakeDocRow>[_row(0), for (int i = 1; i < 40; i++) _row(i, delta: 0)]);
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.text('Show more'));
+      await tester.pump();
+      expect(delayed.querySpecs[1].startAfterDocId, 'tx-39');
+
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      expect(delayed.pending, hasLength(2));
+      delayed.pending[1].complete(<FakeDocRow>[_row(40, delta: -7)]);
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[2].startAfterDocId, isNull);
+      expect(find.text('-7'), findsNothing);
+      CoinsService.instance.balanceNotifier.value++;
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      expect(delayed.pending, hasLength(3));
+      delayed.pending[2].completeError(StateError('superseded refresh failed'));
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[3].startAfterDocId, isNull);
+      delayed.pending[3].complete(<FakeDocRow>[_row(80, delta: -9), _row(0)]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('-5'), findsOneWidget);
+      expect(find.text('-7'), findsNothing);
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets('refresh waits for filtered auto-pagination and resumes it from the newest page', (tester) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      await pumpPage(tester);
+      await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+      delayed.pending[0].complete(<FakeDocRow>[for (int i = 0; i < 40; i++) _row(i, delta: 8)]);
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[1].startAfterDocId, 'tx-39');
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      delayed.pending[1].complete(<FakeDocRow>[_row(40, delta: -7)]);
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[2].startAfterDocId, isNull);
+      expect(find.text('-7'), findsNothing);
+      delayed.pending[2].complete(<FakeDocRow>[for (int i = 80; i < 120; i++) _row(i, delta: 8)]);
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[3].startAfterDocId, 'tx-119');
+      delayed.pending[3].complete(<FakeDocRow>[_row(120, delta: -9)]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('-7'), findsNothing);
+      expect(find.text('+8'), findsNothing);
+      expect(tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Spent')).selected, isTrue);
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets('a queued refresh runs after an initial failure and exposes only its own retry', (tester) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      await pumpPage(tester);
+      CoinsService.instance.balanceNotifier.value++;
+      delayed.pending[0].completeError(StateError('superseded initial read failed'));
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.pending, hasLength(2));
+      expect(find.text('Try again'), findsNothing);
+      delayed.pending[1].completeError(StateError('latest refresh failed'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      await tester.pump();
+      expect(delayed.querySpecs[2].startAfterDocId, isNull);
+      delayed.pending[2].complete(<FakeDocRow>[_row(1, delta: -9)]);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('Try again'), findsNothing);
+    });
+
+    testWidgets('failed refresh keeps rows and retries the newest page instead of appending', (tester) async {
+      firestore.onQuery = (_) => <FakeDocRow>[_row(0), for (int i = 1; i < 40; i++) _row(i, delta: 0)];
+      await pumpPage(tester);
+      firestore.queryError = StateError('offline');
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('-5'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+
+      firestore.queryError = null;
+      firestore.onQuery = (_) => <FakeDocRow>[_row(50, delta: -9), _row(0)];
+      await tester.tap(find.text('Try again'));
+      await tester.pump();
+      await tester.pump();
+      expect(firestore.querySpecs.last.startAfterDocId, isNull);
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('-5'), findsOneWidget);
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets('account switch clears old rows and rejects late previous-owner responses', (tester) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      await pumpPage(tester);
+      delayed.pending[0].complete(<FakeDocRow>[_row(0)]);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('-5'), findsOneWidget);
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true;
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      expect(find.text('-5'), findsNothing);
+      expect(delayed.querySpecs.last.filters.single.value, 'user-2');
+      expect(delayed.querySpecs.last.startAfterDocId, isNull);
+      delayed.pending[2].complete(<FakeDocRow>[_row(99, delta: -3)]);
+      await tester.pump();
+      await tester.pump();
+      delayed.pending[1].complete(<FakeDocRow>[_row(1, delta: -7)]);
+      await tester.pump();
+      expect(find.text('-3'), findsOneWidget);
+      expect(find.text('-7'), findsNothing);
+
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.balanceNotifier.value++;
+      await tester.pump();
+      expect(find.text('-3'), findsNothing);
+      expect(delayed.querySpecs, hasLength(3));
+      await tester.pumpWidget(const SizedBox.shrink());
+      CoinsService.instance.balanceNotifier.value++;
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('session changes clear private rows even when balance does not change', (tester) async {
+      final session = _HistorySession(app_state.prismUser);
+      getIt.registerSingleton<SessionRepository>(session);
+      firestore.onQuery = (_) => <FakeDocRow>[_row(0)];
+      await pumpPage(tester);
+      expect(find.text('-5'), findsOneWidget);
+      final int balance = CoinsService.instance.balanceNotifier.value;
+      session.currentUser = app_constants.createGuestPrismUser();
+      session.changes.add(session.currentUser);
+      await tester.pump();
+      expect(find.text('-5'), findsNothing);
+      expect(firestore.querySpecs, hasLength(1));
+      firestore.onQuery = (_) => <FakeDocRow>[_row(2, delta: -3)];
+      session.currentUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true;
+      session.changes.add(session.currentUser);
+      await tester.pump();
+      await tester.pump();
+      expect(CoinsService.instance.balanceNotifier.value, balance);
+      expect(firestore.querySpecs.last.filters.single.value, 'user-2');
+      expect(firestore.querySpecs.last.startAfterDocId, isNull);
+      expect(find.text('-3'), findsOneWidget);
+      expect(find.text('-5'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await session.changes.close();
+      await getIt.unregister<SessionRepository>();
+    });
+
+    testWidgets('returning to an owner waits for its old read without blocking another owner', (tester) async {
+      final delayed = _DelayedFirestore();
+      firestore = delayed;
+      final session = _HistorySession(app_state.prismUser);
+      getIt.registerSingleton<SessionRepository>(session);
+      await pumpPage(tester);
+      CoinsService.instance.balanceNotifier.value++;
+      session.currentUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true;
+      session.changes.add(session.currentUser);
+      await tester.pump();
+      expect(delayed.querySpecs[1].filters.single.value, 'user-2');
+      session.currentUser = app_constants.createGuestPrismUser()
+        ..id = 'user-1'
+        ..loggedIn = true;
+      session.changes.add(session.currentUser);
+      await tester.pump();
+      expect(delayed.pending, hasLength(2));
+      delayed.pending[0].complete(<FakeDocRow>[_row(0, delta: -7)]);
+      await tester.pump();
+      await tester.pump();
+      expect(delayed.querySpecs[2].filters.single.value, 'user-1');
+      expect(find.text('-7'), findsNothing);
+      delayed.pending[2].complete(<FakeDocRow>[_row(1, delta: -9)]);
+      await tester.pump();
+      await tester.pump();
+      delayed.pending[1].complete(<FakeDocRow>[_row(2, delta: -3)]);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('-9'), findsOneWidget);
+      expect(find.text('-3'), findsNothing);
+      expect(delayed.pending, hasLength(3));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await session.changes.close();
+      await getIt.unregister<SessionRepository>();
+    });
+
+    for (final bool dispose in <bool>[false, true]) {
+      testWidgets('${dispose ? 'disposal' : 'logout'} cancels a queued refresh after the active read fails', (
+        tester,
+      ) async {
+        final delayed = _DelayedFirestore();
+        firestore = delayed;
+        await pumpPage(tester);
+        delayed.pending[0].complete(<FakeDocRow>[_row(0)]);
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('-5'), findsOneWidget);
+        CoinsService.instance.balanceNotifier.value++;
+        CoinsService.instance.balanceNotifier.value++;
+        await tester.pump();
+        if (dispose) {
+          await tester.pumpWidget(const SizedBox.shrink());
+        } else {
+          app_state.prismUser = app_constants.createGuestPrismUser();
+          CoinsService.instance.balanceNotifier.value++;
+          await tester.pump();
+        }
+        delayed.pending[1].completeError(StateError('read failed after leaving'));
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('-5'), findsNothing);
+        expect(find.text('Try again'), findsNothing);
+        expect(delayed.pending, hasLength(2));
+        expect(tester.takeException(), isNull);
+      });
     }
 
     testWidgets('rows show label, description, signed amount and the balance after', (tester) async {

@@ -1,10 +1,17 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -42,52 +49,116 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
 
   final CoinHistoryRepository _repository = CoinHistoryRepository();
   final List<CoinTransactionEntry> _items = <CoinTransactionEntry>[];
+  final Map<String?, Future<CoinHistoryBatch>> _pendingPages = <String?, Future<CoinHistoryBatch>>{};
   bool _loading = true;
   bool _loadingMore = false;
   bool _failed = false;
   bool _hasMore = false;
   String? _cursor;
   _HistoryFilter? _filter;
+  int _generation = 0;
+  String? _owner;
+  bool _refreshPending = false;
+  StreamSubscription<PrismUsersV2>? _sessionSubscription;
+
+  String? get _currentOwner => app_state.prismUser.loggedIn ? app_state.prismUser.id : null;
 
   @override
   void initState() {
     super.initState();
     analytics.track(const CoinHistoryOpenedEvent());
-    _load();
+    _owner = _currentOwner;
+    CoinsService.instance.balanceNotifier.addListener(_refresh);
+    if (getIt.isRegistered<SessionRepository>()) {
+      _sessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((_) {
+        if (_owner != _currentOwner) _refresh();
+      });
+    }
+    _refresh();
   }
 
-  Future<void> _load() async {
-    final bool first = _cursor == null;
+  @override
+  void dispose() {
+    CoinsService.instance.balanceNotifier.removeListener(_refresh);
+    unawaited(_sessionSubscription?.cancel());
+    super.dispose();
+  }
+
+  void _refresh() {
+    final bool changedOwner = _owner != _currentOwner;
+    _owner = _currentOwner;
+    _generation++;
+    _cursor = null;
+    _hasMore = false;
+    _refreshPending = true;
+    if (changedOwner) _items.clear();
+    if (_owner == null || _owner!.isEmpty) {
+      setState(() {
+        _items.clear();
+        _loading = false;
+        _loadingMore = false;
+        _failed = false;
+      });
+      return;
+    }
+    _load(refresh: true);
+  }
+
+  Future<void> _load({bool refresh = false}) async {
+    if (!refresh && (_loading || _loadingMore)) return;
+    final int generation = ++_generation;
+    final String? owner = _owner;
+    bool isCurrent() => mounted && generation == _generation && owner == _currentOwner;
+    final bool first = _refreshPending || _cursor == null;
     setState(() {
       _failed = false;
+      _loadingMore = false;
       if (first) {
-        _loading = true;
+        _loading = _items.isEmpty;
       } else {
         _loadingMore = true;
       }
     });
     try {
+      final Future<CoinHistoryBatch>? pending = _pendingPages[owner];
+      if (pending != null) {
+        try {
+          await pending;
+        } catch (_) {
+          if (!isCurrent()) return;
+        }
+        if (!isCurrent()) return;
+      }
       final List<CoinTransactionEntry> fetched = <CoinTransactionEntry>[];
       String? cursor = first ? null : _cursor;
       CoinHistoryBatch batch;
       int pages = 0;
       do {
-        batch = await _repository.fetchPage(startAfterDocId: cursor);
+        final Future<CoinHistoryBatch> request = _repository.fetchPage(startAfterDocId: cursor);
+        _pendingPages[owner] = request;
+        try {
+          batch = await request;
+        } finally {
+          if (identical(_pendingPages[owner], request)) _pendingPages.remove(owner);
+        }
+        if (!isCurrent()) return;
         fetched.addAll(batch.items);
         cursor = batch.cursor ?? cursor;
         pages++;
       } while (batch.hasMore && pages < _maxPagesPerPull && _visible(fetched).isEmpty);
-      if (!mounted) return;
+      if (!isCurrent()) return;
       setState(() {
+        if (first) _items.clear();
         _items.addAll(fetched);
+        _refreshPending = false;
         _hasMore = batch.hasMore;
         _cursor = cursor;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!isCurrent()) return;
       setState(() => _failed = true);
     } finally {
-      if (mounted) {
+      if (isCurrent()) {
         setState(() {
           _loading = false;
           _loadingMore = false;
