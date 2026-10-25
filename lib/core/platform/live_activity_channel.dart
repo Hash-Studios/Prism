@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
 /// iOS Live Activities. Every call is a no-op on other platforms and never throws.
 class LiveActivityChannel {
@@ -20,9 +19,7 @@ class LiveActivityChannel {
       final String? id = await api.startAiGeneration(request);
       if (id == null || id.isEmpty) return null;
       return AiGenerationActivity._(id);
-    } on PlatformException {
-      return null;
-    } on MissingPluginException {
+    } on Object {
       return null;
     }
   }
@@ -46,9 +43,7 @@ class AiGenerationActivity {
     _settled = true;
     try {
       await call();
-    } on PlatformException {
-      return;
-    } on MissingPluginException {
+    } on Object {
       return;
     }
   }

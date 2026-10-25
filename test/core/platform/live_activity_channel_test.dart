@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/platform/live_activity_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +9,9 @@ class _FakeLiveActivityApi extends PrismLiveActivityHostApi {
   int starts = 0;
   final List<String> calls = <String>[];
   String? startResult = 'abc';
-  PlatformException? startError;
+  Object? startError;
+  Object? finishError;
+  Completer<void>? finishGate;
 
   @override
   Future<String?> startAiGeneration(AiActivityRequest request) async {
@@ -19,6 +23,8 @@ class _FakeLiveActivityApi extends PrismLiveActivityHostApi {
   @override
   Future<void> finishAiGeneration(String activityId, String imageUrl) async {
     calls.add('finish:$activityId:$imageUrl');
+    if (finishError != null) throw finishError!;
+    await finishGate?.future;
   }
 
   @override
@@ -84,6 +90,28 @@ void main() {
   test('a platform error returns null instead of throwing', () async {
     fake.startError = PlatformException(code: 'x');
     expect(await LiveActivityChannel.startAiGeneration(_request()), isNull);
+  });
+
+  test('an unexpected host error returns null instead of throwing', () async {
+    fake.startError = StateError('host failed');
+    expect(await LiveActivityChannel.startAiGeneration(_request()), isNull);
+  });
+
+  test('an unexpected settle error does not escape', () async {
+    final AiGenerationActivity? activity = await LiveActivityChannel.startAiGeneration(_request());
+    fake.finishError = StateError('host failed');
+    await expectLater(activity!.finish('u'), completes);
+  });
+
+  test('an in-flight finish wins over concurrent fail and cancel calls', () async {
+    final AiGenerationActivity? activity = await LiveActivityChannel.startAiGeneration(_request());
+    fake.finishGate = Completer<void>();
+    final Future<void> finishing = activity!.finish('u');
+    await activity.fail('x');
+    await activity.cancel();
+    expect(fake.calls, <String>['finish:abc:u']);
+    fake.finishGate!.complete();
+    await finishing;
   });
 
   test('cancel before finish blocks finish', () async {

@@ -560,23 +560,36 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
 
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final AiGenerationActivity? liveActivity = await LiveActivityChannel.startAiGeneration(
-      AiActivityRequest(
-        prompt: prompt,
-        style: style.label,
-        accentArgb: colors.primary.toARGB32(),
-        swatchArgb: style.swatchColors.map((Color c) => c.toARGB32()).toList(),
-        generatingTitle: context.l10n.aiLiveActivityGenerating,
-        readyTitle: context.l10n.aiLiveActivityReady,
-        failedTitle: context.l10n.aiLiveActivityFailed,
-        staleTitle: context.l10n.aiLiveActivityStale,
-        openLabel: context.l10n.aiLiveActivityOpen,
-      ),
-    );
-
     bool generationSucceeded = false;
+    AiGenerationActivity? liveActivity;
     try {
+      final ColorScheme colors = Theme.of(context).colorScheme;
+      liveActivity = await LiveActivityChannel.startAiGeneration(
+        AiActivityRequest(
+          prompt: prompt,
+          style: style.label,
+          accentArgb: colors.primary.toARGB32(),
+          swatchArgb: style.swatchColors.map((Color c) => c.toARGB32()).toList(),
+          generatingTitle: context.l10n.aiLiveActivityGenerating,
+          readyTitle: context.l10n.aiLiveActivityReady,
+          failedTitle: context.l10n.aiLiveActivityFailed,
+          staleTitle: context.l10n.aiLiveActivityStale,
+          openLabel: context.l10n.aiLiveActivityOpen,
+        ),
+      );
+      if (!mounted || !ownsSession()) {
+        await liveActivity?.cancel();
+        if (ownsSession()) {
+          await CoinsService.instance.rollbackAiGenerationReservation(
+            reservation.mode,
+            sourceTag: 'coins.rollback.ai_screen',
+            reservationTransactionId: reservation.transactionId,
+            operationId: operationId,
+          );
+        }
+        return;
+      }
+
       analytics.track(
         AiGenerateStartedEvent(
           style: style.apiValue,
