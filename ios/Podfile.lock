@@ -309,6 +309,8 @@ PODS:
   - RevenueCat (5.92.0)
   - RevenueCatUI (5.92.0):
     - RevenueCat (= 5.92.0)
+  - screen_corner_radius (0.0.1):
+    - Flutter
   - SDWebImage (5.21.7):
     - SDWebImage/Core (= 5.21.7)
   - SDWebImage/Core (5.21.7)
@@ -364,6 +366,7 @@ DEPENDENCIES:
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - quick_actions_ios (from `.symlinks/plugins/quick_actions_ios/ios`)
+  - screen_corner_radius (from `.symlinks/plugins/screen_corner_radius/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -479,6 +482,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/purchases_ui_flutter/ios"
   quick_actions_ios:
     :path: ".symlinks/plugins/quick_actions_ios/ios"
+  screen_corner_radius:
+    :path: ".symlinks/plugins/screen_corner_radius/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
@@ -573,6 +578,7 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RevenueCat: 39657b04641af73c29788b4bf2cf1acff52fd0dc
   RevenueCatUI: 5add29384ef2916b336346209f91446153165d9d
+  screen_corner_radius: 64e0abb3920228a5f91c0680fa890222970025bd
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   Sentry: 5321d74bdd28d6f6f8beaa1ca06f1fdc746bff49
