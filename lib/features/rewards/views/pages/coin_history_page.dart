@@ -215,6 +215,18 @@ class _Message extends StatelessWidget {
   }
 }
 
+String _historyDescription(CoinTransactionEntry entry) {
+  final String description = entry.description.trim();
+  final bool isInternalReason = switch (entry.action) {
+    'aiGeneration' => description == 'ai_generation_reserved' || description == 'ai_generation',
+    'premiumPreview24h' => description == 'premium_preview_unlock_24h',
+    'wallpaperDownload' || 'premiumWallpaperDownload' =>
+      description == entry.action || RegExp(r'^content_[A-Za-z0-9_-]+$').hasMatch(description),
+    _ => false,
+  };
+  return isInternalReason ? '' : description;
+}
+
 class _HistoryRow extends StatelessWidget {
   const _HistoryRow({required this.entry});
 
@@ -231,15 +243,15 @@ class _HistoryRow extends StatelessWidget {
     final String date = DateFormat.yMMMd(
       Localizations.localeOf(context).toLanguageTag(),
     ).add_jm().format(entry.createdAt.toLocal());
-    final String description = entry.description.trim();
+    final String description = _historyDescription(entry);
     final bool showDescription = description.isNotEmpty && description.toLowerCase() != label.toLowerCase();
     final String balance = l10n.economyCoinBalance(entry.balanceAfter);
     return Semantics(
       container: true,
       label: l10n.economyCoinHistoryRowSemantics(
         label,
-        description,
         showDescription.toString(),
+        description,
         date,
         amount,
         entry.delta.abs(),
