@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -37,6 +38,45 @@ class _DelayedFeedCache extends FakeFeedCacheLocalDataSource {
   }
 }
 
+class _FailingPointerClient extends FakeFirestoreClient {
+  _FailingPointerClient(this.error);
+
+  final FirestoreError error;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async => throw error;
+}
+
+class _DelayedNoAppClient extends FakeFirestoreClient {
+  _DelayedNoAppClient(this.initialization);
+
+  final Completer<bool> initialization;
+
+  Future<T?> _forwardFailure<T>(Future<T?> inner) async => await inner;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    final inner = Completer<T?>();
+    scheduleMicrotask(() {
+      inner.completeError(FirestoreError(message: 'not ready', code: 'no-app'));
+      initialization.complete(true);
+    });
+    return await _forwardFailure(inner.future);
+  }
+}
+
 void main() {
   late FakeFirestoreClient client;
   late FakeFeedCacheLocalDataSource cache;
@@ -69,7 +109,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B'), 'C': _wall('C')};
     setList('trending', <Object?>['C', 'A', 'B']);
 
-    final result = await repository.fetch();
+    final result = (await repository.fetch()).result;
 
     expect(result.data!.map((wall) => wall.id), <String>['C', 'A', 'B']);
   });
@@ -81,13 +121,13 @@ void main() {
       'A': <String, dynamic>{..._wall('A'), 'wallpaper_url': '', 'wallpaper_thumb': thumb, 'originalProtected': true},
     };
     setList('trending', <Object?>['A']);
-    final online = (await repository.fetch()).data!.single;
+    final online = (await repository.fetch()).result.data!.single;
     expect(online.id, 'A');
     expect(online.firestoreDocumentId, 'doc-A');
     expect(online.fullUrl, isEmpty);
     expect(online.thumbnailUrl, thumb);
     client.queryError = StateError('offline');
-    final offline = (await repository.fetch()).data!.single;
+    final offline = (await repository.fetch()).result.data!.single;
     expect(offline.fullUrl, isEmpty);
     expect(offline.thumbnailUrl, thumb);
   });
@@ -97,7 +137,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{for (final String id in ids) id: _wall(id)};
     setList('trending', ids);
 
-    final result = await repository.fetch();
+    final result = (await repository.fetch()).result;
 
     final List<FirestoreQuerySpec> wallQueries = client.querySpecs;
     expect(wallQueries.map((spec) => _idsOf(spec).length), <int>[30, 30, 5]);
@@ -110,7 +150,7 @@ void main() {
     setList('trending', <Object?>['A']);
     setList('popular', <Object?>['B']);
 
-    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['A']);
+    expect((await repository.fetch()).result.data!.map((wall) => wall.id), <String>['A']);
   });
 
   test('only asks for reviewed walls', () async {
@@ -133,7 +173,7 @@ void main() {
     blocks.completeInitial(<String>{'blocked-uid'});
     setList('trending', <Object?>['A', 'B', 'MISSING', 'D', 'E']);
 
-    final result = await repository.fetch();
+    final result = (await repository.fetch()).result;
 
     expect(result.data!.map((wall) => wall.id), <String>['A', 'E']);
   });
@@ -142,16 +182,16 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
     setList('trending', <Object?>['a', 'A', ' ', null, 'b']);
 
-    final result = await repository.fetch();
+    final result = (await repository.fetch()).result;
 
     expect(_idsOf(client.querySpecs.single), <String>['A', 'B']);
     expect(result.data!.map((wall) => wall.id), <String>['A', 'B']);
   });
 
   test('a missing or empty list gives an empty success without a wall query', () async {
-    final missing = await repository.fetch();
+    final missing = (await repository.fetch()).result;
     setList('trending', <Object?>[]);
-    final empty = await repository.fetch();
+    final empty = (await repository.fetch()).result;
 
     expect(missing.isSuccess, isTrue);
     expect(missing.data, isEmpty);
@@ -162,13 +202,13 @@ void main() {
   test('a good empty list replaces the saved one, so a later failure does not bring old walls back', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A')};
     setList('trending', <Object?>['A']);
-    expect((await repository.fetch()).data, hasLength(1));
+    expect((await repository.fetch()).result.data, hasLength(1));
 
     setList('trending', <Object?>[]);
-    expect((await repository.fetch()).data, isEmpty);
+    expect((await repository.fetch()).result.data, isEmpty);
     setList('trending', <Object?>['A']);
     client.queryError = Exception('offline');
-    final offline = await repository.fetch();
+    final offline = (await repository.fetch()).result;
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data, isEmpty);
@@ -180,7 +220,7 @@ void main() {
     setList('trending', <Object?>['A']);
     client.queryError = Exception('offline');
 
-    final offline = await repository.fetch();
+    final offline = (await repository.fetch()).result;
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data, isEmpty);
@@ -189,12 +229,12 @@ void main() {
   test('returns the saved list when the network fails, and hides creators blocked since', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A', 'B']);
-    expect((await repository.fetch()).data, hasLength(2));
+    expect((await repository.fetch()).result.data, hasLength(2));
     expect(cache.scopes, <String>['trending/week']);
 
     client.queryError = Exception('offline');
     blocks.completeInitial(<String>{'later-uid'});
-    final offline = await repository.fetch();
+    final offline = (await repository.fetch()).result;
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data!.map((wall) => wall.id), <String>['A']);
@@ -250,11 +290,11 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: 'later-uid')};
     setList('trending', <Object?>['A', 'B']);
     blocks.completeInitial(<String>{'later-uid'});
-    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['A']);
+    expect((await repository.fetch()).result.data!.map((wall) => wall.id), <String>['A']);
 
     client.queryError = Exception('offline');
     blocks.completeInitial(<String>{});
-    final offline = await repository.fetch();
+    final offline = (await repository.fetch()).result;
 
     expect(offline.data!.map((wall) => wall.id), <String>['A', 'B']);
   });
@@ -263,7 +303,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A', category: 'Anime'), 'B': _wall('B', category: 'Nature')};
     setList('trending', <Object?>['A', 'B']);
 
-    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['B']);
+    expect((await repository.fetch()).result.data!.map((wall) => wall.id), <String>['B']);
     expect((await repository.readCached()).map((wall) => wall.id), <String>['B']);
 
     await settings.set('WHcategories', 110);
@@ -274,9 +314,100 @@ void main() {
     setList('trending', <Object?>['A']);
     client.queryError = Exception('offline');
 
-    final result = await repository.fetch();
+    final result = (await repository.fetch()).result;
 
     expect(result.isFailure, isTrue);
     expect(result.failure, isA<ServerFailure>());
+  });
+
+  for (final bool hasCache in <bool>[false, true]) {
+    test('pending initialization no-app carries recovery without waiting, cached=$hasCache', () async {
+      if (hasCache) {
+        walls = <String, Map<String, dynamic>>{'A': _wall('A')};
+        setList('trending', <Object?>['A']);
+        await repository.fetch();
+      }
+      final initialization = Completer<bool>();
+      final startup = TrendingRepositoryImpl(
+        _FailingPointerClient(FirestoreError(message: 'not ready', code: 'no-app')),
+        cache,
+        blocks,
+        settings,
+        initializationReady: () => initialization.future,
+      );
+      final outcome = await startup.fetch();
+      expect(initialization.isCompleted, isFalse);
+      expect(outcome.result.isSuccess, hasCache);
+      expect(outcome.result.data?.map((wall) => wall.id), hasCache ? <String>['A'] : null);
+      expect(outcome.retryAfterInitialization, isNotNull);
+      initialization.complete(true);
+      expect(await outcome.retryAfterInitialization, isTrue);
+    });
+  }
+
+  test('initialization completing during cache read retains the pre-init failure provenance', () async {
+    final initialization = Completer<bool>();
+    final delayed = _DelayedFeedCache();
+    final startup = TrendingRepositoryImpl(
+      _FailingPointerClient(FirestoreError(message: 'not ready', code: 'no-app')),
+      delayed,
+      blocks,
+      settings,
+      initializationReady: () => initialization.future,
+    );
+    final pending = startup.fetch();
+    await Future<void>.delayed(Duration.zero);
+    initialization.complete(true);
+    delayed.release.complete();
+    final outcome = await pending;
+    expect(outcome.retryAfterInitialization, isNotNull);
+    expect(await outcome.retryAfterInitialization, isTrue);
+  });
+
+  for (final String code in <String>['permission-denied', 'unavailable']) {
+    test('$code during pending initialization never carries a startup retry', () async {
+      final initialization = Completer<bool>();
+      final startup = TrendingRepositoryImpl(
+        _FailingPointerClient(FirestoreError(message: code, code: code)),
+        cache,
+        blocks,
+        settings,
+        initializationReady: () => initialization.future,
+      );
+      final outcome = await startup.fetch();
+      expect(outcome.result.isFailure, isTrue);
+      expect(outcome.retryAfterInitialization, isNull);
+      initialization.complete(true);
+    });
+  }
+
+  test('no-app delivered after initialization settled still permits one startup retry', () async {
+    final startup = TrendingRepositoryImpl(
+      _FailingPointerClient(FirestoreError(message: 'no app', code: 'no-app')),
+      cache,
+      blocks,
+      settings,
+      initializationReady: () => Future<bool>.value(true),
+    );
+    final outcome = await startup.fetch();
+    expect(outcome.result.isFailure, isTrue);
+    expect(outcome.retryAfterInitialization, isNotNull);
+    expect(await outcome.retryAfterInitialization, isTrue);
+  });
+
+  test('no-app thrown immediately before readiness retains its startup retry through async wrappers', () async {
+    final initialization = Completer<bool>();
+    final startup = TrendingRepositoryImpl(
+      _DelayedNoAppClient(initialization),
+      cache,
+      blocks,
+      settings,
+      initializationReady: () => initialization.future,
+    );
+    final outcome = await startup.fetch();
+    expect(outcome.result.isFailure, isTrue);
+    expect(initialization.isCompleted, isTrue);
+    expect(outcome.retryAfterInitialization, isNotNull);
+    expect(await outcome.retryAfterInitialization, isTrue);
   });
 }

@@ -199,7 +199,8 @@ class _Home {
       return Result.success(_page(<int>[for (int i = start; i < start + _pageSize; i++) i]));
     });
     when(() => fetchTrending(any())).thenAnswer(
-      (_) async => Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(400 + i * 5, boosted: i < 2)]),
+      (_) async =>
+          TrendingFetch.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(400 + i * 5, boosted: i < 2)]),
     );
     when(() => stackRouter.push(any())).thenAnswer((_) async => null);
     when(() => stackRouter.pushPath(any())).thenAnswer((_) async => null);

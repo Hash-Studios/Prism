@@ -55,12 +55,13 @@ extension TrendingEventPatterns on TrendingEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _StartupRetryRequested value)?  startupRetryRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return refreshRequested(_that);case _StartupRetryRequested() when startupRetryRequested != null:
+return startupRetryRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that);case _:
   return orElse();
 
@@ -79,12 +80,13 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _StartupRetryRequested value)  startupRetryRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
-return refreshRequested(_that);case _BlockedCreatorsChanged():
+return refreshRequested(_that);case _StartupRetryRequested():
+return startupRetryRequested(_that);case _BlockedCreatorsChanged():
 return blockedCreatorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -102,12 +104,13 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _StartupRetryRequested value)?  startupRetryRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return refreshRequested(_that);case _StartupRetryRequested() when startupRetryRequested != null:
+return startupRetryRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that);case _:
   return null;
 
@@ -125,11 +128,12 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function( int requestId,  int generation)?  startupRetryRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return refreshRequested();case _StartupRetryRequested() when startupRetryRequested != null:
+return startupRetryRequested(_that.requestId,_that.generation);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that.blocked);case _:
   return orElse();
 
@@ -148,11 +152,12 @@ return blockedCreatorsChanged(_that.blocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function( int requestId,  int generation)  startupRetryRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RefreshRequested():
-return refreshRequested();case _BlockedCreatorsChanged():
+return refreshRequested();case _StartupRetryRequested():
+return startupRetryRequested(_that.requestId,_that.generation);case _BlockedCreatorsChanged():
 return blockedCreatorsChanged(_that.blocked);case _:
   throw StateError('Unexpected subclass');
 
@@ -170,11 +175,12 @@ return blockedCreatorsChanged(_that.blocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function( int requestId,  int generation)?  startupRetryRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return refreshRequested();case _StartupRetryRequested() when startupRetryRequested != null:
+return startupRetryRequested(_that.requestId,_that.generation);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that.blocked);case _:
   return null;
 
@@ -188,7 +194,7 @@ return blockedCreatorsChanged(_that.blocked);case _:
 
 class _Started implements TrendingEvent {
   const _Started();
-  
+
 
 
 
@@ -220,7 +226,7 @@ String toString() {
 
 class _RefreshRequested implements TrendingEvent {
   const _RefreshRequested();
-  
+
 
 
 
@@ -250,9 +256,77 @@ String toString() {
 /// @nodoc
 
 
+class _StartupRetryRequested implements TrendingEvent {
+  const _StartupRetryRequested({required this.requestId, required this.generation});
+
+
+ final  int requestId;
+ final  int generation;
+
+/// Create a copy of TrendingEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$StartupRetryRequestedCopyWith<_StartupRetryRequested> get copyWith => __$StartupRetryRequestedCopyWithImpl<_StartupRetryRequested>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StartupRetryRequested&&(identical(other.requestId, requestId) || other.requestId == requestId)&&(identical(other.generation, generation) || other.generation == generation));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,requestId,generation);
+
+@override
+String toString() {
+  return 'TrendingEvent.startupRetryRequested(requestId: $requestId, generation: $generation)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$StartupRetryRequestedCopyWith<$Res> implements $TrendingEventCopyWith<$Res> {
+  factory _$StartupRetryRequestedCopyWith(_StartupRetryRequested value, $Res Function(_StartupRetryRequested) _then) = __$StartupRetryRequestedCopyWithImpl;
+@useResult
+$Res call({
+ int requestId, int generation
+});
+
+
+
+
+}
+/// @nodoc
+class __$StartupRetryRequestedCopyWithImpl<$Res>
+    implements _$StartupRetryRequestedCopyWith<$Res> {
+  __$StartupRetryRequestedCopyWithImpl(this._self, this._then);
+
+  final _StartupRetryRequested _self;
+  final $Res Function(_StartupRetryRequested) _then;
+
+/// Create a copy of TrendingEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? requestId = null,Object? generation = null,}) {
+  return _then(_StartupRetryRequested(
+requestId: null == requestId ? _self.requestId : requestId // ignore: cast_nullable_to_non_nullable
+as int,generation: null == generation ? _self.generation : generation // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class _BlockedCreatorsChanged implements TrendingEvent {
   const _BlockedCreatorsChanged({required final  Set<String> blocked}): _blocked = blocked;
-  
+
 
  final  Set<String> _blocked;
  Set<String> get blocked {
@@ -517,7 +591,7 @@ return $default(_that.status,_that.walls,_that.failure);case _:
 
 class _TrendingState implements TrendingState {
   const _TrendingState({required this.status, required final  List<PrismWallpaper> walls, this.failure}): _walls = walls;
-  
+
 
 @override final  LoadStatus status;
  final  List<PrismWallpaper> _walls;
