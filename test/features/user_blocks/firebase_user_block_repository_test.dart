@@ -1,4 +1,4 @@
-// ignore_for_file: depend_on_referenced_packages
+// ignore_for_file: depend_on_referenced_packages, subtype_of_sealed_class, avoid_implementing_value_types
 
 import 'dart:async';
 import 'dart:io';
@@ -6,12 +6,16 @@ import 'dart:io';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/content_reports/firebase_content_report_repository.dart';
 import 'package:Prism/data/user_blocks/firebase_user_block_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:fake_async/fake_async.dart';
@@ -25,6 +29,23 @@ import '../../support/fake_firestore_client.dart';
 import '../../support/profile_user_fixture.dart';
 
 class _MockSession extends Mock implements SessionRepository {}
+
+class _MockFirestore extends Mock implements FirebaseFirestore {}
+
+class _MockCollection extends Mock implements CollectionReference<Map<String, dynamic>> {}
+
+class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
+
+class _MockQueryDoc extends Mock implements QueryDocumentSnapshot<Map<String, dynamic>> {}
+
+class _MockSnapshotMetadata extends Mock implements SnapshotMetadata {}
+
+class _RecordingSink implements FirestoreTelemetrySink {
+  final List<FirestoreTelemetryEvent> events = <FirestoreTelemetryEvent>[];
+
+  @override
+  Future<void> emit(FirestoreTelemetryEvent event) async => events.add(event);
+}
 
 class _FakeFunctions extends FirebaseFunctionsPlatform {
   _FakeFunctions(this.onCall) : super(null, 'asia-south1');
@@ -173,6 +194,79 @@ void main() {
     expect(client.watchSpecs.single.collection, 'usersv2/me/blockedUsers');
     expect(repo.cachedBlockedCreatorUids, <String>{'u1', 'u2', 'u3'});
   });
+
+  test(
+    'a persisted same-user block watch receives server data after Firebase takes longer than three seconds',
+    () async {
+      final ready = Completer<bool>();
+      FirebaseInit.setFuture(ready.future);
+      var initialized = false;
+      var factoryCalls = 0;
+      var attachments = 0;
+      final attached = Completer<void>();
+      final snapshots = StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast(
+        onListen: () {
+          attachments++;
+          attached.complete();
+        },
+      );
+      final firestore = _MockFirestore();
+      final collection = _MockCollection();
+      final snapshot = _MockQuerySnapshot();
+      final document = _MockQueryDoc();
+      final metadata = _MockSnapshotMetadata();
+      final sink = _RecordingSink();
+      when(() => firestore.collection('usersv2/me/blockedUsers')).thenReturn(collection);
+      when(() => collection.snapshots(includeMetadataChanges: false)).thenAnswer((_) => snapshots.stream);
+      when(() => document.id).thenReturn('remote-blocked-creator');
+      when(() => document.data()).thenReturn(<String, dynamic>{});
+      when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[document]);
+      when(() => snapshot.metadata).thenReturn(metadata);
+      when(() => metadata.isFromCache).thenReturn(false);
+      final trackedClient = FirestoreTrackedClient.deferred(() {
+        factoryCalls++;
+        if (!initialized) throw FirebaseException(plugin: 'core', code: 'no-app');
+        return firestore;
+      }, sink);
+      when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+        yield session.currentUser;
+        yield* sessionUsers.stream;
+      });
+      final repo = FirebaseUserBlockRepository(
+        session,
+        trackedClient,
+        store: DurableJsonStore('user_blocks', directory: storeDirectory),
+      );
+      repositories.add(repo);
+      try {
+        await Future<void>.delayed(const Duration(milliseconds: 3100));
+        expect(factoryCalls, 0, reason: 'A timed-out bounded wait is not permission to access Firebase.');
+        expect(snapshots.hasListener, isFalse);
+        sessionUsers.add(profileUser(id: 'me'));
+        initialized = true;
+        ready.complete(true);
+        await attached.future.timeout(const Duration(seconds: 2));
+
+        final remoteBlocks = repo.watchBlockedCreatorUids().firstWhere(
+          (uids) => uids.contains('remote-blocked-creator'),
+        );
+        snapshots.add(snapshot);
+        expect(await remoteBlocks.timeout(const Duration(seconds: 2)), <String>{'remote-blocked-creator'});
+        sessionUsers.add(profileUser(id: 'me'));
+        await Future<void>.delayed(Duration.zero);
+        expect(repo.cachedBlockedCreatorUids, <String>{'remote-blocked-creator'});
+        expect(attachments, 1);
+        expect(factoryCalls, 1);
+        expect(sink.events.map((event) => (event.sourceTag, event.success)), <(String, bool)>[
+          ('user_blocks.watch', true),
+        ]);
+      } finally {
+        if (!ready.isCompleted) ready.complete(false);
+        await repo.dispose();
+        await snapshots.close();
+      }
+    },
+  );
 
   test('a stream error keeps the last known set and ends the initial wait', () async {
     final repo = createRepository();

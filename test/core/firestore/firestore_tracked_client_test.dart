@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -23,6 +24,8 @@ class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {
 class _MockSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {}
 
 class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
+
+class _MockQueryDoc extends Mock implements QueryDocumentSnapshot<Map<String, dynamic>> {}
 
 class _MockSnapshotMetadata extends Mock implements SnapshotMetadata {}
 
@@ -145,10 +148,14 @@ void main() {
 
   test('watchQueryWithMetadata defers Firestore setup and reports setup failures through the stream', () async {
     var factoryCalls = 0;
-    final deferredClient = FirestoreTrackedClient.deferred(() {
-      factoryCalls++;
-      throw StateError('Firebase is not initialized');
-    }, sink);
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        throw StateError('Firestore setup failed');
+      },
+      sink,
+      waitUntilReady: () async => true,
+    );
 
     final Stream<({List<String> items, bool isFromCache})> stream = deferredClient.watchQueryWithMetadata<String>(
       const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch_offline', isStream: true),
@@ -488,6 +495,171 @@ void main() {
     await result;
 
     expect(sink.events.single.durationMs, lessThan(100));
+  });
+
+  test('failed initialization closes a stream with an error without accessing Firestore', () async {
+    var factoryCalls = 0;
+    when(() => collection.snapshots(includeMetadataChanges: false)).thenAnswer((_) => const Stream.empty());
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        return firestore;
+      },
+      sink,
+      waitUntilReady: () async => false,
+    );
+
+    await expectLater(
+      deferredClient.watchQuery<String>(
+        const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.init_failed', isStream: true),
+        (_, id) => id,
+      ),
+      emitsInOrder(<Object>[
+        emitsError(isA<FirestoreError>().having((error) => error.code, 'code', 'unavailable')),
+        emitsDone,
+      ]),
+    );
+    expect(factoryCalls, 0);
+    expect(sink.events.map((event) => (event.success, event.errorCode)), <(bool, String?)>[(false, 'unavailable')]);
+  });
+
+  test('cancelling before initialization completes promptly and does not attach a listener later', () async {
+    final ready = Completer<bool>();
+    var factoryCalls = 0;
+    final snapshots = StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();
+    final snapshot = _MockQuerySnapshot();
+    final document = _MockQueryDoc();
+    final metadata = _MockSnapshotMetadata();
+    when(() => document.id).thenReturn('kept-creator');
+    when(() => document.data()).thenReturn(<String, dynamic>{});
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[document]);
+    when(() => snapshot.metadata).thenReturn(metadata);
+    when(() => metadata.isFromCache).thenReturn(false);
+    when(() => collection.snapshots(includeMetadataChanges: false)).thenAnswer((_) => snapshots.stream);
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        return firestore;
+      },
+      sink,
+      waitUntilReady: () => ready.future,
+    );
+    const spec = FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.cancel_pending', isStream: true);
+    final watch = deferredClient
+        .watchQuery<String>(spec, (_, id) => id)
+        .listen(
+          (_) => fail('A cancelled watch must not receive data.'),
+          onError: (Object error) => fail('A cancelled watch must not receive errors: $error'),
+        );
+    await Future<void>.delayed(Duration.zero);
+    await watch.cancel().timeout(const Duration(seconds: 1));
+    expect(ready.isCompleted, isFalse);
+    ready.complete(true);
+    await Future<void>.delayed(Duration.zero);
+    expect(factoryCalls, 0);
+    expect(snapshots.hasListener, isFalse);
+    expect(sink.events, isEmpty);
+
+    final next = deferredClient.watchQuery<String>(spec, (_, id) => id).first;
+    await Future<void>.delayed(Duration.zero);
+    snapshots.add(snapshot);
+    expect(await next, <String>['kept-creator']);
+    expect(factoryCalls, 1);
+    expect(sink.events.map((event) => event.success), <bool>[true]);
+    expect(snapshots.hasListener, isFalse);
+    await snapshots.close();
+  });
+
+  testWidgets('production readiness keeps streams alive beyond the bounded read wait and cancels pending watches', (
+    tester,
+  ) async {
+    final ready = Completer<bool>();
+    FirebaseInit.setFuture(ready.future);
+    var factoryCalls = 0;
+    var cancelledFactoryCalls = 0;
+    var readFactoryCalls = 0;
+    var initialized = false;
+    final snapshots = StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();
+    final snapshot = _MockQuerySnapshot();
+    final document = _MockQueryDoc();
+    final metadata = _MockSnapshotMetadata();
+    when(() => document.id).thenReturn('blocked-creator');
+    when(() => document.data()).thenReturn(<String, dynamic>{'name': 'Ada'});
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[document]);
+    when(() => snapshot.metadata).thenReturn(metadata);
+    when(() => metadata.isFromCache).thenReturn(false);
+    when(() => collection.snapshots(includeMetadataChanges: false)).thenAnswer((_) => snapshots.stream);
+    when(() => collection.snapshots(includeMetadataChanges: true)).thenAnswer((_) => snapshots.stream);
+
+    final deferredClient = FirestoreTrackedClient.deferred(() {
+      factoryCalls++;
+      if (!initialized) throw FirebaseException(plugin: 'core', code: 'no-app');
+      return firestore;
+    }, sink);
+    final cancelledClient = FirestoreTrackedClient.deferred(() {
+      cancelledFactoryCalls++;
+      return firestore;
+    }, sink);
+    final boundedClient = FirestoreTrackedClient.deferred(() {
+      readFactoryCalls++;
+      throw FirebaseException(plugin: 'core', code: 'no-app');
+    }, _RecordingSink());
+    const spec = FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.delayed_init', isStream: true);
+    final values = <List<String>>[];
+    final metadataValues = <({List<String> items, bool isFromCache})>[];
+    final errors = <Object>[];
+    final watch = deferredClient
+        .watchQuery<String>(spec, (data, id) => '${data['name']}:$id')
+        .listen(values.add, onError: errors.add);
+    final metadataWatch = deferredClient
+        .watchQueryWithMetadata<String>(spec, (_, id) => id)
+        .listen(metadataValues.add, onError: errors.add);
+    final cancelledWatch = cancelledClient
+        .watchQuery<String>(spec, (_, id) => id)
+        .listen((_) => fail('A cancelled watch must not receive snapshots.'), onError: errors.add);
+    FirestoreError? readError;
+    unawaited(
+      boundedClient
+          .query<String>(spec, (_, id) => id)
+          .then<void>(
+            (_) => fail('The bounded read must fall back before Firebase becomes ready.'),
+            onError: (Object error) {
+              readError = error as FirestoreError;
+            },
+          ),
+    );
+    await tester.pump();
+    unawaited(cancelledWatch.cancel());
+    await tester.pump();
+
+    await tester.pump(const Duration(seconds: 4));
+    expect(factoryCalls, 0);
+    expect(cancelledFactoryCalls, 0);
+    expect(snapshots.hasListener, isFalse);
+    expect(errors, isEmpty);
+    expect(readError?.code, 'no-app');
+    expect(readFactoryCalls, 1);
+
+    initialized = true;
+    ready.complete(true);
+    await tester.pump();
+    snapshots.add(snapshot);
+    await tester.pump();
+    expect(values, <List<String>>[
+      <String>['Ada:blocked-creator'],
+    ]);
+    expect(metadataValues.single.items, <String>['blocked-creator']);
+    expect(metadataValues.single.isFromCache, isFalse);
+    expect(errors, isEmpty);
+    expect(factoryCalls, 2);
+    expect(cancelledFactoryCalls, 0);
+    expect(sink.events.map((event) => event.success), <bool>[true, true]);
+
+    unawaited(watch.cancel());
+    unawaited(metadataWatch.cancel());
+    unawaited(snapshots.close());
+    await tester.pump();
+    expect(snapshots.hasListener, isFalse);
   });
 
   group('FirestoreOperation', () {
