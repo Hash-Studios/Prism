@@ -13,7 +13,6 @@ import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +47,9 @@ void main() {
     calls = <MethodCall>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
+      if (call.method == 'Messaging#getAPNSToken') {
+        return <String, String>{'token': 'test-apns-token'};
+      }
       if (call.method == 'Messaging#getNotificationSettings' || call.method == 'Messaging#requestPermission') {
         return <String, int>{
           'authorizationStatus': switch (call.method == 'Messaging#requestPermission' ? requested : current) {
@@ -67,13 +69,11 @@ void main() {
     await getIt.reset();
     AnalyticsRuntime.reset();
     app_state.prismUser = constants.createGuestPrismUser();
-    debugDefaultTargetPlatformOverride = null;
     StartupModalSlot.reset();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
   });
 
   Future<BuildContext> host(WidgetTester tester) async {
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     late BuildContext result;
     await tester.pumpWidget(
       MaterialApp(
@@ -97,7 +97,11 @@ void main() {
 
   TomorrowHookPermissionResultEvent event() => analytics.events.whereType<TomorrowHookPermissionResultEvent>().single;
 
-  testWidgets('already authorized subscribes opted-in topics and records completion once', (tester) async {
+  void testOnIOS(String description, WidgetTesterCallback callback) {
+    testWidgets(description, callback, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  }
+
+  testOnIOS('already authorized subscribes opted-in topics and records completion once', (tester) async {
     current = AuthorizationStatus.authorized;
     app_state.prismUser = constants.createGuestPrismUser()
       ..loggedIn = true
@@ -126,7 +130,7 @@ void main() {
     expect(analytics.events.whereType<TomorrowHookPermissionResultEvent>(), hasLength(1));
   });
 
-  testWidgets('authorized guest respects disabled topic preferences', (tester) async {
+  testOnIOS('authorized guest respects disabled topic preferences', (tester) async {
     current = AuthorizationStatus.authorized;
     await settings.set(PersistenceKeys.notifWotd, false);
     await settings.set(NotificationPrefKeys.drops, false);
@@ -140,8 +144,7 @@ void main() {
     expect(calls.where((call) => call.method == 'Messaging#subscribeToTopic'), isEmpty);
   });
 
-  testWidgets('iOS denial is final and records cancellation without showing a prompt', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+  testOnIOS('iOS denial is final and records cancellation without showing a prompt', (tester) async {
     current = AuthorizationStatus.denied;
     await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
       await host(tester),
@@ -153,11 +156,10 @@ void main() {
     expect(event().reason, AnalyticsReasonValue.userCancelled);
     expect(calls.map((call) => call.method), <String>['Messaging#getNotificationSettings']);
     expect(find.text('Turn on notifications'), findsNothing);
-    debugDefaultTargetPlatformOverride = null;
   });
 
   for (final status in <AuthorizationStatus>[AuthorizationStatus.authorized, AuthorizationStatus.denied]) {
-    testWidgets('accepting soft prompt records system ${status.name} result', (tester) async {
+    testOnIOS('accepting soft prompt records system ${status.name} result', (tester) async {
       requested = status;
       final context = await host(tester);
       final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
@@ -180,7 +182,7 @@ void main() {
     });
   }
 
-  testWidgets('declining soft prompt leaves permission eligible for another session', (tester) async {
+  testOnIOS('declining soft prompt leaves permission eligible for another session', (tester) async {
     final context = await host(tester);
     final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'save');
     await settle(tester);
