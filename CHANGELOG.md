@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.11.0
+- A free Spooky Halloween theme
+- Pinch to zoom a wallpaper in and out, Pinterest style
+- Share cards now show the wallpaper's own preview
+- Coin history stays up to date and hides internal entries
+- Sign-in stays put when your profile reloads, and purchases made as a guest are recognised
+- Faster, steadier start: feeds, Trending and your interests load reliably
+- Clearer Shortcuts setup steps
+- Security and stability fixes
+
 ### v3.10.0
 - Wallpaper pages now flow into more wallpapers like the one you opened
 - Press and hold a wallpaper, then drag to favourite it, share it or see less like it
