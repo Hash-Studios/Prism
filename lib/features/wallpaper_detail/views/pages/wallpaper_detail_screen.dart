@@ -77,6 +77,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -137,30 +138,84 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
 }
 
-/// Lets the card of a wall opened from a feed move to its neighbours.
+/// Lets the card of a wall opened from a feed drag the feed to its neighbours.
 class _FeedStep extends InheritedWidget {
-  const _FeedStep({required this.step, required this.hasPrevious, required this.hasNext, required super.child});
+  const _FeedStep({
+    required this.browser,
+    required this.active,
+    required this.hasPrevious,
+    required this.hasNext,
+    required super.child,
+  });
 
-  final ValueChanged<int> step;
+  final _FeedBrowserState browser;
+
+  /// The wall the feed rests on or settles to. A neighbour shown during a drag is not active and does not load.
+  final bool active;
   final bool hasPrevious;
   final bool hasNext;
 
   static _FeedStep? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_FeedStep>();
 
+  void step(int delta) => browser._settle(browser._target + delta, 0);
+  void dragStart() => browser._position.stop();
+  void dragUpdate(double dx) => browser._dragUpdate(dx);
+  void dragEnd(double velocity) => browser._dragEnd(velocity);
+
   @override
   bool updateShouldNotify(_FeedStep oldWidget) =>
-      hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext || step != oldWidget.step;
+      active != oldWidget.active || hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext;
 }
 
-/// One showing of a wall in [_FeedBrowser]. A wall seen twice gets two visits, so the leaving copy and the new copy
-/// never share a key.
-class _FeedVisit {
-  _FeedVisit(this.enterDirection);
+/// The card area that drags the feed. A surface that leaves the tree mid-drag gets no drag end, as the loading
+/// overlay does when its wall finishes loading, so it settles the feed itself after the frame.
+class _FeedDragSurface extends StatefulWidget {
+  const _FeedDragSurface({required this.feed, this.onTap, required this.child});
 
-  final int? enterDirection;
-  int? exitDirection;
-  double? exitProgress;
-  double? exitStartOffset;
+  final _FeedStep? feed;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  State<_FeedDragSurface> createState() => _FeedDragSurfaceState();
+}
+
+class _FeedDragSurfaceState extends State<_FeedDragSurface> {
+  bool _dragging = false;
+
+  @override
+  void dispose() {
+    final _FeedBrowserState? browser = widget.feed?.browser;
+    if (_dragging && browser != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (browser.mounted) browser._dragEnd(0);
+      });
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _FeedStep? feed = widget.feed;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onHorizontalDragStart: feed == null
+          ? null
+          : (_) {
+              _dragging = true;
+              feed.dragStart();
+            },
+      onHorizontalDragUpdate: feed == null ? null : (details) => feed.dragUpdate(details.primaryDelta ?? 0),
+      onHorizontalDragEnd: feed == null
+          ? null
+          : (details) {
+              _dragging = false;
+              feed.dragEnd(details.primaryVelocity ?? 0);
+            },
+      child: widget.child,
+    );
+  }
 }
 
 /// Pages through a feed in place. Each wall gets its own bloc and screen, as a new route would.
@@ -175,82 +230,117 @@ class _FeedBrowser extends StatefulWidget {
   State<_FeedBrowser> createState() => _FeedBrowserState();
 }
 
-class _FeedBrowserState extends State<_FeedBrowser> {
-  late int _index = widget.start;
-  _FeedVisit _visit = _FeedVisit(null);
+class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderStateMixin {
+  /// A fling faster than this, in logical pixels a second, moves to the wall it points at.
+  static const double _flingVelocity = 300;
+  static final SpringDescription _spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 500);
+
+  late final AnimationController _position = AnimationController.unbounded(vsync: this, value: widget.start.toDouble())
+    ..addListener(_onMove);
+  late int _target = widget.start;
+  late (int, int) _span = (widget.start, widget.start);
+  double _width = 1;
 
   List<WallpaperFeedTile> get _tiles => widget.feed.tiles;
+  double get _sign => Directionality.of(context) == TextDirection.rtl ? -1 : 1;
 
-  void _step(int delta) {
-    final int next = _index + delta;
-    if (next < 0 || next >= _tiles.length) return;
-    PrismHaptics.selection();
-    setState(() {
-      _visit.exitDirection = delta;
-      _index = next;
-      _visit = _FeedVisit(delta);
-    });
+  @override
+  void dispose() {
+    _position.dispose();
+    super.dispose();
+  }
+
+  void _onMove() {
+    final double position = _position.value;
+    final (int, int) span = (position.floor(), position.ceil());
+    if (span != _span) setState(() => _span = span);
+  }
+
+  void _dragUpdate(double dx) {
+    _position.value = (_position.value - dx * _sign / _width).clamp(0.0, _tiles.length - 1.0);
+  }
+
+  void _dragEnd(double velocity) {
+    final double walls = -velocity * _sign / _width;
+    final double position = _position.value;
+    final int target = velocity.abs() > _flingVelocity
+        ? (walls > 0 ? position.ceil() : position.floor())
+        : position.round();
+    _settle(target, walls);
+  }
+
+  /// Moves to [target], at [velocity] walls a second, and makes it the active wall at once so it starts loading.
+  void _settle(int target, double velocity) {
+    final int next = target.clamp(0, _tiles.length - 1);
+    if (next != _target) {
+      PrismHaptics.selection();
+      setState(() => _target = next);
+    }
+    if (context.reduceMotion) {
+      _position.value = next.toDouble();
+      return;
+    }
+    // A fast fling overshoots the target. Past either end there is no wall to show.
+    _position.animateWith(
+      ClampedSimulation(
+        SpringSimulation(_spring, _position.value, next.toDouble(), velocity, snapToEnd: true),
+        xMin: 0,
+        xMax: _tiles.length - 1.0,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final WallpaperFeedTile tile = _tiles[_index];
-    final WallpaperDetailScreen screen = widget.screen;
-    final Key current = ValueKey<_FeedVisit>(_visit);
-    final double sign = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
+    final List<int> shown = <int>{_span.$1, _span.$2, _target}.toList()..sort();
     return PopScope(
       // A back swipe shows the grid as it is, so moving it under the finger would jump.
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop && !Navigator.of(context).userGestureInProgress) widget.feed.reveal(_index);
+        if (didPop && !Navigator.of(context).userGestureInProgress) widget.feed.reveal(_target);
       },
-      child: _FeedStep(
-        step: _step,
-        hasPrevious: _index > 0,
-        hasNext: _index < _tiles.length - 1,
-        child: AnimatedSwitcher(
-          duration: context.motion(PrismDurations.fast),
-          transitionBuilder: (child, animation) {
-            final bool incoming = child.key == current;
-            final _FeedVisit visit = (child.key! as ValueKey<_FeedVisit>).value;
-            final CurvedAnimation curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-            final double progress = curved.value;
-            final Tween<Offset> slide = incoming
-                ? Tween<Offset>(begin: Offset((visit.enterDirection ?? 0) * sign, 0), end: Offset.zero)
-                : _exitSlide(visit, progress, sign);
-            return HeroMode(
-              enabled: incoming,
-              child: ExcludeSemantics(
-                excluding: !incoming,
-                child: IgnorePointer(
-                  ignoring: !incoming,
-                  child: SlideTransition(position: slide.animate(curved), child: child),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _width = max(1, constraints.maxWidth);
+          return Stack(children: [for (final int index in shown) _page(index)]);
+        },
+      ),
+    );
+  }
+
+  Widget _page(int index) {
+    final WallpaperFeedTile tile = _tiles[index];
+    final WallpaperDetailScreen screen = widget.screen;
+    final bool active = index == _target;
+    return AnimatedBuilder(
+      key: ValueKey<int>(index),
+      animation: _position,
+      builder: (context, child) =>
+          FractionalTranslation(translation: Offset((index - _position.value) * _sign, 0), child: child),
+      child: HeroMode(
+        enabled: active,
+        child: ExcludeSemantics(
+          excluding: !active,
+          child: IgnorePointer(
+            ignoring: !active,
+            child: _FeedStep(
+              browser: this,
+              active: active,
+              hasPrevious: index > 0,
+              hasNext: index < _tiles.length - 1,
+              child: BlocProvider<WallpaperDetailBloc>(
+                create: (_) => getIt<WallpaperDetailBloc>(),
+                child: WallpaperDetailScreen(
+                  entity: tile.item,
+                  analyticsSurface: screen.analyticsSurface,
+                  requestId: screen.requestId,
+                  heroTag: tile.heroTag,
                 ),
               ),
-            );
-          },
-          child: BlocProvider<WallpaperDetailBloc>(
-            key: current,
-            create: (_) => getIt<WallpaperDetailBloc>(),
-            child: WallpaperDetailScreen(
-              entity: tile.item,
-              analyticsSurface: screen.analyticsSurface,
-              requestId: screen.requestId,
-              heroTag: tile.heroTag,
             ),
           ),
         ),
       ),
     );
-  }
-
-  Tween<Offset> _exitSlide(_FeedVisit visit, double progress, double sign) {
-    final double exitProgress = visit.exitProgress ??= progress;
-    final double startOffset = visit.exitStartOffset ??= (visit.enterDirection == null
-        ? 0
-        : visit.enterDirection! * (1 - exitProgress));
-    final double target = -(visit.exitDirection ?? 0).toDouble();
-    final double end = exitProgress <= 0 ? target : target + (startOffset - target) / exitProgress;
-    return Tween<Offset>(begin: Offset(target * sign, 0), end: Offset(end * sign, 0));
   }
 }
 
@@ -285,7 +375,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   final ShakeController _shake = ShakeController();
   final ScrollController _scroll = ScrollController();
   final Object _recommendationHeroScope = Object();
-  double _swipeDx = 0;
 
   /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
   /// them, on a fade of the page colour so the icons stay readable.
@@ -324,6 +413,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   bool _accentToastShown = false;
   bool _openRecorded = false;
+  bool _loaded = false;
   String? _offlinePreviewKey;
   Future<File?>? _offlinePreviewFuture;
 
@@ -413,21 +503,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     toasts.success(context.l10n.wallpaperAppAccentUpdated);
   }
 
-  /// A fling, or a drag of more than 48 px, shows the neighbouring wall of the feed.
-  void _handleSwipeEnd(_FeedStep feed, DragEndDetails details) {
-    final double velocity = details.primaryVelocity ?? 0;
-    final double push = velocity.abs() > 300 ? velocity : (_swipeDx.abs() > 48 ? _swipeDx : 0);
-    _swipeDx = 0;
-    if (push == 0) return;
-    final bool ltr = Directionality.of(context) == TextDirection.ltr;
-    feed.step((push < 0) == ltr ? 1 : -1);
-  }
-
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onDiscoveryScroll);
-    _loadWallpaper(context);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A neighbour shown during a drag shows its tile picture and loads only when the feed settles on it.
+    if (!_loaded && (_FeedStep.maybeOf(context)?.active ?? true)) {
+      _loaded = true;
+      _loadWallpaper(context);
+    }
   }
 
   @override
@@ -834,13 +923,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           if (feed.hasPrevious) CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
           if (feed.hasNext) CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onHorizontalDragStart: (_) => _swipeDx = 0,
-          onHorizontalDragUpdate: (details) => _swipeDx += details.primaryDelta ?? 0,
-          onHorizontalDragEnd: (details) => _handleSwipeEnd(feed, details),
-          child: const SizedBox.expand(),
-        ),
+        child: _FeedDragSurface(feed: feed, child: const SizedBox.expand()),
       ),
     );
   }
@@ -1810,15 +1893,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                       if (feed.hasNext)
                         CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
                     },
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              child: _FeedDragSurface(
+                feed: feed,
                 onTap: () {
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
-                onHorizontalDragStart: feed == null ? null : (_) => _swipeDx = 0,
-                onHorizontalDragUpdate: feed == null ? null : (details) => _swipeDx += details.primaryDelta ?? 0,
-                onHorizontalDragEnd: feed == null ? null : (details) => _handleSwipeEnd(feed, details),
                 child: _withHero(image),
               ),
             ),

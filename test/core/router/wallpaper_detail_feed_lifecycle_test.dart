@@ -465,7 +465,7 @@ void main() {
   testWidgets('iOS centre drag changes wall, keeps native back, and closes the old bloc', (tester) async {
     final router = await open(tester);
     queued.add(router.feed[0]);
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(150, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(150, 0), 1000);
     await tester.pumpAndSettle();
 
     expect(router.current.name, 'Detail');
@@ -485,7 +485,7 @@ void main() {
     testWidgets('iOS pop ${delay}ms into first card switch does not fly the old wallpaper home', (tester) async {
       final router = await open(tester);
       queued.add(router.feed[2]);
-      await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
+      await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0), 1000);
       await tester.pump();
       await tester.pump(Duration(milliseconds: delay));
       final current = find.byWidgetPredicate((widget) => widget is WallpaperQuickActionRegion && widget.item.id == 'c');
@@ -550,7 +550,31 @@ void main() {
     final router = await open(tester);
     expect(canonicalRequests, ['b']);
     expect(views, ['B']);
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
+
+    final peek = await tester.startGesture(tester.getCenter(find.byType(WallpaperQuickActionRegion).first));
+    await peek.moveBy(const Offset(-20, 0));
+    await peek.moveBy(const Offset(-180, 0));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await peek.up();
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate((widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'b'),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate((widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'c'),
+      findsNothing,
+    );
+    expect(canonicalRequests, ['b']);
+    expect(views, ['B']);
+    expect(getIt<TasteSignalStore>().read().map((signal) => signal.creator), ['b']);
+    expect(recommendations.visits.map((visit) => visit.wallId), ['b']);
+    // The peeked neighbour never loaded, so it has no visit. Closing it still releases its own unused session.
+    expect(recommendations.released, hasLength(1));
+    final peeked = recommendations.released.single;
+
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0), 1000);
     await tester.pumpAndSettle();
 
     expect(canonicalRequests, ['b', 'c']);
@@ -558,7 +582,7 @@ void main() {
     expect(getIt<TasteSignalStore>().read().map((signal) => signal.creator), ['b', 'c']);
     expect(recommendations.visits.map((visit) => visit.wallId), ['b', 'c']);
     expect(recommendations.visits.map((visit) => visit.session).toSet(), hasLength(2));
-    expect(recommendations.released, [recommendations.visits.first.session]);
+    expect(recommendations.released, [peeked, recommendations.visits.first.session]);
     expect((blocs.last.state as WallpaperDetailLoaded).views, '200');
 
     oldView.complete(Result.success('100'));
@@ -570,7 +594,7 @@ void main() {
     unawaited(router.maybePop<void>());
     await tester.pumpAndSettle();
     await tester.pump();
-    expect(recommendations.released, recommendations.visits.map((visit) => visit.session));
+    expect(recommendations.released, [peeked, ...recommendations.visits.map((visit) => visit.session)]);
     expect(tester.takeException(), isNull);
   });
 }

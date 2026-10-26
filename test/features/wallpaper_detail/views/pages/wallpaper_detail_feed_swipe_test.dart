@@ -21,6 +21,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
@@ -112,19 +113,25 @@ Future<void> _pumpFeed(
 
 void main() {
   setUpFavouriteCounts();
+  setUpAll(() => registerFallbackValue(const OnPanelOpened()));
   late OfflineAssetFixture offlineAssets;
   final List<FeedItemEntity> blocWalls = <FeedItemEntity>[];
   final List<WallpaperDetailState> blocInitialStates = <WallpaperDetailState>[];
+  final List<Stream<WallpaperDetailState>> blocStreams = <Stream<WallpaperDetailState>>[];
+  final List<_MockDetailBloc> createdBlocs = <_MockDetailBloc>[];
 
   setUp(() async {
     blocWalls.clear();
     blocInitialStates.clear();
+    blocStreams.clear();
+    createdBlocs.clear();
     offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
     offlineAssets.install();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
     getIt.registerFactory<WallpaperDetailBloc>(() {
       final bloc = _MockDetailBloc();
+      createdBlocs.add(bloc);
       final WallpaperDetailState initialState = blocInitialStates.isEmpty
           ? WallpaperDetailLoaded(
               entity: blocWalls.removeAt(0),
@@ -132,7 +139,11 @@ void main() {
               recommendations: const RecommendationState.exhausted(),
             )
           : blocInitialStates.removeAt(0);
-      whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: initialState);
+      whenListen(
+        bloc,
+        blocStreams.isEmpty ? const Stream<WallpaperDetailState>.empty() : blocStreams.removeAt(0),
+        initialState: initialState,
+      );
       return bloc;
     });
   });
@@ -154,7 +165,7 @@ void main() {
     expect(urls(), contains('https://example.com/b-thumb.jpg'));
     expect(find.byType(Hero), findsOneWidget);
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
@@ -174,7 +185,7 @@ void main() {
     blocWalls.addAll([b, a]);
     await _pumpFeed(tester, feed: [a, b, c], open: b);
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(300, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(300, 0), 1000);
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
@@ -187,13 +198,15 @@ void main() {
   testWidgets('a rapid A-B-A reversal keeps only the newest visit interactive', (tester) async {
     final a = _item('a');
     final b = _item('b');
-    blocWalls.addAll([a, b, a]);
+    blocWalls.addAll([a, b]);
     await _pumpFeed(tester, feed: [a, b], open: a);
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
+    final Finder firstCard = find.byType(WallpaperQuickActionRegion).first;
+    final double restLeft = tester.getRect(firstCard).left;
+    await tester.fling(firstCard, const Offset(-300, 0), 1000);
     await tester.pump(const Duration(milliseconds: 16));
     await tester.pump(const Duration(milliseconds: 16));
-    // A returns with the same tag, so pin the original visit by its element.
+    // A stays mounted while the feed moves, so pin its visit by its element.
     final Element originalElement = find
         .byWidgetPredicate((widget) => widget is WallpaperDetailScreen && widget.heroTag == 'tile-0')
         .evaluate()
@@ -201,15 +214,7 @@ void main() {
     final Finder originalVisit = find.byElementPredicate((element) => identical(element, originalElement));
     final Finder originalCard = find.descendant(of: originalVisit, matching: find.byType(WallpaperQuickActionRegion));
     final double beforeReverse = tester.getRect(originalCard).left;
-    final Finder originalTransition = find.ancestor(of: originalVisit, matching: find.byType(SlideTransition)).first;
-    final Iterable<double> outgoingOffsets = tester
-        .widgetList<SlideTransition>(find.ancestor(of: originalVisit, matching: find.byType(SlideTransition)))
-        .map((transition) => transition.position.value.dx);
-    expect(
-      tester.widget<SlideTransition>(originalTransition).position.value.dx,
-      lessThan(0),
-      reason: 'outgoing A offsets $outgoingOffsets',
-    );
+    expect(beforeReverse, lessThan(restLeft), reason: 'outgoing A should be moving left');
     final SemanticsHandle semantics = tester.ensureSemantics();
     final Finder currentScreen = find.byWidgetPredicate(
       (widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'b',
@@ -223,10 +228,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 16));
     final double afterReverse = tester.getRect(originalCard).left;
-    expect(tester.widget<SlideTransition>(originalTransition).position.value.dx, lessThan(0));
+    expect(afterReverse, lessThan(restLeft), reason: 'outgoing A should still be settling back, not snapped');
 
     final Finder screens = find.byType(WallpaperDetailScreen);
-    expect(screens, findsNWidgets(3));
+    expect(screens, findsNWidgets(2));
     final List<bool> transitionPointerStates = <bool>[
       for (int i = 0; i < screens.evaluate().length; i++)
         tester
@@ -261,29 +266,95 @@ void main() {
     blocWalls.addAll([a, b, c]);
     await _pumpFeed(tester, feed: [a, b, c], open: a);
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
     await tester.pump(const Duration(milliseconds: 16));
     await tester.pump(const Duration(milliseconds: 16));
     final Finder currentScreen = find.byWidgetPredicate(
       (widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'b',
     );
-    final Finder currentTransition = find.ancestor(of: currentScreen, matching: find.byType(SlideTransition)).first;
-    final double beforeNextStep = tester.widget<SlideTransition>(currentTransition).position.value.dx;
+    final Finder currentCard = find.descendant(of: currentScreen, matching: find.byType(WallpaperQuickActionRegion));
+    final double beforeNextStep = tester.getRect(currentCard).left;
     expect(beforeNextStep, greaterThan(0));
-    final Semantics currentCard = tester
+    final Semantics currentSemantics = tester
         .widgetList<Semantics>(find.descendant(of: currentScreen, matching: find.byType(Semantics)))
         .firstWhere((semantics) => semantics.properties.customSemanticsActions != null);
-    currentCard.properties.customSemanticsActions!.entries
+    currentSemantics.properties.customSemanticsActions!.entries
         .firstWhere((entry) => entry.key.label == 'Next wallpaper')
         .value();
     await tester.pump();
 
-    final double afterNextStep = tester.widget<SlideTransition>(currentTransition).position.value.dx;
-    expect(afterNextStep, closeTo(beforeNextStep, 0.02));
+    final double afterNextStep = tester.getRect(currentCard).left;
+    expect(afterNextStep, closeTo(beforeNextStep, 3));
     await tester.pumpAndSettle();
     final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
     expect(urls, contains('https://example.com/c-thumb.jpg'));
     expect(blocWalls, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the card follows the finger and shows the next wall beside it', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    final c = _item('c');
+    blocWalls.addAll([b, c]);
+    await _pumpFeed(tester, feed: [a, b, c], open: b);
+
+    final Finder bScreen = find.byWidgetPredicate(
+      (widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'b',
+    );
+    final Finder cScreen = find.byWidgetPredicate(
+      (widget) => widget is WallpaperDetailScreen && widget.entity?.id == 'c',
+    );
+    final Finder bCard = find.descendant(of: bScreen, matching: find.byType(WallpaperQuickActionRegion)).first;
+    final double startLeft = tester.getRect(bCard).left;
+
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(bCard));
+    await gesture.moveBy(const Offset(-20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-180, 0));
+    await tester.pump();
+
+    expect(startLeft - tester.getRect(bCard).left, inInclusiveRange(150, 210));
+    final Finder cCard = find.descendant(of: cScreen, matching: find.byType(WallpaperQuickActionRegion)).first;
+    expect(cScreen, findsOneWidget);
+    expect(tester.getRect(cCard).left, greaterThan(tester.getRect(bCard).left));
+
+    // Hold still so the release carries no fling velocity and the card springs back.
+    await tester.pump(const Duration(milliseconds: 500));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(bCard).left, closeTo(startLeft, 1));
+    expect(cScreen, findsNothing);
+    expect(blocWalls, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a neighbour shown during a drag does not load until the feed settles on it', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    final c = _item('c');
+    blocWalls.addAll([b, c]);
+    await _pumpFeed(tester, feed: [a, b, c], open: b);
+    final Finder bCard = find.byType(WallpaperQuickActionRegion).first;
+
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(bCard));
+    await gesture.moveBy(const Offset(-20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-180, 0));
+    await tester.pump();
+
+    expect(createdBlocs, hasLength(2));
+    final _MockDetailBloc cBloc = createdBlocs[1];
+    verifyNever(() => cBloc.add(any(that: isA<LoadFromEntity>())));
+
+    // Pass the halfway point, then hold still so the release carries no fling velocity.
+    await gesture.moveBy(const Offset(-240, 0));
+    await tester.pump(const Duration(milliseconds: 500));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    verify(() => cBloc.add(any(that: isA<LoadFromEntity>()))).called(1);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -293,13 +364,44 @@ void main() {
     blocWalls.addAll([b]);
     await _pumpFeed(tester, feed: [a, b], open: b);
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
     final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     expect(find.byType(Hero), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a drag held while the wall finishes loading settles the feed', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    final StreamController<WallpaperDetailState> loads = StreamController<WallpaperDetailState>();
+    addTearDown(loads.close);
+    blocInitialStates.add(const WallpaperDetailInitial());
+    blocStreams.add(loads.stream);
+    blocWalls.add(b);
+    await _pumpFeed(tester, feed: [a, b], open: a);
+    final Finder aCard = find.byWidgetPredicate(
+      (widget) => widget is WallpaperQuickActionRegion && widget.item.id == 'a',
+    );
+    final double restLeft = tester.getRect(aCard).left;
+
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(aCard));
+    await gesture.moveBy(const Offset(-20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-180, 0));
+    await tester.pump();
+    expect(tester.getRect(aCard).left, lessThan(restLeft - 100));
+
+    loads.add(
+      WallpaperDetailLoaded(entity: a, paletteLoading: false, recommendations: const RecommendationState.exhausted()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(aCard).left, closeTo(restLeft, 1));
+    await gesture.up();
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -310,7 +412,7 @@ void main() {
     blocWalls.add(b);
     await _pumpFeed(tester, feed: [a, b], open: a);
 
-    await tester.dragFrom(tester.getCenter(find.byType(WallpaperQuickActionRegion).first), const Offset(-150, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
     await tester.pump(const Duration(milliseconds: 100));
     await _pumpOfflinePreview(tester);
 
@@ -356,7 +458,7 @@ void main() {
     await _pumpFeed(tester, feed: [a, b, c], open: b, direction: TextDirection.rtl);
     final double originalLeft = tester.getRect(find.byType(WallpaperQuickActionRegion).first).left;
 
-    await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
     await tester.pump(const Duration(milliseconds: 16));
 
     final Finder previous = find.byWidgetPredicate(
@@ -445,7 +547,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (var i = 0; i < 30; i++) {
-      await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0));
+      await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
       await tester.pumpAndSettle();
     }
     expect(blocWalls, isEmpty);
