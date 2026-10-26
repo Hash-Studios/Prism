@@ -78,7 +78,7 @@ class WallpaperTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
     final Object heroScope = Scrollable.maybeOf(context) ?? context;
-    final String heroTag = _feedHeroTag(heroScope, item);
+    final String heroTag = prismHeroTag(heroScope, index, item.id);
     final List<FeedItemEntity>? walls = feed;
     final int? columns = crossAxisCount;
     final int? decodeHeight =
@@ -133,14 +133,14 @@ class WallpaperTile extends StatelessWidget {
   }
 }
 
-String _feedHeroTag(Object scope, FeedItemEntity item) => prismHeroTag(scope, 0, '${item.source.name}:${item.id}');
-
 WallpaperFeed _wallpaperFeed(BuildContext grid, Object heroScope, List<FeedItemEntity> walls) {
   late final WallpaperFeed feed;
   return feed = WallpaperFeed(
     grid: grid,
     indexInGrid: (wall) => _currentFeedIndex(feed.grid, wall),
-    tiles: [for (final (i, wall) in walls.indexed) (item: wall, index: i, heroTag: _feedHeroTag(heroScope, wall))],
+    tiles: [
+      for (final (i, wall) in walls.indexed) (item: wall, index: i, heroTag: prismHeroTag(heroScope, i, wall.id)),
+    ],
   );
 }
 
