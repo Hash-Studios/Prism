@@ -116,12 +116,44 @@ class DropsRepositoryImpl implements DropsRepository {
         <String, Object?>{'weekKey': weekKey, 'title': title},
       );
       final Object? saved = response.data is Map ? (response.data as Map)['title'] : null;
-      return Result.success(saved is String ? saved : title);
+      final String savedTitle = saved is String ? saved : title;
+      try {
+        await _rememberTitle(weekKey, savedTitle);
+      } on Object catch (error, stackTrace) {
+        logger.w(
+          'Unable to update renamed Drop snapshot',
+          tag: 'DropsRepository',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      return Result.success(savedTitle);
     } catch (error, stackTrace) {
       logger.e('[DropsRepository] rename failed', error: error, stackTrace: stackTrace);
       return Result.error(const ServerFailure("Couldn't rename the Drop."));
     }
   }
+
+  Future<void> _rememberTitle(String weekKey, String title) => _serializeSnapshot(() async {
+    final List<DropEntity> recent = await _readRecent();
+    final int index = recent.indexWhere((DropEntity drop) => drop.weekKey == weekKey);
+    if (index < 0) return;
+    final DropEntity drop = recent[index];
+    recent[index] = DropEntity(
+      weekKey: drop.weekKey,
+      title: title,
+      startsAt: drop.startsAt,
+      endsAt: drop.endsAt,
+      priceWall: drop.priceWall,
+      pricePack: drop.pricePack,
+      count: drop.count,
+      walls: drop.walls,
+      collectors: drop.collectors,
+    );
+    await _store.write(_snapshotKey, <String, Object?>{
+      'drops': recent.take(_maxRecentWeeks).map(_toMap).toList(growable: false),
+    });
+  });
 
   Future<void> _remember(DropEntity? drop, String? weekKey) => _serializeSnapshot(() async {
     final List<DropEntity> recent = await _readRecent();

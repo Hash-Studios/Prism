@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -237,6 +239,31 @@ void main() {
       expect(state.lastResult!.outcome, DropUnlockOutcome.insufficient);
       expect(state.unlocked, isEmpty);
       expect(analytics.events.where((e) => e.eventName == 'drop_unlocked'), isEmpty);
+    });
+
+    test('a second unlock event while the first callable is pending is ignored', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      final Completer<Object?> pendingReply = Completer<Object?>();
+      backend.onCall = (name, params) {
+        calls.add((name, params));
+        return pendingReply.future;
+      };
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      final DropsState busy = await bloc.stream.firstWhere((state) => state.busyKey == 'A');
+      expect(busy.busyKey, 'A');
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      await pumpEventQueue();
+      expect(calls, hasLength(1));
+      expect(bloc.state.busyKey, 'A');
+
+      pendingReply.complete(_reply(success: true, unlocked: <String>['A']));
+      final DropsState completed = await bloc.stream.firstWhere((state) => state.lastResult != null);
+      expect(completed.lastResult!.outcome, DropUnlockOutcome.unlocked);
+      expect(completed.busyKey, isNull);
+      expect(calls, hasLength(1));
     });
 
     test('is ignored with no Drop loaded', () async {

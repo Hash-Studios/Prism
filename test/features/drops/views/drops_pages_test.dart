@@ -50,8 +50,8 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pump(WidgetTester tester, DropsState state, Widget page) async {
-    tester.view.physicalSize = const Size(400, 2400);
+  Future<void> pump(WidgetTester tester, DropsState state, Widget page, {double width = 400}) async {
+    tester.view.physicalSize = Size(width, 2400);
     tester.view.devicePixelRatio = 1;
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.view.reset);
@@ -106,9 +106,9 @@ void main() {
   );
 
   /// Opens the sheet for wall [wallId], or for the pack when [wallId] is null.
-  Future<void> openSheet(WidgetTester tester, DropsState state, {String? wallId = 'B'}) async {
+  Future<void> openSheet(WidgetTester tester, DropsState state, {String? wallId = 'B', double width = 400}) async {
     final DropWall? wall = wallId == null ? null : state.drop!.walls.firstWhere((w) => w.id == wallId);
-    await pump(tester, state, askButton(state, wall));
+    await pump(tester, state, askButton(state, wall), width: width);
     await tester.tap(find.text('ask'));
     await tester.pumpAndSettle();
   }
@@ -423,6 +423,51 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(const DropsEvent.unlockRequested())).called(1);
+    });
+
+    testWidgets('a fast double-tap during dismissal dispatches one unlock and leaves the page open', (tester) async {
+      await openSheet(tester, loaded(dropEntity()));
+
+      final Finder wallButton = find.text('Unlock this wall for 30');
+      await tester.tap(wallButton);
+      await tester.tap(wallButton, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      verify(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'B'))).called(1);
+      expect(find.text('ask'), findsOneWidget);
+    });
+
+    testWidgets('a short balance in pack mode offers a video and Earn coins', (tester) async {
+      CoinsService.instance.balanceNotifier.value = 30;
+      await openSheet(tester, loaded(dropEntity()), wallId: null);
+
+      expect(find.text('Unlock all 4 for 100'), findsOneWidget);
+      expect(find.text('You have 30 coins'), findsOneWidget);
+      expect(find.textContaining('Watch a video (+'), findsOneWidget);
+      expect(find.text('Earn coins'), findsOneWidget);
+    });
+
+    testWidgets('Pro prices the remaining two walls consistently in the header and pack sheet', (tester) async {
+      app_state.prismUser.premium = true;
+      final Map<String, DropUnlock> unlocked = <String, DropUnlock>{
+        'A': ownedA,
+        'B': const DropUnlock(wallId: 'B', weekKey: '2026-W42', url: 'https://full.test/B.jpg'),
+      };
+      final DropsState state = loaded(dropEntity(), unlocked: unlocked);
+
+      await pump(tester, state, const DropsPage());
+      expect(find.text('Unlock all 2 for 30'), findsOneWidget);
+
+      await openSheet(tester, state, wallId: null);
+      expect(find.text('Unlock all 2 for 30'), findsOneWidget);
+      expect(find.text('Pro price'), findsOneWidget);
+    });
+
+    testWidgets('the pack preview fits a narrow 360dp viewport', (tester) async {
+      await openSheet(tester, loaded(dropEntity()), wallId: null, width: 360);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(PrismImageTile), findsNWidgets(3));
     });
 
     testWidgets('with too few coins it offers a video and Earn coins', (tester) async {

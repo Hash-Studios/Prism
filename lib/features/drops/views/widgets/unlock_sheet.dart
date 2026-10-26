@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -83,6 +85,7 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
     final int remaining = widget.locked.length;
     final int wallPrice = widget.drop.wallPrice(isPro: isPro);
     final int packPrice = widget.drop.packPrice(remaining: remaining, isPro: isPro);
+    final List<DropWall> shownWalls = wall == null ? widget.locked.take(3).toList() : <DropWall>[wall];
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,
       builder: (context, balance, _) {
@@ -129,37 +132,51 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              SizedBox(
-                height: _previewHeight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    for (final (int i, DropWall shown)
-                        in (wall == null ? widget.locked.take(3) : <DropWall>[wall]).indexed)
-                      Padding(
-                        padding: EdgeInsetsDirectional.only(start: i == 0 ? 0 : PrismSpace.xs),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(PrismRadius.md),
-                          child: SizedBox(
-                            width: _previewHeight * _wallAspect,
-                            child: PrismImageTile(url: shown.thumb),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (shownWalls.isEmpty) return const SizedBox(height: _previewHeight);
+                  final double gaps = PrismSpace.xs * (shownWalls.length - 1);
+                  final double availableWidth = math.max(0, constraints.maxWidth - gaps);
+                  final double tileWidth = math.min(_previewHeight * _wallAspect, availableWidth / shownWalls.length);
+                  final double tileHeight = tileWidth / _wallAspect;
+                  return SizedBox(
+                    height: tileHeight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        for (final (int i, DropWall shown) in shownWalls.indexed)
+                          Padding(
+                            padding: EdgeInsetsDirectional.only(start: i == 0 ? 0 : PrismSpace.xs),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(PrismRadius.md),
+                              child: SizedBox(
+                                width: tileWidth,
+                                height: tileHeight,
+                                child: PrismImageTile(url: shown.thumb),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: PrismSpace.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: PrismSpace.xs,
+                runSpacing: PrismSpace.xs,
                 children: <Widget>[
-                  const PrismCoinIcon(size: 16),
-                  const SizedBox(width: PrismSpace.xxs),
-                  Text(l10n.economyYouHaveCoins(balance), style: PrismTextStyles.caption(context)),
-                  if (isPro) ...<Widget>[
-                    const SizedBox(width: PrismSpace.xs),
-                    PrismTag(label: l10n.economyProPrice, tone: PrismTone.accent),
-                  ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const PrismCoinIcon(size: 16),
+                      const SizedBox(width: PrismSpace.xxs),
+                      Text(l10n.economyYouHaveCoins(balance), style: PrismTextStyles.caption(context)),
+                    ],
+                  ),
+                  if (isPro) PrismTag(label: l10n.economyProPrice, tone: PrismTone.accent),
                 ],
               ),
             ],

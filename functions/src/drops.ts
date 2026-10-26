@@ -22,6 +22,19 @@ const WEEK_KEY = /^\d{4}-W\d{2}$/;
 const RELEASE_AFTER_MS = 30 * 86_400_000;
 const WALL_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+
+function isValidDropWeekKey(value: string): boolean {
+  const match = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (!match || !WEEK_KEY.test(value)) return false;
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  if (week < 1 || week > 53) return false;
+  const jan4 = Date.UTC(year, 0, 4);
+  const mondayOffset = (new Date(jan4).getUTCDay() + 6) % 7;
+  const monday = jan4 - mondayOffset * DAY_MS + (week - 1) * 7 * DAY_MS;
+  return weekKey(monday) === value;
+}
 
 export interface DropWall {
   id: string;
@@ -145,20 +158,17 @@ export const planWeeklyDrop = onSchedule(
     }
 
     const config = await loadEconomy(nowMs);
-    const titleSnap = await db.doc("studioConfig/current").get();
-    const titles = titleSnap.data()?.dropTitles;
-    const custom =
-      titles && typeof titles === "object" ?
-        str((titles as Record<string, unknown>)[key]) :
-        "";
-    const recentTitles = custom ? [] : (
+    const recentTitles = (
       await db.collection("drops").orderBy("startsAt", "desc").limit(12).get()
-    ).docs.map((doc) => str(doc.data().title));
-    const title = custom || pickDropName(dropMood(docs.map((doc) => doc.data().colors)), recentTitles, isoWeekNumber(key));
+    ).docs.map((doc) => normalizeDropTitle(doc.data().title) ?? "");
+    const fallbackTitle = pickDropName(
+      dropMood(docs.map((doc) => doc.data().colors)),
+      recentTitles,
+      isoWeekNumber(key),
+    );
     const {start, end} = weekBounds(nowMs);
-    const drop: DropDoc & { createdAt: admin.firestore.FieldValue } = {
+    const drop: Omit<DropDoc, "title"> & { createdAt: admin.firestore.FieldValue } = {
       weekKey: key,
-      title,
       startsAt: start,
       endsAt: end,
       priceWall: config.spend.dropWall,
@@ -167,9 +177,20 @@ export const planWeeklyDrop = onSchedule(
       walls: docs.map(snapshotWall),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
+    const configRef = db.doc("studioConfig/current");
     const planned = await db.runTransaction(async (tx) => {
-      if ((await tx.get(dropRef)).exists) return false;
-      tx.set(dropRef, drop);
+      const [currentDrop, currentConfig] = await Promise.all([
+        tx.get(dropRef),
+        tx.get(configRef),
+      ]);
+      if (currentDrop.exists) return false;
+      const titles = currentConfig.data()?.dropTitles;
+      const configuredTitle =
+        titles && typeof titles === "object" && !Array.isArray(titles) &&
+        Object.prototype.hasOwnProperty.call(titles, key) ?
+          normalizeDropTitle((titles as Record<string, unknown>)[key]) :
+          null;
+      tx.set(dropRef, {...drop, title: configuredTitle ?? fallbackTitle});
       for (const doc of docs) {
         tx.update(doc.ref, {dropReserved: false, dropWeek: key});
       }
@@ -546,7 +567,7 @@ export const setDropTitle = onCall(
       throw new HttpsError("permission-denied", "Admins only.");
     }
     const dropKey = request.data?.weekKey;
-    if (typeof dropKey !== "string" || !WEEK_KEY.test(dropKey)) {
+    if (typeof dropKey !== "string" || !isValidDropWeekKey(dropKey)) {
       throw new HttpsError("invalid-argument", "weekKey is invalid.");
     }
     const title = normalizeDropTitle(request.data?.title);

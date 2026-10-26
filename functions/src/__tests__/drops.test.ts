@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as admin from "firebase-admin";
 import * as notificationHelper from "../notificationHelper";
 import {
   duePushKinds,
@@ -9,11 +10,13 @@ import {
   packPrice,
   planWeeklyDrop,
   releaseOldDrops,
+  setDropTitle,
   sendDropPushes,
   snapshotWall,
   unlockDrop,
 } from "../drops";
 import {resetEconomyCache, weekBounds, weekKey} from "../economy";
+import {db} from "../common";
 import {installFakeDb, type Doc} from "./fakeDb";
 
 const MONDAY = Date.UTC(2026, 9, 19, 0, 30);
@@ -137,6 +140,60 @@ test("the planner falls back to a mood name when no title is set", async (t) => 
   const store = installFakeDb(t, reservedWalls(4));
   await plan(t);
   assert.equal(store.get(`drops/${KEY}`)?.title, "Color Study");
+});
+
+test("the planner ignores malformed titles in recent drops", async (t) => {
+  const store = installFakeDb(t, {
+    ...reservedWalls(4),
+    "drops/2026-W42": {startsAt: start - 7 * 86_400_000, title: {toString: "not callable"}},
+  });
+  await plan(t);
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Color Study");
+});
+
+test("the planner uses a rename made after its initial reads", async (t) => {
+  const store = installFakeDb(t, reservedWalls(4));
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    store.set("studioConfig/current", {dropTitles: {[KEY]: "Renamed before commit"}});
+    return runTransaction(callback);
+  });
+  await plan(t);
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Renamed before commit");
+});
+
+const renameDrop = (data: Doc, auth: Doc = {uid: "admin", token: {admin: true}}) =>
+  setDropTitle.run({auth, data} as unknown as Parameters<typeof setDropTitle.run>[0]);
+
+test("setDropTitle renames an existing ended drop in the transaction", async (t) => {
+  const store = installFakeDb(t, {"drops/2020-W53": {endsAt: 1, title: "Old title"}});
+  const result = await renameDrop({weekKey: "2020-W53", title: "  New   title  "});
+  assert.deepEqual(result, {title: "New title", applied: "drop"});
+  assert.equal(store.get("drops/2020-W53")?.title, "New title");
+});
+
+test("setDropTitle saves a title for a drop that is not planned yet", async (t) => {
+  const store = installFakeDb(t, {"studioConfig/current": {generationEnabled: true}});
+  const result = await renameDrop({weekKey: KEY, title: "Future title"});
+  assert.deepEqual(result, {title: "Future title", applied: "planned"});
+  assert.deepEqual(store.get("studioConfig/current"), {
+    generationEnabled: true,
+    dropTitles: {[KEY]: "Future title"},
+  });
+});
+
+test("setDropTitle rejects non-admin callers and invalid inputs without writes", async (t) => {
+  const store = installFakeDb(t);
+  await assert.rejects(renameDrop({weekKey: KEY, title: "Title"}, {uid: "user", token: {}}), {
+    code: "permission-denied",
+  });
+  await assert.rejects(renameDrop({weekKey: "2026-W99", title: "Title"}), {code: "invalid-argument"});
+  await assert.rejects(renameDrop({weekKey: KEY, title: "  "}), {code: "invalid-argument"});
+  await assert.rejects(renameDrop({weekKey: KEY, title: "x".repeat(41)}), {code: "invalid-argument"});
+  await assert.rejects(renameDrop({weekKey: KEY, title: 12}), {code: "invalid-argument"});
+  await assert.rejects(renameDrop({weekKey: "2026-W00", title: "Title"}), {code: "invalid-argument"});
+  await assert.rejects(renameDrop({weekKey: "2021-W53", title: "Title"}), {code: "invalid-argument"});
+  assert.equal(store.size, 0);
 });
 
 test("old drops release their walls to the feed once", async (t) => {

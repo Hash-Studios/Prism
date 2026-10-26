@@ -19,7 +19,8 @@ export function dropMood(wallColors: unknown[]): DropMood {
   const score: Record<Exclude<DropMood, "mixed">, number> = {night: 0, warm: 0, cool: 0};
   for (const colors of wallColors) {
     if (!Array.isArray(colors)) continue;
-    const known = colors.filter((id): id is string => typeof id === "string" && id in MOOD_OF_COLOR);
+    const known = colors.filter((id): id is string =>
+      typeof id === "string" && Object.prototype.hasOwnProperty.call(MOOD_OF_COLOR, id));
     known.forEach((id, i) => {
       score[MOOD_OF_COLOR[id]] += i === 0 ? 2 : 1;
     });

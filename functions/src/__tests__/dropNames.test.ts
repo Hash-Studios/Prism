@@ -26,6 +26,10 @@ test("dropMood ignores non-array entries and unknown ids", () => {
   assert.equal(dropMood([["black"], "x", null, ["nope"]]), "night");
 });
 
+test("dropMood ignores inherited object keys in malformed palette data", () => {
+  assert.equal(dropMood([["constructor", "blue", "red"]]), "cool");
+});
+
 test("pickDropName returns the first name when nothing is recent", () => {
   assert.equal(pickDropName("night", [], 0), "After Hours");
 });
