@@ -34,6 +34,7 @@ import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
+import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
@@ -972,6 +973,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Positioned(top: 0, right: 0, child: SpookyWeb(right: true)),
           const Positioned(top: 0, right: 36, child: SpookySpider(size: 22)),
+          const Positioned(top: 0, right: 40, child: DiwaliDiya(size: 26)),
         ],
       ),
     );

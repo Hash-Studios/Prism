@@ -19,13 +19,12 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -52,8 +51,8 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
-/// The home carousel: Wall of the Day, the live Drop, boosted walls, the Spooky theme card (season only, while the
-/// theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
+/// The home carousel: Wall of the Day, the live Drop, boosted walls, a card for each seasonal theme (in its season,
+/// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
 /// image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
@@ -88,26 +87,26 @@ class _FeedCarouselState extends State<FeedCarousel> {
       drop != null && EconomyConfig.notifier.value.flags.dropsEnabled && drop.isLiveAt(DateTime.now());
 
   Timer? _dropEndTimer;
-  Timer? _spookyEndTimer;
+  Timer? _seasonEndTimer;
 
   @override
   void initState() {
     super.initState();
     _scheduleDropEnd();
-    _scheduleSpookyEnd();
+    _scheduleSeasonEnd();
   }
 
   @override
   void didUpdateWidget(FeedCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.liveDrop?.endsAt != oldWidget.liveDrop?.endsAt) _scheduleDropEnd();
-    _scheduleSpookyEnd();
+    _scheduleSeasonEnd();
   }
 
   @override
   void dispose() {
     _dropEndTimer?.cancel();
-    _spookyEndTimer?.cancel();
+    _seasonEndTimer?.cancel();
     super.dispose();
   }
 
@@ -123,12 +122,19 @@ class _FeedCarouselState extends State<FeedCarousel> {
     });
   }
 
-  void _scheduleSpookyEnd() {
-    _spookyEndTimer?.cancel();
-    final Duration left = spookySeasonEnd.difference(spookyNow());
-    if (left <= Duration.zero) return;
-    _spookyEndTimer = Timer(left, () {
-      if (mounted) setState(() {});
+  /// Rebuilds when the next season ends, so its card goes away.
+  void _scheduleSeasonEnd() {
+    _seasonEndTimer?.cancel();
+    final DateTime now = seasonNow();
+    final Duration? left = seasonalThemes
+        .map((season) => season.seasonEnd.difference(now))
+        .where((left) => left > Duration.zero)
+        .fold<Duration?>(null, (soonest, left) => soonest == null || left < soonest ? left : soonest);
+    if (left == null) return;
+    _seasonEndTimer = Timer(left, () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleSeasonEnd();
     });
   }
 
@@ -151,19 +157,19 @@ class _FeedCarouselState extends State<FeedCarousel> {
     openPrismLink(context, app_state.bannerURL);
   }
 
-  void _trySpookyTheme() {
+  void _trySeasonalTheme(SeasonalTheme season) {
     PrismHaptics.tap();
     unawaited(
       analytics.track(
-        const SurfaceActionTappedEvent(
+        SurfaceActionTappedEvent(
           surface: AnalyticsSurfaceValue.homeWallpaperGrid,
           action: AnalyticsActionValue.bannerTapped,
-          sourceContext: 'spooky_theme_banner',
+          sourceContext: '${season.name}_theme_banner',
         ),
       ),
     );
     context.setPrismDarkTheme(
-      prismSpookyThemeId,
+      season.themeId,
       mode: Theme.of(context).brightness == Brightness.light ? ThemeMode.dark : null,
     );
     unawaited(context.router.push(const ThemeViewRoute()));
@@ -206,18 +212,20 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
-    final bool showsSpooky = isSpookySeason() && !isSpookyActive(context);
+    final List<SeasonalTheme> seasons = seasonalThemes
+        .where((season) => season.inSeason() && !season.isActive(context))
+        .toList();
     final List<String> pageIds = <String>[
       if (hasWotd) 'wotd',
       if (_showsDrop(widget.liveDrop)) 'drop',
       for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
-      if (showsSpooky) 'spooky',
+      for (final SeasonalTheme season in seasons) season.name,
       if (bannerImage.trim().isNotEmpty) 'banner',
       for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
     ];
     if (_pageIds.isNotEmpty && _current < _pageIds.length) {
       final int preservedPage = pageIds.indexOf(_pageIds[_current]);
-      if (preservedPage >= 0 && preservedPage != _current) {
+      if (preservedPage >= 0 && (preservedPage != _current || pageIds.length != _pageIds.length)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _controller.jumpToPage(preservedPage);
         });
@@ -235,13 +243,13 @@ class _FeedCarouselState extends State<FeedCarousel> {
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
         (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
-      if (showsSpooky)
+      for (final SeasonalTheme season in seasons)
         (_) => FeedHeroCard(
-          image: const SpookyBannerArt(),
-          semanticLabel: context.l10n.spookyBannerTitle,
-          title: context.l10n.spookyBannerTitle,
-          subtitle: context.l10n.spookyBannerSubtitle,
-          onTap: _trySpookyTheme,
+          image: season.bannerArt,
+          semanticLabel: season.bannerTitle(context.l10n),
+          title: season.bannerTitle(context.l10n),
+          subtitle: season.bannerSubtitle(context.l10n),
+          onTap: () => _trySeasonalTheme(season),
         ),
       if (bannerImage.trim().isNotEmpty)
         (_) => FeedHeroCard(
@@ -253,7 +261,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
       for (int i = 0; i < widget.previewWalls.length; i++)
         (int realIndex) => _previewCard(widget.previewWalls[i], i, memCacheHeight, realIndex),
     ];
-    if (pages.isEmpty) return const SizedBox.shrink();
+    if (pages.isEmpty) {
+      _current = 0;
+      return const SizedBox.shrink();
+    }
     final int current = _current.clamp(0, pages.length - 1);
     final bool moving = pages.length > 1;
     // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.

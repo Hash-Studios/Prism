@@ -26,6 +26,7 @@ const Map<String, Color> _themeBackgrounds = <String, Color>{
   'kLCotton Blue': Color(0xFF8399BE),
   'kDMaterial Dark': Color(0xFF000000),
   'kDAMOLED': Color(0xFF000000),
+  'kDDiwali': Color(0xFF0D0718),
   'kDSpooky': Color(0xFF0B0806),
   'kDOlive': Color(0xFF202113),
   'kDDeep Ocean': Color(0xFF041B29),

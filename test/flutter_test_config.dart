@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 
-/// Pins the Halloween season clock after the season, so the home carousel does not change with the real date.
+/// Pins the season clock after the seasons, so the home carousel does not change with the real date.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
-  spookyClock = () => DateTime(2026, 12);
+  seasonClock = () => DateTime(2026, 12);
   await testMain();
 }
