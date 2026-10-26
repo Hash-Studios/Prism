@@ -183,7 +183,7 @@ The default consumer models are Z-Image Turbo for `fast`, Seedream 5 Lite for `b
 
 An unknown fal model configured in KV gets the generic `prompt`, `image_size`, and `seed` body and the configured cost estimate. Unknown model names that contain `seedream` keep the legacy Seedream size limits. Other unknown models use the requested size.
 
-The Studio route still permits only GPT Image 2.5, Seedream 4.5, and Seedream 5 Lite. Z-Image is consumer-only and are rejected before a Studio provider call or budget reservation. Studio accepts JPEG output, but that does not add a model to its approved list. Its gates require a portrait image with a short edge of at least 1400, a long edge of at least 3000, and a height-to-width ratio from 2.0 to 2.4.
+The Studio route still permits only GPT Image 2.5, Seedream 4.5, and Seedream 5 Lite. Z-Image is consumer-only and is rejected before a Studio provider call or budget reservation. Studio accepts JPEG output, but that does not add a model to its approved list. Its gates require a portrait image with a short edge of at least 1400, a long edge of at least 3000, and a height-to-width ratio from 2.0 to 2.4.
 
 Automatic cost guardrails use the cost estimate for the requested size:
 

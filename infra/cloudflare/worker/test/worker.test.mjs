@@ -792,15 +792,90 @@ test('the quality tier sends GPT Image 2.5 its own body and size, with no seed',
   assert.equal('seed' in stats.falRequest.body, false);
 });
 
-test('the balanced tier sends Seedream 5 Lite its scaled size and reports the size fal returns', async () => {
-  const { stats, body } = await generateWith(
+test('the balanced default sends Seedream 5 Lite and commits its cost and result', async () => {
+  const { stats, body, kv, storage } = await generateWith(
     { qualityTier: 'balanced', targetSize: '944x2048', seed: 7 },
     { images: [{ url: 'https://fal.media/image.png', width: 1880, height: 4080 }] },
   );
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v5/lite/text-to-image');
-  assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
+  assert.deepEqual(stats.falRequest.body.image_size, { width: 1304, height: 2832 });
   assert.equal('seed' in stats.falRequest.body, false);
   assert.deepEqual({ width: body.width, height: body.height }, { width: 1880, height: 4080 });
+  assert.equal(body.qualityTier, 'balanced');
+  assert.equal(body.seed, null);
+  const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
+  assert.equal(record.seed, null);
+  assert.equal(record.model, 'fal-ai/bytedance/seedream/v5/lite/text-to-image');
+  assert.equal(record.estimatedCostUsd, 0.04);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04);
+  assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
+});
+
+test('the balanced default rejects its full reservation when only a smaller budget remains', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    providers: { fal: { dailyBudgetUsd: 0.035 } },
+  }));
+  const storage = new MemoryStorage();
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    const response = await postGeneration(env, { qualityTier: 'balanced', targetSize: '944x2048' });
+    assert.equal(response.status, 429);
+    assert.equal((await response.json()).error, 'budget_exhausted');
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), undefined);
+  assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), undefined);
+});
+
+test('a balanced variation inherits Seedream default sizing, model and cost', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:gen:gen-balanced-parent', JSON.stringify({
+    generationId: 'gen-balanced-parent', userId: 'alice', prompt: 'A quiet mountain lake',
+    stylePreset: 'minimal', qualityTier: 'balanced', width: 1880, height: 4080,
+  }));
+  const storage = new MemoryStorage();
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
+  const token = await makeToken({ sub: 'alice' });
+  const stats = {};
+  const restore = mockFal({ stats });
+  const falFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (String(input).startsWith('https://fal.run/')) {
+      assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04);
+      assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
+    }
+    return falFetch(input, init);
+  };
+  let body;
+  try {
+    const response = await worker.fetch(new Request(
+      'https://prismwalls.com/api/ai/generations/gen-balanced-parent/variations', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ variationPrompt: 'warmer light', seed: 7 }),
+      }), env, { waitUntil() {} });
+    assert.equal(response.status, 200);
+    body = await response.json();
+  } finally {
+    restore();
+  }
+  assert.equal(body.qualityTier, 'balanced');
+  assert.equal(body.seed, null);
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v5/lite/text-to-image');
+  assert.deepEqual(stats.falRequest.body.image_size, { width: 1880, height: 4080 });
+  assert.equal('seed' in stats.falRequest.body, false);
+  const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
+  assert.equal(record.parentGenerationId, 'gen-balanced-parent');
+  assert.equal(record.seed, null);
+  assert.equal(record.estimatedCostUsd, 0.04);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04);
+  assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
 });
 
 test('the fast tier sends Z-Image the requested size and seed', async () => {
@@ -907,6 +982,62 @@ test('a 45s provider response leaves only 5s for image body under the 50s reques
   assert.deepEqual(calls.map((url) => url.startsWith('https://fal.run/') ? 'fal' : 'image'), ['fal', 'image']);
   assert.ok(clock.firedAt.includes(clock.now()), 'shared request deadline fired at 50s');
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.07);
+});
+
+test('Seedream minimum timeout is 45s and remains bounded by the 50s consumer deadline', async () => {
+  for (const [label, elapsedMs, timeoutMs, expectedStatus, expectedError] of [
+    ['default timeout', 35000, undefined, 200, undefined],
+    ['Seedream minimum', 45000, undefined, 502, 'provider_timeout'],
+    ['consumer deadline', 50000, 60000, 502, 'provider_timeout'],
+  ]) {
+    const clock = fakeClock();
+    const startedAt = clock.now();
+    const storage = new MemoryStorage();
+    const kv = aiKv(5);
+    if (timeoutMs != null) {
+      await kv.put('ai:routing:active', JSON.stringify({
+        hardUserDailyCap: 5,
+        providers: { fal: { timeoutMs } },
+      }));
+    }
+    const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
+    const originalFetch = globalThis.fetch;
+    let falCalls = 0;
+    globalThis.fetch = async (input, init) => {
+      if (String(input).startsWith('https://fal.run/')) {
+        falCalls += 1;
+        clock.advance(elapsedMs);
+        if (init.signal.aborted) throw new Error('timeout');
+        return Response.json({ images: [{ url: 'https://fal.media/image.png' }] });
+      }
+      if (String(input) === 'https://fal.media/image.png') {
+        return new Response(new Uint8Array(4096), { headers: { 'content-type': 'image/png' } });
+      }
+      throw new Error(`unexpected fetch ${String(input)}`);
+    };
+    try {
+      const response = await postGeneration(env, { qualityTier: 'balanced', targetSize: '944x2048' });
+      assert.equal(response.status, expectedStatus, label);
+      if (expectedError == null) {
+        assert.equal((await response.json()).qualityTier, 'balanced', label);
+      } else {
+        assert.equal((await response.json()).error, expectedError, label);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+      clock.restore();
+    }
+    assert.equal(falCalls, 1, label);
+    assert.equal(clock.now() - startedAt, elapsedMs, `${label}: elapsed`);
+    if (expectedError == null) {
+      assert.ok(clock.firedAt.length === 0, `${label}: default 25s timeout must not fire`);
+      assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04, label);
+    } else {
+      assert.ok(clock.firedAt.includes(clock.now()), `${label}: deadline must fire at ${elapsedMs}ms`);
+      assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0, label);
+      assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0, label);
+    }
+  }
 });
 
 test('Fal JSON body parsing also uses the remaining provider deadline', async () => {
@@ -1068,7 +1199,63 @@ test('unknown configured fal models retain their configured tier estimate', asyn
   assert.equal(JSON.parse(await kv.get(`ai:gen:${body.generationId}`)).estimatedCostUsd, 0.123456);
 });
 
-test('balanced stays on its model near the budget guardrail when its cost is below Z-Image', async () => {
+test('the 95 percent budget guardrail chooses the cheaper default model by requested size', async () => {
+  for (const [targetSize, effectiveTier, model, cost] of [
+    ['944x2048', 'fast', 'fal-ai/z-image/turbo', 0.009667],
+    ['2048x2048', 'fast', 'fal-ai/z-image/turbo', 0.020972],
+    ['4096x4096', 'balanced', 'fal-ai/bytedance/seedream/v5/lite/text-to-image', 0.04],
+  ]) {
+    const kv = aiKv(5);
+    const storage = new MemoryStorage();
+    await storage.put(`provider:fal:daily:${today()}`, 28.5);
+    const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
+    const stats = {};
+    const restore = mockFal({ stats });
+    const falFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (String(input).startsWith('https://fal.run/')) {
+        assert.equal(await storage.get(`provider:fal:daily:${today()}`), 28.5 + cost,
+          `${targetSize}: reserved daily budget`);
+        assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), cost,
+          `${targetSize}: reserved monthly budget`);
+      }
+      return falFetch(input, init);
+    };
+    let body;
+    try {
+      let response;
+      if (targetSize === '4096x4096') {
+        await kv.put('ai:gen:gen-balanced-parent', JSON.stringify({
+          generationId: 'gen-balanced-parent', userId: 'alice', prompt: 'A quiet mountain lake',
+          stylePreset: 'minimal', qualityTier: 'balanced', width: 4096, height: 4096,
+        }));
+        const token = await makeToken({ sub: 'alice' });
+        response = await worker.fetch(new Request(
+          'https://prismwalls.com/api/ai/generations/gen-balanced-parent/variations', {
+            method: 'POST',
+            headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+            body: JSON.stringify({ variationPrompt: 'warmer light' }),
+          }), env, { waitUntil() {} });
+      } else {
+        response = await postGeneration(env, { qualityTier: 'balanced', targetSize });
+      }
+      assert.equal(response.status, 200, targetSize);
+      body = await response.json();
+    } finally {
+      restore();
+    }
+    assert.equal(body.qualityTier, effectiveTier, `${targetSize}: effective tier`);
+    assert.equal(stats.falRequest.url, `https://fal.run/${model}`, `${targetSize}: model`);
+    const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
+    assert.equal(record.qualityTier, effectiveTier, `${targetSize}: stored tier`);
+    assert.equal(record.estimatedCostUsd, cost, `${targetSize}: estimated cost`);
+    assert.equal(await storage.get(`provider:fal:daily:${today()}`), 28.5 + cost, `${targetSize}: daily budget`);
+    assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), cost,
+      `${targetSize}: monthly budget`);
+  }
+});
+
+test('the 95 percent budget guardrail keeps a configured balanced model when it is cheaper', async () => {
   const kv = aiKv(5);
   await kv.put('ai:routing:active', JSON.stringify({
     hardUserDailyCap: 5,
@@ -1081,9 +1268,16 @@ test('balanced stays on its model near the budget guardrail when its cost is bel
   }));
   const storage = new MemoryStorage();
   await storage.put(`provider:fal:daily:${today()}`, 28.5);
-  const stats = {};
   const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
+  const stats = {};
   const restore = mockFal({ stats });
+  const falFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (String(input).startsWith('https://fal.run/')) {
+      assert.equal(await storage.get(`provider:fal:daily:${today()}`), 28.51);
+    }
+    return falFetch(input, init);
+  };
   let body;
   try {
     const response = await postGeneration(env, { qualityTier: 'balanced', targetSize: '2048x2048' });
@@ -1094,6 +1288,10 @@ test('balanced stays on its model near the budget guardrail when its cost is bel
   }
   assert.equal(body.qualityTier, 'balanced');
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/custom-cheap');
+  const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
+  assert.equal(record.estimatedCostUsd, 0.01);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), 28.51);
+  assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.01);
 });
 
 test('the full consumer handler sends GPT a schema-valid body for a 256x768 request', async () => {
@@ -2370,7 +2568,7 @@ test('studio generation refuses bad bodies and unknown models before any provide
   assert.equal(stats.fal ?? 0, 0);
 });
 
-test('Studio accepts its literal 512 and 4096 edge bounds', async () => {
+test('Studio rejects out-of-range dimensions and accepts requests at the literal bounds', async () => {
   const storage = new MemoryStorage();
   const env = studioEnv(storage);
   const stats = {};
@@ -2489,6 +2687,17 @@ test('studio generation with v5 lite sends no seed and falls back to the request
   assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
   assert.deepEqual({ width: body.width, height: body.height }, seedreamImageSize(944, 2048));
   assert.equal(body.seed, null);
+});
+
+test('worker and Studio docs describe the consumer model restriction with correct agreement', () => {
+  const cloudflareReadme = readFileSync(new URL('../../README.md', import.meta.url), 'utf8');
+  const studioGuide = readFileSync(new URL('../../../../docs/features/studio.md', import.meta.url), 'utf8');
+  for (const [path, contents] of [['infra/cloudflare/README.md', cloudflareReadme],
+    ['docs/features/studio.md', studioGuide]]) {
+    assert.match(contents,
+      /Z-Image(?: Turbo)? is consumer-only and is rejected before a Studio provider call or budget reservation\./,
+      path);
+  }
 });
 
 test('GPT Image sizes are multiples of 16 inside the fal limits and keep the phone aspect', () => {

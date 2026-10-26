@@ -85,7 +85,7 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 
 The default is GPT Image 2.5 Sunburst on fal at `high` quality, estimated at $0.07 per image. It has no seed input. Its model-specific size rules support the default 1440x3200 request without a crop or upscale.
 
-The worker also allows Seedream 4.5 and Seedream 5 Lite. Both reserve $0.04 per image. These three models remain the approved Studio list. Z-Image Turbo is consumer-only and are rejected before a Studio provider call or budget reservation. The Studio route accepts JPEG output, but that does not add a model to its approved list.
+The worker also allows Seedream 4.5 and Seedream 5 Lite. Both reserve $0.04 per image. These three models remain the approved Studio list. Z-Image Turbo is consumer-only and is rejected before a Studio provider call or budget reservation. The Studio route accepts JPEG output, but that does not add a model to its approved list.
 
 To change the model, set `studioConfig/current.model`. The request body, size rules, cost estimate, and Studio eligibility live in `FAL_MODELS` in `infra/cloudflare/worker/src/ai.ts`. The worker rejects an unknown or consumer-only model before a provider call.
 
