@@ -2400,6 +2400,7 @@
   },
   "coreEditUsernameAvailable": "Username available",
   "coreEditUsernameChars": "Use letters, numbers and underscores only.",
+  "coreEditUsernameAllCaps": "Use at least one lowercase letter.",
   "coreEditUsernameMinLength": "Use at least {length} characters.",
   "@coreEditUsernameMinLength": {
     "placeholders": {

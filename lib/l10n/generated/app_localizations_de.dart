@@ -2439,6 +2439,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreEditUsernameChars => 'Verwende nur Buchstaben, Zahlen und Unterstriche.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Verwende mindestens einen Kleinbuchstaben.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);

@@ -2420,6 +2420,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreEditUsernameChars => 'Gunakan hanya huruf, angka, dan garis bawah.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Gunakan setidaknya satu huruf kecil.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);

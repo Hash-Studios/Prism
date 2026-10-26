@@ -4299,6 +4299,12 @@ abstract class AppLocalizations {
   /// **'Use letters, numbers and underscores only.'**
   String get coreEditUsernameChars;
 
+  /// No description provided for @coreEditUsernameAllCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least one lowercase letter.'**
+  String get coreEditUsernameAllCaps;
+
   /// Username minimum length validation error.
   ///
   /// In en, this message translates to:
