@@ -16,6 +16,7 @@ import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -189,7 +190,7 @@ class _SearchGridState extends State<SearchGrid> {
     }
   }
 
-  void _openWallpaper(FeedItemEntity wallpaper, int index) {
+  void _openWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index) {
     analytics.track(
       SearchResultOpenedEvent(
         provider: widget.provider,
@@ -206,12 +207,17 @@ class _SearchGridState extends State<SearchGrid> {
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
         requestId: widget.searchId,
         heroTag: prismHeroTag(this, index, wallpaper.id),
-        feed: List<FeedItemEntity>.of(_results),
+        feed: WallpaperFeed(
+          grid: grid,
+          tiles: [
+            for (final (i, wall) in _results.indexed) (item: wall, index: i, heroTag: prismHeroTag(this, i, wall.id)),
+          ],
+        ),
       ),
     );
   }
 
-  void _openPrismWallpaper(FeedItemEntity wallpaper, int index) {
+  void _openPrismWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index) {
     analytics.track(
       SearchResultOpenedEvent(
         provider: SearchProviderValue.prism,
@@ -228,7 +234,13 @@ class _SearchGridState extends State<SearchGrid> {
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
         requestId: widget.searchId,
         heroTag: prismHeroTag(widget.prismResults, index, wallpaper.id),
-        feed: widget.prismResults,
+        feed: WallpaperFeed(
+          grid: grid,
+          tiles: [
+            for (final (i, wall) in widget.prismResults.indexed)
+              (item: wall, index: i, heroTag: prismHeroTag(widget.prismResults, i, wall.id)),
+          ],
+        ),
       ),
     );
   }
@@ -298,7 +310,7 @@ class _SearchGridState extends State<SearchGrid> {
                         overlay: depthTagFor(depthTierOf(wallpaper)),
                         onTap: () {
                           PrismHaptics.tap();
-                          _openWallpaper(wallpaper, index);
+                          _openWallpaper(context, wallpaper, index);
                         },
                       ),
                     ),
@@ -319,7 +331,7 @@ class _FromPrismRow extends StatelessWidget {
   final WallpaperImpressionSession session;
 
   final List<FeedItemEntity> results;
-  final void Function(FeedItemEntity wallpaper, int index) onOpen;
+  final void Function(BuildContext grid, FeedItemEntity wallpaper, int index) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -333,37 +345,38 @@ class _FromPrismRow extends StatelessWidget {
         ),
         SizedBox(
           height: 176 + favouriteFooterHeight,
-          child: ListView.separated(
+          child: GridView.builder(
             scrollDirection: Axis.horizontal,
             padding: PrismWallGrid.padding,
             itemCount: results.length,
-            separatorBuilder: (_, _) => const SizedBox(width: PrismWallGrid.spacing),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              mainAxisExtent: 88,
+              mainAxisSpacing: PrismWallGrid.spacing,
+            ),
             itemBuilder: (context, index) {
               final FeedItemEntity wallpaper = results[index];
-              return SizedBox(
-                width: 88,
-                child: WallpaperImpression(
-                  itemId: wallpaper.id,
-                  provider: wallpaper.source.name,
-                  surface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                  source: 'search_prism_results',
-                  index: index,
-                  session: session,
-                  child: FavouriteWallpaperCard(
-                    item: wallpaper,
-                    child: PrismWallTile(
-                      key: ValueKey<String>('prism-${wallpaper.id}'),
-                      url: wallpaper.thumbnailUrl,
-                      fallbackUrl: wallpaper.fullUrl,
-                      memCacheHeight: 400,
-                      heroTag: prismHeroTag(results, index, wallpaper.id),
-                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                      overlay: depthTagFor(depthTierOf(wallpaper)),
-                      onTap: () {
-                        PrismHaptics.tap();
-                        onOpen(wallpaper, index);
-                      },
-                    ),
+              return WallpaperImpression(
+                itemId: wallpaper.id,
+                provider: wallpaper.source.name,
+                surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                source: 'search_prism_results',
+                index: index,
+                session: session,
+                child: FavouriteWallpaperCard(
+                  item: wallpaper,
+                  child: PrismWallTile(
+                    key: ValueKey<String>('prism-${wallpaper.id}'),
+                    url: wallpaper.thumbnailUrl,
+                    fallbackUrl: wallpaper.fullUrl,
+                    memCacheHeight: 400,
+                    heroTag: prismHeroTag(results, index, wallpaper.id),
+                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
+                    overlay: depthTagFor(depthTierOf(wallpaper)),
+                    onTap: () {
+                      PrismHaptics.tap();
+                      onOpen(context, wallpaper, index);
+                    },
                   ),
                 ),
               );

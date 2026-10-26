@@ -14,6 +14,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -79,6 +80,11 @@ FeedItemEntity _item(String id) => FeedItemEntity.prism(
   ),
 );
 
+WallpaperFeed _feedOf(BuildContext context, List<FeedItemEntity> items) => WallpaperFeed(
+  grid: context,
+  tiles: [for (final (i, item) in items.indexed) (item: item, index: i, heroTag: 'tile-$i')],
+);
+
 Future<void> _pumpFeed(
   WidgetTester tester, {
   required List<FeedItemEntity> feed,
@@ -92,7 +98,11 @@ Future<void> _pumpFeed(
       home: Directionality(
         textDirection: direction,
         child: Builder(
-          builder: (context) => WallpaperDetailScreen(entity: open, feed: feed, heroTag: 'tile').wrappedRoute(context),
+          builder: (context) => WallpaperDetailScreen(
+            entity: open,
+            feed: _feedOf(context, feed),
+            heroTag: 'tile-${feed.indexOf(open)}',
+          ).wrappedRoute(context),
         ),
       ),
     ),
@@ -150,7 +160,9 @@ void main() {
 
     expect(urls(), contains('https://example.com/c-thumb.jpg'));
     expect(urls().where((u) => u!.contains('b-thumb')), isEmpty);
-    expect(find.byType(Hero), findsNothing);
+    // The card of c carries c's tile tag, so it can fly back to that tile.
+    expect(find.byType(Hero), findsOneWidget);
+    expect(tester.widget<Hero>(find.byType(Hero)).tag, 'tile-2');
     expect(blocWalls, isEmpty);
     await tester.pumpWidget(const SizedBox());
   });
@@ -181,9 +193,12 @@ void main() {
     await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-150, 0));
     await tester.pump(const Duration(milliseconds: 16));
     await tester.pump(const Duration(milliseconds: 16));
-    final Finder originalVisit = find.byWidgetPredicate(
-      (widget) => widget is WallpaperDetailScreen && widget.heroTag == 'tile',
-    );
+    // A returns with the same tag, so pin the original visit by its element.
+    final Element originalElement = find
+        .byWidgetPredicate((widget) => widget is WallpaperDetailScreen && widget.heroTag == 'tile-0')
+        .evaluate()
+        .single;
+    final Finder originalVisit = find.byElementPredicate((element) => identical(element, originalElement));
     final Finder originalCard = find.descendant(of: originalVisit, matching: find.byType(WallpaperQuickActionRegion));
     final double beforeReverse = tester.getRect(originalCard).left;
     final Finder originalTransition = find.ancestor(of: originalVisit, matching: find.byType(SlideTransition)).first;
@@ -358,12 +373,17 @@ void main() {
     final c = _item('c');
     final List<FeedItemEntity> feed = <FeedItemEntity>[a, b, c];
     blocWalls.add(c);
+    // The screen copies the feed when it is built, so later edits to [feed] must not reach it.
+    WallpaperFeed? snapshot;
 
     Widget app() => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(
-        builder: (context) => WallpaperDetailScreen(entity: c, feed: feed, heroTag: 'tile').wrappedRoute(context),
+        builder: (context) {
+          snapshot ??= _feedOf(context, feed);
+          return WallpaperDetailScreen(entity: c, feed: snapshot, heroTag: 'tile-2').wrappedRoute(context);
+        },
       ),
     );
 
@@ -375,6 +395,72 @@ void main() {
     final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
     expect(urls, contains('https://example.com/c-thumb.jpg'));
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Back after a swipe scrolls the grid to the current wall', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final List<FeedItemEntity> items = <FeedItemEntity>[for (var i = 0; i < 60; i++) _item('w$i')];
+    blocWalls.addAll(items.take(31));
+    final ScrollController scroll = ScrollController();
+    addTearDown(scroll.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: CustomScrollView(
+          controller: scroll,
+          slivers: [
+            SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.5),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return Hero(
+                  tag: 'tile-$index',
+                  child: GestureDetector(
+                    key: ValueKey<String>('tile-$index'),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (ctx) => WallpaperDetailScreen(
+                          entity: items[index],
+                          heroTag: 'tile-$index',
+                          feed: WallpaperFeed(
+                            grid: context,
+                            tiles: [for (final (i, item) in items.indexed) (item: item, index: i, heroTag: 'tile-$i')],
+                          ),
+                        ).wrappedRoute(ctx),
+                      ),
+                    ),
+                    child: const ColoredBox(color: Colors.blue),
+                  ),
+                );
+              }, childCount: items.length),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('tile-0')));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 30; i++) {
+      await tester.drag(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0));
+      await tester.pumpAndSettle();
+    }
+    expect(blocWalls, isEmpty);
+    final Finder targetTile = find.byKey(const ValueKey<String>('tile-30'));
+    expect(targetTile, findsNothing);
+
+    Navigator.of(tester.element(find.byType(WallpaperDetailScreen))).pop();
+    await tester.pumpAndSettle();
+
+    expect(scroll.offset, greaterThan(0));
+    expect(targetTile.hitTestable(), findsOneWidget);
+    final Rect screen = tester.getRect(find.byType(CustomScrollView));
+    final Rect tile = tester.getRect(targetTile);
+    expect(tile.top, greaterThanOrEqualTo(screen.top));
+    expect(tile.bottom, lessThanOrEqualTo(screen.bottom));
   });
 
   testWidgets('without a feed a swipe does nothing', (tester) async {

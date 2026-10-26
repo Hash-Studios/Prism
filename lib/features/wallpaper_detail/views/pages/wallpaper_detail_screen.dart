@@ -55,6 +55,7 @@ import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart'
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
@@ -111,18 +112,15 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
 
-  /// The loaded walls of the feed this wall was opened from. A sideways swipe on the card shows the next or previous
-  /// one in place.
-  final List<FeedItemEntity>? feed;
+  /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
+  final WallpaperFeed? feed;
 
   // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
   Widget wrappedRoute(BuildContext context) {
-    final List<FeedItemEntity>? feed = this.feed;
+    final WallpaperFeed? feed = this.feed;
     final FeedItemEntity? entity = this.entity;
-    final int start = feed == null || entity == null
-        ? -1
-        : feed.indexWhere((item) => item.source == entity.source && item.id == entity.id);
+    final int start = feed == null || entity == null ? -1 : feed.indexOf(entity);
     if (feed != null && start >= 0) return _FeedBrowser(screen: this, feed: feed, start: start);
     return BlocProvider<WallpaperDetailBloc>(
       key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
@@ -150,6 +148,8 @@ class _FeedStep extends InheritedWidget {
       hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext || step != oldWidget.step;
 }
 
+/// One showing of a wall in [_FeedBrowser]. A wall seen twice gets two visits, so the leaving copy and the new copy
+/// never share a key.
 class _FeedVisit {
   _FeedVisit(this.enterDirection);
 
@@ -164,7 +164,7 @@ class _FeedBrowser extends StatefulWidget {
   const _FeedBrowser({required this.screen, required this.feed, required this.start});
 
   final WallpaperDetailScreen screen;
-  final List<FeedItemEntity> feed;
+  final WallpaperFeed feed;
   final int start;
 
   @override
@@ -172,63 +172,67 @@ class _FeedBrowser extends StatefulWidget {
 }
 
 class _FeedBrowserState extends State<_FeedBrowser> {
-  late final List<FeedItemEntity> _feed = List<FeedItemEntity>.unmodifiable(widget.feed);
   late int _index = widget.start;
   _FeedVisit _visit = _FeedVisit(null);
-  bool _moved = false;
+
+  List<WallpaperFeedTile> get _tiles => widget.feed.tiles;
 
   void _step(int delta) {
     final int next = _index + delta;
-    if (next < 0 || next >= _feed.length) return;
+    if (next < 0 || next >= _tiles.length) return;
     PrismHaptics.selection();
     setState(() {
       _visit.exitDirection = delta;
       _index = next;
       _visit = _FeedVisit(delta);
-      _moved = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final FeedItemEntity item = _feed[_index];
+    final WallpaperFeedTile tile = _tiles[_index];
     final WallpaperDetailScreen screen = widget.screen;
     final Key current = ValueKey<_FeedVisit>(_visit);
     final double sign = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
-    return _FeedStep(
-      step: _step,
-      hasPrevious: _index > 0,
-      hasNext: _index < _feed.length - 1,
-      child: AnimatedSwitcher(
-        duration: context.motion(PrismDurations.fast),
-        transitionBuilder: (child, animation) {
-          final bool incoming = child.key == current;
-          final _FeedVisit visit = (child.key! as ValueKey<_FeedVisit>).value;
-          final CurvedAnimation curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-          final double progress = curved.value;
-          final Tween<Offset> slide = incoming
-              ? Tween<Offset>(begin: Offset((visit.enterDirection ?? 0) * sign, 0), end: Offset.zero)
-              : _exitSlide(visit, progress, sign);
-          return HeroMode(
-            enabled: incoming && !_moved,
-            child: ExcludeSemantics(
-              excluding: !incoming,
-              child: IgnorePointer(
-                ignoring: !incoming,
-                child: SlideTransition(position: slide.animate(curved), child: child),
+    return PopScope(
+      // A back swipe shows the grid as it is, so moving it under the finger would jump.
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !Navigator.of(context).userGestureInProgress) widget.feed.reveal(_index);
+      },
+      child: _FeedStep(
+        step: _step,
+        hasPrevious: _index > 0,
+        hasNext: _index < _tiles.length - 1,
+        child: AnimatedSwitcher(
+          duration: context.motion(PrismDurations.fast),
+          transitionBuilder: (child, animation) {
+            final bool incoming = child.key == current;
+            final _FeedVisit visit = (child.key! as ValueKey<_FeedVisit>).value;
+            final CurvedAnimation curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+            final double progress = curved.value;
+            final Tween<Offset> slide = incoming
+                ? Tween<Offset>(begin: Offset((visit.enterDirection ?? 0) * sign, 0), end: Offset.zero)
+                : _exitSlide(visit, progress, sign);
+            return HeroMode(
+              enabled: incoming,
+              child: ExcludeSemantics(
+                excluding: !incoming,
+                child: IgnorePointer(
+                  ignoring: !incoming,
+                  child: SlideTransition(position: slide.animate(curved), child: child),
+                ),
               ),
+            );
+          },
+          child: BlocProvider<WallpaperDetailBloc>(
+            key: current,
+            create: (_) => getIt<WallpaperDetailBloc>(),
+            child: WallpaperDetailScreen(
+              entity: tile.item,
+              analyticsSurface: screen.analyticsSurface,
+              requestId: screen.requestId,
+              heroTag: tile.heroTag,
             ),
-          );
-        },
-        child: BlocProvider<WallpaperDetailBloc>(
-          key: current,
-          create: (_) => getIt<WallpaperDetailBloc>(),
-          child: WallpaperDetailScreen(
-            entity: item,
-            analyticsSurface: screen.analyticsSurface,
-            requestId: screen.requestId,
-            // Only the tapped tile matches its wall, so the card flies home to it only until the first swipe.
-            heroTag: _moved ? null : screen.heroTag,
           ),
         ),
       ),
@@ -726,12 +730,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                           state: state.recommendations,
                           heroScope: _recommendationHeroScope,
                           onLoadMore: _loadMoreRecommendations,
-                          onOpen: (item, hero) => context.router.push(
+                          onOpen: (item, hero, feed) => context.router.push(
                             WallpaperDetailRoute(
                               entity: item,
                               thumbnailUrl: item.thumbnailUrl,
                               heroTag: hero,
-                              feed: state.recommendations.items,
+                              feed: feed,
                             ),
                           ),
                         ),

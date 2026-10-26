@@ -14,6 +14,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -51,6 +52,11 @@ FeedItemEntity _wallhaven(String id) => FeedItemEntity.wallhaven(
   ),
 );
 
+WallpaperFeed _feedOf(BuildContext context, List<FeedItemEntity> items) => WallpaperFeed(
+  grid: context,
+  tiles: [for (final (i, item) in items.indexed) (item: item, index: i, heroTag: 'tile-$i')],
+);
+
 Future<void> _pumpScreen(
   WidgetTester tester, {
   required List<FeedItemEntity> feed,
@@ -68,7 +74,11 @@ Future<void> _pumpScreen(
       home: Builder(
         builder: (context) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
-          child: WallpaperDetailScreen(entity: open, feed: feed, heroTag: 'tile').wrappedRoute(context),
+          child: WallpaperDetailScreen(
+            entity: open,
+            feed: _feedOf(context, feed),
+            heroTag: feed.contains(open) ? 'tile-${feed.indexOf(open)}' : 'tile',
+          ).wrappedRoute(context),
         ),
       ),
     ),
