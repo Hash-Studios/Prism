@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/auth/google_auth.dart';
@@ -12,11 +13,18 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
-/// Opens the sign-in sheet. [func] runs after a successful sign-in.
-void googleSignInPopUp(BuildContext context, VoidCallback func) {
+/// Opens the sign-in sheet. [func] runs after a successful sign-in. Completes with true after [func] ran, and with
+/// false when the user leaves the sheet or sign-in does not finish.
+Future<bool> googleSignInPopUp(BuildContext context, VoidCallback func) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: true);
   final AppLocalizations l10n = context.l10n;
+  final Completer<bool> signedIn = Completer<bool>();
   bool loaderVisible = false;
+  bool started = false;
+
+  void finish(bool value) {
+    if (!signedIn.isCompleted) signedIn.complete(value);
+  }
 
   void closeLoaderIfVisible() {
     if (!loaderVisible || !navigator.mounted) {
@@ -27,6 +35,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   }
 
   void runSignIn(Future<SignInOutcome> Function() signIn, {String Function(Object)? errorMessage}) {
+    started = true;
     navigator.pop();
     loaderVisible = true;
     showPrismSheet<void>(
@@ -50,18 +59,22 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
     signIn()
         .then((outcome) {
           if (!navigator.mounted) {
+            finish(false);
             return;
           }
           closeLoaderIfVisible();
           if (outcome == SignInOutcome.cancelled) {
+            finish(false);
             return;
           }
           PrismHaptics.success();
           app_state.prismUser.loggedIn = true;
           app_state.persistPrismUser();
           func();
+          finish(true);
         })
         .catchError((Object e) {
+          finish(false);
           if (!navigator.mounted) {
             return;
           }
@@ -100,7 +113,10 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
         ),
       ],
     ),
-  );
+  ).then((_) {
+    if (!started) finish(false);
+  });
+  return signedIn.future;
 }
 
 /// "Continue with Apple" in Apple's own colours: black on light themes, white on dark themes.

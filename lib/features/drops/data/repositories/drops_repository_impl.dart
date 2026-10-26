@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/features/drops/data/drop_mapper.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:cloud_functions/cloud_functions.dart' show HttpsCallableResult;
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: DropsRepository)
@@ -106,6 +108,52 @@ class DropsRepositoryImpl implements DropsRepository {
       return Result.error(const ServerFailure("Couldn't load this Drop. Check your connection and try again."));
     }
   }
+
+  @override
+  Future<Result<String>> rename(String weekKey, String title) async {
+    try {
+      final HttpsCallableResult<dynamic> response = await appFunctions.httpsCallable('setDropTitle').call(
+        <String, Object?>{'weekKey': weekKey, 'title': title},
+      );
+      final Object? saved = response.data is Map ? (response.data as Map)['title'] : null;
+      final String savedTitle = saved is String ? saved : title;
+      try {
+        await _rememberTitle(weekKey, savedTitle);
+      } on Object catch (error, stackTrace) {
+        logger.w(
+          'Unable to update renamed Drop snapshot',
+          tag: 'DropsRepository',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      return Result.success(savedTitle);
+    } catch (error, stackTrace) {
+      logger.e('[DropsRepository] rename failed', error: error, stackTrace: stackTrace);
+      return Result.error(const ServerFailure("Couldn't rename the Drop."));
+    }
+  }
+
+  Future<void> _rememberTitle(String weekKey, String title) => _serializeSnapshot(() async {
+    final List<DropEntity> recent = await _readRecent();
+    final int index = recent.indexWhere((DropEntity drop) => drop.weekKey == weekKey);
+    if (index < 0) return;
+    final DropEntity drop = recent[index];
+    recent[index] = DropEntity(
+      weekKey: drop.weekKey,
+      title: title,
+      startsAt: drop.startsAt,
+      endsAt: drop.endsAt,
+      priceWall: drop.priceWall,
+      pricePack: drop.pricePack,
+      count: drop.count,
+      walls: drop.walls,
+      collectors: drop.collectors,
+    );
+    await _store.write(_snapshotKey, <String, Object?>{
+      'drops': recent.take(_maxRecentWeeks).map(_toMap).toList(growable: false),
+    });
+  });
 
   Future<void> _remember(DropEntity? drop, String? weekKey) => _serializeSnapshot(() async {
     final List<DropEntity> recent = await _readRecent();

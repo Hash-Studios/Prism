@@ -183,6 +183,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
               index: index,
               impressionSession: _impressions,
               sourceContext: widget.includePrism && item is PrismFeedItem ? 'category_prism_first' : null,
+              feed: walls,
             );
             return KeyedSubtree(
               key: ValueKey<String>(item.id),

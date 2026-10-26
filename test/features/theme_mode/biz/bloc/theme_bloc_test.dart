@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -28,11 +30,14 @@ void main() {
   late _MockLoadThemeUseCase loadUseCase;
   late _MockUpdateThemeUseCase updateUseCase;
   late _MockThemeRepository repository;
+  late StreamController<ThemePreferences> accountChanges;
 
   setUp(() {
     loadUseCase = _MockLoadThemeUseCase();
     updateUseCase = _MockUpdateThemeUseCase();
     repository = _MockThemeRepository();
+    accountChanges = StreamController<ThemePreferences>.broadcast();
+    when(() => repository.accountChanges).thenAnswer((_) => accountChanges.stream);
     final defaults = ThemeState.initial();
     when(
       () => repository.readSync(),
@@ -45,6 +50,8 @@ void main() {
       (_) async => Result.success(const ThemePreferences(light: _light, dark: _dark, mode: ThemeMode.light)),
     );
   });
+
+  tearDown(() => accountChanges.close());
 
   ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository);
 
@@ -100,6 +107,20 @@ void main() {
     dark: _dark,
     mode: ThemeMode.light,
   );
+
+  test('an account copy on accountChanges replaces the selection', () async {
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    final states = expectLater(
+      bloc.stream,
+      emits(
+        ThemeState.initial().copyWith(status: LoadStatus.success, light: _light, dark: _dark, mode: ThemeMode.light),
+      ),
+    );
+
+    accountChanges.add(const ThemePreferences(light: _light, dark: _dark, mode: ThemeMode.light));
+    await states;
+  });
 
   blocTest<ThemeBloc, ThemeState>(
     'started loads light, dark and mode',

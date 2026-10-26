@@ -9,14 +9,17 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
 import '../../../support/fake_firestore_client.dart';
+import '../../../support/pending_image_picker.dart';
 import '../../../support/profile_user_fixture.dart';
 
 void main() {
@@ -109,6 +112,47 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  group('photo picker', () {
+    late ImagePickerPlatform previousPicker;
+    late PendingImagePicker picker;
+
+    setUp(() {
+      previousPicker = ImagePickerPlatform.instance;
+      picker = PendingImagePicker();
+      ImagePickerPlatform.instance = picker;
+    });
+
+    tearDown(() => ImagePickerPlatform.instance = previousPicker);
+
+    testWidgets('a second tap while the gallery is open does not open it again', (tester) async {
+      await pumpPanel(tester);
+
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+
+      expect(picker.calls, 1);
+      picker.finish(const <String>[]);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+      expect(picker.calls, 2);
+      picker.finish(const <String>[]);
+    });
+
+    testWidgets('a gallery another screen holds open is not an error', (tester) async {
+      await pumpPanel(tester);
+      unawaited(picker.getImageFromSource(source: ImageSource.gallery));
+
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pumpAndSettle();
+
+      expect(picker.calls, 2);
+      expect(saveEnabled(tester), isFalse);
+    });
   });
 
   testWidgets('editing the name enables Save', (tester) async {
@@ -256,6 +300,48 @@ void main() {
 
       expect(find.text('Use letters, numbers and underscores only.'), findsOneWidget);
     });
+
+    testWidgets('an all-caps name shows an inline error and no availability check runs', (tester) async {
+      final _LookupRecordingFirestore recording = await _useRecordingFirestore();
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'SHOUTY');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Use at least one lowercase letter.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+      expect(recording.lookups, isEmpty);
+    });
+
+    testWidgets('a name with a lowercase letter is checked and shows no all-caps error', (tester) async {
+      final _LookupRecordingFirestore recording = await _useRecordingFirestore();
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'Shouty');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Use at least one lowercase letter.'), findsNothing);
+      expect(recording.lookups, <String>['shouty']);
+      expect(saveEnabled(tester), isTrue);
+    });
+  });
+
+  testWidgets('clearing the bio by hand enables Save and saves an empty bio', (tester) async {
+    app_state.prismUser.bio = 'old bio';
+    await pumpPanel(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'old bio'), '');
+    await tester.pump();
+    expect(saveEnabled(tester), isTrue);
+
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(firestore.writes.single.data, <String, Object?>{'bio': ''});
+    expect(app_state.prismUser.bio, '');
   });
 
   group('links', () {
@@ -440,6 +526,29 @@ void main() {
     expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Edit profile'), findsNothing);
   });
+}
+
+Future<_LookupRecordingFirestore> _useRecordingFirestore() async {
+  await getIt.reset();
+  final _LookupRecordingFirestore recording = _LookupRecordingFirestore();
+  getIt.registerSingleton<FirestoreClient>(recording);
+  return recording;
+}
+
+class _LookupRecordingFirestore extends FakeFirestoreClient {
+  final List<String> lookups = <String>[];
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) {
+    if (collection == FirebaseCollections.usernames) lookups.add(id);
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 }
 
 class _FailingWriteFirestore extends FakeFirestoreClient {

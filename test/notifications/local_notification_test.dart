@@ -398,4 +398,59 @@ void main() {
       expect(shown, 1);
     });
   });
+
+  group('foreground push notifications on iOS', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final iOS = TargetPlatformVariant.only(TargetPlatform.iOS);
+    const RemoteMessage push = RemoteMessage(
+      notification: RemoteNotification(title: 'New wall', body: 'Tap to see it'),
+    );
+
+    setUp(IOSFlutterLocalNotificationsPlugin.registerWith);
+    tearDown(() => messenger.setMockMethodCallHandler(_channel, null));
+
+    void mockIOS({required bool authorized, required List<String> calls}) {
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        calls.add(call.method);
+        if (call.method == 'checkPermissions') return <String, Object?>{'isEnabled': authorized};
+        if (call.method == 'show' && !authorized) {
+          throw PlatformException(
+            code: 'Error 2003',
+            message: 'Repository could not save notification. Source is not authorized.',
+            details: 'UNErrorDomain',
+          );
+        }
+        return true;
+      });
+    }
+
+    testWidgets('an unauthorized app skips the banner and still refreshes the inbox', (tester) async {
+      final calls = <String>[];
+      mockIOS(authorized: false, calls: calls);
+      final notification = LocalNotification();
+      var foregroundPushes = 0;
+      final errors = <Object>[];
+      await runZonedGuarded(() async {
+        notification
+          ..onForegroundPush = (() => foregroundPushes++)
+          ..listenForPushMessages(localizations: () async => l10n);
+        FirebaseMessagingPlatform.onMessage.add(push);
+        await tester.pumpAndSettle();
+      }, (error, _) => errors.add(error));
+
+      expect(errors, isEmpty);
+      expect(calls, isNot(contains('show')));
+      expect(foregroundPushes, 1);
+    }, variant: iOS);
+
+    testWidgets('an authorized app shows the banner', (tester) async {
+      final calls = <String>[];
+      mockIOS(authorized: true, calls: calls);
+
+      await LocalNotification().showPushNotification(push, localizations: l10n);
+
+      expect(calls, contains('show'));
+    }, variant: iOS);
+  });
 }

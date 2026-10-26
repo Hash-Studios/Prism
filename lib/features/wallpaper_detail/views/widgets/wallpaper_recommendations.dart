@@ -6,6 +6,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +22,10 @@ class WallpaperRecommendations extends StatelessWidget {
 
   final RecommendationState state;
   final Object heroScope;
-  final void Function(FeedItemEntity, String) onOpen;
+  final void Function(FeedItemEntity item, String heroTag, WallpaperFeed feed) onOpen;
   final VoidCallback onLoadMore;
+
+  String _heroTag(int index, FeedItemEntity item) => prismHeroTag(heroScope, index, '${item.source.name}:${item.id}');
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +64,7 @@ class WallpaperRecommendations extends StatelessWidget {
             gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
             delegate: SliverChildBuilderDelegate((context, index) {
               final item = state.items[index];
-              final hero = prismHeroTag(heroScope, index, '${item.source.name}:${item.id}');
+              final hero = _heroTag(index, item);
               return FavouriteWallpaperCard(
                 key: ValueKey((item.source, item.id)),
                 item: item,
@@ -70,7 +73,16 @@ class WallpaperRecommendations extends StatelessWidget {
                   fallbackUrl: item.source == WallpaperSource.prism ? null : item.fullUrl,
                   heroTag: hero,
                   semanticLabel: item.semanticLabel(context.l10n),
-                  onTap: () => onOpen(item, hero),
+                  onTap: () => onOpen(
+                    item,
+                    hero,
+                    WallpaperFeed(
+                      grid: context,
+                      tiles: [
+                        for (final (i, wall) in state.items.indexed) (item: wall, index: i, heroTag: _heroTag(i, wall)),
+                      ],
+                    ),
+                  ),
                   memCacheHeight: gridTileDecodeHeight(
                     context,
                     crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),

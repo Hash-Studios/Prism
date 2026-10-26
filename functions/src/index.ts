@@ -27,7 +27,7 @@ export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumP
 export {progressQuest, openQuestChest, openDailyChest} from "./quests";
 export {purchaseShopItem, equipCosmetic} from "./shop";
 export {reconcileRankRewards} from "./rankRewards";
-export {planWeeklyDrop, sendDropPushes, unlockDrop} from "./drops";
+export {planWeeklyDrop, sendDropPushes, setDropTitle, unlockDrop} from "./drops";
 export {boostWall} from "./boosts";
 export {giftPremiumPass} from "./gifts";
 export {buyDrawTicket, settleDraw} from "./draw";

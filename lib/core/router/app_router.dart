@@ -63,6 +63,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';

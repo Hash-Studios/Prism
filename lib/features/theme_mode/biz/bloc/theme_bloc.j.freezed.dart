@@ -55,11 +55,12 @@ extension ThemeEventPatterns on ThemeEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _LightThemeChanged value)?  lightThemeChanged,TResult Function( _LightAccentChanged value)?  lightAccentChanged,TResult Function( _DarkThemeChanged value)?  darkThemeChanged,TResult Function( _DarkAccentChanged value)?  darkAccentChanged,TResult Function( _ModeChanged value)?  modeChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AccountSynced value)?  accountSynced,TResult Function( _LightThemeChanged value)?  lightThemeChanged,TResult Function( _LightAccentChanged value)?  lightAccentChanged,TResult Function( _DarkThemeChanged value)?  darkThemeChanged,TResult Function( _DarkAccentChanged value)?  darkAccentChanged,TResult Function( _ModeChanged value)?  modeChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _LightThemeChanged() when lightThemeChanged != null:
+return started(_that);case _AccountSynced() when accountSynced != null:
+return accountSynced(_that);case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that);case _DarkAccentChanged() when darkAccentChanged != null:
@@ -82,11 +83,12 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _LightThemeChanged value)  lightThemeChanged,required TResult Function( _LightAccentChanged value)  lightAccentChanged,required TResult Function( _DarkThemeChanged value)  darkThemeChanged,required TResult Function( _DarkAccentChanged value)  darkAccentChanged,required TResult Function( _ModeChanged value)  modeChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AccountSynced value)  accountSynced,required TResult Function( _LightThemeChanged value)  lightThemeChanged,required TResult Function( _LightAccentChanged value)  lightAccentChanged,required TResult Function( _DarkThemeChanged value)  darkThemeChanged,required TResult Function( _DarkAccentChanged value)  darkAccentChanged,required TResult Function( _ModeChanged value)  modeChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _LightThemeChanged():
+return started(_that);case _AccountSynced():
+return accountSynced(_that);case _LightThemeChanged():
 return lightThemeChanged(_that);case _LightAccentChanged():
 return lightAccentChanged(_that);case _DarkThemeChanged():
 return darkThemeChanged(_that);case _DarkAccentChanged():
@@ -108,11 +110,12 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _LightThemeChanged value)?  lightThemeChanged,TResult? Function( _LightAccentChanged value)?  lightAccentChanged,TResult? Function( _DarkThemeChanged value)?  darkThemeChanged,TResult? Function( _DarkAccentChanged value)?  darkAccentChanged,TResult? Function( _ModeChanged value)?  modeChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AccountSynced value)?  accountSynced,TResult? Function( _LightThemeChanged value)?  lightThemeChanged,TResult? Function( _LightAccentChanged value)?  lightAccentChanged,TResult? Function( _DarkThemeChanged value)?  darkThemeChanged,TResult? Function( _DarkAccentChanged value)?  darkAccentChanged,TResult? Function( _ModeChanged value)?  modeChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _LightThemeChanged() when lightThemeChanged != null:
+return started(_that);case _AccountSynced() when accountSynced != null:
+return accountSynced(_that);case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that);case _DarkAccentChanged() when darkAccentChanged != null:
@@ -134,10 +137,11 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( ThemePreferences preferences)?  accountSynced,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _LightThemeChanged() when lightThemeChanged != null:
+return started();case _AccountSynced() when accountSynced != null:
+return accountSynced(_that.preferences);case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
@@ -160,10 +164,11 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId,  ThemeMode? mode)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( ThemePreferences preferences)  accountSynced,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId,  ThemeMode? mode)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started();case _LightThemeChanged():
+return started();case _AccountSynced():
+return accountSynced(_that.preferences);case _LightThemeChanged():
 return lightThemeChanged(_that.themeId);case _LightAccentChanged():
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged():
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged():
@@ -185,10 +190,11 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( ThemePreferences preferences)?  accountSynced,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _LightThemeChanged() when lightThemeChanged != null:
+return started();case _AccountSynced() when accountSynced != null:
+return accountSynced(_that.preferences);case _LightThemeChanged() when lightThemeChanged != null:
 return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAccentChanged != null:
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
@@ -232,6 +238,72 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _AccountSynced implements ThemeEvent {
+  const _AccountSynced({required this.preferences});
+  
+
+ final  ThemePreferences preferences;
+
+/// Create a copy of ThemeEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$AccountSyncedCopyWith<_AccountSynced> get copyWith => __$AccountSyncedCopyWithImpl<_AccountSynced>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccountSynced&&(identical(other.preferences, preferences) || other.preferences == preferences));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,preferences);
+
+@override
+String toString() {
+  return 'ThemeEvent.accountSynced(preferences: $preferences)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$AccountSyncedCopyWith<$Res> implements $ThemeEventCopyWith<$Res> {
+  factory _$AccountSyncedCopyWith(_AccountSynced value, $Res Function(_AccountSynced) _then) = __$AccountSyncedCopyWithImpl;
+@useResult
+$Res call({
+ ThemePreferences preferences
+});
+
+
+
+
+}
+/// @nodoc
+class __$AccountSyncedCopyWithImpl<$Res>
+    implements _$AccountSyncedCopyWith<$Res> {
+  __$AccountSyncedCopyWithImpl(this._self, this._then);
+
+  final _AccountSynced _self;
+  final $Res Function(_AccountSynced) _then;
+
+/// Create a copy of ThemeEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? preferences = null,}) {
+  return _then(_AccountSynced(
+preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
+as ThemePreferences,
+  ));
+}
+
+
+}
 
 /// @nodoc
 

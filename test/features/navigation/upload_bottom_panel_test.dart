@@ -23,6 +23,7 @@ import 'package:image_picker_platform_interface/image_picker_platform_interface.
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/pending_image_picker.dart';
 import '../../support/wait_for_real_io.dart';
 
 class _Picker extends ImagePickerPlatform {
@@ -146,7 +147,7 @@ void main() {
     await getIt.reset();
   });
 
-  Future<List<EditWallRouteArgs>> pickWith(WidgetTester tester, _Picker picker) async {
+  Future<List<EditWallRouteArgs>> openPanel(WidgetTester tester, ImagePickerPlatform picker) async {
     ImagePickerPlatform.instance = picker;
     final opened = <EditWallRouteArgs>[];
     final router = _PanelRouter(opened.add, draftStore: _EmptyUploadDraftStore());
@@ -161,6 +162,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Open panel'));
     await tester.pumpAndSettle();
+    return opened;
+  }
+
+  Future<List<EditWallRouteArgs>> pickWith(WidgetTester tester, _Picker picker) async {
+    final opened = await openPanel(tester, picker);
     await tester.tap(find.text('Upload wallpaper'));
     await tester.pumpAndSettle();
     return opened;
@@ -196,6 +202,34 @@ void main() {
 
     expect(picker.multiLimit, 10);
     expect(opened.single.batch!.total, 10);
+  });
+
+  testWidgets('a second tap while the gallery is open does not open it again', (tester) async {
+    final picker = PendingImagePicker();
+    final opened = await openPanel(tester, picker);
+
+    await tester.tap(find.text('Upload wallpaper'));
+    await tester.pump();
+    await tester.tap(find.text('Upload wallpaper'));
+    await tester.pump();
+
+    expect(picker.calls, 1);
+    picker.finish(<String>['/tmp/a.png']);
+    await tester.pumpAndSettle();
+    expect(opened.single.image.path, '/tmp/a.png');
+  });
+
+  testWidgets('a gallery another screen holds open is not an error', (tester) async {
+    final picker = PendingImagePicker();
+    final opened = await openPanel(tester, picker);
+    unawaited(picker.getImageFromSource(source: ImageSource.gallery));
+
+    await tester.tap(find.text('Upload wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(picker.calls, 2);
+    expect(opened, isEmpty);
+    expect(find.text('Upload wallpaper'), findsOneWidget);
   });
 
   testWidgets('resumes the latest owner draft from its retained copy without opening the picker', (tester) async {

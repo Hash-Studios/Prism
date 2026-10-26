@@ -513,6 +513,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                 onShowLessLikeThis: () => _lessLikeThis(item),
                 onVisible: () =>
                     _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
+                feed: visibleItems,
               ),
             );
           }, childCount: visibleItems.length),
