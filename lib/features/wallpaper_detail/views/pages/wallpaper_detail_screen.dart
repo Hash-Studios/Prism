@@ -150,6 +150,15 @@ class _FeedStep extends InheritedWidget {
       hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext || step != oldWidget.step;
 }
 
+class _FeedVisit {
+  _FeedVisit(this.enterDirection);
+
+  final int? enterDirection;
+  int? exitDirection;
+  double? exitProgress;
+  double? exitStartOffset;
+}
+
 /// Pages through a feed in place. Each wall gets its own bloc and screen, as a new route would.
 class _FeedBrowser extends StatefulWidget {
   const _FeedBrowser({required this.screen, required this.feed, required this.start});
@@ -163,43 +172,51 @@ class _FeedBrowser extends StatefulWidget {
 }
 
 class _FeedBrowserState extends State<_FeedBrowser> {
+  late final List<FeedItemEntity> _feed = List<FeedItemEntity>.unmodifiable(widget.feed);
   late int _index = widget.start;
-  int _direction = 1;
+  _FeedVisit _visit = _FeedVisit(null);
   bool _moved = false;
 
   void _step(int delta) {
     final int next = _index + delta;
-    if (next < 0 || next >= widget.feed.length) return;
+    if (next < 0 || next >= _feed.length) return;
     PrismHaptics.selection();
     setState(() {
+      _visit.exitDirection = delta;
       _index = next;
-      _direction = delta;
+      _visit = _FeedVisit(delta);
       _moved = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final FeedItemEntity item = widget.feed[_index];
+    final FeedItemEntity item = _feed[_index];
     final WallpaperDetailScreen screen = widget.screen;
-    final Key current = ValueKey<(WallpaperSource, String)>((item.source, item.id));
+    final Key current = ValueKey<_FeedVisit>(_visit);
     final double sign = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
     return _FeedStep(
       step: _step,
       hasPrevious: _index > 0,
-      hasNext: _index < widget.feed.length - 1,
+      hasNext: _index < _feed.length - 1,
       child: AnimatedSwitcher(
         duration: context.motion(PrismDurations.fast),
         transitionBuilder: (child, animation) {
           final bool incoming = child.key == current;
-          return IgnorePointer(
-            ignoring: !incoming,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: Offset((incoming ? _direction : -_direction) * sign, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-              child: child,
+          final _FeedVisit visit = (child.key! as ValueKey<_FeedVisit>).value;
+          final CurvedAnimation curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          final double progress = curved.value;
+          final Tween<Offset> slide = incoming
+              ? Tween<Offset>(begin: Offset((visit.enterDirection ?? 0) * sign, 0), end: Offset.zero)
+              : _exitSlide(visit, progress, sign);
+          return HeroMode(
+            enabled: incoming && !_moved,
+            child: ExcludeSemantics(
+              excluding: !incoming,
+              child: IgnorePointer(
+                ignoring: !incoming,
+                child: SlideTransition(position: slide.animate(curved), child: child),
+              ),
             ),
           );
         },
@@ -216,6 +233,16 @@ class _FeedBrowserState extends State<_FeedBrowser> {
         ),
       ),
     );
+  }
+
+  Tween<Offset> _exitSlide(_FeedVisit visit, double progress, double sign) {
+    final double exitProgress = visit.exitProgress ??= progress;
+    final double startOffset = visit.exitStartOffset ??= (visit.enterDirection == null
+        ? 0
+        : visit.enterDirection! * (1 - exitProgress));
+    final double target = -(visit.exitDirection ?? 0).toDouble();
+    final double end = exitProgress <= 0 ? target : target + (startOffset - target) / exitProgress;
+    return Tween<Offset>(begin: Offset(target * sign, 0), end: Offset(end * sign, 0));
   }
 }
 
@@ -594,6 +621,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state, {bool canonicalLoading = false}) {
+    final _FeedStep? feed = _FeedStep.maybeOf(context);
     final theme = Theme.of(context);
     final Size card = _cardSize(context, state.entity.wallpaperCore);
     final double statusInset = _statusInset(context);
@@ -699,7 +727,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                           heroScope: _recommendationHeroScope,
                           onLoadMore: _loadMoreRecommendations,
                           onOpen: (item, hero) => context.router.push(
-                            WallpaperDetailRoute(entity: item, thumbnailUrl: item.thumbnailUrl, heroTag: hero),
+                            WallpaperDetailRoute(
+                              entity: item,
+                              thumbnailUrl: item.thumbnailUrl,
+                              heroTag: hero,
+                              feed: state.recommendations.items,
+                            ),
                           ),
                         ),
                         SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
@@ -709,6 +742,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 ),
               ),
             ),
+            if (canonicalLoading && feed != null) _feedSwipeOverlay(feed, card, statusInset),
             Positioned(
               top: 0,
               left: 0,
@@ -754,6 +788,32 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _feedSwipeOverlay(_FeedStep feed, Size card, double statusInset) {
+    final EdgeInsets padding = MediaQuery.paddingOf(context);
+    final double start = padding.left + _cardInset + max(0, (_availableCardWidth(context) - card.width) / 2);
+    return Positioned(
+      left: start,
+      top: statusInset,
+      width: card.width,
+      height: card.height,
+      child: Semantics(
+        label: context.l10n.wallpaperImageSemanticLabel,
+        hint: context.l10n.wallpaperImageSemanticHint,
+        customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+          if (feed.hasPrevious) CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
+          if (feed.hasNext) CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragStart: (_) => _swipeDx = 0,
+          onHorizontalDragUpdate: (details) => _swipeDx += details.primaryDelta ?? 0,
+          onHorizontalDragEnd: (details) => _handleSwipeEnd(feed, details),
+          child: const SizedBox.expand(),
         ),
       ),
     );
@@ -1683,7 +1743,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       paletteLoading: paletteLoading,
       thumbnailOnly: canonicalLoading,
     );
-    return Stack(
+    final Widget card = Stack(
       fit: StackFit.expand,
       children: [
         // A tap gives the card a short press: it shrinks a little and settles.
@@ -1730,6 +1790,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
       ],
     );
+    return ExcludeSemantics(excluding: canonicalLoading && feed != null, child: card);
   }
 
   /// Thumbnail first, then the full image on top. The spinner lives outside this subtree.
