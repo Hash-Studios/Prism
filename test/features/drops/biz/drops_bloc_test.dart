@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -239,11 +241,67 @@ void main() {
       expect(analytics.events.where((e) => e.eventName == 'drop_unlocked'), isEmpty);
     });
 
+    test('a second unlock event while the first callable is pending is ignored', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      final Completer<Object?> pendingReply = Completer<Object?>();
+      backend.onCall = (name, params) {
+        calls.add((name, params));
+        return pendingReply.future;
+      };
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      final DropsState busy = await bloc.stream.firstWhere((state) => state.busyKey == 'A');
+      expect(busy.busyKey, 'A');
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      await pumpEventQueue();
+      expect(calls, hasLength(1));
+      expect(bloc.state.busyKey, 'A');
+
+      pendingReply.complete(_reply(success: true, unlocked: <String>['A']));
+      final DropsState completed = await bloc.stream.firstWhere((state) => state.lastResult != null);
+      expect(completed.lastResult!.outcome, DropUnlockOutcome.unlocked);
+      expect(completed.busyKey, isNull);
+      expect(calls, hasLength(1));
+    });
+
     test('is ignored with no Drop loaded', () async {
       bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
       await Future<void>.delayed(Duration.zero);
 
       expect(calls, isEmpty);
+    });
+  });
+
+  group('renameRequested', () {
+    test('renames the Drop, emits an ok result and reloads the Drop', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      clearInteractions(repository);
+      when(() => repository.rename(any(), any())).thenAnswer((_) async => Result.success('Night Swim'));
+
+      bloc.add(const DropsEvent.renameRequested(title: 'Night Swim'));
+      final DropsState state = await bloc.stream.firstWhere((s) => s.lastRename != null);
+
+      expect(state.lastRename!.ok, isTrue);
+      await pumpEventQueue();
+      verify(() => repository.rename('2026-W42', 'Night Swim')).called(1);
+      verify(() => repository.fetchLive(any())).called(1);
+    });
+
+    test('a failed rename emits a not ok result and does not reload', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      clearInteractions(repository);
+      when(() => repository.rename(any(), any())).thenAnswer((_) async => Result.error(const ServerFailure('x')));
+
+      bloc.add(const DropsEvent.renameRequested(title: 'Night Swim'));
+      final DropsState state = await bloc.stream.firstWhere((s) => s.lastRename != null);
+
+      expect(state.lastRename!.ok, isFalse);
+      await pumpEventQueue();
+      verifyNever(() => repository.fetchLive(any()));
     });
   });
 

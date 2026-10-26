@@ -708,10 +708,9 @@ void main() {
 
     await swipeToNextPage(tester);
 
-    expect(find.text('THE DROP'), findsOneWidget);
+    expect(find.text('Weekly Drop'), findsOneWidget);
     expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
     expect(find.text('4 walls · Ends in 5d 23h'), findsOneWidget);
-    expect(find.text('Preview'), findsOneWidget);
     expect(find.text('Last call'), findsNothing);
     expect(find.byType(WallpaperImpression), findsNothing);
 

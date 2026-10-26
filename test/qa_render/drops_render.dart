@@ -142,7 +142,7 @@ void main() {
           shot.tester.element(find.byType(Scaffold).first),
           drop: live,
           wall: live.walls[1],
-          remaining: 6,
+          locked: live.walls.take(6).toList(),
           onUnlock: (_) {},
           onWatch: () async {},
         ),

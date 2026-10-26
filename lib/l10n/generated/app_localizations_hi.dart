@@ -5109,9 +5109,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyDropAlreadyUnlocked => 'यह आपके पास पहले से है।';
 
   @override
-  String get economyDropBrandTitle => 'THE DROP';
-
-  @override
   String economyDropByCreator(String creator) {
     return '$creator द्वारा';
   }
@@ -5123,7 +5120,7 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'The Drop, $time, कुल $totalString में से $unlockedString जमा। प्रीव्यू';
+    return 'साप्ताहिक Drop, $time, कुल $totalString में से $unlockedString जमा';
   }
 
   @override
@@ -5143,7 +5140,7 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String economyDropCarouselSemantics(String title, String detail, String lastCall) {
     String _temp0 = intl.Intl.selectLogic(lastCall, {'true': ', आख़िरी मौका', 'other': ''});
-    return 'The Drop, $title, $detail$_temp0';
+    return 'साप्ताहिक Drop, $title, $detail$_temp0';
   }
 
   @override
@@ -5153,17 +5150,12 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'जमा · $ownedString/$totalString';
+    return '$totalString में से $ownedString जमा';
   }
 
   @override
-  String economyDropCountdownDaysHours(String days, String time) {
-    return '$days दिन $time';
-  }
-
-  @override
-  String economyDropCountdownHoursMinutes(String hours, String minutes) {
-    return '$hours घंटे $minutes मिनट';
+  String economyDropDates(String start, String end) {
+    return '$start से $end';
   }
 
   @override
@@ -5212,9 +5204,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyDropEndsInLabel => 'समाप्त होने में';
-
-  @override
   String economyDropEndsInMinutes(int minutes) {
     final intl.NumberFormat minutesNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String minutesString = minutesNumberFormat.format(minutes);
@@ -5224,16 +5213,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get economyDropGone => 'यह Drop अब उपलब्ध नहीं है';
-
-  @override
-  String economyDropHeader(String week) {
-    return 'THE DROP · $week';
-  }
-
-  @override
-  String economyDropLastCall(String time) {
-    return 'आख़िरी मौका, $time';
-  }
 
   @override
   String get economyDropLastCallLabel => 'आख़िरी मौका';
@@ -5251,23 +5230,39 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyDropOver => 'यह Drop समाप्त हो चुका है।';
 
   @override
-  String get economyDropPack => 'पैक';
+  String get economyDropPastDrops => 'पिछले Drops';
 
   @override
-  String get economyDropPastDrops => 'पिछले DROPS';
+  String economyDropPosition(int index, int total) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
 
-  @override
-  String get economyDropPreview => 'प्रीव्यू';
+    return '$totalString में से $indexString';
+  }
 
   @override
   String get economyDropPreviewTitle => 'Drop का प्रीव्यू';
+
+  @override
+  String get economyDropRename => 'Drop का नाम बदलें';
+
+  @override
+  String get economyDropRenameFailed => 'Drop का नाम नहीं बदला जा सका। फिर कोशिश करें।';
+
+  @override
+  String get economyDropRenameHint => 'Drop का नाम';
+
+  @override
+  String get economyDropRenamed => 'Drop का नाम बदल दिया गया';
 
   @override
   String economyDropSave(int coins) {
     final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String coinsString = coinsNumberFormat.format(coins);
 
-    return '$coinsString कॉइन में सेव करें';
+    return '$coinsString कॉइन बचाएं';
   }
 
   @override
@@ -5285,10 +5280,17 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyDropTapToPreview => 'प्रीव्यू के लिए टैप करें';
+  String get economyDropTitle => 'Drop';
 
   @override
-  String get economyDropTitle => 'Drop';
+  String economyDropUnlockAll(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return 'सभी $countString को $priceString में अनलॉक करें';
+  }
 
   @override
   String get economyDropUnlockFailed => 'अनलॉक नहीं हो सका। फिर कोशिश करें।';
@@ -5299,14 +5301,6 @@ class AppLocalizationsHi extends AppLocalizations {
     final String priceString = priceNumberFormat.format(price);
 
     return '$priceString में अनलॉक करें';
-  }
-
-  @override
-  String economyDropUnlockPack(int price) {
-    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String priceString = priceNumberFormat.format(price);
-
-    return 'पैक को $priceString में अनलॉक करें';
   }
 
   @override
@@ -5353,9 +5347,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyDropWall => 'एक वॉलपेपर';
-
-  @override
   String economyDropWallBySemantics(String state, String serial, String creator) {
     return '$creator का $state वॉलपेपर, क्रमांक $serial';
   }
@@ -5375,9 +5366,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyDropWallPro => 'एक वॉलपेपर · PRO';
-
-  @override
   String economyDropWallSemantics(String state, String serial) {
     return '$state वॉलपेपर, क्रमांक $serial';
   }
@@ -5386,7 +5374,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyDropWallpaperUnavailable => 'यह वॉलपेपर उपलब्ध नहीं है';
 
   @override
-  String get economyDropWatermarkLabel => 'PRISM DROP';
+  String economyDropWeekOf(String date) {
+    return '$date का सप्ताह';
+  }
 
   @override
   String get economyDropYourVault => 'आपकी तिजोरी';
@@ -8493,6 +8483,12 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get wallpaperImageSemanticHint =>
       'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
+
+  @override
+  String get wallpaperPreviousInFeed => 'पिछला वॉलपेपर';
+
+  @override
+  String get wallpaperNextInFeed => 'अगला वॉलपेपर';
 
   @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';

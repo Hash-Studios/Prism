@@ -18,6 +18,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -454,6 +455,99 @@ void main() {
     expect(route.args!.heroTag, isNotNull);
     expect(route.args!.heroTag, contains('wallpaper-11'));
     expect(route.args!.requestId, event.searchId);
+    final WallpaperFeed feed = route.args!.feed!;
+    expect(feed.tiles.map((tile) => tile.item), prism);
+    expect(feed.tiles.map((tile) => tile.index), <int>[0, 1]);
+    expect(feed.tiles.map((tile) => tile.heroTag), <String>[
+      tester.widget<PrismWallTile>(find.byKey(const ValueKey<String>('prism-wallpaper-10'))).heroTag!,
+      tester.widget<PrismWallTile>(find.byKey(const ValueKey<String>('prism-wallpaper-11'))).heroTag!,
+    ]);
+    expect(feed.tiles[1].heroTag, route.args!.heroTag);
+  });
+
+  testWidgets('a From Prism feed reveals the swiped-to offscreen wall on return', (tester) async {
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    final List<FeedItemEntity> prism = List<FeedItemEntity>.generate(12, (index) => _wallpaper(100 + index));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[_wallpaper(1)],
+              prismResults: prism,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('prism-wallpaper-100')));
+    await tester.pump();
+
+    final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+    final WallpaperFeed feed = route.args!.feed!;
+    final Finder row = find.byWidgetPredicate(
+      (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.right,
+    );
+    final Rect rowRect = tester.getRect(row);
+    final ScrollableState scrollable = tester.state<ScrollableState>(row);
+    final Finder target = find.byKey(const ValueKey<String>('prism-wallpaper-111'));
+    expect(target, findsNothing);
+
+    feed.reveal(11);
+    await tester.pump();
+
+    expect(scrollable.position.pixels, greaterThan(0));
+    expect(target, findsOneWidget);
+    final Rect targetRect = tester.getRect(target);
+    expect(targetRect.left, greaterThanOrEqualTo(rowRect.left));
+    expect(targetRect.right, lessThanOrEqualTo(rowRect.right));
+  });
+
+  testWidgets('provider result feed snapshots the rendered result grid and hero tags', (tester) async {
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    final List<FeedItemEntity> results = <FeedItemEntity>[_wallpaper(1), _wallpaper(2)];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: results,
+              prismResults: <FeedItemEntity>[_wallpaper(50)],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('wallpaper-2')));
+    await tester.pump();
+
+    final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+    final WallpaperFeed feed = route.args!.feed!;
+    expect(feed.tiles.map((tile) => tile.item), results);
+    expect(feed.tiles.map((tile) => tile.index), <int>[0, 1]);
+    expect(feed.tiles.map((tile) => tile.heroTag), <String>[
+      tester.widget<PrismWallTile>(find.byKey(const ValueKey<String>('wallpaper-1'))).heroTag!,
+      tester.widget<PrismWallTile>(find.byKey(const ValueKey<String>('wallpaper-2'))).heroTag!,
+    ]);
+    expect(route.args!.heroTag, feed.tiles[1].heroTag);
   });
 
   testWidgets('swiping the From Prism row sideways never asks for the next results page', (tester) async {
@@ -483,7 +577,7 @@ void main() {
       ),
     );
     final Finder row = find.byWidgetPredicate(
-      (widget) => widget is ListView && widget.scrollDirection == Axis.horizontal,
+      (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.right,
     );
     expect(row, findsOneWidget);
 
