@@ -8364,6 +8364,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.';
 
   @override
+  String get wallpaperPreviousInFeed => 'Previous wallpaper';
+
+  @override
+  String get wallpaperNextInFeed => 'Next wallpaper';
+
+  @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
 
   @override

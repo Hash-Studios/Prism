@@ -72,9 +72,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -94,6 +95,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.heroTag,
     this.localFile,
     this.requestId,
+    this.feed,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -109,16 +111,112 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
 
+  /// The loaded walls of the feed this wall was opened from. A sideways swipe on the card shows the next or previous
+  /// one in place.
+  final List<FeedItemEntity>? feed;
+
   // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
-  Widget wrappedRoute(BuildContext context) => BlocProvider<WallpaperDetailBloc>(
-    key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
-    create: (_) => getIt<WallpaperDetailBloc>(),
-    child: this,
-  );
+  Widget wrappedRoute(BuildContext context) {
+    final List<FeedItemEntity>? feed = this.feed;
+    final FeedItemEntity? entity = this.entity;
+    final int start = feed == null || entity == null
+        ? -1
+        : feed.indexWhere((item) => item.source == entity.source && item.id == entity.id);
+    if (feed != null && start >= 0) return _FeedBrowser(screen: this, feed: feed, start: start);
+    return BlocProvider<WallpaperDetailBloc>(
+      key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+      create: (_) => getIt<WallpaperDetailBloc>(),
+      child: this,
+    );
+  }
 
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
+}
+
+/// Lets the card of a wall opened from a feed move to its neighbours.
+class _FeedStep extends InheritedWidget {
+  const _FeedStep({required this.step, required this.hasPrevious, required this.hasNext, required super.child});
+
+  final ValueChanged<int> step;
+  final bool hasPrevious;
+  final bool hasNext;
+
+  static _FeedStep? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_FeedStep>();
+
+  @override
+  bool updateShouldNotify(_FeedStep oldWidget) =>
+      hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext || step != oldWidget.step;
+}
+
+/// Pages through a feed in place. Each wall gets its own bloc and screen, as a new route would.
+class _FeedBrowser extends StatefulWidget {
+  const _FeedBrowser({required this.screen, required this.feed, required this.start});
+
+  final WallpaperDetailScreen screen;
+  final List<FeedItemEntity> feed;
+  final int start;
+
+  @override
+  State<_FeedBrowser> createState() => _FeedBrowserState();
+}
+
+class _FeedBrowserState extends State<_FeedBrowser> {
+  late int _index = widget.start;
+  int _direction = 1;
+  bool _moved = false;
+
+  void _step(int delta) {
+    final int next = _index + delta;
+    if (next < 0 || next >= widget.feed.length) return;
+    PrismHaptics.selection();
+    setState(() {
+      _index = next;
+      _direction = delta;
+      _moved = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final FeedItemEntity item = widget.feed[_index];
+    final WallpaperDetailScreen screen = widget.screen;
+    final Key current = ValueKey<(WallpaperSource, String)>((item.source, item.id));
+    final double sign = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
+    return _FeedStep(
+      step: _step,
+      hasPrevious: _index > 0,
+      hasNext: _index < widget.feed.length - 1,
+      child: AnimatedSwitcher(
+        duration: context.motion(PrismDurations.fast),
+        transitionBuilder: (child, animation) {
+          final bool incoming = child.key == current;
+          return IgnorePointer(
+            ignoring: !incoming,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: Offset((incoming ? _direction : -_direction) * sign, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+          );
+        },
+        child: BlocProvider<WallpaperDetailBloc>(
+          key: current,
+          create: (_) => getIt<WallpaperDetailBloc>(),
+          child: WallpaperDetailScreen(
+            entity: item,
+            analyticsSurface: screen.analyticsSurface,
+            requestId: screen.requestId,
+            // Only the tapped tile matches its wall, so the card flies home to it only until the first swipe.
+            heroTag: _moved ? null : screen.heroTag,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
@@ -152,6 +250,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   final ShakeController _shake = ShakeController();
   final ScrollController _scroll = ScrollController();
   final Object _recommendationHeroScope = Object();
+  double _swipeDx = 0;
 
   /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
   /// them, on a fade of the page colour so the icons stay readable.
@@ -259,6 +358,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   void _handleColorSelected(BuildContext context, Color color) {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
+  }
+
+  /// A fling, or a drag of more than 48 px, shows the neighbouring wall of the feed.
+  void _handleSwipeEnd(_FeedStep feed, DragEndDetails details) {
+    final double velocity = details.primaryVelocity ?? 0;
+    final double push = velocity.abs() > 300 ? velocity : (_swipeDx.abs() > 48 ? _swipeDx : 0);
+    _swipeDx = 0;
+    if (push == 0) return;
+    final bool ltr = Directionality.of(context) == TextDirection.ltr;
+    feed.step((push < 0) == ltr ? 1 : -1);
   }
 
   @override
@@ -1565,6 +1674,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     WallpaperDetailLoaded state, {
     bool canonicalLoading = false,
   }) {
+    final _FeedStep? feed = _FeedStep.maybeOf(context);
     final entity = state.entity;
     final Widget image = _buildProgressiveWallpaperImage(
       context: context,
@@ -1588,12 +1698,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             child: Semantics(
               label: context.l10n.wallpaperImageSemanticLabel,
               hint: context.l10n.wallpaperImageSemanticHint,
+              customSemanticsActions: feed == null
+                  ? null
+                  : <CustomSemanticsAction, VoidCallback>{
+                      if (feed.hasPrevious)
+                        CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
+                      if (feed.hasNext)
+                        CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
+                    },
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
+                onHorizontalDragStart: feed == null ? null : (_) => _swipeDx = 0,
+                onHorizontalDragUpdate: feed == null ? null : (details) => _swipeDx += details.primaryDelta ?? 0,
+                onHorizontalDragEnd: feed == null ? null : (details) => _handleSwipeEnd(feed, details),
                 child: _withHero(image),
               ),
             ),

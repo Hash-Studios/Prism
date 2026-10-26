@@ -13033,6 +13033,18 @@ abstract class AppLocalizations {
   /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
 
+  /// Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous wallpaper'**
+  String get wallpaperPreviousInFeed;
+
+  /// Accessibility action on the wallpaper detail card that shows the next wallpaper of the feed it was opened from.
+  ///
+  /// In en, this message translates to:
+  /// **'Next wallpaper'**
+  String get wallpaperNextInFeed;
+
   /// Accessibility label for the wallpaper image.
   ///
   /// In en, this message translates to:

@@ -7461,6 +7461,8 @@
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
+  "wallpaperPreviousInFeed": "Vorheriges Hintergrundbild",
+  "wallpaperNextInFeed": "Nächstes Hintergrundbild",
   "wallpaperImageSemanticLabel": "Hintergrundbild",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."

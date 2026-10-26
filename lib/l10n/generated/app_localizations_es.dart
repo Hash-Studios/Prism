@@ -8468,6 +8468,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
 
   @override
+  String get wallpaperPreviousInFeed => 'Fondo de pantalla anterior';
+
+  @override
+  String get wallpaperNextInFeed => 'Siguiente fondo de pantalla';
+
+  @override
   String get wallpaperImageSemanticLabel => 'Fondo de pantalla';
 
   @override

@@ -2150,6 +2150,8 @@
   "wallpaperHistoryTitle": "Histórico do papel de parede",
   "wallpaperHomeAppName": "Prism",
   "wallpaperImageSemanticHint": "Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.",
+  "wallpaperPreviousInFeed": "Papel de parede anterior",
+  "wallpaperNextInFeed": "Próximo papel de parede",
   "wallpaperImageSemanticLabel": "Papel de parede",
   "wallpaperInsufficientCoins": "Não há moedas suficientes. Ganhe moedas em recompensas.",
   "wallpaperInterestLearnedLabel": "Aprendido: {label}, {percent} por cento",

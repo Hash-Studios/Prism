@@ -8392,6 +8392,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
+  String get wallpaperPreviousInFeed => 'Wallpaper sebelumnya';
+
+  @override
+  String get wallpaperNextInFeed => 'Wallpaper berikutnya';
+
+  @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
 
   @override

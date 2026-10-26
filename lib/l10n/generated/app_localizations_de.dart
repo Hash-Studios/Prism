@@ -8474,6 +8474,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
 
   @override
+  String get wallpaperPreviousInFeed => 'Vorheriges Hintergrundbild';
+
+  @override
+  String get wallpaperNextInFeed => 'Nächstes Hintergrundbild';
+
+  @override
   String get wallpaperImageSemanticLabel => 'Hintergrundbild';
 
   @override
