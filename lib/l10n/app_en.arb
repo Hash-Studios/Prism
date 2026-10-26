@@ -4274,7 +4274,6 @@
     }
   },
   "economyDropAlreadyUnlocked": "You already have this one.",
-  "economyDropBrandTitle": "THE DROP",
   "economyDropByCreator": "by {creator}",
   "@economyDropByCreator": {
     "placeholders": {
@@ -4283,7 +4282,7 @@
       }
     }
   },
-  "economyDropCardSemantics": "The Drop, {time}, {unlocked} of {total} collected. Preview",
+  "economyDropCardSemantics": "Weekly Drop, {time}, {unlocked} of {total} collected",
   "@economyDropCardSemantics": {
     "placeholders": {
       "time": {
@@ -4311,7 +4310,7 @@
       }
     }
   },
-  "economyDropCarouselSemantics": "The Drop, {title}, {detail}{lastCall, select, true{, last call} other{}}",
+  "economyDropCarouselSemantics": "Weekly Drop, {title}, {detail}{lastCall, select, true{, last call} other{}}",
   "@economyDropCarouselSemantics": {
     "placeholders": {
       "title": {
@@ -4325,7 +4324,7 @@
       }
     }
   },
-  "economyDropCollected": "Collected · {owned}/{total}",
+  "economyDropCollected": "{owned} of {total} collected",
   "@economyDropCollected": {
     "placeholders": {
       "owned": {
@@ -4338,24 +4337,13 @@
       }
     }
   },
-  "economyDropCountdownDaysHours": "{days}d {time}",
-  "@economyDropCountdownDaysHours": {
+  "economyDropDates": "{start} to {end}",
+  "@economyDropDates": {
     "placeholders": {
-      "days": {
+      "start": {
         "type": "String"
       },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropCountdownHoursMinutes": "{hours}h {minutes}m",
-  "@economyDropCountdownHoursMinutes": {
-    "placeholders": {
-      "hours": {
-        "type": "String"
-      },
-      "minutes": {
+      "end": {
         "type": "String"
       }
     }
@@ -4388,7 +4376,6 @@
       }
     }
   },
-  "economyDropEndsInLabel": "Ends in",
   "economyDropEndsInMinutes": "Ends in {minutes}m",
   "@economyDropEndsInMinutes": {
     "placeholders": {
@@ -4399,32 +4386,31 @@
     }
   },
   "economyDropGone": "This Drop is gone",
-  "economyDropHeader": "THE DROP · {week}",
-  "@economyDropHeader": {
-    "placeholders": {
-      "week": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropLastCall": "Last call, {time}",
-  "@economyDropLastCall": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "economyDropLastCallLabel": "Last call",
   "economyDropLoadFailed": "Couldn't load the Drop",
   "economyDropLocked": "Locked",
   "economyDropMissed": "Missed",
   "economyDropOver": "This Drop is over.",
-  "economyDropPack": "THE PACK",
-  "economyDropPastDrops": "PAST DROPS",
-  "economyDropPreview": "Preview",
+  "economyDropPastDrops": "Past drops",
+  "economyDropPosition": "{index} of {total}",
+  "@economyDropPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "economyDropPreviewTitle": "Drop preview",
-  "economyDropSave": "save {coins}",
+  "economyDropRename": "Rename Drop",
+  "economyDropRenameFailed": "Couldn't rename the Drop. Try again.",
+  "economyDropRenameHint": "Drop name",
+  "economyDropRenamed": "Drop renamed",
+  "economyDropSave": "Save {coins}",
   "@economyDropSave": {
     "placeholders": {
       "coins": {
@@ -4445,20 +4431,23 @@
       }
     }
   },
-  "economyDropTapToPreview": "Tap to preview",
   "economyDropTitle": "Drop",
-  "economyDropUnlockFailed": "Couldn't unlock this. Try again.",
-  "economyDropUnlockFor": "Unlock for {price}",
-  "@economyDropUnlockFor": {
+  "economyDropUnlockAll": "Unlock all {count} for {price}",
+  "@economyDropUnlockAll": {
     "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
       "price": {
         "type": "int",
         "format": "decimalPattern"
       }
     }
   },
-  "economyDropUnlockPack": "Unlock the pack for {price}",
-  "@economyDropUnlockPack": {
+  "economyDropUnlockFailed": "Couldn't unlock this. Try again.",
+  "economyDropUnlockFor": "Unlock for {price}",
+  "@economyDropUnlockFor": {
     "placeholders": {
       "price": {
         "type": "int",
@@ -4507,7 +4496,6 @@
       }
     }
   },
-  "economyDropWall": "A WALL",
   "economyDropWallBySemantics": "{state} wall {serial} by {creator}",
   "@economyDropWallBySemantics": {
     "placeholders": {
@@ -4531,7 +4519,6 @@
       }
     }
   },
-  "economyDropWallPro": "A WALL · PRO",
   "economyDropWallSemantics": "{state} wall {serial}",
   "@economyDropWallSemantics": {
     "placeholders": {
@@ -4544,8 +4531,15 @@
     }
   },
   "economyDropWallpaperUnavailable": "This wallpaper is unavailable",
-  "economyDropWatermarkLabel": "PRISM DROP",
-  "economyDropYourVault": "YOUR VAULT",
+  "economyDropWeekOf": "Week of {date}",
+  "@economyDropWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "economyDropYourVault": "Your vault",
   "economyDrops": "Drops",
   "economyEarnCoins": "Earn coins",
   "economyEarnXpAsYouGo": "Earn XP as you go",
@@ -8938,19 +8932,33 @@
   "@economyAiPromptComposition": {
     "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
     "placeholders": {
-      "scene": { "type": "String" },
-      "lighting": { "type": "String" },
-      "mood": { "type": "String" },
-      "quality": { "type": "String" },
-      "suffix": { "type": "String" }
+      "scene": {
+        "type": "String"
+      },
+      "lighting": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
     }
   },
   "economyAiPromptSceneOnly": "{scene}, {suffix}",
   "@economyAiPromptSceneOnly": {
     "description": "An AI wallpaper scene prompt with wallpaper instructions.",
     "placeholders": {
-      "scene": { "type": "String" },
-      "suffix": { "type": "String" }
+      "scene": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
     }
   },
   "economyAiMadeWithPrism": "Made with Prism AI",

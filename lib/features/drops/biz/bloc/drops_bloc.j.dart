@@ -24,6 +24,7 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
     on<_UnlockRequested>(_onUnlockRequested);
     on<_Ticked>((_, emit) => emit(state.copyWith(now: DateTime.now())));
     on<_UnlockedChanged>(_onUnlockedChanged);
+    on<_RenameRequested>(_onRenameRequested);
     CoinsService.instance.dropsUnlockedNotifier.addListener(_onUnlockedNotifier);
   }
 
@@ -121,6 +122,14 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
       );
     }
     emit(state.copyWith(busyKey: null, lastResult: result));
+  }
+
+  Future<void> _onRenameRequested(_RenameRequested event, Emitter<DropsState> emit) async {
+    final DropEntity? drop = state.drop;
+    if (drop == null) return;
+    final Result<String> result = await _repository.rename(drop.weekKey, event.title);
+    emit(state.copyWith(lastRename: DropRenameResult(ok: result.isSuccess)));
+    if (result.isSuccess) await _load(emit);
   }
 
   @override

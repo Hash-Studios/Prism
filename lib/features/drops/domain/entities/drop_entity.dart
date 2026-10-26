@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 /// One wall of a Drop, as the planner snapshotted it. It has no full url: that comes with the unlock.
 class DropWall extends Equatable {
@@ -63,7 +64,21 @@ class DropEntity extends Equatable {
     return endsAt.difference(now) <= lastCallWindow ? DropPhase.lastCall : DropPhase.live;
   }
 
-  String displayTitle(AppLocalizations l10n) => title.trim().isEmpty ? l10n.economyWeeklyDrop : title;
+  /// The planner's old fallback, "Drop 2026-W44". It means nothing to a user, so it reads as "Week of Oct 26" instead.
+  static final RegExp _weekCodeTitle = RegExp(r'^Drop \d{4}-W\d{2}$');
+
+  String displayTitle(AppLocalizations l10n) {
+    final String name = title.trim();
+    if (name.isNotEmpty && !_weekCodeTitle.hasMatch(name)) return name;
+    return l10n.economyDropWeekOf(DateFormat.MMMd(l10n.localeName).format(startsAt.toUtc()));
+  }
+
+  /// "Oct 26 to Nov 1". A Drop week runs Monday to Monday in UTC, so the last day is the one before [endsAt].
+  String datesLabel(AppLocalizations l10n) {
+    final DateFormat day = DateFormat.MMMd(l10n.localeName);
+    final DateTime lastDay = endsAt.toUtc().subtract(const Duration(milliseconds: 1));
+    return l10n.economyDropDates(day.format(startsAt.toUtc()), day.format(lastDay));
+  }
 
   int wallPrice({required bool isPro}) => proPrice(priceWall, isPro);
 

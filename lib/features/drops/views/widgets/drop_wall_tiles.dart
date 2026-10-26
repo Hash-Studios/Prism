@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -11,9 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
-import 'package:Prism/features/drops/views/painters/foil_sheen_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
-import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -43,8 +41,8 @@ PrismFeedItem dropWallFeedItem(DropWall wall, DropUnlock unlock) {
   return PrismFeedItem(id: wall.id, wallpaper: wallpaper);
 }
 
-/// The two-column grid of one Drop. Locked tiles are frosted under a seal, owned tiles are sharp. When the Drop is
-/// over, locked tiles say "Missed" and cannot be tapped.
+/// The two-column grid of one Drop. Every wall shows in full. A locked wall has a lock and its price in the corner.
+/// When the Drop is over, a locked wall dims, says "Missed" and cannot be tapped.
 class DropWallGrid extends StatelessWidget {
   const DropWallGrid({
     super.key,
@@ -63,6 +61,7 @@ class DropWallGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int price = drop.wallPrice(isPro: app_state.prismUser.premium);
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
@@ -79,7 +78,8 @@ class DropWallGrid extends StatelessWidget {
           final tile = DropWallTile(
             key: ValueKey<String>(wall.id),
             wall: wall,
-            serial: dropSerial(index, drop.walls.length),
+            position: context.l10n.economyDropPosition(index + 1, drop.walls.length),
+            price: price,
             busy: busyKey == wall.id,
             quickActionItem: unlock == null ? null : dropWallFeedItem(wall, unlock),
             heroTag: unlock == null ? null : heroTag,
@@ -107,33 +107,12 @@ class DropWallGrid extends StatelessWidget {
   }
 }
 
-/// One line under the hero that tells the user a locked wall opens as a preview.
-class DropPreviewHint extends StatelessWidget {
-  const DropPreviewHint({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final Color gold = dropEyebrowColor(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: PrismSpace.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(Icons.visibility_outlined, size: 14, color: gold),
-          const SizedBox(width: PrismSpace.xs),
-          Text(l10n.economyDropTapToPreview, style: dropCapsStyle(size: 10, spacing: 1.8, color: gold)),
-        ],
-      ),
-    );
-  }
-}
-
-class DropWallTile extends StatefulWidget {
+class DropWallTile extends StatelessWidget {
   const DropWallTile({
     super.key,
     required this.wall,
-    required this.serial,
+    required this.position,
+    required this.price,
     required this.unlocked,
     required this.missed,
     required this.busy,
@@ -143,7 +122,10 @@ class DropWallTile extends StatefulWidget {
   });
 
   final DropWall wall;
-  final String serial;
+
+  /// "3 of 9", for screen readers.
+  final String position;
+  final int price;
   final bool unlocked;
   final bool missed;
   final bool busy;
@@ -152,159 +134,59 @@ class DropWallTile extends StatefulWidget {
   final String? heroTag;
 
   @override
-  State<DropWallTile> createState() => _DropWallTileState();
-}
-
-class _DropWallTileState extends State<DropWallTile> {
-  static const double _frostSigma = 14;
-
-  bool _thawing = false;
-
-  @override
-  void didUpdateWidget(DropWallTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.unlocked && widget.unlocked) _thawing = true;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final String state = widget.unlocked
+    final AppLocalizations l10n = context.l10n;
+    final String state = unlocked
         ? l10n.economyDropUnlocked
-        : widget.missed
+        : missed
         ? l10n.economyDropMissed
         : l10n.economyDropLocked;
-    final String label = widget.wall.by.isEmpty
-        ? l10n.economyDropWallSemantics(state, widget.serial)
-        : l10n.economyDropWallBySemantics(state, widget.serial, widget.wall.by);
+    final String label = wall.by.isEmpty
+        ? l10n.economyDropWallSemantics(state, position)
+        : l10n.economyDropWallBySemantics(state, position, wall.by);
+    final Widget badge = unlocked
+        ? DropTileBadge(key: const ValueKey<String>('owned'), icon: Icons.check_rounded, label: l10n.economyOwned)
+        : missed
+        ? DropTileBadge(key: const ValueKey<String>('missed'), icon: Icons.lock_rounded, label: l10n.economyDropMissed)
+        : DropTileBadge(
+            key: const ValueKey<String>('locked'),
+            icon: Icons.lock_rounded,
+            label: formatLocalizedNumber(price, l10n),
+            coin: true,
+          );
     final Widget tile = PrismWallTile(
-      url: widget.wall.thumb,
+      url: wall.thumb,
       semanticLabel: label,
-      heroTag: widget.heroTag,
-      onTap: widget.onTap,
-      overlay: _overlay(),
-    );
-    final FeedItemEntity? item = widget.quickActionItem;
-    return item == null ? tile : WallpaperQuickActionRegion(item: item, child: tile);
-  }
-
-  Widget _overlay() {
-    if (widget.unlocked && !_thawing) return _OwnedMark(serial: widget.serial);
-    if (_thawing) {
-      return FoilSheen(
-        color: DropPalette.sheen,
-        once: true,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 1, end: 0),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOut,
-          onEnd: () => setState(() => _thawing = false),
-          builder: (context, t, _) => Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              _Frost(sigma: _frostSigma * t, scrim: 0.3 * t),
-              Opacity(
-                opacity: t,
-                child: const Center(child: DropSeal()),
-              ),
-              _OwnedMark(serial: widget.serial),
-            ],
+      heroTag: heroTag,
+      onTap: onTap,
+      overlay: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          if (missed) ColoredBox(color: Colors.black.withValues(alpha: 0.45)),
+          Align(
+            alignment: AlignmentDirectional.topEnd,
+            child: Padding(
+              padding: const EdgeInsets.all(PrismSpace.xs),
+              child: AnimatedSwitcher(duration: context.motion(PrismDurations.base), child: badge),
+            ),
           ),
-        ),
-      );
-    }
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        _Frost(sigma: _frostSigma, scrim: widget.missed ? 0.6 : 0.3, edge: !widget.missed),
-        Center(
-          child: widget.busy
-              ? const SizedBox.square(
-                  dimension: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: DropPalette.gold),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    DropSeal(struck: widget.missed),
-                    if (widget.missed) ...<Widget>[
-                      const SizedBox(height: PrismSpace.xs),
-                      Text(
-                        AppLocalizations.of(context).economyDropMissed,
-                        style: dropCapsStyle(size: 10, spacing: 1.8, color: DropPalette.inkMuted),
-                      ),
-                    ],
-                  ],
-                ),
-        ),
-        DropSerialTag(serial: widget.serial),
-      ],
-    );
-  }
-}
-
-class _Frost extends StatelessWidget {
-  const _Frost({required this.sigma, required this.scrim, this.edge = false});
-
-  final double sigma;
-  final double scrim;
-  final bool edge;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: PrismWallGrid.tileRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: sigma + 0.001, sigmaY: sigma + 0.001),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: DropPalette.obsidian.withValues(alpha: scrim),
-            borderRadius: PrismWallGrid.tileRadius,
-            border: edge ? Border.all(color: DropPalette.hairlineStrong, width: 0.8) : null,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OwnedMark extends StatelessWidget {
-  const _OwnedMark({required this.serial});
-
-  final String serial;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        DropSerialTag(serial: serial),
-        Align(
-          alignment: AlignmentDirectional.bottomStart,
-          child: Padding(
-            padding: const EdgeInsets.all(PrismSpace.xs),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: DropPalette.obsidian.withValues(alpha: 0.78),
-                borderRadius: BorderRadius.circular(PrismRadius.xs),
-                border: Border.all(color: DropPalette.hairlineStrong, width: 0.8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Icon(Icons.check_rounded, size: 12, color: DropPalette.gold),
-                    const SizedBox(width: 4),
-                    Text(l10n.economyOwned, style: dropCapsStyle(size: 10, spacing: 1.2)),
-                  ],
+          if (busy)
+            const Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                child: Padding(
+                  padding: EdgeInsets.all(PrismSpace.sm),
+                  child: SizedBox.square(
+                    dimension: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
+    final FeedItemEntity? item = quickActionItem;
+    return item == null ? tile : WallpaperQuickActionRegion(item: item, child: tile);
   }
 }

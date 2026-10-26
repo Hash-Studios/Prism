@@ -9,5 +9,8 @@ abstract class DropsEvent with _$DropsEvent {
   /// A null [wallId] unlocks every wall left.
   const factory DropsEvent.unlockRequested({String? wallId}) = _UnlockRequested;
   const factory DropsEvent.ticked() = _Ticked;
+
+  /// Admins only. Renames the Drop on the page.
+  const factory DropsEvent.renameRequested({required String title}) = _RenameRequested;
   const factory DropsEvent.unlockedChanged(Map<String, DropUnlock> unlocked) = _UnlockedChanged;
 }

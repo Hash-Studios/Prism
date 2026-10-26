@@ -16,6 +16,9 @@ abstract class DropsState with _$DropsState {
 
     /// The newest unlock reply. The page toasts it once.
     DropUnlockResult? lastResult,
+
+    /// The newest rename reply. The page toasts it once.
+    DropRenameResult? lastRename,
   }) = _DropsState;
 
   const DropsState._();
@@ -31,4 +34,11 @@ abstract class DropsState with _$DropsState {
 
   /// Past Drops with at least one wall the user owns, newest first.
   List<DropEntity> get vault => past.where((d) => d.walls.any((w) => unlocked.containsKey(w.id))).toList();
+}
+
+/// One reply to a rename. Each reply is a new object, so two failures in a row both toast.
+final class DropRenameResult {
+  DropRenameResult({required this.ok});
+
+  final bool ok;
 }
