@@ -6,12 +6,16 @@ const MOOD_OF_COLOR: Record<string, Exclude<DropMood, "mixed">> = {
   blue: "cool", teal: "cool", green: "cool", white: "cool",
 };
 
-/** Names per mood. A Drop takes the first one its recent Drops did not use. */
+/** Names per mood. A Drop takes the first one its recent Drops did not use. Keep at least 13 per mood: the planner skips the names of the last 12 Drops. */
 export const DROP_NAMES: Record<DropMood, readonly string[]> = {
-  night: ["After Hours", "Blue Hour", "Low Light", "Night Shift", "Small Hours", "Moonrise", "Dark Room", "Night Swim"],
-  warm: ["Golden Hour", "Slow Burn", "Late Sun", "Warm Front", "Ember Days", "Afterglow", "Heatwave", "Sun Drift"],
-  cool: ["Cold Water", "Clear Skies", "Tidewater", "First Frost", "Open Air", "Sea Glass", "Still Water", "Fresh Air"],
-  mixed: ["Field Notes", "Open Studio", "Mixed Light", "Color Study", "Daydream", "Free Range", "New Ground", "Wide Angle"],
+  night: ["After Hours", "Blue Hour", "Low Light", "Night Shift", "Small Hours", "Moonrise", "Dark Room", "Night Swim",
+    "Neon Nights", "Starfall", "Deep Space", "Lights Out", "Midnight Oil"],
+  warm: ["Golden Hour", "Slow Burn", "Late Sun", "Warm Front", "Ember Days", "Afterglow", "Heatwave", "Sun Drift",
+    "Ember Glow", "Desert Bloom", "Sunset Strip", "Red Shift", "Honey Light"],
+  cool: ["Cold Water", "Clear Skies", "Tidewater", "First Frost", "Open Air", "Sea Glass", "Still Water", "Fresh Air",
+    "Deep Blue", "Glacier", "Rain Check", "Cold Front", "Green Room"],
+  mixed: ["Field Notes", "Open Studio", "Mixed Light", "Color Study", "Daydream", "Free Range", "New Ground", "Wide Angle",
+    "Free Form", "Side B", "Odd Hours", "Color Field", "Loose Change"],
 };
 
 /** Mood of a set of walls. `wallColors` holds each wall's `colors` field. */

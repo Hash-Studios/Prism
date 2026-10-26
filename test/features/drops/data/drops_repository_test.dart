@@ -82,9 +82,7 @@ void main() {
     final CoinsTestBackend backend = CoinsTestBackend();
     await backend.install();
     backend.onCall = (_, _) async => <String, Object?>{'title': 'Night Swim', 'applied': 'drop'};
-    client.docs[FirebaseCollections.drops] = {
-      '2026-W42': _doc(startsAt: ms - 1000, endsAt: ms + 5000),
-    };
+    client.docs[FirebaseCollections.drops] = {'2026-W42': _doc(startsAt: ms - 1000, endsAt: ms + 5000)};
     expect((await repository.fetchByWeekKey('2026-W42')).data!.title, 'Autumn');
 
     final Result<String> renamed = await repository.rename('2026-W42', '  Night   Swim  ');

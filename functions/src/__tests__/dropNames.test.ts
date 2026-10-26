@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {dropMood, isoWeekNumber, pickDropName} from "../dropNames";
+import {DROP_NAMES, dropMood, isoWeekNumber, pickDropName} from "../dropNames";
 
 test("dropMood reads a night set", () => {
   assert.equal(dropMood([["black", "purple"], ["grey"], ["black"]]), "night");
@@ -35,7 +35,7 @@ test("pickDropName returns the first name when nothing is recent", () => {
 });
 
 test("pickDropName starts from the seed", () => {
-  assert.equal(pickDropName("night", [], 9), "Blue Hour");
+  assert.equal(pickDropName("night", [], 14), "Blue Hour");
 });
 
 test("pickDropName skips names used by recent titles", () => {
@@ -43,12 +43,11 @@ test("pickDropName skips names used by recent titles", () => {
 });
 
 test("pickDropName returns the start name when every name is used", () => {
-  const all = ["After Hours", "Blue Hour", "Low Light", "Night Shift", "Small Hours", "Moonrise", "Dark Room", "Night Swim"];
-  assert.equal(pickDropName("night", all, 2), "Low Light");
+  assert.equal(pickDropName("night", DROP_NAMES.night, 2), "Low Light");
 });
 
 test("pickDropName accepts a negative seed", () => {
-  assert.equal(pickDropName("night", [], -1), "Night Swim");
+  assert.equal(pickDropName("night", [], -1), "Midnight Oil");
 });
 
 test("isoWeekNumber reads the week number", () => {
@@ -57,4 +56,12 @@ test("isoWeekNumber reads the week number", () => {
 
 test("isoWeekNumber returns 0 for a bad key", () => {
   assert.equal(isoWeekNumber("bad"), 0);
+});
+
+test("every mood has a fresh name after the 12 latest Drops of that mood", () => {
+  for (const names of Object.values(DROP_NAMES)) {
+    assert.ok(new Set(names).size >= 13);
+  }
+  const recent = DROP_NAMES.cool.slice(0, 12);
+  assert.equal(pickDropName("cool", recent, 0), "Green Room");
 });

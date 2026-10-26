@@ -139,7 +139,7 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
 test("the planner falls back to a mood name when no title is set", async (t) => {
   const store = installFakeDb(t, reservedWalls(4));
   await plan(t);
-  assert.equal(store.get(`drops/${KEY}`)?.title, "Color Study");
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Daydream");
 });
 
 test("the planner ignores malformed titles in recent drops", async (t) => {
@@ -148,7 +148,7 @@ test("the planner ignores malformed titles in recent drops", async (t) => {
     "drops/2026-W42": {startsAt: start - 7 * 86_400_000, title: {toString: "not callable"}},
   });
   await plan(t);
-  assert.equal(store.get(`drops/${KEY}`)?.title, "Color Study");
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Daydream");
 });
 
 test("the planner uses a rename made after its initial reads", async (t) => {
