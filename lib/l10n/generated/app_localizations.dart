@@ -5394,7 +5394,7 @@ abstract class AppLocalizations {
   /// No description provided for @debugReviewActivityPreviewDescription.
   ///
   /// In en, this message translates to:
-  /// **'Shows the admin review count on the Lock Screen'**
+  /// **'Shows the walls waiting for review on the Lock Screen'**
   String get debugReviewActivityPreviewDescription;
 
   /// No description provided for @debugAllTags.

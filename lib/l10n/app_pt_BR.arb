@@ -881,7 +881,7 @@
   "debugLiveActivityPreviewDescription": "Executa uma atividade de exemplo: pronta após 8 segundos",
   "debugLiveActivityUnavailable": "Live Activities estão desativadas ou não são compatíveis",
   "debugReviewActivityPreview": "Pré-visualizar atividade da fila de revisão",
-  "debugReviewActivityPreviewDescription": "Mostra a contagem de revisões admin na tela de bloqueio",
+  "debugReviewActivityPreviewDescription": "Mostra os papéis de parede aguardando revisão na tela de bloqueio",
   "debugAllTags": "Todas as tags",
   "debugAndroidVersion": "Versão do Android",
   "debugAnimationSpeed": "Velocidade da animação",

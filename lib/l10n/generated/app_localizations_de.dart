@@ -3113,7 +3113,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugReviewActivityPreview => 'Vorschau der Prüfwarteschlangen-Aktivität';
 
   @override
-  String get debugReviewActivityPreviewDescription => 'Zeigt die Anzahl der Prüfungen auf dem Sperrbildschirm';
+  String get debugReviewActivityPreviewDescription =>
+      'Zeigt die Hintergrundbilder, die auf Prüfung warten, auf dem Sperrbildschirm';
 
   @override
   String get debugAllTags => 'Alle Tags';

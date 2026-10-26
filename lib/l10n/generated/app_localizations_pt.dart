@@ -3135,7 +3135,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugReviewActivityPreview => 'Pré-visualizar atividade da fila de revisão';
 
   @override
-  String get debugReviewActivityPreviewDescription => 'Mostra a contagem de revisões admin na tela de bloqueio';
+  String get debugReviewActivityPreviewDescription =>
+      'Mostra os papéis de parede aguardando revisão na tela de bloqueio';
 
   @override
   String get debugAllTags => 'Todas as tags';
@@ -13160,7 +13161,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get debugReviewActivityPreview => 'Pré-visualizar atividade da fila de revisão';
 
   @override
-  String get debugReviewActivityPreviewDescription => 'Mostra a contagem de revisões admin na tela de bloqueio';
+  String get debugReviewActivityPreviewDescription =>
+      'Mostra os papéis de parede aguardando revisão na tela de bloqueio';
 
   @override
   String get debugAllTags => 'Todas as tags';

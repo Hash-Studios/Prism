@@ -3110,7 +3110,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get debugReviewActivityPreviewDescription =>
-      'Muestra el número de revisiones pendientes en la pantalla de bloqueo';
+      'Muestra los fondos de pantalla pendientes de revisión en la pantalla de bloqueo';
 
   @override
   String get debugAllTags => 'Todas las etiquetas';

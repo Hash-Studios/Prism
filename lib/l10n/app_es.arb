@@ -976,7 +976,7 @@
   "debugLiveActivityPreviewDescription": "Ejecuta una actividad de ejemplo: lista tras 8 segundos",
   "debugLiveActivityUnavailable": "Las Live Activities están desactivadas o no son compatibles",
   "debugReviewActivityPreview": "Vista previa de la actividad de la cola de revisión",
-  "debugReviewActivityPreviewDescription": "Muestra el número de revisiones pendientes en la pantalla de bloqueo",
+  "debugReviewActivityPreviewDescription": "Muestra los fondos de pantalla pendientes de revisión en la pantalla de bloqueo",
   "debugAllTags": "Todas las etiquetas",
   "debugAndroidVersion": "Versión de Android",
   "debugAnimationSpeed": "Velocidad de animación",

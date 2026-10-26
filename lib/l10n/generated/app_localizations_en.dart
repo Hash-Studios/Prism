@@ -3079,7 +3079,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugReviewActivityPreview => 'Preview review queue activity';
 
   @override
-  String get debugReviewActivityPreviewDescription => 'Shows the admin review count on the Lock Screen';
+  String get debugReviewActivityPreviewDescription => 'Shows the walls waiting for review on the Lock Screen';
 
   @override
   String get debugAllTags => 'All tags';
