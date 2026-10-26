@@ -10,6 +10,7 @@ import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/features/drops/views/widgets/unlock_sheet.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -43,6 +44,10 @@ void main() {
     when(() => bloc.close()).thenAnswer((_) async {});
     getIt.registerFactory<DropsBloc>(() => bloc);
     CoinsService.instance.balanceNotifier.value = 100;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'signed-in-uid'
+      ..loggedIn = true;
+    dropSignIn = _unexpectedSignIn;
   });
 
   tearDown(() async {
@@ -486,6 +491,91 @@ void main() {
     });
   });
 
+  group('guest', () {
+    setUp(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    testWidgets('sees the live Drop with its prices, and unlock all asks to sign in first', (tester) async {
+      int signIns = 0;
+      dropSignIn = (_) async {
+        signIns++;
+        return false;
+      };
+      await pump(tester, loaded(dropEntity()), const DropsPage());
+
+      expect(find.text('Unlock all 4 for 100'), findsOneWidget);
+      expect(find.byKey(const ValueKey('locked')), findsNWidgets(4));
+
+      await tester.tap(find.text('Unlock all 4 for 100'));
+      await tester.pumpAndSettle();
+
+      expect(signIns, 1);
+      expect(find.byType(DropUnlockSheet), findsNothing);
+      verifyNever(() => bloc.add(const DropsEvent.unlockRequested()));
+    });
+
+    testWidgets('who leaves the sign-in sheet gets no unlock sheet and no unlock', (tester) async {
+      dropSignIn = (_) async => false;
+      await openSheet(tester, loaded(dropEntity()));
+
+      expect(find.byType(DropUnlockSheet), findsNothing);
+      expect(find.text('ask'), findsOneWidget);
+    });
+
+    testWidgets('who signs in goes on to the unlock sheet for the same wall', (tester) async {
+      dropSignIn = (_) async {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'new-uid'
+          ..loggedIn = true;
+        return true;
+      };
+      await openSheet(tester, loaded(dropEntity()));
+
+      expect(find.text('Unlock this wall for 30'), findsOneWidget);
+
+      await tester.tap(find.text('Unlock this wall for 30'));
+      await tester.pumpAndSettle();
+
+      verify(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'B'))).called(1);
+    });
+
+    testWidgets('who signs in and already owns the wall gets no unlock sheet', (tester) async {
+      final DropsState owned = loaded(
+        dropEntity(),
+        unlocked: {'B': const DropUnlock(wallId: 'B', weekKey: '2026-W42', url: 'https://full.test/B.jpg')},
+      );
+      dropSignIn = (_) async {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'owner-uid'
+          ..loggedIn = true;
+        when(() => bloc.state).thenReturn(owned);
+        return true;
+      };
+      await openSheet(tester, loaded(dropEntity()));
+
+      expect(find.byType(DropUnlockSheet), findsNothing);
+    });
+
+    testWidgets('who signs in and already owns every wall gets no pack sheet', (tester) async {
+      final DropsState owned = loaded(
+        dropEntity(),
+        unlocked: {
+          for (final String id in <String>['A', 'B', 'C', 'D'])
+            id: DropUnlock(wallId: id, weekKey: '2026-W42', url: 'https://full.test/$id.jpg'),
+        },
+      );
+      dropSignIn = (_) async {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'owner-uid'
+          ..loggedIn = true;
+        when(() => bloc.state).thenReturn(owned);
+        return true;
+      };
+      await openSheet(tester, loaded(dropEntity()), wallId: null);
+
+      expect(find.byType(DropUnlockSheet), findsNothing);
+    });
+  });
+
   group('rename sheet', () {
     testWidgets('Done sends the trimmed name and the sheet closes through its exit animation', (tester) async {
       final DropEntity drop = dropWithin(const Duration(days: 3));
@@ -603,3 +693,5 @@ void main() {
     });
   });
 }
+
+Future<bool> _unexpectedSignIn(BuildContext context) => throw StateError('a signed-in user must not see sign-in');

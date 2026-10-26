@@ -654,19 +654,17 @@ void main() {
 
     tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    test('a guest never asks for the Drop, which the rules refuse without sign-in', () async {
+    test('a guest gets the live Drop page too, as a reason to sign up', () async {
       app_state.prismUser = app_constants.createGuestPrismUser();
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(dropEntity()));
       final bloc = build();
 
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
-      bloc.add(const PersonalizedFeedEvent.refreshRequested());
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
 
-      verifyNever(() => dropsRepository.fetchLive(any()));
-      expect(bloc.state.liveDrop, isNull);
+      verify(() => dropsRepository.fetchLive(any())).called(1);
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
       expect(bloc.state.items.map((e) => e.id), <String>['1']);
     });
 

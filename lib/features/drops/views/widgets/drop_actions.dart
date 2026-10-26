@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
@@ -12,12 +14,32 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Opens the sign-in sheet and completes with true once the user signed in. Tests replace it.
+@visibleForTesting
+Future<bool> Function(BuildContext context) dropSignIn = (context) => googleSignInPopUp(context, () {});
+
 /// Opens the unlock sheet for a locked [wall], or for every wall left when [wall] is null, and sends the choice to the
-/// bloc.
+/// bloc. A guest signs in first, then gets the sheet unless the account already owns what they asked for.
 void askToUnlock(BuildContext context, DropsState state, DropWall? wall) {
+  if (state.drop == null) return;
+  PrismHaptics.tap();
+  if (app_state.prismUser.loggedIn) {
+    _showUnlockSheet(context, state, wall);
+    return;
+  }
+  final DropsBloc bloc = context.read<DropsBloc>();
+  unawaited(
+    dropSignIn(context).then((bool signedIn) {
+      if (!signedIn || !context.mounted || !app_state.prismUser.loggedIn) return;
+      if (wall == null ? bloc.state.lockedWalls.isEmpty : bloc.state.unlocked.containsKey(wall.id)) return;
+      _showUnlockSheet(context, bloc.state, wall);
+    }),
+  );
+}
+
+void _showUnlockSheet(BuildContext context, DropsState state, DropWall? wall) {
   final DropEntity? drop = state.drop;
   if (drop == null) return;
-  PrismHaptics.tap();
   final DropsBloc bloc = context.read<DropsBloc>();
   unawaited(
     showDropUnlockSheet(
