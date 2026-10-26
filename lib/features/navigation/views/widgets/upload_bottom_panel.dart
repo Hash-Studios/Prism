@@ -16,6 +16,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -35,6 +36,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   UploadDraft? _latestDraft;
   late String _latestDraftOwner = _draftOwner;
   int _draftLookupGeneration = 0;
+  bool _picking = false;
 
   String get _draftOwner => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty
       ? app_state.prismUser.id
@@ -90,6 +92,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 
   Future<void> _onWallpaperTap() async {
+    if (_picking) return;
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadWallpaperSelected,
@@ -108,7 +111,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       return;
     }
     PrismHaptics.tap();
-    await _pickWallpaperImage();
+    _picking = true;
+    try {
+      await _pickWallpaperImage();
+    } on PlatformException catch (error) {
+      // already_active means another screen has the gallery open, and the user is choosing there.
+      if (error.code != 'already_active') rethrow;
+    } finally {
+      _picking = false;
+    }
   }
 
   void _onAiTap() {
