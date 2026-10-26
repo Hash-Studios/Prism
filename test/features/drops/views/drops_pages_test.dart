@@ -486,6 +486,36 @@ void main() {
     });
   });
 
+  group('rename sheet', () {
+    testWidgets('Done sends the trimmed name and the sheet closes through its exit animation', (tester) async {
+      final DropEntity drop = dropWithin(const Duration(days: 3));
+      await pump(
+        tester,
+        at(drop),
+        BlocProvider<DropsBloc>.value(
+          value: bloc,
+          child: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  TextButton(onPressed: () => askToRenameDrop(context, drop), child: const Text('rename')),
+            ),
+          ),
+        ),
+      );
+      tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+      await tester.tap(find.text('rename'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '  Night Swim ');
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TextField), findsNothing);
+      verify(() => bloc.add(const DropsEvent.renameRequested(title: 'Night Swim'))).called(1);
+    });
+  });
+
   group('DropDetailPage', () {
     final ended = dropEntity(
       weekKey: '2026-W41',

@@ -4652,7 +4652,7 @@
     }
   },
   "economyDropWallpaperUnavailable": "Wallpaper ini tidak tersedia",
-  "economyDropWeekOf": "Minggu {date}",
+  "economyDropWeekOf": "Pekan {date}",
   "@economyDropWeekOf": {
     "placeholders": {
       "date": {

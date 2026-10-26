@@ -52,29 +52,52 @@ void toastUnlockResult(BuildContext context, DropUnlockResult result) {
 /// Admins only: asks for a new name for [drop] and sends it to the bloc.
 Future<void> askToRenameDrop(BuildContext context, DropEntity drop) async {
   final DropsBloc bloc = context.read<DropsBloc>();
-  final TextEditingController name = TextEditingController(text: drop.displayTitle(context.l10n));
   final String? title = await showPrismSheet<String>(
     context,
-    builder: (sheetContext) => PrismSheetBody(
-      title: sheetContext.l10n.economyDropRename,
+    builder: (_) => _RenameDropSheet(initial: drop.displayTitle(context.l10n)),
+  );
+  if (title == null || title.isEmpty) return;
+  bloc.add(DropsEvent.renameRequested(title: title));
+}
+
+/// Owns its text controller, so the controller lives until the sheet's exit animation ends.
+class _RenameDropSheet extends StatefulWidget {
+  const _RenameDropSheet({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_RenameDropSheet> createState() => _RenameDropSheetState();
+}
+
+class _RenameDropSheetState extends State<_RenameDropSheet> {
+  late final TextEditingController _name = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismSheetBody(
+      title: context.l10n.economyDropRename,
       actions: <Widget>[
         PrismButton(
-          label: sheetContext.l10n.actionDone,
+          label: context.l10n.actionDone,
           expand: true,
-          onPressed: () => Navigator.of(sheetContext).pop(name.text.trim()),
+          onPressed: () => Navigator.of(context).pop(_name.text.trim()),
         ),
       ],
       child: PrismTextField(
-        controller: name,
-        hint: sheetContext.l10n.economyDropRenameHint,
+        controller: _name,
+        hint: context.l10n.economyDropRenameHint,
         maxLength: 40,
         autofocus: true,
       ),
-    ),
-  );
-  name.dispose();
-  if (title == null || title.isEmpty) return;
-  bloc.add(DropsEvent.renameRequested(title: title));
+    );
+  }
 }
 
 void toastRenameResult(BuildContext context, DropRenameResult result) {

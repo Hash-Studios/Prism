@@ -5309,7 +5309,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String economyDropWeekOf(String date) {
-    return 'Minggu $date';
+    return 'Pekan $date';
   }
 
   @override
