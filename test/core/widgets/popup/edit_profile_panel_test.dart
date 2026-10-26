@@ -9,14 +9,17 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
 import '../../../support/fake_firestore_client.dart';
+import '../../../support/pending_image_picker.dart';
 import '../../../support/profile_user_fixture.dart';
 
 void main() {
@@ -109,6 +112,47 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  group('photo picker', () {
+    late ImagePickerPlatform previousPicker;
+    late PendingImagePicker picker;
+
+    setUp(() {
+      previousPicker = ImagePickerPlatform.instance;
+      picker = PendingImagePicker();
+      ImagePickerPlatform.instance = picker;
+    });
+
+    tearDown(() => ImagePickerPlatform.instance = previousPicker);
+
+    testWidgets('a second tap while the gallery is open does not open it again', (tester) async {
+      await pumpPanel(tester);
+
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+
+      expect(picker.calls, 1);
+      picker.finish(const <String>[]);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pump();
+      expect(picker.calls, 2);
+      picker.finish(const <String>[]);
+    });
+
+    testWidgets('a gallery another screen holds open is not an error', (tester) async {
+      await pumpPanel(tester);
+      unawaited(picker.getImageFromSource(source: ImageSource.gallery));
+
+      await tester.tap(find.byKey(EditProfileHeader.changeCoverKey));
+      await tester.pumpAndSettle();
+
+      expect(picker.calls, 2);
+      expect(saveEnabled(tester), isFalse);
+    });
   });
 
   testWidgets('editing the name enables Save', (tester) async {
