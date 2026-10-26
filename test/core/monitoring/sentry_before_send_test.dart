@@ -59,4 +59,14 @@ void main() {
 
     expect(dropNetworkNoise(event, Hint()), isNull);
   });
+
+  test('stops the iOS SDK from reporting HTTP errors that Firebase and ad SDKs already handle', () {
+    final options = SentryFlutterOptions(dsn: 'https://key@example.ingest.sentry.io/1');
+
+    applyNetworkNoiseFilters(options);
+
+    expect(options.captureNativeFailedRequests, isFalse);
+    expect(options.beforeSend?.call(SentryEvent(throwable: const SocketException('x')), Hint()), isNull);
+    expect(options.beforeSend?.call(SentryEvent(throwable: StateError('bug')), Hint()), isNotNull);
+  });
 }
