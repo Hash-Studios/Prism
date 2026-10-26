@@ -141,6 +141,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         entity: wall.toFeedItem(),
         analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
         heroTag: prismHeroTag(this, index, wall.id),
+        feed: walls.map((w) => w.toFeedItem()).toList(growable: false),
       ),
     );
   }

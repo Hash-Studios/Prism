@@ -27,12 +27,16 @@ class WallpaperTile extends StatelessWidget {
     this.overlay,
     this.impressionSession,
     this.onVisible,
+    this.feed,
   });
 
   final FeedItemEntity item;
   final int index;
   final WallpaperImpressionSession? impressionSession;
   final VoidCallback? onVisible;
+
+  /// The loaded walls of this tile's feed, for swiping between them in the detail page.
+  final List<FeedItemEntity>? feed;
 
   /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
@@ -111,7 +115,9 @@ class WallpaperTile extends StatelessWidget {
                 ),
               ),
             );
-            context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId));
+            context.router.push(
+              WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId, feed: feed),
+            );
           },
         ),
       ),

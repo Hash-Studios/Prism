@@ -206,6 +206,7 @@ class _SearchGridState extends State<SearchGrid> {
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
         requestId: widget.searchId,
         heroTag: prismHeroTag(this, index, wallpaper.id),
+        feed: List<FeedItemEntity>.of(_results),
       ),
     );
   }
@@ -227,6 +228,7 @@ class _SearchGridState extends State<SearchGrid> {
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
         requestId: widget.searchId,
         heroTag: prismHeroTag(widget.prismResults, index, wallpaper.id),
+        feed: widget.prismResults,
       ),
     );
   }
