@@ -163,11 +163,11 @@ const AI_DEFAULT_CONFIG: AiRoutingConfig = {
       enabled: true,
       weight: 100,
       modelByQuality: {
-        fast: 'fal-ai/flux/schnell',
-        balanced: 'fal-ai/bytedance/seedream/v5/lite/text-to-image',
-        quality: 'fal-ai/bytedance/seedream/v4.5/text-to-image',
+        fast: 'fal-ai/z-image/turbo',
+        balanced: 'meta/muse-image/text-to-image',
+        quality: 'openai/gpt-image-2.5/sunburst/text-to-image',
       },
-      estimatedCostByQualityUsd: { fast: 0.006, balanced: 0.04, quality: 0.04 },
+      estimatedCostByQualityUsd: { fast: 0.015, balanced: 0.01, quality: 0.07 },
       dailyBudgetUsd: 30,
       monthlyBudgetUsd: 600,
       timeoutMs: 25000,
@@ -2048,9 +2048,11 @@ function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
   return env.AI_QUOTA_DO.get(id);
 }
 
-interface StudioModel {
+interface FalModel {
   costUsd: number;
   imageSize?: (width: number, height: number) => { width: number; height: number };
+  // Least time a consumer request waits for this model; slow models outlast the routing config timeout.
+  minTimeoutMs?: number;
   buildBody(prompt: string, width: number, height: number, seed?: number): Record<string, unknown>;
 }
 
@@ -2068,12 +2070,16 @@ interface StudioGenerationResult {
   terminal: boolean;
 }
 
-// Models the internal studio pipeline may call. Adding a model is one entry here.
-const STUDIO_MODELS: Record<string, StudioModel> = {
-  // Default studio model: first on the LMArena and Artificial Analysis image boards (Oct 2026), exact phone sizes.
+// fal models with a known request shape, for the studio pipeline and consumer tiers. Adding a model is one entry here.
+// Studio may call only these. A consumer model that is not here gets the generic prompt, image_size and seed body.
+const FAL_MODELS: Record<string, FalModel> = {
+  // Default studio and quality tier model: first on the LMArena and Artificial Analysis image boards (Oct 2026),
+  // exact phone sizes.
   'openai/gpt-image-2.5/sunburst/text-to-image': {
     costUsd: 0.07,
     imageSize: gptImageSize,
+    // Phone sizes took 24 to 40 seconds in an Oct 2026 test.
+    minTimeoutMs: 50000,
     // GPT Image 2.5 has no seed input.
     buildBody: (prompt, width, height) => ({
       prompt,
@@ -2099,12 +2105,37 @@ const STUDIO_MODELS: Record<string, StudioModel> = {
   'fal-ai/bytedance/seedream/v5/lite/text-to-image': {
     costUsd: 0.04,
     imageSize: seedreamImageSize,
+    // Phone sizes took 24 to 35 seconds in an Oct 2026 test.
+    minTimeoutMs: 45000,
     // v5 lite documents no seed input, so no seed is sent.
     buildBody: (prompt, width, height) => ({
       prompt,
       image_size: { width, height },
       num_images: 1,
       enable_safety_checker: true,
+    }),
+  },
+  // Fast tier: $0.005 per megapixel.
+  'fal-ai/z-image/turbo': {
+    costUsd: 0.015,
+    buildBody: (prompt, width, height, seed) => ({
+      prompt,
+      image_size: { width, height },
+      seed,
+      num_images: 1,
+      enable_safety_checker: true,
+      output_format: 'jpeg',
+    }),
+  },
+  // Balanced tier: $0.01 per image.
+  'meta/muse-image/text-to-image': {
+    costUsd: 0.01,
+    // Muse takes only an aspect ratio and picks its own size of about 2.5 MP. It has no seed input.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      aspect_ratio: `${width}:${height}`,
+      num_images: 1,
+      output_format: 'jpeg',
     }),
   },
 };
@@ -2223,7 +2254,7 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid studio generation payload');
   }
-  if (!Object.hasOwn(STUDIO_MODELS, parsed.model)) {
+  if (!Object.hasOwn(FAL_MODELS, parsed.model)) {
     return aiError('invalid_request', 400, 'Unsupported studio model');
   }
   if (!isNonEmptyString(studioFalKey(env))) {
@@ -2247,7 +2278,7 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
     return aiError('in_progress', 409, 'This studio generation is already running');
   }
 
-  const result = await runStudioGeneration(parsed, STUDIO_MODELS[parsed.model], env);
+  const result = await runStudioGeneration(parsed, FAL_MODELS[parsed.model], env);
   await sendStudioMutation(
     env,
     result.terminal
@@ -2286,7 +2317,7 @@ function isStudioEdge(value: unknown): value is number {
 
 async function runStudioGeneration(
   request: StudioGenerateRequest,
-  studioModel: StudioModel,
+  studioModel: FalModel,
   env: AiEnvBindings,
 ): Promise<StudioGenerationResult> {
   let reservation: AiQuotaProviderBudgetReserveResponse;
@@ -2974,15 +3005,14 @@ class FalProviderAdapter implements AiProviderAdapter {
       throw new Error('FAL_API_KEY missing');
     }
     const endpoint = `https://fal.run/${params.model}`;
+    const known = Object.hasOwn(FAL_MODELS, params.model) ? FAL_MODELS[params.model] : undefined;
     const requestedSize = parseSize(params.targetSize);
-    const { width, height } = params.model.includes('seedream')
-      ? seedreamImageSize(requestedSize.width, requestedSize.height)
-      : requestedSize;
-    const requestBody = {
-      prompt: `${params.prompt}, ${params.stylePreset} style`,
-      image_size: { width, height },
-      seed: params.seed,
-    };
+    const { width, height } = known?.imageSize?.(requestedSize.width, requestedSize.height)
+      ?? (params.model.includes('seedream') ? seedreamImageSize(requestedSize.width, requestedSize.height) : requestedSize);
+    const prompt = `${params.prompt}, ${params.stylePreset} style`;
+    const requestBody = known?.buildBody(prompt, width, height, params.seed)
+      ?? { prompt, image_size: { width, height }, seed: params.seed };
+    const timeoutMs = Math.max(params.timeoutMs, known?.minTimeoutMs ?? 0);
     const response = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: {
@@ -2990,7 +3020,7 @@ class FalProviderAdapter implements AiProviderAdapter {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
-    }, params.timeoutMs);
+    }, timeoutMs);
 
     if (!response.ok) {
       const details = await readErrorDetails(response);
@@ -2998,10 +3028,11 @@ class FalProviderAdapter implements AiProviderAdapter {
     }
     await params.onProviderBilled();
     const payload = await response.json() as {
-      images?: Array<{ url?: string }>;
-      image?: { url?: string };
+      images?: Array<{ url?: string; width?: number; height?: number }>;
+      image?: { url?: string; width?: number; height?: number };
     };
-    const imageUrl = payload.images?.[0]?.url ?? payload.image?.url;
+    const image = payload.images?.[0] ?? payload.image;
+    const imageUrl = image?.url;
     if (!isNonEmptyString(imageUrl)) {
       throw new Error('fal_missing_image');
     }
@@ -3014,8 +3045,7 @@ class FalProviderAdapter implements AiProviderAdapter {
     return {
       model: params.model,
       seed: params.seed,
-      width,
-      height,
+      ...reportedSize(image, { width, height }),
       contentType,
       imageBytes,
       estimatedCostUsd: params.estimatedCostUsd,
@@ -3110,6 +3140,18 @@ function parseSize(raw: string): { width: number; height: number } {
 // fal Seedream needs at least 2560x1440 total pixels and at most 4096 on each edge.
 const SEEDREAM_MIN_PIXELS = 2560 * 1440;
 const SEEDREAM_MAX_EDGE = 4096;
+
+// Muse picks its own size, so prefer the size fal reports over the size we asked for.
+function reportedSize(
+  image: { width?: number; height?: number } | undefined,
+  requested: { width: number; height: number },
+): { width: number; height: number } {
+  const width = image?.width;
+  const height = image?.height;
+  return Number.isInteger(width) && Number.isInteger(height)
+    ? { width: width as number, height: height as number }
+    : requested;
+}
 
 export function seedreamImageSize(width: number, height: number): { width: number; height: number } {
   // One factor for both edges keeps the requested aspect ratio.

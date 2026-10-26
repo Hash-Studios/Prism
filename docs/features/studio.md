@@ -85,7 +85,7 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 
 The default is GPT Image 2.5 Sunburst on fal at `high` quality, about $0.07 for one 1440x3200 image. It was first on the LMArena and Artificial Analysis image boards in October 2026, and it makes the exact phone size with no crop or upscale. It has no seed input.
 
-The worker also allows Seedream 4.5 and Seedream 5 Lite. Both reserve $0.04 per image in the worker. To change the model, set `studioConfig/current.model`. A model must be in `STUDIO_MODELS` in `infra/cloudflare/worker/src/ai.ts`. The worker rejects an unknown model before a provider call.
+The worker also allows Seedream 4.5 and Seedream 5 Lite. Both reserve $0.04 per image in the worker. To change the model, set `studioConfig/current.model`. A model must be in `FAL_MODELS` in `infra/cloudflare/worker/src/ai.ts`. The worker rejects an unknown model before a provider call.
 
 No visual test of the models was run yet. Compare the first week of candidates before you commit to one model.
 

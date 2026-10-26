@@ -172,8 +172,10 @@ Config supports:
 - provider weights (weighted primary routing)
 - quality tier model mapping (`fast`, `balanced`, `quality`)
 - per-provider daily/monthly budget caps
-- timeout + fallback order
+- timeout + fallback order (a slow model in `FAL_MODELS` sets a higher minimum timeout itself)
 - hard user daily cap
+
+A fal model in `FAL_MODELS` (`src/ai.ts`) gets its own request body and size. Any other fal model gets `prompt`, `image_size` and `seed`.
 - automatic cost guardrails:
   - `70%` usage: route fallbacks to cheaper providers first
   - `85%` usage: pick cheapest provider as primary, downgrade `quality -> balanced`

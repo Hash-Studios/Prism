@@ -653,7 +653,7 @@ test('a failed image download keeps the daily cap and the budget spend because f
   }
 
   const spent = await storage.get(`provider:fal:daily:${new Date().toISOString().slice(0, 10)}`);
-  assert.equal(spent, 0.006);
+  assert.equal(spent, 0.015);
 });
 
 test('a watermark failure still returns success, keeps the original and defers the public image', async () => {
@@ -706,7 +706,12 @@ test('Seedream sizing keeps the requested aspect ratio and meets the fal pixel m
 });
 
 test('a Seedream generation sends and reports a size with the requested aspect ratio', async () => {
-  const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    providers: { fal: { modelByQuality: { quality: 'fal-ai/bytedance/seedream/v4.5/text-to-image' } } },
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }));
   const stats = {};
   const restore = mockFal({ stats });
   let body;
@@ -720,6 +725,65 @@ test('a Seedream generation sends and reports a size with the requested aspect r
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v4.5/text-to-image');
   assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
   assert.deepEqual({ width: body.width, height: body.height }, stats.falRequest.body.image_size);
+});
+
+async function generateWith(extra, falPayload = {}) {
+  const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const stats = {};
+  const restore = mockFal({ stats, falPayload });
+  try {
+    const response = await postGeneration(env, extra);
+    assert.equal(response.status, 200);
+    return { stats, body: await response.json() };
+  } finally {
+    restore();
+  }
+}
+
+test('the quality tier sends GPT Image 2.5 its own body and size, with no seed', async () => {
+  const { stats } = await generateWith({ qualityTier: 'quality', targetSize: '944x2048', seed: 7 });
+  assert.equal(stats.falRequest.url, 'https://fal.run/openai/gpt-image-2.5/sunburst/text-to-image');
+  assert.equal(stats.falRequest.body.quality, 'high');
+  assert.deepEqual(stats.falRequest.body.image_size, gptImageSize(944, 2048));
+  assert.equal('seed' in stats.falRequest.body, false);
+});
+
+test('the balanced tier sends Muse an aspect ratio and reports the size Muse returns', async () => {
+  const { stats, body } = await generateWith(
+    { qualityTier: 'balanced', targetSize: '944x2048', seed: 7 },
+    { images: [{ url: 'https://fal.media/image.png', width: 1072, height: 2336 }] },
+  );
+  assert.equal(stats.falRequest.url, 'https://fal.run/meta/muse-image/text-to-image');
+  assert.equal(stats.falRequest.body.aspect_ratio, '944:2048');
+  assert.equal('image_size' in stats.falRequest.body, false);
+  assert.equal('seed' in stats.falRequest.body, false);
+  assert.deepEqual({ width: body.width, height: body.height }, { width: 1072, height: 2336 });
+});
+
+test('the fast tier sends Z-Image the requested size and seed', async () => {
+  const { stats, body } = await generateWith({ qualityTier: 'fast', targetSize: '944x2048', seed: 7 });
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/z-image/turbo');
+  assert.deepEqual(stats.falRequest.body.image_size, { width: 944, height: 2048 });
+  assert.equal(stats.falRequest.body.seed, 7);
+  assert.deepEqual({ width: body.width, height: body.height }, { width: 944, height: 2048 });
+});
+
+test('a configured model with no known shape still gets the generic body', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    providers: { fal: { modelByQuality: { fast: 'fal-ai/flux/schnell' } } },
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    assert.equal((await postGeneration(env, { targetSize: '944x2048', seed: 7 })).status, 200);
+  } finally {
+    restore();
+  }
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/flux/schnell');
+  assert.deepEqual(Object.keys(stats.falRequest.body).sort(), ['image_size', 'prompt', 'seed']);
 });
 
 function chargeDoc(overrides = {}) {
