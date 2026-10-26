@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.12.0
+- Swipe between wallpapers right on the card, and it shrinks back into its tile when you close it
+- Pick your own accent colour, and your theme now follows your account to every device
+- A free Diwali theme with diyas and fireworks, and a Default app icon to switch back to
+- Your first AI wallpaper is on us
+- Drops are easier to spot, have real names, and guests can see the live Drop
+- On iPhone, AI generation shows as a Live Activity
+- Profile bio links you can tap, and usernames keep their own casing
+- Security and stability fixes
+
 ### v3.11.0
 - A free Spooky Halloween theme
 - Pinch to zoom a wallpaper in and out, Pinterest style
