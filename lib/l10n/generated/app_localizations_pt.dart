@@ -3123,6 +3123,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugAdminShortcuts => 'Atalhos de admin';
 
   @override
+  String get debugLiveActivityPreview => 'Pré-visualizar Live Activity';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Executa uma atividade de exemplo: pronta após 8 segundos';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live Activities estão desativadas ou não são compatíveis';
+
+  @override
   String get debugAllTags => 'Todas as tags';
 
   @override
@@ -3804,6 +3813,21 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'O corte pode ser um pouco diferente no seu dispositivo.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Criando seu papel de parede';
+
+  @override
+  String get aiLiveActivityReady => 'Seu papel de parede está pronto';
+
+  @override
+  String get aiLiveActivityFailed => 'Não foi possível criar';
+
+  @override
+  String get aiLiveActivityStale => 'Ainda trabalhando nisso';
+
+  @override
+  String get aiLiveActivityOpen => 'Abrir no Prism';
 
   @override
   String get economyAiDailyLimit => 'Você atingiu o limite de IA de hoje.';
@@ -13118,6 +13142,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get debugAdminShortcuts => 'Atalhos de admin';
 
   @override
+  String get debugLiveActivityPreview => 'Pré-visualizar Live Activity';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Executa uma atividade de exemplo: pronta após 8 segundos';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live Activities estão desativadas ou não são compatíveis';
+
+  @override
   String get debugAllTags => 'Todas as tags';
 
   @override
@@ -13799,6 +13832,21 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get economyAiCropMayDiffer => 'O corte pode ser um pouco diferente no seu dispositivo.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Criando seu papel de parede';
+
+  @override
+  String get aiLiveActivityReady => 'Seu papel de parede está pronto';
+
+  @override
+  String get aiLiveActivityFailed => 'Não foi possível criar';
+
+  @override
+  String get aiLiveActivityStale => 'Ainda trabalhando nisso';
+
+  @override
+  String get aiLiveActivityOpen => 'Abrir no Prism';
 
   @override
   String get economyAiDailyLimit => 'Você atingiu o limite de IA de hoje.';

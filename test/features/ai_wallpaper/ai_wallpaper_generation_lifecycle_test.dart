@@ -11,6 +11,8 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/live_activity_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -188,6 +190,40 @@ class _GenerationUser extends Fake implements User {
 class _GenerationAuth extends Fake implements FirebaseAuth {
   @override
   User get currentUser => _GenerationUser();
+}
+
+class _FailingLiveActivityApi extends PrismLiveActivityHostApi {
+  @override
+  Future<String?> startAiGeneration(AiActivityRequest request) async => throw StateError('host failed');
+}
+
+class _RecordingLiveActivityApi extends PrismLiveActivityHostApi {
+  final List<String> calls = <String>[];
+  final Completer<void> startEntered = Completer<void>();
+  Completer<String?>? startGate;
+  int starts = 0;
+
+  @override
+  Future<String?> startAiGeneration(AiActivityRequest request) {
+    starts++;
+    if (!startEntered.isCompleted) startEntered.complete();
+    return startGate?.future ?? Future<String?>.value('activity-$starts');
+  }
+
+  @override
+  Future<void> finishAiGeneration(String activityId, String imageUrl) async {
+    calls.add('finish:$activityId:$imageUrl');
+  }
+
+  @override
+  Future<void> failAiGeneration(String activityId, String detail) async {
+    calls.add('fail:$activityId');
+  }
+
+  @override
+  Future<void> cancelAiGeneration(String activityId) async {
+    calls.add('cancel:$activityId');
+  }
 }
 
 AiGenerationRecord _record({
@@ -435,6 +471,15 @@ void main() {
     testWidgets('old generation $outcome cannot publish, commit or refund in a replacement session', (tester) async {
       final analytics = _RecordingAnalytics();
       AnalyticsRuntime.instance = analytics;
+      final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+      final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+      addTearDown(() {
+        LiveActivityChannel.api = originalApi;
+        LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+      });
+      final api = _RecordingLiveActivityApi();
+      LiveActivityChannel.api = api;
+      LiveActivityChannel.isSupportedPlatform = () => true;
       final generation = Completer<AiGenerationRecord>();
       final refunds = <String>[];
       var historyReads = 0;
@@ -491,6 +536,7 @@ void main() {
       ]);
       expect(analytics.events.whereType<AiChargeCommittedEvent>(), isEmpty);
       expect(refunds, isEmpty);
+      expect(api.calls, <String>['cancel:activity-1']);
       expect(toasts, isEmpty);
       expect(app_state.prismUser.coins, 77);
       await tester.pump(const Duration(seconds: 2));
@@ -1017,9 +1063,26 @@ void main() {
     expect(app_state.prismUser.coins, 100);
   });
 
+  Map<String, Object> coinReply(String name, {bool refundChanged = true}) => <String, Object>{
+    'success': name != 'awardCoins' || refundChanged,
+    'changed': name != 'awardCoins' || refundChanged,
+    'currentBalance': name == 'awardCoins' ? 100 : 90,
+    'delta': name == 'awardCoins' ? 10 : -10,
+    'transactionId': 'reservation-1',
+  };
+
   testWidgets('a started-event failure cannot cancel a paid generation', (tester) async {
     final recorder = _RecordingAnalytics(throwOn: (event) => event is AiGenerateStartedEvent);
     AnalyticsRuntime.instance = recorder;
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
     var requests = 0;
     final refunds = await generateAndCountRefunds(tester, () async {
       requests++;
@@ -1028,6 +1091,7 @@ void main() {
 
     expect(refunds, 0);
     expect(requests, 1);
+    expect(api.starts, 1);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
     expect(find.text('Generate'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -1045,13 +1109,236 @@ void main() {
     expect(app_state.prismUser.coins, 90);
   });
 
-  Map<String, Object> coinReply(String name, {bool refundChanged = true}) => <String, Object>{
-    'success': name != 'awardCoins' || refundChanged,
-    'changed': name != 'awardCoins' || refundChanged,
-    'currentBalance': name == 'awardCoins' ? 100 : 90,
-    'delta': name == 'awardCoins' ? 10 : -10,
-    'transactionId': 'reservation-1',
-  };
+  testWidgets('a successful generation finishes its activity before follow-up analytics can fail', (tester) async {
+    final recorder = _RecordingAnalytics(throwOn: (event) => event is AiGenerateSuccessEvent);
+    AnalyticsRuntime.instance = recorder;
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record(id: 'generated-1'));
+    await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(api.calls, hasLength(1));
+    expect(api.calls.single, startsWith('finish:activity-1:'));
+    expect(app_state.prismUser.coins, 90);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a retry starts a fresh activity after the first request fails', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    var requests = 0;
+    final repository = _FakeAiGenerationRepository(
+      _record(),
+      generation: () async {
+        if (++requests == 1) throw StateError('provider failed');
+        return _record(id: 'retry-success');
+      },
+    );
+    await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(api.starts, 2);
+    expect(api.calls, <String>['fail:activity-1', 'finish:activity-2:']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('generation continues when starting a live activity fails unexpectedly', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    LiveActivityChannel.api = _FailingLiveActivityApi();
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record(id: 'generated-1'));
+
+    await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
+    final Finder generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.requests, hasLength(1));
+    expect(app_state.prismUser.coins, 90);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('offline generation does not start a live activity', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      connectivity: _FakeConnectivityService(check: () async => false),
+    );
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(api.starts, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a rejected charge does not start a live activity', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'spendCoins') {
+        throw FirebaseFunctionsException(code: 'permission-denied', message: 'denied');
+      }
+      return coinReply(name);
+    });
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(api.starts, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a session change during activity startup cancels activity without starting generation', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi()..startGate = Completer<String?>();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    var refunds = 0;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record());
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') refunds++;
+      return coinReply(name);
+    }, repository: repository);
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pump();
+    await api.startEntered.future;
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    api.startGate!.complete('delayed-activity');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.requests, isEmpty);
+    expect(api.calls, <String>['cancel:delayed-activity']);
+    expect(refunds, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('disposal during activity startup cancels activity and rolls back reservation', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi()..startGate = Completer<String?>();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    var refunds = 0;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record());
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') refunds++;
+      return coinReply(name);
+    }, repository: repository);
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pump();
+    await api.startEntered.future;
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    api.startGate!.complete('delayed-activity');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.requests, isEmpty);
+    expect(api.calls, <String>['cancel:delayed-activity']);
+    expect(refunds, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an unmounted generation failure settles its activity with one cancellation', (tester) async {
+    final PrismLiveActivityHostApi originalApi = LiveActivityChannel.api;
+    final bool Function() originalPlatformCheck = LiveActivityChannel.isSupportedPlatform;
+    addTearDown(() {
+      LiveActivityChannel.api = originalApi;
+      LiveActivityChannel.isSupportedPlatform = originalPlatformCheck;
+    });
+    final api = _RecordingLiveActivityApi();
+    LiveActivityChannel.api = api;
+    LiveActivityChannel.isSupportedPlatform = () => true;
+    final request = Completer<AiGenerationRecord>();
+    final repository = _FakeAiGenerationRepository(_record(), generation: () => request.future);
+    var refunds = 0;
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') refunds++;
+      return coinReply(name);
+    }, repository: repository);
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pump();
+    await tester.pump();
+    expect(repository.requests, hasLength(1));
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    request.completeError(StateError('provider failed'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(api.calls, <String>['cancel:activity-1']);
+    expect(refunds, 1);
+    expect(tester.takeException(), isNull);
+  });
 
   List<String> toastMessages(List<MethodCall> calls) =>
       calls.map((call) => (call.arguments as Map<Object?, Object?>)['msg']! as String).toList();

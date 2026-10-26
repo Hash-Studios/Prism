@@ -3101,6 +3101,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugAdminShortcuts => 'Admin-Kurzbefehle';
 
   @override
+  String get debugLiveActivityPreview => 'Live-Activity-Vorschau';
+
+  @override
+  String get debugLiveActivityPreviewDescription => 'Startet eine Beispiel-Aktivität: fertig nach 8 Sekunden';
+
+  @override
+  String get debugLiveActivityUnavailable => 'Live-Aktivitäten sind aus oder nicht unterstützt';
+
+  @override
   String get debugAllTags => 'Alle Tags';
 
   @override
@@ -3781,6 +3790,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get economyAiCropMayDiffer => 'Der Zuschnitt kann auf deinem Gerät leicht abweichen.';
+
+  @override
+  String get aiLiveActivityGenerating => 'Dein Wallpaper wird erstellt';
+
+  @override
+  String get aiLiveActivityReady => 'Dein Wallpaper ist fertig';
+
+  @override
+  String get aiLiveActivityFailed => 'Konnte nicht erstellt werden';
+
+  @override
+  String get aiLiveActivityStale => 'Arbeitet noch daran';
+
+  @override
+  String get aiLiveActivityOpen => 'In Prism öffnen';
 
   @override
   String get economyAiDailyLimit => 'Du hast das heutige KI-Limit erreicht.';
