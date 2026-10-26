@@ -543,9 +543,6 @@ function mockFal({
       stats.fal = (stats.fal ?? 0) + 1;
       stats.falRequest = { url, authorization: new Headers(init.headers).get('authorization'), body: JSON.parse(init.body) };
       const image = { url: 'https://fal.media/image.png' };
-      if (stats.falRequest.url === 'https://fal.run/meta/muse-image/text-to-image') {
-        Object.assign(image, { width: 1072, height: 2336 });
-      }
       return providerStatus === 200
         ? Response.json({ images: [image], ...falPayload })
         : new Response('boom', { status: providerStatus });
@@ -795,16 +792,15 @@ test('the quality tier sends GPT Image 2.5 its own body and size, with no seed',
   assert.equal('seed' in stats.falRequest.body, false);
 });
 
-test('the balanced tier sends Muse an aspect ratio and reports the size Muse returns', async () => {
+test('the balanced tier sends Seedream 5 Lite its scaled size and reports the size fal returns', async () => {
   const { stats, body } = await generateWith(
     { qualityTier: 'balanced', targetSize: '944x2048', seed: 7 },
-    { images: [{ url: 'https://fal.media/image.png', width: 1072, height: 2336 }] },
+    { images: [{ url: 'https://fal.media/image.png', width: 1880, height: 4080 }] },
   );
-  assert.equal(stats.falRequest.url, 'https://fal.run/meta/muse-image/text-to-image');
-  assert.equal(stats.falRequest.body.aspect_ratio, '944:2048');
-  assert.equal('image_size' in stats.falRequest.body, false);
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v5/lite/text-to-image');
+  assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
   assert.equal('seed' in stats.falRequest.body, false);
-  assert.deepEqual({ width: body.width, height: body.height }, { width: 1072, height: 2336 });
+  assert.deepEqual({ width: body.width, height: body.height }, { width: 1880, height: 4080 });
 });
 
 test('the fast tier sends Z-Image the requested size and seed', async () => {
@@ -817,7 +813,7 @@ test('the fast tier sends Z-Image the requested size and seed', async () => {
 
 test('seedless consumer models return and store a null seed', async () => {
   for (const [qualityTier, model] of [
-    ['balanced', 'meta/muse-image/text-to-image'],
+    ['balanced', 'fal-ai/bytedance/seedream/v5/lite/text-to-image'],
     ['quality', 'openai/gpt-image-2.5/sunburst/text-to-image'],
   ]) {
     const { stats, body, kv } = await generateWith({ qualityTier, targetSize: '944x2048', seed: 7 });
@@ -1072,11 +1068,21 @@ test('unknown configured fal models retain their configured tier estimate', asyn
   assert.equal(JSON.parse(await kv.get(`ai:gen:${body.generationId}`)).estimatedCostUsd, 0.123456);
 });
 
-test('balanced remains Muse near the budget guardrail when its size-aware cost is below Z-Image', async () => {
+test('balanced stays on its model near the budget guardrail when its cost is below Z-Image', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    providers: {
+      fal: {
+        modelByQuality: { balanced: 'fal-ai/custom-cheap' },
+        estimatedCostByQualityUsd: { balanced: 0.01 },
+      },
+    },
+  }));
   const storage = new MemoryStorage();
   await storage.put(`provider:fal:daily:${today()}`, 28.5);
   const stats = {};
-  const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
   const restore = mockFal({ stats });
   let body;
   try {
@@ -1087,14 +1093,7 @@ test('balanced remains Muse near the budget guardrail when its size-aware cost i
     restore();
   }
   assert.equal(body.qualityTier, 'balanced');
-  assert.equal(stats.falRequest.url, 'https://fal.run/meta/muse-image/text-to-image');
-});
-
-test('Muse accepts normalized extreme aspect requests', async () => {
-  for (const [targetSize, aspectRatio] of [['256x768', '256:768'], ['768x256', '768:256']]) {
-    const { stats } = await generateWith({ qualityTier: 'balanced', targetSize });
-    assert.equal(stats.falRequest.body.aspect_ratio, aspectRatio, targetSize);
-  }
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/custom-cheap');
 });
 
 test('the full consumer handler sends GPT a schema-valid body for a 256x768 request', async () => {
@@ -1161,36 +1160,6 @@ test('reported invalid fal dimensions never reach the consumer record', async ()
   assert.deepEqual({ width: body.width, height: body.height }, expected);
   const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
   assert.deepEqual({ width: record.width, height: record.height }, expected);
-});
-
-test('Muse requires positive reported dimensions and fails after billing without saving a generation', async () => {
-  for (const [label, image] of [
-    ['missing dimensions', { url: 'https://fal.media/image.png' }],
-    ['zero width', { url: 'https://fal.media/image.png', width: 0, height: 2336 }],
-    ['negative height', { url: 'https://fal.media/image.png', width: 1072, height: -1 }],
-  ]) {
-    const kv = aiKv(5);
-    const writes = [];
-    const originalPut = kv.put.bind(kv);
-    kv.put = async (key, value, options) => {
-      if (key.startsWith('ai:gen:')) writes.push(key);
-      return originalPut(key, value, options);
-    };
-    const storage = new MemoryStorage();
-    const stats = {};
-    const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
-    const restore = mockFal({ stats, falPayload: { images: [image] } });
-    try {
-      const response = await postGeneration(env, { qualityTier: 'balanced', targetSize: '944x2048' });
-      assert.equal(response.status, 502, label);
-      assert.equal((await response.json()).error, 'provider_error', label);
-    } finally {
-      restore();
-    }
-    assert.equal(stats.fal, 1, label);
-    assert.deepEqual(writes, [], label);
-    assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.01, label);
-  }
 });
 
 test('an unknown Seedream-like model keeps legacy sizing, generic body and configured cost', async () => {
@@ -2386,7 +2355,6 @@ test('studio generation refuses bad bodies and unknown models before any provide
       'negative seed': { seed: -1 },
       'string seed': { seed: '42' },
       'consumer model': { model: 'fal-ai/flux/schnell' },
-      'consumer-only Muse model': { model: 'meta/muse-image/text-to-image' },
       'consumer-only Z-Image model': { model: 'fal-ai/z-image/turbo' },
       'prototype key model': { model: 'constructor' },
       'missing model': { model: undefined },
@@ -2402,7 +2370,7 @@ test('studio generation refuses bad bodies and unknown models before any provide
   assert.equal(stats.fal ?? 0, 0);
 });
 
-test('Studio accepts its literal 512 and 4096 edge bounds and rejects Muse before budget work', async () => {
+test('Studio accepts its literal 512 and 4096 edge bounds', async () => {
   const storage = new MemoryStorage();
   const env = studioEnv(storage);
   const stats = {};
@@ -2412,11 +2380,6 @@ test('Studio accepts its literal 512 and 4096 edge bounds and rejects Muse befor
     assert.equal(below.status, 400);
     const above = await postStudioGeneration(env, { id: 'edge-above-4096', height: 4097 });
     assert.equal(above.status, 400);
-    const muse = await postStudioGeneration(env, {
-      id: 'studio-muse-rejected', model: 'meta/muse-image/text-to-image', width: 1440, height: 3200,
-    });
-    assert.equal(muse.status, 400);
-    assert.equal((await muse.json()).error, 'invalid_request');
     const accepted = await postStudioGeneration(env, {
       id: 'edge-valid-512-4096', model: 'openai/gpt-image-2.5/sunburst/text-to-image', width: 512, height: 4096,
     });

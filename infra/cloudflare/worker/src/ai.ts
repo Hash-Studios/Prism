@@ -165,10 +165,10 @@ const AI_DEFAULT_CONFIG: AiRoutingConfig = {
       weight: 100,
       modelByQuality: {
         fast: 'fal-ai/z-image/turbo',
-        balanced: 'meta/muse-image/text-to-image',
+        balanced: 'fal-ai/bytedance/seedream/v5/lite/text-to-image',
         quality: 'openai/gpt-image-2.5/sunburst/text-to-image',
       },
-      estimatedCostByQualityUsd: { fast: 0.015, balanced: 0.01, quality: 0.07 },
+      estimatedCostByQualityUsd: { fast: 0.015, balanced: 0.04, quality: 0.07 },
       dailyBudgetUsd: 30,
       monthlyBudgetUsd: 600,
       timeoutMs: 25000,
@@ -2203,17 +2203,6 @@ const FAL_MODELS: Record<string, FalModel> = {
       output_format: 'jpeg',
     }),
   },
-  // Balanced tier: $0.01 per image.
-  'meta/muse-image/text-to-image': {
-    costUsd: 0.01,
-    // Muse takes only an aspect ratio and picks its own size of about 2.5 MP. It has no seed input.
-    buildBody: (prompt, width, height) => ({
-      prompt,
-      aspect_ratio: `${width}:${height}`,
-      num_images: 1,
-      output_format: 'jpeg',
-    }),
-  },
 };
 const STUDIO_PROMPT_MAX_CHARS = 2000;
 const STUDIO_MIN_EDGE = 512;
@@ -3168,9 +3157,6 @@ class FalProviderAdapter implements AiProviderAdapter {
         throw new Error('fal_missing_image');
       }
       const actualSize = validReportedSize(image);
-      if (requestBody.aspect_ratio != null && actualSize == null) {
-        throw new Error('fal_missing_image_size');
-      }
       const imageResponse = await deadline.wait(fetch(imageUrl, { method: 'GET', signal: deadline.signal }));
       if (!imageResponse.ok) {
         throw new Error(`fal_image_fetch_${imageResponse.status}`);
@@ -3287,7 +3273,7 @@ function parseSize(raw: string): { width: number; height: number } {
 const SEEDREAM_MIN_PIXELS = 2560 * 1440;
 const SEEDREAM_MAX_EDGE = 4096;
 
-// Muse picks its own size, so prefer the size fal reports over the size we asked for.
+// fal can return a size other than the one we asked for, so prefer the size it reports.
 function validReportedSize(
   image: { width?: number; height?: number } | undefined,
 ): { width: number; height: number } | null {

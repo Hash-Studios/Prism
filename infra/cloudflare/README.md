@@ -175,15 +175,15 @@ Config supports:
 - timeout + fallback order
 - hard user daily cap
 
-The default consumer models are Z-Image Turbo for `fast`, Meta Muse Image for `balanced`, and GPT Image 2.5 Sunburst for `quality`. KV can override these defaults. A known model gets its request body, size rules, and cost estimate from `FAL_MODELS` in `worker/src/ai.ts`:
+The default consumer models are Z-Image Turbo for `fast`, Seedream 5 Lite for `balanced`, and GPT Image 2.5 Sunburst for `quality`. KV can override these defaults. A known model gets its request body, size rules, and cost estimate from `FAL_MODELS` in `worker/src/ai.ts`:
 
 - Z-Image Turbo accepts the requested size and seed. Its estimate is $0.005 per megapixel, calculated from the dimensions sent to fal, not a flat $0.015.
-- Muse accepts an aspect ratio, has no seed input, and returns its own size of about 2.5 MP. Its estimate is $0.01 per image. The consumer response uses the returned dimensions.
+- Seedream 5 Lite has no seed input and applies the Seedream size limits. Its estimate is $0.04 per image. It took 24 to 35 seconds in an October 2026 test, so its fal timeout is at least 45 seconds.
 - GPT Image 2.5 uses `high` quality, has no seed input, and applies its model-specific size limits. Its estimate is $0.07 per image.
 
 An unknown fal model configured in KV gets the generic `prompt`, `image_size`, and `seed` body and the configured cost estimate. Unknown model names that contain `seedream` keep the legacy Seedream size limits. Other unknown models use the requested size.
 
-The Studio route still permits only GPT Image 2.5, Seedream 4.5, and Seedream 5 Lite. Z-Image and Muse are consumer-only and are rejected before a Studio provider call or budget reservation. Studio accepts JPEG output, but that does not add a model to its approved list. Its gates require a portrait image with a short edge of at least 1400, a long edge of at least 3000, and a height-to-width ratio from 2.0 to 2.4. Muse's output of about 2.5 MP is too small for those gates.
+The Studio route still permits only GPT Image 2.5, Seedream 4.5, and Seedream 5 Lite. Z-Image is consumer-only and are rejected before a Studio provider call or budget reservation. Studio accepts JPEG output, but that does not add a model to its approved list. Its gates require a portrait image with a short edge of at least 1400, a long edge of at least 3000, and a height-to-width ratio from 2.0 to 2.4.
 
 Automatic cost guardrails use the cost estimate for the requested size:
 
@@ -191,7 +191,7 @@ Automatic cost guardrails use the cost estimate for the requested size:
 - `85%` usage: pick the cheapest provider as primary and consider `quality -> balanced`.
 - `95%` usage: also consider `balanced -> fast` and avoid a near-exhausted provider when alternatives exist.
 
-A tier downgrade applies only if it does not increase the cost estimate for the requested size. For example, Balanced stays on Muse when Z-Image would cost more. Paid requests are never downgraded.
+A tier downgrade applies only if it does not increase the cost estimate for the requested size. For example, a Balanced model with a lower estimate than Z-Image stays on Balanced. Paid requests are never downgraded.
 
 ### Consumer request deadlines
 
