@@ -167,6 +167,57 @@ class _FeedStep extends InheritedWidget {
       active != oldWidget.active || hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext;
 }
 
+/// The card area that drags the feed. A surface that leaves the tree mid-drag gets no drag end, as the loading
+/// overlay does when its wall finishes loading, so it settles the feed itself after the frame.
+class _FeedDragSurface extends StatefulWidget {
+  const _FeedDragSurface({required this.feed, this.onTap, required this.child});
+
+  final _FeedStep? feed;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  State<_FeedDragSurface> createState() => _FeedDragSurfaceState();
+}
+
+class _FeedDragSurfaceState extends State<_FeedDragSurface> {
+  bool _dragging = false;
+
+  @override
+  void dispose() {
+    final _FeedBrowserState? browser = widget.feed?.browser;
+    if (_dragging && browser != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (browser.mounted) browser._dragEnd(0);
+      });
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _FeedStep? feed = widget.feed;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onHorizontalDragStart: feed == null
+          ? null
+          : (_) {
+              _dragging = true;
+              feed.dragStart();
+            },
+      onHorizontalDragUpdate: feed == null ? null : (details) => feed.dragUpdate(details.primaryDelta ?? 0),
+      onHorizontalDragEnd: feed == null
+          ? null
+          : (details) {
+              _dragging = false;
+              feed.dragEnd(details.primaryVelocity ?? 0);
+            },
+      child: widget.child,
+    );
+  }
+}
+
 /// Pages through a feed in place. Each wall gets its own bloc and screen, as a new route would.
 class _FeedBrowser extends StatefulWidget {
   const _FeedBrowser({required this.screen, required this.feed, required this.start});
@@ -872,13 +923,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           if (feed.hasPrevious) CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
           if (feed.hasNext) CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onHorizontalDragStart: (_) => feed.dragStart(),
-          onHorizontalDragUpdate: (details) => feed.dragUpdate(details.primaryDelta ?? 0),
-          onHorizontalDragEnd: (details) => feed.dragEnd(details.primaryVelocity ?? 0),
-          child: const SizedBox.expand(),
-        ),
+        child: _FeedDragSurface(feed: feed, child: const SizedBox.expand()),
       ),
     );
   }
@@ -1848,15 +1893,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                       if (feed.hasNext)
                         CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
                     },
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              child: _FeedDragSurface(
+                feed: feed,
                 onTap: () {
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
-                onHorizontalDragStart: feed == null ? null : (_) => feed.dragStart(),
-                onHorizontalDragUpdate: feed == null ? null : (details) => feed.dragUpdate(details.primaryDelta ?? 0),
-                onHorizontalDragEnd: feed == null ? null : (details) => feed.dragEnd(details.primaryVelocity ?? 0),
                 child: _withHero(image),
               ),
             ),

@@ -117,11 +117,13 @@ void main() {
   late OfflineAssetFixture offlineAssets;
   final List<FeedItemEntity> blocWalls = <FeedItemEntity>[];
   final List<WallpaperDetailState> blocInitialStates = <WallpaperDetailState>[];
+  final List<Stream<WallpaperDetailState>> blocStreams = <Stream<WallpaperDetailState>>[];
   final List<_MockDetailBloc> createdBlocs = <_MockDetailBloc>[];
 
   setUp(() async {
     blocWalls.clear();
     blocInitialStates.clear();
+    blocStreams.clear();
     createdBlocs.clear();
     offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
     offlineAssets.install();
@@ -137,7 +139,11 @@ void main() {
               recommendations: const RecommendationState.exhausted(),
             )
           : blocInitialStates.removeAt(0);
-      whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: initialState);
+      whenListen(
+        bloc,
+        blocStreams.isEmpty ? const Stream<WallpaperDetailState>.empty() : blocStreams.removeAt(0),
+        initialState: initialState,
+      );
       return bloc;
     });
   });
@@ -365,6 +371,37 @@ void main() {
     final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     expect(find.byType(Hero), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a drag held while the wall finishes loading settles the feed', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    final StreamController<WallpaperDetailState> loads = StreamController<WallpaperDetailState>();
+    addTearDown(loads.close);
+    blocInitialStates.add(const WallpaperDetailInitial());
+    blocStreams.add(loads.stream);
+    blocWalls.add(b);
+    await _pumpFeed(tester, feed: [a, b], open: a);
+    final Finder aCard = find.byWidgetPredicate(
+      (widget) => widget is WallpaperQuickActionRegion && widget.item.id == 'a',
+    );
+    final double restLeft = tester.getRect(aCard).left;
+
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(aCard));
+    await gesture.moveBy(const Offset(-20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-180, 0));
+    await tester.pump();
+    expect(tester.getRect(aCard).left, lessThan(restLeft - 100));
+
+    loads.add(
+      WallpaperDetailLoaded(entity: a, paletteLoading: false, recommendations: const RecommendationState.exhausted()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(aCard).left, closeTo(restLeft, 1));
+    await gesture.up();
     await tester.pumpWidget(const SizedBox());
   });
 
