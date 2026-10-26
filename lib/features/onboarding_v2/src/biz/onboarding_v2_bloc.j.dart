@@ -153,10 +153,6 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       }
     }
 
-    final starterPackData = await _fetchStarterPack().timeout(
-      _onboardingEnrichmentBudget,
-      onTimeout: OnboardingStarterPackData.initial,
-    );
     final wallpaperVm = await _recommendFirstWallpaper();
 
     final latest = state;
@@ -173,7 +169,6 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
               : availableCategories,
           categoryImages: categoryImages,
         ),
-        starterPackData: starterPackData,
         wallpaperData: loadedWallpaper,
       ),
     );
@@ -230,10 +225,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
       }
     } else if (skipInterests) {
+      final starterPackData = await _fetchStarterPack().timeout(
+        _onboardingEnrichmentBudget,
+        onTimeout: OnboardingStarterPackData.initial,
+      );
       emit(
         state.copyWith(
           isAuthLoading: false,
           step: OnboardingV2Step.starterPack,
+          starterPackData: starterPackData,
           skipInterests: true,
           skipStarterPack: false,
           navRequest: null,
@@ -249,6 +249,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
           navRequest: null,
         ),
       );
+      if (skipStarterPack) return;
+      final starterPackData = await _fetchStarterPack();
+      if (state.starterPackData.creators.isEmpty) emit(state.copyWith(starterPackData: starterPackData));
     }
   }
 
@@ -446,7 +449,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
   }
 
-  /// Loads the starter pack sorted by rank, with the top creators preselected.
+  /// Loads the starter pack sorted by rank, with the top creators preselected. Call it only after sign-in: the
+  /// rules refuse creator profile reads from a signed-out user.
   Future<OnboardingStarterPackData> _fetchStarterPack() async {
     final result = await _fetchStarterPackUseCase(const NoParams());
     final seenEmails = <String>{};
