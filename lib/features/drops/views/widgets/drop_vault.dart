@@ -5,7 +5,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
-import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -29,7 +28,7 @@ class DropVault extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _GoldHeader(title: l10n.economyDropYourVault),
+        _SectionHeader(title: l10n.economyDropYourVault),
         for (final DropEntity drop in drops) ...<Widget>[
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(PrismWallGrid.margin + 4, PrismSpace.xxs, 0, PrismSpace.xxs),
@@ -60,7 +59,6 @@ class DropVault extends StatelessWidget {
                           ? l10n.economyDropUnlockedWall
                           : l10n.economyDropUnlockedWallBy(wall.by),
                       onTap: () => openDropWall(context, wall, unlocked[wall.id]!, heroTag: heroTag),
-                      overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
                     ),
                   ),
                 );
@@ -87,7 +85,7 @@ class PastDropRows extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _GoldHeader(title: l10n.economyDropPastDrops),
+        _SectionHeader(title: l10n.economyDropPastDrops),
         Padding(
           padding: PrismWallGrid.padding,
           child: PrismGroup(
@@ -95,10 +93,8 @@ class PastDropRows extends StatelessWidget {
               for (final DropEntity drop in drops)
                 PrismRow(
                   title: drop.displayTitle(context.l10n),
-                  subtitle: l10n.economyDropUnlockedCount(
-                    drop.walls.where((w) => unlocked.containsKey(w.id)).length,
-                    drop.count,
-                  ),
+                  subtitle:
+                      '${drop.datesLabel(l10n)} · ${l10n.economyDropUnlockedCount(drop.walls.where((w) => unlocked.containsKey(w.id)).length, drop.count)}',
                   onTap: () {
                     PrismHaptics.tap();
                     unawaited(context.router.push(DropDetailRoute(weekKey: drop.weekKey)));
@@ -112,23 +108,20 @@ class PastDropRows extends StatelessWidget {
   }
 }
 
-class _GoldHeader extends StatelessWidget {
-  const _GoldHeader({required this.title});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
 
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      header: true,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          PrismWallGrid.margin + 4,
-          PrismSpace.xl,
-          PrismSpace.md,
-          PrismSpace.xs,
-        ),
-        child: Text(title, style: dropCapsStyle(color: dropEyebrowColor(context))),
+    return PrismSectionHeader(
+      title: title,
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        PrismWallGrid.margin + 4,
+        PrismSpace.xl,
+        PrismSpace.md,
+        PrismSpace.xs,
       ),
     );
   }

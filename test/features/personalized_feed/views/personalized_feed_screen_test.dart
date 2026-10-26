@@ -116,6 +116,9 @@ class _FakeDropsRepository implements DropsRepository {
 
   @override
   Future<Result<DropEntity?>> fetchByWeekKey(String weekKey) async => Result.success<DropEntity?>(null);
+
+  @override
+  Future<Result<String>> rename(String weekKey, String title) async => Result.success(title);
 }
 
 void main() {

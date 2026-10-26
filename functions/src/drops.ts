@@ -9,6 +9,8 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
+import {isAdminCaller} from "./adminConfig";
+import {dropMood, isoWeekNumber, pickDropName} from "./dropNames";
 import {sendNotification} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
 
@@ -20,6 +22,19 @@ const WEEK_KEY = /^\d{4}-W\d{2}$/;
 const RELEASE_AFTER_MS = 30 * 86_400_000;
 const WALL_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+
+function isValidDropWeekKey(value: string): boolean {
+  const match = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (!match || !WEEK_KEY.test(value)) return false;
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  if (week < 1 || week > 53) return false;
+  const jan4 = Date.UTC(year, 0, 4);
+  const mondayOffset = (new Date(jan4).getUTCDay() + 6) % 7;
+  const monday = jan4 - mondayOffset * DAY_MS + (week - 1) * 7 * DAY_MS;
+  return weekKey(monday) === value;
+}
 
 export interface DropWall {
   id: string;
@@ -143,16 +158,17 @@ export const planWeeklyDrop = onSchedule(
     }
 
     const config = await loadEconomy(nowMs);
-    const titleSnap = await db.doc("studioConfig/current").get();
-    const titles = titleSnap.data()?.dropTitles;
-    const custom =
-      titles && typeof titles === "object" ?
-        str((titles as Record<string, unknown>)[key]) :
-        "";
+    const recentTitles = (
+      await db.collection("drops").orderBy("startsAt", "desc").limit(12).get()
+    ).docs.map((doc) => normalizeDropTitle(doc.data().title) ?? "");
+    const fallbackTitle = pickDropName(
+      dropMood(docs.map((doc) => doc.data().colors)),
+      recentTitles,
+      isoWeekNumber(key),
+    );
     const {start, end} = weekBounds(nowMs);
-    const drop: DropDoc & { createdAt: admin.firestore.FieldValue } = {
+    const drop: Omit<DropDoc, "title"> & { createdAt: admin.firestore.FieldValue } = {
       weekKey: key,
-      title: custom || `Drop ${key}`,
       startsAt: start,
       endsAt: end,
       priceWall: config.spend.dropWall,
@@ -161,9 +177,20 @@ export const planWeeklyDrop = onSchedule(
       walls: docs.map(snapshotWall),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
+    const configRef = db.doc("studioConfig/current");
     const planned = await db.runTransaction(async (tx) => {
-      if ((await tx.get(dropRef)).exists) return false;
-      tx.set(dropRef, drop);
+      const [currentDrop, currentConfig] = await Promise.all([
+        tx.get(dropRef),
+        tx.get(configRef),
+      ]);
+      if (currentDrop.exists) return false;
+      const titles = currentConfig.data()?.dropTitles;
+      const configuredTitle =
+        titles && typeof titles === "object" && !Array.isArray(titles) &&
+        Object.prototype.hasOwnProperty.call(titles, key) ?
+          normalizeDropTitle((titles as Record<string, unknown>)[key]) :
+          null;
+      tx.set(dropRef, {...drop, title: configuredTitle ?? fallbackTitle});
       for (const doc of docs) {
         tx.update(doc.ref, {dropReserved: false, dropWeek: key});
       }
@@ -174,6 +201,13 @@ export const planWeeklyDrop = onSchedule(
     }
   },
 );
+
+/** Trims, collapses spaces, and returns the title, or null when it is not 1 to 40 characters. */
+export function normalizeDropTitle(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const title = raw.trim().replace(/\s+/g, " ");
+  return title.length >= 1 && title.length <= 40 ? title : null;
+}
 
 const priceOr = (value: unknown, fallback: number): number => {
   const n = int(value, fallback);
@@ -521,5 +555,38 @@ export const sendDropPushes = onSchedule(
   {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
   async () => {
     await sendDuePushes(Date.now());
+  },
+);
+
+export const setDropTitle = onCall(
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 5},
+  async (request: CallableRequest<{weekKey?: unknown; title?: unknown}>) => {
+    const uid = request.auth?.uid?.trim() ?? "";
+    if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
+    if (!(await isAdminCaller(request.auth))) {
+      throw new HttpsError("permission-denied", "Admins only.");
+    }
+    const dropKey = request.data?.weekKey;
+    if (typeof dropKey !== "string" || !isValidDropWeekKey(dropKey)) {
+      throw new HttpsError("invalid-argument", "weekKey is invalid.");
+    }
+    const title = normalizeDropTitle(request.data?.title);
+    if (title === null) {
+      throw new HttpsError("invalid-argument", "title must be 1 to 40 characters.");
+    }
+
+    const dropRef = db.collection("drops").doc(dropKey);
+    const configRef = db.doc("studioConfig/current");
+    let applied: "drop" | "planned" = "planned";
+    await db.runTransaction(async (tx) => {
+      if ((await tx.get(dropRef)).exists) {
+        tx.update(dropRef, {title});
+        applied = "drop";
+      } else {
+        tx.set(configRef, {dropTitles: {[dropKey]: title}}, {merge: true});
+      }
+    });
+    logger.info("drops: renamed", {weekKey: dropKey, applied});
+    return {title, applied};
   },
 );

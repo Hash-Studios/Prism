@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
@@ -36,43 +37,54 @@ class _DropDetailView extends StatelessWidget {
     return PrismPage(
       maxContentWidth: double.infinity,
       title: context.l10n.economyDropTitle,
-      body: BlocConsumer<DropsBloc, DropsState>(
-        listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
-        listener: (context, state) => toastUnlockResult(context, state.lastResult!),
-        builder: (context, state) {
-          if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-            return const LoadingCards();
-          }
-          final DropEntity? drop = state.drop;
-          if (state.status == LoadStatus.failure) {
-            return GlintState(
-              kind: GlintStateKind.error,
-              title: context.l10n.economyDropLoadFailed,
-              body: context.l10n.errorNetwork,
-              actionLabel: context.l10n.actionRetry,
-              onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
+      body: BlocListener<DropsBloc, DropsState>(
+        listenWhen: (previous, current) => current.lastRename != null && current.lastRename != previous.lastRename,
+        listener: (context, state) => toastRenameResult(context, state.lastRename!),
+        child: BlocConsumer<DropsBloc, DropsState>(
+          listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
+          listener: (context, state) => toastUnlockResult(context, state.lastResult!),
+          builder: (context, state) {
+            if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
+              return const LoadingCards();
+            }
+            final DropEntity? drop = state.drop;
+            if (state.status == LoadStatus.failure) {
+              return GlintState(
+                kind: GlintStateKind.error,
+                title: context.l10n.economyDropLoadFailed,
+                body: context.l10n.errorNetwork,
+                actionLabel: context.l10n.actionRetry,
+                onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
+              );
+            }
+            if (drop == null) {
+              return GlintState(kind: GlintStateKind.empty, title: context.l10n.economyDropGone);
+            }
+            return CustomScrollView(
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: DropHeader(
+                    drop: drop,
+                    now: state.now,
+                    remaining: state.lockedWalls.length,
+                    live: state.isLive,
+                    busy: state.busyKey == DropsBloc.packKey,
+                    onUnlockAll: () => askToUnlock(context, state, null),
+                    onRename: app_state.isAdminUser() ? () => askToRenameDrop(context, drop) : null,
+                  ),
+                ),
+                DropWallGrid(
+                  drop: drop,
+                  unlocked: state.unlocked,
+                  canBuy: state.isLive,
+                  busyKey: state.busyKey,
+                  onLockedTap: (wall) => openDropPreview(context, wall: wall),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+              ],
             );
-          }
-          if (drop == null) {
-            return GlintState(kind: GlintStateKind.empty, title: context.l10n.economyDropGone);
-          }
-          return CustomScrollView(
-            slivers: <Widget>[
-              SliverToBoxAdapter(
-                child: DropHeader(drop: drop, now: state.now, remaining: state.lockedWalls.length, live: state.isLive),
-              ),
-              if (state.isLive && state.lockedWalls.isNotEmpty) const SliverToBoxAdapter(child: DropPreviewHint()),
-              DropWallGrid(
-                drop: drop,
-                unlocked: state.unlocked,
-                canBuy: state.isLive,
-                busyKey: state.busyKey,
-                onLockedTap: (wall) => openDropPreview(context, wall: wall),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }

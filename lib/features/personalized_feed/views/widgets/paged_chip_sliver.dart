@@ -82,6 +82,7 @@ class PagedChipSliver extends StatelessWidget {
                       index: index,
                       crossAxisCount: crossAxisCount,
                       memCacheHeight: tileMemCacheHeight,
+                      feed: state.items,
                     ),
                   );
                 }, childCount: state.items.length),

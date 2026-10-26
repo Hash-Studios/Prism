@@ -4,9 +4,12 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/drops/data/repositories/drops_repository_impl.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_firestore_client.dart';
 
 class _NeverQueryClient extends FakeFirestoreClient {
@@ -60,6 +63,7 @@ Map<String, dynamic> _doc({required int startsAt, required int endsAt}) => <Stri
 };
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final DateTime now = DateTime.utc(2026, 10, 14, 12);
   final int ms = now.millisecondsSinceEpoch;
   late FakeFirestoreClient client;
@@ -73,6 +77,23 @@ void main() {
   });
 
   tearDown(() => directory.deleteSync(recursive: true));
+
+  test('rename updates the offline Drop snapshot used after a transient read failure', () async {
+    final CoinsTestBackend backend = CoinsTestBackend();
+    await backend.install();
+    backend.onCall = (_, _) async => <String, Object?>{'title': 'Night Swim', 'applied': 'drop'};
+    client.docs[FirebaseCollections.drops] = {'2026-W42': _doc(startsAt: ms - 1000, endsAt: ms + 5000)};
+    expect((await repository.fetchByWeekKey('2026-W42')).data!.title, 'Autumn');
+
+    final Result<String> renamed = await repository.rename('2026-W42', '  Night   Swim  ');
+    expect(renamed.data, 'Night Swim');
+
+    repository = DropsRepositoryImpl(client, store: DurableJsonStore('drops', directory: directory));
+    client.queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final Result<DropEntity?> offline = await repository.fetchByWeekKey('2026-W42');
+
+    expect(offline.data!.title, 'Night Swim');
+  });
 
   group('fetchLive', () {
     test('asks for the next Drop that has not ended, oldest end first', () async {
