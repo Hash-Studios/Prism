@@ -21,7 +21,7 @@ void showPrismToast(OverlayState overlay, String message, {PrismToastKind kind =
         // A replaced entry was already removed but stays mounted until the next build.
         if (_current != entry) return;
         _current = null;
-        entry.remove();
+        if (entry.mounted) entry.remove();
       },
     ),
   );
