@@ -2684,6 +2684,38 @@
     },
     "description": "Screen reader summary of streak and next reward."
   },
+  "coreCustomAccent": "Eigene Farbe",
+  "@coreCustomAccent": {
+    "description": "Label for the custom accent color option."
+  },
+  "coreCustomAccentHex": "Hex-Code",
+  "@coreCustomAccentHex": {
+    "description": "Label for the hex color code text field."
+  },
+  "coreCustomAccentHue": "Farbton",
+  "@coreCustomAccentHue": {
+    "description": "Label for the hue slider of the custom accent color picker."
+  },
+  "coreCustomAccentSaturation": "Sättigung",
+  "@coreCustomAccentSaturation": {
+    "description": "Label for the saturation slider of the custom accent color picker."
+  },
+  "coreCustomAccentLightness": "Helligkeit",
+  "@coreCustomAccentLightness": {
+    "description": "Label for the lightness slider of the custom accent color picker."
+  },
+  "coreCustomAccentInvalidHex": "Gib 6 Hex-Ziffern ein, z. B. #E57697.",
+  "@coreCustomAccentInvalidHex": {
+    "description": "Error shown when the hex color code is not 6 hex digits."
+  },
+  "coreCustomAccentLowContrast": "Diese Farbe ist in diesem Design schwer zu erkennen. Wähle einen helleren oder dunkleren Ton.",
+  "@coreCustomAccentLowContrast": {
+    "description": "Warning shown when the custom accent is too close to the theme background."
+  },
+  "coreCustomAccentApply": "Farbe verwenden",
+  "@coreCustomAccentApply": {
+    "description": "Button label that applies the custom accent color."
+  },
   "coreThemeAccentSemanticLabel": "Akzentfarbe {index} von {count}",
   "@coreThemeAccentSemanticLabel": {
     "placeholders": {
@@ -8309,6 +8341,14 @@
   "wallpaperThemeDarkThemes": "Dunkle Designs",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
+  },
+  "wallpaperUseAsAppAccent": "Als App-Akzentfarbe verwenden",
+  "@wallpaperUseAsAppAccent": {
+    "description": "Button label that sets a wallpaper color as the app accent."
+  },
+  "wallpaperAppAccentUpdated": "App-Akzentfarbe aktualisiert",
+  "@wallpaperAppAccentUpdated": {
+    "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
   "wallpaperThemeLightAccent": "Akzentfarbe für helles Design",
   "@wallpaperThemeLightAccent": {
