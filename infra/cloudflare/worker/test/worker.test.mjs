@@ -1062,6 +1062,68 @@ test('with the charge flag on, a request without chargeTxId gets 402 and no prov
   assert.equal(stats.fal ?? 0, 0);
 });
 
+test('with the charge flag on, each user gets one free trial that replays without a second provider call', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const alice = await makeToken({ sub: 'alice' });
+  const restore = mockFal({ stats, firestore: () => { throw new Error('a free trial must not read the coin ledger'); } });
+  try {
+    const first = await postGeneration(env, { freeTrial: true }, alice);
+    assert.equal(first.status, 200);
+    const firstBody = await first.json();
+    const replay = await postGeneration(env, { freeTrial: true, prompt: 'A second wallpaper' }, alice);
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), firstBody);
+    assert.equal((await postGeneration(env, {}, alice)).status, 402);
+    assert.equal((await postGeneration(env, { freeTrial: true }, await makeToken({ sub: 'bob' }))).status, 200);
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal, 2);
+  assert.equal(stats.firestore ?? 0, 0);
+});
+
+test('a failed free trial can be retried and bad free trial requests are refused before any provider call', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const token = await makeToken({ sub: 'alice' });
+  const restoreFailing = mockFal({ providerStatus: 500 });
+  try {
+    assert.equal((await postGeneration(env, { freeTrial: true }, token)).status, 502);
+  } finally {
+    restoreFailing();
+  }
+  const restore = mockFal({ stats });
+  try {
+    for (const invalid of [
+      { freeTrial: 'true' },
+      { freeTrial: 1 },
+      { freeTrial: true, qualityTier: 'quality' },
+      { freeTrial: true, chargeTxId: TX_ID },
+    ]) {
+      assert.equal((await postGeneration(env, invalid, token)).status, 400, JSON.stringify(invalid));
+    }
+    assert.equal((await postGeneration(env, { freeTrial: false }, token)).status, 402);
+    assert.equal(stats.fal ?? 0, 0);
+    assert.equal((await postGeneration(env, { freeTrial: true }, token)).status, 200);
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal, 1);
+});
+
+test('a free trial that is still running gets 409, and only its owner can finish it', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const rpc = async (body) => (await coordinator.fetch(new Request('https://quota.internal/rpc', {
+    method: 'POST', body: JSON.stringify(body),
+  }))).json();
+  assert.equal((await rpc({ op: 'trial_claim', userId: 'alice' })).status, 'new');
+  assert.equal((await rpc({ op: 'trial_claim', userId: 'alice' })).status, 'in_progress');
+  assert.equal((await rpc({ op: 'trial_finish', userId: 'bob', outcome: 'succeeded', response: '{}' })).ok, false);
+  assert.equal((await rpc({ op: 'trial_finish', userId: 'alice', outcome: 'succeeded', response: '{"a":1}' })).committed, true);
+  assert.deepEqual(await rpc({ op: 'trial_claim', userId: 'alice' }), { ok: true, status: 'done', response: '{"a":1}' });
+});
+
 test('with the charge flag off, a request without chargeTxId still works and a bad id shape is rejected', async () => {
   const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
   const restore = mockFal();

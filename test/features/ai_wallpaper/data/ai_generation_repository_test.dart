@@ -213,6 +213,30 @@ void main() {
     expect(bodies.single.containsKey('chargeTxId'), isFalse);
   });
 
+  test('a free trial generation asks the worker for the free trial and sends no charge id', () async {
+    final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
+    final repository = _repository(
+      MockClient((request) async {
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response(_okBody, 200);
+      }),
+    );
+
+    await repository.generate(
+      prompt: 'misty peaks',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.fast,
+      targetSize: '1080x1920',
+      chargeMode: AiChargeMode.freeTrial,
+      coinsSpent: 0,
+    );
+    await _generate(repository);
+
+    expect(bodies.first['freeTrial'], isTrue);
+    expect(bodies.first.containsKey('chargeTxId'), isFalse);
+    expect(bodies.last.containsKey('freeTrial'), isFalse);
+  });
+
   test('a timeout is retried once with the same charge id', () async {
     final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
     final repository = _repository(

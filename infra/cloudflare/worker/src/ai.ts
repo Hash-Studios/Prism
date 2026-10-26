@@ -53,6 +53,7 @@ interface AiGenerateRequest {
   targetSize: string;
   seed?: number;
   chargeTxId?: unknown;
+  freeTrial?: unknown;
 }
 
 interface AiVariationRequest {
@@ -227,7 +228,9 @@ type AiQuotaRpcOp =
   | 'rate_limit_bump'
   | 'studio_claim'
   | 'studio_finish'
-  | 'studio_release';
+  | 'studio_release'
+  | 'trial_claim'
+  | 'trial_finish';
 
 interface AiQuotaRpcBaseRequest {
   op: AiQuotaRpcOp;
@@ -304,7 +307,15 @@ interface AiQuotaStudioFinishRequest extends AiQuotaRpcBaseRequest {
   outcome: 'succeeded' | 'failed';
 }
 
+interface AiQuotaTrialRequest extends AiQuotaRpcBaseRequest {
+  op: 'trial_claim' | 'trial_finish';
+  userId: string;
+  outcome?: 'succeeded' | 'failed';
+  response?: string;
+}
+
 type AiQuotaRpcRequest =
+  | AiQuotaTrialRequest
   | AiQuotaStudioRequest
   | AiQuotaStudioFinishRequest
   | AiQuotaChargeRequest
@@ -465,6 +476,9 @@ export class AiQuotaCoordinator {
           return this.handleStudioFinish(body);
         case 'studio_release':
           return this.handleStudioRelease(body);
+        case 'trial_claim':
+        case 'trial_finish':
+          return await this.handleTrial(body);
       }
     } catch (error) {
       console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
@@ -763,6 +777,44 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
   }
 
+  // One free trial per user. A success is kept for replay forever; a failed or stale trial is given back.
+  private async handleTrial(request: AiQuotaTrialRequest): Promise<Response> {
+    const userId = clipText(asString(request.userId), 128);
+    if (!isNonEmptyString(userId)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const key = `trial:${userId}`;
+    return this.state.storage.transaction(async (storage) => {
+      const record = await storage.get<AiChargeRecord>(key);
+      const state = record == null ? null : effectiveChargeState(record);
+      if (request.op === 'trial_claim') {
+        if (state === 'succeeded') {
+          return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record?.response ?? '' });
+        }
+        if (state === 'in_progress') {
+          return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'in_progress' });
+        }
+        await storage.put<AiChargeRecord>(key, {
+          state: 'in_progress', userId, at: Date.now(), expiresAt: Number.MAX_SAFE_INTEGER,
+        });
+        return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+      }
+      if (state !== 'in_progress') {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'trial_not_in_progress' }, 409);
+      }
+      if (request.outcome === 'succeeded' && isNonEmptyString(request.response)) {
+        await storage.put<AiChargeRecord>(key, {
+          state: 'succeeded', userId, at: Date.now(), expiresAt: Number.MAX_SAFE_INTEGER, response: request.response,
+        });
+      } else if (request.outcome === 'failed') {
+        await storage.delete(key);
+      } else {
+        return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+      }
+      return quotaJson<AiQuotaChargeMutationResponse>({ ok: true, committed: true });
+    });
+  }
+
   private studioKey(id: string): string {
     return `studio:${id}`;
   }
@@ -1023,7 +1075,15 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
-  const charge = readChargeTxId(body.chargeTxId, env);
+  if (body.freeTrial !== undefined && typeof body.freeTrial !== 'boolean') {
+    return aiError('invalid_request', 400, 'Invalid freeTrial');
+  }
+  const freeTrial = body.freeTrial === true;
+  if (freeTrial && body.chargeTxId != null) {
+    return aiError('invalid_request', 400, 'A free trial has no chargeTxId');
+  }
+
+  const charge = freeTrial ? undefined : readChargeTxId(body.chargeTxId, env);
   if (charge instanceof Response) {
     return charge;
   }
@@ -1032,12 +1092,15 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid generation payload');
   }
+  if (freeTrial && parsed.qualityTier !== 'fast') {
+    return aiError('invalid_request', 400, 'A free trial uses the fast tier');
+  }
 
   if (!isPromptSafe(parsed.prompt)) {
     return aiError('unsafe_prompt', 422, 'Prompt rejected by safety policy');
   }
 
-  return executeGeneration({
+  const params: ExecuteGenerationParams = {
     env,
     auth,
     chargeTxId: charge,
@@ -1046,7 +1109,50 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     qualityTier: parsed.qualityTier,
     targetSize: parsed.targetSize,
     seed: parsed.seed,
-  });
+  };
+  return freeTrial ? executeFreeTrial(params) : executeGeneration(params);
+}
+
+// The onboarding free generation. The quota coordinator owns the one-per-user grant, so the client cannot mint more.
+async function executeFreeTrial(params: ExecuteGenerationParams): Promise<Response> {
+  const userId = params.auth.userId;
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, { op: 'trial_claim', userId });
+  } catch (error) {
+    console.error('[ai] trial_claim_failed', { userId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done') {
+    return new Response(claim.response ?? '', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status === 'in_progress') {
+    return aiError('charge_in_progress', 409, 'The free trial is already being generated');
+  }
+  if (claim.status !== 'new') return aiError('provider_error', 502, 'Invalid trial coordinator response');
+
+  let response: Response;
+  try {
+    response = await runQuotaGatedGeneration(params);
+  } catch (error) {
+    console.error('[ai] trial_generation_failed', { userId, error: `${error ?? ''}` });
+    response = aiError('provider_error', 502, 'Generation failed');
+  }
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(
+      params.env,
+      response.ok
+        ? { op: 'trial_finish', userId, outcome: 'succeeded', response: await response.clone().text() }
+        : { op: 'trial_finish', userId, outcome: 'failed' },
+    );
+  } catch (error) {
+    // The trial then goes stale after CHARGE_STALE_IN_PROGRESS_MS and can be claimed once more.
+    console.error('[ai] trial_finish_failed', { userId, error: `${error ?? ''}` });
+  }
+  return response;
 }
 
 async function handleVariation(request: Request, env: AiEnvBindings, parentGenerationId: string): Promise<Response> {
