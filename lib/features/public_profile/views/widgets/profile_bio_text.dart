@@ -2,7 +2,8 @@ import 'package:Prism/core/constants/profile_links.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-final RegExp _linkPattern = RegExp(r'https?://\S+', caseSensitive: false);
+/// A comma or semicolon right before another scheme starts the next link, as in `https://a.com,https://b.com`.
+final RegExp _linkPattern = RegExp(r'https?://(?:(?![,;]https?://)\S)+', caseSensitive: false);
 
 /// Sentence punctuation that usually ends a sentence, not the link, so it stays in the plain text.
 const String _trailingPunctuation = '.,!?;:)]}\'"';
@@ -32,6 +33,7 @@ List<BioSegment> splitBioLinks(String bio) {
   for (final RegExpMatch match in _linkPattern.allMatches(bio)) {
     String link = match.group(0)!;
     while (link.isNotEmpty && _trailingPunctuation.contains(link[link.length - 1])) {
+      if (link.endsWith(')') && '('.allMatches(link).length >= ')'.allMatches(link).length) break;
       link = link.substring(0, link.length - 1);
     }
     final Uri? uri = safeProfileLinkUri(link);

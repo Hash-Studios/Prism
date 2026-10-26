@@ -32,6 +32,31 @@ void main() {
       ]);
     });
 
+    test('keeps balanced parentheses inside the link', () {
+      expect(splitBioLinks('Docs https://example.com/docs/(intro) here'), <BioSegment>[
+        const BioSegment('Docs '),
+        BioSegment('https://example.com/docs/(intro)', Uri.parse('https://example.com/docs/(intro)')),
+        const BioSegment(' here'),
+      ]);
+    });
+
+    test('splits two links joined by a comma', () {
+      expect(splitBioLinks('https://a.example,https://b.example'), <BioSegment>[
+        BioSegment('https://a.example', Uri.parse('https://a.example')),
+        const BioSegment(','),
+        BioSegment('https://b.example', Uri.parse('https://b.example')),
+      ]);
+    });
+
+    test('keeps a scheme inside a path as one link', () {
+      expect(splitBioLinks('https://web.archive.org/web/2020/https://a.com'), <BioSegment>[
+        BioSegment(
+          'https://web.archive.org/web/2020/https://a.com',
+          Uri.parse('https://web.archive.org/web/2020/https://a.com'),
+        ),
+      ]);
+    });
+
     test('splits two links with the text between them', () {
       expect(splitBioLinks('https://a.com and https://b.com/x!'), <BioSegment>[
         BioSegment('https://a.com', Uri.parse('https://a.com')),
