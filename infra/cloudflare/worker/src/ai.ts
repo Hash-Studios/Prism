@@ -71,7 +71,7 @@ interface AiGenerationRecord {
   qualityTier: AiQualityTier;
   provider: AiProviderName;
   model: string;
-  seed: number;
+  seed: number | null;
   width: number;
   height: number;
   imageUrl: string;
@@ -86,7 +86,7 @@ interface AiGenerationRecord {
 
 interface AiProviderResult {
   model: string;
-  seed: number;
+  seed: number | null;
   width: number;
   height: number;
   contentType: string;
@@ -105,6 +105,7 @@ interface AiProviderAdapter {
     seed: number;
     stylePreset: string;
     timeoutMs: number;
+    providerDeadlineAt: number;
     env: AiEnvBindings;
     onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult>;
@@ -207,6 +208,8 @@ const CHARGE_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
 const CHARGE_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
 const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
 const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
+const CONSUMER_PROVIDER_DEADLINE_MS = 50 * 1000;
+const CONSUMER_INLINE_WATERMARK_DEADLINE_MS = 55 * 1000;
 
 const STUDIO_ID_REGEX = /^[A-Za-z0-9_-]{8,64}$/;
 
@@ -984,7 +987,7 @@ async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Res
   const config = await readRoutingConfig(env);
   let snapshots: Record<AiProviderName, ProviderBudgetSnapshot>;
   try {
-    snapshots = await readProviderBudgetSnapshots(config, 'balanced', env);
+    snapshots = await readProviderBudgetSnapshots(config, 'balanced', '1080x1920', env);
   } catch (error) {
     console.error('[ai] health_budget_snapshot_failed', { error: `${error ?? ''}` });
     return aiError('provider_error', 502, 'Quota coordinator unavailable');
@@ -1013,6 +1016,9 @@ async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Res
 }
 
 async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Response> {
+  const requestStartedAt = Date.now();
+  const providerDeadlineAt = requestStartedAt + CONSUMER_PROVIDER_DEADLINE_MS;
+  const watermarkDeadlineAt = requestStartedAt + CONSUMER_INLINE_WATERMARK_DEADLINE_MS;
   const auth = await parseAuth(request, env);
   if (auth == null) {
     return aiError('unauthorized', 401, 'Missing or invalid bearer token');
@@ -1046,10 +1052,15 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     qualityTier: parsed.qualityTier,
     targetSize: parsed.targetSize,
     seed: parsed.seed,
+    providerDeadlineAt,
+    watermarkDeadlineAt,
   });
 }
 
 async function handleVariation(request: Request, env: AiEnvBindings, parentGenerationId: string): Promise<Response> {
+  const requestStartedAt = Date.now();
+  const providerDeadlineAt = requestStartedAt + CONSUMER_PROVIDER_DEADLINE_MS;
+  const watermarkDeadlineAt = requestStartedAt + CONSUMER_INLINE_WATERMARK_DEADLINE_MS;
   const auth = await parseAuth(request, env);
   if (auth == null) {
     return aiError('unauthorized', 401, 'Missing or invalid bearer token');
@@ -1098,6 +1109,8 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     targetSize: `${original.width}x${original.height}`,
     seed: randomSeed(),
     parentGenerationId: parentGenerationId,
+    providerDeadlineAt,
+    watermarkDeadlineAt,
   });
 }
 
@@ -1140,6 +1153,8 @@ interface ExecuteGenerationParams {
   qualityTier: AiQualityTier;
   targetSize: string;
   seed: number;
+  providerDeadlineAt: number;
+  watermarkDeadlineAt: number;
   parentGenerationId?: string;
   chargeTxId?: string;
 }
@@ -1195,7 +1210,9 @@ async function executeGeneration(params: ExecuteGenerationParams): Promise<Respo
   }
   if (claim.status === 'done') {
     try {
-      await publishChargedGeneration(claim.response ?? '', txId, params.auth.userId, params.env);
+      await publishChargedGeneration(
+        claim.response ?? '', txId, params.auth.userId, params.env, params.watermarkDeadlineAt,
+      );
     } catch (error) {
       console.error('[ai] charge_publication_failed', { txId, error: `${error ?? ''}` });
       return aiError('provider_error', 502, 'Generation publication unavailable');
@@ -1228,7 +1245,9 @@ async function executeGeneration(params: ExecuteGenerationParams): Promise<Respo
         : { op: 'charge_finish', txId, userId, outcome: 'failed' },
     );
     if (response.ok) {
-      await publishChargedGeneration(await response.clone().text(), txId, userId, params.env);
+      await publishChargedGeneration(
+        await response.clone().text(), txId, userId, params.env, params.watermarkDeadlineAt,
+      );
     }
     return response;
   } catch (error) {
@@ -1353,7 +1372,7 @@ async function runGenerationAttempts(
 ): Promise<Response> {
   let routingPlan: RoutingPlan;
   try {
-    routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.env);
+    routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.targetSize, params.env);
   } catch (error) {
     console.error('[ai] quota_budget_snapshot_failed', {
       userId: params.auth.userId,
@@ -1389,13 +1408,24 @@ async function runGenerationAttempts(
   let lastErrorCode: AiErrorCode = 'provider_error';
   let lastErrorMessage = 'No provider could generate image';
   for (const providerName of routingPlan.order) {
+    if (Date.now() >= params.providerDeadlineAt) {
+      lastErrorCode = 'provider_timeout';
+      lastErrorMessage = 'Provider deadline exceeded';
+      break;
+    }
     attemptedProviders.push(providerName);
     const providerConfig = config.providers[providerName];
     if (!providerConfig.enabled) {
       continue;
     }
 
-    const estimatedCost = providerConfig.estimatedCostByQualityUsd[effectiveQualityTier];
+    const model = providerConfig.modelByQuality[effectiveQualityTier];
+    const estimatedCost = estimateProviderModelCost(
+      providerName,
+      model,
+      params.targetSize,
+      providerConfig.estimatedCostByQualityUsd[effectiveQualityTier],
+    );
     let budgetReservation: ProviderBudgetReservationResult;
     try {
       budgetReservation = await reserveProviderBudget(providerName, estimatedCost, providerConfig, params.env);
@@ -1425,7 +1455,6 @@ async function runGenerationAttempts(
     const reservationId = budgetReservation.reservationId;
 
     const adapter = providerName === 'fal' ? new FalProviderAdapter() : new GeminiProviderAdapter();
-    const model = providerConfig.modelByQuality[effectiveQualityTier];
     const startedAt = Date.now();
     let shouldReleaseReservation = true;
     let reservationCommitted = false;
@@ -1450,6 +1479,7 @@ async function runGenerationAttempts(
         seed: params.seed,
         stylePreset: params.stylePreset,
         timeoutMs: providerConfig.timeoutMs,
+        providerDeadlineAt: params.providerDeadlineAt,
         env: params.env,
         onProviderBilled: markBilled,
       });
@@ -1504,7 +1534,7 @@ async function runGenerationAttempts(
         });
       } else {
         await persistGenerationArtifacts(generationId, result.imageBytes, result.contentType,
-          result.width, result.height, params.env);
+          result.width, result.height, params.env, params.watermarkDeadlineAt);
         await saveGenerationRecord(record, params.env);
       }
 
@@ -1711,14 +1741,49 @@ function normalizeFallbackOrder(raw: unknown): AiProviderName[] {
 async function buildProviderAttemptOrder(
   config: AiRoutingConfig,
   requestedQualityTier: AiQualityTier,
+  targetSize: string,
   env: AiEnvBindings,
 ): Promise<RoutingPlan> {
-  const snapshots = await readProviderBudgetSnapshots(config, requestedQualityTier, env);
-  const guardrailLevel = resolveHighestThreshold(Object.values(snapshots).map((snapshot) => snapshot.thresholdLevel));
-  const effectiveQualityTier = applyBudgetQualityGuardrail(requestedQualityTier, guardrailLevel);
+  const requestedSnapshots = await readProviderBudgetSnapshots(config, requestedQualityTier, targetSize, env);
+  const guardrailLevel = resolveHighestThreshold(
+    Object.values(requestedSnapshots).map((snapshot) => snapshot.thresholdLevel),
+  );
   const enabledProviders = (Object.entries(config.providers) as Array<[AiProviderName, AiRoutingProviderConfig]>)
     .filter(([, providerConfig]) => providerConfig.enabled)
     .map(([providerName, providerConfig]) => ({ providerName, providerConfig }));
+
+  let effectiveQualityTier = applyBudgetQualityGuardrail(requestedQualityTier, guardrailLevel);
+  if (effectiveQualityTier !== requestedQualityTier && enabledProviders.some(({ providerName, providerConfig }) => {
+    const requestedModel = providerConfig.modelByQuality[requestedQualityTier];
+    const effectiveModel = providerConfig.modelByQuality[effectiveQualityTier];
+    return estimateProviderModelCost(
+      providerName, effectiveModel, targetSize, providerConfig.estimatedCostByQualityUsd[effectiveQualityTier],
+    ) > estimateProviderModelCost(
+      providerName, requestedModel, targetSize, providerConfig.estimatedCostByQualityUsd[requestedQualityTier],
+    );
+  })) {
+    effectiveQualityTier = requestedQualityTier;
+  }
+  const snapshots = {
+    fal: {
+      ...requestedSnapshots.fal,
+      estimatedCostUsd: estimateProviderModelCost(
+        'fal',
+        config.providers.fal.modelByQuality[effectiveQualityTier],
+        targetSize,
+        config.providers.fal.estimatedCostByQualityUsd[effectiveQualityTier],
+      ),
+    },
+    gemini: {
+      ...requestedSnapshots.gemini,
+      estimatedCostUsd: estimateProviderModelCost(
+        'gemini',
+        config.providers.gemini.modelByQuality[effectiveQualityTier],
+        targetSize,
+        config.providers.gemini.estimatedCostByQualityUsd[effectiveQualityTier],
+      ),
+    },
+  };
 
   if (enabledProviders.length === 0) {
     return {
@@ -1814,12 +1879,13 @@ function pickWeightedProvider(candidates: Array<{ providerName: AiProviderName; 
 async function readProviderBudgetSnapshots(
   config: AiRoutingConfig,
   qualityTier: AiQualityTier,
+  targetSize: string,
   env: AiEnvBindings,
 ): Promise<Record<AiProviderName, ProviderBudgetSnapshot>> {
   const [falStatus, geminiStatus] = await Promise.all([readBudgetStatus('fal', env), readBudgetStatus('gemini', env)]);
   return {
-    fal: createBudgetSnapshot('fal', falStatus, config.providers.fal, qualityTier),
-    gemini: createBudgetSnapshot('gemini', geminiStatus, config.providers.gemini, qualityTier),
+    fal: createBudgetSnapshot('fal', falStatus, config.providers.fal, qualityTier, targetSize),
+    gemini: createBudgetSnapshot('gemini', geminiStatus, config.providers.gemini, qualityTier, targetSize),
   };
 }
 
@@ -1828,6 +1894,7 @@ function createBudgetSnapshot(
   status: BudgetStatus,
   providerConfig: AiRoutingProviderConfig,
   qualityTier: AiQualityTier,
+  targetSize: string,
 ): ProviderBudgetSnapshot {
   const dailyUsageRatio = normalizeBudgetUsageRatio(status.dailySpentUsd, providerConfig.dailyBudgetUsd);
   const monthlyUsageRatio = normalizeBudgetUsageRatio(status.monthlySpentUsd, providerConfig.monthlyBudgetUsd);
@@ -1839,7 +1906,12 @@ function createBudgetSnapshot(
     dailyUsageRatio,
     monthlyUsageRatio,
     usageRatio,
-    estimatedCostUsd: providerConfig.estimatedCostByQualityUsd[qualityTier],
+    estimatedCostUsd: estimateProviderModelCost(
+      provider,
+      providerConfig.modelByQuality[qualityTier],
+      targetSize,
+      providerConfig.estimatedCostByQualityUsd[qualityTier],
+    ),
     thresholdLevel: resolveBudgetThreshold(usageRatio),
   };
 }
@@ -2049,9 +2121,10 @@ function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
 }
 
 interface FalModel {
-  costUsd: number;
+  costUsd: number | ((width: number, height: number) => number);
+  studioAllowed?: boolean;
   imageSize?: (width: number, height: number) => { width: number; height: number };
-  // Least time a consumer request waits for this model; slow models outlast the routing config timeout.
+  // Minimum consumer provider time, bounded by the request-wide deadline.
   minTimeoutMs?: number;
   buildBody(prompt: string, width: number, height: number, seed?: number): Record<string, unknown>;
 }
@@ -2070,13 +2143,14 @@ interface StudioGenerationResult {
   terminal: boolean;
 }
 
-// fal models with a known request shape, for the studio pipeline and consumer tiers. Adding a model is one entry here.
-// Studio may call only these. A consumer model that is not here gets the generic prompt, image_size and seed body.
+// Known Fal request shapes, model costs, consumer timeouts and Studio eligibility live here.
+// An unknown consumer model gets the generic prompt, image_size and seed body.
 const FAL_MODELS: Record<string, FalModel> = {
   // Default studio and quality tier model: first on the LMArena and Artificial Analysis image boards (Oct 2026),
   // exact phone sizes.
   'openai/gpt-image-2.5/sunburst/text-to-image': {
     costUsd: 0.07,
+    studioAllowed: true,
     imageSize: gptImageSize,
     // Phone sizes took 24 to 40 seconds in an Oct 2026 test.
     minTimeoutMs: 50000,
@@ -2093,6 +2167,7 @@ const FAL_MODELS: Record<string, FalModel> = {
   },
   'fal-ai/bytedance/seedream/v4.5/text-to-image': {
     costUsd: 0.04,
+    studioAllowed: true,
     imageSize: seedreamImageSize,
     buildBody: (prompt, width, height, seed) => ({
       prompt,
@@ -2104,6 +2179,7 @@ const FAL_MODELS: Record<string, FalModel> = {
   },
   'fal-ai/bytedance/seedream/v5/lite/text-to-image': {
     costUsd: 0.04,
+    studioAllowed: true,
     imageSize: seedreamImageSize,
     // Phone sizes took 24 to 35 seconds in an Oct 2026 test.
     minTimeoutMs: 45000,
@@ -2117,7 +2193,7 @@ const FAL_MODELS: Record<string, FalModel> = {
   },
   // Fast tier: $0.005 per megapixel.
   'fal-ai/z-image/turbo': {
-    costUsd: 0.015,
+    costUsd: (width, height) => Math.ceil(width * height * 0.005) / 1_000_000,
     buildBody: (prompt, width, height, seed) => ({
       prompt,
       image_size: { width, height },
@@ -2149,6 +2225,30 @@ const STUDIO_DEFAULT_MONTHLY_BUDGET_USD = 60;
 const STUDIO_ASSETS_PATH_PREFIX = '/api/ai/studio/assets/';
 const STUDIO_UPLOAD_KEY_REGEX = /^ai\/studio\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
 const STUDIO_DELETE_KEY_REGEX = /^ai\/studio\/(?:raw\/)?[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+
+function falModelCost(model: FalModel, width: number, height: number): number {
+  return typeof model.costUsd === 'number' ? model.costUsd : model.costUsd(width, height);
+}
+
+function falRequestSize(model: string, targetSize: string): { width: number; height: number } {
+  const requested = parseSize(targetSize);
+  const known = Object.hasOwn(FAL_MODELS, model) ? FAL_MODELS[model] : undefined;
+  return known?.imageSize?.(requested.width, requested.height)
+    ?? (model.includes('seedream') ? seedreamImageSize(requested.width, requested.height) : requested);
+}
+
+function estimateProviderModelCost(
+  provider: AiProviderName,
+  model: string,
+  targetSize: string,
+  fallbackCostUsd: number,
+): number {
+  if (provider !== 'fal' || !Object.hasOwn(FAL_MODELS, model)) {
+    return fallbackCostUsd;
+  }
+  const size = falRequestSize(model, targetSize);
+  return falModelCost(FAL_MODELS[model], size.width, size.height);
+}
 const STUDIO_UPLOAD_MIN_BYTES = 1024;
 const STUDIO_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
 const STUDIO_EXTENSION_BY_CONTENT_TYPE = new Map([['image/jpeg', 'jpg'], ['image/webp', 'webp'], ['image/png', 'png']]);
@@ -2254,7 +2354,7 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid studio generation payload');
   }
-  if (!Object.hasOwn(FAL_MODELS, parsed.model)) {
+  if (FAL_MODELS[parsed.model]?.studioAllowed !== true) {
     return aiError('invalid_request', 400, 'Unsupported studio model');
   }
   if (!isNonEmptyString(studioFalKey(env))) {
@@ -2320,6 +2420,9 @@ async function runStudioGeneration(
   studioModel: FalModel,
   env: AiEnvBindings,
 ): Promise<StudioGenerationResult> {
+  const size = studioModel.imageSize?.(request.width, request.height)
+    ?? { width: request.width, height: request.height };
+  const costUsd = falModelCost(studioModel, size.width, size.height);
   let reservation: AiQuotaProviderBudgetReserveResponse;
   try {
     reservation = await sendQuotaRequest<AiQuotaProviderBudgetReserveResponse>(env, {
@@ -2327,7 +2430,7 @@ async function runStudioGeneration(
       provider: 'studio',
       dayKey: utcDayKey(),
       monthKey: utcMonthKey(),
-      estimatedCostUsd: studioModel.costUsd,
+      estimatedCostUsd: costUsd,
       dailyBudgetUsd: asNumber(env.STUDIO_DAILY_BUDGET_USD, STUDIO_DEFAULT_DAILY_BUDGET_USD),
       monthlyBudgetUsd: asNumber(env.STUDIO_MONTHLY_BUDGET_USD, STUDIO_DEFAULT_MONTHLY_BUDGET_USD),
     });
@@ -2346,7 +2449,6 @@ async function runStudioGeneration(
     return { response: aiError('budget_exhausted', 429, 'Studio budget exhausted'), terminal: false };
   }
 
-  const size = studioModel.imageSize?.(request.width, request.height) ?? { width: request.width, height: request.height };
   const falBody = studioModel.buildBody(request.prompt, size.width, size.height, request.seed);
   const startedAt = Date.now();
   let providerRequestStarted = false;
@@ -2390,15 +2492,13 @@ async function runStudioGeneration(
     const key = `ai/studio/raw/${request.id}.${extension}`;
     await storeAsset(key, imageBytes, contentType, env);
 
-    const actualSize = Number.isInteger(image.width) && Number.isInteger(image.height)
-      ? { width: image.width, height: image.height }
-      : size;
-    const seed = Number.isInteger(payload.seed) ? payload.seed : falBody.seed;
+    const actualSize = reportedSize(image, size);
+    const seed = validFalSeed(payload.seed) ?? validFalSeed(falBody.seed);
     console.info('[ai] studio_generation_success', {
       id: request.id,
       model: request.model,
       latencyMs: Date.now() - startedAt,
-      costUsd: studioModel.costUsd,
+      costUsd,
     });
     return { response: aiJson({
       id: request.id,
@@ -2410,8 +2510,8 @@ async function runStudioGeneration(
       bytes: imageBytes.length,
       model: request.model,
       provider: 'fal',
-      seed: seed ?? null,
-      costUsd: studioModel.costUsd,
+      seed,
+      costUsd,
     }), terminal: true };
   } catch (error) {
     console.warn('[ai] studio_generation_failed', {
@@ -2426,7 +2526,7 @@ async function runStudioGeneration(
     };
   } finally {
     if (providerRequestStarted) {
-      await commitBilledReservation(reservationId, 'fal', studioModel.costUsd, env);
+      await commitBilledReservation(reservationId, 'fal', costUsd, env);
     } else {
       try {
         await releaseProviderBudgetReservation(reservationId, env);
@@ -2530,6 +2630,7 @@ async function persistGenerationArtifacts(
   width: number,
   height: number,
   env: AiEnvBindings,
+  watermarkDeadlineAt?: number,
 ): Promise<{ imageUrl: string; watermarkedImageUrl: string }> {
   const originalKey = `ai/original/${generationId}.png`;
   const publicKey = `ai/public/${generationId}.png`;
@@ -2537,8 +2638,13 @@ async function persistGenerationArtifacts(
 
   let watermarked: { bytes: Uint8Array; contentType: string } | null = null;
   for (let attempt = 1; attempt <= WATERMARK_RENDER_ATTEMPTS && watermarked == null; attempt += 1) {
+    if (watermarkDeadlineAt != null && Date.now() >= watermarkDeadlineAt) {
+      break;
+    }
     try {
-      const rendered = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
+      const rendered = await renderPublicWatermarkedBytes(
+        imageBytes, contentType, width, height, env, watermarkDeadlineAt,
+      );
       if (rendered.bytes.length >= WATERMARK_MIN_BYTES) {
         watermarked = rendered;
       }
@@ -2579,7 +2685,13 @@ function pendingGenerationKey(generationId: string): string {
 }
 
 // Call only after charge_finish committed, or an owner-bound claim replay confirmed success.
-async function publishChargedGeneration(response: string, txId: string, userId: string, env: AiEnvBindings): Promise<void> {
+async function publishChargedGeneration(
+  response: string,
+  txId: string,
+  userId: string,
+  env: AiEnvBindings,
+  watermarkDeadlineAt?: number,
+): Promise<void> {
   const payload: unknown = JSON.parse(response);
   if (!isJsonObject(payload) || typeof payload.generationId !== 'string' ||
     !/^gen_[a-z0-9]+_[a-f0-9]{16}$/.test(payload.generationId)) {
@@ -2599,7 +2711,7 @@ async function publishChargedGeneration(response: string, txId: string, userId: 
     throw new Error('invalid_generation_staging');
   }
   await persistGenerationArtifacts(generationId, fromBase64(pending.imageBase64), pending.contentType,
-    pending.record.width, pending.record.height, env);
+    pending.record.width, pending.record.height, env, watermarkDeadlineAt);
   await saveGenerationRecord(pending.record, env);
   // Keep private staging until TTL for safe retries across KV propagation delay; it is never publicly served.
 }
@@ -2671,6 +2783,7 @@ async function renderPublicWatermarkedBytes(
   width: number,
   height: number,
   env: AiEnvBindings,
+  deadlineAt?: number,
 ): Promise<{ bytes: Uint8Array; contentType: string }> {
   if (!contentType.startsWith('image/')) {
     throw new Error('watermark_invalid_content_type');
@@ -2678,20 +2791,28 @@ async function renderPublicWatermarkedBytes(
   const normalizedWidth = Math.round(clampNumber(width, 256, 4096));
   const normalizedHeight = Math.round(clampNumber(height, 256, 4096));
 
-  const canvasResult = await tryRenderWatermarkWithCanvas(imageBytes, contentType, normalizedWidth, normalizedHeight);
-  if (canvasResult != null) {
-    return canvasResult;
-  }
+  const deadline = deadlineAt == null ? null : createDeadlineContext(deadlineAt);
+  try {
+    const canvas = tryRenderWatermarkWithCanvas(imageBytes, contentType, normalizedWidth, normalizedHeight);
+    const canvasResult = deadline == null ? await canvas : await deadline.wait(canvas);
+    if (canvasResult != null) {
+      return canvasResult;
+    }
 
-  const browserRenderingResult = await tryRenderWatermarkWithBrowserRendering(
-    imageBytes,
-    contentType,
-    normalizedWidth,
-    normalizedHeight,
-    env,
-  );
-  if (browserRenderingResult != null) {
-    return browserRenderingResult;
+    const browserRendering = tryRenderWatermarkWithBrowserRendering(
+      imageBytes,
+      contentType,
+      normalizedWidth,
+      normalizedHeight,
+      env,
+      deadline ?? undefined,
+    );
+    const browserRenderingResult = deadline == null ? await browserRendering : await deadline.wait(browserRendering);
+    if (browserRenderingResult != null) {
+      return browserRenderingResult;
+    }
+  } finally {
+    deadline?.dispose();
   }
 
   console.warn('[ai] watermark_renderer_unavailable', { width, height, contentType });
@@ -2769,6 +2890,7 @@ async function tryRenderWatermarkWithBrowserRendering(
   width: number,
   height: number,
   env: AiEnvBindings,
+  deadline?: DeadlineContext,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
     return null;
@@ -2777,7 +2899,7 @@ async function tryRenderWatermarkWithBrowserRendering(
     const endpoint =
       `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
     const imageDataUrl = `data:${contentType};base64,${toBase64(imageBytes)}`;
-    const response = await fetch(endpoint, {
+    const fetchOperation = fetch(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
@@ -2797,16 +2919,19 @@ async function tryRenderWatermarkWithBrowserRendering(
           type: 'png',
         },
       }),
+      signal: deadline?.signal,
     });
+    const response = deadline == null ? await fetchOperation : await deadline.wait(fetchOperation);
     if (!response.ok) {
       console.warn('[ai] watermark_browser_rendering_failed', {
         status: response.status,
-        body: await readErrorDetails(response),
+        body: deadline == null ? await readErrorDetails(response) : await deadline.wait(readErrorDetails(response)),
       });
       return null;
     }
+    const responseBytes = response.arrayBuffer();
     return {
-      bytes: new Uint8Array(await response.arrayBuffer()),
+      bytes: new Uint8Array(deadline == null ? await responseBytes : await deadline.wait(responseBytes)),
       contentType: 'image/png',
     };
   } catch (error) {
@@ -2998,6 +3123,7 @@ class FalProviderAdapter implements AiProviderAdapter {
     seed: number;
     stylePreset: string;
     timeoutMs: number;
+    providerDeadlineAt: number;
     env: AiEnvBindings;
     onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
@@ -3006,50 +3132,63 @@ class FalProviderAdapter implements AiProviderAdapter {
     }
     const endpoint = `https://fal.run/${params.model}`;
     const known = Object.hasOwn(FAL_MODELS, params.model) ? FAL_MODELS[params.model] : undefined;
-    const requestedSize = parseSize(params.targetSize);
-    const { width, height } = known?.imageSize?.(requestedSize.width, requestedSize.height)
-      ?? (params.model.includes('seedream') ? seedreamImageSize(requestedSize.width, requestedSize.height) : requestedSize);
+    const { width, height } = falRequestSize(params.model, params.targetSize);
     const prompt = `${params.prompt}, ${params.stylePreset} style`;
     const requestBody = known?.buildBody(prompt, width, height, params.seed)
       ?? { prompt, image_size: { width, height }, seed: params.seed };
-    const timeoutMs = Math.max(params.timeoutMs, known?.minTimeoutMs ?? 0);
-    const response = await fetchWithTimeout(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Key ${params.env.FAL_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    }, timeoutMs);
+    const providerDeadlineAt = Math.min(
+      params.providerDeadlineAt,
+      Date.now() + Math.max(params.timeoutMs, known?.minTimeoutMs ?? 0),
+    );
+    const deadline = createDeadlineContext(providerDeadlineAt);
+    try {
+      const response = await deadline.wait(fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Key ${params.env.FAL_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: deadline.signal,
+      }));
 
-    if (!response.ok) {
-      const details = await readErrorDetails(response);
-      throw new Error(`fal_failed_${response.status}${details}`);
+      if (!response.ok) {
+        const details = await deadline.wait(readErrorDetails(response));
+        throw new Error(`fal_failed_${response.status}${details}`);
+      }
+      await params.onProviderBilled();
+      const payload = await deadline.wait(response.json()) as {
+        images?: Array<{ url?: string; width?: number; height?: number }>;
+        image?: { url?: string; width?: number; height?: number };
+        seed?: number;
+      };
+      const image = payload.images?.[0] ?? payload.image;
+      const imageUrl = image?.url;
+      if (!isNonEmptyString(imageUrl)) {
+        throw new Error('fal_missing_image');
+      }
+      const actualSize = validReportedSize(image);
+      if (requestBody.aspect_ratio != null && actualSize == null) {
+        throw new Error('fal_missing_image_size');
+      }
+      const imageResponse = await deadline.wait(fetch(imageUrl, { method: 'GET', signal: deadline.signal }));
+      if (!imageResponse.ok) {
+        throw new Error(`fal_image_fetch_${imageResponse.status}`);
+      }
+      const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
+      const imageBytes = new Uint8Array(await deadline.wait(imageResponse.arrayBuffer()));
+      const sentSeed = validFalSeed(requestBody.seed);
+      return {
+        model: params.model,
+        seed: sentSeed == null ? null : validFalSeed(payload.seed) ?? sentSeed,
+        ...(actualSize ?? { width, height }),
+        contentType,
+        imageBytes,
+        estimatedCostUsd: params.estimatedCostUsd,
+      };
+    } finally {
+      deadline.dispose();
     }
-    await params.onProviderBilled();
-    const payload = await response.json() as {
-      images?: Array<{ url?: string; width?: number; height?: number }>;
-      image?: { url?: string; width?: number; height?: number };
-    };
-    const image = payload.images?.[0] ?? payload.image;
-    const imageUrl = image?.url;
-    if (!isNonEmptyString(imageUrl)) {
-      throw new Error('fal_missing_image');
-    }
-    const imageResponse = await fetchWithTimeout(imageUrl, { method: 'GET' }, params.timeoutMs);
-    if (!imageResponse.ok) {
-      throw new Error(`fal_image_fetch_${imageResponse.status}`);
-    }
-    const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
-    const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
-    return {
-      model: params.model,
-      seed: params.seed,
-      ...reportedSize(image, { width, height }),
-      contentType,
-      imageBytes,
-      estimatedCostUsd: params.estimatedCostUsd,
-    };
   }
 }
 
@@ -3065,6 +3204,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
     seed: number;
     stylePreset: string;
     timeoutMs: number;
+    providerDeadlineAt: number;
     env: AiEnvBindings;
     onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
@@ -3074,55 +3214,61 @@ class GeminiProviderAdapter implements AiProviderAdapter {
     const endpoint =
       `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`;
     const { width, height } = parseSize(params.targetSize);
-    const response = await fetchWithTimeout(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': params.env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `${params.prompt}, ${params.stylePreset} style` }],
-        }],
-        generationConfig: {
-          responseModalities: ['TEXT', 'IMAGE'],
+    const deadline = createDeadlineContext(Math.min(params.providerDeadlineAt, Date.now() + params.timeoutMs));
+    try {
+      const response = await deadline.wait(fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': params.env.GEMINI_API_KEY,
         },
-      }),
-    }, params.timeoutMs);
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `${params.prompt}, ${params.stylePreset} style` }],
+          }],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+          },
+        }),
+        signal: deadline.signal,
+      }));
 
-    if (!response.ok) {
-      const details = await readErrorDetails(response);
-      throw new Error(`gemini_failed_${response.status}${details}`);
+      if (!response.ok) {
+        const details = await deadline.wait(readErrorDetails(response));
+        throw new Error(`gemini_failed_${response.status}${details}`);
+      }
+      await params.onProviderBilled();
+      const payload = await deadline.wait(response.json()) as {
+        candidates?: Array<{
+          content?: {
+            parts?: Array<{
+              inlineData?: {
+                data?: string;
+                mimeType?: string;
+              };
+            }>;
+          };
+        }>;
+      };
+      const parts = payload.candidates?.[0]?.content?.parts ?? [];
+      const imagePart = parts.find((part) => isNonEmptyString(part.inlineData?.data));
+      const encoded = imagePart?.inlineData?.data ?? '';
+      if (!isNonEmptyString(encoded)) {
+        throw new Error('gemini_missing_image');
+      }
+      const imageBytes = fromBase64(encoded);
+      return {
+        model: params.model,
+        seed: params.seed,
+        width,
+        height,
+        contentType: imagePart?.inlineData?.mimeType ?? 'image/png',
+        imageBytes,
+        estimatedCostUsd: params.estimatedCostUsd,
+      };
+    } finally {
+      deadline.dispose();
     }
-    await params.onProviderBilled();
-    const payload = await response.json() as {
-      candidates?: Array<{
-        content?: {
-          parts?: Array<{
-            inlineData?: {
-              data?: string;
-              mimeType?: string;
-            };
-          }>;
-        };
-      }>;
-    };
-    const parts = payload.candidates?.[0]?.content?.parts ?? [];
-    const imagePart = parts.find((part) => isNonEmptyString(part.inlineData?.data));
-    const encoded = imagePart?.inlineData?.data ?? '';
-    if (!isNonEmptyString(encoded)) {
-      throw new Error('gemini_missing_image');
-    }
-    const imageBytes = fromBase64(encoded);
-    return {
-      model: params.model,
-      seed: params.seed,
-      width,
-      height,
-      contentType: imagePart?.inlineData?.mimeType ?? 'image/png',
-      imageBytes,
-      estimatedCostUsd: params.estimatedCostUsd,
-    };
   }
 }
 
@@ -3142,15 +3288,27 @@ const SEEDREAM_MIN_PIXELS = 2560 * 1440;
 const SEEDREAM_MAX_EDGE = 4096;
 
 // Muse picks its own size, so prefer the size fal reports over the size we asked for.
+function validReportedSize(
+  image: { width?: number; height?: number } | undefined,
+): { width: number; height: number } | null {
+  const width = image?.width;
+  const height = image?.height;
+  if (typeof width !== 'number' || typeof height !== 'number' ||
+    !Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+  return { width, height };
+}
+
 function reportedSize(
   image: { width?: number; height?: number } | undefined,
   requested: { width: number; height: number },
 ): { width: number; height: number } {
-  const width = image?.width;
-  const height = image?.height;
-  return Number.isInteger(width) && Number.isInteger(height)
-    ? { width: width as number, height: height as number }
-    : requested;
+  return validReportedSize(image) ?? requested;
+}
+
+function validFalSeed(value: unknown): number | null {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 export function seedreamImageSize(width: number, height: number): { width: number; height: number } {
@@ -3178,17 +3336,32 @@ const GPT_IMAGE_MAX_EDGE = 3840;
 const GPT_IMAGE_MAX_ASPECT = 3;
 
 export function gptImageSize(width: number, height: number): { width: number; height: number } {
-  let long = Math.max(width, height);
-  let short = Math.max(Math.min(width, height), long / GPT_IMAGE_MAX_ASPECT);
+  const inputLong = Math.max(1, width, height);
+  const inputShort = Math.max(1, Math.min(width, height), inputLong / GPT_IMAGE_MAX_ASPECT);
   // One factor for both edges keeps the aspect ratio inside the pixel and edge limits.
   const scale = Math.min(
-    Math.max(1, Math.sqrt(GPT_IMAGE_MIN_PIXELS / (long * short))),
-    Math.sqrt(GPT_IMAGE_MAX_PIXELS / (long * short)),
-    GPT_IMAGE_MAX_EDGE / long,
+    Math.max(1, Math.sqrt(GPT_IMAGE_MIN_PIXELS / (inputLong * inputShort))),
+    Math.sqrt(GPT_IMAGE_MAX_PIXELS / (inputLong * inputShort)),
+    GPT_IMAGE_MAX_EDGE / inputLong,
   );
-  long = Math.min(GPT_IMAGE_MAX_EDGE, Math.max(16, Math.round((long * scale) / 16) * 16));
-  short = Math.min(long, Math.max(16, Math.round((short * scale) / 16) * 16));
+  const long = Math.min(
+    GPT_IMAGE_MAX_EDGE,
+    Math.max(ceilToMultipleOf16(Math.sqrt(GPT_IMAGE_MIN_PIXELS)), Math.round((inputLong * scale) / 16) * 16),
+  );
+  const minShort = Math.max(
+    ceilToMultipleOf16(long / GPT_IMAGE_MAX_ASPECT),
+    ceilToMultipleOf16(GPT_IMAGE_MIN_PIXELS / long),
+  );
+  const maxShort = Math.min(long, Math.floor(GPT_IMAGE_MAX_PIXELS / long / 16) * 16);
+  const short = Math.min(
+    maxShort,
+    Math.max(minShort, Math.round((inputShort * scale) / 16) * 16),
+  );
   return width >= height ? { width: long, height: short } : { width: short, height: long };
+}
+
+function ceilToMultipleOf16(value: number): number {
+  return Math.ceil(value / 16) * 16;
 }
 
 function roundUpToMultipleOf8(value: number): number {
@@ -3206,6 +3379,33 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+interface DeadlineContext {
+  signal: AbortSignal;
+  wait<T>(operation: Promise<T>): Promise<T>;
+  dispose(): void;
+}
+
+function createDeadlineContext(deadlineAt: number): DeadlineContext {
+  const remainingMs = deadlineAt - Date.now();
+  if (remainingMs <= 0) {
+    throw new Error('timeout');
+  }
+  const controller = new AbortController();
+  let rejectTimeout: (reason: Error) => void = () => {};
+  const timeout = new Promise<never>((_, reject) => {
+    rejectTimeout = reject;
+  });
+  const timeoutId = setTimeout(() => {
+    controller.abort('timeout');
+    rejectTimeout(new Error('timeout'));
+  }, remainingMs);
+  return {
+    signal: controller.signal,
+    wait: <T>(operation: Promise<T>) => Promise.race([operation, timeout]),
+    dispose: () => clearTimeout(timeoutId),
+  };
 }
 
 function isTimeoutError(error: unknown): boolean {

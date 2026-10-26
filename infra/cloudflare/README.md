@@ -172,14 +172,34 @@ Config supports:
 - provider weights (weighted primary routing)
 - quality tier model mapping (`fast`, `balanced`, `quality`)
 - per-provider daily/monthly budget caps
-- timeout + fallback order (a slow model in `FAL_MODELS` sets a higher minimum timeout itself)
+- timeout + fallback order
 - hard user daily cap
 
-A fal model in `FAL_MODELS` (`src/ai.ts`) gets its own request body and size. Any other fal model gets `prompt`, `image_size` and `seed`.
-- automatic cost guardrails:
-  - `70%` usage: route fallbacks to cheaper providers first
-  - `85%` usage: pick cheapest provider as primary, downgrade `quality -> balanced`
-  - `95%` usage: aggressively downgrade `balanced -> fast` and avoid near-exhausted provider when alternatives exist
+The default consumer models are Z-Image Turbo for `fast`, Meta Muse Image for `balanced`, and GPT Image 2.5 Sunburst for `quality`. KV can override these defaults. A known model gets its request body, size rules, and cost estimate from `FAL_MODELS` in `worker/src/ai.ts`:
+
+- Z-Image Turbo accepts the requested size and seed. Its estimate is $0.005 per megapixel, calculated from the dimensions sent to fal, not a flat $0.015.
+- Muse accepts an aspect ratio, has no seed input, and returns its own size of about 2.5 MP. Its estimate is $0.01 per image. The consumer response uses the returned dimensions.
+- GPT Image 2.5 uses `high` quality, has no seed input, and applies its model-specific size limits. Its estimate is $0.07 per image.
+
+An unknown fal model configured in KV gets the generic `prompt`, `image_size`, and `seed` body and the configured cost estimate. Unknown model names that contain `seedream` keep the legacy Seedream size limits. Other unknown models use the requested size.
+
+The Studio route still permits only GPT Image 2.5, Seedream 4.5, and Seedream 5 Lite. Z-Image and Muse are consumer-only and are rejected before a Studio provider call or budget reservation. Studio accepts JPEG output, but that does not add a model to its approved list. Its gates require a portrait image with a short edge of at least 1400, a long edge of at least 3000, and a height-to-width ratio from 2.0 to 2.4. Muse's output of about 2.5 MP is too small for those gates.
+
+Automatic cost guardrails use the cost estimate for the requested size:
+
+- `70%` usage: route fallbacks to cheaper providers first.
+- `85%` usage: pick the cheapest provider as primary and consider `quality -> balanced`.
+- `95%` usage: also consider `balanced -> fast` and avoid a near-exhausted provider when alternatives exist.
+
+A tier downgrade applies only if it does not increase the cost estimate for the requested size. For example, Balanced stays on Muse when Z-Image would cost more. Paid requests are never downgraded.
+
+### Consumer request deadlines
+
+Generation and variation requests start a shared 50-second provider deadline before authentication. Fal generation, response-body reads, and image download share that deadline. Fallback attempts use the time left, not a new 50 seconds. A model's minimum timeout can raise the configured timeout, but cannot extend the shared deadline.
+
+Inline watermark work has a separate deadline 55 seconds after the same request start. If no watermark is ready by then, the worker records deferred work instead of waiting for another render attempt.
+
+These deadlines do not bound authentication, KV, Durable Object, or R2 calls. They are not a hard 60-second end-to-end response guarantee.
 
 ## AI watermark backfill
 
