@@ -6,6 +6,7 @@ import 'package:Prism/auth/badge_model.dart';
 import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/logger/app_logger.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -433,6 +435,33 @@ class _OfflinePexels extends Fake implements PexelsWallpaperRepository {
     bool portraitOnly = true,
     String? color,
   }) async => Result.error(const UnknownFailure('offline'));
+}
+
+class _TimedOutFirestore extends Fake implements FirestoreClient {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
+      throw TimeoutException('No confirmed server snapshot for ${spec.sourceTag}.');
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async => null;
+}
+
+class _HangingPexels extends Fake implements PexelsWallpaperRepository {
+  @override
+  Future<Result<List<PexelsWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int startPage = 1,
+    String? paginationKey,
+    bool portraitOnly = true,
+    String? color,
+  }) => Completer<Result<List<PexelsWallpaper>>>().future;
 }
 
 class _EmptyBlocks extends Fake implements UserBlockRepository {
@@ -911,6 +940,63 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(result.data!.items, isNotEmpty);
     expect(result.data!.items.every(BundledWallpapers.isStarter), isTrue);
+  });
+
+  for (final (String providers, WallhavenWallpaperRepository wallhaven, PexelsWallpaperRepository pexels)
+      in <(String, WallhavenWallpaperRepository, PexelsWallpaperRepository)>[
+        ('time out', _HangingWallhaven(), _HangingPexels()),
+        ('return failures', _OfflineWallhaven(), _OfflinePexels()),
+      ]) {
+    test('a feed whose Firestore reads time out and whose providers $providers logs no error', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      await settings.set('onboarding_v2_interests', 'Photography');
+      app_state.prismUser = _signedInUser();
+      InMemoryLogSink.instance.clear();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _TimedOutFirestore(),
+        wallhaven: wallhaven,
+        pexels: pexels,
+        favourites: _CountingFavourites(),
+        settings: settings,
+      );
+
+      final result = await repository.fetch(_firstPage);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items.every(BundledWallpapers.isStarter), isTrue);
+      final List<AppLogRecord> feedLogs = InMemoryLogSink.instance.records
+          .where((record) => record.message.startsWith('[PersonalizedFeed]'))
+          .toList();
+      expect(feedLogs.where((record) => record.level == AppLogLevel.error), isEmpty);
+      expect(
+        feedLogs.where((record) => record.level == AppLogLevel.warn && record.message.contains('every source')),
+        hasLength(1),
+      );
+    });
+  }
+
+  test('every source failing for a reason other than the network is still reported as an error', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('onboarding_v2_interests', 'Photography');
+    app_state.prismUser = _signedInUser();
+    InMemoryLogSink.instance.clear();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OfflineFirestore(),
+      wallhaven: _OfflineWallhaven(),
+      pexels: _OfflinePexels(),
+      favourites: _CountingFavourites(),
+      settings: settings,
+    );
+
+    final result = await repository.fetch(_firstPage);
+
+    expect(result.isSuccess, isTrue);
+    expect(
+      InMemoryLogSink.instance.records.where(
+        (record) => record.level == AppLogLevel.error && record.message == '[PersonalizedFeed] fetch failed',
+      ),
+      hasLength(1),
+    );
   });
 
   test('all-successful empty sources return a successful empty page', () async {
