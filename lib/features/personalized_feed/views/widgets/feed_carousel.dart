@@ -47,9 +47,10 @@ int _carouselColumns(BuildContext context) {
 }
 
 /// Height of one carousel page: the page is as wide as the carousel divided by its columns, less the
-/// [PrismFeedLayout.gridSpacing] margin on both sides, and 0.6 times as tall as it is wide.
+/// [PrismFeedLayout.gridSpacing] margin on both sides, and 0.6 times as tall as it is wide. It is 0 while the screen is
+/// narrower than the margins, as on the zero-size first frame on Android.
 double feedCarouselCardHeight(BuildContext context) =>
-    (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
+    math.max(0, (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6);
 
 /// The home carousel: Wall of the Day, the live Drop, boosted walls, a card for each seasonal theme (in its season,
 /// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
