@@ -17,6 +17,11 @@ export function parseUsername(raw: unknown): string {
   return username;
 }
 
+/** A name shouts when it has 3 or more ASCII letters and no lowercase ASCII letter. */
+export function isAllCapsUsername(username: string): boolean {
+  return (username.match(/[A-Za-z]/g) ?? []).length >= 3 && !/[a-z]/.test(username);
+}
+
 /**
  * Gives the caller a username that nobody else holds. The `usernames/{lowercase}` registry decides who owns a name.
  * A name that only a profile holds, with no registry doc yet, counts as taken too. The previous registry doc of the
@@ -37,6 +42,9 @@ export async function reserveUsername(uid: string, username: string, initial = f
     }
     const user = userSnap.data();
     const oldUsername = typeof user?.username === "string" ? user.username : "";
+    if (!initial && username !== oldUsername && isAllCapsUsername(username)) {
+      throw new HttpsError("invalid-argument", "Use at least one lowercase letter.");
+    }
     const oldLower = usernameLowerOf(oldUsername);
     const oldRef = oldLower && oldLower !== lower ? db.collection(USERNAMES).doc(oldLower) : null;
     const [nameSnap, holders, oldSnap] = await Promise.all([
@@ -67,7 +75,8 @@ export async function reserveUsername(uid: string, username: string, initial = f
 /** Initial names use the same reservation transaction as explicit claims, never a query-then-write. */
 export async function reserveInitialUsername(uid: string, raw: unknown) {
   const cleaned = typeof raw === "string" ? raw.replace(/\W/g, "").slice(0, 30) : "";
-  const base = cleaned.length >= 3 ? cleaned : "user";
+  const named = cleaned.length >= 3 ? cleaned : "user";
+  const base = isAllCapsUsername(named) ? named.toLowerCase() : named;
   const suffix = uid.replace(/\W/g, "").toLowerCase();
   const candidates = [base, ...[4, 8, 12, 20].map((length) =>
     `${base.slice(0, 29 - Math.min(length, suffix.length))}_${suffix.slice(0, length)}`)];
