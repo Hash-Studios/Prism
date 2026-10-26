@@ -8652,6 +8652,12 @@ class AppLocalizationsPt extends AppLocalizations {
       'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
+  String get wallpaperPreviousInFeed => 'Papel de parede anterior';
+
+  @override
+  String get wallpaperNextInFeed => 'Próximo papel de parede';
+
+  @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
 
   @override
@@ -18676,6 +18682,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get wallpaperImageSemanticHint =>
       'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
+
+  @override
+  String get wallpaperPreviousInFeed => 'Papel de parede anterior';
+
+  @override
+  String get wallpaperNextInFeed => 'Próximo papel de parede';
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';

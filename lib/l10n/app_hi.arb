@@ -7457,6 +7457,14 @@
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
+  "wallpaperPreviousInFeed": "पिछला वॉलपेपर",
+  "@wallpaperPreviousInFeed": {
+    "description": "Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from."
+  },
+  "wallpaperNextInFeed": "अगला वॉलपेपर",
+  "@wallpaperNextInFeed": {
+    "description": "Accessibility action on the wallpaper detail card that shows the next wallpaper of the feed it was opened from."
+  },
   "wallpaperImageSemanticLabel": "वॉलपेपर",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."

@@ -2240,6 +2240,8 @@
   "wallpaperHistoryTitle": "Historial de fondos de pantalla",
   "wallpaperHomeAppName": "Prism",
   "wallpaperImageSemanticHint": "Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.",
+  "wallpaperPreviousInFeed": "Fondo de pantalla anterior",
+  "wallpaperNextInFeed": "Siguiente fondo de pantalla",
   "wallpaperImageSemanticLabel": "Fondo de pantalla",
   "wallpaperInsufficientCoins": "No tienes suficientes monedas. Gana monedas en Recompensas.",
   "wallpaperInterestLearnedLabel": "Aprendido: {label}, {percent} por ciento",

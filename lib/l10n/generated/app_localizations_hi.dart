@@ -8495,6 +8495,12 @@ class AppLocalizationsHi extends AppLocalizations {
       'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
 
   @override
+  String get wallpaperPreviousInFeed => 'पिछला वॉलपेपर';
+
+  @override
+  String get wallpaperNextInFeed => 'अगला वॉलपेपर';
+
+  @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';
 
   @override
