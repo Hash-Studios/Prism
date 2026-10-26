@@ -71,7 +71,7 @@ class _DiyaState extends State<_Diya> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.flicker || context.reduceMotion) {
+    if (!widget.flicker || context.reduceMotion || !TickerMode.valuesOf(context).enabled) {
       _flicker.stop();
     } else if (!_flicker.isAnimating) {
       _flicker.repeat(reverse: true);
@@ -173,8 +173,9 @@ class _DiwaliFireworksState extends State<DiwaliFireworks> with SingleTickerProv
       if (_bloom.isAnimating) _bloom.stop();
       return const SizedBox.shrink();
     }
+    final bool tickerEnabled = TickerMode.valuesOf(context).enabled;
     final bool still = context.reduceMotion;
-    if (still) {
+    if (!tickerEnabled || still) {
       _bloom.stop();
     } else if (!_bloom.isAnimating) {
       _bloom.repeat();

@@ -106,6 +106,60 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('diya and fireworks stop while their ticker mode is disabled', (tester) async {
+    bool tickerEnabled = true;
+    StateSetter? rebuild;
+
+    Widget app() => MaterialApp(
+      theme: kDarkTheme10,
+      home: StatefulBuilder(
+        builder: (context, setState) {
+          rebuild = setState;
+          return Scaffold(
+            body: TickerMode(
+              enabled: tickerEnabled,
+              child: const Stack(children: <Widget>[DiwaliDiya(), DiwaliFireworks()]),
+            ),
+          );
+        },
+      ),
+    );
+
+    AnimationController diyaController() =>
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(DiwaliDiya), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+
+    AnimationController fireworksController() =>
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(DiwaliFireworks), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+    expect(diyaController().isAnimating, isTrue);
+    expect(fireworksController().isAnimating, isTrue);
+
+    rebuild!(() => tickerEnabled = false);
+    await tester.pump();
+    expect(tester.binding.transientCallbackCount, 0);
+    expect(<bool>[diyaController().isAnimating, fireworksController().isAnimating], <bool>[false, false]);
+
+    rebuild!(() => tickerEnabled = true);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+    expect(diyaController().isAnimating, isTrue);
+    expect(fireworksController().isAnimating, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('DiwaliBannerArt builds in a sized box under the light theme', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

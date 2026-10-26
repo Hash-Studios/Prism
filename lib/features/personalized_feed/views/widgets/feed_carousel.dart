@@ -225,7 +225,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     ];
     if (_pageIds.isNotEmpty && _current < _pageIds.length) {
       final int preservedPage = pageIds.indexOf(_pageIds[_current]);
-      if (preservedPage >= 0 && preservedPage != _current) {
+      if (preservedPage >= 0 && (preservedPage != _current || pageIds.length != _pageIds.length)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _controller.jumpToPage(preservedPage);
         });
@@ -261,7 +261,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
       for (int i = 0; i < widget.previewWalls.length; i++)
         (int realIndex) => _previewCard(widget.previewWalls[i], i, memCacheHeight, realIndex),
     ];
-    if (pages.isEmpty) return const SizedBox.shrink();
+    if (pages.isEmpty) {
+      _current = 0;
+      return const SizedBox.shrink();
+    }
     final int current = _current.clamp(0, pages.length - 1);
     final bool moving = pages.length > 1;
     // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.

@@ -50,8 +50,11 @@ class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-StartupConfigEntity _startupConfig({required String bannerText}) => StartupConfigEntity(
-  topImageLink: app_constants.defaultTopImageLink,
+StartupConfigEntity _startupConfig({
+  required String bannerText,
+  String topImageLink = app_constants.defaultTopImageLink,
+}) => StartupConfigEntity(
+  topImageLink: topImageLink,
   bannerText: bannerText,
   bannerTextOn: true,
   bannerUrl: '',
@@ -190,6 +193,11 @@ void main() {
 
   Future<void> swipeToNextPage(WidgetTester tester) async {
     await tester.fling(find.byType(CarouselSlider), const Offset(-300, 0), 1500);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> swipeToPreviousPage(WidgetTester tester) async {
+    await tester.fling(find.byType(CarouselSlider), const Offset(300, 0), 1500);
     await tester.pumpAndSettle();
   }
 
@@ -422,6 +430,14 @@ void main() {
 
   String shownWallId(WidgetTester tester) =>
       tester.widget<WallpaperImpression>(find.byType(WallpaperImpression)).itemId;
+
+  String? centeredCarouselTitle(WidgetTester tester) {
+    final double centerX = tester.getRect(find.byType(CarouselSlider)).center.dx;
+    for (final FeedHeroCard card in tester.widgetList<FeedHeroCard>(find.byType(FeedHeroCard))) {
+      if ((tester.getRect(find.byWidget(card)).center.dx - centerX).abs() < 1) return card.title;
+    }
+    return null;
+  }
 
   List<String> shownWallIds(WidgetTester tester) => find
       .byType(WallpaperImpression)
@@ -659,6 +675,23 @@ void main() {
     expect(find.byType(FeedCarouselDots), findsNothing);
   });
 
+  testWidgets('returning from an empty carousel resets the page indicator', (tester) async {
+    final _MockStartupRepository repository = _MockStartupRepository();
+    when(() => repository.currentConfig).thenReturn(_startupConfig(bannerText: '', topImageLink: ''));
+    getIt.registerSingleton<StartupRepository>(repository);
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
+    await swipeToNextPage(tester);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+
+    await pumpCarousel(tester, const <PrismFeedItem>[]);
+    expect(find.byType(CarouselSlider), findsNothing);
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('c'), _wall('d')]);
+
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+  });
+
   const WallOfTheDayEntity wotd = WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana');
 
   testWidgets('a live Drop gets the page right after the Wall of the Day, before the boosted walls', (tester) async {
@@ -804,7 +837,7 @@ void main() {
       seasonClock = () => DateTime(2026, 11, 2, 23, 59).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
       await swipeToNextPage(tester);
-      expect(find.text('The Spooky theme is here'), findsOneWidget);
+      expect(centeredCarouselTitle(tester), 'The Spooky theme is here');
 
       elapsed = const Duration(minutes: 1);
       await tester.pump(const Duration(minutes: 1));
@@ -899,6 +932,87 @@ void main() {
       await swipeToNextPage(tester);
 
       expect(find.text('The Spooky theme is here'), findsOneWidget);
+    });
+
+    testWidgets('the seasonal deadline timer removes each card in order without a parent rebuild', (tester) async {
+      Duration elapsed = Duration.zero;
+      seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 4);
+
+      elapsed = const Duration(days: 3);
+      await tester.pump(const Duration(days: 3));
+
+      expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 3);
+      expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
+
+      elapsed = const Duration(days: 12);
+      await tester.pump(const Duration(days: 9));
+
+      expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 2);
+      expect(centeredCarouselTitle(tester), 'Join our Telegram');
+    });
+
+    testWidgets('removing the selected Spooky card keeps the banner and dots aligned', (tester) async {
+      Duration elapsed = Duration.zero;
+      seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
+      expect(find.text('The Spooky theme is here'), findsOneWidget);
+
+      elapsed = const Duration(days: 3);
+      await tester.pump(const Duration(days: 3));
+
+      expect(find.text('The Spooky theme is here'), findsNothing);
+      expect(find.text('Join our Telegram'), findsOneWidget);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+      expect(centeredCarouselTitle(tester), 'Join our Telegram');
+    });
+
+    testWidgets('switching active seasonal themes reveals the other card at the selected page', (tester) async {
+      seasonClock = () => DateTime(2026, 10, 31);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
+
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme10);
+      await tester.pumpAndSettle();
+
+      expect(find.text('The Diwali theme is here'), findsNothing);
+      expect(centeredCarouselTitle(tester), 'The Spooky theme is here');
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme9);
+      await tester.pumpAndSettle();
+
+      expect(Theme.of(tester.element(find.byType(FeedCarousel))).colorScheme.surface, kDarkTheme9.colorScheme.surface);
+      expect(find.text('The Spooky theme is here'), findsNothing);
+      expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 3);
+      expect(centeredCarouselTitle(tester), 'Join our Telegram');
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+
+      await swipeToPreviousPage(tester);
+
+      expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+    });
+
+    testWidgets('same-index seasonal page stays selected after a full infinite cycle and removal', (tester) async {
+      Duration elapsed = Duration.zero;
+      seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      for (int i = 0; i < 4; i++) {
+        await swipeToNextPage(tester);
+      }
+      expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+
+      elapsed = const Duration(days: 3);
+      await tester.pump(const Duration(days: 3));
+      await tester.pumpAndSettle();
+
+      expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
+      expect(find.text('The Spooky theme is here'), findsNothing);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
     });
   });
 }

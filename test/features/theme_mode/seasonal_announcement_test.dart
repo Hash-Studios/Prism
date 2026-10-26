@@ -14,6 +14,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_local_store.dart';
 
+class _FailOnceLocalStore extends InMemoryLocalStore {
+  _FailOnceLocalStore(this.failKey);
+
+  String? failKey;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == failKey) {
+      failKey = null;
+      throw StateError('write failed for $key');
+    }
+    await super.set(key, value);
+  }
+}
+
 void main() {
   final AppLocalizations l10n = lookupAppLocalizations(const Locale('en'));
   final DateTime inSeason = DateTime(2026, 10, 25, 12);
@@ -218,6 +233,177 @@ void main() {
     expect(await first, isTrue);
     expect(await second, isTrue);
     expect(pushCount, 1);
+  });
+
+  test('Diwali and legacy Spooky announcements can proceed concurrently', () async {
+    final Completer<void> bothPushesStarted = Completer<void>();
+    final Completer<void> finishPushes = Completer<void>();
+    final List<String> pushTitles = <String>[];
+    Future<void> blockedPush(String title, String body) async {
+      pushTitles.add(title);
+      if (pushTitles.length == 2) bothPushesStarted.complete();
+      await finishPushes.future;
+    }
+
+    final Future<bool> diwali = announceSeasonalTheme(
+      season: diwaliSeason,
+      now: inSeason,
+      l10n: l10n,
+      settings: settings,
+      inbox: inbox,
+      showPush: blockedPush,
+    );
+    final Future<bool> spooky = announceSeasonalTheme(
+      season: spookySeason,
+      now: inSeason,
+      l10n: l10n,
+      settings: settings,
+      inbox: inbox,
+      showPush: blockedPush,
+    );
+    await bothPushesStarted.future;
+    finishPushes.complete();
+
+    expect(await diwali, isTrue);
+    expect(await spooky, isTrue);
+    expect(pushTitles, containsAll(<String>[l10n.diwaliAnnouncementTitle, l10n.spookyAnnouncementTitle]));
+    expect(
+      (await inbox.readAll()).map((item) => item.id),
+      containsAll(<String>['local_diwali_theme_2026', 'local_spooky_theme_2026']),
+    );
+  });
+
+  test('overlapping update checks keep the selected Diwali season while its callback is blocked', () async {
+    await settings.set('lastSeenVersion', '1.0.0');
+    final Completer<void> firstCallbackStarted = Completer<void>();
+    final Completer<void> bothCallbacksStarted = Completer<void>();
+    final Completer<void> finishCallbacks = Completer<void>();
+    final List<SeasonalTheme> selected = <SeasonalTheme>[];
+    Future<bool> blockedAnnouncement(SeasonalTheme season) async {
+      selected.add(season);
+      if (selected.length == 1) firstCallbackStarted.complete();
+      if (selected.length == 2) bothCallbacksStarted.complete();
+      await finishCallbacks.future;
+      return true;
+    }
+
+    final Future<bool> first = checkSeasonalAnnouncementOnAppUpdate(
+      currentVersion: '1.1.0',
+      currentBuild: '348',
+      settings: settings,
+      now: inSeason,
+      announce: blockedAnnouncement,
+    );
+    await firstCallbackStarted.future;
+    final Future<bool> overlapping = checkSeasonalAnnouncementOnAppUpdate(
+      currentVersion: '1.1.0',
+      currentBuild: '348',
+      settings: settings,
+      now: inSeason,
+      announce: blockedAnnouncement,
+    );
+    await bothCallbacksStarted.future;
+
+    expect(selected, <SeasonalTheme>[diwaliSeason, diwaliSeason]);
+    finishCallbacks.complete();
+    expect(await first, isTrue);
+    expect(await overlapping, isFalse);
+    expect(settings.get<bool>(spookySeason.pendingKey, defaultValue: false), isFalse);
+  });
+
+  test('pending and version-metadata write failures leave an update recoverable', () async {
+    for (final String failedKey in <String>[
+      'settings.${diwaliSeason.pendingKey}',
+      'settings.lastSeenVersion',
+      'settings.lastSeenBuildVersion',
+    ]) {
+      final _FailOnceLocalStore failingStore = _FailOnceLocalStore(null);
+      final SettingsLocalDataSource failingSettings = SettingsLocalDataSource(failingStore);
+      await failingSettings.set('lastSeenVersion', '1.0.0');
+      await failingSettings.set('lastSeenBuildVersion', '347');
+      failingStore.failKey = failedKey;
+      var attempts = 0;
+
+      await expectLater(
+        checkSeasonalAnnouncementOnAppUpdate(
+          currentVersion: '1.1.0',
+          currentBuild: '348',
+          settings: failingSettings,
+          seasons: <SeasonalTheme>[diwaliSeason],
+          now: inSeason,
+          announce: (season) async {
+            attempts++;
+            return true;
+          },
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(attempts, 0, reason: failedKey);
+
+      final bool recovered = await checkSeasonalAnnouncementOnAppUpdate(
+        currentVersion: '1.1.0',
+        currentBuild: '348',
+        settings: failingSettings,
+        seasons: <SeasonalTheme>[diwaliSeason],
+        now: inSeason,
+        announce: (season) async {
+          attempts++;
+          return true;
+        },
+      );
+
+      expect(recovered, isTrue, reason: failedKey);
+      expect(attempts, 1, reason: failedKey);
+    }
+  });
+
+  test('forced-style inbox replacement retains read Diwali and legacy Spooky announcements', () async {
+    await announceSeasonalTheme(
+      season: diwaliSeason,
+      now: inSeason,
+      l10n: l10n,
+      settings: settings,
+      inbox: inbox,
+      showPush: showPush,
+    );
+    await announceSeasonalTheme(
+      season: spookySeason,
+      now: inSeason,
+      l10n: l10n,
+      settings: settings,
+      inbox: inbox,
+      showPush: showPush,
+    );
+    await inbox.markAsRead(diwaliSeason.announcementId);
+    await inbox.markAsRead(spookySeason.announcementId);
+    final InAppNotificationEntity remote = InAppNotificationEntity(
+      id: 'remote-notification',
+      title: 'Remote notification',
+      pageName: '',
+      body: '',
+      imageUrl: '',
+      arguments: const <Object>[],
+      url: '',
+      createdAt: inSeason,
+      read: false,
+    );
+
+    await inbox.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[remote],
+      filterRemoved: (items) async => items,
+      isCurrentSession: () => true,
+    );
+
+    final List<InAppNotificationEntity> afterSync = await inbox.readAll();
+    final Map<String, InAppNotificationEntity> byId = <String, InAppNotificationEntity>{
+      for (final item in afterSync) item.id: item,
+    };
+    expect(
+      byId.keys,
+      containsAll(<String>[diwaliSeason.announcementId, 'local_spooky_theme_2026', 'remote-notification']),
+    );
+    expect(byId[diwaliSeason.announcementId]!.read, isTrue);
+    expect(byId['local_spooky_theme_2026']!.read, isTrue);
   });
 
   test('does not mark announced if the notification owner changes during the inbox write', () async {
