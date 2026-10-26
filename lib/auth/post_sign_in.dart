@@ -14,6 +14,7 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
+import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -90,6 +91,14 @@ Future<void> _startFavouritesSync(String userId) async {
     await getIt<FavouritesSyncService>().start(userId);
   } catch (error, stackTrace) {
     logger.w('Favourites sync did not start.', tag: 'Auth', error: error, stackTrace: stackTrace);
+  }
+}
+
+Future<void> _syncAccountTheme(String userId) async {
+  try {
+    await getIt<ThemeRepository>().syncWithAccount(userId);
+  } catch (error, stackTrace) {
+    logger.w('Theme did not sync with the account.', tag: 'Auth', error: error, stackTrace: stackTrace);
   }
 }
 
@@ -226,6 +235,8 @@ Future<void> completeSignIn({
     await PurchasesService.instance.checkAndPersistPremium();
     operation.requireCurrent();
     await CoinsService.instance.bootstrapForCurrentUser();
+    operation.requireCurrent();
+    await _syncAccountTheme(user.uid);
     operation.requireCurrent();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     operation.requireCurrent();

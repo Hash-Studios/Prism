@@ -364,9 +364,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
-  gh.lazySingleton<_i428.ThemeRepository>(
-    () => _i593.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
-  );
   gh.factory<_i638.WallpaperPositionBloc>(
     () => _i638.WallpaperPositionBloc(gh<_i307.WallpaperPositionRepository>()),
   );
@@ -386,12 +383,6 @@ _i174.GetIt initGetIt(
       gh<_i672.GuestFavouritesStore>(),
       gh<_i640.FavoritesLocalDataSource>(),
     ),
-  );
-  gh.lazySingleton<_i937.LoadThemeUseCase>(
-    () => _i937.LoadThemeUseCase(gh<_i428.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i937.UpdateThemeUseCase>(
-    () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
   );
   gh.lazySingleton<_i312.PexelsWallpaperRepository>(
     () => _i914.PexelsWallpaperRepositoryImpl(
@@ -487,6 +478,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i761.FavouriteCountsRepository>(
     () => _i931.FavouriteCountsRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
+  gh.lazySingleton<_i428.ThemeRepository>(
+    () => _i593.ThemeRepositoryImpl(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i349.FirestoreClient>(),
+    ),
+  );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
     () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
@@ -553,12 +550,11 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
-  gh.factory<_i583.ThemeBloc>(
-    () => _i583.ThemeBloc(
-      gh<_i937.LoadThemeUseCase>(),
-      gh<_i937.UpdateThemeUseCase>(),
-      gh<_i428.ThemeRepository>(),
-    ),
+  gh.lazySingleton<_i937.LoadThemeUseCase>(
+    () => _i937.LoadThemeUseCase(gh<_i428.ThemeRepository>()),
+  );
+  gh.lazySingleton<_i937.UpdateThemeUseCase>(
+    () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
   );
   gh.lazySingleton<_i886.FetchTrendingUseCase>(
     () => _i886.FetchTrendingUseCase(gh<_i72.TrendingRepository>()),
@@ -681,6 +677,13 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
+  );
+  gh.factory<_i583.ThemeBloc>(
+    () => _i583.ThemeBloc(
+      gh<_i937.LoadThemeUseCase>(),
+      gh<_i937.UpdateThemeUseCase>(),
+      gh<_i428.ThemeRepository>(),
+    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(

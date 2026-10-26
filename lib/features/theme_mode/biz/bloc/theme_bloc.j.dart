@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -18,7 +20,21 @@ part 'theme_bloc.j.freezed.dart';
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   ThemeBloc(this._loadThemeUseCase, this._updateThemeUseCase, ThemeRepository repository)
     : super(ThemeState.fromPreferences(repository.readSync())) {
+    _accountChanges = repository.accountChanges.listen(
+      (preferences) => add(ThemeEvent.accountSynced(preferences: preferences)),
+    );
     on<_Started>(_onStarted);
+    on<_AccountSynced>(
+      (event, emit) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          light: event.preferences.light,
+          dark: event.preferences.dark,
+          mode: event.preferences.mode,
+          failure: null,
+        ),
+      ),
+    );
     on<_LightThemeChanged>((event, emit) => _update(UpdateThemeParams(lightThemeId: event.themeId), emit));
     on<_LightAccentChanged>(
       (event, emit) => _update(UpdateThemeParams(lightAccentColorValue: event.accentColorValue), emit),
@@ -34,6 +50,13 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
 
   final LoadThemeUseCase _loadThemeUseCase;
   final UpdateThemeUseCase _updateThemeUseCase;
+  StreamSubscription<ThemePreferences>? _accountChanges;
+
+  @override
+  Future<void> close() async {
+    await _accountChanges?.cancel();
+    return super.close();
+  }
 
   Future<void> _onStarted(_Started event, Emitter<ThemeState> emit) async {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
