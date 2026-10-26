@@ -7,6 +7,7 @@ export interface FirebaseAuthEnvBindings {
 export interface VerifiedFirebaseAuth {
   token: string;
   userId: string;
+  signInProvider: string | null;
   claims: Record<string, unknown>;
 }
 
@@ -97,7 +98,12 @@ export async function verifyFirebaseIdTokenFromRequest(
     return null;
   }
 
-  return { token, userId, claims };
+  const firebase = claims['firebase'];
+  const signInProvider = firebase !== null && typeof firebase === 'object'
+    ? asString((firebase as Record<string, unknown>)['sign_in_provider'])
+    : '';
+
+  return { token, userId, signInProvider: signInProvider.length > 0 ? signInProvider : null, claims };
 }
 
 async function getFirebaseJwk(kid: string, env: FirebaseAuthEnvBindings): Promise<FirebaseJwk | null> {

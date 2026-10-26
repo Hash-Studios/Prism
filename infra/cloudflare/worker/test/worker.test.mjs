@@ -1780,6 +1780,35 @@ test('a failed free trial can be retried and bad free trial requests are refused
   assert.equal(stats.fal, 1);
 });
 
+test('anonymous users and tokens without a sign-in provider get 403 for the free trial and no provider call', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ stats, firestore: () => chargeDoc() });
+  try {
+    for (const firebase of [{ sign_in_provider: 'anonymous' }, {}, undefined]) {
+      const token = await makeToken({ sub: 'anon', firebase });
+      const response = await postGeneration(env, { freeTrial: true }, token);
+      assert.equal(response.status, 403, JSON.stringify(firebase));
+      assert.equal((await response.json()).error, 'trial_not_allowed');
+    }
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+  assert.equal(stats.firestore ?? 0, 0);
+});
+
+test('anonymous users keep paid generations', async () => {
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const token = await makeToken({ sub: 'alice', firebase: { sign_in_provider: 'anonymous' } });
+  const restore = mockFal({ firestore: () => chargeDoc() });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID }, token)).status, 200);
+  } finally {
+    restore();
+  }
+});
+
 test('a free trial that is still running gets 409, and only its owner can finish it', async () => {
   const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
   const rpc = async (body) => (await coordinator.fetch(new Request('https://quota.internal/rpc', {
@@ -3041,6 +3070,7 @@ async function makeToken(overrides = {}) {
     iat: now,
     exp: now + 3600,
     auth_time: now,
+    firebase: { sign_in_provider: 'google.com' },
     ...overrides,
   };
   const unsigned = `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(claims))}`;

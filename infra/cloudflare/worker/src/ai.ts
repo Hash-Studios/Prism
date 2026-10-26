@@ -38,12 +38,14 @@ type AiErrorCode =
   | 'charge_required'
   | 'charge_invalid'
   | 'charge_in_progress'
+  | 'trial_not_allowed'
   | 'in_progress';
 type BudgetThresholdLevel = 0 | 70 | 85 | 95;
 
 interface AuthContext {
   token: string;
   userId: string;
+  signInProvider: string | null;
 }
 
 interface AiGenerateRequest {
@@ -1085,6 +1087,9 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_request', 400, 'Invalid freeTrial');
   }
   const freeTrial = body.freeTrial === true;
+  if (freeTrial && (auth.signInProvider == null || auth.signInProvider === 'anonymous')) {
+    return aiError('trial_not_allowed', 403, 'The free trial needs a signed-in account');
+  }
   if (freeTrial && body.chargeTxId != null) {
     return aiError('invalid_request', 400, 'A free trial has no chargeTxId');
   }
@@ -1765,6 +1770,7 @@ async function parseAuth(request: Request, env: AiEnvBindings): Promise<AuthCont
   return {
     token: verified.token,
     userId: clipText(verified.userId, 128),
+    signInProvider: verified.signInProvider,
   };
 }
 
