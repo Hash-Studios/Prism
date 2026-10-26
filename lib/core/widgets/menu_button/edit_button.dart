@@ -68,6 +68,15 @@ class _EditButtonState extends State<EditButton> {
   }
 
   Future<void> onEdit(String? url) async {
+    if (!await signInForOriginal(
+          context,
+          url: url ?? '',
+          wallpaperId: widget.wallpaperId,
+          wallpaperSource: widget.wallpaperSource,
+        ) ||
+        !mounted) {
+      return;
+    }
     final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     if (url == null) {

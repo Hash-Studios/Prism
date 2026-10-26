@@ -60,14 +60,16 @@ void main() {
       expect(find.text('Not now'), findsOneWidget);
     });
 
-    testWidgets('Not now closes the sheet', (tester) async {
-      await open(tester, (context) => googleSignInPopUp(context, () {}));
+    testWidgets('Not now closes the sheet and reports no sign-in', (tester) async {
+      Future<bool>? signedIn;
+      await open(tester, (context) => signedIn = googleSignInPopUp(context, () {}));
 
       await tester.tap(find.text('Not now'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Sign in to Prism'), findsNothing);
+      expect(await signedIn, isFalse);
     });
   });
 

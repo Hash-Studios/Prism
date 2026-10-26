@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -176,6 +177,45 @@ void main() {
       expect(temporaryDirectoryCalls, 0);
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
       expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
+
+  for (final signsIn in <bool>[false, true]) {
+    testWidgets('Edit on a protected wall asks a guest to sign in first (signs in: $signsIn)', (tester) async {
+      final backend = CoinsTestBackend();
+      await backend.install();
+      final signedInUser = app_state.prismUser;
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final calls = <Map<String, dynamic>>[];
+      backend.onCall = (name, input) async {
+        if (!app_state.prismUser.loggedIn) {
+          throw FirebaseFunctionsException(code: 'unauthenticated', message: 'Sign in to access originals.');
+        }
+        calls.add(input);
+        if (input['mode'] == 'quote') {
+          return <String, dynamic>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+        }
+        throw FirebaseFunctionsException(code: 'permission-denied', message: 'Denied');
+      };
+      final signIn = originalSignIn;
+      addTearDown(() => originalSignIn = signIn);
+      var signIns = 0;
+      originalSignIn = (_) async {
+        signIns++;
+        if (signsIn) app_state.prismUser = signedInUser;
+        return signsIn;
+      };
+      final router = _MockStackRouter();
+      await tester.pumpWidget(_host(router, '', source: WallpaperSource.prism, wallpaperId: 'protected-edit'));
+
+      await tester.tap(find.byType(EditButton));
+      await tester.pumpAndSettle();
+
+      expect(signIns, 1);
+      expect(calls.map((call) => call['action']), signsIn ? ['edit', 'edit'] : isEmpty);
+      verifyNever(() => router.push(any()));
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
       await tester.pump(const Duration(seconds: 1));
     });
   }
