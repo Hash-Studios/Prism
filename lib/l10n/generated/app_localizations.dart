@@ -5385,6 +5385,18 @@ abstract class AppLocalizations {
   /// **'Live Activities are off or not supported'**
   String get debugLiveActivityUnavailable;
 
+  /// No description provided for @debugReviewActivityPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview review queue activity'**
+  String get debugReviewActivityPreview;
+
+  /// No description provided for @debugReviewActivityPreviewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the walls waiting for review on the Lock Screen'**
+  String get debugReviewActivityPreviewDescription;
+
   /// No description provided for @debugAllTags.
   ///
   /// In en, this message translates to:

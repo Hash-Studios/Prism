@@ -24,6 +24,15 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
   @override
   bool get wantKeepAlive => true;
 
+  Future<void> _previewReviewActivity(BuildContext context) async {
+    final bool started = await LiveActivityChannel.startReviewQueue(
+      pending: 12,
+      newestBy: 'Alice',
+      oldestAt: DateTime.now().subtract(const Duration(hours: 3)),
+    );
+    if (!started && context.mounted) showDebugSnackBar(context, context.l10n.debugLiveActivityUnavailable);
+  }
+
   Future<void> _previewLiveActivity(BuildContext context) async {
     final ColorScheme colors = Theme.of(context).colorScheme;
     const AiStylePreset style = AiStylePreset.cyberpunk;
@@ -195,6 +204,12 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
                 title: context.l10n.debugLiveActivityPreview,
                 subtitle: context.l10n.debugLiveActivityPreviewDescription,
                 onTap: () => _previewLiveActivity(context),
+              ),
+              PrismRow(
+                icon: Icons.inbox_outlined,
+                title: context.l10n.debugReviewActivityPreview,
+                subtitle: context.l10n.debugReviewActivityPreviewDescription,
+                onTap: () => _previewReviewActivity(context),
               ),
             ],
           ),

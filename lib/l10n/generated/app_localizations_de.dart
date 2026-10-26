@@ -3110,6 +3110,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Live-Aktivitäten sind aus oder nicht unterstützt';
 
   @override
+  String get debugReviewActivityPreview => 'Vorschau der Prüfwarteschlangen-Aktivität';
+
+  @override
+  String get debugReviewActivityPreviewDescription =>
+      'Zeigt die Hintergrundbilder, die auf Prüfung warten, auf dem Sperrbildschirm';
+
+  @override
   String get debugAllTags => 'Alle Tags';
 
   @override

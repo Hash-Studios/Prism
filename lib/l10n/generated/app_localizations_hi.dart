@@ -3100,6 +3100,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Live Activities बंद हैं या समर्थित नहीं हैं';
 
   @override
+  String get debugReviewActivityPreview => 'समीक्षा कतार गतिविधि का पूर्वावलोकन';
+
+  @override
+  String get debugReviewActivityPreviewDescription => 'लॉक स्क्रीन पर समीक्षा की प्रतीक्षा कर रहे वॉलपेपर दिखाता है';
+
+  @override
   String get debugAllTags => 'सभी टैग';
 
   @override

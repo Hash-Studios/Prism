@@ -5,5 +5,6 @@ import WidgetKit
 struct PrismLiveActivitiesBundle: WidgetBundle {
   var body: some Widget {
     AiGenerationLiveActivity()
+    ReviewQueueLiveActivity()
   }
 }

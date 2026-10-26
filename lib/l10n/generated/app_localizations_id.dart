@@ -3086,6 +3086,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugLiveActivityUnavailable => 'Live Activities nonaktif atau tidak didukung';
 
   @override
+  String get debugReviewActivityPreview => 'Pratinjau aktivitas antrean tinjauan';
+
+  @override
+  String get debugReviewActivityPreviewDescription => 'Menampilkan wallpaper yang menunggu tinjauan di Layar Kunci';
+
+  @override
   String get debugAllTags => 'Semua tag';
 
   @override

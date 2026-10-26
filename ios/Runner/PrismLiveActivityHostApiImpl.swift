@@ -3,13 +3,23 @@ import ImageIO
 import UIKit
 import UniformTypeIdentifiers
 
+private extension Data {
+  var hexToken: String { map { String(format: "%02x", $0) }.joined() }
+}
+
 @MainActor
 final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostApi {
+  private let flutterApi: PrismLiveActivityFlutterApi
   private var backgroundTasks: [String: UIBackgroundTaskIdentifier] = [:]
   private var workTasks: [String: Task<Void, Never>] = [:]
   private var workIDs: [String: UUID] = [:]
+  private var reviewPushToStartToken: String?
+  private var reviewActivityTokens: [String: String] = [:]
+  private var endedReviewActivityIDs: Set<String> = []
+  private var reportsReviewTokens = false
 
-  init() {
+  init(flutterApi: PrismLiveActivityFlutterApi) {
+    self.flutterApi = flutterApi
     Self.removeExpiredThumbnails()
     if #available(iOS 16.2, *) {
       for activity in Activity<PrismAiGenerationAttributes>.activities where activity.content.state.phase == .generating {
@@ -20,6 +30,7 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
         }
       }
     }
+    watchReviewTokens()
   }
 
   func startAiGeneration(request: AiActivityRequest) throws -> String? {
@@ -137,6 +148,111 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
       endBackgroundTask(activityId)
       Self.removeThumbnail(named: Self.thumbnailName(for: activityId))
     }
+  }
+
+  func startReviewTokenUpdates() throws {
+    reportsReviewTokens = true
+    if let token = reviewPushToStartToken {
+      flutterApi.onReviewPushToStartToken(token: token) { _ in }
+    }
+    reportReviewActivityToken()
+  }
+
+  func startReviewQueue(pending: Int64, newestBy: String?, oldestAt: Double?) throws -> Bool {
+    guard #available(iOS 16.2, *), ActivityAuthorizationInfo().areActivitiesEnabled else { return false }
+    let state = PrismReviewAttributes.ContentState(pending: Int(pending), newestBy: newestBy, oldestAt: oldestAt)
+    return (try? Activity.request(
+      attributes: PrismReviewAttributes(),
+      content: .init(state: state, staleDate: nil),
+      pushType: .token
+    )) != nil
+  }
+
+  /// A server-started activity has no update token until the app reads it, so the app watches from launch. iOS wakes
+  /// the app in the background for that.
+  private func watchReviewTokens() {
+    guard #available(iOS 16.2, *) else { return }
+    if #available(iOS 17.2, *) {
+      Task { [weak self] in
+        for await data in Activity<PrismReviewAttributes>.pushToStartTokenUpdates {
+          self?.receivePushToStartToken(data.hexToken)
+        }
+      }
+    }
+    Task { [weak self] in
+      await Self.watchReviewActivities { id, token in
+        Task { @MainActor in self?.receiveReviewActivityToken(id: id, token: token) }
+      }
+    }
+  }
+
+  @available(iOS 16.2, *)
+  private nonisolated static func watchReviewActivities(
+    _ receive: @escaping @Sendable (_ id: String, _ token: String?) -> Void
+  ) async {
+    var watchedIDs: Set<String> = []
+    for activity in Activity<PrismReviewAttributes>.activities {
+      guard watchedIDs.insert(activity.id).inserted else { continue }
+      watchReviewActivity(id: activity.id, receive)
+    }
+    for await activity in Activity<PrismReviewAttributes>.activityUpdates {
+      guard watchedIDs.insert(activity.id).inserted else { continue }
+      watchReviewActivity(id: activity.id, receive)
+    }
+  }
+
+  @available(iOS 16.2, *)
+  private nonisolated static func watchReviewActivity(
+    id: String,
+    _ receive: @escaping @Sendable (_ id: String, _ token: String?) -> Void
+  ) {
+    Task {
+      guard let activity = Activity<PrismReviewAttributes>.activities.first(where: { $0.id == id }) else { return }
+      for await data in activity.pushTokenUpdates {
+        receive(id, data.hexToken)
+      }
+    }
+    Task {
+      guard let activity = Activity<PrismReviewAttributes>.activities.first(where: { $0.id == id }) else { return }
+      for await state in activity.activityStateUpdates where state == .ended || state == .dismissed {
+        receive(id, nil)
+        return
+      }
+    }
+  }
+
+  private func receivePushToStartToken(_ token: String) {
+    guard token != reviewPushToStartToken else { return }
+    reviewPushToStartToken = token
+    if reportsReviewTokens {
+      flutterApi.onReviewPushToStartToken(token: token) { _ in }
+    }
+  }
+
+  private func receiveReviewActivityToken(id: String, token: String?) {
+    guard #available(iOS 16.2, *) else { return }
+    guard !endedReviewActivityIDs.contains(id) else { return }
+    if let token {
+      guard let activity = Activity<PrismReviewAttributes>.activities.first(where: { $0.id == id }),
+            activity.activityState != .ended, activity.activityState != .dismissed
+      else {
+        endedReviewActivityIDs.insert(id)
+        reviewActivityTokens.removeValue(forKey: id)
+        reportReviewActivityToken()
+        return
+      }
+      guard reviewActivityTokens[id] != token else { return }
+      reviewActivityTokens[id] = token
+    } else {
+      endedReviewActivityIDs.insert(id)
+      reviewActivityTokens.removeValue(forKey: id)
+    }
+    reportReviewActivityToken()
+  }
+
+  private func reportReviewActivityToken() {
+    guard reportsReviewTokens else { return }
+    flutterApi.onReviewActivityToken(token: reviewActivityTokens.values.first) { _ in }
   }
 
   /// In the foreground the app shows the result itself. In the background the Dynamic Island shows it for a moment,
