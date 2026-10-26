@@ -366,6 +366,46 @@ void main() {
     expect(find.text('Match system colour'), findsNothing);
   });
 
+  testWidgets('the custom accent circle is labelled Custom color', (tester) async {
+    await pumpPage(tester, ThemeMode.light);
+
+    expect(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Custom color'), findsOneWidget);
+  });
+
+  testWidgets('tapping the custom accent circle opens the custom colour sheet', (tester) async {
+    await pumpPage(tester, ThemeMode.light);
+
+    await tester.tap(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Custom color'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Use color'), findsOneWidget);
+  });
+
+  testWidgets('a hex picked in the custom colour sheet becomes the light accent', (tester) async {
+    await pumpPage(tester, ThemeMode.light);
+    await tester.tap(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Custom color'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '#1976D2');
+    await tester.pump();
+    await tester.tap(find.text('Use color'));
+    await tester.pumpAndSettle();
+
+    verify(() => themeBloc.add(const ThemeEvent.lightAccentChanged(accentColorValue: 0xFF1976D2))).called(1);
+  });
+
+  testWidgets('a custom light accent that is not a swatch marks the custom circle selected', (tester) async {
+    when(() => themeBloc.state).thenReturn(
+      ThemeState.initial().copyWith(light: const ThemeSelection(themeId: 'kLRose', accentColorValue: 0xFF123456)),
+    );
+    await pumpPage(tester, ThemeMode.light);
+
+    final Semantics custom = tester.widget<Semantics>(
+      find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Custom color'),
+    );
+    expect(custom.properties.selected, isTrue);
+  });
+
   group('match system colour', () {
     const MethodChannel channel = MethodChannel('prism/system_colors');
     late SettingsLocalDataSource settings;
