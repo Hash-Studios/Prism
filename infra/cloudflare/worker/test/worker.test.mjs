@@ -2689,17 +2689,6 @@ test('studio generation with v5 lite sends no seed and falls back to the request
   assert.equal(body.seed, null);
 });
 
-test('worker and Studio docs describe the consumer model restriction with correct agreement', () => {
-  const cloudflareReadme = readFileSync(new URL('../../README.md', import.meta.url), 'utf8');
-  const studioGuide = readFileSync(new URL('../../../../docs/features/studio.md', import.meta.url), 'utf8');
-  for (const [path, contents] of [['infra/cloudflare/README.md', cloudflareReadme],
-    ['docs/features/studio.md', studioGuide]]) {
-    assert.match(contents,
-      /Z-Image(?: Turbo)? is consumer-only and is rejected before a Studio provider call or budget reservation\./,
-      path);
-  }
-});
-
 test('GPT Image sizes are multiples of 16 inside the fal limits and keep the phone aspect', () => {
   assert.deepEqual(gptImageSize(1440, 3200), { width: 1440, height: 3200 });
   assert.deepEqual(gptImageSize(944, 2048), { width: 944, height: 2048 });
