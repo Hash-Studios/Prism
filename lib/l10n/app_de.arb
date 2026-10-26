@@ -2392,6 +2392,7 @@
   },
   "coreEditUsernameAvailable": "Nutzername verfügbar",
   "coreEditUsernameChars": "Verwende nur Buchstaben, Zahlen und Unterstriche.",
+  "coreEditUsernameAllCaps": "Verwende mindestens einen Kleinbuchstaben.",
   "coreEditUsernameMinLength": "Verwende mindestens {length} Zeichen.",
   "@coreEditUsernameMinLength": {
     "placeholders": {

@@ -2521,6 +2521,7 @@
   },
   "coreEditUsernameAvailable": "Nama pengguna tersedia",
   "coreEditUsernameChars": "Gunakan hanya huruf, angka, dan garis bawah.",
+  "coreEditUsernameAllCaps": "Gunakan setidaknya satu huruf kecil.",
   "coreEditUsernameMinLength": "Gunakan setidaknya {length} karakter.",
   "@coreEditUsernameMinLength": {
     "placeholders": {

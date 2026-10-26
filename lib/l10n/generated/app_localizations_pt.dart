@@ -2438,6 +2438,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreEditUsernameChars => 'Use apenas letras, números e sublinhados.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Use pelo menos uma letra minúscula.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);
@@ -12462,6 +12465,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreEditUsernameChars => 'Use apenas letras, números e sublinhados.';
+
+  @override
+  String get coreEditUsernameAllCaps => 'Use pelo menos uma letra minúscula.';
 
   @override
   String coreEditUsernameMinLength(int length) {

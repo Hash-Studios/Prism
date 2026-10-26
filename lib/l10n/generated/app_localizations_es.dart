@@ -2432,6 +2432,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreEditUsernameChars => 'Usa solo letras, números y guiones bajos.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Usa al menos una letra minúscula.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);

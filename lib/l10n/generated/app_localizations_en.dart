@@ -2417,6 +2417,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreEditUsernameChars => 'Use letters, numbers and underscores only.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Use at least one lowercase letter.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);

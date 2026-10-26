@@ -2419,6 +2419,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreEditUsernameChars => 'सिर्फ़ अक्षर, अंक और अंडरस्कोर इस्तेमाल करें।';
 
   @override
+  String get coreEditUsernameAllCaps => 'कम-से-कम एक छोटा अक्षर इस्तेमाल करें।';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);

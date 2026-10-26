@@ -256,6 +256,48 @@ void main() {
 
       expect(find.text('Use letters, numbers and underscores only.'), findsOneWidget);
     });
+
+    testWidgets('an all-caps name shows an inline error and no availability check runs', (tester) async {
+      final _LookupRecordingFirestore recording = await _useRecordingFirestore();
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'SHOUTY');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Use at least one lowercase letter.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+      expect(recording.lookups, isEmpty);
+    });
+
+    testWidgets('a name with a lowercase letter is checked and shows no all-caps error', (tester) async {
+      final _LookupRecordingFirestore recording = await _useRecordingFirestore();
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'Shouty');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Use at least one lowercase letter.'), findsNothing);
+      expect(recording.lookups, <String>['shouty']);
+      expect(saveEnabled(tester), isTrue);
+    });
+  });
+
+  testWidgets('clearing the bio by hand enables Save and saves an empty bio', (tester) async {
+    app_state.prismUser.bio = 'old bio';
+    await pumpPanel(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'old bio'), '');
+    await tester.pump();
+    expect(saveEnabled(tester), isTrue);
+
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(firestore.writes.single.data, <String, Object?>{'bio': ''});
+    expect(app_state.prismUser.bio, '');
   });
 
   group('links', () {
@@ -440,6 +482,29 @@ void main() {
     expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Edit profile'), findsNothing);
   });
+}
+
+Future<_LookupRecordingFirestore> _useRecordingFirestore() async {
+  await getIt.reset();
+  final _LookupRecordingFirestore recording = _LookupRecordingFirestore();
+  getIt.registerSingleton<FirestoreClient>(recording);
+  return recording;
+}
+
+class _LookupRecordingFirestore extends FakeFirestoreClient {
+  final List<String> lookups = <String>[];
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) {
+    if (collection == FirebaseCollections.usernames) lookups.add(id);
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 }
 
 class _FailingWriteFirestore extends FakeFirestoreClient {

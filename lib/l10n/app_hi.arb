@@ -2414,6 +2414,7 @@
   },
   "coreEditUsernameAvailable": "यह यूज़रनेम उपलब्ध है",
   "coreEditUsernameChars": "सिर्फ़ अक्षर, अंक और अंडरस्कोर इस्तेमाल करें।",
+  "coreEditUsernameAllCaps": "कम-से-कम एक छोटा अक्षर इस्तेमाल करें।",
   "coreEditUsernameMinLength": "कम-से-कम {length} अक्षर इस्तेमाल करें।",
   "@coreEditUsernameMinLength": {
     "placeholders": {

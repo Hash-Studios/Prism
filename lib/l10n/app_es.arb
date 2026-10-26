@@ -794,6 +794,7 @@
   "coreEditRemoveTitle": "¿Eliminar {item}?",
   "coreEditUsernameAvailable": "Nombre de usuario disponible",
   "coreEditUsernameChars": "Usa solo letras, números y guiones bajos.",
+  "coreEditUsernameAllCaps": "Usa al menos una letra minúscula.",
   "coreEditUsernameMinLength": "Usa al menos {length} caracteres.",
   "coreEditUsernameRule": "Usa {length} o más letras, números o guiones bajos (_).",
   "coreEditUsernameTaken": "Ese nombre de usuario ya está en uso.",
