@@ -397,7 +397,7 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       // symbolicates with every thread suspended and can deadlock the app on
       // launch (getsentry/sentry-cocoa#5609). Release builds keep it.
       options.enableAppHangTracking = !kDebugMode;
-      options.beforeSend = dropNetworkNoise;
+      applyNetworkNoiseFilters(options);
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(

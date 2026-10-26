@@ -46,3 +46,11 @@ SentryEvent? dropNetworkNoise(SentryEvent event, Hint hint) {
   }
   return event;
 }
+
+/// The iOS SDK reports every 5xx that any native SDK gets, for example a Remote Config fetch or an FCM topic call,
+/// and those events skip [dropNetworkNoise]. The SDKs already retry or fall back, and our own native downloads check
+/// the status code themselves, so these reports are noise.
+void applyNetworkNoiseFilters(SentryFlutterOptions options) {
+  options.beforeSend = dropNetworkNoise;
+  options.captureNativeFailedRequests = false;
+}
