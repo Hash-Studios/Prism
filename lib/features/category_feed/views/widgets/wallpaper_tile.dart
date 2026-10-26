@@ -78,7 +78,7 @@ class WallpaperTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
     final Object heroScope = Scrollable.maybeOf(context) ?? context;
-    final String heroTag = prismHeroTag(heroScope, index, item.id);
+    final String heroTag = _feedHeroTag(heroScope, item);
     final List<FeedItemEntity>? walls = feed;
     final int? columns = crossAxisCount;
     final int? decodeHeight =
@@ -123,15 +123,7 @@ class WallpaperTile extends StatelessWidget {
                 entity: item,
                 heroTag: heroTag,
                 requestId: session.requestId,
-                feed: walls == null
-                    ? null
-                    : WallpaperFeed(
-                        grid: context,
-                        tiles: [
-                          for (final (i, wall) in walls.indexed)
-                            (item: wall, index: i, heroTag: prismHeroTag(heroScope, i, wall.id)),
-                        ],
-                      ),
+                feed: walls == null ? null : _wallpaperFeed(context, heroScope, walls),
               ),
             );
           },
@@ -139,4 +131,33 @@ class WallpaperTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _feedHeroTag(Object scope, FeedItemEntity item) => prismHeroTag(scope, 0, '${item.source.name}:${item.id}');
+
+WallpaperFeed _wallpaperFeed(BuildContext grid, Object heroScope, List<FeedItemEntity> walls) {
+  late final WallpaperFeed feed;
+  return feed = WallpaperFeed(
+    grid: grid,
+    indexInGrid: (wall) => _currentFeedIndex(feed.grid, wall),
+    tiles: [for (final (i, wall) in walls.indexed) (item: wall, index: i, heroTag: _feedHeroTag(heroScope, wall))],
+  );
+}
+
+int _currentFeedIndex(BuildContext grid, FeedItemEntity target) {
+  if (!grid.mounted) return -1;
+  List<FeedItemEntity>? feed;
+  void visit(Element element) {
+    if (feed != null) return;
+    final Widget child = element.widget;
+    if (child is WallpaperTile && child.feed != null) {
+      feed = child.feed;
+      return;
+    }
+    element.visitChildren(visit);
+  }
+
+  grid.visitChildElements(visit);
+  final List<FeedItemEntity>? currentFeed = feed;
+  return currentFeed?.indexWhere((item) => item.source == target.source && item.id == target.id) ?? -1;
 }

@@ -99,6 +99,217 @@ void main() {
     await tester.pump();
 
     expect(controller.offset, controller.position.maxScrollExtent);
+    final rect = tester.getRect(find.byKey(const ValueKey('tile-99')));
+    expect(rect.top, greaterThanOrEqualTo(0));
+    expect(rect.bottom, lessThanOrEqualTo(600));
+  });
+
+  testWidgets('reveal accounts for a pinned header when checking whether a tile is visible', (tester) async {
+    final controller = ScrollController();
+    late BuildContext grid;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CustomScrollView(
+          controller: controller,
+          slivers: [
+            const SliverAppBar(pinned: true, toolbarHeight: 80, title: Text('Pinned')),
+            SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 500),
+              itemCount: 100,
+              itemBuilder: (context, i) {
+                if (i == 0) grid = context;
+                return SizedBox(key: ValueKey('tile-$i'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final feed = _feed(grid);
+    controller.jumpTo(620);
+    await tester.pump();
+    final before = tester.getRect(find.byKey(const ValueKey('tile-2')));
+    expect(before.top, lessThan(80));
+
+    feed.reveal(2);
+    await tester.pump();
+
+    final after = tester.getRect(find.byKey(const ValueKey('tile-2')));
+    expect(after.top, greaterThanOrEqualTo(80));
+    expect(after.center.dy, closeTo(340, 1));
+  });
+
+  testWidgets('reveal keeps working when the tapped child element is rebuilt away', (tester) async {
+    final controller = ScrollController();
+    BuildContext? tappedTile;
+
+    Widget buildGrid({required bool includeOriginal}) => MaterialApp(
+      home: CustomScrollView(
+        controller: controller,
+        slivers: [
+          SliverGrid.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+            itemCount: 100,
+            itemBuilder: (context, i) {
+              if (i == 0) {
+                return Builder(
+                  key: ValueKey(includeOriginal ? 'original' : 'replacement'),
+                  builder: (tileContext) {
+                    if (includeOriginal) {
+                      tappedTile = tileContext;
+                    }
+                    return const SizedBox();
+                  },
+                );
+              }
+              return SizedBox(key: ValueKey('tile-$i'));
+            },
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(buildGrid(includeOriginal: true));
+    final feed = _feed(tappedTile!);
+    await tester.pumpWidget(buildGrid(includeOriginal: false));
+    expect(tappedTile!.mounted, isFalse);
+
+    feed.reveal(60);
+    await tester.pump();
+
+    expect(tester.getRect(find.byKey(const ValueKey('tile-60'))).center.dy, closeTo(300, 1));
+  });
+
+  testWidgets('reveal locates a tile in a NestedScrollView inner grid', (tester) async {
+    final outer = ScrollController();
+    late BuildContext grid;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NestedScrollView(
+          controller: outer,
+          headerSliverBuilder: (context, _) => [
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: const SliverAppBar(pinned: true, toolbarHeight: 80, expandedHeight: 120, title: Text('Nested')),
+            ),
+          ],
+          body: Builder(
+            builder: (context) => CustomScrollView(
+              slivers: [
+                SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+                SliverGrid.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+                  itemCount: 100,
+                  itemBuilder: (context, i) {
+                    if (i == 0) grid = context;
+                    return SizedBox(key: ValueKey('nested-$i'));
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    _feed(grid).reveal(60);
+    await tester.pump();
+
+    final rect = tester.getRect(find.byKey(const ValueKey('nested-60')));
+    expect(rect.top, greaterThanOrEqualTo(80));
+    expect(rect.bottom, lessThanOrEqualTo(600));
+    expect(outer.offset, greaterThan(0));
+  });
+
+  testWidgets('reveal centres a tile in a reversed grid', (tester) async {
+    final controller = ScrollController();
+    late BuildContext grid;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CustomScrollView(
+          controller: controller,
+          reverse: true,
+          slivers: [
+            SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+              itemCount: 100,
+              itemBuilder: (context, i) {
+                if (i == 0) grid = context;
+                return SizedBox(key: ValueKey('reverse-$i'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    _feed(grid).reveal(60);
+    await tester.pump();
+
+    expect(tester.getRect(find.byKey(const ValueKey('reverse-60'))).center.dy, closeTo(300, 1));
+  });
+
+  testWidgets('reveal centres a tile in a horizontal grid', (tester) async {
+    final controller = ScrollController();
+    late BuildContext grid;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CustomScrollView(
+          controller: controller,
+          scrollDirection: Axis.horizontal,
+          slivers: [
+            SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+              itemCount: 100,
+              itemBuilder: (context, i) {
+                if (i == 0) grid = context;
+                return SizedBox(key: ValueKey('horizontal-$i'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    _feed(grid).reveal(60);
+    await tester.pump();
+
+    expect(tester.getRect(find.byKey(const ValueKey('horizontal-60'))).center.dx, closeTo(400, 1));
+  });
+
+  testWidgets('reveal safely no-ops during initial grid layout and works after layout', (tester) async {
+    final controller = ScrollController();
+    late WallpaperFeed feed;
+    var attemptedBeforeLayout = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CustomScrollView(
+          controller: controller,
+          slivers: [
+            SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+              itemCount: 100,
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  feed = _feed(context);
+                  feed.reveal(60);
+                  attemptedBeforeLayout = true;
+                }
+                return SizedBox(key: ValueKey('offstage-$i'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(attemptedBeforeLayout, isTrue);
+    expect(controller.offset, 0);
+    feed.reveal(60);
+    await tester.pump();
+
+    expect(tester.getRect(find.byKey(const ValueKey('offstage-60'))).center.dy, closeTo(300, 1));
   });
 
   testWidgets('reveal does nothing outside a grid', (tester) async {

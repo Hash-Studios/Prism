@@ -32,6 +32,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -139,6 +140,56 @@ class _FeedRouter extends RootStackRouter {
   ];
 }
 
+class _GridFeedRouter extends RootStackRouter {
+  final items = List<FeedItemEntity>.generate(40, (index) => _item('wall-$index'));
+  final scroll = ScrollController();
+  final flights = <({int index, Rect begin, Rect end})>[];
+  late WallpaperFeed feed;
+  ModalRoute<dynamic>? detail;
+
+  @override
+  List<AutoRoute> get routes => [
+    AutoRoute(
+      path: '/',
+      page: PageInfo(
+        'Grid',
+        builder: (_) => Scaffold(
+          body: GridView.builder(
+            controller: scroll,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 200),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              if (index == 1) feed = _feedOf(context, items);
+              return Hero(
+                tag: 'tile-$index',
+                createRectTween: (begin, end) {
+                  flights.add((index: index, begin: begin!, end: end!));
+                  return wallpaperHeroRectTween(begin, end);
+                },
+                placeholderBuilder: (_, size, _) => SizedBox.fromSize(key: ValueKey('destination-$index'), size: size),
+                child: const ColoredBox(color: Colors.blue),
+              );
+            },
+          ),
+        ),
+      ),
+    ),
+    CustomRoute(
+      path: '/detail',
+      page: PageInfo(
+        'Detail',
+        builder: (_) => Builder(
+          builder: (context) {
+            detail = ModalRoute.of(context);
+            return WallpaperDetailScreen(entity: items[1], feed: feed, heroTag: 'tile-1').wrappedRoute(context);
+          },
+        ),
+      ),
+      customRouteBuilder: wallpaperDetailRouteBuilder,
+    ),
+  ];
+}
+
 void main() {
   setUpFavouriteCounts();
   late OfflineAssetFixture assets;
@@ -225,6 +276,171 @@ void main() {
     await tester.pumpAndSettle();
     return router;
   }
+
+  Future<_GridFeedRouter> openFarWall(WidgetTester tester, {int target = 21}) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final router = _GridFeedRouter();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox());
+      router.dispose();
+      router.scroll.dispose();
+    });
+    queued.add(router.items[1]);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router.config(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+      ),
+    );
+    await tester.pumpAndSettle();
+    unawaited(router.push<void>(const PageRouteInfo<void>('Detail')));
+    await tester.pumpAndSettle();
+    for (int index = 2; index <= target; index++) {
+      queued.add(router.items[index]);
+      final Semantics card = tester
+          .widgetList<Semantics>(find.byType(Semantics))
+          .firstWhere((widget) => widget.properties.customSemanticsActions != null);
+      card.properties.customSemanticsActions!.entries
+          .firstWhere((entry) => entry.key.label == 'Next wallpaper')
+          .value();
+      await tester.pumpAndSettle();
+    }
+    expect(router.scroll.offset, 0);
+    expect(find.byWidgetPredicate((widget) => widget is Hero && widget.tag == 'tile-$target'), findsOneWidget);
+    router.flights.clear();
+    return router;
+  }
+
+  for (final method in [
+    'Navigator.pop',
+    'auto_route.pop',
+    'auto_route.maybePop',
+    'handlePopRoute',
+    'Android predictive commit fallback',
+  ]) {
+    testWidgets(
+      '$method reveals the swiped tile before its real Hero destination is measured',
+      (tester) async {
+        final router = await openFarWall(tester);
+        final before = tester.getRect(find.byType(WallpaperQuickActionRegion));
+        switch (method) {
+          case 'Navigator.pop':
+            router.navigatorKey.currentState!.pop();
+          case 'auto_route.pop':
+            router.pop();
+          case 'auto_route.maybePop':
+            await router.maybePop<void>();
+          case 'handlePopRoute':
+            await tester.binding.handlePopRoute();
+          case 'Android predictive commit fallback':
+            Future<void> send(MethodCall call) => tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+              'flutter/backgesture',
+              const StandardMethodCodec().encodeMethodCall(call),
+              (_) {},
+            );
+            await send(
+              const MethodCall('startBackGesture', <String, dynamic>{
+                'touchOffset': <double>[5, 300],
+                'progress': 0.0,
+                'swipeEdge': 0,
+              }),
+            );
+            await send(
+              const MethodCall('updateBackGestureProgress', <String, dynamic>{
+                'touchOffset': <double>[100, 300],
+                'progress': 0.35,
+                'swipeEdge': 0,
+              }),
+            );
+            await tester.pump();
+            // This custom route bypasses Material's predictive gesture detector. The system commit falls back to
+            // handlePopRoute, not an interactive Hero flight or a synthetic Navigator user gesture.
+            expect(router.navigatorKey.currentState!.userGestureInProgress, isFalse);
+            expect(router.scroll.offset, 0);
+            expect(router.flights, isEmpty);
+            expect(router.detail!.animation!.value, 1);
+            await send(const MethodCall('commitBackGesture'));
+        }
+        await tester.pump();
+        await tester.pump();
+        expect(router.flights, hasLength(1), reason: 'the returning card must have a matching grid Hero');
+        expect(router.flights.single.index, 21);
+        expect(router.flights.single.end.top, greaterThanOrEqualTo(0));
+        expect(router.flights.single.end.bottom, lessThanOrEqualTo(800));
+        expect(find.byKey(const ValueKey('destination-21')), findsOneWidget);
+        expect(router.detail!.animation!.status, AnimationStatus.reverse);
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(tester.getRect(find.byType(WallpaperQuickActionRegion)).width, lessThan(before.width));
+        await tester.pumpAndSettle();
+        expect(router.current.name, 'Grid');
+        expect(tester.takeException(), isNull);
+      },
+      variant: method == 'Android predictive commit fallback'
+          ? TargetPlatformVariant.only(TargetPlatform.android)
+          : const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}),
+    );
+  }
+
+  for (final returningToFirst in [false, true]) {
+    for (final delay in [0, 16, 80]) {
+      testWidgets('pop ${delay}ms into ${returningToFirst ? 'A-B-A' : 'A-B'} flies only the current visit home', (
+        tester,
+      ) async {
+        final router = await openFarWall(tester, target: 1);
+        void step(String id, String action) {
+          final screen = find.byWidgetPredicate((widget) => widget is WallpaperDetailScreen && widget.entity?.id == id);
+          final Semantics card = tester
+              .widgetList<Semantics>(find.descendant(of: screen, matching: find.byType(Semantics)))
+              .firstWhere((widget) => widget.properties.customSemanticsActions != null);
+          card.properties.customSemanticsActions!.entries.firstWhere((entry) => entry.key.label == action).value();
+        }
+
+        queued.add(router.items[2]);
+        step('wall-1', 'Next wallpaper');
+        await tester.pump();
+        if (returningToFirst) {
+          await tester.pump(const Duration(milliseconds: 32));
+          queued.add(router.items[1]);
+          step('wall-2', 'Previous wallpaper');
+          await tester.pump();
+        }
+        await tester.pump(Duration(milliseconds: delay));
+        await router.maybePop<void>();
+        await tester.pump();
+        await tester.pump();
+        expect(router.flights, hasLength(1));
+        final int current = returningToFirst ? 1 : 2;
+        expect(router.flights.single.index, current);
+        expect(find.byKey(ValueKey('destination-$current')), findsOneWidget);
+        expect(router.detail!.animation!.status, AnimationStatus.reverse);
+        expect(tester.takeException(), isNull);
+        await tester.pumpAndSettle();
+        expect(router.current.name, 'Grid');
+        expect(closed, unorderedEquals(created));
+      }, variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}));
+    }
+  }
+
+  testWidgets('iOS edge back leaves an offscreen swiped tile unrevealed and uses the native slide', (tester) async {
+    final router = await openFarWall(tester);
+    final gesture = await tester.startGesture(const Offset(5, 400));
+    await gesture.moveBy(const Offset(100, 0));
+    await tester.pump();
+    expect(router.navigatorKey.currentState!.userGestureInProgress, isTrue);
+    expect(router.scroll.offset, 0);
+    expect(router.flights, isEmpty);
+    await gesture.moveBy(const Offset(260, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Grid');
+    expect(router.scroll.offset, 0);
+    expect(router.flights, isEmpty);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('iOS edge back beats the card drag recognizer and does not open a previous wall', (tester) async {
     final router = await open(tester);

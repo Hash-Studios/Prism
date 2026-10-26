@@ -345,37 +345,38 @@ class _FromPrismRow extends StatelessWidget {
         ),
         SizedBox(
           height: 176 + favouriteFooterHeight,
-          child: ListView.separated(
+          child: GridView.builder(
             scrollDirection: Axis.horizontal,
             padding: PrismWallGrid.padding,
             itemCount: results.length,
-            separatorBuilder: (_, _) => const SizedBox(width: PrismWallGrid.spacing),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              mainAxisExtent: 88,
+              mainAxisSpacing: PrismWallGrid.spacing,
+            ),
             itemBuilder: (context, index) {
               final FeedItemEntity wallpaper = results[index];
-              return SizedBox(
-                width: 88,
-                child: WallpaperImpression(
-                  itemId: wallpaper.id,
-                  provider: wallpaper.source.name,
-                  surface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                  source: 'search_prism_results',
-                  index: index,
-                  session: session,
-                  child: FavouriteWallpaperCard(
-                    item: wallpaper,
-                    child: PrismWallTile(
-                      key: ValueKey<String>('prism-${wallpaper.id}'),
-                      url: wallpaper.thumbnailUrl,
-                      fallbackUrl: wallpaper.fullUrl,
-                      memCacheHeight: 400,
-                      heroTag: prismHeroTag(results, index, wallpaper.id),
-                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                      overlay: depthTagFor(depthTierOf(wallpaper)),
-                      onTap: () {
-                        PrismHaptics.tap();
-                        onOpen(context, wallpaper, index);
-                      },
-                    ),
+              return WallpaperImpression(
+                itemId: wallpaper.id,
+                provider: wallpaper.source.name,
+                surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                source: 'search_prism_results',
+                index: index,
+                session: session,
+                child: FavouriteWallpaperCard(
+                  item: wallpaper,
+                  child: PrismWallTile(
+                    key: ValueKey<String>('prism-${wallpaper.id}'),
+                    url: wallpaper.thumbnailUrl,
+                    fallbackUrl: wallpaper.fullUrl,
+                    memCacheHeight: 400,
+                    heroTag: prismHeroTag(results, index, wallpaper.id),
+                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
+                    overlay: depthTagFor(depthTierOf(wallpaper)),
+                    onTap: () {
+                      PrismHaptics.tap();
+                      onOpen(context, wallpaper, index);
+                    },
                   ),
                 ),
               );

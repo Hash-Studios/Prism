@@ -31,9 +31,10 @@ Widget _detailPage(Object tag) => Scaffold(
 );
 
 class _Router extends RootStackRouter {
-  _Router({required this.picture, required this.cardTag});
+  _Router({required this.picture, required this.cardTag, this.secondPicture});
 
   final ImageProvider picture;
+  final ImageProvider? secondPicture;
   final ValueNotifier<Object> cardTag;
 
   @override
@@ -45,6 +46,19 @@ class _Router extends RootStackRouter {
         builder: (_) => Scaffold(
           body: Stack(
             children: <Widget>[
+              Positioned(
+                left: 200,
+                top: 48,
+                width: 120,
+                height: 180,
+                child: Hero(
+                  tag: 'b',
+                  createRectTween: wallpaperHeroRectTween,
+                  child: secondPicture == null
+                      ? const ColoredBox(color: Colors.green)
+                      : Image(image: secondPicture!, fit: BoxFit.cover),
+                ),
+              ),
               Positioned(
                 left: 24,
                 top: 48,
@@ -112,5 +126,46 @@ void main() {
     cardTag.value = 'b';
     await tester.pump();
     expect(_pictureUnderCard(picture), findsNothing);
+
+    cardTag.value = 'a';
+    await tester.pump();
+    expect(_pictureUnderCard(picture), findsOneWidget);
+  });
+
+  testWidgets('returning from a different card uses that destination tile picture in the actual pop flight', (
+    tester,
+  ) async {
+    final first = _TilePicture();
+    final second = _TilePicture();
+    final tag = ValueNotifier<Object>('a');
+    final router = _Router(picture: first, secondPicture: second, cardTag: tag);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox());
+      router.dispose();
+      tag.dispose();
+    });
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(_pictureUnderCard(first), findsOneWidget);
+    tag.value = 'b';
+    await tester.pump();
+    expect(_pictureUnderCard(first), findsNothing);
+    await router.maybePop<void>();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    Finder flying(ImageProvider picture) => find.byElementPredicate(
+      (element) =>
+          element.widget is Image &&
+          identical((element.widget as Image).image, picture) &&
+          element.findAncestorWidgetOfExactType<Hero>() == null,
+    );
+    expect(flying(second), findsOneWidget);
+    expect(flying(first), findsNothing);
+    await tester.pumpAndSettle();
+    expect(router.current.name, 'Grid');
+    expect(tester.takeException(), isNull);
   });
 }

@@ -119,6 +119,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     });
   }
 
+  String _wallHeroTag(FavouriteWallEntity wall) => prismHeroTag(this, 0, '${wall.source.name}:${wall.id}');
+
   void _openWall(BuildContext grid, List<FavouriteWallEntity> walls, int index) {
     final FavouriteWallEntity wall = walls[index];
     if (wall is LegacyFavouriteWall) {
@@ -141,12 +143,16 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       WallpaperDetailRoute(
         entity: wall.toFeedItem(),
         analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
-        heroTag: prismHeroTag(this, index, wall.id),
+        heroTag: _wallHeroTag(wall),
         feed: WallpaperFeed(
           grid: grid,
+          indexInGrid: (item) {
+            final List<FavouriteWallEntity> currentWalls = context.read<FavouriteWallsBloc>().state.visibleItems;
+            return currentWalls.indexWhere((candidate) => candidate.id == item.id && candidate.source == item.source);
+          },
           tiles: [
             for (final (i, w) in walls.indexed)
-              if (w is! LegacyFavouriteWall) (item: w.toFeedItem(), index: i, heroTag: prismHeroTag(this, i, w.id)),
+              if (w is! LegacyFavouriteWall) (item: w.toFeedItem(), index: i, heroTag: _wallHeroTag(w)),
           ],
         ),
       ),
@@ -507,7 +513,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       wall.fullUrl.startsWith('/') ||
                       Uri.tryParse(wall.fullUrl)?.scheme == 'file' ||
                       BundledWallpapers.isStarterIdentity(wall.id, wall.source),
-                  heroTag: prismHeroTag(this, index, wall.id),
+                  heroTag: _wallHeroTag(wall),
                   onUnavailable: () => _markUnavailable(wall.id),
                 ),
                 if (wall is LegacyFavouriteWall)
