@@ -2814,6 +2814,38 @@
     },
     "description": "Screen reader summary of streak and next reward."
   },
+  "coreCustomAccent": "Warna kustom",
+  "@coreCustomAccent": {
+    "description": "Label for the custom accent color option."
+  },
+  "coreCustomAccentHex": "Kode hex",
+  "@coreCustomAccentHex": {
+    "description": "Label for the hex color code text field."
+  },
+  "coreCustomAccentHue": "Rona",
+  "@coreCustomAccentHue": {
+    "description": "Label for the hue slider of the custom accent color picker."
+  },
+  "coreCustomAccentSaturation": "Saturasi",
+  "@coreCustomAccentSaturation": {
+    "description": "Label for the saturation slider of the custom accent color picker."
+  },
+  "coreCustomAccentLightness": "Kecerahan",
+  "@coreCustomAccentLightness": {
+    "description": "Label for the lightness slider of the custom accent color picker."
+  },
+  "coreCustomAccentInvalidHex": "Masukkan 6 digit hex, seperti #E57697.",
+  "@coreCustomAccentInvalidHex": {
+    "description": "Error shown when the hex color code is not 6 hex digits."
+  },
+  "coreCustomAccentLowContrast": "Warna ini sulit terlihat di tema ini. Pilih warna yang lebih terang atau lebih gelap.",
+  "@coreCustomAccentLowContrast": {
+    "description": "Warning shown when the custom accent is too close to the theme background."
+  },
+  "coreCustomAccentApply": "Gunakan warna",
+  "@coreCustomAccentApply": {
+    "description": "Button label that applies the custom accent color."
+  },
   "coreThemeAccentSemanticLabel": "Warna aksen {index} dari {count}",
   "@coreThemeAccentSemanticLabel": {
     "placeholders": {
@@ -8432,6 +8464,14 @@
   "wallpaperThemeDarkThemes": "Tema Gelap",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
+  },
+  "wallpaperUseAsAppAccent": "Gunakan sebagai aksen aplikasi",
+  "@wallpaperUseAsAppAccent": {
+    "description": "Button label that sets a wallpaper color as the app accent."
+  },
+  "wallpaperAppAccentUpdated": "Aksen aplikasi diperbarui",
+  "@wallpaperAppAccentUpdated": {
+    "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
   "wallpaperThemeLightAccent": "Warna Aksen Terang",
   "@wallpaperThemeLightAccent": {

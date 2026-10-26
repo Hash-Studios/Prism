@@ -2814,6 +2814,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coreCustomAccent => 'Custom color';
+
+  @override
+  String get coreCustomAccentHex => 'Hex code';
+
+  @override
+  String get coreCustomAccentHue => 'Hue';
+
+  @override
+  String get coreCustomAccentSaturation => 'Saturation';
+
+  @override
+  String get coreCustomAccentLightness => 'Lightness';
+
+  @override
+  String get coreCustomAccentInvalidHex => 'Enter 6 hex digits, like #E57697.';
+
+  @override
+  String get coreCustomAccentLowContrast => 'This color is hard to see on this theme. Pick a lighter or darker shade.';
+
+  @override
+  String get coreCustomAccentApply => 'Use color';
+
+  @override
   String coreThemeAccentSemanticLabel(int index, int count) {
     final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String indexString = indexNumberFormat.format(index);
@@ -8981,6 +9005,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperThemeDarkThemes => 'Dark Themes';
+
+  @override
+  String get wallpaperUseAsAppAccent => 'Use as app accent';
+
+  @override
+  String get wallpaperAppAccentUpdated => 'App accent updated';
 
   @override
   String get wallpaperThemeLightAccent => 'Light Accent Color';

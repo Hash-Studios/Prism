@@ -14,6 +14,7 @@ import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/theme_mode/views/widgets/custom_accent_sheet.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -247,6 +248,7 @@ class _ThemeViewState extends State<ThemeView> {
                     _SectionTitle(context.l10n.wallpaperThemeLightAccent),
                     _AccentRow(
                       selected: lightAccent,
+                      surface: context.prismLightTheme().colorScheme.surface,
                       onSelect: (color) {
                         setState(() => changingLight = true);
                         _pickAccent();
@@ -258,6 +260,7 @@ class _ThemeViewState extends State<ThemeView> {
                     _SectionTitle(context.l10n.wallpaperThemeDarkAccent),
                     _AccentRow(
                       selected: darkAccent,
+                      surface: context.prismDarkTheme().colorScheme.surface,
                       onSelect: (color) {
                         setState(() => changingLight = false);
                         _pickAccent();
@@ -412,10 +415,19 @@ class _ThemeChipRow extends StatelessWidget {
 }
 
 class _AccentRow extends StatelessWidget {
-  const _AccentRow({required this.selected, required this.onSelect});
+  const _AccentRow({required this.selected, required this.surface, required this.onSelect});
 
   final Color selected;
+
+  /// The page background the custom accent must stay readable on.
+  final Color surface;
   final ValueChanged<Color> onSelect;
+
+  Future<void> _pickCustom(BuildContext context) async {
+    PrismHaptics.selection();
+    final Color? picked = await showCustomAccentSheet(context, initial: selected, surface: surface);
+    if (picked != null && context.mounted) onSelect(picked);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -425,19 +437,30 @@ class _AccentRow extends StatelessWidget {
       height: rowHeight < 57 ? 57 : rowHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: prismAccentSwatches.length,
+        itemCount: prismAccentSwatches.length + 1,
         padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 8, 0),
         itemBuilder: (context, index) {
-          final Color color = prismAccentSwatches[index];
+          final bool isCustomSwatch = index == 0;
+          final int swatchIndex = index - 1;
+          final bool isCustom = !prismAccentSwatches.contains(selected);
+          final Color? color = isCustomSwatch ? (isCustom ? selected : null) : prismAccentSwatches[swatchIndex];
+          final bool isSelected = isCustomSwatch ? isCustom : selected == color;
+          final Color fill = color ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
           return Semantics(
             button: true,
-            selected: selected == color,
-            label: context.l10n.coreThemeAccentSemanticLabel(index + 1, prismAccentSwatches.length),
+            selected: isSelected,
+            label: isCustomSwatch
+                ? context.l10n.coreCustomAccent
+                : context.l10n.coreThemeAccentSemanticLabel(swatchIndex + 1, prismAccentSwatches.length),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                PrismHaptics.selection();
-                onSelect(color);
+                if (isCustomSwatch) {
+                  _pickCustom(context);
+                } else {
+                  PrismHaptics.selection();
+                  onSelect(color!);
+                }
               },
               child: Stack(
                 children: [
@@ -445,16 +468,28 @@ class _AccentRow extends StatelessWidget {
                     margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: selected == color
+                        color: isSelected
                             ? Theme.of(context).colorScheme.onSurface
                             : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
-                      color: color,
+                      color: fill,
                       shape: BoxShape.circle,
                     ),
-                    child: const SizedBox(width: 41, height: 41),
+                    child: SizedBox(
+                      width: 41,
+                      height: 41,
+                      child: isCustomSwatch && !isCustom
+                          ? Center(
+                              child: Icon(
+                                Icons.colorize_rounded,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
-                  if (selected == color)
+                  if (isSelected)
                     Container(
                       margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
                       decoration: BoxDecoration(

@@ -2824,6 +2824,31 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get coreCustomAccent => 'Warna kustom';
+
+  @override
+  String get coreCustomAccentHex => 'Kode hex';
+
+  @override
+  String get coreCustomAccentHue => 'Rona';
+
+  @override
+  String get coreCustomAccentSaturation => 'Saturasi';
+
+  @override
+  String get coreCustomAccentLightness => 'Kecerahan';
+
+  @override
+  String get coreCustomAccentInvalidHex => 'Masukkan 6 digit hex, seperti #E57697.';
+
+  @override
+  String get coreCustomAccentLowContrast =>
+      'Warna ini sulit terlihat di tema ini. Pilih warna yang lebih terang atau lebih gelap.';
+
+  @override
+  String get coreCustomAccentApply => 'Gunakan warna';
+
+  @override
   String coreThemeAccentSemanticLabel(int index, int count) {
     final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String indexString = indexNumberFormat.format(index);
@@ -9018,6 +9043,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperThemeDarkThemes => 'Tema Gelap';
+
+  @override
+  String get wallpaperUseAsAppAccent => 'Gunakan sebagai aksen aplikasi';
+
+  @override
+  String get wallpaperAppAccentUpdated => 'Aksen aplikasi diperbarui';
 
   @override
   String get wallpaperThemeLightAccent => 'Warna Aksen Terang';

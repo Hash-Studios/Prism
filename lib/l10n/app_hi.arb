@@ -2707,6 +2707,38 @@
     },
     "description": "Screen reader summary of streak and next reward."
   },
+  "coreCustomAccent": "कस्टम रंग",
+  "@coreCustomAccent": {
+    "description": "Label for the custom accent color option."
+  },
+  "coreCustomAccentHex": "हेक्स कोड",
+  "@coreCustomAccentHex": {
+    "description": "Label for the hex color code text field."
+  },
+  "coreCustomAccentHue": "रंगत",
+  "@coreCustomAccentHue": {
+    "description": "Label for the hue slider of the custom accent color picker."
+  },
+  "coreCustomAccentSaturation": "संतृप्ति",
+  "@coreCustomAccentSaturation": {
+    "description": "Label for the saturation slider of the custom accent color picker."
+  },
+  "coreCustomAccentLightness": "चमक",
+  "@coreCustomAccentLightness": {
+    "description": "Label for the lightness slider of the custom accent color picker."
+  },
+  "coreCustomAccentInvalidHex": "#E57697 जैसे 6 हेक्स अंक डालें।",
+  "@coreCustomAccentInvalidHex": {
+    "description": "Error shown when the hex color code is not 6 hex digits."
+  },
+  "coreCustomAccentLowContrast": "यह रंग इस थीम पर साफ़ नहीं दिखता। कोई हल्का या गहरा शेड चुनें।",
+  "@coreCustomAccentLowContrast": {
+    "description": "Warning shown when the custom accent is too close to the theme background."
+  },
+  "coreCustomAccentApply": "रंग इस्तेमाल करें",
+  "@coreCustomAccentApply": {
+    "description": "Button label that applies the custom accent color."
+  },
   "coreThemeAccentSemanticLabel": "ऐक्सेंट रंग {count} में से {index}",
   "@coreThemeAccentSemanticLabel": {
     "placeholders": {
@@ -8308,6 +8340,14 @@
   "wallpaperThemeDarkThemes": "गहरी थीम",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
+  },
+  "wallpaperUseAsAppAccent": "ऐप ऐक्सेंट के रूप में इस्तेमाल करें",
+  "@wallpaperUseAsAppAccent": {
+    "description": "Button label that sets a wallpaper color as the app accent."
+  },
+  "wallpaperAppAccentUpdated": "ऐप ऐक्सेंट अपडेट हो गया",
+  "@wallpaperAppAccentUpdated": {
+    "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
   "wallpaperThemeLightAccent": "हल्के रंग का ऐक्सेंट",
   "@wallpaperThemeLightAccent": {
