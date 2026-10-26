@@ -130,6 +130,10 @@ class SetWallpaperFlow {
     VoidCallback? onMatchAccent,
     Future<String> Function(String source)? prepareAuthorized,
   }) async {
+    if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
+        !context.mounted) {
+      return null;
+    }
     final String owner = app_state.prismUser.id;
     final String? historyOriginalIdentity =
         prepareAuthorized == null &&
@@ -373,11 +377,22 @@ class SetWallpaperFlow {
     WallpaperSource? wallpaperSource,
     Future<String> Function(String source)? prepareAuthorized,
   }) async {
-    final owner = app_state.prismUser.id;
+    String owner = app_state.prismUser.id;
     final PairPick? pick = await pairPicker(context, excludeUrl: url);
     if (pick == null) return null;
     if (!context.mounted) return null;
     if (owner != app_state.prismUser.id) return null;
+    final PairCandidate candidate = pick.candidate;
+    if (!await signInForOriginal(
+          context,
+          url: candidate.fullUrl,
+          wallpaperId: candidate.wallpaperId,
+          wallpaperSource: candidate.wallpaperSource,
+        ) ||
+        !context.mounted) {
+      return null;
+    }
+    owner = app_state.prismUser.id;
     final protectedAssets = <String>[];
     void addProtected(String sourceUrl, String? id, WallpaperSource? source) {
       if (!OriginalAccessService.requiresGrant(sourceUrl, id, source)) return;

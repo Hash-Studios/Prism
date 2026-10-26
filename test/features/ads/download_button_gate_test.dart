@@ -18,6 +18,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -1823,6 +1824,26 @@ void main() {
       expect(enqueued, isEmpty);
       Navigator.of(tester.element(find.text('Sign in'))).pop();
       await settle(tester);
+      expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
+    });
+
+    testWidgets('a guest with Pro is asked to sign in without calling original access', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      backend.originalAuthenticated = false;
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final signIn = originalSignIn;
+      addTearDown(() => originalSignIn = signIn);
+      var signIns = 0;
+      originalSignIn = (_) async {
+        signIns++;
+        return false;
+      };
+      await pump(tester, source: WallpaperSource.prism, link: '');
+      await tapSave(tester);
+
+      expect(signIns, 1);
+      expect(backend.originalCalls, isEmpty);
+      expect(enqueued, isEmpty);
       expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
     });
 

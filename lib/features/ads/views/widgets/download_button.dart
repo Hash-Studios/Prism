@@ -21,6 +21,7 @@ import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -363,6 +364,20 @@ class _DownloadButtonState extends State<DownloadButton> {
         _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
         if (tap.isGuest && _authorizedSource == null) {
           await _showGuestPremiumPrompt();
+          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
+          return;
+        }
+        if (!app_state.prismUser.loggedIn &&
+            _authorizedSource == null &&
+            OriginalAccessService.requiresGrant(tap.link, tap.contentId, tap.wallpaperSource)) {
+          if (mounted) {
+            await signInForOriginal(
+              context,
+              url: tap.link,
+              wallpaperId: tap.contentId,
+              wallpaperSource: tap.wallpaperSource,
+            );
+          }
           _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
           return;
         }

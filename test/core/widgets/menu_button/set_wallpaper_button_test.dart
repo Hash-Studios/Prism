@@ -12,6 +12,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -91,6 +93,7 @@ void main() {
   late String thumbnailFilePath;
   final studioOpener = SetWallpaperFlow.studioOpener;
   final pairPicker = SetWallpaperFlow.pairPicker;
+  final signIn = originalSignIn;
 
   setUp(() async {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
@@ -109,6 +112,7 @@ void main() {
   tearDown(() async {
     SetWallpaperFlow.studioOpener = studioOpener;
     SetWallpaperFlow.pairPicker = pairPicker;
+    originalSignIn = signIn;
     await getIt.reset();
     AnalyticsRuntime.reset();
     aw.AsyncWallpaper.debugResetClient();
@@ -190,8 +194,160 @@ void main() {
     expect(client.requests, isEmpty);
   });
 
+  group('signed-out user', () {
+    late CoinsTestBackend backend;
+    late List<Map<String, dynamic>> calls;
+    late int signIns;
+
+    Future<void> asGuest(WidgetTester tester, {required bool signsIn}) async {
+      backend = CoinsTestBackend();
+      await backend.install();
+      final signedInUser = app_state.prismUser;
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => '${assets.directory.path}/scratch',
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          null,
+        ),
+      );
+      calls = <Map<String, dynamic>>[];
+      backend.onCall = (name, input) async {
+        expect(name, 'resolveOriginalAccess');
+        if (!app_state.prismUser.loggedIn) {
+          throw FirebaseFunctionsException(code: 'unauthenticated', message: 'Sign in to access originals.');
+        }
+        calls.add(input);
+        if (input['mode'] == 'quote') {
+          return <String, dynamic>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+        }
+        return <String, dynamic>{
+          'status': 'granted',
+          'url': 'https://signed.test/${input['assetId']}',
+          'expiresAt': DateTime.now().add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+          'currentBalance': 100,
+        };
+      };
+      signIns = 0;
+      originalSignIn = (_) async {
+        signIns++;
+        if (signsIn) app_state.prismUser = signedInUser;
+        return signsIn;
+      };
+    }
+
+    testWidgets('Set on a protected wall asks a guest to sign in and calls nothing when they leave', (tester) async {
+      await asGuest(tester, signsIn: false);
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+      await tester.pumpAndSettle();
+
+      expect(signIns, 1);
+      expect(find.byType(SetOptionsPanel), findsNothing);
+      expect(calls, isEmpty);
+      expect(client.requests, isEmpty);
+    });
+
+    testWidgets('after a guest signs in, Set goes on and sets the original', (tester) async {
+      await asGuest(tester, signsIn: true);
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      assets.mapSource('https://signed.test/protected-wall', File(wallFilePath));
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(signIns, 1);
+      expect(calls.map((call) => (call['assetId'], call['action'], call['mode'])), [
+        ('protected-wall', 'set', 'quote'),
+        ('protected-wall', 'set', null),
+      ]);
+      expect(client.requests.map((r) => (r.target, r.source.filePath)), [(aw.WallpaperTarget.home, wallFilePath)]);
+    });
+
+    testWidgets('Set on a wall that needs no grant does not ask a guest to sign in', (tester) async {
+      await asGuest(tester, signsIn: false);
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester);
+
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(signIns, 0);
+      expect(client.requests.map((r) => r.source.filePath), [wallFilePath]);
+    });
+
+    PairPick protectedPick() => PairPick(
+      source: PairSource.favourites,
+      candidate: PairCandidate(
+        fullUrl: '',
+        thumbnailUrl: lockFilePath,
+        wallpaperId: 'protected-lock',
+        wallpaperSource: WallpaperSource.prism,
+      ),
+    );
+
+    Future<void> openPair(WidgetTester tester) async {
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(l10n.coreDifferentLockWallpaper));
+      await tester.tap(find.text(l10n.coreDifferentLockWallpaper));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+    }
+
+    testWidgets('a protected lock screen pick asks a guest to sign in and sets nothing when they leave', (
+      tester,
+    ) async {
+      await asGuest(tester, signsIn: false);
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => protectedPick();
+      await pumpButton(tester);
+
+      await openPair(tester);
+
+      expect(signIns, 1);
+      expect(calls, isEmpty);
+      expect(client.requests, isEmpty);
+    });
+
+    testWidgets('after a guest signs in, a protected lock screen pick goes on and sets both screens', (tester) async {
+      await asGuest(tester, signsIn: true);
+      assets.mapSource('https://signed.test/protected-lock', File(lockFilePath));
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => protectedPick();
+      await pumpButton(tester);
+
+      await openPair(tester);
+
+      expect(signIns, 1);
+      expect(calls.map((call) => (call['assetId'], call['action'], call['mode'])), [
+        ('protected-lock', 'set', 'quote'),
+        ('protected-lock', 'set', null),
+      ]);
+      expect(client.requests.map((r) => (r.target, r.source.filePath)), [
+        (aw.WallpaperTarget.home, wallFilePath),
+        (aw.WallpaperTarget.lock, lockFilePath),
+      ]);
+    });
+  });
+
   testWidgets('catalogue Set deduplicates a retained original and a later downloaded copy', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'history-original-owner';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'history-original-owner'
+      ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(

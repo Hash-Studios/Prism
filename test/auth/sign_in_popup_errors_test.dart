@@ -63,6 +63,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       int successes = 0;
+      Future<bool>? signedIn;
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -70,7 +71,7 @@ void main() {
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => googleSignInPopUp(context, () => successes++),
+                onPressed: () => signedIn = googleSignInPopUp(context, () => successes++),
                 child: const Text('Open sign-in'),
               ),
             ),
@@ -91,6 +92,7 @@ void main() {
 
       expect(find.text('Signing in'), findsNothing);
       expect(successes, 0);
+      expect(await signedIn, isFalse);
       expect(messages, <String>[entry.value]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   }
