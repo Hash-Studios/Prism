@@ -402,15 +402,15 @@ service cloud.firestore {
       }
     }
 
-    // Coin economy v2. Config, drops, boosts, draws and leaderboards are read-only to signed-in users.
-    // questEventRate and giftRateDaily have no match: default deny.
+    // Coin economy v2. Config and drops are public, so guests see the live Drop. Boosts, draws and leaderboards are
+    // read-only to signed-in users. questEventRate and giftRateDaily have no match: default deny.
     match /economyConfig/{docId} {
       allow read: if true;
       allow write: if false;
     }
 
     match /drops/{weekKey} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if false;
     }
 

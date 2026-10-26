@@ -9,6 +9,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
+import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -163,6 +164,9 @@ void main() {
     });
 
     testWidgets('swiping changes the place and the wall the buy button targets', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'signed-in-uid'
+        ..loggedIn = true;
       await openPreview(tester, loaded(dropEntity()));
       expect(find.text('by Ana · 1 of 4'), findsOneWidget);
 
@@ -178,6 +182,24 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'B'))).called(1);
+    });
+
+    testWidgets('a guest who taps the buy button gets the sign-in sheet, not the unlock sheet', (tester) async {
+      final Future<bool> Function(BuildContext) realSignIn = dropSignIn;
+      addTearDown(() => dropSignIn = realSignIn);
+      int signIns = 0;
+      dropSignIn = (_) async {
+        signIns++;
+        return false;
+      };
+      await openPreview(tester, loaded(dropEntity()));
+
+      await tester.tap(find.text('Unlock for 30'));
+      await tester.pumpAndSettle();
+
+      expect(signIns, 1);
+      expect(find.text('Unlock this wall for 30'), findsNothing);
+      verifyNever(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'A')));
     });
 
     testWidgets('a live Drop shows the price and the countdown, a Pro user sees the Pro tag', (tester) async {
