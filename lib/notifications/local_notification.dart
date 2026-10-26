@@ -186,6 +186,11 @@ class LocalNotification {
     );
     final NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
 
+    // iOS refuses show() with UNError 2003 when the user has not allowed notifications.
+    final IOSFlutterLocalNotificationsPlugin? iOS = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    if (iOS != null && (await iOS.checkPermissions())?.isEnabled != true) return;
+
     await flutterLocalNotificationsPlugin.show(
       id: pushNotificationId(message),
       title: copy.title,
