@@ -5,6 +5,7 @@ import {
   duePushKinds,
   type DropDoc,
   isDropLive,
+  normalizeDropTitle,
   packPrice,
   planWeeklyDrop,
   releaseOldDrops,
@@ -132,10 +133,10 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
   assert.equal(store.get("walls/X1")?.dropWeek, undefined);
 });
 
-test("the planner falls back to the default title", async (t) => {
+test("the planner falls back to a mood name when no title is set", async (t) => {
   const store = installFakeDb(t, reservedWalls(4));
   await plan(t);
-  assert.equal(store.get(`drops/${KEY}`)?.title, `Drop ${KEY}`);
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Color Study");
 });
 
 test("old drops release their walls to the feed once", async (t) => {
@@ -759,4 +760,25 @@ test("a failed send frees only its own claim", async (t) => {
   await assert.rejects(run(), /push failed/);
   assert.equal(send.mock.callCount(), 1);
   assert.equal((store.get(`drops/${KEY}`)?.pushClaims as Doc).live, MONDAY + 1);
+});
+
+test("normalizeDropTitle trims and collapses spaces", () => {
+  assert.equal(normalizeDropTitle("  Night   Swim "), "Night Swim");
+});
+
+test("normalizeDropTitle rejects an empty title", () => {
+  assert.equal(normalizeDropTitle(""), null);
+});
+
+test("normalizeDropTitle rejects a 41 character title", () => {
+  assert.equal(normalizeDropTitle("a".repeat(41)), null);
+});
+
+test("normalizeDropTitle keeps a 40 character title", () => {
+  const title = "a".repeat(40);
+  assert.equal(normalizeDropTitle(title), title);
+});
+
+test("normalizeDropTitle rejects a number", () => {
+  assert.equal(normalizeDropTitle(12), null);
 });

@@ -9,6 +9,8 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
+import {isAdminCaller} from "./adminConfig";
+import {dropMood, isoWeekNumber, pickDropName} from "./dropNames";
 import {sendNotification} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
 
@@ -149,10 +151,14 @@ export const planWeeklyDrop = onSchedule(
       titles && typeof titles === "object" ?
         str((titles as Record<string, unknown>)[key]) :
         "";
+    const recentTitles = custom ? [] : (
+      await db.collection("drops").orderBy("startsAt", "desc").limit(12).get()
+    ).docs.map((doc) => str(doc.data().title));
+    const title = custom || pickDropName(dropMood(docs.map((doc) => doc.data().colors)), recentTitles, isoWeekNumber(key));
     const {start, end} = weekBounds(nowMs);
     const drop: DropDoc & { createdAt: admin.firestore.FieldValue } = {
       weekKey: key,
-      title: custom || `Drop ${key}`,
+      title,
       startsAt: start,
       endsAt: end,
       priceWall: config.spend.dropWall,
@@ -174,6 +180,13 @@ export const planWeeklyDrop = onSchedule(
     }
   },
 );
+
+/** Trims, collapses spaces, and returns the title, or null when it is not 1 to 40 characters. */
+export function normalizeDropTitle(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const title = raw.trim().replace(/\s+/g, " ");
+  return title.length >= 1 && title.length <= 40 ? title : null;
+}
 
 const priceOr = (value: unknown, fallback: number): number => {
   const n = int(value, fallback);
@@ -521,5 +534,38 @@ export const sendDropPushes = onSchedule(
   {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
   async () => {
     await sendDuePushes(Date.now());
+  },
+);
+
+export const setDropTitle = onCall(
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 5},
+  async (request: CallableRequest<{weekKey?: unknown; title?: unknown}>) => {
+    const uid = request.auth?.uid?.trim() ?? "";
+    if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
+    if (!(await isAdminCaller(request.auth))) {
+      throw new HttpsError("permission-denied", "Admins only.");
+    }
+    const dropKey = request.data?.weekKey;
+    if (typeof dropKey !== "string" || !WEEK_KEY.test(dropKey)) {
+      throw new HttpsError("invalid-argument", "weekKey is invalid.");
+    }
+    const title = normalizeDropTitle(request.data?.title);
+    if (title === null) {
+      throw new HttpsError("invalid-argument", "title must be 1 to 40 characters.");
+    }
+
+    const dropRef = db.collection("drops").doc(dropKey);
+    const configRef = db.doc("studioConfig/current");
+    let applied: "drop" | "planned" = "planned";
+    await db.runTransaction(async (tx) => {
+      if ((await tx.get(dropRef)).exists) {
+        tx.update(dropRef, {title});
+        applied = "drop";
+      } else {
+        tx.set(configRef, {dropTitles: {[dropKey]: title}}, {merge: true});
+      }
+    });
+    logger.info("drops: renamed", {weekKey: dropKey, applied});
+    return {title, applied};
   },
 );
