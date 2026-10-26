@@ -369,6 +369,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('replacing a toast while it is dismissing is safe', (tester) async {
+    final key = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        navigatorKey: key,
+        home: const Scaffold(body: SizedBox()),
+      ),
+    );
+    final OverlayState overlay = key.currentState!.overlay!;
+    showPrismToast(overlay, 'First');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('First'));
+    await tester.pump();
+    showPrismToast(overlay, 'Latest');
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+    expect(find.text('First'), findsNothing);
+    expect(find.text('Latest'), findsOneWidget);
+  });
+
   testWidgets('toast timer and replacement remain safe after its overlay is disposed', (tester) async {
     final firstKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
