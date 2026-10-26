@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -9,13 +8,12 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
-import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The Drop ticket on the Rewards page: a fan of frosted walls, the countdown and how many walls the user owns.
+/// The Drop card on the Rewards page: three of its walls, the name, the time left and how many walls the user owns.
 /// Hidden between Drops.
 class DropCard extends StatefulWidget {
   const DropCard({super.key});
@@ -54,38 +52,48 @@ class DropCardView extends StatelessWidget {
       builder: (context, state) {
         final DropEntity? drop = state.drop;
         if (drop == null || !state.isLive) return const SizedBox.shrink();
+        final AppLocalizations l10n = context.l10n;
         return Padding(
           padding: const EdgeInsets.only(bottom: PrismSpace.sm),
-          child: PressScale(
-            scale: 0.98,
-            child: Semantics(
-              button: true,
-              label: context.l10n.economyDropCardSemantics(
-                drop.endsInLabel(context.l10n, state.now),
-                state.unlockedCount,
-                drop.count,
-              ),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  PrismHaptics.tap();
-                  unawaited(context.router.push(const DropsRoute()));
-                },
-                child: DropSurface(
-                  child: Padding(
-                    padding: const EdgeInsets.all(PrismSpace.md),
-                    child: Row(
-                      children: <Widget>[
-                        _FrostedFan(walls: drop.walls),
-                        const SizedBox(width: PrismSpace.md),
-                        Expanded(
-                          child: _Details(drop: drop, state: state),
-                        ),
-                      ],
-                    ),
+          child: PrismCard(
+            padding: const EdgeInsets.all(PrismSpace.md),
+            semanticLabel: l10n.economyDropCardSemantics(
+              drop.endsInLabel(l10n, state.now),
+              state.unlockedCount,
+              drop.count,
+            ),
+            onTap: () {
+              PrismHaptics.tap();
+              unawaited(context.router.push(const DropsRoute()));
+            },
+            child: Row(
+              children: <Widget>[
+                _WallFan(walls: drop.walls),
+                const SizedBox(width: PrismSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(l10n.economyWeeklyDrop, style: PrismTextStyles.caption(context)),
+                      const SizedBox(height: 2),
+                      Text(
+                        drop.displayTitle(l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.cardTitle(context),
+                      ),
+                      const SizedBox(height: PrismSpace.xs),
+                      DropTimeTag(drop: drop, now: state.now),
+                      const SizedBox(height: PrismSpace.xs),
+                      Text(
+                        l10n.economyDropCollected(state.unlockedCount, drop.count),
+                        style: PrismTextStyles.caption(context),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ],
             ),
           ),
         );
@@ -94,71 +102,8 @@ class DropCardView extends StatelessWidget {
   }
 }
 
-class _Details extends StatelessWidget {
-  const _Details({required this.drop, required this.state});
-
-  final DropEntity drop;
-  final DropsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(context.l10n.economyDropHeader(dropWeekLabel(drop.weekKey)), style: dropCapsStyle(size: 10, spacing: 2)),
-        const SizedBox(height: 6),
-        Text(
-          drop.displayTitle(context.l10n),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: PrismFonts.fraunces,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: DropPalette.ink,
-          ),
-        ),
-        const SizedBox(height: PrismSpace.sm),
-        DropCountdown(drop: drop, now: state.now, digitSize: 20),
-        const SizedBox(height: PrismSpace.sm),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                context.l10n.economyDropCollected(state.unlockedCount, drop.count),
-                style: const TextStyle(
-                  fontFamily: PrismFonts.proximaNova,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: DropPalette.inkMuted,
-                ),
-              ),
-            ),
-            const _PreviewPill(),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PreviewPill extends StatelessWidget {
-  const _PreviewPill();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: DropPalette.foil, borderRadius: BorderRadius.circular(PrismRadius.xl)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        child: Text(context.l10n.economyDropPreview, style: dropCapsStyle(spacing: 0.8, color: DropPalette.obsidian)),
-      ),
-    );
-  }
-}
-
-class _FrostedFan extends StatelessWidget {
-  const _FrostedFan({required this.walls});
+class _WallFan extends StatelessWidget {
+  const _WallFan({required this.walls});
 
   final List<DropWall> walls;
 
@@ -170,6 +115,7 @@ class _FrostedFan extends StatelessWidget {
     final List<DropWall> shown = walls.take(3).toList();
     const List<double> turns = <double>[-0.17, 0, 0.17];
     const List<double> shifts = <double>[0, 22, 44];
+    final Color edge = Theme.of(context).colorScheme.outlineVariant;
     return ExcludeSemantics(
       child: SizedBox(
         width: _width + 44 + 6,
@@ -183,31 +129,15 @@ class _FrostedFan extends StatelessWidget {
                 top: i == 1 ? 0 : 8,
                 child: Transform.rotate(
                   angle: turns[i],
-                  child: SizedBox(
+                  child: Container(
                     width: _width,
                     height: _height,
-                    child: ClipRRect(
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(PrismRadius.xs),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: <Widget>[
-                          ImageFiltered(
-                            imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                            child: wall.thumb.isEmpty
-                                ? const ColoredBox(color: DropPalette.obsidianRaised)
-                                : PrismImageTile(url: wall.thumb),
-                          ),
-                          ColoredBox(color: DropPalette.obsidian.withValues(alpha: 0.3)),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(PrismRadius.xs),
-                              border: Border.all(color: DropPalette.hairlineStrong, width: 0.8),
-                            ),
-                          ),
-                          if (i == shown.length - 1) const Center(child: DropSeal(size: 28)),
-                        ],
-                      ),
+                      border: Border.all(color: edge, width: 0.8),
                     ),
+                    child: PrismImageTile(url: wall.thumb),
                   ),
                 ),
               ),

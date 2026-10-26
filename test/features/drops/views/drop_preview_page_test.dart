@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -105,7 +106,7 @@ void main() {
     testWidgets('loads its requested week and shows the requested wall without an unlock', (tester) async {
       await pumpRoute(tester, loaded(dropEntity()));
 
-      expect(find.text('03 / 04'), findsOneWidget);
+      expect(find.text('by Ana · 3 of 4'), findsOneWidget);
       expect(find.text('Wall C'), findsOneWidget);
       final List<Object?> events = verify(() => bloc.add(captureAny())).captured;
       expect(events, <DropsEvent>[const DropsEvent.started(weekKey: '2026-W42')]);
@@ -145,12 +146,11 @@ void main() {
   });
 
   group('DropPreviewPage', () {
-    testWidgets('opens at the tapped wall with its serial and title', (tester) async {
+    testWidgets('opens at the tapped wall with its place and title', (tester) async {
       await openPreview(tester, loaded(dropEntity()), wallId: 'C');
 
-      expect(find.text('03 / 04'), findsOneWidget);
+      expect(find.text('by Ana · 3 of 4'), findsOneWidget);
       expect(find.text('Wall C'), findsOneWidget);
-      expect(find.text('by Ana'), findsOneWidget);
       expect(find.text('Lock screen'), findsOneWidget);
       expect(find.text('Home screen'), findsOneWidget);
       expect(find.byType(Hero), findsNothing);
@@ -162,14 +162,14 @@ void main() {
       expect(find.byType(DropPreviewPage), findsNothing);
     });
 
-    testWidgets('swiping changes the serial and the wall the buy button targets', (tester) async {
+    testWidgets('swiping changes the place and the wall the buy button targets', (tester) async {
       await openPreview(tester, loaded(dropEntity()));
-      expect(find.text('01 / 04'), findsOneWidget);
+      expect(find.text('by Ana · 1 of 4'), findsOneWidget);
 
       await tester.drag(find.byType(PageView), const Offset(-300, 0));
       await tester.pumpAndSettle();
 
-      expect(find.text('02 / 04'), findsOneWidget);
+      expect(find.text('by Ana · 2 of 4'), findsOneWidget);
       expect(find.text('Wall B'), findsOneWidget);
 
       await tester.tap(find.text('Unlock for 30'));
@@ -190,11 +190,13 @@ void main() {
       expect(find.text('Last call'), findsNothing);
     });
 
-    testWidgets('the last day says Last call', (tester) async {
+    testWidgets('the last day turns the time tag to the warning tone', (tester) async {
       await openPreview(tester, loaded(dropEntity(endsIn: const Duration(hours: 5, minutes: 30))));
 
-      expect(find.text('Last call'), findsOneWidget);
-      expect(find.textContaining('Ends in 5h'), findsOneWidget);
+      final PrismTag tag = tester.widget<PrismTag>(
+        find.ancestor(of: find.textContaining('Ends in 5h'), matching: find.byType(PrismTag)),
+      );
+      expect(tag.tone, PrismTone.warning);
     });
 
     testWidgets('an ended Drop has no buy button', (tester) async {
@@ -261,7 +263,8 @@ void main() {
 
       expect(labels.where(banned.hasMatch), isEmpty);
       expect(find.byType(PopupMenuButton), findsNothing);
-      expect(find.byType(IconButton), findsNothing);
+      expect(find.byType(IconButton), findsOneWidget);
+      expect(find.byTooltip('Close preview'), findsOneWidget);
     });
   });
 }

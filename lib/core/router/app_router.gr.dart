@@ -1972,6 +1972,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     String? heroTag,
     File? localFile,
     String? requestId,
+    WallpaperFeed? feed,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -1985,6 +1986,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            heroTag: heroTag,
            localFile: localFile,
            requestId: requestId,
+           feed: feed,
          ),
          initialChildren: children,
        );
@@ -2008,6 +2010,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           heroTag: args.heroTag,
           localFile: args.localFile,
           requestId: args.requestId,
+          feed: args.feed,
         ),
       );
     },
@@ -2025,6 +2028,7 @@ class WallpaperDetailRouteArgs {
     this.heroTag,
     this.localFile,
     this.requestId,
+    this.feed,
   });
 
   final Key? key;
@@ -2045,9 +2049,11 @@ class WallpaperDetailRouteArgs {
 
   final String? requestId;
 
+  final WallpaperFeed? feed;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, requestId: $requestId}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, requestId: $requestId, feed: $feed}';
   }
 
   @override
@@ -2062,7 +2068,8 @@ class WallpaperDetailRouteArgs {
         analyticsSurface == other.analyticsSurface &&
         heroTag == other.heroTag &&
         localFile == other.localFile &&
-        requestId == other.requestId;
+        requestId == other.requestId &&
+        feed == other.feed;
   }
 
   @override
@@ -2075,7 +2082,8 @@ class WallpaperDetailRouteArgs {
       analyticsSurface.hashCode ^
       heroTag.hashCode ^
       localFile.hashCode ^
-      requestId.hashCode;
+      requestId.hashCode ^
+      feed.hashCode;
 }
 
 /// generated route for

@@ -4298,7 +4298,6 @@
     }
   },
   "economyDropAlreadyUnlocked": "Du hast dieses Hintergrundbild bereits.",
-  "economyDropBrandTitle": "DER DROP",
   "economyDropByCreator": "von {creator}",
   "@economyDropByCreator": {
     "placeholders": {
@@ -4307,7 +4306,7 @@
       }
     }
   },
-  "economyDropCardSemantics": "Der Drop, {time}, {unlocked} von {total} gesammelt. Vorschau",
+  "economyDropCardSemantics": "Wöchentlicher Drop, {time}, {unlocked} von {total} gesammelt",
   "@economyDropCardSemantics": {
     "placeholders": {
       "time": {
@@ -4335,7 +4334,7 @@
       }
     }
   },
-  "economyDropCarouselSemantics": "Der Drop, {title}, {detail}{lastCall, select, true{, letzter Aufruf} other{}}",
+  "economyDropCarouselSemantics": "Wöchentlicher Drop, {title}, {detail}{lastCall, select, true{, letzter Aufruf} other{}}",
   "@economyDropCarouselSemantics": {
     "placeholders": {
       "title": {
@@ -4349,7 +4348,7 @@
       }
     }
   },
-  "economyDropCollected": "Gesammelt · {owned}/{total}",
+  "economyDropCollected": "{owned} von {total} gesammelt",
   "@economyDropCollected": {
     "placeholders": {
       "owned": {
@@ -4362,24 +4361,13 @@
       }
     }
   },
-  "economyDropCountdownDaysHours": "{days} T. {time}",
-  "@economyDropCountdownDaysHours": {
+  "economyDropDates": "{start} bis {end}",
+  "@economyDropDates": {
     "placeholders": {
-      "days": {
+      "start": {
         "type": "String"
       },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropCountdownHoursMinutes": "{hours} Std. {minutes} Min.",
-  "@economyDropCountdownHoursMinutes": {
-    "placeholders": {
-      "hours": {
-        "type": "String"
-      },
-      "minutes": {
+      "end": {
         "type": "String"
       }
     }
@@ -4412,7 +4400,6 @@
       }
     }
   },
-  "economyDropEndsInLabel": "Endet in",
   "economyDropEndsInMinutes": "Endet in {minutes} Min.",
   "@economyDropEndsInMinutes": {
     "placeholders": {
@@ -4423,32 +4410,31 @@
     }
   },
   "economyDropGone": "Dieser Drop ist nicht mehr verfügbar",
-  "economyDropHeader": "DER DROP · {week}",
-  "@economyDropHeader": {
-    "placeholders": {
-      "week": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropLastCall": "Letzter Aufruf, {time}",
-  "@economyDropLastCall": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "economyDropLastCallLabel": "Letzter Aufruf",
   "economyDropLoadFailed": "Der Drop konnte nicht geladen werden.",
   "economyDropLocked": "Gesperrt",
   "economyDropMissed": "Verpasst",
   "economyDropOver": "Dieser Drop ist vorbei.",
-  "economyDropPack": "DAS PAKET",
-  "economyDropPastDrops": "VERGANGENE DROPS",
-  "economyDropPreview": "Vorschau",
+  "economyDropPastDrops": "Vergangene Drops",
+  "economyDropPosition": "{index} von {total}",
+  "@economyDropPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "economyDropPreviewTitle": "Drop-Vorschau",
-  "economyDropSave": "{coins} speichern",
+  "economyDropRename": "Drop umbenennen",
+  "economyDropRenameFailed": "Der Drop konnte nicht umbenannt werden. Versuch es erneut.",
+  "economyDropRenameHint": "Name des Drops",
+  "economyDropRenamed": "Drop umbenannt",
+  "economyDropSave": "{coins} sparen",
   "@economyDropSave": {
     "placeholders": {
       "coins": {
@@ -4469,20 +4455,23 @@
       }
     }
   },
-  "economyDropTapToPreview": "Tippen für Vorschau",
   "economyDropTitle": "Drop",
-  "economyDropUnlockFailed": "Freischalten fehlgeschlagen. Versuch es erneut.",
-  "economyDropUnlockFor": "Für {price} freischalten",
-  "@economyDropUnlockFor": {
+  "economyDropUnlockAll": "Alle {count} für {price} freischalten",
+  "@economyDropUnlockAll": {
     "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
       "price": {
         "type": "int",
         "format": "decimalPattern"
       }
     }
   },
-  "economyDropUnlockPack": "Paket für {price} freischalten",
-  "@economyDropUnlockPack": {
+  "economyDropUnlockFailed": "Freischalten fehlgeschlagen. Versuch es erneut.",
+  "economyDropUnlockFor": "Für {price} freischalten",
+  "@economyDropUnlockFor": {
     "placeholders": {
       "price": {
         "type": "int",
@@ -4531,7 +4520,6 @@
       }
     }
   },
-  "economyDropWall": "EIN HINTERGRUNDBILD",
   "economyDropWallBySemantics": "{state} Hintergrundbild {serial} von {creator}",
   "@economyDropWallBySemantics": {
     "placeholders": {
@@ -4555,7 +4543,6 @@
       }
     }
   },
-  "economyDropWallPro": "EIN HINTERGRUNDBILD · PRO",
   "economyDropWallSemantics": "{state} Hintergrundbild {serial}",
   "@economyDropWallSemantics": {
     "placeholders": {
@@ -4568,8 +4555,15 @@
     }
   },
   "economyDropWallpaperUnavailable": "Dieses Hintergrundbild ist nicht verfügbar.",
-  "economyDropWatermarkLabel": "PRISM DROP",
-  "economyDropYourVault": "DEIN ARCHIV",
+  "economyDropWeekOf": "Woche vom {date}",
+  "@economyDropWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "economyDropYourVault": "Dein Archiv",
   "economyDrops": "Drops",
   "economyEarnCoins": "Coins verdienen",
   "economyEarnXpAsYouGo": "Nebenbei XP verdienen",
@@ -7493,6 +7487,8 @@
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
+  "wallpaperPreviousInFeed": "Vorheriges Hintergrundbild",
+  "wallpaperNextInFeed": "Nächstes Hintergrundbild",
   "wallpaperImageSemanticLabel": "Hintergrundbild",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."

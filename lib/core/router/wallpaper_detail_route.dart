@@ -80,12 +80,12 @@ class WallpaperDetailHero extends StatelessWidget {
     // The card decodes its own copy of the picture, which takes a few frames. Until it fades in, the tile's decoded
     // picture shows under it. Read when built: the flight finds it, and the card builds again when the flight lands.
     Widget picture() {
-      final ImageProvider? tile = detailRoute?._tilePicture;
-      if (tile == null) return image;
+      final ({Object tag, ImageProvider picture})? tile = detailRoute?._tilePicture;
+      if (tile == null || tile.tag != tag) return image;
       return Stack(
         fit: StackFit.expand,
         children: [
-          Image(image: tile, fit: BoxFit.cover, excludeFromSemantics: true),
+          Image(image: tile.picture, fit: BoxFit.cover, excludeFromSemantics: true),
           image,
         ],
       );
@@ -98,9 +98,9 @@ class WallpaperDetailHero extends StatelessWidget {
       createRectTween: wallpaperHeroRectTween,
       flightShuttleBuilder: (_, animation, direction, fromHero, toHero) {
         if (direction == HeroFlightDirection.push) {
-          detailRoute?._startZoom(tile: fromHero, card: toHero, out: false);
+          detailRoute?._startZoom(tile: fromHero, card: toHero, out: false, tag: tag);
         } else {
-          detailRoute?._startZoom(tile: toHero, card: fromHero, out: true);
+          detailRoute?._startZoom(tile: toHero, card: fromHero, out: true, tag: tag);
         }
         // The picture fills the flight, so it morphs between the tile and the card.
         return AnimatedBuilder(
@@ -161,8 +161,9 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   /// Whether [_zoom] came from a flight home. A back that turns an opening around keeps the opening's curve.
   bool _zoomingOut = false;
 
-  /// The picture on the tile the card flew in from. Kept while the page is open.
-  ImageProvider? _tilePicture;
+  /// The picture on the tile the card last flew from or to, with that card's Hero tag. A card with another tag, as after
+  /// a swipe to another wall, never shows it.
+  ({Object tag, ImageProvider picture})? _tilePicture;
 
   /// The route under this one. Its page holds the tile, and it zooms with the card.
   ModalRoute<dynamic>? _behind;
@@ -190,8 +191,11 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   }
 
   /// Keeps the tile's picture, and measures the tile and the card the way the Hero does, each on its own page.
-  void _startZoom({required BuildContext tile, required BuildContext card, required bool out}) {
-    _tilePicture ??= _pictureIn(tile);
+  void _startZoom({required BuildContext tile, required BuildContext card, required bool out, required Object tag}) {
+    if (_tilePicture?.tag != tag) {
+      final ImageProvider? picture = _pictureIn(tile);
+      _tilePicture = picture == null ? null : (tag: tag, picture: picture);
+    }
     final Rect? source = _rectOn(_behind, tile);
     final Rect? target = _rectOn(this, card);
     if (source == null || target == null || source.isEmpty || !source.isFinite || target.isEmpty || !target.isFinite) {

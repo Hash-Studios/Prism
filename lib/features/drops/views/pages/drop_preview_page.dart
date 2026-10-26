@@ -12,7 +12,6 @@ import 'package:Prism/features/drops/views/preview/preview_bottom_bar.dart';
 import 'package:Prism/features/drops/views/preview/preview_chrome.dart';
 import 'package:Prism/features/drops/views/preview/preview_wall_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
-import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -144,7 +143,6 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DropPalette.obsidian,
       body: BlocBuilder<DropsBloc, DropsState>(
         builder: (context, state) {
           final DropEntity? drop = state.drop;
@@ -184,7 +182,6 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
                             index: i,
                             child: PreviewWallPage(
                               wall: wall,
-                              owned: state.unlocked.containsKey(wall.id),
                               mode: _mode,
                               now: state.now,
                               height: height,

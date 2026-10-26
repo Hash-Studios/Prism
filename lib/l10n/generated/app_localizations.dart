@@ -8339,12 +8339,6 @@ abstract class AppLocalizations {
   /// **'You already have this one.'**
   String get economyDropAlreadyUnlocked;
 
-  /// No description provided for @economyDropBrandTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'THE DROP'**
-  String get economyDropBrandTitle;
-
   /// No description provided for @economyDropByCreator.
   ///
   /// In en, this message translates to:
@@ -8354,7 +8348,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyDropCardSemantics.
   ///
   /// In en, this message translates to:
-  /// **'The Drop, {time}, {unlocked} of {total} collected. Preview'**
+  /// **'Weekly Drop, {time}, {unlocked} of {total} collected'**
   String economyDropCardSemantics(String time, int unlocked, int total);
 
   /// No description provided for @economyDropCarouselDetail.
@@ -8366,26 +8360,20 @@ abstract class AppLocalizations {
   /// No description provided for @economyDropCarouselSemantics.
   ///
   /// In en, this message translates to:
-  /// **'The Drop, {title}, {detail}{lastCall, select, true{, last call} other{}}'**
+  /// **'Weekly Drop, {title}, {detail}{lastCall, select, true{, last call} other{}}'**
   String economyDropCarouselSemantics(String title, String detail, String lastCall);
 
   /// No description provided for @economyDropCollected.
   ///
   /// In en, this message translates to:
-  /// **'Collected · {owned}/{total}'**
+  /// **'{owned} of {total} collected'**
   String economyDropCollected(int owned, int total);
 
-  /// No description provided for @economyDropCountdownDaysHours.
+  /// No description provided for @economyDropDates.
   ///
   /// In en, this message translates to:
-  /// **'{days}d {time}'**
-  String economyDropCountdownDaysHours(String days, String time);
-
-  /// No description provided for @economyDropCountdownHoursMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{hours}h {minutes}m'**
-  String economyDropCountdownHoursMinutes(String hours, String minutes);
+  /// **'{start} to {end}'**
+  String economyDropDates(String start, String end);
 
   /// No description provided for @economyDropEnded.
   ///
@@ -8411,12 +8399,6 @@ abstract class AppLocalizations {
   /// **'Ends in {hours, plural, one{1h} other{{hours}h}} {minutes, plural, one{1m} other{{minutes}m}}'**
   String economyDropEndsInHoursMinutes(int hours, int minutes);
 
-  /// No description provided for @economyDropEndsInLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Ends in'**
-  String get economyDropEndsInLabel;
-
   /// No description provided for @economyDropEndsInMinutes.
   ///
   /// In en, this message translates to:
@@ -8428,18 +8410,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Drop is gone'**
   String get economyDropGone;
-
-  /// No description provided for @economyDropHeader.
-  ///
-  /// In en, this message translates to:
-  /// **'THE DROP · {week}'**
-  String economyDropHeader(String week);
-
-  /// No description provided for @economyDropLastCall.
-  ///
-  /// In en, this message translates to:
-  /// **'Last call, {time}'**
-  String economyDropLastCall(String time);
 
   /// No description provided for @economyDropLastCallLabel.
   ///
@@ -8471,23 +8441,17 @@ abstract class AppLocalizations {
   /// **'This Drop is over.'**
   String get economyDropOver;
 
-  /// No description provided for @economyDropPack.
-  ///
-  /// In en, this message translates to:
-  /// **'THE PACK'**
-  String get economyDropPack;
-
   /// No description provided for @economyDropPastDrops.
   ///
   /// In en, this message translates to:
-  /// **'PAST DROPS'**
+  /// **'Past drops'**
   String get economyDropPastDrops;
 
-  /// No description provided for @economyDropPreview.
+  /// No description provided for @economyDropPosition.
   ///
   /// In en, this message translates to:
-  /// **'Preview'**
-  String get economyDropPreview;
+  /// **'{index} of {total}'**
+  String economyDropPosition(int index, int total);
 
   /// No description provided for @economyDropPreviewTitle.
   ///
@@ -8495,10 +8459,34 @@ abstract class AppLocalizations {
   /// **'Drop preview'**
   String get economyDropPreviewTitle;
 
+  /// No description provided for @economyDropRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Drop'**
+  String get economyDropRename;
+
+  /// No description provided for @economyDropRenameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename the Drop. Try again.'**
+  String get economyDropRenameFailed;
+
+  /// No description provided for @economyDropRenameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop name'**
+  String get economyDropRenameHint;
+
+  /// No description provided for @economyDropRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop renamed'**
+  String get economyDropRenamed;
+
   /// No description provided for @economyDropSave.
   ///
   /// In en, this message translates to:
-  /// **'save {coins}'**
+  /// **'Save {coins}'**
   String economyDropSave(int coins);
 
   /// No description provided for @economyDropStats.
@@ -8507,17 +8495,17 @@ abstract class AppLocalizations {
   /// **'{walls} · {count, plural, one{1 collector} other{{count} collectors}}'**
   String economyDropStats(String walls, int count);
 
-  /// No description provided for @economyDropTapToPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to preview'**
-  String get economyDropTapToPreview;
-
   /// No description provided for @economyDropTitle.
   ///
   /// In en, this message translates to:
   /// **'Drop'**
   String get economyDropTitle;
+
+  /// No description provided for @economyDropUnlockAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock all {count} for {price}'**
+  String economyDropUnlockAll(int count, int price);
 
   /// No description provided for @economyDropUnlockFailed.
   ///
@@ -8530,12 +8518,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock for {price}'**
   String economyDropUnlockFor(int price);
-
-  /// No description provided for @economyDropUnlockPack.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock the pack for {price}'**
-  String economyDropUnlockPack(int price);
 
   /// No description provided for @economyDropUnlockWall.
   ///
@@ -8573,12 +8555,6 @@ abstract class AppLocalizations {
   /// **'Unlocked wall by {creator}'**
   String economyDropUnlockedWallBy(String creator);
 
-  /// No description provided for @economyDropWall.
-  ///
-  /// In en, this message translates to:
-  /// **'A WALL'**
-  String get economyDropWall;
-
   /// No description provided for @economyDropWallBySemantics.
   ///
   /// In en, this message translates to:
@@ -8590,12 +8566,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{1 wall} other{{count} walls}}'**
   String economyDropWallCount(int count);
-
-  /// No description provided for @economyDropWallPro.
-  ///
-  /// In en, this message translates to:
-  /// **'A WALL · PRO'**
-  String get economyDropWallPro;
 
   /// No description provided for @economyDropWallSemantics.
   ///
@@ -8609,16 +8579,16 @@ abstract class AppLocalizations {
   /// **'This wallpaper is unavailable'**
   String get economyDropWallpaperUnavailable;
 
-  /// No description provided for @economyDropWatermarkLabel.
+  /// No description provided for @economyDropWeekOf.
   ///
   /// In en, this message translates to:
-  /// **'PRISM DROP'**
-  String get economyDropWatermarkLabel;
+  /// **'Week of {date}'**
+  String economyDropWeekOf(String date);
 
   /// No description provided for @economyDropYourVault.
   ///
   /// In en, this message translates to:
-  /// **'YOUR VAULT'**
+  /// **'Your vault'**
   String get economyDropYourVault;
 
   /// No description provided for @economyDrops.
@@ -13080,6 +13050,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
+
+  /// Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous wallpaper'**
+  String get wallpaperPreviousInFeed;
+
+  /// Accessibility action on the wallpaper detail card that shows the next wallpaper of the feed it was opened from.
+  ///
+  /// In en, this message translates to:
+  /// **'Next wallpaper'**
+  String get wallpaperNextInFeed;
 
   /// Accessibility label for the wallpaper image.
   ///

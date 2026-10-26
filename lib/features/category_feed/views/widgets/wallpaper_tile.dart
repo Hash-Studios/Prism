@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -27,12 +28,16 @@ class WallpaperTile extends StatelessWidget {
     this.overlay,
     this.impressionSession,
     this.onVisible,
+    this.feed,
   });
 
   final FeedItemEntity item;
   final int index;
   final WallpaperImpressionSession? impressionSession;
   final VoidCallback? onVisible;
+
+  /// The loaded walls of this tile's feed, for swiping between them in the detail page.
+  final List<FeedItemEntity>? feed;
 
   /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
@@ -72,7 +77,9 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
-    final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
+    final Object heroScope = Scrollable.maybeOf(context) ?? context;
+    final String heroTag = prismHeroTag(heroScope, index, item.id);
+    final List<FeedItemEntity>? walls = feed;
     final int? columns = crossAxisCount;
     final int? decodeHeight =
         memCacheHeight ??
@@ -111,10 +118,46 @@ class WallpaperTile extends StatelessWidget {
                 ),
               ),
             );
-            context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId));
+            context.router.push(
+              WallpaperDetailRoute(
+                entity: item,
+                heroTag: heroTag,
+                requestId: session.requestId,
+                feed: walls == null ? null : _wallpaperFeed(context, heroScope, walls),
+              ),
+            );
           },
         ),
       ),
     );
   }
+}
+
+WallpaperFeed _wallpaperFeed(BuildContext grid, Object heroScope, List<FeedItemEntity> walls) {
+  late final WallpaperFeed feed;
+  return feed = WallpaperFeed(
+    grid: grid,
+    indexInGrid: (wall) => _currentFeedIndex(feed.grid, wall),
+    tiles: [
+      for (final (i, wall) in walls.indexed) (item: wall, index: i, heroTag: prismHeroTag(heroScope, i, wall.id)),
+    ],
+  );
+}
+
+int _currentFeedIndex(BuildContext grid, FeedItemEntity target) {
+  if (!grid.mounted) return -1;
+  List<FeedItemEntity>? feed;
+  void visit(Element element) {
+    if (feed != null) return;
+    final Widget child = element.widget;
+    if (child is WallpaperTile && child.feed != null) {
+      feed = child.feed;
+      return;
+    }
+    element.visitChildren(visit);
+  }
+
+  grid.visitChildElements(visit);
+  final List<FeedItemEntity>? currentFeed = feed;
+  return currentFeed?.indexWhere((item) => item.source == target.source && item.id == target.id) ?? -1;
 }

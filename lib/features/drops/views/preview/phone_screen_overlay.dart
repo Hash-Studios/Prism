@@ -1,5 +1,3 @@
-import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -36,9 +34,7 @@ class PhoneScreenOverlay extends StatelessWidget {
   }
 }
 
-List<Shadow> _lift(double w) => <Shadow>[
-  Shadow(color: DropPalette.obsidian.withValues(alpha: 0.45), blurRadius: w * 0.05),
-];
+List<Shadow> _lift(double w) => <Shadow>[Shadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: w * 0.05)];
 
 class _LockScreen extends StatelessWidget {
   const _LockScreen({required this.width, required this.now, required this.locale});
@@ -58,10 +54,10 @@ class _LockScreen extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: <Color>[
-                DropPalette.obsidian.withValues(alpha: 0.38),
-                DropPalette.obsidian.withValues(alpha: 0),
-                DropPalette.obsidian.withValues(alpha: 0),
-                DropPalette.obsidian.withValues(alpha: 0.3),
+                Colors.black.withValues(alpha: 0.38),
+                Colors.black.withValues(alpha: 0),
+                Colors.black.withValues(alpha: 0),
+                Colors.black.withValues(alpha: 0.3),
               ],
               stops: const <double>[0, 0.3, 0.75, 1],
             ),
@@ -76,7 +72,7 @@ class _LockScreen extends StatelessWidget {
               Text(
                 DateFormat.yMMMMEEEEd(locale).format(now),
                 style: TextStyle(
-                  color: DropPalette.ink.withValues(alpha: 0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: width * 0.052,
                   fontWeight: FontWeight.w600,
                   shadows: _lift(width),
@@ -85,11 +81,10 @@ class _LockScreen extends StatelessWidget {
               Text(
                 DateFormat.Hm(locale).format(now),
                 style: TextStyle(
-                  fontFamily: PrismFonts.fraunces,
-                  color: DropPalette.ink,
+                  color: Colors.white,
                   fontSize: width * 0.3,
                   height: 1.05,
-                  fontVariations: const <FontVariation>[FontVariation('wght', 200), FontVariation('opsz', 144)],
+                  fontWeight: FontWeight.w600,
                   fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
                   shadows: _lift(width),
                 ),
@@ -189,8 +184,8 @@ class _Frosted extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
-        color: DropPalette.ink.withValues(alpha: 0.16),
-        border: Border.all(color: DropPalette.ink.withValues(alpha: 0.22), width: 0.6),
+        color: Colors.white.withValues(alpha: 0.16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 0.6),
       ),
       child: SizedBox(width: size, height: height ?? size),
     );
@@ -207,7 +202,7 @@ class _HomeBar extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(width),
-        color: DropPalette.ink.withValues(alpha: 0.75),
+        color: Colors.white.withValues(alpha: 0.75),
       ),
       child: SizedBox(height: width * 0.014),
     );
