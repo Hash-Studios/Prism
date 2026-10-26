@@ -6,6 +6,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
@@ -213,7 +214,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
     try {
       int successfulSources = 0;
-      int failedSources = 0;
+      final List<Object> sourceFailures = <Object>[];
       // Overlaps the pools. Awaited before ranking, so blocked creators never slip in.
       final Future<Set<String>> blockedFuture = _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       blockedFuture.ignore();
@@ -222,13 +223,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         CandidatePool.fresh,
         _fetchFreshItems(),
         onSuccess: () => successfulSources++,
-        onFailure: () => failedSources++,
+        onFailure: sourceFailures.add,
       );
       final Future<List<RankingCandidate>> gemsPool = _pool(
         CandidatePool.gems,
         _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
         onSuccess: () => successfulSources++,
-        onFailure: () => failedSources++,
+        onFailure: sourceFailures.add,
       );
 
       if (request.refresh || _bootstrapScope != cacheScope) {
@@ -281,7 +282,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
             page: request.page,
           ).then((creators) => creators.items),
           onSuccess: _following.isEmpty ? null : () => successfulSources++,
-          onFailure: () => failedSources++,
+          onFailure: sourceFailures.add,
         ),
         freshPool,
         gemsPool,
@@ -289,21 +290,21 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           CandidatePool.taste,
           _fetchTasteItems(tasteCategories),
           onSuccess: tasteCategories.isEmpty ? null : () => successfulSources++,
-          onFailure: () => failedSources++,
+          onFailure: sourceFailures.add,
         ),
         _fetchExternal(
           WallpaperSource.wallhaven,
           refresh: request.refresh,
           maxQueries: 3,
           onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
+          onFailure: sourceFailures.add,
         ),
         _fetchExternal(
           WallpaperSource.pexels,
           refresh: request.refresh,
           maxQueries: 2,
           onSuccess: () => successfulSources++,
-          onFailure: () => failedSources++,
+          onFailure: sourceFailures.add,
         ),
       ]);
 
@@ -328,7 +329,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         rememberFeedTerms(candidate.key, candidate.terms);
       }
       if (successfulSources == 0) {
-        throw StateError('Personalized feed sources failed without candidates');
+        throw _AllSourcesFailed(sourceFailures);
       }
 
       final PersonalizedRankingResult ranking = _rankingService.rank(
@@ -343,7 +344,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         random: _random,
         now: now,
       );
-      if (failedSources > 0 && ranking.items.isEmpty) {
+      if (sourceFailures.isNotEmpty && ranking.items.isEmpty) {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
 
@@ -378,7 +379,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         PersonalizedFeedPage(items: ranking.items, hasMore: ranking.items.isNotEmpty, usedKeys: ranking.usedKeys),
       );
     } catch (error, stackTrace) {
-      logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
+      if (error is _AllSourcesFailed && error.isOffline) {
+        logger.w('[PersonalizedFeed] every source failed, so the feed falls back to cached walls: $error');
+      } else {
+        logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
+      }
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
@@ -422,7 +427,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     CandidatePool pool,
     Future<List<FeedItemEntity>> items, {
     void Function()? onSuccess,
-    required void Function() onFailure,
+    required void Function(Object error) onFailure,
   }) async {
     try {
       final List<FeedItemEntity> result = await items.timeout(_poolTimeout);
@@ -430,7 +435,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return result.map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
     } catch (error) {
       logger.w('[PersonalizedFeed] ${pool.name} source failed: $error');
-      onFailure();
+      onFailure(error);
       return const <RankingCandidate>[];
     }
   }
@@ -818,7 +823,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     required bool refresh,
     required int maxQueries,
     required void Function() onSuccess,
-    required void Function() onFailure,
+    required void Function(Object error) onFailure,
   }) async {
     final Set<String> picked = _interests.map((e) => e.toLowerCase()).toSet();
     List<PersonalizedInterest> entries = _catalog
@@ -845,7 +850,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
               .toList(growable: false);
         } catch (error) {
           logger.w('[PersonalizedFeed] ${source.name} "${entry.query}" failed: $error');
-          onFailure();
+          onFailure(error);
           return const <RankingCandidate>[];
         }
       }),
@@ -868,7 +873,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
         );
         if (result.isFailure) {
-          throw StateError('Wallhaven feed request failed');
+          throw const _ProviderFeedFailed(WallpaperSource.wallhaven);
         }
         return (result.data ?? const <WallhavenWallpaper>[])
             .map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall))
@@ -881,7 +886,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         paginationKey: 'personalized:$query',
       );
       if (result.isFailure) {
-        throw StateError('Pexels feed request failed');
+        throw const _ProviderFeedFailed(WallpaperSource.pexels);
       }
       return (result.data ?? const <PexelsWallpaper>[])
           .map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall))
@@ -1011,4 +1016,26 @@ List<String> _toStringList(Object? value) {
     return const <String>[];
   }
   return value.map((e) => e?.toString().trim() ?? '').where((e) => e.isNotEmpty).toSet().toList(growable: false);
+}
+
+/// The Wallhaven and Pexels repositories log their own cause before they return a failed result.
+class _ProviderFeedFailed implements Exception {
+  const _ProviderFeedFailed(this.source);
+
+  final WallpaperSource source;
+
+  @override
+  String toString() => '${source.name} feed request failed';
+}
+
+class _AllSourcesFailed implements Exception {
+  const _AllSourcesFailed(this.failures);
+
+  final List<Object> failures;
+
+  /// The cached fallback covers a lost or slow connection. Any other cause is a bug to report.
+  bool get isOffline => failures.every((error) => isNetworkNoise(error) || error is _ProviderFeedFailed);
+
+  @override
+  String toString() => failures.map((error) => '$error').toSet().join('; ');
 }
