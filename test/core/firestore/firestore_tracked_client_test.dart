@@ -115,10 +115,14 @@ void main() {
 
   test('deferred Firestore access does not happen while constructing the client', () async {
     var factoryCalls = 0;
-    final deferredClient = FirestoreTrackedClient.deferred(() {
-      factoryCalls++;
-      throw StateError('Firebase is not initialized');
-    }, sink);
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        throw StateError('Firestore setup failed');
+      },
+      sink,
+      waitUntilReady: () async => true,
+    );
 
     expect(factoryCalls, 0);
     await expectLater(
@@ -657,7 +661,7 @@ void main() {
       boundedClient
           .query<String>(spec, (_, id) => id)
           .then<void>(
-            (_) => fail('The bounded read must fall back before Firebase becomes ready.'),
+            (_) => fail('The bounded read must fail before Firebase becomes ready.'),
             onError: (Object error) {
               readError = error as FirestoreError;
             },
@@ -672,8 +676,8 @@ void main() {
     expect(cancelledFactoryCalls, 0);
     expect(snapshots.hasListener, isFalse);
     expect(errors, isEmpty);
-    expect(readError?.code, 'no-app');
-    expect(readFactoryCalls, 1);
+    expect(readError?.code, 'unavailable');
+    expect(readFactoryCalls, 0);
 
     initialized = true;
     ready.complete(true);

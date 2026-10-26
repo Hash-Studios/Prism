@@ -11,7 +11,8 @@ abstract class TrendingRepository {
   Future<List<PrismWallpaper>> readCached();
 }
 
-/// A `no-app` load permits one refresh after successful initialization without delaying its cache or error result.
+/// A load that failed because Firebase was not ready permits one refresh after successful initialization without
+/// delaying its cache or error result.
 class TrendingFetch {
   TrendingFetch.success(List<PrismWallpaper> walls, {this.retryAfterInitialization}) : result = Result.success(walls);
 

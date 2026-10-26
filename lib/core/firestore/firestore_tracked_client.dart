@@ -96,8 +96,8 @@ class FirestoreTrackedClient implements FirestoreClient {
       _waitUntilStreamReady = null,
       _ready = true;
 
-  /// One-shot operations use the bounded startup wait. Streams wait for eventual initialization so a slow startup
-  /// does not permanently close their subscriptions with `no-app`.
+  /// One-shot operations use the bounded startup wait and fail as `unavailable` if Firebase is still not ready. Streams
+  /// wait for eventual initialization so a slow startup does not permanently close their subscriptions.
   FirestoreTrackedClient.deferred(this._firestoreFactory, this._telemetry, {Future<bool> Function()? waitUntilReady})
     : _waitUntilReady = waitUntilReady ?? _waitForFirebaseInit,
       _waitUntilStreamReady = waitUntilReady ?? _waitForFirebaseStreamInit,
@@ -126,17 +126,15 @@ class FirestoreTrackedClient implements FirestoreClient {
   final FirebaseFirestore Function() _firestoreFactory;
   FirebaseFirestore get _firestore => _firestoreFactory();
 
-  Future<void> _ensureReady() async {
-    if (_ready) {
-      return;
-    }
-    _ready = await _waitUntilReady!();
+  Future<bool> _ensureReady() async {
+    if (!_ready) _ready = await _waitUntilReady!();
+    return _ready;
   }
 
   Future<void> _ensureStreamReady() async {
     if (_ready) return;
     if (!await _waitUntilStreamReady!()) {
-      throw FirebaseException(plugin: 'core', code: 'unavailable');
+      throw FirestoreNotReadyError();
     }
     _ready = true;
   }
@@ -299,9 +297,10 @@ class FirestoreTrackedClient implements FirestoreClient {
     int? Function(T result)? resultCount,
     String? Function(T result)? docIdOf,
   }) async {
-    await _ensureReady();
+    final bool ready = await _ensureReady();
     final Stopwatch sw = Stopwatch()..start();
     try {
+      if (!ready) throw FirestoreNotReadyError();
       final T result = await body();
       unawaited(
         _telemetry.emit(
@@ -401,7 +400,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   /// Reads the SDK disk cache. Returns null when the cache has no usable answer (miss, error, or a cursor doc that is
   /// not cached), so the caller falls back to the network.
   Future<_QueryCacheEntry?> _readDiskCache(FirestoreQuerySpec spec) async {
-    await _ensureReady();
+    if (!await _ensureReady()) return null;
     final Stopwatch sw = Stopwatch()..start();
     try {
       Query<Map<String, dynamic>> query = _applySpec(spec);
@@ -498,8 +497,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async {
-    if (preferCacheFirst) {
-      await _ensureReady();
+    if (preferCacheFirst && await _ensureReady()) {
       try {
         final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
         final Stopwatch swCache = Stopwatch()..start();

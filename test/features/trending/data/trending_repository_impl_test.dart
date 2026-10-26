@@ -381,6 +381,22 @@ void main() {
     });
   }
 
+  test('a read that ran out of the bounded Firebase wait carries a startup retry', () async {
+    final initialization = Completer<bool>();
+    final startup = TrendingRepositoryImpl(
+      _FailingPointerClient(FirestoreNotReadyError()),
+      cache,
+      blocks,
+      settings,
+      initializationReady: () => initialization.future,
+    );
+    final outcome = await startup.fetch();
+    expect(outcome.result.isFailure, isTrue);
+    expect(outcome.retryAfterInitialization, isNotNull);
+    initialization.complete(true);
+    expect(await outcome.retryAfterInitialization, isTrue);
+  });
+
   test('no-app delivered after initialization settled still permits one startup retry', () async {
     final startup = TrendingRepositoryImpl(
       _FailingPointerClient(FirestoreError(message: 'no app', code: 'no-app')),
