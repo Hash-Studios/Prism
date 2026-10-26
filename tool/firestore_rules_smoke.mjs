@@ -122,6 +122,12 @@ const seed = () => Promise.all([
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
+const themeFields = {
+  mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
+  darkThemeId: str('kDOlive'), darkAccent: { integerValue: '4278190080' }, changedAt: { integerValue: '1793000000000' },
+};
+const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
+const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
 const cases = [
   ['stranger can get a public profile', () => req('GET', 'profiles/a', null, Bu), 200],
   ['public profile carries no email key', () => profileHasNoEmail('profiles/a', Bu), 200],
@@ -325,6 +331,12 @@ const cases = [
   ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
     appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
   }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ['owner writes a valid themePrefs map', () => req('PATCH', 'usersv2/b', themeMap(themeFields), Bu, ['themePrefs']), 200],
+  ['owner writes themePrefs with an extra key', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, extra: str('x') }), Bu, ['themePrefs']), 403],
+  ['owner writes themePrefs with mode sepia', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, mode: str('sepia') }), Bu, ['themePrefs']), 403],
+  ['owner writes themePrefs with a string lightAccent', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, lightAccent: str('4293228183') }), Bu, ['themePrefs']), 403],
+  ['owner writes themePrefs missing changedAt', () => req('PATCH', 'usersv2/b', themeMap(themeNoChangedAt), Bu, ['themePrefs']), 403],
+  ['stranger writes themePrefs on another user doc', () => req('PATCH', 'usersv2/a', themeMap(themeFields), Bu, ['themePrefs']), 403],
   ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
     userId: { stringValue: 'b' }, delta: { integerValue: '500' },
   }, Bu), 403],

@@ -106,6 +106,24 @@ service cloud.firestore {
       return timestampOk && offsetOk;
     }
 
+    // Synced theme choice: all six keys, no extras. Light and dark each keep their own theme and accent.
+    function validThemePrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['mode', 'lightThemeId', 'lightAccent', 'darkThemeId', 'darkAccent', 'changedAt'])
+        && p.keys().hasAll(['mode', 'lightThemeId', 'lightAccent', 'darkThemeId', 'darkAccent', 'changedAt'])
+        && p.mode in ['light', 'dark', 'system']
+        && p.lightThemeId is string && p.lightThemeId.size() > 0 && p.lightThemeId.size() <= 64
+        && p.darkThemeId is string && p.darkThemeId.size() > 0 && p.darkThemeId.size() <= 64
+        && p.lightAccent is int && p.lightAccent >= 0 && p.lightAccent <= 4294967295
+        && p.darkAccent is int && p.darkAccent >= 0 && p.darkAccent <= 4294967295
+        && p.changedAt is int && p.changedAt >= 0;
+    }
+
+    function ownerThemePrefsOk() {
+      return !('themePrefs' in request.resource.data.diff(resource.data).affectedKeys())
+        || validThemePrefs(request.resource.data.themePrefs);
+    }
+
     function wallServerKeysAbsent() {
       return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
     }
@@ -220,8 +238,8 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
