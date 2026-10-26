@@ -13,6 +13,7 @@ import 'package:Prism/features/in_app_notifications/domain/notification_grouping
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -161,6 +162,15 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             children: <Widget>[
               _body(context, state, initialLoading),
               const Positioned(top: 0, left: 0, child: SpookyWeb()),
+              Positioned(
+                right: PrismSpace.lg,
+                bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[DiwaliDiya(size: 26), DiwaliDiya(size: 34), DiwaliDiya(size: 26)],
+                ),
+              ),
             ],
           ),
         );

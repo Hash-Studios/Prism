@@ -17,7 +17,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.da
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
-import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -102,10 +102,10 @@ void main() {
   setUp(() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    spookyClock = () => DateTime(2026, 12);
+    seasonClock = () => DateTime(2026, 12);
   });
   tearDown(() async {
-    spookyClock = DateTime.now;
+    seasonClock = DateTime.now;
     if (getIt.isRegistered<StartupRepository>()) await getIt.unregister<StartupRepository>();
     AnalyticsRuntime.reset();
   });
@@ -771,27 +771,29 @@ void main() {
 
   group('Spooky theme card', () {
     testWidgets('shows the card in the season when the theme is not Spooky', (tester) async {
-      spookyClock = () => DateTime(2026, 10, 31);
+      seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
 
       expect(find.text('The Spooky theme is here'), findsOneWidget);
     });
 
     testWidgets('hides the card once the season has ended', (tester) async {
-      spookyClock = () => DateTime(2026, 11, 3);
+      seasonClock = () => DateTime(2026, 11, 3);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
 
       expect(find.text('The Spooky theme is here'), findsNothing);
     });
 
     testWidgets('keeps the viewed wallpaper selected when the seasonal card disappears', (tester) async {
-      spookyClock = () => DateTime(2026, 10, 31);
+      seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
       await swipeToNextPage(tester);
       await swipeToNextPage(tester);
       expect(shownWallId(tester), 'a');
 
-      spookyClock = () => DateTime(2026, 11, 3);
+      seasonClock = () => DateTime(2026, 11, 3);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
 
       expect(shownWallId(tester), 'a');
@@ -799,8 +801,9 @@ void main() {
 
     testWidgets('removes the card at the season deadline without another parent rebuild', (tester) async {
       Duration elapsed = Duration.zero;
-      spookyClock = () => DateTime(2026, 11, 2, 23, 59).add(elapsed);
+      seasonClock = () => DateTime(2026, 11, 2, 23, 59).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
       expect(find.text('The Spooky theme is here'), findsOneWidget);
 
       elapsed = const Duration(minutes: 1);
@@ -810,14 +813,67 @@ void main() {
     });
 
     testWidgets('hides the card when the Spooky theme is already active', (tester) async {
-      spookyClock = () => DateTime(2026, 10, 31);
+      seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme9);
 
       expect(find.text('The Spooky theme is here'), findsNothing);
     });
 
     testWidgets('tap requests the Spooky dark theme and mode in one event', (tester) async {
-      spookyClock = () => DateTime(2026, 10, 31);
+      seasonClock = () => DateTime(2026, 10, 31);
+      final _MockThemeBloc themeBloc = _MockThemeBloc();
+      when(() => themeBloc.state).thenReturn(ThemeState.initial());
+      registerFallbackValue(const ThemeViewRoute());
+      final _MockStackRouter router = _MockStackRouter();
+      when(() => router.push(any())).thenAnswer((_) async => null);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], router: router, themeBloc: themeBloc);
+      await swipeToNextPage(tester);
+
+      await tester.tap(find.text('The Spooky theme is here'));
+
+      verify(
+        () => themeBloc.add(const ThemeEvent.darkThemeChanged(themeId: prismSpookyThemeId, mode: ThemeMode.dark)),
+      ).called(1);
+      verifyNever(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark)));
+    });
+  });
+
+  group('Diwali theme card', () {
+    testWidgets('shows the card in the season when the theme is not Diwali', (tester) async {
+      seasonClock = () => DateTime(2026, 11, 5);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Diwali theme is here'), findsOneWidget);
+    });
+
+    testWidgets('hides the card once the season has ended', (tester) async {
+      seasonClock = () => DateTime(2026, 11, 12);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Diwali theme is here'), findsNothing);
+    });
+
+    testWidgets('removes the card at the season deadline without another parent rebuild', (tester) async {
+      Duration elapsed = Duration.zero;
+      seasonClock = () => DateTime(2026, 11, 11, 23, 59).add(elapsed);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      expect(find.text('The Diwali theme is here'), findsOneWidget);
+
+      elapsed = const Duration(minutes: 1);
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(find.text('The Diwali theme is here'), findsNothing);
+    });
+
+    testWidgets('hides the card when the Diwali theme is already active', (tester) async {
+      seasonClock = () => DateTime(2026, 11, 5);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme10);
+
+      expect(find.text('The Diwali theme is here'), findsNothing);
+    });
+
+    testWidgets('tap requests the Diwali dark theme and mode in one event', (tester) async {
+      seasonClock = () => DateTime(2026, 11, 5);
       final _MockThemeBloc themeBloc = _MockThemeBloc();
       when(() => themeBloc.state).thenReturn(ThemeState.initial());
       registerFallbackValue(const ThemeViewRoute());
@@ -828,9 +884,21 @@ void main() {
       await tester.tap(find.byType(FeedHeroCard).first);
 
       verify(
-        () => themeBloc.add(const ThemeEvent.darkThemeChanged(themeId: prismSpookyThemeId, mode: ThemeMode.dark)),
+        () => themeBloc.add(const ThemeEvent.darkThemeChanged(themeId: prismDiwaliThemeId, mode: ThemeMode.dark)),
       ).called(1);
       verifyNever(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark)));
+    });
+
+    testWidgets('on 31 October the Diwali card comes before the Spooky card', (tester) async {
+      seasonClock = () => DateTime(2026, 10, 31);
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Diwali theme is here'), findsOneWidget);
+      expect(find.text('The Spooky theme is here'), findsNothing);
+
+      await swipeToNextPage(tester);
+
+      expect(find.text('The Spooky theme is here'), findsOneWidget);
     });
   });
 }

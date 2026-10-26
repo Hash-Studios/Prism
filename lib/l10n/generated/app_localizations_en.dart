@@ -2878,6 +2878,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get spookyAnnouncementBody => 'Orange, black and a few spiders. It is free. Tap to try it.';
 
   @override
+  String get coreThemeDiwali => 'Diwali';
+
+  @override
+  String get diwaliBannerTitle => 'The Diwali theme is here';
+
+  @override
+  String get diwaliBannerSubtitle => 'Diyas, fireworks and gold. Free. Tap to try it.';
+
+  @override
+  String get diwaliAnnouncementTitle => 'New: the Diwali theme 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'Diyas, fireworks and gold. It is free. Tap to try it.';
+
+  @override
   String get coreThisGoesOnHome => 'This one goes on the home screen.';
 
   @override
