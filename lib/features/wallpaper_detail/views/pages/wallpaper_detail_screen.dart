@@ -395,14 +395,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
   }
 
-  void _useAsAppAccent(BuildContext context, Color color) {
+  Future<void> _useAsAppAccent(BuildContext context, Color color) async {
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     if (!accentReadsOn(color, Theme.of(context).colorScheme.surface)) {
       toasts.error(context.l10n.coreCustomAccentLowContrast);
       return;
     }
     PrismHaptics.selection();
-    getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, false);
+    await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, false);
+    if (!context.mounted) return;
     if (dark) {
       context.setPrismDarkAccent(color);
     } else {

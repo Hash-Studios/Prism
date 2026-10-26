@@ -51,7 +51,7 @@ class _CustomAccentSheetState extends State<_CustomAccentSheet> {
   void _onSliderChanged(HSLColor next) {
     setState(() {
       _value = next;
-      if (!_hexFocus.hasFocus) _hex.text = _hexOf(_value);
+      _hex.text = _hexOf(_value);
     });
   }
 
@@ -109,10 +109,7 @@ class _CustomAccentSheetState extends State<_CustomAccentSheet> {
                   autocorrect: false,
                   textCapitalization: TextCapitalization.characters,
                   textInputAction: TextInputAction.done,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.allow(RegExp('[#0-9a-fA-F]')),
-                    LengthLimitingTextInputFormatter(7),
-                  ],
+                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp('[#0-9a-fA-F]'))],
                   onChanged: _onHexChanged,
                 ),
               ),

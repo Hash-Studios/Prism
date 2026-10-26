@@ -82,6 +82,17 @@ void main() {
     expect(find.text('Use color'), findsOneWidget);
   });
 
+  testWidgets('a pasted 8 digit hex stays whole and is refused, not cut to another colour', (tester) async {
+    await pumpHost(tester);
+
+    await tester.enterText(find.byType(TextField), '#FF000080');
+    await tester.pump();
+
+    expect(fieldText(tester), '#FF000080');
+    expect(find.text(en.coreCustomAccentInvalidHex), findsOneWidget);
+    expect(applyEnabled(tester), isFalse);
+  });
+
   testWidgets('a colour too close to the surface shows the low contrast message and disables Use color', (
     tester,
   ) async {

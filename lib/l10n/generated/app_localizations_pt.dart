@@ -2877,7 +2877,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreCustomAccentLightness => 'Luminosidade';
 
   @override
-  String get coreCustomAccentInvalidHex => 'Introduza 6 dígitos hexadecimais, como #E57697.';
+  String get coreCustomAccentInvalidHex => 'Digite 6 dígitos hexadecimais, como #E57697.';
 
   @override
   String get coreCustomAccentLowContrast =>
@@ -9307,10 +9307,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperThemeDarkThemes => 'Temas escuros';
 
   @override
-  String get wallpaperUseAsAppAccent => 'Usar como cor de destaque da app';
+  String get wallpaperUseAsAppAccent => 'Usar como cor de destaque do app';
 
   @override
-  String get wallpaperAppAccentUpdated => 'Cor de destaque da app atualizada';
+  String get wallpaperAppAccentUpdated => 'Cor de destaque do app atualizada';
 
   @override
   String get wallpaperThemeLightAccent => 'Cor de destaque clara';
