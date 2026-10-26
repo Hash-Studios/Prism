@@ -28,6 +28,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/library/data/favourites_export.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -118,7 +119,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     });
   }
 
-  void _openWall(List<FavouriteWallEntity> walls, int index) {
+  void _openWall(BuildContext grid, List<FavouriteWallEntity> walls, int index) {
     final FavouriteWallEntity wall = walls[index];
     if (wall is LegacyFavouriteWall) {
       toasts.info(context.l10n.wallpaperFavouriteUnavailableLegacy);
@@ -141,7 +142,13 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         entity: wall.toFeedItem(),
         analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
         heroTag: prismHeroTag(this, index, wall.id),
-        feed: walls.where((w) => w is! LegacyFavouriteWall).map((w) => w.toFeedItem()).toList(growable: false),
+        feed: WallpaperFeed(
+          grid: grid,
+          tiles: [
+            for (final (i, w) in walls.indexed)
+              if (w is! LegacyFavouriteWall) (item: w.toFeedItem(), index: i, heroTag: prismHeroTag(this, i, w.id)),
+          ],
+        ),
       ),
     );
   }
@@ -484,7 +491,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               return;
             }
             PrismHaptics.tap();
-            _openWall(walls, index);
+            _openWall(context, walls, index);
           },
           onLongPress: _selecting || wall is LegacyFavouriteWall ? () => _toggleSelected(wall) : null,
           child: ClipRRect(

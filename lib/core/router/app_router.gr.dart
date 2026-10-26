@@ -1972,7 +1972,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     String? heroTag,
     File? localFile,
     String? requestId,
-    List<FeedItemEntity>? feed,
+    WallpaperFeed? feed,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -2049,7 +2049,7 @@ class WallpaperDetailRouteArgs {
 
   final String? requestId;
 
-  final List<FeedItemEntity>? feed;
+  final WallpaperFeed? feed;
 
   @override
   String toString() {
@@ -2069,7 +2069,7 @@ class WallpaperDetailRouteArgs {
         heroTag == other.heroTag &&
         localFile == other.localFile &&
         requestId == other.requestId &&
-        const ListEquality<FeedItemEntity>().equals(feed, other.feed);
+        feed == other.feed;
   }
 
   @override
@@ -2083,7 +2083,7 @@ class WallpaperDetailRouteArgs {
       heroTag.hashCode ^
       localFile.hashCode ^
       requestId.hashCode ^
-      const ListEquality<FeedItemEntity>().hash(feed);
+      feed.hashCode;
 }
 
 /// generated route for

@@ -27,6 +27,7 @@ import 'package:Prism/features/wallpaper_detail/domain/repositories/wallpaper_re
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -83,6 +84,11 @@ FeedItemEntity _item(String id) => FeedItemEntity.prism(
   ),
 );
 
+WallpaperFeed _feedOf(BuildContext context, List<FeedItemEntity> items) => WallpaperFeed(
+  grid: context,
+  tiles: [for (final (i, item) in items.indexed) (item: item, index: i, heroTag: 'tile-$i')],
+);
+
 class _FeedRouter extends RootStackRouter {
   _FeedRouter(this.feed);
 
@@ -120,7 +126,11 @@ class _FeedRouter extends RootStackRouter {
         builder: (_) => Builder(
           builder: (context) {
             detail = ModalRoute.of(context);
-            return WallpaperDetailScreen(entity: feed[1], feed: feed, heroTag: 'tile').wrappedRoute(context);
+            return WallpaperDetailScreen(
+              entity: feed[1],
+              feed: _feedOf(context, feed),
+              heroTag: 'tile-1',
+            ).wrappedRoute(context);
           },
         ),
       ),
@@ -166,14 +176,26 @@ void main() {
     await getIt.reset();
   });
 
-  test('feed route arguments compare list values and preserve the optional no-feed path', () {
+  testWidgets('feed route arguments compare the feed by identity and preserve the optional no-feed path', (
+    tester,
+  ) async {
+    late BuildContext context;
+    await tester.pumpWidget(
+      Builder(
+        builder: (c) {
+          context = c;
+          return const SizedBox();
+        },
+      ),
+    );
     final feed = [_item('a'), _item('b')];
-    final first = WallpaperDetailRoute(entity: feed[1], feed: feed).args!;
-    final equivalent = WallpaperDetailRoute(entity: feed[1], feed: List.of(feed)).args!;
+    final grid = _feedOf(context, feed);
+    final first = WallpaperDetailRoute(entity: feed[1], feed: grid).args!;
+    final equivalent = WallpaperDetailRoute(entity: feed[1], feed: grid).args!;
     expect(first, equivalent);
     expect(first.hashCode, equivalent.hashCode);
-    expect(first, isNot(WallpaperDetailRoute(entity: feed[1], feed: feed.reversed.toList()).args));
-    expect(first.feed, same(feed));
+    expect(first, isNot(WallpaperDetailRoute(entity: feed[1], feed: _feedOf(context, feed)).args));
+    expect(first.feed, same(grid));
     final standalone = WallpaperDetailRoute(wallId: 'linked-wall', source: WallpaperSource.wallhaven).args!;
     expect(standalone.feed, isNull);
     expect(standalone.wallId, 'linked-wall');
@@ -234,7 +256,8 @@ void main() {
     expect(created, hasLength(2));
     expect(closed, [created.first]);
     expect(router.detail!.popGestureEnabled, isTrue);
-    expect(find.byType(WallpaperDetailHero), findsNothing);
+    // The card of the new wall carries its own tile tag (feed[0] is tile-0).
+    expect(tester.widget<WallpaperDetailHero>(find.byType(WallpaperDetailHero)).tag, 'tile-0');
     unawaited(router.maybePop<void>());
     await tester.pumpAndSettle();
     expect(router.current.name, 'Grid');

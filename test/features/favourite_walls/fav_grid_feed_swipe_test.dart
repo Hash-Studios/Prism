@@ -78,6 +78,7 @@ void main() {
             source: WallpaperSource.prism,
             legacyPayload: <String, Object?>{'url': 'https://example.com/legacy.jpg'},
           ),
+          prismFav('second'),
         ],
       ),
     );
@@ -110,7 +111,11 @@ void main() {
 
     final captured = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
     final feed = captured.args!.feed!;
-    expect(feed.map((item) => item.id), <String>['valid']);
-    expect(feed.single, isA<PrismFeedItem>());
+    expect(feed.tiles.map((tile) => tile.item.id), <String>['valid', 'second']);
+    expect(feed.tiles.map((tile) => tile.index), <int>[0, 2]);
+    expect(feed.tiles.every((tile) => tile.item is PrismFeedItem), isTrue);
+    // The tapped wall is at grid index 0, so its tag matches the route's own heroTag.
+    expect(feed.tiles.first.heroTag, captured.args!.heroTag);
+    expect(feed.tiles.last.heroTag, isNot(feed.tiles.first.heroTag));
   });
 }

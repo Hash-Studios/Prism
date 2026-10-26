@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,9 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
-    final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
+    final Object heroScope = Scrollable.maybeOf(context) ?? context;
+    final String heroTag = prismHeroTag(heroScope, index, item.id);
+    final List<FeedItemEntity>? walls = feed;
     final int? columns = crossAxisCount;
     final int? decodeHeight =
         memCacheHeight ??
@@ -116,7 +119,20 @@ class WallpaperTile extends StatelessWidget {
               ),
             );
             context.router.push(
-              WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId, feed: feed),
+              WallpaperDetailRoute(
+                entity: item,
+                heroTag: heroTag,
+                requestId: session.requestId,
+                feed: walls == null
+                    ? null
+                    : WallpaperFeed(
+                        grid: context,
+                        tiles: [
+                          for (final (i, wall) in walls.indexed)
+                            (item: wall, index: i, heroTag: prismHeroTag(heroScope, i, wall.id)),
+                        ],
+                      ),
+              ),
             );
           },
         ),

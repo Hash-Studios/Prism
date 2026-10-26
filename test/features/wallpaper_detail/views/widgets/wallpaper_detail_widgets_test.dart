@@ -219,7 +219,7 @@ void main() {
                 WallpaperRecommendations(
                   state: state,
                   heroScope: 'test-visit',
-                  onOpen: (_, _) {},
+                  onOpen: (_, _, _) {},
                   onLoadMore: onLoadMore ?? () {},
                 ),
               ],

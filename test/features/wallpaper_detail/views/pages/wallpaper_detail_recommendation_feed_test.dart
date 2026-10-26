@@ -8,12 +8,14 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -116,14 +118,25 @@ void main() {
     unawaited(router.push<void>(WallpaperDetailRoute(entity: current)));
     await tester.pumpAndSettle();
 
+    String gridHeroTag(FeedItemEntity item) => tester
+        .widget<PrismWallTile>(
+          find.descendant(of: find.byKey(ValueKey((item.source, item.id))), matching: find.byType(PrismWallTile)),
+        )
+        .heroTag!;
     final Finder firstTile = find.byKey(const ValueKey((WallpaperSource.prism, 'recommendation-1')));
     await tester.scrollUntilVisible(firstTile, 500, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
+    final String firstGridTag = gridHeroTag(first);
+    final String secondGridTag = gridHeroTag(second);
     await tester.tap(firstTile);
     await tester.pumpAndSettle();
 
     final WallpaperDetailRouteArgs args = router.current.argsAs<WallpaperDetailRouteArgs>();
     expect(args.entity?.id, 'recommendation-1');
-    expect(args.feed?.map((item) => item.id), <String>['recommendation-1', 'recommendation-2']);
+    final WallpaperFeed feed = args.feed!;
+    expect(feed.tiles.map((tile) => tile.item), <FeedItemEntity>[first, second]);
+    expect(feed.tiles.map((tile) => tile.index), <int>[0, 1]);
+    expect(feed.tiles.map((tile) => tile.heroTag), <String>[firstGridTag, secondGridTag]);
+    expect(args.heroTag, firstGridTag);
   });
 }
