@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_cover.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
@@ -82,7 +83,7 @@ class _F0AuthPageState extends State<F0AuthPage> {
           prev.interestsData.categoryImages.isEmpty && curr.interestsData.categoryImages.isNotEmpty,
       listener: (context, state) {
         for (final url in state.interestsData.categoryImages.values) {
-          precacheImage(NetworkImage(url), context);
+          precacheCover(url, context);
         }
       },
       child: Stack(

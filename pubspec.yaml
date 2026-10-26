@@ -130,6 +130,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/covers/
     - assets/lottie/
     - assets/sounds/
     - assets/app_icons/

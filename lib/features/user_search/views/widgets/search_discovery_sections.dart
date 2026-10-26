@@ -7,6 +7,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/category_catalog.dart';
+import 'package:Prism/data/categories/category_cover.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -192,12 +193,18 @@ class _CategoryCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: <Widget>[
-                PrismImageTile(
-                  url: image,
-                  fallbackUrl: fallbackImage,
-                  memCacheHeight: _decodeHeight(context, _categoryWidth),
-                  borderRadius: radius,
-                ),
+                if (bundledCoverAsset(image) case final String asset)
+                  ClipRRect(
+                    borderRadius: radius,
+                    child: Image.asset(asset, cacheHeight: _decodeHeight(context, _categoryWidth), fit: BoxFit.cover),
+                  )
+                else
+                  PrismImageTile(
+                    url: image,
+                    fallbackUrl: fallbackImage,
+                    memCacheHeight: _decodeHeight(context, _categoryWidth),
+                    borderRadius: radius,
+                  ),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: radius,
