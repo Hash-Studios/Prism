@@ -55,14 +55,15 @@ extension DropsEventPatterns on DropsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Refreshed value)?  refreshed,TResult Function( _UnlockRequested value)?  unlockRequested,TResult Function( _Ticked value)?  ticked,TResult Function( _UnlockedChanged value)?  unlockedChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Refreshed value)?  refreshed,TResult Function( _UnlockRequested value)?  unlockRequested,TResult Function( _Ticked value)?  ticked,TResult Function( _RenameRequested value)?  renameRequested,TResult Function( _UnlockedChanged value)?  unlockedChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Refreshed() when refreshed != null:
 return refreshed(_that);case _UnlockRequested() when unlockRequested != null:
 return unlockRequested(_that);case _Ticked() when ticked != null:
-return ticked(_that);case _UnlockedChanged() when unlockedChanged != null:
+return ticked(_that);case _RenameRequested() when renameRequested != null:
+return renameRequested(_that);case _UnlockedChanged() when unlockedChanged != null:
 return unlockedChanged(_that);case _:
   return orElse();
 
@@ -81,14 +82,15 @@ return unlockedChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Refreshed value)  refreshed,required TResult Function( _UnlockRequested value)  unlockRequested,required TResult Function( _Ticked value)  ticked,required TResult Function( _UnlockedChanged value)  unlockedChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Refreshed value)  refreshed,required TResult Function( _UnlockRequested value)  unlockRequested,required TResult Function( _Ticked value)  ticked,required TResult Function( _RenameRequested value)  renameRequested,required TResult Function( _UnlockedChanged value)  unlockedChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _Refreshed():
 return refreshed(_that);case _UnlockRequested():
 return unlockRequested(_that);case _Ticked():
-return ticked(_that);case _UnlockedChanged():
+return ticked(_that);case _RenameRequested():
+return renameRequested(_that);case _UnlockedChanged():
 return unlockedChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -106,14 +108,15 @@ return unlockedChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Refreshed value)?  refreshed,TResult? Function( _UnlockRequested value)?  unlockRequested,TResult? Function( _Ticked value)?  ticked,TResult? Function( _UnlockedChanged value)?  unlockedChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Refreshed value)?  refreshed,TResult? Function( _UnlockRequested value)?  unlockRequested,TResult? Function( _Ticked value)?  ticked,TResult? Function( _RenameRequested value)?  renameRequested,TResult? Function( _UnlockedChanged value)?  unlockedChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Refreshed() when refreshed != null:
 return refreshed(_that);case _UnlockRequested() when unlockRequested != null:
 return unlockRequested(_that);case _Ticked() when ticked != null:
-return ticked(_that);case _UnlockedChanged() when unlockedChanged != null:
+return ticked(_that);case _RenameRequested() when renameRequested != null:
+return renameRequested(_that);case _UnlockedChanged() when unlockedChanged != null:
 return unlockedChanged(_that);case _:
   return null;
 
@@ -131,13 +134,14 @@ return unlockedChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? weekKey)?  started,TResult Function()?  refreshed,TResult Function( String? wallId)?  unlockRequested,TResult Function()?  ticked,TResult Function( Map<String, DropUnlock> unlocked)?  unlockedChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? weekKey)?  started,TResult Function()?  refreshed,TResult Function( String? wallId)?  unlockRequested,TResult Function()?  ticked,TResult Function( String title)?  renameRequested,TResult Function( Map<String, DropUnlock> unlocked)?  unlockedChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.weekKey);case _Refreshed() when refreshed != null:
 return refreshed();case _UnlockRequested() when unlockRequested != null:
 return unlockRequested(_that.wallId);case _Ticked() when ticked != null:
-return ticked();case _UnlockedChanged() when unlockedChanged != null:
+return ticked();case _RenameRequested() when renameRequested != null:
+return renameRequested(_that.title);case _UnlockedChanged() when unlockedChanged != null:
 return unlockedChanged(_that.unlocked);case _:
   return orElse();
 
@@ -156,13 +160,14 @@ return unlockedChanged(_that.unlocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? weekKey)  started,required TResult Function()  refreshed,required TResult Function( String? wallId)  unlockRequested,required TResult Function()  ticked,required TResult Function( Map<String, DropUnlock> unlocked)  unlockedChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? weekKey)  started,required TResult Function()  refreshed,required TResult Function( String? wallId)  unlockRequested,required TResult Function()  ticked,required TResult Function( String title)  renameRequested,required TResult Function( Map<String, DropUnlock> unlocked)  unlockedChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.weekKey);case _Refreshed():
 return refreshed();case _UnlockRequested():
 return unlockRequested(_that.wallId);case _Ticked():
-return ticked();case _UnlockedChanged():
+return ticked();case _RenameRequested():
+return renameRequested(_that.title);case _UnlockedChanged():
 return unlockedChanged(_that.unlocked);case _:
   throw StateError('Unexpected subclass');
 
@@ -180,13 +185,14 @@ return unlockedChanged(_that.unlocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? weekKey)?  started,TResult? Function()?  refreshed,TResult? Function( String? wallId)?  unlockRequested,TResult? Function()?  ticked,TResult? Function( Map<String, DropUnlock> unlocked)?  unlockedChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? weekKey)?  started,TResult? Function()?  refreshed,TResult? Function( String? wallId)?  unlockRequested,TResult? Function()?  ticked,TResult? Function( String title)?  renameRequested,TResult? Function( Map<String, DropUnlock> unlocked)?  unlockedChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.weekKey);case _Refreshed() when refreshed != null:
 return refreshed();case _UnlockRequested() when unlockRequested != null:
 return unlockRequested(_that.wallId);case _Ticked() when ticked != null:
-return ticked();case _UnlockedChanged() when unlockedChanged != null:
+return ticked();case _RenameRequested() when renameRequested != null:
+return renameRequested(_that.title);case _UnlockedChanged() when unlockedChanged != null:
 return unlockedChanged(_that.unlocked);case _:
   return null;
 
@@ -394,6 +400,72 @@ String toString() {
 /// @nodoc
 
 
+class _RenameRequested implements DropsEvent {
+  const _RenameRequested({required this.title});
+  
+
+ final  String title;
+
+/// Create a copy of DropsEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$RenameRequestedCopyWith<_RenameRequested> get copyWith => __$RenameRequestedCopyWithImpl<_RenameRequested>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RenameRequested&&(identical(other.title, title) || other.title == title));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,title);
+
+@override
+String toString() {
+  return 'DropsEvent.renameRequested(title: $title)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$RenameRequestedCopyWith<$Res> implements $DropsEventCopyWith<$Res> {
+  factory _$RenameRequestedCopyWith(_RenameRequested value, $Res Function(_RenameRequested) _then) = __$RenameRequestedCopyWithImpl;
+@useResult
+$Res call({
+ String title
+});
+
+
+
+
+}
+/// @nodoc
+class __$RenameRequestedCopyWithImpl<$Res>
+    implements _$RenameRequestedCopyWith<$Res> {
+  __$RenameRequestedCopyWithImpl(this._self, this._then);
+
+  final _RenameRequested _self;
+  final $Res Function(_RenameRequested) _then;
+
+/// Create a copy of DropsEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? title = null,}) {
+  return _then(_RenameRequested(
+title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class _UnlockedChanged implements DropsEvent {
   const _UnlockedChanged(final  Map<String, DropUnlock> unlocked): _unlocked = unlocked;
   
@@ -469,7 +541,8 @@ mixin _$DropsState {
  LoadStatus get status; DateTime get now; DropEntity? get drop;/// Past Drops the user owns walls from, newest first. Fetched once each and kept.
  List<DropEntity> get past; Map<String, DropUnlock> get unlocked;/// The wall id being unlocked, or [DropsBloc.packKey] for the pack.
  String? get busyKey;/// The newest unlock reply. The page toasts it once.
- DropUnlockResult? get lastResult;
+ DropUnlockResult? get lastResult;/// The newest rename reply. The page toasts it once.
+ DropRenameResult? get lastRename;
 /// Create a copy of DropsState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -480,16 +553,16 @@ $DropsStateCopyWith<DropsState> get copyWith => _$DropsStateCopyWithImpl<DropsSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DropsState&&(identical(other.status, status) || other.status == status)&&(identical(other.now, now) || other.now == now)&&(identical(other.drop, drop) || other.drop == drop)&&const DeepCollectionEquality().equals(other.past, past)&&const DeepCollectionEquality().equals(other.unlocked, unlocked)&&(identical(other.busyKey, busyKey) || other.busyKey == busyKey)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DropsState&&(identical(other.status, status) || other.status == status)&&(identical(other.now, now) || other.now == now)&&(identical(other.drop, drop) || other.drop == drop)&&const DeepCollectionEquality().equals(other.past, past)&&const DeepCollectionEquality().equals(other.unlocked, unlocked)&&(identical(other.busyKey, busyKey) || other.busyKey == busyKey)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult)&&(identical(other.lastRename, lastRename) || other.lastRename == lastRename));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,now,drop,const DeepCollectionEquality().hash(past),const DeepCollectionEquality().hash(unlocked),busyKey,lastResult);
+int get hashCode => Object.hash(runtimeType,status,now,drop,const DeepCollectionEquality().hash(past),const DeepCollectionEquality().hash(unlocked),busyKey,lastResult,lastRename);
 
 @override
 String toString() {
-  return 'DropsState(status: $status, now: $now, drop: $drop, past: $past, unlocked: $unlocked, busyKey: $busyKey, lastResult: $lastResult)';
+  return 'DropsState(status: $status, now: $now, drop: $drop, past: $past, unlocked: $unlocked, busyKey: $busyKey, lastResult: $lastResult, lastRename: $lastRename)';
 }
 
 
@@ -500,7 +573,7 @@ abstract mixin class $DropsStateCopyWith<$Res>  {
   factory $DropsStateCopyWith(DropsState value, $Res Function(DropsState) _then) = _$DropsStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, DateTime now, DropEntity? drop, List<DropEntity> past, Map<String, DropUnlock> unlocked, String? busyKey, DropUnlockResult? lastResult
+ LoadStatus status, DateTime now, DropEntity? drop, List<DropEntity> past, Map<String, DropUnlock> unlocked, String? busyKey, DropUnlockResult? lastResult, DropRenameResult? lastRename
 });
 
 
@@ -517,7 +590,7 @@ class _$DropsStateCopyWithImpl<$Res>
 
 /// Create a copy of DropsState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? now = null,Object? drop = freezed,Object? past = null,Object? unlocked = null,Object? busyKey = freezed,Object? lastResult = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? now = null,Object? drop = freezed,Object? past = null,Object? unlocked = null,Object? busyKey = freezed,Object? lastResult = freezed,Object? lastRename = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,now: null == now ? _self.now : now // ignore: cast_nullable_to_non_nullable
@@ -526,7 +599,8 @@ as DropEntity?,past: null == past ? _self.past : past // ignore: cast_nullable_t
 as List<DropEntity>,unlocked: null == unlocked ? _self.unlocked : unlocked // ignore: cast_nullable_to_non_nullable
 as Map<String, DropUnlock>,busyKey: freezed == busyKey ? _self.busyKey : busyKey // ignore: cast_nullable_to_non_nullable
 as String?,lastResult: freezed == lastResult ? _self.lastResult : lastResult // ignore: cast_nullable_to_non_nullable
-as DropUnlockResult?,
+as DropUnlockResult?,lastRename: freezed == lastRename ? _self.lastRename : lastRename // ignore: cast_nullable_to_non_nullable
+as DropRenameResult?,
   ));
 }
 
@@ -611,10 +685,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult,  DropRenameResult? lastRename)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DropsState() when $default != null:
-return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult);case _:
+return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult,_that.lastRename);case _:
   return orElse();
 
 }
@@ -632,10 +706,10 @@ return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult,  DropRenameResult? lastRename)  $default,) {final _that = this;
 switch (_that) {
 case _DropsState():
-return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult);case _:
+return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult,_that.lastRename);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -652,10 +726,10 @@ return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  DateTime now,  DropEntity? drop,  List<DropEntity> past,  Map<String, DropUnlock> unlocked,  String? busyKey,  DropUnlockResult? lastResult,  DropRenameResult? lastRename)?  $default,) {final _that = this;
 switch (_that) {
 case _DropsState() when $default != null:
-return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult);case _:
+return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_that.busyKey,_that.lastResult,_that.lastRename);case _:
   return null;
 
 }
@@ -667,7 +741,7 @@ return $default(_that.status,_that.now,_that.drop,_that.past,_that.unlocked,_tha
 
 
 class _DropsState extends DropsState {
-  const _DropsState({required this.status, required this.now, this.drop, final  List<DropEntity> past = const <DropEntity>[], final  Map<String, DropUnlock> unlocked = const <String, DropUnlock>{}, this.busyKey, this.lastResult}): _past = past,_unlocked = unlocked,super._();
+  const _DropsState({required this.status, required this.now, this.drop, final  List<DropEntity> past = const <DropEntity>[], final  Map<String, DropUnlock> unlocked = const <String, DropUnlock>{}, this.busyKey, this.lastResult, this.lastRename}): _past = past,_unlocked = unlocked,super._();
   
 
 @override final  LoadStatus status;
@@ -693,6 +767,8 @@ class _DropsState extends DropsState {
 @override final  String? busyKey;
 /// The newest unlock reply. The page toasts it once.
 @override final  DropUnlockResult? lastResult;
+/// The newest rename reply. The page toasts it once.
+@override final  DropRenameResult? lastRename;
 
 /// Create a copy of DropsState
 /// with the given fields replaced by the non-null parameter values.
@@ -704,16 +780,16 @@ _$DropsStateCopyWith<_DropsState> get copyWith => __$DropsStateCopyWithImpl<_Dro
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DropsState&&(identical(other.status, status) || other.status == status)&&(identical(other.now, now) || other.now == now)&&(identical(other.drop, drop) || other.drop == drop)&&const DeepCollectionEquality().equals(other._past, _past)&&const DeepCollectionEquality().equals(other._unlocked, _unlocked)&&(identical(other.busyKey, busyKey) || other.busyKey == busyKey)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DropsState&&(identical(other.status, status) || other.status == status)&&(identical(other.now, now) || other.now == now)&&(identical(other.drop, drop) || other.drop == drop)&&const DeepCollectionEquality().equals(other._past, _past)&&const DeepCollectionEquality().equals(other._unlocked, _unlocked)&&(identical(other.busyKey, busyKey) || other.busyKey == busyKey)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult)&&(identical(other.lastRename, lastRename) || other.lastRename == lastRename));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,now,drop,const DeepCollectionEquality().hash(_past),const DeepCollectionEquality().hash(_unlocked),busyKey,lastResult);
+int get hashCode => Object.hash(runtimeType,status,now,drop,const DeepCollectionEquality().hash(_past),const DeepCollectionEquality().hash(_unlocked),busyKey,lastResult,lastRename);
 
 @override
 String toString() {
-  return 'DropsState(status: $status, now: $now, drop: $drop, past: $past, unlocked: $unlocked, busyKey: $busyKey, lastResult: $lastResult)';
+  return 'DropsState(status: $status, now: $now, drop: $drop, past: $past, unlocked: $unlocked, busyKey: $busyKey, lastResult: $lastResult, lastRename: $lastRename)';
 }
 
 
@@ -724,7 +800,7 @@ abstract mixin class _$DropsStateCopyWith<$Res> implements $DropsStateCopyWith<$
   factory _$DropsStateCopyWith(_DropsState value, $Res Function(_DropsState) _then) = __$DropsStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, DateTime now, DropEntity? drop, List<DropEntity> past, Map<String, DropUnlock> unlocked, String? busyKey, DropUnlockResult? lastResult
+ LoadStatus status, DateTime now, DropEntity? drop, List<DropEntity> past, Map<String, DropUnlock> unlocked, String? busyKey, DropUnlockResult? lastResult, DropRenameResult? lastRename
 });
 
 
@@ -741,7 +817,7 @@ class __$DropsStateCopyWithImpl<$Res>
 
 /// Create a copy of DropsState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? now = null,Object? drop = freezed,Object? past = null,Object? unlocked = null,Object? busyKey = freezed,Object? lastResult = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? now = null,Object? drop = freezed,Object? past = null,Object? unlocked = null,Object? busyKey = freezed,Object? lastResult = freezed,Object? lastRename = freezed,}) {
   return _then(_DropsState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,now: null == now ? _self.now : now // ignore: cast_nullable_to_non_nullable
@@ -750,7 +826,8 @@ as DropEntity?,past: null == past ? _self._past : past // ignore: cast_nullable_
 as List<DropEntity>,unlocked: null == unlocked ? _self._unlocked : unlocked // ignore: cast_nullable_to_non_nullable
 as Map<String, DropUnlock>,busyKey: freezed == busyKey ? _self.busyKey : busyKey // ignore: cast_nullable_to_non_nullable
 as String?,lastResult: freezed == lastResult ? _self.lastResult : lastResult // ignore: cast_nullable_to_non_nullable
-as DropUnlockResult?,
+as DropUnlockResult?,lastRename: freezed == lastRename ? _self.lastRename : lastRename // ignore: cast_nullable_to_non_nullable
+as DropRenameResult?,
   ));
 }
 

@@ -1,11 +1,14 @@
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../drop_fixtures.dart';
 
 void main() {
   final AppLocalizationsEn l10n = AppLocalizationsEn();
+  setUpAll(() => initializeDateFormatting('en'));
+
   group('packPrice', () {
     test('is the pack price when it is cheaper than the walls left', () {
       expect(dropEntity().packPrice(remaining: 4, isPro: false), 100);
@@ -64,6 +67,35 @@ void main() {
       expect(drop.phaseAt(drop.endsAt.subtract(const Duration(minutes: 1))), DropPhase.lastCall);
       expect(drop.phaseAt(drop.endsAt), DropPhase.ended);
       expect(drop.phaseAt(drop.startsAt.subtract(const Duration(minutes: 1))), DropPhase.ended);
+    });
+  });
+
+  group('displayTitle and datesLabel', () {
+    DropEntity named(String title) => DropEntity(
+      weekKey: '2026-W44',
+      title: title,
+      startsAt: DateTime.utc(2026, 10, 26),
+      endsAt: DateTime.utc(2026, 11, 2),
+      priceWall: 30,
+      pricePack: 100,
+      count: 4,
+      walls: const <DropWall>[],
+    );
+
+    test('displayTitle returns a real name as it is', () {
+      expect(named('Night Swim').displayTitle(l10n), 'Night Swim');
+    });
+
+    test('displayTitle reads a week code title as the week of its start', () {
+      expect(named('Drop 2026-W44').displayTitle(l10n), 'Week of Oct 26');
+    });
+
+    test('displayTitle reads an empty title as the week of its start', () {
+      expect(named('').displayTitle(l10n), 'Week of Oct 26');
+    });
+
+    test('datesLabel runs from the start to the last day before the end', () {
+      expect(named('Night Swim').datesLabel(l10n), 'Oct 26 to Nov 1');
     });
   });
 }

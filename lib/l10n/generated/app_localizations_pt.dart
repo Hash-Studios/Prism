@@ -5161,9 +5161,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyDropAlreadyUnlocked => 'Você já tem este.';
 
   @override
-  String get economyDropBrandTitle => 'O DROP';
-
-  @override
   String economyDropByCreator(String creator) {
     return 'por $creator';
   }
@@ -5175,7 +5172,7 @@ class AppLocalizationsPt extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'O Drop, $time, $unlockedString de $totalString coletados. Prévia';
+    return 'Drop semanal, $time, $unlockedString de $totalString coletados';
   }
 
   @override
@@ -5196,7 +5193,7 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String economyDropCarouselSemantics(String title, String detail, String lastCall) {
     String _temp0 = intl.Intl.selectLogic(lastCall, {'true': ', última chamada', 'other': ''});
-    return 'O Drop, $title, $detail$_temp0';
+    return 'Drop semanal, $title, $detail$_temp0';
   }
 
   @override
@@ -5206,17 +5203,12 @@ class AppLocalizationsPt extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'Coletados · $ownedString/$totalString';
+    return '$ownedString de $totalString coletados';
   }
 
   @override
-  String economyDropCountdownDaysHours(String days, String time) {
-    return '${days}d $time';
-  }
-
-  @override
-  String economyDropCountdownHoursMinutes(String hours, String minutes) {
-    return '${hours}h ${minutes}m';
+  String economyDropDates(String start, String end) {
+    return '$start a $end';
   }
 
   @override
@@ -5274,9 +5266,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get economyDropEndsInLabel => 'Termina em';
-
-  @override
   String economyDropEndsInMinutes(int minutes) {
     final intl.NumberFormat minutesNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String minutesString = minutesNumberFormat.format(minutes);
@@ -5286,16 +5275,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get economyDropGone => 'Este Drop acabou';
-
-  @override
-  String economyDropHeader(String week) {
-    return 'O DROP · $week';
-  }
-
-  @override
-  String economyDropLastCall(String time) {
-    return 'Última chamada, $time';
-  }
 
   @override
   String get economyDropLastCallLabel => 'Última chamada';
@@ -5313,23 +5292,39 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyDropOver => 'Este Drop acabou.';
 
   @override
-  String get economyDropPack => 'O PACOTE';
+  String get economyDropPastDrops => 'Drops anteriores';
 
   @override
-  String get economyDropPastDrops => 'DROPS ANTERIORES';
+  String economyDropPosition(int index, int total) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
 
-  @override
-  String get economyDropPreview => 'Prévia';
+    return '$indexString de $totalString';
+  }
 
   @override
   String get economyDropPreviewTitle => 'Prévia do Drop';
+
+  @override
+  String get economyDropRename => 'Renomear Drop';
+
+  @override
+  String get economyDropRenameFailed => 'Não foi possível renomear o Drop. Tente novamente.';
+
+  @override
+  String get economyDropRenameHint => 'Nome do Drop';
+
+  @override
+  String get economyDropRenamed => 'Drop renomeado';
 
   @override
   String economyDropSave(int coins) {
     final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String coinsString = coinsNumberFormat.format(coins);
 
-    return 'economize $coinsString';
+    return 'Economize $coinsString';
   }
 
   @override
@@ -5348,10 +5343,17 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get economyDropTapToPreview => 'Toque para ver a prévia';
+  String get economyDropTitle => 'Drop';
 
   @override
-  String get economyDropTitle => 'Drop';
+  String economyDropUnlockAll(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return 'Desbloquear todos os $countString por $priceString';
+  }
 
   @override
   String get economyDropUnlockFailed => 'Não foi possível desbloquear. Tente novamente.';
@@ -5362,14 +5364,6 @@ class AppLocalizationsPt extends AppLocalizations {
     final String priceString = priceNumberFormat.format(price);
 
     return 'Desbloquear por $priceString';
-  }
-
-  @override
-  String economyDropUnlockPack(int price) {
-    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String priceString = priceNumberFormat.format(price);
-
-    return 'Desbloquear o pacote por $priceString';
   }
 
   @override
@@ -5417,9 +5411,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get economyDropWall => 'UM PAPEL DE PAREDE';
-
-  @override
   String economyDropWallBySemantics(String state, String serial, String creator) {
     return 'Papel de parede $serial de $creator, $state';
   }
@@ -5440,9 +5431,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get economyDropWallPro => 'UM PAPEL DE PAREDE · PRO';
-
-  @override
   String economyDropWallSemantics(String state, String serial) {
     return 'Papel de parede $serial, $state';
   }
@@ -5451,10 +5439,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyDropWallpaperUnavailable => 'Este papel de parede não está disponível';
 
   @override
-  String get economyDropWatermarkLabel => 'PRISM DROP';
+  String economyDropWeekOf(String date) {
+    return 'Semana de $date';
+  }
 
   @override
-  String get economyDropYourVault => 'SEU COFRE';
+  String get economyDropYourVault => 'Seu cofre';
 
   @override
   String get economyDrops => 'Drops';
@@ -15187,9 +15177,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get economyDropAlreadyUnlocked => 'Você já tem este.';
 
   @override
-  String get economyDropBrandTitle => 'O DROP';
-
-  @override
   String economyDropByCreator(String creator) {
     return 'por $creator';
   }
@@ -15201,7 +15188,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'O Drop, $time, $unlockedString de $totalString coletados. Prévia';
+    return 'Drop semanal, $time, $unlockedString de $totalString coletados';
   }
 
   @override
@@ -15222,7 +15209,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String economyDropCarouselSemantics(String title, String detail, String lastCall) {
     String _temp0 = intl.Intl.selectLogic(lastCall, {'true': ', última chamada', 'other': ''});
-    return 'O Drop, $title, $detail$_temp0';
+    return 'Drop semanal, $title, $detail$_temp0';
   }
 
   @override
@@ -15232,17 +15219,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'Coletados · $ownedString/$totalString';
+    return '$ownedString de $totalString coletados';
   }
 
   @override
-  String economyDropCountdownDaysHours(String days, String time) {
-    return '${days}d $time';
-  }
-
-  @override
-  String economyDropCountdownHoursMinutes(String hours, String minutes) {
-    return '${hours}h ${minutes}m';
+  String economyDropDates(String start, String end) {
+    return '$start a $end';
   }
 
   @override
@@ -15300,9 +15282,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get economyDropEndsInLabel => 'Termina em';
-
-  @override
   String economyDropEndsInMinutes(int minutes) {
     final intl.NumberFormat minutesNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String minutesString = minutesNumberFormat.format(minutes);
@@ -15312,16 +15291,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get economyDropGone => 'Este Drop acabou';
-
-  @override
-  String economyDropHeader(String week) {
-    return 'O DROP · $week';
-  }
-
-  @override
-  String economyDropLastCall(String time) {
-    return 'Última chamada, $time';
-  }
 
   @override
   String get economyDropLastCallLabel => 'Última chamada';
@@ -15339,23 +15308,39 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get economyDropOver => 'Este Drop acabou.';
 
   @override
-  String get economyDropPack => 'O PACOTE';
+  String get economyDropPastDrops => 'Drops anteriores';
 
   @override
-  String get economyDropPastDrops => 'DROPS ANTERIORES';
+  String economyDropPosition(int index, int total) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
 
-  @override
-  String get economyDropPreview => 'Prévia';
+    return '$indexString de $totalString';
+  }
 
   @override
   String get economyDropPreviewTitle => 'Prévia do Drop';
+
+  @override
+  String get economyDropRename => 'Renomear Drop';
+
+  @override
+  String get economyDropRenameFailed => 'Não foi possível renomear o Drop. Tente novamente.';
+
+  @override
+  String get economyDropRenameHint => 'Nome do Drop';
+
+  @override
+  String get economyDropRenamed => 'Drop renomeado';
 
   @override
   String economyDropSave(int coins) {
     final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String coinsString = coinsNumberFormat.format(coins);
 
-    return 'economize $coinsString';
+    return 'Economize $coinsString';
   }
 
   @override
@@ -15374,10 +15359,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get economyDropTapToPreview => 'Toque para ver a prévia';
+  String get economyDropTitle => 'Drop';
 
   @override
-  String get economyDropTitle => 'Drop';
+  String economyDropUnlockAll(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return 'Desbloquear todos os $countString por $priceString';
+  }
 
   @override
   String get economyDropUnlockFailed => 'Não foi possível desbloquear. Tente novamente.';
@@ -15388,14 +15380,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     final String priceString = priceNumberFormat.format(price);
 
     return 'Desbloquear por $priceString';
-  }
-
-  @override
-  String economyDropUnlockPack(int price) {
-    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String priceString = priceNumberFormat.format(price);
-
-    return 'Desbloquear o pacote por $priceString';
   }
 
   @override
@@ -15443,9 +15427,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get economyDropWall => 'UM PAPEL DE PAREDE';
-
-  @override
   String economyDropWallBySemantics(String state, String serial, String creator) {
     return 'Papel de parede $serial de $creator, $state';
   }
@@ -15466,9 +15447,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get economyDropWallPro => 'UM PAPEL DE PAREDE · PRO';
-
-  @override
   String economyDropWallSemantics(String state, String serial) {
     return 'Papel de parede $serial, $state';
   }
@@ -15477,10 +15455,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get economyDropWallpaperUnavailable => 'Este papel de parede não está disponível';
 
   @override
-  String get economyDropWatermarkLabel => 'PRISM DROP';
+  String economyDropWeekOf(String date) {
+    return 'Semana de $date';
+  }
 
   @override
-  String get economyDropYourVault => 'SEU COFRE';
+  String get economyDropYourVault => 'Seu cofre';
 
   @override
   String get economyDrops => 'Drops';

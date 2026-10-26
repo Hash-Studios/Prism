@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
@@ -13,7 +14,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// This week's Drop: a grid of blurred walls to unlock, the vault of past unlocks and the past Drops.
+/// This week's Drop: a grid of walls to unlock, the vault of past unlocks and the past Drops.
 @RoutePage()
 class DropsPage extends StatelessWidget {
   const DropsPage({super.key});
@@ -35,24 +36,28 @@ class _DropsView extends StatelessWidget {
     return PrismPage(
       maxContentWidth: double.infinity,
       title: context.l10n.economyWeeklyDrop,
-      body: BlocConsumer<DropsBloc, DropsState>(
-        listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
-        listener: (context, state) => toastUnlockResult(context, state.lastResult!),
-        builder: (context, state) {
-          if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-            return const LoadingCards();
-          }
-          if (state.status == LoadStatus.failure) {
-            return GlintState(
-              kind: GlintStateKind.error,
-              title: context.l10n.economyDropLoadFailed,
-              body: context.l10n.errorNetwork,
-              actionLabel: context.l10n.actionRetry,
-              onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
-            );
-          }
-          return _DropsBody(state: state);
-        },
+      body: BlocListener<DropsBloc, DropsState>(
+        listenWhen: (previous, current) => current.lastRename != null && current.lastRename != previous.lastRename,
+        listener: (context, state) => toastRenameResult(context, state.lastRename!),
+        child: BlocConsumer<DropsBloc, DropsState>(
+          listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
+          listener: (context, state) => toastUnlockResult(context, state.lastResult!),
+          builder: (context, state) {
+            if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
+              return const LoadingCards();
+            }
+            if (state.status == LoadStatus.failure) {
+              return GlintState(
+                kind: GlintStateKind.error,
+                title: context.l10n.economyDropLoadFailed,
+                body: context.l10n.errorNetwork,
+                actionLabel: context.l10n.actionRetry,
+                onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
+              );
+            }
+            return _DropsBody(state: state);
+          },
+        ),
       ),
     );
   }
@@ -82,9 +87,16 @@ class _DropsBody extends StatelessWidget {
           )
         else ...<Widget>[
           SliverToBoxAdapter(
-            child: DropHeader(drop: drop, now: state.now, remaining: state.lockedWalls.length, live: true),
+            child: DropHeader(
+              drop: drop,
+              now: state.now,
+              remaining: state.lockedWalls.length,
+              live: true,
+              busy: state.busyKey == DropsBloc.packKey,
+              onUnlockAll: () => askToUnlock(context, state, null),
+              onRename: app_state.isAdminUser() ? () => askToRenameDrop(context, drop) : null,
+            ),
           ),
-          if (state.lockedWalls.isNotEmpty) const SliverToBoxAdapter(child: DropPreviewHint()),
           DropWallGrid(
             drop: drop,
             unlocked: state.unlocked,

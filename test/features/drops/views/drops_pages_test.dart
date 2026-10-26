@@ -9,10 +9,9 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
-import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +19,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../drop_fixtures.dart';
 import '../../../support/favourite_test_scope.dart';
+import '../drop_fixtures.dart';
 
 class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBloc {}
 
@@ -96,15 +95,8 @@ void main() {
   DropsState at(DropEntity drop, {Map<String, DropUnlock> unlocked = const {}}) =>
       DropsState(status: LoadStatus.success, now: fixedNow, drop: drop, unlocked: unlocked);
 
-  String countdownText(WidgetTester tester) => tester
-      .widget<RichText>(
-        find.descendant(of: find.byKey(const ValueKey('drop.countdown')), matching: find.byType(RichText)).first,
-      )
-      .text
-      .toPlainText()
-      .replaceAll('  ', ' ');
-
-  Widget askButton(DropsState state, DropWall wall) => BlocProvider<DropsBloc>.value(
+  /// A button that opens the unlock sheet for [wall], or for every wall left when [wall] is null.
+  Widget askButton(DropsState state, DropWall? wall) => BlocProvider<DropsBloc>.value(
     value: bloc,
     child: Scaffold(
       body: Builder(
@@ -113,8 +105,10 @@ void main() {
     ),
   );
 
-  Future<void> openSheet(WidgetTester tester, DropsState state, {String wallId = 'B'}) async {
-    await pump(tester, state, askButton(state, state.drop!.walls.firstWhere((w) => w.id == wallId)));
+  /// Opens the sheet for wall [wallId], or for the pack when [wallId] is null.
+  Future<void> openSheet(WidgetTester tester, DropsState state, {String? wallId = 'B'}) async {
+    final DropWall? wall = wallId == null ? null : state.drop!.walls.firstWhere((w) => w.id == wallId);
+    await pump(tester, state, askButton(state, wall));
     await tester.tap(find.text('ask'));
     await tester.pumpAndSettle();
   }
@@ -122,7 +116,7 @@ void main() {
   const DropUnlock ownedA = DropUnlock(wallId: 'A', weekKey: '2026-W42', url: 'https://full.test/A.jpg');
 
   group('DropsPage', () {
-    testWidgets('unlocking a grid wall keeps its tile and plays the thaw before removing the seal', (tester) async {
+    testWidgets('unlocking a grid wall keeps its tile and swaps its lock for Owned', (tester) async {
       final unlocked = ValueNotifier<Map<String, DropUnlock>>({});
       addTearDown(unlocked.dispose);
       final drop = dropWithin(const Duration(days: 3));
@@ -139,19 +133,17 @@ void main() {
         ),
       );
       final tile = find.byKey(const ValueKey<String>('A'));
-      final originalState = tester.state(tile);
-      final seal = find.descendant(of: tile, matching: find.byType(DropSeal));
-      expect(seal, findsOneWidget);
+      final originalElement = tester.element(tile);
+      final locked = find.descendant(of: tile, matching: find.byKey(const ValueKey<String>('locked')));
+      expect(locked, findsOneWidget);
 
       unlocked.value = {'A': ownedA};
       await tester.pump();
 
-      expect(tester.state(tile), same(originalState));
-      expect(seal, findsOneWidget);
-      expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+      expect(tester.element(tile), same(originalElement));
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pump();
-      expect(seal, findsNothing);
+      expect(locked, findsNothing);
       expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
     });
 
@@ -163,61 +155,89 @@ void main() {
       expect(find.byType(LoadingCards), findsOneWidget);
     });
 
-    testWidgets('shows the eyebrow, title, countdown, prices, locked and owned tiles', (tester) async {
+    testWidgets('shows the title, dates, time left, collected count and a lock with the price on each locked wall', (
+      tester,
+    ) async {
+      final DropEntity drop = dropWithin(const Duration(days: 5, hours: 3, minutes: 7));
+      await pump(tester, at(drop, unlocked: {'A': ownedA}), const DropsPage());
+
+      expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
+      expect(find.text('${drop.datesLabel(AppLocalizationsEn())} · 4 walls'), findsOneWidget);
+      expect(find.text('Ends in 5d 3h'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDropCollected(1, 4)), findsOneWidget);
+      expect(find.byType(PrismWallTile), findsNWidgets(4));
+      expect(find.byKey(const ValueKey('owned')), findsOneWidget);
+      expect(find.text('Owned'), findsOneWidget);
+      expect(find.byKey(const ValueKey('locked')), findsNWidgets(3));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(3));
+      expect(find.text('30'), findsNWidgets(3));
+      expect(find.byType(DropTileBadge), findsNWidgets(4));
+    });
+
+    testWidgets('no grid wall is blurred or framed by a filter', (tester) async {
+      await pump(tester, at(dropWithin(const Duration(days: 3)), unlocked: {'A': ownedA}), const DropsPage());
+
+      expect(find.descendant(of: find.byType(DropWallGrid), matching: find.byType(ImageFiltered)), findsNothing);
+      expect(find.descendant(of: find.byType(DropWallGrid), matching: find.byType(BackdropFilter)), findsNothing);
+    });
+
+    testWidgets('in the last 24 hours the time tag turns to the warning tone', (tester) async {
+      await pump(tester, at(dropWithin(const Duration(hours: 5, minutes: 20))), const DropsPage());
+
+      final PrismTag tag = tester.widget<PrismTag>(
+        find.ancestor(of: find.text('Ends in 5h 20m'), matching: find.byType(PrismTag)),
+      );
+      expect(tag.tone, PrismTone.warning);
+    });
+
+    testWidgets('before the last day the time tag is neutral', (tester) async {
+      await pump(tester, at(dropWithin(const Duration(days: 3))), const DropsPage());
+
+      final PrismTag tag = tester.widget<PrismTag>(
+        find.ancestor(of: find.textContaining('Ends in 3d'), matching: find.byType(PrismTag)),
+      );
+      expect(tag.tone, PrismTone.neutral);
+    });
+
+    testWidgets('the pack button shows its price and the coins it saves', (tester) async {
+      await pump(tester, at(dropWithin(const Duration(days: 3))), const DropsPage());
+
+      expect(find.text('Unlock all 4 for 100'), findsOneWidget);
+      expect(find.text('Save 20'), findsOneWidget);
+    });
+
+    testWidgets('with one wall left the header has no unlock-all button', (tester) async {
       await pump(
         tester,
-        at(dropWithin(const Duration(days: 5, hours: 3, minutes: 7)), unlocked: {'A': ownedA}),
+        at(
+          dropWithin(const Duration(days: 3)),
+          unlocked: {
+            'A': ownedA,
+            'B': const DropUnlock(wallId: 'B', weekKey: '2026-W42', url: 'https://full.test/B.jpg'),
+            'C': const DropUnlock(wallId: 'C', weekKey: '2026-W42', url: 'https://full.test/C.jpg'),
+          },
+        ),
         const DropsPage(),
       );
 
-      expect(find.text('THE DROP · W42'), findsOneWidget);
-      expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
-      expect(countdownText(tester), '05d 03h 07m');
-      expect(find.text('Ends in'), findsOneWidget);
-      expect(find.text('A WALL'), findsOneWidget);
-      expect(find.text('30'), findsOneWidget);
-      expect(find.text('THE PACK'), findsOneWidget);
-      expect(find.text('90'), findsOneWidget);
-      expect(find.text('Pro price'), findsNothing);
-      expect(find.byType(PrismWallTile), findsNWidgets(4));
-      expect(find.text('Owned'), findsOneWidget);
-      expect(find.byType(DropSeal), findsNWidgets(3));
-      expect(find.text('01 / 04'), findsOneWidget);
-      expect(find.text('04 / 04'), findsOneWidget);
-      expect(find.text('Tap to preview'), findsOneWidget);
-    });
-
-    testWidgets('in the last 24 hours the countdown says Last call', (tester) async {
-      await pump(tester, at(dropWithin(const Duration(hours: 5, minutes: 20))), const DropsPage());
-
-      expect(find.text(AppLocalizationsEn().economyDropLastCallLabel), findsOneWidget);
-      expect(find.text('Ends in'), findsNothing);
-      expect(countdownText(tester), '05h 20m');
-      final Text countdown = tester.widget<Text>(find.byKey(const ValueKey('drop.countdown')));
-      expect(countdown.style!.color, DropPalette.urgent);
-    });
-
-    testWidgets('the pack shows how many coins it saves', (tester) async {
-      await pump(tester, at(dropWithin(const Duration(days: 3))), const DropsPage());
-
-      expect(find.text('save 20'), findsOneWidget);
-      expect(find.text('100'), findsOneWidget);
+      expect(find.textContaining('Unlock all'), findsNothing);
+      expect(find.byKey(const ValueKey('locked')), findsOneWidget);
     });
 
     testWidgets('collectors show with the wall count', (tester) async {
       await pump(tester, at(dropWithin(const Duration(days: 3), collectors: 12)), const DropsPage());
 
-      expect(find.text('4 walls · 12 collectors'), findsOneWidget);
+      expect(find.textContaining('4 walls · 12 collectors'), findsOneWidget);
     });
 
     testWidgets('collectors hide at zero', (tester) async {
       await pump(tester, at(dropWithin(const Duration(days: 3))), const DropsPage());
 
-      expect(find.text('4 walls'), findsOneWidget);
+      expect(find.textContaining('4 walls'), findsOneWidget);
       expect(find.textContaining('collectors'), findsNothing);
     });
 
-    testWidgets('with every wall owned the hero says Collected instead of prices', (tester) async {
+    testWidgets('with every wall owned the header says collected and offers no unlock', (tester) async {
       const DropUnlock b = DropUnlock(wallId: 'B', weekKey: '2026-W42', url: 'https://full.test/B.jpg');
       await pump(
         tester,
@@ -233,19 +253,20 @@ void main() {
         const DropsPage(),
       );
 
-      expect(find.text('Collected · 4/4'), findsOneWidget);
-      expect(find.text('THE PACK'), findsNothing);
-      expect(find.text('Tap to preview'), findsNothing);
+      expect(find.text('4 of 4 collected'), findsOneWidget);
+      expect(find.textContaining('Unlock all'), findsNothing);
+      expect(find.byKey(const ValueKey('locked')), findsNothing);
+      expect(find.byKey(const ValueKey('owned')), findsNWidgets(4));
     });
 
     testWidgets('Pro sees half prices and the Pro price tag', (tester) async {
       app_state.prismUser.premium = true;
       await pump(tester, loaded(dropEntity()), const DropsPage());
 
-      expect(find.text('A WALL · PRO'), findsOneWidget);
-      expect(find.text('15'), findsOneWidget);
-      expect(find.text('50'), findsOneWidget);
-      expect(find.text('save 10'), findsOneWidget);
+      expect(find.text('Unlock all 4 for 50'), findsOneWidget);
+      expect(find.text('Save 10'), findsOneWidget);
+      expect(find.text('Pro price'), findsOneWidget);
+      expect(find.text('15'), findsNWidgets(4));
     });
 
     testWidgets('with nothing live it says the next Drop lands Monday', (tester) async {
@@ -270,10 +291,9 @@ void main() {
       );
       await pump(tester, loaded(null, past: <DropEntity>[old], unlocked: {'A': ownedA}), const DropsPage());
 
-      expect(find.text('YOUR VAULT'), findsOneWidget);
-      expect(find.text('PAST DROPS'), findsOneWidget);
-      expect(find.text('1/4 unlocked'), findsOneWidget);
-      expect(find.text('01 / 04'), findsOneWidget);
+      expect(find.text('Your vault'), findsOneWidget);
+      expect(find.text('Past drops'), findsOneWidget);
+      expect(find.textContaining('1/4 unlocked'), findsOneWidget);
 
       await tester.tap(find.text('Weekly Drop 2026-W41').last);
       await tester.pump();
@@ -335,7 +355,7 @@ void main() {
       expect(tapped?.id, 'B');
     });
 
-    testWidgets('a tile that goes from locked to owned thaws its frost in 600 ms', (tester) async {
+    testWidgets('a tile that goes from locked to owned swaps its badge for Owned', (tester) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       Widget tile({required bool unlocked}) => MaterialApp(
@@ -349,7 +369,8 @@ void main() {
             height: 260,
             child: DropWallTile(
               wall: dropWall('A'),
-              serial: '01 / 04',
+              position: '1 of 4',
+              price: 30,
               unlocked: unlocked,
               missed: false,
               busy: false,
@@ -359,29 +380,30 @@ void main() {
         ),
       );
       await tester.pumpWidget(tile(unlocked: false));
-      expect(find.byType(DropSeal), findsOneWidget);
+      expect(find.byKey(const ValueKey('locked')), findsOneWidget);
+      expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+      expect(find.text('30'), findsOneWidget);
       expect(find.text('Owned'), findsNothing);
 
       await tester.pumpWidget(tile(unlocked: true));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.byType(BackdropFilter), findsOneWidget);
-
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 1200));
-      expect(find.byType(BackdropFilter), findsNothing);
-      expect(find.byType(DropSeal), findsNothing);
+      expect(find.byKey(const ValueKey('locked')), findsNothing);
+      expect(find.byKey(const ValueKey('owned')), findsOneWidget);
       expect(find.text('Owned'), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsNothing);
     });
   });
 
   group('unlock sheet', () {
-    testWidgets('shows the balance and unlocking a wall sends its id', (tester) async {
+    testWidgets('shows the balance, the wall and both buttons, and unlocking a wall sends its id', (tester) async {
       await openSheet(tester, loaded(dropEntity()));
 
+      expect(find.text('Wall B'), findsOneWidget);
       expect(find.text('Unlock this wall for 30'), findsOneWidget);
-      expect(find.text('Unlock the pack for 100'), findsOneWidget);
+      expect(find.text('Unlock all 4 for 100'), findsOneWidget);
       expect(find.text('You have 100 coins'), findsOneWidget);
-      expect(find.text('02 / 04'), findsOneWidget);
       expect(find.textContaining('Watch a video'), findsNothing);
       expect(find.text('Earn coins'), findsNothing);
 
@@ -391,9 +413,13 @@ void main() {
       verify(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'B'))).called(1);
     });
 
-    testWidgets('the pack button sends no wall id', (tester) async {
-      await openSheet(tester, loaded(dropEntity()), wallId: 'A');
-      await tester.tap(find.text('Unlock the pack for 100'));
+    testWidgets('the pack sheet (no wall) shows only the unlock-all button, which sends no wall id', (tester) async {
+      await openSheet(tester, loaded(dropEntity()), wallId: null);
+
+      expect(find.textContaining('Unlock this wall'), findsNothing);
+      expect(find.text('Unlock all 4 for 100'), findsOneWidget);
+
+      await tester.tap(find.text('Unlock all 4 for 100'));
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(const DropsEvent.unlockRequested())).called(1);
@@ -407,11 +433,11 @@ void main() {
       expect(find.text('Earn coins'), findsOneWidget);
     });
 
-    testWidgets('with one wall left it has no pack button', (tester) async {
+    testWidgets('with one wall left it has no unlock-all button', (tester) async {
       await openSheet(tester, loaded(dropEntity(wallIds: <String>['A', 'B']), unlocked: {'A': ownedA}));
 
       expect(find.text('Unlock this wall for 30'), findsOneWidget);
-      expect(find.textContaining('Unlock the pack'), findsNothing);
+      expect(find.textContaining('Unlock all'), findsNothing);
     });
   });
 
@@ -434,9 +460,8 @@ void main() {
       expect(find.text('This Drop has ended'), findsOneWidget);
       expect(find.text('Missed'), findsNWidgets(3));
       expect(find.text('Owned'), findsOneWidget);
-      expect(find.text('Collected · 1/4'), findsOneWidget);
-      expect(find.text('THE PACK'), findsNothing);
-      expect(find.text('Tap to preview'), findsNothing);
+      expect(find.text('1 of 4 collected'), findsOneWidget);
+      expect(find.textContaining('Unlock all'), findsNothing);
 
       await tester.tap(find.byType(PrismWallTile).at(2));
       await tester.pumpAndSettle();
@@ -452,7 +477,7 @@ void main() {
   });
 
   group('DropCard', () {
-    testWidgets('shows the title, the countdown and the unlocked count, and opens the Drops page', (tester) async {
+    testWidgets('shows the title, the time left and the collected count, and opens the Drops page', (tester) async {
       await pump(
         tester,
         loaded(dropEntity(), unlocked: {'A': ownedA}),
@@ -462,18 +487,18 @@ void main() {
         ),
       );
 
+      expect(find.text('Weekly Drop'), findsOneWidget);
       expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
-      expect(find.text('THE DROP · W42'), findsOneWidget);
-      expect(find.text('Ends in'), findsOneWidget);
+      expect(find.text('Ends in 5d 23h'), findsOneWidget);
       expect(find.text(AppLocalizationsEn().economyDropCollected(1, 4)), findsOneWidget);
 
-      await tester.tap(find.text('Preview'));
+      await tester.tap(find.text('Weekly Drop 2026-W42'));
       await tester.pump();
 
       verify(() => router.push(any(that: isA<DropsRoute>()))).called(1);
     });
 
-    testWidgets('says Last call when the Drop ends within a day', (tester) async {
+    testWidgets('warns when the Drop ends within a day', (tester) async {
       await pump(
         tester,
         at(dropWithin(const Duration(hours: 2, minutes: 5))),
@@ -483,8 +508,10 @@ void main() {
         ),
       );
 
-      expect(find.text('Last call'), findsOneWidget);
-      expect(countdownText(tester), '02h 05m');
+      final PrismTag tag = tester.widget<PrismTag>(
+        find.ancestor(of: find.text('Ends in 2h 5m'), matching: find.byType(PrismTag)),
+      );
+      expect(tag.tone, PrismTone.warning);
     });
 
     testWidgets('is empty when no Drop is live', (tester) async {
@@ -497,7 +524,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Preview'), findsNothing);
+      expect(find.text('Weekly Drop'), findsNothing);
     });
   });
 }

@@ -4262,7 +4262,6 @@
     }
   },
   "economyDropAlreadyUnlocked": "यह आपके पास पहले से है।",
-  "economyDropBrandTitle": "THE DROP",
   "economyDropByCreator": "{creator} द्वारा",
   "@economyDropByCreator": {
     "placeholders": {
@@ -4271,7 +4270,7 @@
       }
     }
   },
-  "economyDropCardSemantics": "The Drop, {time}, कुल {total} में से {unlocked} जमा। प्रीव्यू",
+  "economyDropCardSemantics": "साप्ताहिक Drop, {time}, कुल {total} में से {unlocked} जमा",
   "@economyDropCardSemantics": {
     "placeholders": {
       "time": {
@@ -4299,7 +4298,7 @@
       }
     }
   },
-  "economyDropCarouselSemantics": "The Drop, {title}, {detail}{lastCall, select, true{, आख़िरी मौका} other{}}",
+  "economyDropCarouselSemantics": "साप्ताहिक Drop, {title}, {detail}{lastCall, select, true{, आख़िरी मौका} other{}}",
   "@economyDropCarouselSemantics": {
     "placeholders": {
       "title": {
@@ -4313,7 +4312,7 @@
       }
     }
   },
-  "economyDropCollected": "जमा · {owned}/{total}",
+  "economyDropCollected": "{total} में से {owned} जमा",
   "@economyDropCollected": {
     "placeholders": {
       "owned": {
@@ -4326,24 +4325,13 @@
       }
     }
   },
-  "economyDropCountdownDaysHours": "{days} दिन {time}",
-  "@economyDropCountdownDaysHours": {
+  "economyDropDates": "{start} से {end}",
+  "@economyDropDates": {
     "placeholders": {
-      "days": {
+      "start": {
         "type": "String"
       },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropCountdownHoursMinutes": "{hours} घंटे {minutes} मिनट",
-  "@economyDropCountdownHoursMinutes": {
-    "placeholders": {
-      "hours": {
-        "type": "String"
-      },
-      "minutes": {
+      "end": {
         "type": "String"
       }
     }
@@ -4376,7 +4364,6 @@
       }
     }
   },
-  "economyDropEndsInLabel": "समाप्त होने में",
   "economyDropEndsInMinutes": "{minutes} मिनट में समाप्त होगा",
   "@economyDropEndsInMinutes": {
     "placeholders": {
@@ -4387,32 +4374,31 @@
     }
   },
   "economyDropGone": "यह Drop अब उपलब्ध नहीं है",
-  "economyDropHeader": "THE DROP · {week}",
-  "@economyDropHeader": {
-    "placeholders": {
-      "week": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropLastCall": "आख़िरी मौका, {time}",
-  "@economyDropLastCall": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "economyDropLastCallLabel": "आख़िरी मौका",
   "economyDropLoadFailed": "Drop लोड नहीं हो सका",
   "economyDropLocked": "लॉक है",
   "economyDropMissed": "छूट गया",
   "economyDropOver": "यह Drop समाप्त हो चुका है।",
-  "economyDropPack": "पैक",
-  "economyDropPastDrops": "पिछले DROPS",
-  "economyDropPreview": "प्रीव्यू",
+  "economyDropPastDrops": "पिछले Drops",
+  "economyDropPosition": "{total} में से {index}",
+  "@economyDropPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "economyDropPreviewTitle": "Drop का प्रीव्यू",
-  "economyDropSave": "{coins} कॉइन में सेव करें",
+  "economyDropRename": "Drop का नाम बदलें",
+  "economyDropRenameFailed": "Drop का नाम नहीं बदला जा सका। फिर कोशिश करें।",
+  "economyDropRenameHint": "Drop का नाम",
+  "economyDropRenamed": "Drop का नाम बदल दिया गया",
+  "economyDropSave": "{coins} कॉइन बचाएं",
   "@economyDropSave": {
     "placeholders": {
       "coins": {
@@ -4433,20 +4419,23 @@
       }
     }
   },
-  "economyDropTapToPreview": "प्रीव्यू के लिए टैप करें",
   "economyDropTitle": "Drop",
-  "economyDropUnlockFailed": "अनलॉक नहीं हो सका। फिर कोशिश करें।",
-  "economyDropUnlockFor": "{price} में अनलॉक करें",
-  "@economyDropUnlockFor": {
+  "economyDropUnlockAll": "सभी {count} को {price} में अनलॉक करें",
+  "@economyDropUnlockAll": {
     "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
       "price": {
         "type": "int",
         "format": "decimalPattern"
       }
     }
   },
-  "economyDropUnlockPack": "पैक को {price} में अनलॉक करें",
-  "@economyDropUnlockPack": {
+  "economyDropUnlockFailed": "अनलॉक नहीं हो सका। फिर कोशिश करें।",
+  "economyDropUnlockFor": "{price} में अनलॉक करें",
+  "@economyDropUnlockFor": {
     "placeholders": {
       "price": {
         "type": "int",
@@ -4495,7 +4484,6 @@
       }
     }
   },
-  "economyDropWall": "एक वॉलपेपर",
   "economyDropWallBySemantics": "{creator} का {state} वॉलपेपर, क्रमांक {serial}",
   "@economyDropWallBySemantics": {
     "placeholders": {
@@ -4519,7 +4507,6 @@
       }
     }
   },
-  "economyDropWallPro": "एक वॉलपेपर · PRO",
   "economyDropWallSemantics": "{state} वॉलपेपर, क्रमांक {serial}",
   "@economyDropWallSemantics": {
     "placeholders": {
@@ -4532,7 +4519,14 @@
     }
   },
   "economyDropWallpaperUnavailable": "यह वॉलपेपर उपलब्ध नहीं है",
-  "economyDropWatermarkLabel": "PRISM DROP",
+  "economyDropWeekOf": "{date} का सप्ताह",
+  "@economyDropWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "economyDropYourVault": "आपकी तिजोरी",
   "economyDrops": "Drops",
   "economyEarnCoins": "कॉइन कमाएँ",

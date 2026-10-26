@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/features/drops/data/drop_mapper.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:cloud_functions/cloud_functions.dart' show HttpsCallableResult;
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: DropsRepository)
@@ -104,6 +106,20 @@ class DropsRepositoryImpl implements DropsRepository {
         } on Object {}
       }
       return Result.error(const ServerFailure("Couldn't load this Drop. Check your connection and try again."));
+    }
+  }
+
+  @override
+  Future<Result<String>> rename(String weekKey, String title) async {
+    try {
+      final HttpsCallableResult<dynamic> response = await appFunctions.httpsCallable('setDropTitle').call(
+        <String, Object?>{'weekKey': weekKey, 'title': title},
+      );
+      final Object? saved = response.data is Map ? (response.data as Map)['title'] : null;
+      return Result.success(saved is String ? saved : title);
+    } catch (error, stackTrace) {
+      logger.e('[DropsRepository] rename failed', error: error, stackTrace: stackTrace);
+      return Result.error(const ServerFailure("Couldn't rename the Drop."));
     }
   }
 

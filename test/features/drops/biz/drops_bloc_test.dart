@@ -247,6 +247,37 @@ void main() {
     });
   });
 
+  group('renameRequested', () {
+    test('renames the Drop, emits an ok result and reloads the Drop', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      clearInteractions(repository);
+      when(() => repository.rename(any(), any())).thenAnswer((_) async => Result.success('Night Swim'));
+
+      bloc.add(const DropsEvent.renameRequested(title: 'Night Swim'));
+      final DropsState state = await bloc.stream.firstWhere((s) => s.lastRename != null);
+
+      expect(state.lastRename!.ok, isTrue);
+      await pumpEventQueue();
+      verify(() => repository.rename('2026-W42', 'Night Swim')).called(1);
+      verify(() => repository.fetchLive(any())).called(1);
+    });
+
+    test('a failed rename emits a not ok result and does not reload', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      clearInteractions(repository);
+      when(() => repository.rename(any(), any())).thenAnswer((_) async => Result.error(const ServerFailure('x')));
+
+      bloc.add(const DropsEvent.renameRequested(title: 'Night Swim'));
+      final DropsState state = await bloc.stream.firstWhere((s) => s.lastRename != null);
+
+      expect(state.lastRename!.ok, isFalse);
+      await pumpEventQueue();
+      verifyNever(() => repository.fetchLive(any()));
+    });
+  });
+
   test('a ticked event moves the clock', () async {
     stubLoad(live: dropEntity());
     final before = (await loaded()).now;

@@ -4395,7 +4395,6 @@
     }
   },
   "economyDropAlreadyUnlocked": "Anda sudah memiliki item ini.",
-  "economyDropBrandTitle": "THE DROP",
   "economyDropByCreator": "oleh {creator}",
   "@economyDropByCreator": {
     "placeholders": {
@@ -4404,7 +4403,7 @@
       }
     }
   },
-  "economyDropCardSemantics": "The Drop, {time}, {unlocked} dari {total} telah dikumpulkan. Pratinjau",
+  "economyDropCardSemantics": "Drop mingguan, {time}, {unlocked} dari {total} telah dikumpulkan",
   "@economyDropCardSemantics": {
     "placeholders": {
       "time": {
@@ -4432,7 +4431,7 @@
       }
     }
   },
-  "economyDropCarouselSemantics": "The Drop, {title}, {detail}{lastCall, select, true{, kesempatan terakhir} other{}}",
+  "economyDropCarouselSemantics": "Drop mingguan, {title}, {detail}{lastCall, select, true{, kesempatan terakhir} other{}}",
   "@economyDropCarouselSemantics": {
     "placeholders": {
       "title": {
@@ -4446,7 +4445,7 @@
       }
     }
   },
-  "economyDropCollected": "Dikumpulkan · {owned}/{total}",
+  "economyDropCollected": "{owned} dari {total} telah dikumpulkan",
   "@economyDropCollected": {
     "placeholders": {
       "owned": {
@@ -4459,24 +4458,13 @@
       }
     }
   },
-  "economyDropCountdownDaysHours": "{days}h {time}",
-  "@economyDropCountdownDaysHours": {
+  "economyDropDates": "{start} sampai {end}",
+  "@economyDropDates": {
     "placeholders": {
-      "days": {
+      "start": {
         "type": "String"
       },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropCountdownHoursMinutes": "{hours}j {minutes}m",
-  "@economyDropCountdownHoursMinutes": {
-    "placeholders": {
-      "hours": {
-        "type": "String"
-      },
-      "minutes": {
+      "end": {
         "type": "String"
       }
     }
@@ -4509,7 +4497,6 @@
       }
     }
   },
-  "economyDropEndsInLabel": "Berakhir dalam",
   "economyDropEndsInMinutes": "Berakhir dalam {minutes}m",
   "@economyDropEndsInMinutes": {
     "placeholders": {
@@ -4520,32 +4507,31 @@
     }
   },
   "economyDropGone": "Drop ini sudah tidak tersedia",
-  "economyDropHeader": "THE DROP · {week}",
-  "@economyDropHeader": {
-    "placeholders": {
-      "week": {
-        "type": "String"
-      }
-    }
-  },
-  "economyDropLastCall": "Kesempatan terakhir, {time}",
-  "@economyDropLastCall": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "economyDropLastCallLabel": "Kesempatan terakhir",
   "economyDropLoadFailed": "Drop tidak dapat dimuat",
   "economyDropLocked": "Terkunci",
   "economyDropMissed": "Terlewat",
   "economyDropOver": "Drop ini sudah berakhir.",
-  "economyDropPack": "PAKET",
-  "economyDropPastDrops": "DROP SEBELUMNYA",
-  "economyDropPreview": "Pratinjau",
+  "economyDropPastDrops": "Drop sebelumnya",
+  "economyDropPosition": "{index} dari {total}",
+  "@economyDropPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "economyDropPreviewTitle": "Pratinjau Drop",
-  "economyDropSave": "simpan {coins}",
+  "economyDropRename": "Ganti nama Drop",
+  "economyDropRenameFailed": "Nama Drop tidak dapat diubah. Coba lagi.",
+  "economyDropRenameHint": "Nama Drop",
+  "economyDropRenamed": "Nama Drop diubah",
+  "economyDropSave": "Hemat {coins}",
   "@economyDropSave": {
     "placeholders": {
       "coins": {
@@ -4566,20 +4552,23 @@
       }
     }
   },
-  "economyDropTapToPreview": "Ketuk untuk melihat pratinjau",
   "economyDropTitle": "Drop",
-  "economyDropUnlockFailed": "Item ini tidak dapat dibuka. Coba lagi.",
-  "economyDropUnlockFor": "Buka seharga {price}",
-  "@economyDropUnlockFor": {
+  "economyDropUnlockAll": "Buka semua {count} seharga {price}",
+  "@economyDropUnlockAll": {
     "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
       "price": {
         "type": "int",
         "format": "decimalPattern"
       }
     }
   },
-  "economyDropUnlockPack": "Buka paket seharga {price}",
-  "@economyDropUnlockPack": {
+  "economyDropUnlockFailed": "Item ini tidak dapat dibuka. Coba lagi.",
+  "economyDropUnlockFor": "Buka seharga {price}",
+  "@economyDropUnlockFor": {
     "placeholders": {
       "price": {
         "type": "int",
@@ -4628,7 +4617,6 @@
       }
     }
   },
-  "economyDropWall": "SEBUAH WALLPAPER",
   "economyDropWallBySemantics": "Wallpaper {serial} {state} oleh {creator}",
   "@economyDropWallBySemantics": {
     "placeholders": {
@@ -4652,7 +4640,6 @@
       }
     }
   },
-  "economyDropWallPro": "SEBUAH WALLPAPER · PRO",
   "economyDropWallSemantics": "Wallpaper {serial} {state}",
   "@economyDropWallSemantics": {
     "placeholders": {
@@ -4665,8 +4652,15 @@
     }
   },
   "economyDropWallpaperUnavailable": "Wallpaper ini tidak tersedia",
-  "economyDropWatermarkLabel": "PRISM DROP",
-  "economyDropYourVault": "KOLEKSI ANDA",
+  "economyDropWeekOf": "Minggu {date}",
+  "@economyDropWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "economyDropYourVault": "Koleksi Anda",
   "economyDrops": "Drops",
   "economyEarnCoins": "Dapatkan koin",
   "economyEarnXpAsYouGo": "Dapatkan XP selama beraktivitas",
