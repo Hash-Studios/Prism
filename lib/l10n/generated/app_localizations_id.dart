@@ -2888,6 +2888,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get spookyAnnouncementBody => 'Oranye, hitam, dan beberapa laba-laba. Gratis. Ketuk untuk mencoba.';
 
   @override
+  String get coreThemeDiwali => 'Diwali';
+
+  @override
+  String get diwaliBannerTitle => 'Tema Diwali sudah hadir';
+
+  @override
+  String get diwaliBannerSubtitle => 'Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.';
+
+  @override
+  String get diwaliAnnouncementTitle => 'Baru: tema Diwali 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.';
+
+  @override
   String get coreThisGoesOnHome => 'Yang ini dipasang di layar utama.';
 
   @override
@@ -6047,6 +6062,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get economyShopDeepOcean => 'Laut Dalam';
+
+  @override
+  String get economyShopDefaultIcon => 'Bawaan';
 
   @override
   String get economyShopEarnXp => 'Dapatkan XP';

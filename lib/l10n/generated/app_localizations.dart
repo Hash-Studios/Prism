@@ -5013,6 +5013,36 @@ abstract class AppLocalizations {
   /// **'Orange, black and a few spiders. It is free. Tap to try it.'**
   String get spookyAnnouncementBody;
 
+  /// No description provided for @coreThemeDiwali.
+  ///
+  /// In en, this message translates to:
+  /// **'Diwali'**
+  String get coreThemeDiwali;
+
+  /// No description provided for @diwaliBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Diwali theme is here'**
+  String get diwaliBannerTitle;
+
+  /// No description provided for @diwaliBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Diyas, fireworks and gold. Free. Tap to try it.'**
+  String get diwaliBannerSubtitle;
+
+  /// No description provided for @diwaliAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New: the Diwali theme 🪔'**
+  String get diwaliAnnouncementTitle;
+
+  /// No description provided for @diwaliAnnouncementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Diyas, fireworks and gold. It is free. Tap to try it.'**
+  String get diwaliAnnouncementBody;
+
   /// No description provided for @coreThisGoesOnHome.
   ///
   /// In en, this message translates to:
@@ -9502,6 +9532,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deep Ocean'**
   String get economyShopDeepOcean;
+
+  /// No description provided for @economyShopDefaultIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get economyShopDefaultIcon;
 
   /// No description provided for @economyShopEarnXp.
   ///

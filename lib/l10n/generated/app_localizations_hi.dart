@@ -2899,6 +2899,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get spookyAnnouncementBody => 'नारंगी, काला और कुछ मकड़ियाँ। यह मुफ़्त है। आज़माने के लिए टैप करें।';
 
   @override
+  String get coreThemeDiwali => 'दिवाली';
+
+  @override
+  String get diwaliBannerTitle => 'दिवाली थीम आ गई है';
+
+  @override
+  String get diwaliBannerSubtitle => 'दीये, आतिशबाज़ी और सोना। मुफ़्त। आज़माने के लिए टैप करें।';
+
+  @override
+  String get diwaliAnnouncementTitle => 'नई: दिवाली थीम 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।';
+
+  @override
   String get coreThisGoesOnHome => 'यह होम स्क्रीन पर लगेगा।';
 
   @override
@@ -6123,6 +6138,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get economyShopDeepOcean => 'गहरा समंदर';
+
+  @override
+  String get economyShopDefaultIcon => 'डिफ़ॉल्ट';
 
   @override
   String get economyShopEarnXp => 'XP कमाएँ';

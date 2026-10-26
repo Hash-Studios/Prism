@@ -329,8 +329,8 @@ final class PrismLiveActivityHostApiImpl: @preconcurrency PrismLiveActivityHostA
     else { return nil }
 
     let configuration = URLSessionConfiguration.ephemeral
-    configuration.timeoutIntervalForRequest = 30
-    configuration.timeoutIntervalForResource = 30
+    configuration.timeoutIntervalForRequest = 8
+    configuration.timeoutIntervalForResource = 8
     let session = URLSession(configuration: configuration)
     defer { session.invalidateAndCancel() }
     guard let (download, response) = try? await session.download(for: URLRequest(url: url)) else { return nil }

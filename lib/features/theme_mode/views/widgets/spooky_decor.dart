@@ -3,17 +3,6 @@ import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// The banner and the update announcement run until this local date. The theme itself stays.
-final DateTime spookySeasonEnd = DateTime(2026, 11, 3);
-
-/// The clock [isSpookySeason] reads when no date is given. Tests set it, so they do not depend on the real date.
-@visibleForTesting
-DateTime Function() spookyClock = DateTime.now;
-
-DateTime spookyNow() => spookyClock();
-
-bool isSpookySeason([DateTime? now]) => (now ?? spookyNow()).isBefore(spookySeasonEnd);
-
 /// True when the theme in [context] is Spooky. It reads the page colour, so it needs no theme bloc above it.
 bool isSpookyActive(BuildContext context) => Theme.of(context).colorScheme.surface == kDarkTheme9.colorScheme.surface;
 

@@ -22,8 +22,7 @@ import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notification
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
-import 'package:Prism/features/theme_mode/data/spooky_announcement.dart';
-import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -197,7 +196,7 @@ void main() {
     messenger.setMockMethodCallHandler(_quickActions, null);
     messenger.setMockMethodCallHandler(_messaging, null);
     messenger.setMockMethodCallHandler(const MethodChannel('dexterous.com/flutter/local_notifications'), null);
-    spookyClock = DateTime.now;
+    seasonClock = DateTime.now;
     await getIt.reset();
   });
 
@@ -405,7 +404,7 @@ void main() {
     expect(quickActionTabIndex('nope'), isNull);
   });
 
-  testWidgets('an app update announces Spooky through the owned inbox and local notification', (tester) async {
+  testWidgets('an app update announces Diwali through the owned inbox and local notification', (tester) async {
     const MethodChannel localNotifications = MethodChannel('dexterous.com/flutter/local_notifications');
     final List<MethodCall> notificationCalls = <MethodCall>[];
     final Completer<void> shown = Completer<void>();
@@ -415,7 +414,7 @@ void main() {
       return null;
     });
     AndroidFlutterLocalNotificationsPlugin.registerWith();
-    spookyClock = () => DateTime(2026, 10, 25, 12);
+    seasonClock = () => DateTime(2026, 10, 25, 12);
     await getIt<SettingsLocalDataSource>().set('lastSeenVersion', 'previous-version');
 
     await mount(tester);
@@ -423,7 +422,7 @@ void main() {
 
     final List<InAppNotificationEntity> items = (await tester.runAsync(localInbox.readAll))!;
     expect(localInbox.ownerId, 'u1');
-    expect(items.map((item) => item.id), <String>[spookyAnnouncementId]);
+    expect(items.map((item) => item.id), <String>[diwaliSeason.announcementId]);
     expect(items.single.createdAt, DateTime(2026, 10, 25, 12).toUtc());
     final MethodCall show = notificationCalls.singleWhere((call) => call.method == 'show');
     final Map<Object?, Object?> arguments = show.arguments as Map<Object?, Object?>;

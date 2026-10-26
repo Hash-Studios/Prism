@@ -2905,6 +2905,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Orange, Schwarz und ein paar Spinnen. Es ist kostenlos. Tippen zum Ausprobieren.';
 
   @override
+  String get coreThemeDiwali => 'Diwali';
+
+  @override
+  String get diwaliBannerTitle => 'Das Diwali-Theme ist da';
+
+  @override
+  String get diwaliBannerSubtitle => 'Diyas, Feuerwerk und Gold. Kostenlos. Tippen zum Ausprobieren.';
+
+  @override
+  String get diwaliAnnouncementTitle => 'Neu: das Diwali-Theme 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'Diyas, Feuerwerk und Gold. Es ist kostenlos. Tippen zum Ausprobieren.';
+
+  @override
   String get coreThisGoesOnHome => 'Dieses Bild kommt auf den Startbildschirm.';
 
   @override
@@ -6076,6 +6091,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get economyShopDeepOcean => 'Tiefsee';
+
+  @override
+  String get economyShopDefaultIcon => 'Standard';
 
   @override
   String get economyShopEarnXp => 'XP verdienen';

@@ -221,6 +221,11 @@ ThemeData kDarkTheme9 = _darkTheme(
   accent: const Color(0xFFFF7A1A),
   foreground: const Color(0xFFF5E6D3),
 );
+ThemeData kDarkTheme10 = _darkTheme(
+  background: const Color(0xFF0D0718),
+  accent: const Color(0xFFFFB020),
+  foreground: const Color(0xFFFFF1D6),
+);
 
 /// Applies a Prism [ColorScheme] and the component defaults that follow from it. The accent picker calls this again
 /// with the user's accent, so every component default tracks the accent too.

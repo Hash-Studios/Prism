@@ -1,4 +1,5 @@
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -60,8 +61,8 @@ class _TickerRouter extends RootStackRouter {
 
 void main() {
   test('Spooky season ends on 3 November 2026', () {
-    expect(isSpookySeason(DateTime(2026, 10, 31)), isTrue);
-    expect(isSpookySeason(DateTime(2026, 11, 3)), isFalse);
+    expect(spookySeason.inSeason(DateTime(2026, 10, 31)), isTrue);
+    expect(spookySeason.inSeason(DateTime(2026, 11, 3)), isFalse);
   });
 
   testWidgets('Spooky decor draws on the Spooky theme', (tester) async {

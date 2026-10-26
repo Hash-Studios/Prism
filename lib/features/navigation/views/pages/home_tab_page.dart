@@ -22,7 +22,9 @@ import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notification
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
-import 'package:Prism/features/theme_mode/data/spooky_announcement.dart';
+import 'package:Prism/features/theme_mode/data/seasonal_announcement.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
+import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
@@ -126,31 +128,32 @@ class _HomeTabPageState extends State<HomeTabPage> {
   void _showChangelogCheck() {
     final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
     if (lastSeen != null && lastSeen != currentAppVersion) showChangelog(context, () {});
-    unawaited(_checkChangelogAndSpookyAnnouncement());
+    unawaited(_checkSeasonalAnnouncement());
   }
 
-  Future<void> _checkChangelogAndSpookyAnnouncement() async {
+  Future<void> _checkSeasonalAnnouncement() async {
     try {
-      await checkSpookyAnnouncementOnAppUpdate(
+      await checkSeasonalAnnouncementOnAppUpdate(
         currentVersion: currentAppVersion,
         currentBuild: currentAppVersionCode,
         settings: _settingsLocal,
-        announce: _announceSpookyTheme,
+        announce: _announceSeasonalTheme,
       );
     } catch (error, stackTrace) {
-      logger.w('Failed to check the spooky theme announcement.', error: error, stackTrace: stackTrace);
+      logger.w('Failed to check the seasonal theme announcement.', error: error, stackTrace: stackTrace);
     }
   }
 
-  Future<bool> _announceSpookyTheme() async {
+  Future<bool> _announceSeasonalTheme(SeasonalTheme season) async {
     final AppLocalizations l10n = context.l10n;
-    final bool announced = await announceSpookyTheme(
-      now: spookyNow(),
+    final bool announced = await announceSeasonalTheme(
+      season: season,
+      now: seasonNow(),
       l10n: l10n,
       settings: _settingsLocal,
       inbox: getIt<NotificationsLocalDataSource>(),
       showPush: (String title, String body) => FlutterLocalNotificationsPlugin().show(
-        id: spookyAnnouncementId.hashCode & 0x7fffffff,
+        id: season.announcementId.hashCode & 0x7fffffff,
         title: title,
         body: body,
         notificationDetails: NotificationDetails(
@@ -334,6 +337,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
               child: ConnectivityWidget(offline: !_isOnline),
             ),
             const Positioned(top: 0, right: 0, child: SpookyWeb(right: true, size: 84)),
+            Positioned(top: MediaQuery.paddingOf(context).top, right: 56, child: const DiwaliFireworks(size: 84)),
             Positioned(top: PersonalizedFeedScreen.headerHeight(context), right: 72, child: const SpookySpider()),
           ],
         ),

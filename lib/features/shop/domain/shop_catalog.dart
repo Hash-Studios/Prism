@@ -88,6 +88,9 @@ const List<ShopItem> shopCatalog = <ShopItem>[
   ShopItem(id: 'glow_founders', kind: ShopItemKind.nameGlow, name: 'Founders', price: 1000, founders: true),
 ];
 
+/// The stock launcher icon. Free and always owned, so users can switch back from a bought icon.
+const ShopItem defaultAppIcon = ShopItem(id: 'icon_default', kind: ShopItemKind.appIcon, name: 'Default', price: 0);
+
 ShopItem? shopItem(String id) {
   for (final ShopItem item in shopCatalog) {
     if (item.id == id) return item;
@@ -108,6 +111,7 @@ String shopItemName(ShopItem item, AppLocalizations l10n) => switch (item.id) {
   'theme_pepper' => l10n.economyShopPepper,
   'theme_sky' => l10n.economyShopSky,
   'theme_steel' => l10n.economyShopSteel,
+  'icon_default' => l10n.economyShopDefaultIcon,
   'icon_noir' => l10n.economyShopNoir,
   'icon_glass' => l10n.economyShopGlass,
   'icon_sunset' => l10n.economyShopSunset,
@@ -144,8 +148,10 @@ int shopFromPrice(DateTime now, {EconomyConfig? config}) {
       .reduce(min);
 }
 
-List<ShopItem> shopItemsOf(ShopItemKind kind) =>
-    shopCatalog.where((ShopItem item) => item.kind == kind).toList(growable: false);
+List<ShopItem> shopItemsOf(ShopItemKind kind) => <ShopItem>[
+  if (kind == ShopItemKind.appIcon) defaultAppIcon,
+  ...shopCatalog.where((ShopItem item) => item.kind == kind),
+];
 
 /// Why an item cannot be bought right now. The server decides; this only labels the UI.
 enum ShopAvailability { available, proOnly, rankLocked, soldOut }
@@ -176,4 +182,4 @@ ShopAvailability shopAvailability(
 
 /// Owned by purchase, or a theme the device already used before the shop existed.
 bool shopItemOwned(ShopItem item, {required Set<String> owned, required Set<String> legacyThemes}) =>
-    owned.contains(item.id) || (item.themeId != null && legacyThemes.contains(item.themeId));
+    item == defaultAppIcon || owned.contains(item.id) || (item.themeId != null && legacyThemes.contains(item.themeId));

@@ -2929,6 +2929,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get spookyAnnouncementBody => 'Laranja, preto e algumas aranhas. É grátis. Toque para experimentar.';
 
   @override
+  String get coreThemeDiwali => 'Diwali';
+
+  @override
+  String get diwaliBannerTitle => 'O tema Diwali chegou';
+
+  @override
+  String get diwaliBannerSubtitle => 'Diyas, fogos de artifício e ouro. Grátis. Toque para experimentar.';
+
+  @override
+  String get diwaliAnnouncementTitle => 'Novo: o tema Diwali 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'Diyas, fogos de artifício e ouro. É grátis. Toque para experimentar.';
+
+  @override
   String get coreThisGoesOnHome => 'Este vai para a tela inicial.';
 
   @override
@@ -6202,6 +6217,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get economyShopDeepOcean => 'Oceano profundo';
+
+  @override
+  String get economyShopDefaultIcon => 'Padrão';
 
   @override
   String get economyShopEarnXp => 'Ganhar XP';
@@ -12936,6 +12954,21 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get spookyAnnouncementBody => 'Laranja, preto e algumas aranhas. É grátis. Toque para experimentar.';
 
   @override
+  String get coreThemeDiwali => 'Diwali';
+
+  @override
+  String get diwaliBannerTitle => 'O tema Diwali chegou';
+
+  @override
+  String get diwaliBannerSubtitle => 'Diyas, fogos de artifício e ouro. Grátis. Toque para experimentar.';
+
+  @override
+  String get diwaliAnnouncementTitle => 'Novo: o tema Diwali 🪔';
+
+  @override
+  String get diwaliAnnouncementBody => 'Diyas, fogos de artifício e ouro. É grátis. Toque para experimentar.';
+
+  @override
   String get coreThisGoesOnHome => 'Este vai para a tela inicial.';
 
   @override
@@ -16209,6 +16242,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get economyShopDeepOcean => 'Oceano profundo';
+
+  @override
+  String get economyShopDefaultIcon => 'Padrão';
 
   @override
   String get economyShopEarnXp => 'Ganhar XP';
