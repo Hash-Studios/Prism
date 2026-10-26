@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/data/categories/category_cover.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -91,14 +92,19 @@ class InterestTile extends StatelessWidget {
               fit: StackFit.expand,
               children: <Widget>[
                 LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) => CachedNetworkImage(
-                    imageUrl: interest.imageUrl,
-                    fit: BoxFit.cover,
-                    memCacheWidth: (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round(),
-                    fadeInDuration: fast,
-                    placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHighest),
-                    errorWidget: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
-                  ),
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final int decodeWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round();
+                    final String? asset = bundledCoverAsset(interest.imageUrl);
+                    if (asset != null) return Image.asset(asset, cacheWidth: decodeWidth, fit: BoxFit.cover);
+                    return CachedNetworkImage(
+                      imageUrl: interest.imageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: decodeWidth,
+                      fadeInDuration: fast,
+                      placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHighest),
+                      errorWidget: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
+                    );
+                  },
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(
