@@ -5,7 +5,9 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -640,11 +642,32 @@ void main() {
     }
 
     setUp(() {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'signed-in-uid'
+        ..loggedIn = true;
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(
           PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorUid: 'a-uid')], hasMore: false),
         ),
       );
+    });
+
+    tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    test('a guest never asks for the Drop, which the rules refuse without sign-in', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final bloc = build();
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      verifyNever(() => dropsRepository.fetchLive(any()));
+      expect(bloc.state.liveDrop, isNull);
+      expect(bloc.state.items.map((e) => e.id), <String>['1']);
     });
 
     test('start and refresh each fetch the live Drop into the state', () async {

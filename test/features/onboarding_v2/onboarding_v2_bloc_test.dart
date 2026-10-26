@@ -229,8 +229,46 @@ void main() {
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'a signed-out user does not read creator profiles, which the rules refuse without sign-in',
+    setUp: () => app_state.prismUser = _user(id: '', loggedIn: false),
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+    },
+    verify: (bloc) {
+      verifyNever(() => fetchStarterPackUseCase(const NoParams()));
+      expect(bloc.state.starterPackData.creators, isEmpty);
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'signing in loads the starter pack while the user picks interests',
+    setUp: () {
+      app_state.prismUser = _user(id: '', loggedIn: false);
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async => Result.success(<OnboardingStarterCreatorEntity>[_creator(2), _creator(1), _creator(0)]),
+      );
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.authCompleted());
+      await bloc.stream.firstWhere((s) => s.starterPackData.creators.isNotEmpty);
+    },
+    verify: (bloc) {
+      expect(bloc.state.step, OnboardingV2Step.interests);
+      expect(bloc.state.starterPackData.creators.map((c) => c.userId), <String>['creator-0', 'creator-1', 'creator-2']);
+      verify(() => fetchStarterPackUseCase(const NoParams())).called(1);
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'the first creators by rank start selected and toggling changes only the selection',
     setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
       when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
         (_) async => Result.success(List<OnboardingStarterCreatorEntity>.generate(5, (i) => _creator(4 - i))),
       );
@@ -238,7 +276,7 @@ void main() {
     build: buildBloc,
     act: (bloc) async {
       bloc.add(const OnboardingV2Event.started());
-      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      await bloc.stream.firstWhere((s) => s.starterPackData.creators.isNotEmpty);
       bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-0'));
       bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-4'));
     },
