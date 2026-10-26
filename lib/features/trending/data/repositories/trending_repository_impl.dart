@@ -69,7 +69,9 @@ class TrendingRepositoryImpl implements TrendingRepository {
       await _writeCache(walls);
       return TrendingFetch.success(visible);
     } catch (error, stackTrace) {
-      final Future<bool>? retry = error is FirestoreError && error.code == 'no-app' ? initialization : null;
+      final bool beforeInitialization =
+          error is FirestoreNotReadyError || (error is FirestoreError && error.code == 'no-app');
+      final Future<bool>? retry = beforeInitialization ? initialization : null;
       final List<PrismWallpaper>? cached = await _readCached();
       if (cached != null) {
         logger.w('[TrendingRepository] fetch failed; returning the saved list', error: error, stackTrace: stackTrace);

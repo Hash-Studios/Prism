@@ -1,6 +1,7 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/data/categories/category_cover.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
@@ -52,14 +53,19 @@ class InterestCategoryTile extends StatelessWidget {
               children: [
                 if (imageUrl != null)
                   LayoutBuilder(
-                    builder: (context, constraints) => CachedNetworkImage(
-                      imageUrl: imageUrl!,
-                      cacheManager: PrismImageCache.instance,
-                      memCacheWidth: (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round(),
-                      fit: BoxFit.cover,
-                      fadeInDuration: shortMotion,
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
-                    ),
+                    builder: (context, constraints) {
+                      final int decodeWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round();
+                      final String? asset = bundledCoverAsset(imageUrl!);
+                      if (asset != null) return Image.asset(asset, cacheWidth: decodeWidth, fit: BoxFit.cover);
+                      return CachedNetworkImage(
+                        imageUrl: imageUrl!,
+                        cacheManager: PrismImageCache.instance,
+                        memCacheWidth: decodeWidth,
+                        fit: BoxFit.cover,
+                        fadeInDuration: shortMotion,
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
+                      );
+                    },
                   ),
                 AnimatedContainer(
                   duration: shortMotion,

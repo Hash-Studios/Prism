@@ -57,6 +57,30 @@ void main() {
     expect(image.memCacheWidth, 200);
   });
 
+  testWidgets('a stock cover shows the bundled copy and never waits on Pexels', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(
+          width: 100,
+          height: 100,
+          child: InterestCategoryTile(
+            name: 'Birds',
+            imageUrl:
+                'https://images.pexels.com/photos/326900/pexels-photo-326900.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+            isSelected: false,
+            onTap: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    final ResizeImage image = tester.widget<Image>(find.byType(Image)).image as ResizeImage;
+    expect(image.imageProvider, const AssetImage('assets/images/covers/326900.webp'));
+  });
+
   testWidgets('a tile without a cover shows no image', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

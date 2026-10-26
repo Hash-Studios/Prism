@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/widgets.dart';
@@ -40,6 +41,20 @@ void main() {
 
   testWidgets('feedCarouselCardHeight uses half the width on a tablet', (WidgetTester tester) async {
     expect(await _heightAt(tester, const Size(1032, 1376)), (1032 / 2 - 2 * PrismFeedLayout.gridSpacing) * 0.6);
+  });
+
+  testWidgets('feedCarouselCardHeight is 0, not negative, before the screen has a width', (WidgetTester tester) async {
+    expect(await _heightAt(tester, Size.zero), 0);
+  });
+
+  testWidgets('the carousel skeleton mounts on a zero-size first frame', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(),
+        child: Builder(builder: (BuildContext context) => PrismBone(height: feedCarouselCardHeight(context))),
+      ),
+    );
+    expect(tester.takeException(), isNull);
   });
 
   group('iPhone Duo', () {

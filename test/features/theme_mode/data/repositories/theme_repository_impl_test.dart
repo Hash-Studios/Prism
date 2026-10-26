@@ -1,24 +1,57 @@
+import 'dart:async';
+
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/data/repositories/theme_repository_impl.dart';
+import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../support/fake_firestore_client.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/profile_user_fixture.dart';
 
 class _ThrowingReadStore extends InMemoryLocalStore {
   @override
   Object? get(String key) => throw StateError('read failed');
 }
 
+/// The `usersv2/{uid}.themePrefs` wire shape.
+Map<String, Object> _accountCopy({
+  String mode = 'light',
+  String lightId = 'kLCoffee',
+  int lightAccent = 0xffc19439,
+  String darkId = 'kDAMOLED',
+  int darkAccent = 0xffffffff,
+  required int changedAt,
+}) => <String, Object>{
+  'mode': mode,
+  'lightThemeId': lightId,
+  'lightAccent': lightAccent,
+  'darkThemeId': darkId,
+  'darkAccent': darkAccent,
+  'changedAt': changedAt,
+};
+
 void main() {
   late InMemoryLocalStore store;
+  late FakeFirestoreClient firestore;
   late ThemeRepositoryImpl repository;
 
   setUp(() {
     store = InMemoryLocalStore();
-    repository = ThemeRepositoryImpl(SettingsLocalDataSource(store));
+    firestore = FakeFirestoreClient();
+    repository = ThemeRepositoryImpl(SettingsLocalDataSource(store), firestore);
+    CoinsService.instance.inventoryNotifier.value = Inventory.empty;
+  });
+
+  tearDown(() {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    CoinsService.instance.inventoryNotifier.value = Inventory.empty;
   });
 
   test('returns the default themes and mode when nothing is stored', () async {
@@ -159,8 +192,174 @@ void main() {
   });
 
   test('read errors map to CacheFailure', () async {
-    final failing = ThemeRepositoryImpl(SettingsLocalDataSource(_ThrowingReadStore()));
+    final failing = ThemeRepositoryImpl(SettingsLocalDataSource(_ThrowingReadStore()), firestore);
 
     expect((await failing.load()).failure, isA<CacheFailure>());
+  });
+
+  test('update while signed in writes the choice and its change time to the account', () async {
+    app_state.prismUser = profileUser();
+
+    await repository.update(lightThemeId: 'kLCoffee', darkThemeId: 'kDOlive', mode: ThemeMode.light);
+    await pumpEventQueue();
+
+    expect(firestore.writes.single.op, 'update');
+    expect(firestore.writes.single.collection, FirebaseCollections.usersV2);
+    expect(firestore.writes.single.id, 'u1');
+    expect(firestore.writes.single.data, <String, Object?>{
+      'themePrefs': <String, Object?>{
+        'mode': 'light',
+        'lightThemeId': 'kLCoffee',
+        'lightAccent': 0xffc19439,
+        'darkThemeId': 'kDOlive',
+        'darkAccent': 0xff767b45,
+        'changedAt': store.data['settings.theme.changed_at'],
+      },
+    });
+  });
+
+  test('update as a guest writes nothing to the account but stores the change time', () async {
+    app_state.prismUser = profileUser(loggedIn: false);
+
+    await repository.update(lightThemeId: 'kLCoffee');
+    await pumpEventQueue();
+
+    expect(firestore.writes, isEmpty);
+    expect(store.data['settings.theme.changed_at'], isA<int>());
+  });
+
+  test('sync applies a newer account copy of free themes and emits it', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(changedAt: 1000)},
+    };
+    final List<ThemePreferences> emitted = <ThemePreferences>[];
+    final StreamSubscription<ThemePreferences> subscription = repository.accountChanges.listen(emitted.add);
+    addTearDown(subscription.cancel);
+
+    await repository.syncWithAccount('u1');
+    await pumpEventQueue();
+
+    final ThemePreferences applied = repository.readSync();
+    expect(applied.light.themeId, 'kLCoffee');
+    expect(applied.light.accentColorValue, 0xffc19439);
+    expect(applied.dark.themeId, 'kDAMOLED');
+    expect(applied.dark.accentColorValue, 0xffffffff);
+    expect(applied.mode, ThemeMode.light);
+    expect(emitted.single.light.themeId, 'kLCoffee');
+    expect(emitted.single.mode, ThemeMode.light);
+    expect(store.data['settings.theme.changed_at'], 1000);
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('a second sync with the same account copy changes nothing and writes nothing', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: 'kDOlive', darkAccent: 0xff767b45, changedAt: 1000)},
+    };
+
+    await repository.syncWithAccount('u1');
+    await repository.syncWithAccount('u1');
+
+    final ThemePreferences applied = repository.readSync();
+    expect(applied.light.themeId, 'kLCoffee');
+    expect(applied.dark.themeId, 'kDMaterial Dark');
+    expect(store.data['settings.theme.changed_at'], 1000);
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('sync keeps the local dark theme and accent when this device does not own the account dark theme', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: 'kDOlive', darkAccent: 0xff767b45, changedAt: 1000)},
+    };
+    store.data['settings.darkThemeID'] = 'kDAMOLED';
+    store.data['settings.darkAccent'] = 0xff123456;
+
+    await repository.syncWithAccount('u1');
+
+    final ThemePreferences applied = repository.readSync();
+    expect(applied.dark.themeId, 'kDAMOLED');
+    expect(applied.dark.accentColorValue, 0xff123456);
+    expect(applied.light.themeId, 'kLCoffee');
+    expect(applied.mode, ThemeMode.light);
+  });
+
+  test('sync applies the account dark theme once this device owns it', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: 'kDOlive', darkAccent: 0xff767b45, changedAt: 1000)},
+    };
+    store.data['settings.darkThemeID'] = 'kDAMOLED';
+    store.data['settings.darkAccent'] = 0xff123456;
+    CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'theme_olive'});
+
+    await repository.syncWithAccount('u1');
+
+    final ThemePreferences applied = repository.readSync();
+    expect(applied.dark.themeId, 'kDOlive');
+    expect(applied.dark.accentColorValue, 0xff767b45);
+  });
+
+  test('sync never turns the account paid theme into a legacy theme', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: 'kDOlive', darkAccent: 0xff767b45, changedAt: 1000)},
+    };
+    CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'theme_olive'});
+
+    await repository.syncWithAccount('u1');
+
+    expect(repository.readSync().dark.themeId, 'kDOlive');
+    expect(readLegacyThemes(SettingsLocalDataSource(store)), <String>{'kLFrost White', 'kDMaterial Dark'});
+  });
+
+  test('sync uploads the local choice when it changed after the account copy', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{'themePrefs': _accountCopy(changedAt: 1000)},
+    };
+    store.data['settings.lightThemeID'] = 'kLCoffee';
+    store.data['settings.lightAccent'] = 0xffc19439;
+    store.data['settings.darkThemeID'] = 'kDAMOLED';
+    store.data['settings.darkAccent'] = 0xffffffff;
+    store.data['settings.themeMode'] = 'Dark';
+    store.data['settings.theme.changed_at'] = 2000;
+
+    await repository.syncWithAccount('u1');
+
+    expect(firestore.writes.single.op, 'update');
+    expect(firestore.writes.single.data, <String, Object?>{
+      'themePrefs': <String, Object?>{
+        'mode': 'dark',
+        'lightThemeId': 'kLCoffee',
+        'lightAccent': 0xffc19439,
+        'darkThemeId': 'kDAMOLED',
+        'darkAccent': 0xffffffff,
+        'changedAt': 2000,
+      },
+    });
+    expect(store.data['settings.theme.changed_at'], 2000);
+  });
+
+  test('sync uploads a local change when the account has no copy', () async {
+    app_state.prismUser = profileUser(loggedIn: false);
+    await repository.update(lightThemeId: 'kLCoffee', mode: ThemeMode.light);
+    app_state.prismUser = profileUser();
+
+    await repository.syncWithAccount('u1');
+
+    expect(firestore.writes.single.op, 'update');
+    expect(firestore.writes.single.data, <String, Object?>{
+      'themePrefs': <String, Object?>{
+        'mode': 'light',
+        'lightThemeId': 'kLCoffee',
+        'lightAccent': 0xffc19439,
+        'darkThemeId': 'kDMaterial Dark',
+        'darkAccent': 0xffe57697,
+        'changedAt': store.data['settings.theme.changed_at'],
+      },
+    });
+  });
+
+  test('sync with no account copy and no local change writes nothing', () async {
+    await repository.syncWithAccount('u1');
+
+    expect(firestore.writes, isEmpty);
+    expect(store.data.containsKey('settings.theme.changed_at'), isFalse);
   });
 }

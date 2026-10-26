@@ -2400,6 +2400,7 @@
   },
   "coreEditUsernameAvailable": "Username available",
   "coreEditUsernameChars": "Use letters, numbers and underscores only.",
+  "coreEditUsernameAllCaps": "Use at least one lowercase letter.",
   "coreEditUsernameMinLength": "Use at least {length} characters.",
   "@coreEditUsernameMinLength": {
     "placeholders": {
@@ -2691,6 +2692,38 @@
       }
     },
     "description": "Screen reader summary of streak and next reward."
+  },
+  "coreCustomAccent": "Custom color",
+  "@coreCustomAccent": {
+    "description": "Label for the custom accent color option."
+  },
+  "coreCustomAccentHex": "Hex code",
+  "@coreCustomAccentHex": {
+    "description": "Label for the hex color code text field."
+  },
+  "coreCustomAccentHue": "Hue",
+  "@coreCustomAccentHue": {
+    "description": "Label for the hue slider of the custom accent color picker."
+  },
+  "coreCustomAccentSaturation": "Saturation",
+  "@coreCustomAccentSaturation": {
+    "description": "Label for the saturation slider of the custom accent color picker."
+  },
+  "coreCustomAccentLightness": "Lightness",
+  "@coreCustomAccentLightness": {
+    "description": "Label for the lightness slider of the custom accent color picker."
+  },
+  "coreCustomAccentInvalidHex": "Enter 6 hex digits, like #E57697.",
+  "@coreCustomAccentInvalidHex": {
+    "description": "Error shown when the hex color code is not 6 hex digits."
+  },
+  "coreCustomAccentLowContrast": "This color is hard to see on this theme. Pick a lighter or darker shade.",
+  "@coreCustomAccentLowContrast": {
+    "description": "Warning shown when the custom accent is too close to the theme background."
+  },
+  "coreCustomAccentApply": "Use color",
+  "@coreCustomAccentApply": {
+    "description": "Button label that applies the custom accent color."
   },
   "coreThemeAccentSemanticLabel": "Accent colour {index} of {count}",
   "@coreThemeAccentSemanticLabel": {
@@ -8319,6 +8352,14 @@
   "wallpaperThemeDarkThemes": "Dark Themes",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
+  },
+  "wallpaperUseAsAppAccent": "Use as app accent",
+  "@wallpaperUseAsAppAccent": {
+    "description": "Button label that sets a wallpaper color as the app accent."
+  },
+  "wallpaperAppAccentUpdated": "App accent updated",
+  "@wallpaperAppAccentUpdated": {
+    "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
   "wallpaperThemeLightAccent": "Light Accent Color",
   "@wallpaperThemeLightAccent": {

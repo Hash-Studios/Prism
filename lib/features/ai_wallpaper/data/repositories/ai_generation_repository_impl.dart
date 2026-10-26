@@ -108,6 +108,8 @@ class AiGenerationRepositoryImpl {
       'targetSize': targetSize,
       if (seed != null) 'seed': seed,
       if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
+      // The worker owns the one free trial per account; a repeat replays the first image.
+      if (chargeMode == AiChargeMode.freeTrial && (chargeTxId == null || chargeTxId.isEmpty)) 'freeTrial': true,
     };
     final data = await _post('/generations', payload, retryOnTimeout: payload.containsKey('chargeTxId'));
     final record = _recordFromApiResponse(

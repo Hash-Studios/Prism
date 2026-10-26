@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
+import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,10 +115,14 @@ void main() {
 
   test('deferred Firestore access does not happen while constructing the client', () async {
     var factoryCalls = 0;
-    final deferredClient = FirestoreTrackedClient.deferred(() {
-      factoryCalls++;
-      throw StateError('Firebase is not initialized');
-    }, sink);
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        throw StateError('Firestore setup failed');
+      },
+      sink,
+      waitUntilReady: () async => true,
+    );
 
     expect(factoryCalls, 0);
     await expectLater(
@@ -523,6 +528,40 @@ void main() {
     expect(sink.events.map((event) => (event.success, event.errorCode)), <(bool, String?)>[(false, 'unavailable')]);
   });
 
+  test('failed initialization fails a one-shot read as unavailable without accessing Firestore', () async {
+    var factoryCalls = 0;
+    final deferredClient = FirestoreTrackedClient.deferred(
+      () {
+        factoryCalls++;
+        throw FirebaseException(plugin: 'core', code: 'no-app');
+      },
+      sink,
+      waitUntilReady: () async => false,
+    );
+
+    for (final bool preferCacheFirst in <bool>[false, true]) {
+      await expectLater(
+        deferredClient.getById<String>(
+          'usersv2',
+          'u1',
+          (_, id) => id,
+          sourceTag: 'test.init_failed_read',
+          preferCacheFirst: preferCacheFirst,
+        ),
+        throwsA(
+          isA<FirestoreError>()
+              .having((error) => error.code, 'code', 'unavailable')
+              .having(isNetworkNoise, 'isNetworkNoise', isTrue),
+        ),
+      );
+    }
+    expect(factoryCalls, 0);
+    expect(sink.events.map((event) => (event.success, event.errorCode)), <(bool, String?)>[
+      (false, 'unavailable'),
+      (false, 'unavailable'),
+    ]);
+  });
+
   test('cancelling before initialization completes promptly and does not attach a listener later', () async {
     final ready = Completer<bool>();
     var factoryCalls = 0;
@@ -622,7 +661,7 @@ void main() {
       boundedClient
           .query<String>(spec, (_, id) => id)
           .then<void>(
-            (_) => fail('The bounded read must fall back before Firebase becomes ready.'),
+            (_) => fail('The bounded read must fail before Firebase becomes ready.'),
             onError: (Object error) {
               readError = error as FirestoreError;
             },
@@ -637,8 +676,8 @@ void main() {
     expect(cancelledFactoryCalls, 0);
     expect(snapshots.hasListener, isFalse);
     expect(errors, isEmpty);
-    expect(readError?.code, 'no-app');
-    expect(readFactoryCalls, 1);
+    expect(readError?.code, 'unavailable');
+    expect(readFactoryCalls, 0);
 
     initialized = true;
     ready.complete(true);

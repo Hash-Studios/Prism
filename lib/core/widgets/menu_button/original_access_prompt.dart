@@ -3,10 +3,29 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+
+/// Opens the sign-in sheet and completes with true once the user signed in. Tests replace it.
+@visibleForTesting
+Future<bool> Function(BuildContext context) originalSignIn = (context) => googleSignInPopUp(context, () {});
+
+/// The server serves a protected original only to a signed-in user, so a guest signs in first.
+/// True when the action can go on.
+Future<bool> signInForOriginal(
+  BuildContext context, {
+  required String url,
+  required String? wallpaperId,
+  required WallpaperSource? wallpaperSource,
+}) async {
+  if (app_state.prismUser.loggedIn || !OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource)) {
+    return true;
+  }
+  return await originalSignIn(context) && context.mounted && app_state.prismUser.loggedIn;
+}
 
 Future<OriginalAccessQuote?> quoteOriginalWithConsent(
   BuildContext context, {
@@ -85,6 +104,10 @@ Future<String?> resolveOriginalWithConsent(
   required String label,
   String? requestId,
 }) async {
+  if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
+      !context.mounted) {
+    return null;
+  }
   final owner = app_state.prismUser.id;
   while (context.mounted && owner == app_state.prismUser.id) {
     final quote = await quoteOriginalWithConsent(

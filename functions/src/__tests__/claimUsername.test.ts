@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {claimUsername, parseUsername} from "../claimUsername";
+import {claimUsername, isAllCapsUsername, parseUsername} from "../claimUsername";
 import {installFakeDb} from "./fakeDb";
 
 const claim = (username: unknown, uid: string | null = "u1") => claimUsername.run({
@@ -13,6 +13,14 @@ test("a username is 3 to 30 letters, digits or underscores", () => {
   for (const bad of [undefined, 5, "", "ab", "a b c", "sam!", "a/b", "x".repeat(31)]) {
     assert.throws(() => parseUsername(bad), {code: "invalid-argument"});
   }
+});
+
+test("a name shouts when it has 3 or more letters and no lowercase letter", () => {
+  const cases: Array<[string, boolean]> = [
+    ["AKSHAY", true], ["ABC_123", true], ["NASA", true],
+    ["AB_12", false], ["Akshay", false], ["akshay", false], ["123_456", false],
+  ];
+  for (const [name, shouts] of cases) assert.equal(isAllCapsUsername(name), shouts, name);
 });
 
 test("claiming needs a signed-in caller who has a profile", async (t) => {
@@ -39,7 +47,7 @@ test("a name in the registry for someone else is taken, in any letter case", asy
     "usersv2/u1": {username: "OldName", usernameLower: "oldname"},
     "usernames/samk": {uid: "u2"},
   });
-  await assert.rejects(() => claim("SAMK"), {code: "already-exists"});
+  await assert.rejects(() => claim("SamK"), {code: "already-exists"});
   assert.equal(store.get("usersv2/u1")?.username, "OldName");
 });
 
@@ -113,7 +121,7 @@ test("missing, unknown and active reservation owners cannot be reclaimed", async
 test("two concurrent historical reclaims have exactly one winner", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {}, "usersv2/u2": {}, "usersv2/gone": {deleted: true},
     "usernames/reuse": {uid: "gone"}});
-  const results = await Promise.allSettled([claim("Reuse", "u1"), claim("REUSE", "u2")]);
+  const results = await Promise.allSettled([claim("Reuse", "u1"), claim("rEUSE", "u2")]);
   assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(results.filter((r) => r.status === "rejected").length, 1);
   const owner = store.get("usernames/reuse")?.uid;
@@ -126,4 +134,29 @@ test("a reservation transferred to an active owner cannot be reclaimed again", a
   await claim("Reuse", "u2");
   await assert.rejects(() => claim("Reuse", "u1"), {code: "already-exists"});
   assert.equal(store.get("usernames/reuse")?.uid, "u2");
+});
+
+test("an explicit claim of an all caps name is refused", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {username: "old_name", usernameLower: "old_name"}});
+  await assert.rejects(() => claim("SHOUTY"), {code: "invalid-argument"});
+  assert.equal(store.has("usernames/shouty"), false);
+  assert.equal(store.get("usersv2/u1")?.username, "old_name");
+});
+
+test("an explicit claim with a lowercase letter is accepted", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {username: "old_name", usernameLower: "old_name"}});
+  assert.deepEqual(await claim("Shouty"), {username: "Shouty", usernameLower: "shouty"});
+  assert.equal(store.get("usernames/shouty")?.uid, "u1");
+});
+
+test("a user can re-claim the all caps name they already hold", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {username: "LEGACY", usernameLower: "legacy"}, "usernames/legacy": {uid: "u1"}});
+  assert.deepEqual(await claim("LEGACY"), {username: "LEGACY", usernameLower: "legacy"});
+});
+
+test("an initial name from an all caps display name is lowercased", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {}});
+  assert.deepEqual(await claimUsername.run({auth: {uid: "u1"}, data: {initial: true, username: "JOHNDOE"}} as unknown as
+    Parameters<typeof claimUsername.run>[0]), {username: "johndoe", usernameLower: "johndoe"});
+  assert.equal(store.get("usernames/johndoe")?.uid, "u1");
 });

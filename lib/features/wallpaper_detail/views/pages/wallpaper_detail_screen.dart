@@ -9,7 +9,9 @@ import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -46,6 +48,8 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
+import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -428,6 +432,24 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   void _handleColorSelected(BuildContext context, Color color) {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
+  }
+
+  Future<void> _useAsAppAccent(BuildContext context, Color color) async {
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    if (!accentReadsOn(color, Theme.of(context).colorScheme.surface)) {
+      toasts.error(context.l10n.coreCustomAccentLowContrast);
+      return;
+    }
+    PrismHaptics.selection();
+    await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, false);
+    if (!context.mounted) return;
+    if (dark) {
+      context.setPrismDarkAccent(color);
+    } else {
+      context.setPrismLightAccent(color);
+    }
+    analytics.track(AccentChangedEvent(color: color.rgbHex));
+    toasts.success(context.l10n.wallpaperAppAccentUpdated);
   }
 
   @override
@@ -1079,13 +1101,31 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
     ];
 
+    final Color? accent = state.accent;
     // A row of small round variations, the untouched wallpaper first. The ring sits inside each 44 point target.
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(start: _sheetHPad - (_swatchTarget - _swatchSize) / 2),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: swatches),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: _sheetHPad - (_swatchTarget - _swatchSize) / 2),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: swatches),
+          ),
+        ),
+        if (state.colorChanged && accent != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: _sheetHPad, top: PrismSpace.sm),
+            child: PrismButton(
+              label: context.l10n.wallpaperUseAsAppAccent,
+              icon: Icons.palette_outlined,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              onPressed: () => _useAsAppAccent(context, accent),
+            ),
+          ),
+      ],
     );
   }
 

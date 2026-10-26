@@ -86,4 +86,14 @@ void main() {
     expect(await UsernameService().claim('NewName'), 'NewName');
     expect(firestore.writes, isEmpty);
   });
+
+  test('isAllCapsUsername shouts only with three or more letters and no lowercase letter', () {
+    expect(isAllCapsUsername('AKSHAY'), isTrue);
+    expect(isAllCapsUsername('ABC_123'), isTrue);
+    expect(isAllCapsUsername('NASA'), isTrue);
+    expect(isAllCapsUsername('AB_12'), isFalse);
+    expect(isAllCapsUsername('Akshay'), isFalse);
+    expect(isAllCapsUsername('akshay'), isFalse);
+    expect(isAllCapsUsername('123_456'), isFalse);
+  });
 }

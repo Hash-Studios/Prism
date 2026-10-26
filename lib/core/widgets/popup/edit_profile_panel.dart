@@ -24,6 +24,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
@@ -69,6 +70,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   File? _pfp;
   File? _cover;
   final picker2 = ImagePicker();
+  bool _picking = false;
   late final Map<String, String> _linkValues = <String, String>{
     for (final ProfileLinkKind kind in profileLinkKinds) kind.name: app_state.prismUser.links[kind.name] ?? '',
   };
@@ -94,10 +96,19 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _pickImage(ValueSetter<File> onPicked) async {
+    if (_picking) return;
+    _picking = true;
     PrismHaptics.tap();
-    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => onPicked(File(pickedFile.path)));
+    try {
+      final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() => onPicked(File(pickedFile.path)));
+      }
+    } on PlatformException catch (error) {
+      // already_active means another screen has the gallery open, and the user is choosing there.
+      if (error.code != 'already_active') rethrow;
+    } finally {
+      _picking = false;
     }
   }
 
@@ -199,7 +210,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         updates['coverPhoto'] = await _uploadImage(_cover!, minWidth: 1080, ownerId: ownerId, ownsSession: ownsSession);
         if (!ownsSession()) return;
       }
-      if (bioEdit && bioController.text.isNotEmpty) {
+      if (bioEdit) {
         updates['bio'] = bioController.text;
       }
       if (nameEdit && nameController.text.isNotEmpty) {
@@ -246,7 +257,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     _usernameDebounce?.cancel();
     final bool longEnough = value.length >= minUsernameLength;
     final bool validChars = RegExp(r'^\w{1,30}$').hasMatch(value);
-    final bool valid = longEnough && validChars;
+    final bool allCaps = isAllCapsUsername(value);
+    final bool valid = longEnough && validChars && !allCaps;
     final int checkId = ++_usernameCheckId;
     setState(() {
       enabled = valid;
@@ -257,6 +269,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           ? context.l10n.coreEditUsernameMinLength(minUsernameLength)
           : !validChars
           ? context.l10n.coreEditUsernameChars
+          : allCaps
+          ? context.l10n.coreEditUsernameAllCaps
           : null;
       isCheckingUsername = valid && value != app_state.prismUser.username;
       usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
@@ -461,7 +475,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               ),
                             ),
                       onChanged: (value) => setState(() {
-                        bioEdit = value.isNotEmpty && value != app_state.prismUser.bio;
+                        bioEdit = value != app_state.prismUser.bio;
                       }),
                     ),
                     const SizedBox(height: fieldGap),

@@ -1,6 +1,10 @@
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 
+/// True when the name shouts: three or more ASCII letters and no lowercase ASCII letter.
+bool isAllCapsUsername(String username) =>
+    RegExp('[A-Za-z]').allMatches(username).length >= 3 && !RegExp('[a-z]').hasMatch(username);
+
 /// Canonical usernames are published only by the server's reservation transaction.
 class UsernameService {
   UsernameService({Future<Object?> Function(Map<String, Object?> data)? request}) : _request = request ?? _call;

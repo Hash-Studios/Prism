@@ -29,6 +29,7 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
+import 'package:Prism/features/public_profile/views/widgets/profile_bio_text.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
@@ -306,6 +307,22 @@ class _ProfileChildState extends State<_ProfileChild> {
           result: launched ? EventResultValue.success : EventResultValue.failure,
           reason: launched ? null : AnalyticsReasonValue.error,
           sourceContext: 'profile_screen_link_chip',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openBioLink(Uri uri) async {
+    _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_screen_bio_link');
+    final bool launched = await _openProfileLink(uri.toString());
+    unawaited(
+      analytics.track(
+        ExternalLinkOpenResultEvent(
+          surface: AnalyticsSurfaceValue.profileScreen,
+          destination: LinkDestinationValue.external,
+          result: launched ? EventResultValue.success : EventResultValue.failure,
+          reason: launched ? null : AnalyticsReasonValue.error,
+          sourceContext: 'profile_screen_bio_link',
         ),
       ),
     );
@@ -689,12 +706,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                       if (_profile.bio.isNotEmpty) ...<Widget>[
                         SizedBox(
                           width: headerWidth * 0.72,
-                          child: Text(
-                            _profile.bio,
-                            textAlign: TextAlign.center,
-                            // 2 lines: bios up to 150 chars deserve more space.
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          child: ProfileBioText(
+                            bio: _profile.bio,
                             style: TextStyle(
                               fontFamily: PrismFonts.proximaNova,
                               color: cs.onSurface.withValues(alpha: 0.65),
@@ -702,6 +715,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               fontWeight: FontWeight.normal,
                               height: 1.45,
                             ),
+                            onOpenLink: _openBioLink,
                           ),
                         ),
                         const SizedBox(height: 2),

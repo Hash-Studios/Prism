@@ -3,6 +3,7 @@ part of 'theme_bloc.j.dart';
 @freezed
 abstract class ThemeEvent with _$ThemeEvent {
   const factory ThemeEvent.started() = _Started;
+  const factory ThemeEvent.accountSynced({required ThemePreferences preferences}) = _AccountSynced;
   const factory ThemeEvent.lightThemeChanged({required String themeId}) = _LightThemeChanged;
   const factory ThemeEvent.lightAccentChanged({required int accentColorValue}) = _LightAccentChanged;
   const factory ThemeEvent.darkThemeChanged({required String themeId, ThemeMode? mode}) = _DarkThemeChanged;

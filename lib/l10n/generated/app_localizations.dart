@@ -4299,6 +4299,12 @@ abstract class AppLocalizations {
   /// **'Use letters, numbers and underscores only.'**
   String get coreEditUsernameChars;
 
+  /// No description provided for @coreEditUsernameAllCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least one lowercase letter.'**
+  String get coreEditUsernameAllCaps;
+
   /// Username minimum length validation error.
   ///
   /// In en, this message translates to:
@@ -4892,6 +4898,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{days} day streak, next reward {coins} coins'**
   String coreStreakSemantics(int days, int coins);
+
+  /// Label for the custom accent color option.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom color'**
+  String get coreCustomAccent;
+
+  /// Label for the hex color code text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Hex code'**
+  String get coreCustomAccentHex;
+
+  /// Label for the hue slider of the custom accent color picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Hue'**
+  String get coreCustomAccentHue;
+
+  /// Label for the saturation slider of the custom accent color picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturation'**
+  String get coreCustomAccentSaturation;
+
+  /// Label for the lightness slider of the custom accent color picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Lightness'**
+  String get coreCustomAccentLightness;
+
+  /// Error shown when the hex color code is not 6 hex digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6 hex digits, like #E57697.'**
+  String get coreCustomAccentInvalidHex;
+
+  /// Warning shown when the custom accent is too close to the theme background.
+  ///
+  /// In en, this message translates to:
+  /// **'This color is hard to see on this theme. Pick a lighter or darker shade.'**
+  String get coreCustomAccentLowContrast;
+
+  /// Button label that applies the custom accent color.
+  ///
+  /// In en, this message translates to:
+  /// **'Use color'**
+  String get coreCustomAccentApply;
 
   /// Accessibility label for a selectable system accent colour.
   ///
@@ -14112,6 +14166,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark Themes'**
   String get wallpaperThemeDarkThemes;
+
+  /// Button label that sets a wallpaper color as the app accent.
+  ///
+  /// In en, this message translates to:
+  /// **'Use as app accent'**
+  String get wallpaperUseAsAppAccent;
+
+  /// Snackbar message shown after the app accent changes from a wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'App accent updated'**
+  String get wallpaperAppAccentUpdated;
 
   /// Section title for choosing the light theme accent colour.
   ///

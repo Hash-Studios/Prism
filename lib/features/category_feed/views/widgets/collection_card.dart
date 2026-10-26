@@ -1,8 +1,8 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_cover.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/category_feed/views/widgets/premium_tile_badge.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 enum CollectionCardKind { collection, category }
@@ -126,11 +126,10 @@ class _Cover extends StatelessWidget {
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     return LayoutBuilder(
       builder: (context, constraints) => Image(
-        image: ResizeImage(
-          CachedNetworkImageProvider(url),
-          height: (constraints.maxHeight * dpr).round().clamp(1, 4096),
-        ),
+        image: ResizeImage(coverImageProvider(url), height: (constraints.maxHeight * dpr).round().clamp(1, 4096)),
         fit: BoxFit.cover,
+        // The card's base colour shows through, so a cover that cannot load is a calm empty card.
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) => wasSynchronouslyLoaded
             ? child
             : AnimatedOpacity(

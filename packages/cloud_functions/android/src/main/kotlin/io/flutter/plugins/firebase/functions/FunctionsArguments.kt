@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 package io.flutter.plugins.firebase.functions
 
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.FirebaseFunctionsException
 import com.google.firebase.functions.HttpsCallableOptions
@@ -66,16 +67,17 @@ internal fun FirebaseFunctions.callable(arguments: Map<*, *>): HttpsCallableRefe
 }
 
 internal fun functionsError(error: Throwable): FlutterError {
-  val functionsException = generateSequence(error) { it.cause }
-    .filterIsInstance<FirebaseFunctionsException>().firstOrNull()
+  val causes = generateSequence(error) { it.cause }
+  val functionsException = causes.filterIsInstance<FirebaseFunctionsException>().firstOrNull()
   var code = functionsException?.code?.name ?: if (error is IllegalArgumentException) {
     "INVALID_ARGUMENT"
   } else {
     "UNKNOWN"
   }
   var message = functionsException?.message ?: error.message ?: code
-  val cause = functionsException?.cause
-  if (cause is IOException) {
+  // Offline, the SDK fails its auth token fetch before the call and wraps that in a Tasks.whenAll ExecutionException.
+  val cause = functionsException?.cause ?: causes.firstOrNull { it is FirebaseNetworkException }
+  if (cause is IOException || cause is FirebaseNetworkException) {
     code = if (cause.message == "Canceled" ||
       (cause is InterruptedIOException && cause.message == "timeout")) {
       "DEADLINE_EXCEEDED"

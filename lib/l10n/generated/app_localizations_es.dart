@@ -2432,6 +2432,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreEditUsernameChars => 'Usa solo letras, números y guiones bajos.';
 
   @override
+  String get coreEditUsernameAllCaps => 'Usa al menos una letra minúscula.';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);
@@ -2833,6 +2836,30 @@ class AppLocalizationsEs extends AppLocalizations {
 
     return 'Racha de $daysString días; próxima recompensa: $coinsString monedas';
   }
+
+  @override
+  String get coreCustomAccent => 'Color personalizado';
+
+  @override
+  String get coreCustomAccentHex => 'Código hexadecimal';
+
+  @override
+  String get coreCustomAccentHue => 'Tono';
+
+  @override
+  String get coreCustomAccentSaturation => 'Saturación';
+
+  @override
+  String get coreCustomAccentLightness => 'Luminosidad';
+
+  @override
+  String get coreCustomAccentInvalidHex => 'Introduce 6 dígitos hexadecimales, como #E57697.';
+
+  @override
+  String get coreCustomAccentLowContrast => 'Este color se ve mal en este tema. Elige un tono más claro u oscuro.';
+
+  @override
+  String get coreCustomAccentApply => 'Usar color';
 
   @override
   String coreThemeAccentSemanticLabel(int index, int count) {
@@ -9093,6 +9120,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperThemeDarkThemes => 'Temas oscuros';
+
+  @override
+  String get wallpaperUseAsAppAccent => 'Usar como color de acento de la app';
+
+  @override
+  String get wallpaperAppAccentUpdated => 'Color de acento de la app actualizado';
 
   @override
   String get wallpaperThemeLightAccent => 'Color de acento claro';

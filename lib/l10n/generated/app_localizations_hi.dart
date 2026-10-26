@@ -2419,6 +2419,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreEditUsernameChars => 'सिर्फ़ अक्षर, अंक और अंडरस्कोर इस्तेमाल करें।';
 
   @override
+  String get coreEditUsernameAllCaps => 'कम-से-कम एक छोटा अक्षर इस्तेमाल करें।';
+
+  @override
   String coreEditUsernameMinLength(int length) {
     final intl.NumberFormat lengthNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String lengthString = lengthNumberFormat.format(length);
@@ -2830,6 +2833,30 @@ class AppLocalizationsHi extends AppLocalizations {
 
     return '$daysString दिन की स्ट्रीक, अगला इनाम $coinsString कॉइन';
   }
+
+  @override
+  String get coreCustomAccent => 'कस्टम रंग';
+
+  @override
+  String get coreCustomAccentHex => 'हेक्स कोड';
+
+  @override
+  String get coreCustomAccentHue => 'रंगत';
+
+  @override
+  String get coreCustomAccentSaturation => 'संतृप्ति';
+
+  @override
+  String get coreCustomAccentLightness => 'चमक';
+
+  @override
+  String get coreCustomAccentInvalidHex => '#E57697 जैसे 6 हेक्स अंक डालें।';
+
+  @override
+  String get coreCustomAccentLowContrast => 'यह रंग इस थीम पर साफ़ नहीं दिखता। कोई हल्का या गहरा शेड चुनें।';
+
+  @override
+  String get coreCustomAccentApply => 'रंग इस्तेमाल करें';
 
   @override
   String coreThemeAccentSemanticLabel(int index, int count) {
@@ -9114,6 +9141,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperThemeDarkThemes => 'गहरी थीम';
+
+  @override
+  String get wallpaperUseAsAppAccent => 'ऐप ऐक्सेंट के रूप में इस्तेमाल करें';
+
+  @override
+  String get wallpaperAppAccentUpdated => 'ऐप ऐक्सेंट अपडेट हो गया';
 
   @override
   String get wallpaperThemeLightAccent => 'हल्के रंग का ऐक्सेंट';
