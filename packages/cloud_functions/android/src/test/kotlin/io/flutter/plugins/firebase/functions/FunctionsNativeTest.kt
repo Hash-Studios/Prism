@@ -2,6 +2,7 @@ package io.flutter.plugins.firebase.functions
 
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.functions.FirebaseFunctionsException
 import com.google.firebase.functions.HttpsCallableOptions
 import com.google.firebase.functions.HttpsCallableReference
@@ -22,6 +23,7 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import java.net.URL
 import java.util.Locale
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 private fun <T : Any> eq(value: T): T = Mockito.eq(value) ?: value
@@ -73,6 +75,12 @@ internal class FunctionsNativeTest {
     } finally {
       Locale.setDefault(previous)
     }
+  }
+
+  @Test internal fun offlineTokenFetchFailuresAreUnavailable() {
+    val error = functionsError(
+      ExecutionException("1 out of 2 underlying tasks failed", FirebaseNetworkException("offline")))
+    assertEquals(mapOf("code" to "unavailable", MESSAGE_KEY to "UNAVAILABLE"), error.details)
   }
 
   @Test internal fun streamFailuresAreErrorsAndCloseExactlyOnce() {
