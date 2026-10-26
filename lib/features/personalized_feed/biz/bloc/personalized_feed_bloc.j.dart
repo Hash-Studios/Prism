@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -83,10 +84,10 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   /// Runs beside the feed load, so the carousel paints first and gains the Drop page when it arrives. A failed
-  /// fetch keeps the Drop already on screen.
+  /// fetch keeps the Drop already on screen. Guests get no Drop page: Drops are for signed-in users only.
   Future<void> _onLiveDropRequested(_LiveDropRequested event, Emitter<PersonalizedFeedState> emit) async {
     final int request = ++_liveDropRequest;
-    if (!EconomyConfig.notifier.value.flags.dropsEnabled) {
+    if (!EconomyConfig.notifier.value.flags.dropsEnabled || !app_state.prismUser.loggedIn) {
       if (state.liveDrop != null) emit(state.copyWith(liveDrop: null));
       return;
     }

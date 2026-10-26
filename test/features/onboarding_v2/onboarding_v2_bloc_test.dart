@@ -126,7 +126,7 @@ void main() {
   late _MockFirebaseRemoteConfig remoteConfig;
   late _MockAiGenerationRepository aiRepository;
   late FakeAppAnalytics analytics;
-  late Completer<Result<List<OnboardingStarterCreatorEntity>>> pendingStarterPackLoad;
+  late Completer<OnboardingWallpaperVm?> pendingWallpaperLoad;
   late Completer<AppLocalizationsEn> pendingLocalizations;
   late Completer<void> localizationsLoadStarted;
 
@@ -891,8 +891,8 @@ void main() {
     'a late initial load cannot replace a wallpaper generated after the user skips ahead',
     setUp: () {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
-      pendingStarterPackLoad = Completer<Result<List<OnboardingStarterCreatorEntity>>>();
-      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer((_) => pendingStarterPackLoad.future);
+      pendingWallpaperLoad = Completer<OnboardingWallpaperVm?>();
+      when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((_) => pendingWallpaperLoad.future);
       when(
         () => aiRepository.generate(
           prompt: any(named: 'prompt'),
@@ -918,7 +918,7 @@ void main() {
       await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
       bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
       await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.firstWallpaper);
-      pendingStarterPackLoad.complete(Result.success(<OnboardingStarterCreatorEntity>[]));
+      pendingWallpaperLoad.complete(null);
       await bloc.stream.firstWhere((state) => state.loadStatus == LoadStatus.success);
     },
     verify: (bloc) {
@@ -1477,13 +1477,16 @@ void main() {
   group('starter pack and interests skipping', () {
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
       'a starter pack with fewer creators than the minimum can continue once all are picked',
-      setUp: () => when(
-        () => fetchStarterPackUseCase(const NoParams()),
-      ).thenAnswer((_) async => Result.success(<OnboardingStarterCreatorEntity>[_creator(0), _creator(1)])),
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => fetchStarterPackUseCase(const NoParams()),
+        ).thenAnswer((_) async => Result.success(<OnboardingStarterCreatorEntity>[_creator(0), _creator(1)]));
+      },
       build: buildBloc,
       act: (bloc) async {
         bloc.add(const OnboardingV2Event.started());
-        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+        await bloc.stream.firstWhere((s) => s.starterPackData.creators.isNotEmpty);
       },
       verify: (bloc) {
         expect(bloc.state.starterPackData.requiredCount, 2);
@@ -1549,7 +1552,7 @@ void main() {
         await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.loading);
         await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
       },
-      verify: (_) => verify(() => fetchStarterPackUseCase(const NoParams())).called(2),
+      verify: (_) => verify(() => firstWallpaperService.recommendForOnboarding(any())).called(2),
     );
   });
 
