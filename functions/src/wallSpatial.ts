@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
-import {checkedImageUrl} from "./wallColors";
+import {checkedImageUrl, fetchImageBuffer} from "./wallColors";
 import {type DepthImage, falKey} from "./wallDepth";
 import {R2Storage, r2Env} from "./r2Storage";
 
@@ -144,13 +144,23 @@ export async function wallSpatialFor(
 ): Promise<WallSpatial | undefined> {
   try {
     if (!WALL_ID.test(wallId)) throw new Error("wall id is not valid");
-    const imageUrl = "url" in image ? checkedImageUrl(image.url).href :
-      `data:image/jpeg;base64,${image.jpeg.toString("base64")}`;
-    const {png, pixels} = await spatialMap(await falDepth(imageUrl, deps.key(), deps.fetch));
+    const key = deps.key();
+    if (key.trim() === "") throw new Error("FAL_API_KEY is empty");
+    let imageUrl: string;
+    if ("url" in image) {
+      const bytes = await fetchImageBuffer(checkedImageUrl(image.url).href, deps.fetch);
+      const sharp = (await import("sharp")).default;
+      const jpeg = await sharp(bytes).rotate().jpeg().toBuffer();
+      imageUrl = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+    } else {
+      imageUrl = `data:image/jpeg;base64,${image.jpeg.toString("base64")}`;
+    }
+    const {png, pixels} = await spatialMap(await falDepth(imageUrl, key, deps.fetch));
     const score = spatialScore(pixels);
     const tier = spatialTierFor(score);
     logger.info("wallSpatial: scored", {wallId, tier, ...score});
-    const map = await deps.store(`${deps.prefix ?? SPATIAL_MAP_PREFIX}/${wallId}.png`, png);
+    const mapHash = createHash("sha256").update(png).digest("hex");
+    const map = await deps.store(`${deps.prefix ?? SPATIAL_MAP_PREFIX}/${wallId}-${mapHash}.png`, png);
     return {tier, map, v: SPATIAL_VERSION};
   } catch (error) {
     logger.warn("wallSpatial: could not check the Spatial Scene", {

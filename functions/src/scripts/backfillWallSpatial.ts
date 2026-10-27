@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 
+import {falKey} from "../wallDepth";
 import {
   SPATIAL_VERSION,
   type SpatialStore,
@@ -50,6 +51,19 @@ export function needsSpatial(spatial: unknown, force: boolean): boolean {
 /** A store for dry runs without --map-prefix: it saves nothing, so a plain dry run never writes to R2. */
 const dryRunStore: SpatialStore = async (object) => `dry-run:${object}`;
 
+/** Default map storage follows the Firestore mode; importing the library in dry-run mode cannot write to R2. */
+export function spatialBackfillDeps(options: SpatialBackfillOptions, deps?: WallSpatialDeps): WallSpatialDeps {
+  if (options.apply && options.mapPrefix) {
+    throw new Error("--map-prefix is for dry runs only");
+  }
+  return deps ?? {
+    fetch: (url, init) => fetch(url, init),
+    key: () => falKey.value(),
+    store: options.apply ? storeSpatialMap : dryRunStore,
+    prefix: options.mapPrefix,
+  };
+}
+
 /**
  * Sets walls.spatial on reviewed walls, one batch at a time in document id order.
  * Logs one line per wall and the last id of each batch. Pass it as --start-after=<id> to resume.
@@ -61,6 +75,7 @@ export async function backfillWallSpatial(
   log: (line: string) => void = console.log,
 ): Promise<SpatialBackfillCounts> {
   const counts: SpatialBackfillCounts = {scanned: 0, skipped: 0, checked: 0, failed: 0, written: 0, tiers: {}};
+  const spatialDeps = spatialBackfillDeps(options, deps);
   const writer = db.bulkWriter();
   let cursor = options.startAfter;
   let left = options.limit ?? Infinity;
@@ -91,7 +106,7 @@ export async function backfillWallSpatial(
     for (let i = 0; i < pending.length; i += CONCURRENCY) {
       await Promise.all(pending.slice(i, i + CONCURRENCY).map(async (doc) => {
         const url = String(doc.get("wallpaper_url") || doc.get("wallpaper_thumb") || "").trim();
-        const spatial = url ? await wallSpatialFor(doc.id, {url}, deps) : undefined;
+        const spatial = url ? await wallSpatialFor(doc.id, {url}, spatialDeps) : undefined;
         if (!spatial) {
           counts.failed += 1;
           log(`${doc.id} failed`);

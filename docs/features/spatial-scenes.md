@@ -25,14 +25,14 @@ interface WallSpatial {
 
 - A missing `spatial` field means that nobody checked the wall.
 - Clients cannot write `spatial`. `firestore.rules` keeps it server and admin owned, like `depth`.
-- Maps live in the public R2 preview bucket at `spatial/v1/<wallId>.png`, next to the wall previews.
+- Maps live in the public R2 preview bucket at `spatial/v1/<wallId>-<sha256-of-map-png>.png`, next to the wall previews. A changed map gets a new URL, so caches cannot serve stale bytes after a force run or retry.
 
 ## Detector
 
 `functions/src/wallSpatial.ts`, `wallSpatialFor(wallId, {url} | {jpeg})`:
 
-1. It accepts a wall URL only on https and on an allowed host (`checkedImageUrl` in `wallColors.ts`).
-2. It sends the image to fal Depth Anything v2 (`fal-ai/image-preprocessors/depth-anything/v2`) with `FAL_API_KEY`. fal answers with a PNG on `*.fal.media`; any other host is an error.
+1. It accepts a wall URL only on https and on an allowed host (`checkedImageUrl` in `wallColors.ts`), downloads it with redirects checked against the same host allowlist, and converts the bytes to a JPEG data URI. A URL passed to fal would require fal to fetch the source and would bypass Prism's redirect checks.
+2. It sends the data URI to fal Depth Anything v2 (`fal-ai/image-preprocessors/depth-anything/v2`) with `FAL_API_KEY`. fal answers with a PNG on `*.fal.media`; any other host is an error.
 3. It resizes the map to 512 px on the long side, makes it grey and stretches it to the full range.
 4. It scores the split with Otsu's method: `split` (between-class variance over total variance), `gap` (near mean minus far mean) and `near` (share of near pixels). A smooth gradient has a split of 0.75.
 5. It maps the score to a tier. The thresholds are a first guess to tune against real iPhones:
@@ -61,7 +61,7 @@ FAL_API_KEY=<key> <R2 env> node lib/scripts/backfillWallSpatial.js --limit=10 --
 FAL_API_KEY=<key> <R2 env> node lib/scripts/backfillWallSpatial.js --apply                        # writes spatial
 ```
 
-- A dry run writes nothing to Firestore and, without `--map-prefix`, nothing to R2. It still calls fal for every wall it checks.
+- A dry run writes nothing to Firestore and, without `--map-prefix`, nothing to R2. It still downloads each source image and calls fal for every wall it checks. This library behavior is also the default when `backfillWallSpatial` is imported and called without injected dependencies.
 - `--apply` with `--map-prefix` is refused, so test URLs never reach Firestore.
 - It skips walls with `spatial.v` at the current version. `--force` checks them again. `--limit`, `--batch` and `--start-after` work like the depth backfill.
 

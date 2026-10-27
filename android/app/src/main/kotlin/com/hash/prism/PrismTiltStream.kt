@@ -15,18 +15,22 @@ internal class PrismTiltStream(context: Context) : EventChannel.StreamHandler, S
     private var sink: EventChannel.EventSink? = null
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+        onCancel(null)
         val sensor = sensors?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         if (sensor == null) {
             events.error("NO_SENSOR", "This phone has no rotation-vector sensor", null)
             return
         }
         sink = events
-        sensors?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
+        if (sensors?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME) != true) {
+            onCancel(null)
+            events.error("SENSOR_FAILED", "The rotation-vector sensor could not start", null)
+        }
     }
 
     override fun onCancel(arguments: Any?) {
-        sensors?.unregisterListener(this)
         sink = null
+        sensors?.unregisterListener(this)
     }
 
     override fun onSensorChanged(event: SensorEvent) {

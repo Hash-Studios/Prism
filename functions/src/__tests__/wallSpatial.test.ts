@@ -24,10 +24,11 @@ async function twoLevelPng(): Promise<Buffer> {
   return sharp(twoLevelRaw(), {raw: {width: 64, height: 128, channels: 1}}).png().toBuffer();
 }
 
-function falFetch(calls: Array<{url: string; init: RequestInit}>, map: Buffer, mapUrl = MAP_URL) {
+function falFetch(calls: Array<{url: string; init: RequestInit}>, map: Buffer, mapUrl = MAP_URL, source = map) {
   return async (url: string, init: RequestInit): Promise<Response> => {
     calls.push({url, init});
     if (url.startsWith("https://fal.run/")) return Response.json({image: {url: mapUrl}});
+    if (url === WALL_URL) return new Response(new Uint8Array(source), {headers: {"content-type": "image/png"}});
     return new Response(new Uint8Array(map));
   };
 }
@@ -83,27 +84,75 @@ test("a split below the ok bar is none", () => {
   assert.equal(spatialTierFor({split: 0.7, gap: 0.6, near: 0.3}), "none");
 });
 
-test("a wall image gets its tier and a 512 px grey map stored under its wall id", async () => {
+test("a wall image gets its tier and a 512 px grey map stored under a content-addressed key", async () => {
   const calls: Array<{url: string; init: RequestInit}> = [];
   const stored: Array<{object: string; png: Buffer}> = [];
   const result = await wallSpatialFor("w1", {url: WALL_URL}, deps({
-    fetch: falFetch(calls, await twoLevelPng()),
+    fetch: falFetch(calls, await twoLevelPng(), MAP_URL, await twoLevelPng()),
     store: async (object, png) => {
       stored.push({object, png});
       return `https://img.example/${object}`;
     },
   }));
-  assert.deepEqual(result, {tier: "great", map: "https://img.example/spatial-test/v1/w1.png", v: 1});
+  assert.equal(result?.tier, "great");
+  assert.equal(result?.v, 1);
   assert.equal(stored.length, 1);
-  assert.equal(stored[0].object, "spatial-test/v1/w1.png");
+  assert.match(stored[0].object, /^spatial-test\/v1\/w1-[a-f0-9]{64}\.png$/);
+  assert.equal(result?.map, `https://img.example/${stored[0].object}`);
   const meta = await sharp(stored[0].png).metadata();
   assert.equal(meta.channels, 1);
   assert.equal(meta.depth, "uchar");
   assert.equal(Math.max(meta.width ?? 0, meta.height ?? 0), 512);
-  assert.equal(calls.length, 2);
-  assert.equal(calls[0].url, "https://fal.run/fal-ai/image-preprocessors/depth-anything/v2");
-  assert.deepEqual(JSON.parse(calls[0].init.body as string), {image_url: WALL_URL});
-  assert.deepEqual((calls[0].init.headers as Record<string, string>).Authorization, "Key k");
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0].url, WALL_URL);
+  assert.equal((calls[0].init as RequestInit).redirect, "manual");
+  assert.equal(calls[1].url, "https://fal.run/fal-ai/image-preprocessors/depth-anything/v2");
+  const request = JSON.parse(calls[1].init.body as string) as {image_url: string};
+  assert.match(request.image_url, /^data:image\/jpeg;base64,/);
+  assert.deepEqual((calls[1].init.headers as Record<string, string>).Authorization, "Key k");
+  assert.equal(calls[2].init.redirect, "error");
+});
+
+test("a changed map gets a new object key so force and retry cannot reuse stale bytes", async () => {
+  const first = await twoLevelPng();
+  const second = await sharp(Buffer.alloc(64 * 128, 128), {raw: {width: 64, height: 128, channels: 1}}).png().toBuffer();
+  const objects: string[] = [];
+  const store = async (object: string) => {
+    objects.push(object);
+    return `https://img.example/${object}`;
+  };
+  const firstResult = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: falFetch([], first, MAP_URL, first), store,
+  }));
+  const secondResult = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: falFetch([], second, MAP_URL, first), store,
+  }));
+  assert.notEqual(firstResult?.map, secondResult?.map);
+  assert.equal(new Set(objects).size, 2);
+});
+
+test("a source JPEG is auto-oriented before fal receives its data URI", async () => {
+  const sharp = (await import("sharp")).default;
+  const source = await sharp({create: {width: 64, height: 128, channels: 3, background: "red"}})
+    .jpeg().withMetadata({orientation: 6}).toBuffer();
+  const sourceMetadata = await sharp(source).metadata();
+  assert.equal(sourceMetadata.orientation, 6);
+  const calls: Array<{url: string; init: RequestInit}> = [];
+  const result = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: async (url, init) => {
+      calls.push({url, init});
+      if (url === WALL_URL) return new Response(new Uint8Array(source), {headers: {"content-type": "image/jpeg"}});
+      if (url.startsWith("https://fal.run/")) return Response.json({image: {url: MAP_URL}});
+      return new Response(new Uint8Array(await twoLevelPng()));
+    },
+  }));
+  assert.ok(result);
+  const request = JSON.parse(calls[1].init.body as string) as {image_url: string};
+  const normalized = Buffer.from(request.image_url.slice("data:image/jpeg;base64,".length), "base64");
+  const normalizedMetadata = await sharp(normalized).metadata();
+  assert.equal(normalizedMetadata.width, 128);
+  assert.equal(normalizedMetadata.height, 64);
+  assert.equal(normalizedMetadata.orientation, undefined);
 });
 
 test("a non-allowed wall host is rejected before any fetch", async () => {
@@ -112,6 +161,24 @@ test("a non-allowed wall host is rejected before any fetch", async () => {
   assert.equal(await wallSpatialFor("w1", {url: "https://evil.example.com/a.jpg"}, deps({fetch})), undefined);
   assert.equal(await wallSpatialFor("w1", {url: "http://raw.githubusercontent.com/a.jpg"}, deps({fetch})), undefined);
   assert.equal(calls.length, 0);
+});
+
+test("an allowed wall URL redirecting to a non-allowed host is rejected before fal", async () => {
+  const calls: Array<{url: string; init: RequestInit}> = [];
+  let stores = 0;
+  const result = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: async (url, init) => {
+      calls.push({url, init});
+      return new Response(null, {status: 302, headers: {location: "https://evil.example/secret"}});
+    },
+    store: async () => {
+      stores++;
+      return "";
+    },
+  }));
+  assert.equal(result, undefined);
+  assert.deepEqual(calls.map((call) => call.url), [WALL_URL]);
+  assert.equal(stores, 0);
 });
 
 test("a fal map host that is not fal.media is rejected and never stored", async () => {
@@ -125,6 +192,28 @@ test("a fal map host that is not fal.media is rejected and never stored", async 
     },
   }));
   assert.equal(result, undefined);
+  assert.equal(stores, 0);
+});
+
+test("a fal map redirect is not followed and the map is never stored", async () => {
+  const calls: Array<{url: string; init: RequestInit}> = [];
+  let stores = 0;
+  const result = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: async (url, init) => {
+      calls.push({url, init});
+      if (url === WALL_URL) return new Response(new Uint8Array(await twoLevelPng()));
+      if (url.startsWith("https://fal.run/")) return Response.json({image: {url: MAP_URL}});
+      return new Response(null, {status: 302, headers: {location: "https://evil.example/map.png"}});
+    },
+    store: async () => {
+      stores++;
+      return "";
+    },
+  }));
+  assert.equal(result, undefined);
+  assert.deepEqual(calls.map((call) => call.url), [WALL_URL,
+    "https://fal.run/fal-ai/image-preprocessors/depth-anything/v2", MAP_URL]);
+  assert.equal(calls[2].init.redirect, "error");
   assert.equal(stores, 0);
 });
 

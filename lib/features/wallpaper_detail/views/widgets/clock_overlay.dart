@@ -375,8 +375,10 @@ class _SpatialToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
     final Duration duration = context.motion(PrismDurations.fast);
+    final Color glassColor = on ? scheme.scrim.withValues(alpha: 0.6) : scheme.inverseSurface;
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -393,7 +395,7 @@ class _SpatialToggle extends StatelessWidget {
             child: PrismGlass(
               borderRadius: _ModeToggle._height / 2,
               thickness: 16,
-              glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.6),
+              glassColor: glassColor,
               child: AnimatedContainer(
                 duration: duration,
                 curve: PrismCurves.enter,
@@ -401,7 +403,7 @@ class _SpatialToggle extends StatelessWidget {
                 margin: const EdgeInsets.all(_ModeToggle._inset),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: on ? PrismColors.onPrimary.withValues(alpha: 0.92) : Colors.transparent,
+                  color: on ? scheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(_ModeToggle._height / 2 - _ModeToggle._inset),
                 ),
                 alignment: Alignment.center,
@@ -411,7 +413,7 @@ class _SpatialToggle extends StatelessWidget {
                     curve: PrismCurves.enter,
                     style: PrismTextStyles.rowTitle(
                       context,
-                    ).copyWith(color: on ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88)),
+                    ).copyWith(color: on ? scheme.onPrimary : scheme.onInverseSurface),
                     child: Text(context.l10n.wallpaperSpatialPreviewLabel),
                   ),
                 ),

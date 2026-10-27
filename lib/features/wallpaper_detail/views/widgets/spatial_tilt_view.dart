@@ -70,14 +70,16 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
   Offset? _baseline;
   bool _noSensor = false;
   bool _reduceMotion = false;
-  bool _foreground = true;
+  bool _foreground = false;
   SpatialTiltMode? _reportedMode;
+  int _imageGeneration = 0;
 
   SpatialTiltMode get _mode => _reduceMotion || _noSensor ? SpatialTiltMode.drag : SpatialTiltMode.sensor;
 
   @override
   void initState() {
     super.initState();
+    _foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     unawaited(_loadShader());
   }
@@ -88,17 +90,45 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
     _reduceMotion = context.reduceMotion;
     final ImageConfiguration config = createLocalImageConfiguration(context);
     if (_streams.isEmpty) {
-      final double width = MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context);
-      _resolve(ResizeImage(widget.image, width: width.round(), policy: ResizeImagePolicy.fit), config, (img) {
-        _image = img;
-      });
-      _resolve(
-        widget.mapProvider ?? ResizeImage(NetworkImage(widget.mapUrl), width: _mapDecodeWidth),
-        config,
-        (img) => _map = img,
-      );
+      _loadImages(config);
     }
     _syncSensor();
+  }
+
+  @override
+  void didUpdateWidget(covariant SpatialTiltView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tiltSource != widget.tiltSource) {
+      unawaited(_sensor?.cancel());
+      _sensor = null;
+      _baseline = null;
+      _noSensor = false;
+      _syncSensor();
+    }
+    if (oldWidget.image != widget.image ||
+        oldWidget.mapUrl != widget.mapUrl ||
+        oldWidget.mapProvider != widget.mapProvider) {
+      _clearImages();
+      _loadImages(createLocalImageConfiguration(context));
+    }
+  }
+
+  void _loadImages(ImageConfiguration config) {
+    final int generation = _imageGeneration;
+    final double width = MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context);
+    _resolve(ResizeImage(widget.image, width: width.round(), policy: ResizeImagePolicy.fit), config, generation, (img) {
+      _image?.dispose();
+      _image = img;
+    });
+    _resolve(
+      widget.mapProvider ?? ResizeImage(NetworkImage(widget.mapUrl), width: _mapDecodeWidth),
+      config,
+      generation,
+      (img) {
+        _map?.dispose();
+        _map = img;
+      },
+    );
   }
 
   Future<void> _loadShader() async {
@@ -111,16 +141,30 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
     }
   }
 
-  void _resolve(ImageProvider provider, ImageConfiguration config, void Function(ui.Image) onImage) {
+  void _resolve(ImageProvider provider, ImageConfiguration config, int generation, void Function(ui.Image) onImage) {
     final ImageStream stream = provider.resolve(config);
     final ImageStreamListener listener = ImageStreamListener((info, _) {
-      if (!mounted) return info.dispose();
-      setState(() => onImage(info.image.clone()));
+      final ui.Image image = info.image.clone();
       info.dispose();
+      if (!mounted || generation != _imageGeneration) return image.dispose();
+      setState(() => onImage(image));
     }, onError: (error, stackTrace) => logger.w('SpatialTiltView: image failed', error: error, stackTrace: stackTrace));
     stream.addListener(listener);
     _streams.add(stream);
     _listeners.add(listener);
+  }
+
+  void _clearImages() {
+    _imageGeneration++;
+    for (int i = 0; i < _streams.length; i++) {
+      _streams[i].removeListener(_listeners[i]);
+    }
+    _streams.clear();
+    _listeners.clear();
+    _image?.dispose();
+    _image = null;
+    _map?.dispose();
+    _map = null;
   }
 
   void _onLifecycle(AppLifecycleState state) {
@@ -195,11 +239,7 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
     _sensor = null;
     _lifecycle.dispose();
     _settle.dispose();
-    for (int i = 0; i < _streams.length; i++) {
-      _streams[i].removeListener(_listeners[i]);
-    }
-    _image?.dispose();
-    _map?.dispose();
+    _clearImages();
     _shader?.dispose();
     _tilt.dispose();
     super.dispose();
@@ -250,15 +290,15 @@ class _DragHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: BoxDecoration(color: scheme.scrim.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(color: scheme.inverseSurface, borderRadius: BorderRadius.circular(999)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.swipe_rounded, size: 18, color: Colors.white),
+            Icon(Icons.swipe_rounded, size: 18, color: scheme.onInverseSurface),
             const SizedBox(width: 8),
-            Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+            Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: scheme.onInverseSurface)),
           ],
         ),
       ),
