@@ -44,6 +44,7 @@ import UserNotifications
       binaryMessenger: messenger,
       api: PrismLiveActivityHostApiImpl(flutterApi: PrismLiveActivityFlutterApi(binaryMessenger: messenger))
     )
+    FlutterEventChannel(name: "prism/tilt", binaryMessenger: messenger).setStreamHandler(PrismTiltStream())
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,

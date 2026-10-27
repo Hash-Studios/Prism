@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -12,6 +14,7 @@ import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -37,6 +40,7 @@ class ClockOverlay extends StatefulWidget {
     this.wallpaperSource,
     this.thumbnailUrl,
     this.tint,
+    this.spatialMapUrl,
   });
 
   final String link;
@@ -50,6 +54,9 @@ class ClockOverlay extends StatefulWidget {
   /// The colour variation the user picked. When set, the image is shown with this hue.
   final Color? tint;
 
+  /// The wall's depth map. When set, a 3D toggle shows the wall with a tilt parallax.
+  final String? spatialMapUrl;
+
   @override
   State<ClockOverlay> createState() => _ClockOverlayState();
 }
@@ -59,6 +66,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
       ? ClockPreviewMode.lock
       : ClockPreviewMode.home;
   Color? _textColor;
+  bool _spatial = false;
   ImageStream? _sampleStream;
   ImageStreamListener? _sampleListener;
   Future<File?>? _localFileFuture;
@@ -208,43 +216,68 @@ class _ClockOverlayState extends State<ClockOverlay> {
     );
   }
 
+  void _trackSpatial(SpatialTiltMode mode) =>
+      analytics.track(SpatialPreviewOpenedEvent(wallId: widget.wallpaperId ?? '', tilt: mode.name));
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final Color textColor = _textColor ?? Theme.of(context).colorScheme.secondary;
     final bool lock = _mode == ClockPreviewMode.lock;
+    final String? spatialMap = widget.spatialMapUrl;
+    final Widget layers = Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        AnimatedSwitcher(
+          duration: context.motion(const Duration(milliseconds: 160)),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeOut.flipped,
+          layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+          child: lock
+              ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+              : HomePreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor),
+        ),
+        Semantics(
+          button: true,
+          label: context.l10n.wallpaperClosePreview,
+          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => Navigator.pop(context)),
+        ),
+      ],
+    );
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: Stack(
         children: <Widget>[
-          Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: context.motion(const Duration(milliseconds: 160)),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeOut.flipped,
-              layoutBuilder: (current, previous) =>
-                  Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
-              child: lock
-                  ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
-                  : HomePreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor),
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: context.l10n.wallpaperClosePreview,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.pop(context),
-              child: SizedBox(height: size.height, width: size.width),
-            ),
+          Positioned(
+            left: 0,
+            top: 0,
+            width: size.width,
+            height: size.height,
+            child: _spatial && spatialMap != null
+                ? SpatialTiltView(
+                    image: _provider,
+                    mapUrl: spatialMap,
+                    tint: widget.tint,
+                    onMode: _trackSpatial,
+                    child: layers,
+                  )
+                : Stack(fit: StackFit.expand, children: <Widget>[_image(context, size), layers]),
           ),
           Align(
             alignment: Alignment.bottomCenter,
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24),
-                child: _ModeToggle(mode: _mode, onChanged: (mode) => setState(() => _mode = mode)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    _ModeToggle(mode: _mode, onChanged: (mode) => setState(() => _mode = mode)),
+                    if (spatialMap != null) ...<Widget>[
+                      const SizedBox(width: PrismSpace.xs),
+                      _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -333,6 +366,64 @@ class _ModeToggle extends StatelessWidget {
   }
 }
 
+/// Turns the tilt parallax on and off. A glass circle that fills when on.
+class _SpatialToggle extends StatelessWidget {
+  const _SpatialToggle({required this.on, required this.onChanged});
+
+  final bool on;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
+    final Duration duration = context.motion(PrismDurations.fast);
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        toggled: on,
+        label: tooltip,
+        excludeSemantics: true,
+        onTap: () => onChanged(!on),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(!on),
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.5,
+            child: PrismGlass(
+              borderRadius: _ModeToggle._height / 2,
+              thickness: 16,
+              glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.6),
+              child: AnimatedContainer(
+                duration: duration,
+                curve: PrismCurves.enter,
+                constraints: const BoxConstraints(minWidth: _ModeToggle._height, minHeight: _ModeToggle._height),
+                margin: const EdgeInsets.all(_ModeToggle._inset),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: on ? PrismColors.onPrimary.withValues(alpha: 0.92) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(_ModeToggle._height / 2 - _ModeToggle._inset),
+                ),
+                alignment: Alignment.center,
+                child: PressScale(
+                  child: AnimatedDefaultTextStyle(
+                    duration: duration,
+                    curve: PrismCurves.enter,
+                    style: PrismTextStyles.rowTitle(
+                      context,
+                    ).copyWith(color: on ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88)),
+                    child: Text(context.l10n.wallpaperSpatialPreviewLabel),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Segment extends StatelessWidget {
   const _Segment({
     required this.label,
@@ -393,6 +484,7 @@ Future<void> pushClockPreview(
   WallpaperSource? wallpaperSource,
   String? thumbnailUrl,
   Color? tint,
+  String? spatialMapUrl,
 }) {
   return Navigator.push<void>(
     context,
@@ -408,6 +500,7 @@ Future<void> pushClockPreview(
           wallpaperSource: wallpaperSource,
           thumbnailUrl: thumbnailUrl,
           tint: tint,
+          spatialMapUrl: spatialMapUrl,
         ),
       ),
       fullscreenDialog: true,

@@ -2847,3 +2847,33 @@ class StreakLifecycleEvent extends AnalyticsEvent {
     };
   }
 }
+
+class SpatialPreviewOpenedEvent extends AnalyticsEvent {
+  const SpatialPreviewOpenedEvent({required this.wallId, required this.tilt});
+
+  final String wallId;
+  final String tilt;
+
+  @override
+  String get eventName => 'spatial_preview_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'tilt': tilt};
+  }
+}
+
+class SpatialGuideOpenedEvent extends AnalyticsEvent {
+  const SpatialGuideOpenedEvent({required this.wallId, required this.tier});
+
+  final String wallId;
+  final String tier;
+
+  @override
+  String get eventName => 'spatial_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'tier': tier};
+  }
+}
