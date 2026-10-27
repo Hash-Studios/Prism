@@ -236,6 +236,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     WallpaperSource? wallpaperSource,
     String? thumbnailUrl,
     Color? tint,
+    Widget Function(WallpaperTarget, String)? setAction,
     List<PageRouteInfo>? children,
   }) : super(
          ClockPreviewRoute.name,
@@ -247,6 +248,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            wallpaperSource: wallpaperSource,
            thumbnailUrl: thumbnailUrl,
            tint: tint,
+           setAction: setAction,
          ),
          initialChildren: children,
        );
@@ -265,6 +267,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         wallpaperSource: args.wallpaperSource,
         thumbnailUrl: args.thumbnailUrl,
         tint: args.tint,
+        setAction: args.setAction,
       );
     },
   );
@@ -279,6 +282,7 @@ class ClockPreviewRouteArgs {
     this.wallpaperSource,
     this.thumbnailUrl,
     this.tint,
+    this.setAction,
   });
 
   final Key? key;
@@ -295,9 +299,11 @@ class ClockPreviewRouteArgs {
 
   final Color? tint;
 
+  final Widget Function(WallpaperTarget, String)? setAction;
+
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, setAction: $setAction}';
   }
 
   @override
