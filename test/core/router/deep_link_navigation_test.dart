@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,6 +77,67 @@ void main() {
     final route = await navigation.routeForUri(Uri.parse('https://prismwalls.com/l/u5lmmUq0'));
 
     expect(route, isA<WallpaperDetailRoute>());
+  });
+
+  test('id-only short links open the exact wallpaper detail route args', () async {
+    final http.Client client = MockClient((request) async {
+      expect(request.url.toString(), 'https://prismwalls.com/api/links/short-code');
+      return http.Response(
+        jsonEncode(<String, dynamic>{'canonical_url': 'https://prismwalls.com/share?id=short-wall&provider=Prism'}),
+        200,
+        headers: const <String, String>{'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final route = await DeepLinkNavigation(
+      httpClient: client,
+    ).routeForUri(Uri.parse('https://prismwalls.com/l/short-code'));
+
+    expect(route, isA<WallpaperDetailRoute>());
+    final WallpaperDetailRouteArgs args = (route! as WallpaperDetailRoute).args!;
+    expect(args.wallId, 'short-wall');
+    expect(args.source, WallpaperSource.prism);
+    expect(args.thumbnailUrl, isEmpty);
+    expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
+  });
+
+  test('direct share links route by id with the exact provider source', () async {
+    for (final (String provider, String wallId, WallpaperSource source) in <(String, String, WallpaperSource)>[
+      ('Prism', 'prism-wall', WallpaperSource.prism),
+      ('Wallhaven', 'wallhaven-wall', WallpaperSource.wallhaven),
+      ('Pexels', 'pexels-wall', WallpaperSource.pexels),
+    ]) {
+      final route = await const DeepLinkNavigation().routeForUri(
+        Uri.parse('https://prismwalls.com/share?id=$wallId&provider=$provider'),
+      );
+
+      expect(route, isA<WallpaperDetailRoute>(), reason: provider);
+      final WallpaperDetailRouteArgs args = (route! as WallpaperDetailRoute).args!;
+      expect(args.wallId, wallId, reason: provider);
+      expect(args.source, source, reason: provider);
+      expect(args.thumbnailUrl, isEmpty, reason: provider);
+      expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView, reason: provider);
+      expect(args.entity, isNull, reason: provider);
+      expect(args.localFile, isNull, reason: provider);
+    }
+  });
+
+  test('a supplied full image URL cannot become a wallpaper entity or local-file route', () async {
+    final route = await const DeepLinkNavigation().routeForUri(
+      Uri.parse(
+        'https://prismwalls.com/share?id=hostile-wall&source=wallhaven&url=https%3A%2F%2Fevil.example%2Ffull.jpg',
+      ),
+    );
+
+    expect(route, isA<WallpaperDetailRoute>());
+    final WallpaperDetailRouteArgs args = (route! as WallpaperDetailRoute).args!;
+    expect(args.wallId, 'hostile-wall');
+    expect(args.source, WallpaperSource.wallhaven);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
   });
 
   test('returns null for unknown links', () async {

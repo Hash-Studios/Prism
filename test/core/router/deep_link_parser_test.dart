@@ -20,6 +20,38 @@ void main() {
     expect(share.thumbnailUrl, 'https://thumb');
   });
 
+  test('parses share ids and provider aliases without requiring image URLs', () {
+    for (final (String provider, String wallId, WallpaperSource source) in <(String, String, WallpaperSource)>[
+      ('Prism', 'prism-id', WallpaperSource.prism),
+      ('Wallhaven', 'wallhaven-id', WallpaperSource.wallhaven),
+      ('Pexels', 'pexels-id', WallpaperSource.pexels),
+    ]) {
+      final String link = 'https://prismwalls.com/share?id=$wallId&provider=$provider';
+      final ShareLinkIntent share = parser.parse(Uri.parse(link)) as ShareLinkIntent;
+
+      expect(share.wallId, wallId, reason: link);
+      expect(share.source, source, reason: link);
+      expect(share.wallpaperUrl, isEmpty, reason: link);
+      expect(share.thumbnailUrl, isEmpty, reason: link);
+    }
+
+    final Uri transformed = parser.transform(Uri.parse('prism://share/custom-id'));
+    final ShareLinkIntent customScheme = parser.parse(transformed) as ShareLinkIntent;
+    expect(customScheme.wallId, 'custom-id');
+    expect(customScheme.wallpaperUrl, isEmpty);
+    expect(customScheme.thumbnailUrl, isEmpty);
+  });
+
+  test('image URLs cannot make a share link valid without a non-blank id', () {
+    for (final String link in <String>[
+      'https://prismwalls.com/share?thumb=https%3A%2F%2Fevil.example%2Fthumb.jpg',
+      'https://prismwalls.com/share?id=%20%20&url=https%3A%2F%2Fevil.example%2Ffull.jpg',
+      'prism://share?thumb=https%3A%2F%2Fevil.example%2Fthumb.jpg&url=https%3A%2F%2Fevil.example%2Ffull.jpg',
+    ]) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>(), reason: link);
+    }
+  });
+
   test('parses canonical user path link', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/user/alice'));
 

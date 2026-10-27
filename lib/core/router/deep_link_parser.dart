@@ -94,7 +94,7 @@ class DeepLinkParser {
         uri.queryParameters['wallpaper_thumb'],
         wallpaperUrl,
       ]);
-      if (wallId.isEmpty || (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty)) {
+      if (wallId.isEmpty) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShareLinkIntent(
