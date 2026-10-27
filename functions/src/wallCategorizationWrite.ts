@@ -5,6 +5,7 @@ import {DEFAULT_CATEGORY, DEFAULT_COLLECTION} from "./wallCategory";
 import {collectionFor} from "./wallCollections";
 import {premiumCollections} from "./wallOfTheDay";
 import {type WallDepth} from "./wallDepth";
+import {type WallSpatial} from "./wallSpatial";
 
 /** Both entrypoints commit remote image results against the same incarnation and unchanged source. */
 export async function writeWallCategorization(input: {
@@ -14,6 +15,7 @@ export async function writeWallCategorization(input: {
   labels?: string[];
   colors?: string[];
   depth?: WallDepth;
+  spatial?: WallSpatial;
   replaceClassification?: boolean;
 }): Promise<{category: string} | null> {
   const before = input.initial.data();
@@ -46,6 +48,7 @@ export async function writeWallCategorization(input: {
     }
     if (input.colors && unchanged("colors")) patch.colors = input.colors;
     if (input.depth && wall.depth == null && unchanged("depth")) patch.depth = input.depth;
+    if (input.spatial && wall.spatial == null && unchanged("spatial")) patch.spatial = input.spatial;
     if (input.labels && unchanged("visionLabels")) patch.visionLabels = input.labels;
     if (Object.keys(patch).length > 0) tx.update(ref, patch);
     return {category: typeof patch.category === "string" ? patch.category : wall.category ?? DEFAULT_CATEGORY};

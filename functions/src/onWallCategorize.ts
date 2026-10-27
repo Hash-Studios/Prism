@@ -4,6 +4,8 @@ import {DEFAULT_CATEGORY, detectLabels, mapLabelsToCategory} from "./wallCategor
 import {REGION} from "./common";
 import {hasPaletteColors, wallColorsFor} from "./wallColors";
 import {falKey, wallDepthFor} from "./wallDepth";
+import {wallSpatialFor} from "./wallSpatial";
+import {r2Secrets} from "./r2Storage";
 import {writeWallCategorization} from "./wallCategorizationWrite";
 
 export const onWallCategorize = onDocumentCreated(
@@ -12,7 +14,7 @@ export const onWallCategorize = onDocumentCreated(
     region: REGION,
     timeoutSeconds: 120,
     concurrency: 1,
-    secrets: [falKey],
+    secrets: [falKey, ...r2Secrets],
     retry: true,
   },
   async (event) => {
@@ -29,13 +31,14 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
-    const [colors, depth, labels] = await Promise.all([
+    const [colors, depth, spatial, labels] = await Promise.all([
       hasPaletteColors(data.colors) ? undefined : wallColorsFor(wallId, data),
       data.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
+      data.spatial == null ? wallSpatialFor(wallId, {url: wallpaperUrl}) : undefined,
       detectLabelsIfAble(wallId, wallpaperUrl),
     ]);
     await writeWallCategorization({wallId, initial: event.data,
-      category: labels?.length ? mapLabelsToCategory(labels) : DEFAULT_CATEGORY, colors, depth, labels});
+      category: labels?.length ? mapLabelsToCategory(labels) : DEFAULT_CATEGORY, colors, depth, spatial, labels});
   },
 );
 
