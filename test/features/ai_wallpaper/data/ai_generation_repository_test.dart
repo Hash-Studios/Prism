@@ -199,6 +199,71 @@ void main() {
     expect(bodies.single['chargeTxId'], 'spend_user-1_abc');
   });
 
+  test('all styles keep their worker values through generation and local and remote history', () async {
+    const Map<AiStylePreset, String> workerValues = <AiStylePreset, String>{
+      AiStylePreset.anime: 'anime',
+      AiStylePreset.minimal: 'minimal',
+      AiStylePreset.cyberpunk: 'cyberpunk',
+      AiStylePreset.watercolor: 'watercolor',
+      AiStylePreset.meshGradient: 'mesh gradient',
+      AiStylePreset.abstract: 'abstract',
+      AiStylePreset.nature: 'nature',
+      AiStylePreset.space: 'space art',
+      AiStylePreset.synthwave: 'synthwave',
+      AiStylePreset.pixelArt: 'pixel art',
+      AiStylePreset.render3d: '3d render',
+      AiStylePreset.oilPainting: 'oil painting',
+      AiStylePreset.ukiyoE: 'ukiyo-e',
+    };
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-style-history-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final List<String> requestedStyles = <String>[];
+    final client = MockClient((request) async {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      final String style = body['stylePreset'] as String;
+      requestedStyles.add(style);
+      final response = jsonDecode(_okBody) as Map<String, dynamic>;
+      response['generationId'] = style;
+      return http.Response(jsonEncode(response), 200);
+    });
+    final repository = AiGenerationRepositoryImpl.forTest(
+      client: client,
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_style_test', directory: directory),
+    );
+    for (final entry in workerValues.entries) {
+      final record = await repository.generate(
+        prompt: 'a quiet scene',
+        stylePreset: entry.key,
+        qualityTier: AiQualityTier.fast,
+        targetSize: '1080x1920',
+        chargeMode: AiChargeMode.coinSpend,
+        coinsSpent: 10,
+      );
+      expect(record.stylePreset, entry.key);
+    }
+    expect(requestedStyles, workerValues.values.toList());
+    final expectedStyles = <String, AiStylePreset>{for (final entry in workerValues.entries) entry.value: entry.key};
+    final afterRestart = AiGenerationRepositoryImpl.forTest(
+      client: client,
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_style_test', directory: directory),
+    );
+    final localHistory = await afterRestart.fetchLocalHistory(userId: 'user-1');
+    expect(<String, AiStylePreset>{for (final record in localHistory) record.id: record.stylePreset}, expectedStyles);
+
+    final firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    firestore.onQuery = (_) => <FakeDocRow>[for (final write in firestore.writes) (id: write.id, data: write.data!)];
+    final remoteReader = AiGenerationRepositoryImpl.forTest(
+      client: client,
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_remote_style_test', directory: Directory('${directory.path}/remote')),
+    );
+    expect(await remoteReader.fetchLocalHistory(userId: 'user-1'), isEmpty);
+    final remoteHistory = await remoteReader.fetchHistory(userId: 'user-1');
+    expect(<String, AiStylePreset>{for (final record in remoteHistory) record.id: record.stylePreset}, expectedStyles);
+  });
+
   test('generate leaves chargeTxId out when there is no charge', () async {
     final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
     final repository = _repository(

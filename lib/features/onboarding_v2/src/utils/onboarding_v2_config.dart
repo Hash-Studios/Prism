@@ -36,6 +36,7 @@ class OnboardingV2Config {
   static const Map<String, AiStylePreset> aiInterestStyleMap = {
     'space': AiStylePreset.space,
     'galaxy': AiStylePreset.space,
+    '3d render': AiStylePreset.render3d,
     'retro': AiStylePreset.synthwave,
     'vintage': AiStylePreset.oilPainting,
     'nature': AiStylePreset.nature,

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
@@ -5,7 +7,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// The AI worker clips a prompt to 160 characters, so every suggested prompt must fit.
+/// The AI worker clips a prompt to 160 UTF-16 code units, so every suggested prompt must fit.
 const int _maxPromptLength = 160;
 
 void main() {
@@ -17,15 +19,15 @@ void main() {
 
       test('every random prompt fits the worker limit', () {
         for (final AiStylePreset style in AiStylePreset.values) {
-          for (final String scene in AiPromptPools.scenesByStyle(l10n, style)) {
-            for (final String lighting in AiPromptPools.lighting(l10n)) {
-              for (final String palette in AiPromptPools.palettes(l10n)) {
-                final String prompt = l10n.economyAiPromptComposition(
-                  scene,
-                  lighting,
-                  palette,
-                  l10n.economyAiPromptSuffix,
-                );
+          final List<String> scenes = AiPromptPools.scenesByStyle(l10n, style);
+          final List<String> lighting = AiPromptPools.lighting(l10n);
+          final List<String> palettes = AiPromptPools.palettes(l10n);
+          for (int scene = 0; scene < scenes.length; scene++) {
+            for (int light = 0; light < lighting.length; light++) {
+              for (int palette = 0; palette < palettes.length; palette++) {
+                final _PromptIndicesRandom random = _PromptIndicesRandom(<int>[scene, light, palette]);
+                final String prompt = AiPromptPools.randomPrompt(l10n, style, random);
+                expect(random.isExhausted, isTrue);
                 expect(prompt.length, lessThanOrEqualTo(_maxPromptLength), reason: '${style.name}: $prompt');
               }
             }
@@ -56,4 +58,27 @@ void main() {
       });
     });
   }
+}
+
+class _PromptIndicesRandom implements Random {
+  _PromptIndicesRandom(this._indices);
+
+  final List<int> _indices;
+  int _offset = 0;
+
+  bool get isExhausted => _offset == _indices.length;
+
+  @override
+  int nextInt(int max) {
+    if (max != 8 || _offset >= _indices.length) {
+      throw StateError('Update the exhaustive matrix when a prompt pool changes size.');
+    }
+    return _indices[_offset++];
+  }
+
+  @override
+  bool nextBool() => throw UnsupportedError('nextBool is not used by randomPrompt');
+
+  @override
+  double nextDouble() => throw UnsupportedError('nextDouble is not used by randomPrompt');
 }
