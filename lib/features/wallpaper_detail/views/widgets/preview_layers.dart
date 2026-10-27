@@ -176,7 +176,9 @@ class LockPreviewLayer extends StatelessWidget {
         final double scale = _layerScale(context, constraints);
         final double inset = _statusBarInset(context, scale);
         if (defaultTargetPlatform == TargetPlatform.iOS) {
-          final double w = constraints.maxWidth / scale;
+          final double w = constraints.hasBoundedWidth
+              ? constraints.maxWidth / scale
+              : MediaQuery.sizeOf(context).width;
           final double widget = math.min(w * 0.15, 72) * scale;
           final double button = math.min(w * 0.125, 56) * scale;
           final double buttonSide = w * 0.11 * scale;
@@ -315,8 +317,10 @@ class HomePreviewLayer extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double s = _layerScale(context, constraints);
-        final double w = constraints.maxWidth / s;
-        final double h = constraints.maxHeight / s;
+        final Size screen = MediaQuery.sizeOf(context);
+        final double w = constraints.hasBoundedWidth ? constraints.maxWidth / s : screen.width;
+        final double h = constraints.hasBoundedHeight ? constraints.maxHeight / s : screen.height;
+        if (w <= 0 || h <= 0) return const SizedBox.shrink();
         final EdgeInsets device = MediaQuery.viewPaddingOf(context);
         final Widget layer = ios
             ? _iosHome(context, time, palette, s, w, h, device)

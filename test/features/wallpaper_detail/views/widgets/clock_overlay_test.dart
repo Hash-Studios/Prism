@@ -212,16 +212,26 @@ void _mockSetChannels(WidgetTester tester) {
   });
 }
 
-Future<void> _pumpPreview(WidgetTester tester, {Widget Function(WallpaperTarget target, String label)? setAction}) {
-  return tester.pumpWidget(
+Future<void> _pumpPreview(
+  WidgetTester tester, {
+  Widget Function(WallpaperTarget target, String label)? setAction,
+}) async {
+  await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: ClockOverlay(link: _previewPath, file: true, setAction: setAction),
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => pushClockPreview(context, link: _previewPath, file: true, setAction: setAction),
+            child: const Text('open'),
+          ),
+        ),
       ),
     ),
   );
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -392,9 +402,11 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: MediaQuery(
-          data: const MediaQueryData(alwaysUse24HourFormat: true),
-          child: ClockOverlay(link: File('assets/images/prism.webp').path, file: true),
+        home: Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: ClockOverlay(link: File('assets/images/prism.webp').path, file: true),
+          ),
         ),
       ),
     );
@@ -1050,6 +1062,20 @@ void main() {
       expect(client.requests.last.target, aw.WallpaperTarget.both);
       expect(find.byType(SetOptionsPanel), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a set result snack bar, with its Undo, shows on the preview and not under it', (tester) async {
+      await _pumpPreview(tester);
+      ScaffoldMessenger.of(tester.element(find.byType(ClockOverlay))).showSnackBar(
+        SnackBar(
+          content: const Text('Wallpaper set'),
+          action: SnackBarAction(label: 'Undo', onPressed: () {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: find.byType(ClockOverlay), matching: find.text('Undo')), findsOneWidget);
+      await tester.tap(find.descendant(of: find.byType(ClockOverlay), matching: find.text('Undo')));
+    });
 
     testWidgets('Android setAction receives the lock and home target with its label', (tester) async {
       final List<(WallpaperTarget, String)> calls = <(WallpaperTarget, String)>[];

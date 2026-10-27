@@ -317,9 +317,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Duration fade = context.motion(const Duration(milliseconds: 160));
     final List<PreviewIconStyle> styles = PreviewIconStyle.forPlatform(defaultTargetPlatform);
     final Widget? action = _action(context);
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: Stack(
+    // A Scaffold, so the set result and its Undo show over the preview and not under it.
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: Stack(
         children: <Widget>[
           Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
           Positioned.fill(
