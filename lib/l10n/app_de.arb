@@ -9080,6 +9080,24 @@
   "onboardingAiPromptCyberpunk2": "Eine futuristische Gasse mit holografischen Werbetafeln und türkis-magenta Licht",
   "onboardingAiPromptCyberpunk3": "Eine nächtliche Hightech-Silhouette mit leuchtenden Verkehrsschneisen",
   "onboardingAiPromptCyberpunk4": "Ein Cyberpunk-Dach mit Blick auf eine Stadt voller leuchtender Türme",
-  "onboardingAiPromptCyberpunk5": "Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht"
+  "onboardingAiPromptCyberpunk5": "Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht",
+  "widgetsSettingsTitle": "Widgets",
+  "widgetsSettingsSubtitle": "Prism zum Home-Bildschirm und Sperrbildschirm hinzufügen",
+  "widgetsGuideTitle": "Prism-Widgets hinzufügen",
+  "widgetsGuideHomeTab": "Home-Bildschirm",
+  "widgetsGuideLockTab": "Sperrbildschirm",
+  "widgetsGuideHomeStep1": "Lege den Finger auf eine freie Stelle des Home-Bildschirms, bis die Apps wackeln.",
+  "widgetsGuideHomeStep2": "Tippe auf „Bearbeiten“ und dann auf „Widget hinzufügen“.",
+  "widgetsGuideHomeStep3": "Suche nach Prism, wähle eine Größe und tippe auf „Widget hinzufügen“.",
+  "widgetsGuideLockStep1": "Lege den Finger auf den Sperrbildschirm und tippe auf „Anpassen“.",
+  "widgetsGuideLockStep2": "Tippe auf „Sperrbildschirm“ und dann auf den Widget-Bereich unter der Uhr.",
+  "widgetsGuideLockStep3": "Wähle Prism und tippe auf ein Widget, um es hinzuzufügen.",
+  "widgetsGuideHomeIllustration": "Ein Telefon mit dem Widget „Hintergrundbild des Tages“ auf dem Home-Bildschirm",
+  "widgetsGuideLockIllustration": "Ein Telefon mit Prism-Widgets auf dem Sperrbildschirm",
+  "widgetsGuideDone": "Fertig",
+  "widgetsCardTitle": "Hintergrundbild des Tages auf deinem Home-Bildschirm",
+  "widgetsCardBody": "Füge das Widget hinzu und sieh jeden Tag ein neues Hintergrundbild.",
+  "widgetsCardAction": "Zeig mir, wie",
+  "widgetsCardDismiss": "Schließen"
 }
 

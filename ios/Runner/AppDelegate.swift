@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import UserNotifications
+import WidgetKit
 
 @main
 @objc final class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -44,6 +45,7 @@ import UserNotifications
       binaryMessenger: messenger,
       api: PrismLiveActivityHostApiImpl(flutterApi: PrismLiveActivityFlutterApi(binaryMessenger: messenger))
     )
+    PrismWidgetHostApiSetup.setUp(binaryMessenger: messenger, api: PrismWidgetHostApiImpl())
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
@@ -51,6 +53,7 @@ import UserNotifications
     ) { _ in
       Task { @MainActor in
         AppDelegate.clearBadge()
+        WidgetCenter.shared.reloadTimelines(ofKind: PrismWidgetKind.wallOfTheDay)
       }
     }
   }

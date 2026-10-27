@@ -28,8 +28,13 @@ fvm dart run pigeon \
   --dart_out=lib/core/platform/pigeon/prism_live_activity_api.g.dart \
   --swift_out=ios/Runner/Pigeon/PrismLiveActivityApi.swift
 
+fvm dart run pigeon \
+  --input=pigeons/prism_widget_api.dart \
+  --dart_out=lib/core/platform/pigeon/prism_widget_api.g.dart \
+  --swift_out=ios/Runner/Pigeon/PrismWidgetApi.swift
+
 fvm dart format --line-length=120 lib/core/platform/pigeon/prism_media_api.g.dart lib/core/platform/pigeon/prism_app_icon_api.g.dart \
-  lib/core/platform/pigeon/prism_live_activity_api.g.dart
+  lib/core/platform/pigeon/prism_live_activity_api.g.dart lib/core/platform/pigeon/prism_widget_api.g.dart
 
 echo "Pigeon generation complete!"
 echo "  - Dart: lib/core/platform/pigeon/prism_media_api.g.dart"
@@ -37,3 +42,4 @@ echo "  - Kotlin: android/app/src/main/kotlin/com/hash/prism/pigeon/PrismMediaAp
 echo "  - Swift: ios/Runner/Pigeon/PrismMediaApi.swift"
 echo "  - App icon: lib/core/platform/pigeon/prism_app_icon_api.g.dart (+ Kotlin, Swift)"
 echo "  - Live Activities: lib/core/platform/pigeon/prism_live_activity_api.g.dart (+ Swift)"
+echo "  - Widgets: lib/core/platform/pigeon/prism_widget_api.g.dart (+ Swift)"

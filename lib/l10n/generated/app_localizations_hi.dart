@@ -9902,4 +9902,58 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'आपकी प्रोफ़ाइल';
+
+  @override
+  String get widgetsSettingsTitle => 'विजेट';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Prism को अपनी होम स्क्रीन और लॉक स्क्रीन पर जोड़ें';
+
+  @override
+  String get widgetsGuideTitle => 'Prism विजेट जोड़ें';
+
+  @override
+  String get widgetsGuideHomeTab => 'होम स्क्रीन';
+
+  @override
+  String get widgetsGuideLockTab => 'लॉक स्क्रीन';
+
+  @override
+  String get widgetsGuideHomeStep1 => 'होम स्क्रीन की किसी खाली जगह को तब तक दबाकर रखें जब तक ऐप्स हिलने न लगें।';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'संपादित करें पर टैप करें, फिर विजेट जोड़ें पर टैप करें।';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Prism खोजें, एक साइज़ चुनें, फिर विजेट जोड़ें पर टैप करें।';
+
+  @override
+  String get widgetsGuideLockStep1 => 'लॉक स्क्रीन को दबाकर रखें, फिर कस्टमाइज़ करें पर टैप करें।';
+
+  @override
+  String get widgetsGuideLockStep2 => 'लॉक स्क्रीन पर टैप करें, फिर घड़ी के नीचे विजेट वाली जगह पर टैप करें।';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Prism चुनें, फिर जोड़ने के लिए किसी विजेट पर टैप करें।';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'होम स्क्रीन पर आज के वॉलपेपर विजेट वाला फ़ोन';
+
+  @override
+  String get widgetsGuideLockIllustration => 'लॉक स्क्रीन पर Prism विजेट वाला फ़ोन';
+
+  @override
+  String get widgetsGuideDone => 'हो गया';
+
+  @override
+  String get widgetsCardTitle => 'आज का वॉलपेपर आपकी होम स्क्रीन पर';
+
+  @override
+  String get widgetsCardBody => 'विजेट जोड़ें और हर दिन नया वॉलपेपर देखें।';
+
+  @override
+  String get widgetsCardAction => 'तरीका दिखाएँ';
+
+  @override
+  String get widgetsCardDismiss => 'हटाएँ';
 }

@@ -135,7 +135,7 @@ void main() {
     when(() => bloc.add(any())).thenAnswer((_) => states.add(loaded));
     await pumpPage(tester, loaded, stream: states.stream);
 
-    await tester.fling(find.byType(GridView), const Offset(0, 400), 1000);
+    await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();

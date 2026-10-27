@@ -9110,5 +9110,23 @@
   "wallpaperYourProfile": "Profil Anda",
   "@wallpaperYourProfile": {
     "description": "Accessibility label for the profile button."
-  }
+  },
+  "widgetsSettingsTitle": "Widget",
+  "widgetsSettingsSubtitle": "Tambahkan Prism ke Layar Utama dan Layar Terkunci",
+  "widgetsGuideTitle": "Tambahkan widget Prism",
+  "widgetsGuideHomeTab": "Layar Utama",
+  "widgetsGuideLockTab": "Layar Terkunci",
+  "widgetsGuideHomeStep1": "Sentuh dan tahan area kosong di Layar Utama sampai aplikasi bergoyang.",
+  "widgetsGuideHomeStep2": "Ketuk Edit, lalu ketuk Tambah Widget.",
+  "widgetsGuideHomeStep3": "Cari Prism, pilih ukuran, lalu ketuk Tambah Widget.",
+  "widgetsGuideLockStep1": "Sentuh dan tahan Layar Terkunci, lalu ketuk Sesuaikan.",
+  "widgetsGuideLockStep2": "Ketuk Layar Terkunci, lalu ketuk area widget di bawah jam.",
+  "widgetsGuideLockStep3": "Pilih Prism, lalu ketuk widget untuk menambahkannya.",
+  "widgetsGuideHomeIllustration": "Ponsel dengan widget Wallpaper Hari Ini di Layar Utama",
+  "widgetsGuideLockIllustration": "Ponsel dengan widget Prism di Layar Terkunci",
+  "widgetsGuideDone": "Selesai",
+  "widgetsCardTitle": "Wallpaper Hari Ini di Layar Utama",
+  "widgetsCardBody": "Tambahkan widget dan lihat wallpaper baru setiap hari.",
+  "widgetsCardAction": "Tunjukkan caranya",
+  "widgetsCardDismiss": "Tutup"
 }

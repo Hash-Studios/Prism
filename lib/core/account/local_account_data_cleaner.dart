@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -51,6 +52,7 @@ class LocalAccountDataCleaner {
     ),
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
+    (name: 'iOS widget streak', run: (_) => IosWidgetChannel.clearStreak()),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),

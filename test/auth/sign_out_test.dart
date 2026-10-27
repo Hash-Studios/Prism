@@ -12,6 +12,8 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/ios_widget_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -367,6 +369,23 @@ void main() {
     expect((await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFavourites), '[]');
   });
 
+  test('clears the iOS streak widget snapshot so the next user does not inherit it', () async {
+    final _FakeWidgetApi widgets = _FakeWidgetApi();
+    IosWidgetChannel.api = widgets;
+    IosWidgetChannel.isSupportedPlatform = () => true;
+    addTearDown(() {
+      IosWidgetChannel.api = PrismWidgetHostApi();
+      IosWidgetChannel.isSupportedPlatform = () => false;
+    });
+    app_state.prismUser = profileUser();
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await auth.signOutGoogle();
+
+    expect(widgets.snapshots, <StreakWidgetSnapshot?>[null]);
+  });
+
   test('marks the user logged out and drops their topics before Firebase sign-out', () async {
     app_state.prismUser = profileUser()..following = <String>['creator@example.com'];
 
@@ -593,4 +612,17 @@ class _ThrowingFirestore extends Fake implements FirestoreClient {
   @override
   Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) =>
       Future<void>.error(StateError('permission-denied'));
+}
+
+class _FakeWidgetApi implements PrismWidgetHostApi {
+  final List<StreakWidgetSnapshot?> snapshots = <StreakWidgetSnapshot?>[];
+
+  @override
+  Future<void> setStreakSnapshot(StreakWidgetSnapshot? snapshot) async => snapshots.add(snapshot);
+
+  @override
+  Future<void> reloadWallOfTheDay() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

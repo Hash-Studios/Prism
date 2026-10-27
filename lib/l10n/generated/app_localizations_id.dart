@@ -9821,4 +9821,58 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Profil Anda';
+
+  @override
+  String get widgetsSettingsTitle => 'Widget';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Tambahkan Prism ke Layar Utama dan Layar Terkunci';
+
+  @override
+  String get widgetsGuideTitle => 'Tambahkan widget Prism';
+
+  @override
+  String get widgetsGuideHomeTab => 'Layar Utama';
+
+  @override
+  String get widgetsGuideLockTab => 'Layar Terkunci';
+
+  @override
+  String get widgetsGuideHomeStep1 => 'Sentuh dan tahan area kosong di Layar Utama sampai aplikasi bergoyang.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Ketuk Edit, lalu ketuk Tambah Widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Cari Prism, pilih ukuran, lalu ketuk Tambah Widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Sentuh dan tahan Layar Terkunci, lalu ketuk Sesuaikan.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Ketuk Layar Terkunci, lalu ketuk area widget di bawah jam.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Pilih Prism, lalu ketuk widget untuk menambahkannya.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'Ponsel dengan widget Wallpaper Hari Ini di Layar Utama';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Ponsel dengan widget Prism di Layar Terkunci';
+
+  @override
+  String get widgetsGuideDone => 'Selesai';
+
+  @override
+  String get widgetsCardTitle => 'Wallpaper Hari Ini di Layar Utama';
+
+  @override
+  String get widgetsCardBody => 'Tambahkan widget dan lihat wallpaper baru setiap hari.';
+
+  @override
+  String get widgetsCardAction => 'Tunjukkan caranya';
+
+  @override
+  String get widgetsCardDismiss => 'Tutup';
 }

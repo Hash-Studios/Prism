@@ -468,4 +468,40 @@ void main() {
     expect(DeepLinkDispatcher.maybeOf(router), isNull);
     expect(results().single.result, EventResultValue.cancelled);
   });
+
+  testWidgets('a widget link records widget_tapped and still records deep_link_received', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      Uri.parse('prism://share?id=abc&source=prism&thumb=https%3A%2F%2Fexample.com%2Ft.jpg&widget=wotd_medium'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.wotdMedium,
+    ]);
+    expect(events.whereType<DeepLinkReceivedEvent>(), hasLength(1));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a share link without a widget parameter records no widget_tapped', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      Uri.parse('prism://share?id=abc&source=prism&thumb=https%3A%2F%2Fexample.com%2Ft.jpg'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('an unknown widget value records no widget_tapped', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(Uri.parse('prism://streak?widget=nope'), source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
 }

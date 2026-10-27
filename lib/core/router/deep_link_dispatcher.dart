@@ -46,6 +46,10 @@ class DeepLinkDispatcher {
   Future<void> _tail = Future<void>.value();
 
   Future<DeepLinkDispatchResult> openUri(Uri uri, {required DeepLinkSourceValue source}) {
+    if (navigation.isPrismDeepLink(uri)) {
+      final WidgetKindValue? widget = _widgetKind(uri);
+      if (widget != null) _record(WidgetTappedEvent(kind: widget));
+    }
     final DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
         ? navigation.parser.parse(uri)
         : UnknownIntent(rawUri: uri.toString());
@@ -341,4 +345,14 @@ class DeepLinkDispatcher {
   ]);
 
   void _record(AnalyticsEvent event) => unawaited(_track(event).catchError((Object _) {}));
+
+  static WidgetKindValue? _widgetKind(Uri uri) {
+    final String? raw;
+    try {
+      raw = uri.queryParameters['widget'];
+    } on FormatException {
+      return null;
+    }
+    return WidgetKindValue.values.where((value) => value.wireValue == raw).firstOrNull;
+  }
 }

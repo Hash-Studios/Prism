@@ -11,6 +11,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [wallpaper-history.md](wallpaper-history.md) | List of wallpapers you set, with re-apply |
 | [auto-rotate.md](auto-rotate.md) | Timed rotation from favourites, downloads, a category, Wall of the Day or history (Android, Pro) |
 | [ios-shortcuts.md](ios-shortcuts.md) | Change the wallpaper automatically with a Shortcuts automation (iOS) |
+| [ios-widgets.md](ios-widgets.md) | Home Screen and Lock Screen widgets: Wall of the Day and streak (iOS) |
 | [quick-tiles.md](quick-tiles.md) | Android quick settings tiles |
 | [search.md](search.md) | Prism results, filters, recent searches, tag search |
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |

@@ -9119,5 +9119,77 @@
   "wallpaperYourProfile": "Your profile",
   "@wallpaperYourProfile": {
     "description": "Accessibility label for the profile button."
+  },
+  "widgetsSettingsTitle": "Widgets",
+  "@widgetsSettingsTitle": {
+    "description": "Settings row title that opens the iOS widget guide."
+  },
+  "widgetsSettingsSubtitle": "Add Prism to your Home Screen and Lock Screen",
+  "@widgetsSettingsSubtitle": {
+    "description": "Settings row subtitle for the iOS widget guide."
+  },
+  "widgetsGuideTitle": "Add Prism widgets",
+  "@widgetsGuideTitle": {
+    "description": "Title of the sheet that teaches how to add Prism iOS widgets."
+  },
+  "widgetsGuideHomeTab": "Home Screen",
+  "@widgetsGuideHomeTab": {
+    "description": "Segment label for the Home Screen widget steps."
+  },
+  "widgetsGuideLockTab": "Lock Screen",
+  "@widgetsGuideLockTab": {
+    "description": "Segment label for the Lock Screen widget steps."
+  },
+  "widgetsGuideHomeStep1": "Touch and hold an empty area of your Home Screen until the apps jiggle.",
+  "@widgetsGuideHomeStep1": {
+    "description": "Step 1 to add a widget to the Home Screen."
+  },
+  "widgetsGuideHomeStep2": "Tap Edit, then tap Add Widget.",
+  "@widgetsGuideHomeStep2": {
+    "description": "Step 2 to add a widget to the Home Screen."
+  },
+  "widgetsGuideHomeStep3": "Search for Prism, pick a size, then tap Add Widget.",
+  "@widgetsGuideHomeStep3": {
+    "description": "Step 3 to add a widget to the Home Screen."
+  },
+  "widgetsGuideLockStep1": "Touch and hold your Lock Screen, then tap Customize.",
+  "@widgetsGuideLockStep1": {
+    "description": "Step 1 to add a widget to the Lock Screen."
+  },
+  "widgetsGuideLockStep2": "Tap Lock Screen, then tap the widget area under the clock.",
+  "@widgetsGuideLockStep2": {
+    "description": "Step 2 to add a widget to the Lock Screen."
+  },
+  "widgetsGuideLockStep3": "Pick Prism, then tap a widget to add it.",
+  "@widgetsGuideLockStep3": {
+    "description": "Step 3 to add a widget to the Lock Screen."
+  },
+  "widgetsGuideHomeIllustration": "A phone with the Wall of the Day widget on the Home Screen",
+  "@widgetsGuideHomeIllustration": {
+    "description": "Accessibility label for the Home Screen widget illustration."
+  },
+  "widgetsGuideLockIllustration": "A phone with Prism widgets on the Lock Screen",
+  "@widgetsGuideLockIllustration": {
+    "description": "Accessibility label for the Lock Screen widget illustration."
+  },
+  "widgetsGuideDone": "Done",
+  "@widgetsGuideDone": {
+    "description": "Button that closes the widget guide sheet."
+  },
+  "widgetsCardTitle": "Wall of the Day on your Home Screen",
+  "@widgetsCardTitle": {
+    "description": "Title of the card on Wall of the Day that promotes the Home Screen widget."
+  },
+  "widgetsCardBody": "Add the widget and see a new wall every day.",
+  "@widgetsCardBody": {
+    "description": "Body of the card on Wall of the Day that promotes the Home Screen widget."
+  },
+  "widgetsCardAction": "Show me how",
+  "@widgetsCardAction": {
+    "description": "Button on the Wall of the Day widget card that opens the widget guide."
+  },
+  "widgetsCardDismiss": "Dismiss",
+  "@widgetsCardDismiss": {
+    "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
   }
 }
