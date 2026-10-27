@@ -7896,9 +7896,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperClearSearch => 'Suche leeren';
 
   @override
-  String get wallpaperClockPreview => 'Uhr-Vorschau';
-
-  @override
   String get wallpaperClosePreview => 'Vorschau schließen';
 
   @override
@@ -8458,6 +8455,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Verstanden. Du wirst weniger Hintergrundbilder dieser Art sehen.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Steuerelemente ausblenden';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Beide Bildschirme';
 
   @override
@@ -8880,7 +8880,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperPreviewHome => 'Startbildschirm';
 
   @override
+  String get wallpaperPreviewIconClear => 'Klar';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Dunkel';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Standard';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Symbolstil';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Themenbasiert';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Getönt';
+
+  @override
   String get wallpaperPreviewLock => 'Sperrbildschirm';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Vorschau auf deinem Bildschirm';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Auf beiden Bildschirmen festlegen';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Auf Startbildschirm festlegen';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Auf Sperrbildschirm festlegen';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9111,6 +9141,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Weniger davon anzeigen';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Steuerelemente einblenden';
 
   @override
   String get wallpaperSignIn => 'Anmelden';

@@ -6750,10 +6750,6 @@
   "@wallpaperClearSearch": {
     "description": "Accessibility label for clearing the favourites search."
   },
-  "wallpaperClockPreview": "घड़ी का पूर्वावलोकन",
-  "@wallpaperClockPreview": {
-    "description": "Wallpaper interface text: wallpaperClockPreview."
-  },
   "wallpaperClosePreview": "पूर्वावलोकन बंद करें",
   "@wallpaperClosePreview": {
     "description": "Accessibility label for closing the wallpaper clock preview."
@@ -7433,6 +7429,10 @@
   "@wallpaperGotItFewerLikeThis": {
     "description": "Confirmation after reducing similar wallpaper recommendations."
   },
+  "wallpaperHidePreviewControls": "नियंत्रण छिपाएँ",
+  "@wallpaperHidePreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+  },
   "wallpaperHistoryBothScreens": "दोनों स्क्रीन",
   "@wallpaperHistoryBothScreens": {
     "description": "Target label when a wallpaper is set on both screens."
@@ -8023,9 +8023,49 @@
   "@wallpaperPreviewHome": {
     "description": "Preview mode option for the home screen."
   },
+  "wallpaperPreviewIconClear": "पारदर्शी",
+  "@wallpaperPreviewIconClear": {
+    "description": "Home screen preview icon style: clear glass app icons (iOS)."
+  },
+  "wallpaperPreviewIconDark": "डार्क",
+  "@wallpaperPreviewIconDark": {
+    "description": "Home screen preview icon style: dark app icons (iOS)."
+  },
+  "wallpaperPreviewIconDefault": "डिफ़ॉल्ट",
+  "@wallpaperPreviewIconDefault": {
+    "description": "Home screen preview icon style: normal colourful app icons."
+  },
+  "wallpaperPreviewIconStyle": "आइकन शैली",
+  "@wallpaperPreviewIconStyle": {
+    "description": "Accessibility label of the picker that changes how app icons look in the home screen preview."
+  },
+  "wallpaperPreviewIconThemed": "थीम वाले",
+  "@wallpaperPreviewIconThemed": {
+    "description": "Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You)."
+  },
+  "wallpaperPreviewIconTinted": "टिंटेड",
+  "@wallpaperPreviewIconTinted": {
+    "description": "Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS)."
+  },
   "wallpaperPreviewLock": "लॉक",
   "@wallpaperPreviewLock": {
     "description": "Preview mode option for the lock screen."
+  },
+  "wallpaperPreviewOnScreen": "आपकी स्क्रीन पर पूर्वावलोकन",
+  "@wallpaperPreviewOnScreen": {
+    "description": "Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen."
+  },
+  "wallpaperPreviewSetBoth": "दोनों स्क्रीन पर लगाएँ",
+  "@wallpaperPreviewSetBoth": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock and home screens."
+  },
+  "wallpaperPreviewSetHome": "होम स्क्रीन पर लगाएँ",
+  "@wallpaperPreviewSetHome": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the home screen."
+  },
+  "wallpaperPreviewSetLock": "लॉक स्क्रीन पर लगाएँ",
+  "@wallpaperPreviewSetLock": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock screen."
   },
   "wallpaperPreviewUnlock24Hours": "24 घंटे के लिए अनलॉक करें (-{cost})",
   "@wallpaperPreviewUnlock24Hours": {
@@ -8312,6 +8352,10 @@
   "wallpaperShowLessLikeThis": "ऐसे कम दिखाएं",
   "@wallpaperShowLessLikeThis": {
     "description": "Wallpaper menu action to reduce similar recommendations."
+  },
+  "wallpaperShowPreviewControls": "नियंत्रण दिखाएँ",
+  "@wallpaperShowPreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
   },
   "wallpaperSignIn": "साइन इन करें",
   "@wallpaperSignIn": {

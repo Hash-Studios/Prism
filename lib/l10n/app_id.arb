@@ -6880,10 +6880,6 @@
   "@wallpaperClearSearch": {
     "description": "Accessibility label for clearing the favourites search."
   },
-  "wallpaperClockPreview": "Pratinjau jam",
-  "@wallpaperClockPreview": {
-    "description": "Wallpaper interface text: wallpaperClockPreview."
-  },
   "wallpaperClosePreview": "Tutup pratinjau",
   "@wallpaperClosePreview": {
     "description": "Accessibility label for closing the wallpaper clock preview."
@@ -7563,6 +7559,10 @@
   "@wallpaperGotItFewerLikeThis": {
     "description": "Confirmation after reducing similar wallpaper recommendations."
   },
+  "wallpaperHidePreviewControls": "Sembunyikan kontrol",
+  "@wallpaperHidePreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+  },
   "wallpaperHistoryBothScreens": "Kedua layar",
   "@wallpaperHistoryBothScreens": {
     "description": "Target label when a wallpaper is set on both screens."
@@ -8147,9 +8147,49 @@
   "@wallpaperPreviewHome": {
     "description": "Preview mode option for the home screen."
   },
+  "wallpaperPreviewIconClear": "Bening",
+  "@wallpaperPreviewIconClear": {
+    "description": "Home screen preview icon style: clear glass app icons (iOS)."
+  },
+  "wallpaperPreviewIconDark": "Gelap",
+  "@wallpaperPreviewIconDark": {
+    "description": "Home screen preview icon style: dark app icons (iOS)."
+  },
+  "wallpaperPreviewIconDefault": "Default",
+  "@wallpaperPreviewIconDefault": {
+    "description": "Home screen preview icon style: normal colourful app icons."
+  },
+  "wallpaperPreviewIconStyle": "Gaya ikon",
+  "@wallpaperPreviewIconStyle": {
+    "description": "Accessibility label of the picker that changes how app icons look in the home screen preview."
+  },
+  "wallpaperPreviewIconThemed": "Bertema",
+  "@wallpaperPreviewIconThemed": {
+    "description": "Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You)."
+  },
+  "wallpaperPreviewIconTinted": "Berwarna",
+  "@wallpaperPreviewIconTinted": {
+    "description": "Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS)."
+  },
   "wallpaperPreviewLock": "Layar kunci",
   "@wallpaperPreviewLock": {
     "description": "Preview mode option for the lock screen."
+  },
+  "wallpaperPreviewOnScreen": "Pratinjau di layar Anda",
+  "@wallpaperPreviewOnScreen": {
+    "description": "Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen."
+  },
+  "wallpaperPreviewSetBoth": "Pasang di kedua layar",
+  "@wallpaperPreviewSetBoth": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock and home screens."
+  },
+  "wallpaperPreviewSetHome": "Pasang di layar utama",
+  "@wallpaperPreviewSetHome": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the home screen."
+  },
+  "wallpaperPreviewSetLock": "Pasang di layar kunci",
+  "@wallpaperPreviewSetLock": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock screen."
   },
   "wallpaperPreviewUnlock24Hours": "Buka selama 24 jam (-{cost})",
   "@wallpaperPreviewUnlock24Hours": {
@@ -8436,6 +8476,10 @@
   "wallpaperShowLessLikeThis": "Tampilkan lebih sedikit seperti ini",
   "@wallpaperShowLessLikeThis": {
     "description": "Wallpaper menu action to reduce similar recommendations."
+  },
+  "wallpaperShowPreviewControls": "Tampilkan kontrol",
+  "@wallpaperShowPreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
   },
   "wallpaperSignIn": "Masuk",
   "@wallpaperSignIn": {

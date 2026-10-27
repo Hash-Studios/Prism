@@ -132,6 +132,7 @@ void main() {
     bool primary = false,
     WallpaperSource? source,
     String? wallpaperId,
+    WallpaperTarget? target,
     String url = '/tmp/wall.png',
   }) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
@@ -163,6 +164,7 @@ void main() {
               prepareSource: prepareSource,
               prepareAuthorized: prepareAuthorized,
               primary: primary,
+              target: target,
             ),
           ),
         ),
@@ -272,6 +274,52 @@ void main() {
         ('protected-wall', 'set', null),
       ]);
       expect(client.requests.map((r) => (r.target, r.source.filePath)), [(aw.WallpaperTarget.home, wallFilePath)]);
+    });
+
+    testWidgets('a fixed target prepares the consented original and retries on that target', (tester) async {
+      await asGuest(tester, signsIn: true);
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      assets.mapSource('https://signed.test/protected-wall', File(wallFilePath));
+      final String preparedPath = assets.createImageSync('tinted-protected-wall.png').path;
+      final client = _Client()..statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.failed;
+      aw.AsyncWallpaper.debugSetClient(client);
+      final List<String> preparedSources = <String>[];
+      await pumpButton(
+        tester,
+        source: WallpaperSource.prism,
+        wallpaperId: 'protected-wall',
+        url: '',
+        target: WallpaperTarget.lock,
+        prepareAuthorized: (source) async {
+          preparedSources.add(source);
+          return preparedPath;
+        },
+      );
+
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+      await tester.pumpAndSettle();
+
+      expect(preparedSources, <String>['https://signed.test/protected-wall']);
+      final int initialRequestCount = client.requests.length;
+      expect(initialRequestCount, greaterThanOrEqualTo(2));
+      expect(client.requests, everyElement(isA<aw.StaticWallpaperRequest>()));
+      expect(client.requests.map((request) => request.target), everyElement(aw.WallpaperTarget.lock));
+      expect(client.requests.map((request) => request.source.filePath), everyElement(preparedPath));
+      expect(find.text(l10n.coreTryAgain), findsOneWidget);
+
+      client.statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.applied;
+      await tester.tap(find.text(l10n.coreTryAgain));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(client.requests, hasLength(initialRequestCount + 1));
+      expect(client.requests.last.target, aw.WallpaperTarget.lock);
+      expect(client.requests.last.source.filePath, preparedPath);
+      expect(preparedSources, hasLength(1));
+      expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'home');
+      expect(calls.map((call) => (call['assetId'], call['action'], call['mode'])), [
+        ('protected-wall', 'set', 'quote'),
+        ('protected-wall', 'set', null),
+      ]);
     });
 
     testWidgets('Set on a wall that needs no grant does not ask a guest to sign in', (tester) async {
@@ -431,6 +479,89 @@ void main() {
     expect(find.byType(SetOptionsPanel), findsNothing);
     expect(client.requests.single.target, aw.WallpaperTarget.home);
     expect(onSetCalls, 1);
+  });
+
+  testWidgets('a fixed target applies that screen without the sheet, even with another saved default', (tester) async {
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    const String wallpaperUrl = 'https://example.test/fixed-target-wallpaper.jpg';
+    assets.mapSource(wallpaperUrl, File(wallFilePath));
+    final WallpaperHistoryStore history = WallpaperHistoryStore(settings);
+    getIt.registerSingleton<WallpaperHistoryStore>(history);
+    await history.record(
+      AppliedWallpaper(
+        id: 'before-lock',
+        source: 'local',
+        thumbnailUrl: lockFilePath,
+        fullUrl: lockFilePath,
+        target: 'lock',
+        appliedAt: DateTime(2026),
+      ),
+    );
+    final _Client client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(
+      tester,
+      url: wallpaperUrl,
+      source: WallpaperSource.pexels,
+      target: WallpaperTarget.lock,
+      primary: true,
+      label: 'Set on lock',
+    );
+
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(find.byType(SetOptionsPanel), findsNothing);
+    expect(client.requests.single.target, aw.WallpaperTarget.lock);
+    expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'home');
+    expect(history.items().first.target, 'lock');
+    expect(history.items(), hasLength(2));
+    expect(analytics.events.whereType<SetWallEvent>().single.toWireParameters(), containsPair('used_default', 0));
+
+    expect(find.byType(SnackBarAction), findsOneWidget);
+    await tester.tap(find.byType(SnackBarAction));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pump();
+
+    expect(client.requests, hasLength(2));
+    expect(client.requests.last.target, aw.WallpaperTarget.lock);
+    expect(client.requests.last.source.filePath, lockFilePath);
+    expect(history.items().map((item) => item.id), <String>['before-lock']);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a fixed target shows no tune badge', (tester) async {
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    aw.AsyncWallpaper.debugSetClient(_Client());
+    await pumpButton(tester, target: WallpaperTarget.lock, label: 'Set');
+
+    expect(find.byKey(const ValueKey<String>('set-tune-badge')), findsNothing);
+  });
+
+  testWidgets('long press on a fixed target still opens the sheet', (tester) async {
+    final _Client client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester, target: WallpaperTarget.lock);
+
+    await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(client.requests, isEmpty);
+  });
+
+  testWidgets('a fixed target the device cannot set falls back to the sheet', (tester) async {
+    final _Client client = _Client(
+      capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
+    );
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester, target: WallpaperTarget.lock);
+
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(client.requests, isEmpty);
   });
 
   testWidgets('long press opens the sheet even with a saved default', (tester) async {

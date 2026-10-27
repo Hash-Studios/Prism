@@ -345,6 +345,8 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
+  /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
+  Widget Function(WallpaperTarget target, String label)? _previewAction;
   static const double _sheetHPad = PrismSpace.md;
 
   /// Text and icons in the panel that sit one step below the title.
@@ -659,7 +661,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         PositionedDirectional(
           end: padding.right + _cardInset + centring + _chromePad,
           top: top,
-          child: _chromeButton(icon: JamIcons.clock, tooltip: context.l10n.wallpaperClockPreview, onPressed: onClock),
+          child: _chromeButton(
+            icon: Icons.smartphone_rounded,
+            tooltip: context.l10n.wallpaperPreviewOnScreen,
+            onPressed: onClock,
+          ),
         ),
     ];
   }
@@ -899,6 +905,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         wallpaperSource: entity.source,
                         thumbnailUrl: entity.thumbnailUrl,
                         tint: state.tint,
+                        setAction: _previewAction,
                       );
                     },
             ),
@@ -1620,6 +1627,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       return label == null ? button : PressScale(child: button);
     }
 
+    Widget setButton({required String label, WallpaperTarget? target, String entryPoint = 'wallpaper_detail'}) =>
+        PressScale(
+          child: SetWallpaperButton(
+            label: label,
+            target: target,
+            url: source,
+            wallpaperId: entity.id,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+            prepareSource: prepareSource,
+            prepareAuthorized: prepareAuthorized,
+            thumbnailUrl: entity.thumbnailUrl,
+            promptNotificationPermissionOnSuccess: true,
+            entryPoint: entryPoint,
+            requestId: widget.requestId,
+            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+            onMatchAccent: _matchAccentAction(context, state),
+            onSet: () => _onWallpaperSet(entity),
+          ),
+        );
+    _previewAction = (target, label) => hideSetWallpaperUi
+        ? downloadButton(label: label)
+        : setButton(label: label, target: target, entryPoint: 'wallpaper_preview');
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: context.l10n.wallpaperSaveToPhotos,
@@ -1627,23 +1656,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           )
         : WallpaperBarAction(
             label: context.l10n.wallpaperSetAsWallpaper,
-            child: PressScale(
-              child: SetWallpaperButton(
-                label: context.l10n.wallpaperSet,
-                url: source,
-                wallpaperId: entity.id,
-                wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-                prepareSource: prepareSource,
-                prepareAuthorized: prepareAuthorized,
-                thumbnailUrl: entity.thumbnailUrl,
-                promptNotificationPermissionOnSuccess: true,
-                entryPoint: 'wallpaper_detail',
-                requestId: widget.requestId,
-                notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-                onMatchAccent: _matchAccentAction(context, state),
-                onSet: () => _onWallpaperSet(entity),
-              ),
-            ),
+            child: setButton(label: context.l10n.wallpaperSet),
           );
     final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
     final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;

@@ -31,6 +31,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -313,6 +314,50 @@ void main() {
     expect(find.byType(DownloadButton), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+  testWidgets('the preview action stays bound to its displayed wall when detail state changes underneath it', (
+    tester,
+  ) async {
+    final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
+    final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>.broadcast(sync: true);
+    addTearDown(states.close);
+    final WallpaperDetailLoaded first = WallpaperDetailLoaded(
+      recommendations: const RecommendationState.exhausted(),
+      entity: _prism(),
+      paletteLoading: false,
+      accent: Colors.teal,
+      colorChanged: true,
+    );
+    whenListen(bloc, states.stream, initialState: first);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: WallpaperDetailScreen(entity: first.entity),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay), findsOneWidget);
+
+    final FeedItemEntity replacement = _prism().copyWith(id: 'prism-2');
+    states.add(first.copyWith(entity: replacement, accent: Colors.blue));
+    await tester.pump();
+
+    final Finder preview = find.byType(ClockOverlay);
+    final SetWallpaperButton action = tester.widget<SetWallpaperButton>(
+      find.descendant(of: preview, matching: find.byType(SetWallpaperButton)),
+    );
+    expect(action.wallpaperId, 'prism-1');
+    expect(action.url, 'https://img.test/full.jpg');
+    expect(action.target, WallpaperTarget.home);
+    expect(action.prepareAuthorized, isNotNull);
+    expect(action.entryPoint, 'wallpaper_preview');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('actions sit under the card: icons first, then the labelled primary at the end', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -469,6 +514,97 @@ void main() {
         expect(hues, everyElement(closeTo(120, 10)));
       }
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a preview opened with a picked colour prepares the tinted authorized source', (tester) async {
+      final File source = File('${directory.path}/preview-wall.png');
+      await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
+      final FeedItemEntity entity = FeedItemEntity.prism(
+        id: 'preview-wall',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'preview-wall',
+            source: WallpaperSource.prism,
+            fullUrl: source.path,
+            thumbnailUrl: '',
+          ),
+        ),
+      );
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pumpAndSettle();
+
+      final Finder preview = find.byType(ClockOverlay);
+      final SetWallpaperButton action = tester.widget<SetWallpaperButton>(
+        find.descendant(of: preview, matching: find.byType(SetWallpaperButton)),
+      );
+      expect(action.wallpaperId, 'preview-wall');
+      expect(action.url, source.path);
+      expect(action.target, WallpaperTarget.home);
+      expect(action.prepareAuthorized, isNotNull);
+
+      final List<double> hues = (await tester.runAsync(() async {
+        final String path = await action.prepareAuthorized!(source.path);
+        return _hues(await File(path).readAsBytes());
+      }))!;
+      expect(hues, hasLength(2));
+      expect(hues, everyElement(closeTo(120, 10)));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('iOS preview exposes Save to Photos with its current tinted variant', (tester) async {
+      final File source = File('${directory.path}/ios-preview-wall.png');
+      await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
+      final FeedItemEntity entity = FeedItemEntity.prism(
+        id: 'ios-preview-wall',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'ios-preview-wall',
+            source: WallpaperSource.prism,
+            fullUrl: source.path,
+            thumbnailUrl: '',
+          ),
+        ),
+      );
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pumpAndSettle();
+
+      final Finder preview = find.byType(ClockOverlay);
+      final DownloadButton action = tester.widget<DownloadButton>(
+        find.descendant(of: preview, matching: find.byType(DownloadButton)),
+      );
+      expect(action.label, AppLocalizationsEn().wallpaperSaveToPhotos);
+      expect(action.link, source.path);
+      expect(action.contentId, 'ios-preview-wall');
+      expect(action.variant?.key, 'tint-00ff00');
+      expect(action.variant?.prepareAuthorized, isNotNull);
+
+      final List<double> hues = (await tester.runAsync(() async {
+        final String path = await action.variant!.prepareAuthorized!(source.path);
+        return _hues(await File(path).readAsBytes());
+      }))!;
+      expect(hues, hasLength(2));
+      expect(hues, everyElement(closeTo(120, 10)));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {
       await pumpDetail(

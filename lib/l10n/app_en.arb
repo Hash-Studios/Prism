@@ -6762,10 +6762,6 @@
   "@wallpaperClearSearch": {
     "description": "Accessibility label for clearing the favourites search."
   },
-  "wallpaperClockPreview": "Clock preview",
-  "@wallpaperClockPreview": {
-    "description": "Wallpaper interface text: wallpaperClockPreview."
-  },
   "wallpaperClosePreview": "Close preview",
   "@wallpaperClosePreview": {
     "description": "Accessibility label for closing the wallpaper clock preview."
@@ -7445,6 +7441,10 @@
   "@wallpaperGotItFewerLikeThis": {
     "description": "Confirmation after reducing similar wallpaper recommendations."
   },
+  "wallpaperHidePreviewControls": "Hide controls",
+  "@wallpaperHidePreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+  },
   "wallpaperHistoryBothScreens": "Both screens",
   "@wallpaperHistoryBothScreens": {
     "description": "Target label when a wallpaper is set on both screens."
@@ -8035,9 +8035,49 @@
   "@wallpaperPreviewHome": {
     "description": "Preview mode option for the home screen."
   },
+  "wallpaperPreviewIconClear": "Clear",
+  "@wallpaperPreviewIconClear": {
+    "description": "Home screen preview icon style: clear glass app icons (iOS)."
+  },
+  "wallpaperPreviewIconDark": "Dark",
+  "@wallpaperPreviewIconDark": {
+    "description": "Home screen preview icon style: dark app icons (iOS)."
+  },
+  "wallpaperPreviewIconDefault": "Default",
+  "@wallpaperPreviewIconDefault": {
+    "description": "Home screen preview icon style: normal colourful app icons."
+  },
+  "wallpaperPreviewIconStyle": "Icon style",
+  "@wallpaperPreviewIconStyle": {
+    "description": "Accessibility label of the picker that changes how app icons look in the home screen preview."
+  },
+  "wallpaperPreviewIconThemed": "Themed",
+  "@wallpaperPreviewIconThemed": {
+    "description": "Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You)."
+  },
+  "wallpaperPreviewIconTinted": "Tinted",
+  "@wallpaperPreviewIconTinted": {
+    "description": "Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS)."
+  },
   "wallpaperPreviewLock": "Lock",
   "@wallpaperPreviewLock": {
     "description": "Preview mode option for the lock screen."
+  },
+  "wallpaperPreviewOnScreen": "Preview on your screen",
+  "@wallpaperPreviewOnScreen": {
+    "description": "Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen."
+  },
+  "wallpaperPreviewSetBoth": "Set on both screens",
+  "@wallpaperPreviewSetBoth": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock and home screens."
+  },
+  "wallpaperPreviewSetHome": "Set on home screen",
+  "@wallpaperPreviewSetHome": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the home screen."
+  },
+  "wallpaperPreviewSetLock": "Set on lock screen",
+  "@wallpaperPreviewSetLock": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock screen."
   },
   "wallpaperPreviewUnlock24Hours": "Unlock for 24 hours (-{cost})",
   "@wallpaperPreviewUnlock24Hours": {
@@ -8324,6 +8364,10 @@
   "wallpaperShowLessLikeThis": "Show less like this",
   "@wallpaperShowLessLikeThis": {
     "description": "Wallpaper menu action to reduce similar recommendations."
+  },
+  "wallpaperShowPreviewControls": "Show controls",
+  "@wallpaperShowPreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
   },
   "wallpaperSignIn": "Sign in",
   "@wallpaperSignIn": {

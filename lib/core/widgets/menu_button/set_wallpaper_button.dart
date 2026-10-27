@@ -113,6 +113,8 @@ class SetWallpaperFlow {
   /// Applies straight to the default target when one is saved, else opens the sheet.
   /// Returns null when the user closed the sheet.
   ///
+  /// [target] sets that screen without the sheet, like a saved default. [forceSheet] still opens the sheet.
+  ///
   /// [notes] are short warnings for the sheet, [entryPoint] names the screen for analytics, and [onMatchAccent] adds
   /// "Match accent" to the success snackbar.
   static Future<WallpaperSetResult?> run(
@@ -122,6 +124,7 @@ class SetWallpaperFlow {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
     bool forceSheet = false,
+    WallpaperTarget? target,
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
     String? entryPoint,
@@ -147,11 +150,11 @@ class SetWallpaperFlow {
     final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
     if (!context.mounted) return null;
     SetWallpaperChoice? choice;
-    final WallpaperTarget? saved = forceSheet ? null : defaultTarget();
+    final WallpaperTarget? saved = forceSheet ? null : target ?? defaultTarget();
     bool usedDefault = false;
-    if (saved != null && await _supportsTarget(saved)) {
+    if (saved != null && await supportsTarget(saved)) {
       choice = SetWallpaperChoice(saved);
-      usedDefault = true;
+      usedDefault = target == null;
     }
     if (!context.mounted) return null;
     choice ??= await showSetWallpaperSheet(context, thumbnailUrl: thumbnailUrl, notes: notes, canAdjust: true);
@@ -249,7 +252,7 @@ class SetWallpaperFlow {
   }
 
   /// True when the device can set [target]. If the plugin cannot answer, the answer is yes and the apply reports any error.
-  static Future<bool> _supportsTarget(WallpaperTarget target) async {
+  static Future<bool> supportsTarget(WallpaperTarget target) async {
     try {
       return isWallpaperTargetSupported(await aw.AsyncWallpaper.getCapabilities(), target);
     } catch (error, stackTrace) {
@@ -669,6 +672,9 @@ class SetWallpaperButton extends StatefulWidget {
   /// Shows a caption under the round icon button.
   final bool labelled;
 
+  /// Sets this screen straight away, without the sheet or the saved default. Long press still opens the sheet.
+  final WallpaperTarget? target;
+
   const SetWallpaperButton({
     super.key,
     required this.url,
@@ -686,6 +692,7 @@ class SetWallpaperButton extends StatefulWidget {
     this.prepareAuthorized,
     this.primary = false,
     this.labelled = false,
+    this.target,
   });
 
   @override
@@ -735,6 +742,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         wallpaperSource: widget.wallpaperSource,
         prepareAuthorized: widget.prepareAuthorized,
         forceSheet: forceSheet,
+        target: widget.target,
         entryPoint: widget.entryPoint,
         requestId: widget.requestId,
         notes: widget.notes,
@@ -766,7 +774,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final WallpaperTarget? saved = SetWallpaperFlow.defaultTarget();
+    final WallpaperTarget? saved = widget.target ?? SetWallpaperFlow.defaultTarget();
     final String semanticLabel = saved == null
         ? context.l10n.coreSetWallpaper
         : context.l10n.coreSetWallpaperOn(_targetLabel(saved, context.l10n));
@@ -798,7 +806,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       onLongPress: () => _start(forceSheet: true),
       child: button,
     );
-    if (saved == null) return setTarget;
+    if (saved == null || widget.target != null) return setTarget;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
