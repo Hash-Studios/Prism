@@ -20,21 +20,28 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$out" ] || out="prism-$platform-$(date +%Y%m%d-%H%M%S).mp4"
-[ ! -e "$out" ] || die "$out already exists. Pick another name."
+[ ! -e "$out" ] && [ ! -L "$out" ] || die "$out already exists. Pick another name."
 [ -d "$(dirname -- "$out")" ] || die "folder for $out does not exist"
 
 trim_args=()
 if [ -n "$trim" ]; then
-  ts='([0-9]+:){0,2}[0-9]+(\.[0-9]+)?'
+  ts='([0-9]+|([0-9]{1,4}:)?[0-5]?[0-9]:[0-5]?[0-9])(\.[0-9]+)?'
   [[ $trim =~ ^$ts-$ts$ ]] || die "--trim needs START-END timestamps, got: $trim"
   start=${trim%%-*}; end=${trim#*-}
-  secs() { awk -v t="$1" 'BEGIN { n = split(t, p, ":"); s = 0; for (i = 1; i <= n; i++) s = s * 60 + p[i]; print s }'; }
-  awk -v a="$(secs "$start")" -v b="$(secs "$end")" 'BEGIN { exit !(b > a) }' || die "--trim end must be after start, got: $trim"
+  awk -v a="$start" -v b="$end" '
+    function secs(t, p, n, s, i) {
+      n = split(t, p, ":"); s = 0
+      for (i = 1; i <= n; i++) s = s * 60 + p[i]
+      return s
+    }
+    BEGIN { exit !(secs(b) > secs(a)) }
+  ' || die "--trim end must be after start, got: $trim"
   trim_args=(-ss "$start" -to "$end")
 fi
 
 command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg not found. Install it (brew install ffmpeg)."
-tmp=$(mktemp -d); keep_tmp=0
+tmp=$(mktemp -d "$(dirname -- "$out")/.prism-clip.XXXXXX"); keep_tmp=0
+converted="$tmp/converted-${out##*/}"
 trap '[ "$keep_tmp" -eq 1 ] || rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>&1 || true' EXIT
 
 if [ "$platform" = ios ]; then
@@ -75,17 +82,18 @@ if [ "$platform" = android ]; then
 fi
 [ -s "$tmp/raw.mp4" ] || die "recording is empty"
 
-ffmpeg -hide_banner -loglevel error -n -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
+# Stage on the output filesystem so link can publish without replacing any existing path.
+if ! { ffmpeg -hide_banner -loglevel error -n -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
   -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
-  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$out" || {
-  rm -f "$out" || true # this run made it: $out was refused if it existed and ffmpeg runs with -n
+  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$converted" &&
+  link "$converted" "$out"; }; then
   raw_name=${out##*/}; raw_stem=$raw_name
   case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
   raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
   mv "$tmp/raw.mp4" "$raw_out" || {
     keep_tmp=1
-    die "conversion failed and could not move the raw recording. It is kept at $tmp/raw.mp4"
+    die "conversion or output save failed and could not move the raw recording. It is kept at $tmp/raw.mp4"
   }
-  die "conversion failed. The raw recording is kept at $raw_out"
-}
+  die "conversion or output save failed. The raw recording is kept at $raw_out"
+fi
 echo "$out"

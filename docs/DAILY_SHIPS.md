@@ -17,9 +17,9 @@ IOS_SIM='<udid>' tool/record_clip.sh ios     # replace <udid> with a booted simu
 
 Press Ctrl-C to stop the recording. Black bars pad the clip. It is never stretched.
 
-The script refuses to start if the output file already exists, if its folder does not exist, or if the `--trim` end is not after the start. Timestamps are seconds (`12.5`) or `M:SS` / `H:MM:SS`.
+The script refuses to start if the output path already exists, including a dangling symlink, or if its folder does not exist. It also rejects malformed `--trim` timestamps and an end that is not after the start. Timestamps are seconds (`12.5`), `M:SS`, or `H:MM:SS`, with optional fractional seconds. Colon-form minutes and seconds must be 0 to 59; hours use up to four digits. For example, use `1:00:00` or `3600`, not `60:00`.
 
-If conversion fails (for example, a `--trim` range past the end of the take), the script exits with status 1, deletes the partial output, and keeps the raw take beside it as `<name>-raw.mp4` (`clips/clip.mp4` gives `clips/clip-raw.mp4`). If it cannot move the raw take, it keeps its temp folder and prints the raw file path.
+The script converts in a temporary folder beside the output and saves the clip only if the output path is still unused. It never replaces an output that appears during recording. If conversion or saving fails, the script exits with status 1 and deletes its temporary conversion. It keeps the raw take beside the output as `<name>-raw.mp4` (`clips/clip.mp4` gives `clips/clip-raw.mp4`). A trim start past the end of the take can cause conversion to fail. If it cannot move the raw take, it keeps its temp folder, including any partial conversion, and prints the raw file path.
 
 ### Morning post
 
