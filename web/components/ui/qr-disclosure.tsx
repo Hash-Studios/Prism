@@ -26,15 +26,23 @@ export function QrDisclosure({ children, className }: { children: ReactNode; cla
   }, [expanded]);
 
   return (
-    <div ref={root} className="relative inline-block" data-analytics-qr>
+    <div ref={root} className="relative inline-block" data-analytics-qr
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") setExpanded(true);
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") setExpanded(false);
+      }}>
       <button type="button" className={className} aria-expanded={expanded} aria-controls={panelId}
         onClick={() => setExpanded((value) => !value)}>
         <QrCode className="w-5 h-5" aria-hidden="true" />
         Scan QR Code
       </button>
       <div id={panelId} hidden={!expanded} role="region" aria-label="Scan to download Prism for Android"
-        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 bg-white rounded-2xl shadow-xl p-2">
-        {children}
+        className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-2">
+          {children}
+        </div>
       </div>
     </div>
   );
