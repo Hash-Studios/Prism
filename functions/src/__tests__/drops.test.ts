@@ -31,6 +31,7 @@ const wall = (n: number, extra: Doc = {}): Doc => ({
   resolution: "1440x3200",
   by: "Prism Studio",
   seriesId: "dusk",
+  creatorUid: "prism-studio",
   origin: "studio",
   review: false,
   dropReserved: true,
@@ -63,7 +64,13 @@ test("snapshotWall keeps the thumb and drops the full url", () => {
     resolution: "1440x3200",
     by: "Prism Studio",
     seriesId: "dusk",
+    creatorUid: "prism-studio",
   });
+});
+
+test("snapshotWall keeps legacy snapshots valid when creatorUid is absent", () => {
+  const snap = snapshotWall({id: "legacy", data: () => wall(1, {creatorUid: undefined})});
+  assert.equal(snap.creatorUid, "");
 });
 
 test("packPrice never exceeds the cost of the walls left", () => {
@@ -128,6 +135,7 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
   );
   assert.equal("url" in walls[0], false);
   assert.equal(walls[0].thumb, "https://img/t1.jpg");
+  assert.equal(walls[0].creatorUid, "prism-studio");
   assert.deepEqual(
     [store.get("walls/W1")?.dropReserved, store.get("walls/W1")?.dropWeek],
     [false, KEY],
@@ -598,6 +606,7 @@ const pushDrop = (extra: Partial<DropDoc> = {}): Doc => {
           resolution: "",
           by: "",
           seriesId: "",
+          creatorUid: "",
         },
       ],
       ...extra,

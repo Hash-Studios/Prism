@@ -7,6 +7,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
@@ -112,6 +113,23 @@ void main() {
       final List<Object?> events = verify(() => bloc.add(captureAny())).captured;
       expect(events, <DropsEvent>[const DropsEvent.started(weekKey: '2026-W42')]);
       expect(CoinsService.instance.balanceNotifier.value, 100);
+    });
+
+    testWidgets('Open passes the creator uid when resolving a preview route', (tester) async {
+      await pumpRoute(
+        tester,
+        loaded(
+          dropEntity(),
+          unlocked: {'C': const DropUnlock(wallId: 'C', weekKey: '2026-W42', url: 'https://full.test/C.jpg')},
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+
+      final route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      final entity = route.args!.entity! as PrismFeedItem;
+      expect(entity.wallpaper.core.authorUid, 'uid-C');
     });
 
     testWidgets('waits for the week before constructing the preview pager', (tester) async {
@@ -241,6 +259,7 @@ void main() {
 
       final route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
       expect(route.args!.entity!.id, 'B');
+      expect((route.args!.entity! as PrismFeedItem).wallpaper.core.authorUid, 'uid-B');
       expect(route.args!.heroTag, isNotNull);
       expect(tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag), contains(route.args!.heroTag));
     });
