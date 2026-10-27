@@ -30,7 +30,7 @@ export function ShareButton({ slug, version }: { slug: string; version: string }
         {result === "copied" ? <Check className="h-4 w-4" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
       </button>
       <span role="status" className="text-sm text-neutral-500">
-        {result === "failed" ? "Couldn't copy the link" : null}
+        {result === "copied" ? "Link copied" : result === "failed" ? "Couldn't copy the link" : null}
       </span>
     </>
   );

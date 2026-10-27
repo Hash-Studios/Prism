@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
+          persist-credentials: false
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -51,8 +52,11 @@ jobs:
         run: |
           npm ci
           node --test test/changelog.test.mjs
-      - name: Build and deploy
+      - name: Build
+        env:
+          NEXT_PUBLIC_MIXPANEL_TOKEN: ${{ vars.NEXT_PUBLIC_MIXPANEL_TOKEN }}
+        run: npm run build
+      - name: Deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          NEXT_PUBLIC_MIXPANEL_TOKEN: ${{ vars.NEXT_PUBLIC_MIXPANEL_TOKEN }}
-        run: npm run deploy
+        run: npx wrangler deploy
