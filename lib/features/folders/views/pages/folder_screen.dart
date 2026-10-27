@@ -4,10 +4,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -36,6 +38,7 @@ class FolderScreen extends StatefulWidget {
 
 class _FolderScreenState extends State<FolderScreen> {
   bool _tracked = false;
+  String? _loadingOwnerId;
 
   @override
   void initState() {
@@ -45,15 +48,29 @@ class _FolderScreenState extends State<FolderScreen> {
 
   Future<void> _load() async {
     final FoldersBloc bloc = context.read<FoldersBloc>();
-    await ensureFoldersLoaded(context);
-    await bloc.run((id) => FoldersEvent.folderOpened(folderId: widget.folderId, operationId: id));
-    final FolderEntity? folder = bloc.state.folder(widget.folderId);
-    if (_tracked || folder == null) return;
-    _tracked = true;
-    final bool fromLibrary = mounted && context.router.stack.any((route) => route.name == LibraryRoute.name);
-    unawaited(
-      analytics.track(FolderOpenedEvent(source: fromLibrary ? 'library' : 'link', itemCount: folder.itemCount)),
-    );
+    final String ownerId = app_state.prismUser.id;
+    if (ownerId.isEmpty || _loadingOwnerId == ownerId) return;
+    _loadingOwnerId = ownerId;
+    try {
+      await ensureFoldersLoaded(context);
+      if (!mounted ||
+          app_state.prismUser.id != ownerId ||
+          bloc.state.userId != ownerId ||
+          bloc.state.status != LoadStatus.success) {
+        return;
+      }
+      await bloc.run((id) => FoldersEvent.folderOpened(folderId: widget.folderId, operationId: id));
+      if (!mounted || app_state.prismUser.id != ownerId || bloc.state.userId != ownerId) return;
+      final FolderEntity? folder = bloc.state.folder(widget.folderId);
+      if (_tracked || folder == null) return;
+      _tracked = true;
+      final bool fromLibrary = context.router.stack.any((route) => route.name == LibraryRoute.name);
+      unawaited(
+        analytics.track(FolderOpenedEvent(source: fromLibrary ? 'library' : 'link', itemCount: folder.itemCount)),
+      );
+    } finally {
+      if (_loadingOwnerId == ownerId) _loadingOwnerId = null;
+    }
   }
 
   String _heroTag(FavouriteWallEntity wall) => prismHeroTag(this, 0, '${wall.source.name}:${wall.id}');
@@ -87,6 +104,7 @@ class _FolderScreenState extends State<FolderScreen> {
   Future<void> _remove(FavouriteWallEntity wall) async {
     PrismHaptics.impact();
     final FoldersBloc bloc = context.read<FoldersBloc>();
+    final String ownerId = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     final bool confirmed = await showPrismConfirm(
       context,
@@ -95,7 +113,7 @@ class _FolderScreenState extends State<FolderScreen> {
       confirmLabel: l10n.foldersRemoveConfirm,
       destructive: true,
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted || app_state.prismUser.id != ownerId || bloc.state.userId != ownerId) return;
     final bool ok = await bloc.run(
       (id) => FoldersEvent.itemRemoved(folderId: widget.folderId, wall: wall, operationId: id),
     );
@@ -113,7 +131,13 @@ class _FolderScreenState extends State<FolderScreen> {
           actionLabel: l10n.foldersRename,
           initialName: folder.name,
         );
-        if (name == null || name == folder.name) return;
+        if (name == null ||
+            name == folder.name ||
+            !mounted ||
+            app_state.prismUser.id != folder.ownerId ||
+            bloc.state.userId != folder.ownerId) {
+          return;
+        }
         final bool ok = await bloc.run(
           (id) => FoldersEvent.renameRequested(folderId: folder.id, name: name, operationId: id),
         );
@@ -126,7 +150,9 @@ class _FolderScreenState extends State<FolderScreen> {
           confirmLabel: l10n.foldersDeleteConfirm,
           destructive: true,
         );
-        if (!confirmed || !mounted) return;
+        if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) {
+          return;
+        }
         final StackRouter router = context.router;
         final bool ok = await bloc.run((id) => FoldersEvent.deleteRequested(folderId: folder.id, operationId: id));
         if (!ok) {
@@ -140,9 +166,11 @@ class _FolderScreenState extends State<FolderScreen> {
 
   Widget _body(BuildContext context, FoldersState state, FolderEntity? folder) {
     final AppLocalizations l10n = context.l10n;
+    if (app_state.prismUser.id.isEmpty) return SignInPrompt(feature: l10n.foldersSignInFeature);
+    if (state.userId != app_state.prismUser.id) return const LoadingCards();
     final LoadStatus? status = state.itemsStatus[widget.folderId];
     final List<FavouriteWallEntity>? walls = state.items[widget.folderId];
-    if (status == LoadStatus.failure) {
+    if (state.status == LoadStatus.failure || status == LoadStatus.failure) {
       return GlintState(
         kind: GlintStateKind.error,
         title: l10n.foldersLoadError,
@@ -191,9 +219,21 @@ class _FolderScreenState extends State<FolderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<FoldersBloc, FoldersState>(
+    return BlocConsumer<FoldersBloc, FoldersState>(
+      listenWhen: (previous, current) =>
+          previous.userId != current.userId ||
+          (previous.status != current.status && current.status == LoadStatus.success),
+      listener: (context, state) {
+        if (state.userId.isNotEmpty &&
+            state.userId == app_state.prismUser.id &&
+            !state.itemsStatus.containsKey(widget.folderId)) {
+          unawaited(_load());
+        }
+      },
       builder: (context, state) {
-        final FolderEntity? folder = state.folder(widget.folderId);
+        final FolderEntity? folder = state.userId == app_state.prismUser.id && state.userId.isNotEmpty
+            ? state.folder(widget.folderId)
+            : null;
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,

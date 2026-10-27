@@ -4,6 +4,7 @@ part of 'folders_bloc.j.dart';
 abstract class FoldersEvent with _$FoldersEvent {
   const factory FoldersEvent.started({required String userId, @Default(0) int operationId}) = _Started;
   const factory FoldersEvent.cleared() = _Cleared;
+  const factory FoldersEvent.writeFailed({required String userId, required Failure failure}) = _WriteFailed;
   const factory FoldersEvent.folderOpened({required String folderId, @Default(0) int operationId}) = _FolderOpened;
   const factory FoldersEvent.membershipRequested({required FavouriteWallEntity wall, @Default(0) int operationId}) =
       _MembershipRequested;

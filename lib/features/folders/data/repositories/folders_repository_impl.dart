@@ -43,11 +43,38 @@ class FoldersRepositoryImpl implements FoldersRepository {
   FoldersRepositoryImpl(this._firestoreClient);
 
   final FirestoreClient _firestoreClient;
+  final StreamController<FolderWriteFailure> _writeFailures = StreamController<FolderWriteFailure>.broadcast();
+  int _writeRevision = 0;
 
-  Future<void> _write(Future<void> Function(FirestoreBatch batch) action, String sourceTag) async {
+  @override
+  int get writeRevision => _writeRevision;
+
+  @override
+  Stream<FolderWriteFailure> get writeFailures => _writeFailures.stream;
+
+  Future<void> _write(
+    Future<void> Function(FirestoreBatch batch) action,
+    String sourceTag, {
+    required String ownerId,
+  }) async {
+    final int revision = ++_writeRevision;
+    bool queued = false;
+    final Future<void> pending = _firestoreClient.runBatch(action, sourceTag: sourceTag).onError((
+      Object error,
+      StackTrace stackTrace,
+    ) {
+      if (!queued) Error.throwWithStackTrace(error, stackTrace);
+      logger.e('Queued folder write rejected: $sourceTag', tag: 'Folders', error: error, stackTrace: stackTrace);
+      _writeFailures.add((
+        ownerId: ownerId,
+        revision: revision,
+        failure: ServerFailure('Unable to save folders: $error'),
+      ));
+    });
     try {
-      await _firestoreClient.runBatch(action, sourceTag: sourceTag).timeout(_writeTimeout);
+      await pending.timeout(_writeTimeout);
     } on TimeoutException {
+      queued = true;
       logger.w('Folder write queued offline: $sourceTag', tag: 'Folders');
     }
   }
@@ -75,18 +102,30 @@ class FoldersRepositoryImpl implements FoldersRepository {
   });
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {int? limit}) =>
+  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) =>
       _guard('load folder items', () async {
+        if (userId.isEmpty) return null;
         try {
-          return await _firestoreClient.query<FavouriteWallEntity>(
+          final rows = await _firestoreClient.query<({FavouriteWallEntity wall, DateTime addedAt})>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.folderItems(folderId),
               sourceTag: 'folders.fetch_items',
-              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
-              limit: limit,
+              filters: <FirestoreFilter>[
+                FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId),
+              ],
             ),
-            (data, docId) => mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(data), docId),
+            (data, docId) => (
+              wall: mapFavouriteWallDoc(
+                FavouriteWallDocDto.fromJson(data),
+                parseString(data['wallpaperDocumentId'], fallback: parseString(data['id'], fallback: docId)),
+              ),
+              addedAt: parseDateTime(data['addedAt']) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+            ),
           );
+          // The owner filter is required by the item rules. Sorting here avoids an extra composite index.
+          rows.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+          final items = rows.map((row) => row.wall);
+          return (limit == null ? items : items.take(limit)).toList();
         } catch (error) {
           // The rules refuse reads of a folder that is gone or belongs to someone else.
           if (mapFirestoreError(error).code == 'permission-denied') return null;
@@ -106,7 +145,12 @@ class FoldersRepositoryImpl implements FoldersRepository {
                   (_, _) => true,
                   sourceTag: 'folders.membership',
                 )
-                .then((value) => value ?? false),
+                .then((value) => value ?? false)
+                .onError((Object error, StackTrace stackTrace) {
+                  // A recreated folder can still contain a former owner's item with this key.
+                  if (mapFirestoreError(error).code == 'permission-denied') return false;
+                  Error.throwWithStackTrace(error, stackTrace);
+                }),
         ]);
         return <String>{
           for (int i = 0; i < folderIds.length; i++)
@@ -118,57 +162,94 @@ class FoldersRepositoryImpl implements FoldersRepository {
     ...favouriteWallToDoc(wall),
     'ownerId': folder.ownerId,
     'addedAt': FirestoreSentinels.serverTimestamp(),
+    if (wall case PrismFavouriteWall(:final wallpaper)) 'wallpaperDocumentId': wallpaper.firestoreDocumentId ?? wall.id,
   };
 
   @override
   Future<Result<void>> createFolder(FolderEntity folder, {FavouriteWallEntity? firstWall}) =>
       _guard('create folder', () async {
-        await _write((batch) async {
-          batch.setDoc(FirebaseCollections.folders, folder.id, <String, dynamic>{
-            'ownerId': folder.ownerId,
-            'name': folder.name,
-            'createdAt': FirestoreSentinels.serverTimestamp(),
-            'updatedAt': FirestoreSentinels.serverTimestamp(),
-            'itemCount': folder.itemCount,
-            'covers': folder.covers,
-          });
-          if (firstWall != null) {
-            batch.setDoc(
-              FirebaseCollections.folderItems(folder.id),
-              folderItemKey(firstWall),
-              _itemDoc(folder, firstWall),
-            );
-          }
-        }, 'folders.create');
+        await _write(
+          (batch) async {
+            batch.setDoc(FirebaseCollections.folders, folder.id, <String, dynamic>{
+              'ownerId': folder.ownerId,
+              'name': folder.name,
+              'createdAt': FirestoreSentinels.serverTimestamp(),
+              'updatedAt': FirestoreSentinels.serverTimestamp(),
+              'itemCount': folder.itemCount,
+              'covers': folder.covers,
+            });
+            if (firstWall != null) {
+              batch.setDoc(
+                FirebaseCollections.folderItems(folder.id),
+                folderItemKey(firstWall),
+                _itemDoc(folder, firstWall),
+              );
+            }
+          },
+          'folders.create',
+          ownerId: folder.ownerId,
+        );
       });
 
   @override
   Future<Result<void>> renameFolder(FolderEntity folder) => _guard('rename folder', () async {
-    await _write((batch) async {
-      batch.updateDoc(FirebaseCollections.folders, folder.id, <String, dynamic>{
-        'name': folder.name,
-        'updatedAt': FirestoreSentinels.serverTimestamp(),
-      });
-    }, 'folders.rename');
+    await _write(
+      (batch) async {
+        batch.updateDoc(FirebaseCollections.folders, folder.id, <String, dynamic>{
+          'name': folder.name,
+          'updatedAt': FirestoreSentinels.serverTimestamp(),
+        });
+      },
+      'folders.rename',
+      ownerId: folder.ownerId,
+    );
   });
 
   @override
-  Future<Result<void>> deleteFolder(String folderId) => _guard('delete folder', () async {
-    final List<String> keys = await _firestoreClient.query<String>(
-      FirestoreQuerySpec(collection: FirebaseCollections.folderItems(folderId), sourceTag: 'folders.delete.list'),
-      (_, docId) => docId,
-    );
-    for (int start = 0; start < keys.length; start += _maxBatchWrites) {
-      final List<String> chunk = keys.sublist(start, math.min(start + _maxBatchWrites, keys.length));
-      await _write((batch) async {
-        for (final String key in chunk) {
-          batch.deleteDoc(FirebaseCollections.folderItems(folderId), key);
-        }
-      }, 'folders.delete.items');
-    }
-    // The folder goes last, so a failed run leaves it in place and deleteAccount still finds its items.
-    await _write((batch) async => batch.deleteDoc(FirebaseCollections.folders, folderId), 'folders.delete.folder');
-  });
+  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) => _guard(
+    'delete folder',
+    () async {
+      if (userId.isEmpty) throw StateError('Sign in to delete folders.');
+      void ensureActive() {
+        if (isCancelled?.call() ?? false) throw StateError('Folder operation cancelled.');
+      }
+
+      ensureActive();
+      final List<String> keys = await _firestoreClient.query<String>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.folderItems(folderId),
+          sourceTag: 'folders.delete.list',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+        ),
+        (_, docId) => docId,
+      );
+      ensureActive();
+      for (int start = 0; start < keys.length; start += _maxBatchWrites) {
+        ensureActive();
+        final List<String> chunk = keys.sublist(start, math.min(start + _maxBatchWrites, keys.length));
+        await _write(
+          (batch) async {
+            ensureActive();
+            for (final String key in chunk) {
+              batch.deleteDoc(FirebaseCollections.folderItems(folderId), key);
+            }
+          },
+          'folders.delete.items',
+          ownerId: userId,
+        );
+      }
+      // The folder goes last, so a failed run leaves it in place and deleteAccount still finds its items.
+      ensureActive();
+      await _write(
+        (batch) async {
+          ensureActive();
+          batch.deleteDoc(FirebaseCollections.folders, folderId);
+        },
+        'folders.delete.folder',
+        ownerId: userId,
+      );
+    },
+  );
 
   Map<String, dynamic> _folderCounts(FolderEntity folder, int delta) => <String, dynamic>{
     'itemCount': FirestoreSentinels.increment(delta),
@@ -178,18 +259,26 @@ class FoldersRepositoryImpl implements FoldersRepository {
 
   @override
   Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) => _guard('add to folder', () async {
-    await _write((batch) async {
-      batch.setDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall), _itemDoc(folder, wall));
-      batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, 1));
-    }, 'folders.add_item');
+    await _write(
+      (batch) async {
+        batch.setDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall), _itemDoc(folder, wall));
+        batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, 1));
+      },
+      'folders.add_item',
+      ownerId: folder.ownerId,
+    );
   });
 
   @override
   Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) =>
       _guard('remove from folder', () async {
-        await _write((batch) async {
-          batch.deleteDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall));
-          batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, -1));
-        }, 'folders.remove_item');
+        await _write(
+          (batch) async {
+            batch.deleteDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall));
+            batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, -1));
+          },
+          'folders.remove_item',
+          ownerId: folder.ownerId,
+        );
       });
 }

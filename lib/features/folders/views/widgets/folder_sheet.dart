@@ -64,6 +64,8 @@ class FolderSheet extends StatefulWidget {
 
 class _FolderSheetState extends State<FolderSheet> {
   final TextEditingController _name = TextEditingController();
+  final String _ownerId = app_state.prismUser.id;
+  bool _closing = false;
 
   /// Null until the user changes a tick; until then the ticks show the wall's folders.
   Set<String>? _selected;
@@ -80,7 +82,12 @@ class _FolderSheetState extends State<FolderSheet> {
   Future<void> _load() async {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     await ensureFoldersLoaded(context);
-    if (mounted) bloc.add(FoldersEvent.membershipRequested(wall: widget.wall));
+    if (mounted &&
+        app_state.prismUser.id == _ownerId &&
+        bloc.state.userId == _ownerId &&
+        bloc.state.status == LoadStatus.success) {
+      bloc.add(FoldersEvent.membershipRequested(wall: widget.wall));
+    }
   }
 
   @override
@@ -109,6 +116,7 @@ class _FolderSheetState extends State<FolderSheet> {
   }
 
   Future<void> _done(FoldersState state) async {
+    if (app_state.prismUser.id != _ownerId || state.userId != _ownerId) return;
     _addName();
     final Set<String> initial = state.membership[_key] ?? const <String>{};
     final Set<String> selected = _current(state);
@@ -118,12 +126,14 @@ class _FolderSheetState extends State<FolderSheet> {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     final FavouriteWallsAdapter favourites = context.favouriteWallsAdapter(listen: false);
     final AppLocalizations l10n = context.l10n;
+    _closing = true;
     Navigator.of(context).pop();
     if (!changed) return;
     final FavouriteWallEntity wall = widget.wall;
     final bool ok = await bloc.run(
       (id) => FoldersEvent.saveRequested(wall: wall, folderIds: selected, newNames: newNames, operationId: id),
     );
+    if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
     if (!ok) {
       toasts.error(l10n.foldersSaveFailed);
       return;
@@ -144,7 +154,9 @@ class _FolderSheetState extends State<FolderSheet> {
 
   /// Saving to a folder also favourites the wall. Removing it from a folder leaves the favourite alone.
   Future<void> _favourite(FavouriteWallsAdapter favourites, FavouriteWallEntity wall) async {
-    if (getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, wall.id)) return;
+    if (app_state.prismUser.id != _ownerId || getIt<FavoritesLocalDataSource>().isWallFavourite(_ownerId, wall.id)) {
+      return;
+    }
     try {
       await favourites.favCheck(wall, desired: true);
     } catch (error, stackTrace) {
@@ -218,14 +230,23 @@ class _FolderSheetState extends State<FolderSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<FoldersBloc, FoldersState>(
+    return BlocConsumer<FoldersBloc, FoldersState>(
+      listenWhen: (previous, current) => previous.userId != current.userId,
+      listener: (context, state) {
+        if (state.userId != _ownerId && !_closing) {
+          _closing = true;
+          Navigator.of(context).pop();
+        }
+      },
       builder: (context, state) => PrismSheetBody(
         title: context.l10n.foldersSaveToFolder,
         actions: <Widget>[
           PrismButton(
             label: context.l10n.coreDone,
             expand: true,
-            onPressed: state.membershipStatus[_key] == LoadStatus.success ? () => unawaited(_done(state)) : null,
+            onPressed: state.status == LoadStatus.success && state.membershipStatus[_key] == LoadStatus.success
+                ? () => unawaited(_done(state))
+                : null,
           ),
         ],
         child: _body(context, state),

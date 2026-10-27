@@ -30,7 +30,7 @@ function fake(t: TestContext, options: Options = {}) {
   };
   const docsFor = (collection: string) => [{
     id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {},
-    ref: {path: `${collection}/d1`, collection: (name: string) => ({path: `${collection}/d1/${name}`})},
+    ref: {path: `${collection}/d1`, collection: (name: string) => query(`${collection}/d1/${name}`)},
   }];
   const query = (collection: string) => {
     const q = {
@@ -63,6 +63,16 @@ function fake(t: TestContext, options: Options = {}) {
   t.mock.method(db, "runTransaction", async (callback: (tx: typeof transaction) => Promise<unknown>) => callback(transaction));
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
+  });
+  t.mock.method(db, "batch", () => {
+    const batch = {
+      delete: (ref: {path: string}) => {
+        log.push(`delete:${ref.path}`);
+        return batch;
+      },
+      commit: async () => [],
+    };
+    return batch;
   });
   let deletes = 0;
   const updates: Array<{path: string; data: Record<string, unknown>}> = [];
@@ -196,15 +206,11 @@ test("an early failed delete is handled at once, never as an unhandled rejection
 
 test("the writer closes even when queueing a delete throws", async (t) => {
   const log = fake(t);
-  t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
-    {doc: () => ({
-      path: "usersv2/u1",
-      collection: (sub: string) => ({path: `usersv2/u1/${sub}`}),
-      get: async () => ({data: () => ({email: "sam@example.com"})}),
-    })} :
-    {doc: () => ({set: async () => undefined}), where: () => ({get: async () => {
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => name === "aiGenerations" ?
+    {where: () => ({get: async () => {
       throw new Error("query failed");
-    }})});
+    }})} : collection(name));
   await assert.rejects(async () => {
     await call();
   }, /query failed/);
@@ -375,8 +381,108 @@ test("deleting an account removes the caller's folders, items first", async (t) 
   const log = fake(t);
   await call();
   assert.ok(log.includes("query:folders.ownerId==u1"));
-  assert.ok(log.includes("recursive:folders/d1/items"));
+  assert.ok(log.includes("query:folders/d1/items.ownerId==u1"));
   assert.ok(log.includes("delete:folders/d1"));
-  assert.ok(log.indexOf("recursive:folders/d1/items") < log.indexOf("delete:folders/d1"));
+  assert.ok(log.indexOf("delete:folders/d1/items/d1") < log.indexOf("delete:folders/d1"));
   assert.ok(log.indexOf("delete:folders/d1") < log.indexOf("anonymize"));
+});
+
+test("folder cleanup retries partial item deletion before deleting any caller folders and preserves other owners", async (t) => {
+  const log = fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {name: "Caller"},
+    "folders/one": {ownerId: "u1"},
+    "folders/one/items/prism_a": {ownerId: "u1"},
+    "folders/one/items/pexels_b": {ownerId: "u1"},
+    ...Object.fromEntries(Array.from({length: 401}, (_, index) =>
+      [`folders/one/items/prism_bulk_${index}`, {ownerId: "u1"}])),
+    "folders/two": {ownerId: "u1"},
+    "folders/two/items/wallhaven_c": {ownerId: "u1"},
+    "folders/two/items/prism_d": {ownerId: "u1"},
+    "folders/two/items/prism_previous_owner": {ownerId: "u2"},
+    "folders/foreign": {ownerId: "u2"},
+    "folders/foreign/items/prism_x": {ownerId: "u2"},
+    "other/parent/items/prism_unrelated": {ownerId: "u1"},
+  });
+  let fail = true;
+  const operations: string[] = [];
+  type Ref = {path: string; set: (data: Record<string, unknown>) => Promise<void>;
+    update: (data: Record<string, unknown>) => Promise<void>; delete: () => Promise<void>};
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => {
+    const target = collection(name);
+    if (name !== "folders") return target;
+    return {where: (field: string, op: admin.firestore.WhereFilterOp, value: unknown) => ({
+      get: async () => {
+        const snap = await target.where(field, op, value).get();
+        return {docs: snap.docs.map((doc) => ({...doc, ref: {...doc.ref,
+          collection: (sub: string) => ({...doc.ref.collection(sub), path: `${doc.ref.path}/${sub}`}),
+        }}))};
+      },
+    })};
+  });
+  t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
+    for (const path of [...store.keys()].filter((key) => key.startsWith(`${ref.path}/`))) {
+      if (fail && path === "folders/two/items/prism_d") {
+        fail = false;
+        throw new Error("item deletion failed");
+      }
+      operations.push(`delete:${path}`);
+      store.delete(path);
+    }
+  });
+  t.mock.method(db, "batch", () => {
+    const queued: Ref[] = [];
+    const batch = {
+      delete: (ref: Ref) => { queued.push(ref); return batch; },
+      commit: async () => {
+        assert.ok(queued.length <= 400);
+        if (fail && queued.some((ref) => ref.path === "folders/two/items/prism_d")) {
+          fail = false;
+          throw new Error("item deletion failed");
+        }
+        for (const ref of queued) {
+          operations.push(`delete:${ref.path}`);
+          await ref.delete();
+        }
+        return [];
+      },
+    };
+    return batch;
+  });
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: Ref, data: Record<string, unknown>) => ref.set(data),
+    update: (ref: Ref, data: Record<string, unknown>) => ref.update(data),
+    delete: (ref: Ref) => {
+      operations.push(`delete:${ref.path}`);
+      return ref.delete();
+    },
+    close: async () => undefined,
+  }));
+  const run = () => deleteAccount.run({auth: {uid: "u1", token: {auth_time: Math.floor(Date.now() / 1000)}},
+    data: {uid: "u2"}} as unknown as Parameters<typeof deleteAccount.run>[0]);
+  await assert.rejects(run, /item deletion failed/);
+  assert.equal(store.has("folders/one/items/prism_a"), false);
+  assert.ok(![...store.keys()].some((path) => path.startsWith("folders/one/items/")));
+  assert.equal(store.has("folders/two/items/prism_d"), true);
+  assert.equal(store.has("folders/one"), true);
+  assert.equal(store.has("folders/two"), true);
+  assert.equal(store.get("creatorDeletionState/u1")?.closed, true);
+  assert.equal(store.get("usersv2/u1")?.deleted, undefined);
+  assert.ok(!log.includes("auth"));
+  const retryStart = operations.length;
+  assert.deepEqual(await run(), {ok: true});
+  assert.deepEqual([...store.keys()].filter((path) => path.startsWith("folders/")),
+    ["folders/two/items/prism_previous_owner", "folders/foreign", "folders/foreign/items/prism_x"]);
+  const retry = operations.slice(retryStart);
+  for (const folder of ["one", "two"]) {
+    const folderDelete = retry.indexOf(`delete:folders/${folder}`);
+    assert.ok(folderDelete >= 0);
+    for (const [index, operation] of retry.entries()) {
+      if (operation.startsWith(`delete:folders/${folder}/items/`)) assert.ok(index < folderDelete);
+    }
+  }
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
+  assert.equal(store.has("other/parent/items/prism_unrelated"), true);
+  assert.ok(log.includes("auth"));
 });

@@ -55,12 +55,13 @@ extension FoldersEventPatterns on FoldersEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,TResult Function( _FolderOpened value)?  folderOpened,TResult Function( _MembershipRequested value)?  membershipRequested,TResult Function( _CreateRequested value)?  createRequested,TResult Function( _RenameRequested value)?  renameRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _SaveRequested value)?  saveRequested,TResult Function( _ItemRemoved value)?  itemRemoved,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,TResult Function( _WriteFailed value)?  writeFailed,TResult Function( _FolderOpened value)?  folderOpened,TResult Function( _MembershipRequested value)?  membershipRequested,TResult Function( _CreateRequested value)?  createRequested,TResult Function( _RenameRequested value)?  renameRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _SaveRequested value)?  saveRequested,TResult Function( _ItemRemoved value)?  itemRemoved,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _FolderOpened() when folderOpened != null:
+return cleared(_that);case _WriteFailed() when writeFailed != null:
+return writeFailed(_that);case _FolderOpened() when folderOpened != null:
 return folderOpened(_that);case _MembershipRequested() when membershipRequested != null:
 return membershipRequested(_that);case _CreateRequested() when createRequested != null:
 return createRequested(_that);case _RenameRequested() when renameRequested != null:
@@ -85,12 +86,13 @@ return itemRemoved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,required TResult Function( _FolderOpened value)  folderOpened,required TResult Function( _MembershipRequested value)  membershipRequested,required TResult Function( _CreateRequested value)  createRequested,required TResult Function( _RenameRequested value)  renameRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _SaveRequested value)  saveRequested,required TResult Function( _ItemRemoved value)  itemRemoved,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,required TResult Function( _WriteFailed value)  writeFailed,required TResult Function( _FolderOpened value)  folderOpened,required TResult Function( _MembershipRequested value)  membershipRequested,required TResult Function( _CreateRequested value)  createRequested,required TResult Function( _RenameRequested value)  renameRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _SaveRequested value)  saveRequested,required TResult Function( _ItemRemoved value)  itemRemoved,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _Cleared():
-return cleared(_that);case _FolderOpened():
+return cleared(_that);case _WriteFailed():
+return writeFailed(_that);case _FolderOpened():
 return folderOpened(_that);case _MembershipRequested():
 return membershipRequested(_that);case _CreateRequested():
 return createRequested(_that);case _RenameRequested():
@@ -114,12 +116,13 @@ return itemRemoved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,TResult? Function( _FolderOpened value)?  folderOpened,TResult? Function( _MembershipRequested value)?  membershipRequested,TResult? Function( _CreateRequested value)?  createRequested,TResult? Function( _RenameRequested value)?  renameRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _SaveRequested value)?  saveRequested,TResult? Function( _ItemRemoved value)?  itemRemoved,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,TResult? Function( _WriteFailed value)?  writeFailed,TResult? Function( _FolderOpened value)?  folderOpened,TResult? Function( _MembershipRequested value)?  membershipRequested,TResult? Function( _CreateRequested value)?  createRequested,TResult? Function( _RenameRequested value)?  renameRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _SaveRequested value)?  saveRequested,TResult? Function( _ItemRemoved value)?  itemRemoved,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _FolderOpened() when folderOpened != null:
+return cleared(_that);case _WriteFailed() when writeFailed != null:
+return writeFailed(_that);case _FolderOpened() when folderOpened != null:
 return folderOpened(_that);case _MembershipRequested() when membershipRequested != null:
 return membershipRequested(_that);case _CreateRequested() when createRequested != null:
 return createRequested(_that);case _RenameRequested() when renameRequested != null:
@@ -143,11 +146,12 @@ return itemRemoved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function()?  cleared,TResult Function( String folderId,  int operationId)?  folderOpened,TResult Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult Function( String folderId,  String name,  int operationId)?  renameRequested,TResult Function( String folderId,  int operationId)?  deleteRequested,TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function()?  cleared,TResult Function( String userId,  Failure failure)?  writeFailed,TResult Function( String folderId,  int operationId)?  folderOpened,TResult Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult Function( String folderId,  String name,  int operationId)?  renameRequested,TResult Function( String folderId,  int operationId)?  deleteRequested,TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId,_that.operationId);case _Cleared() when cleared != null:
-return cleared();case _FolderOpened() when folderOpened != null:
+return cleared();case _WriteFailed() when writeFailed != null:
+return writeFailed(_that.userId,_that.failure);case _FolderOpened() when folderOpened != null:
 return folderOpened(_that.folderId,_that.operationId);case _MembershipRequested() when membershipRequested != null:
 return membershipRequested(_that.wall,_that.operationId);case _CreateRequested() when createRequested != null:
 return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequested() when renameRequested != null:
@@ -172,11 +176,12 @@ return itemRemoved(_that.folderId,_that.wall,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function()  cleared,required TResult Function( String folderId,  int operationId)  folderOpened,required TResult Function( FavouriteWallEntity wall,  int operationId)  membershipRequested,required TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)  createRequested,required TResult Function( String folderId,  String name,  int operationId)  renameRequested,required TResult Function( String folderId,  int operationId)  deleteRequested,required TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)  saveRequested,required TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)  itemRemoved,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function()  cleared,required TResult Function( String userId,  Failure failure)  writeFailed,required TResult Function( String folderId,  int operationId)  folderOpened,required TResult Function( FavouriteWallEntity wall,  int operationId)  membershipRequested,required TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)  createRequested,required TResult Function( String folderId,  String name,  int operationId)  renameRequested,required TResult Function( String folderId,  int operationId)  deleteRequested,required TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)  saveRequested,required TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)  itemRemoved,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.userId,_that.operationId);case _Cleared():
-return cleared();case _FolderOpened():
+return cleared();case _WriteFailed():
+return writeFailed(_that.userId,_that.failure);case _FolderOpened():
 return folderOpened(_that.folderId,_that.operationId);case _MembershipRequested():
 return membershipRequested(_that.wall,_that.operationId);case _CreateRequested():
 return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequested():
@@ -200,11 +205,12 @@ return itemRemoved(_that.folderId,_that.wall,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function()?  cleared,TResult? Function( String folderId,  int operationId)?  folderOpened,TResult? Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult? Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult? Function( String folderId,  String name,  int operationId)?  renameRequested,TResult? Function( String folderId,  int operationId)?  deleteRequested,TResult? Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult? Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function()?  cleared,TResult? Function( String userId,  Failure failure)?  writeFailed,TResult? Function( String folderId,  int operationId)?  folderOpened,TResult? Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult? Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult? Function( String folderId,  String name,  int operationId)?  renameRequested,TResult? Function( String folderId,  int operationId)?  deleteRequested,TResult? Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult? Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId,_that.operationId);case _Cleared() when cleared != null:
-return cleared();case _FolderOpened() when folderOpened != null:
+return cleared();case _WriteFailed() when writeFailed != null:
+return writeFailed(_that.userId,_that.failure);case _FolderOpened() when folderOpened != null:
 return folderOpened(_that.folderId,_that.operationId);case _MembershipRequested() when membershipRequested != null:
 return membershipRequested(_that.wall,_that.operationId);case _CreateRequested() when createRequested != null:
 return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequested() when renameRequested != null:
@@ -318,6 +324,74 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _WriteFailed implements FoldersEvent {
+  const _WriteFailed({required this.userId, required this.failure});
+
+
+ final  String userId;
+ final  Failure failure;
+
+/// Create a copy of FoldersEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$WriteFailedCopyWith<_WriteFailed> get copyWith => __$WriteFailedCopyWithImpl<_WriteFailed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WriteFailed&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.failure, failure) || other.failure == failure));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,userId,failure);
+
+@override
+String toString() {
+  return 'FoldersEvent.writeFailed(userId: $userId, failure: $failure)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$WriteFailedCopyWith<$Res> implements $FoldersEventCopyWith<$Res> {
+  factory _$WriteFailedCopyWith(_WriteFailed value, $Res Function(_WriteFailed) _then) = __$WriteFailedCopyWithImpl;
+@useResult
+$Res call({
+ String userId, Failure failure
+});
+
+
+
+
+}
+/// @nodoc
+class __$WriteFailedCopyWithImpl<$Res>
+    implements _$WriteFailedCopyWith<$Res> {
+  __$WriteFailedCopyWithImpl(this._self, this._then);
+
+  final _WriteFailed _self;
+  final $Res Function(_WriteFailed) _then;
+
+/// Create a copy of FoldersEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? failure = null,}) {
+  return _then(_WriteFailed(
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,failure: null == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as Failure,
+  ));
+}
+
+
+}
 
 /// @nodoc
 
@@ -822,7 +896,7 @@ mixin _$FoldersState {
 
  LoadStatus get status; String get userId; List<FolderEntity> get folders;/// Loaded walls per folder id, newest first.
  Map<String, List<FavouriteWallEntity>> get items; Map<String, LoadStatus> get itemsStatus;/// Folder ids that hold each wall, keyed by [folderItemKey].
- Map<String, Set<String>> get membership; Map<String, LoadStatus> get membershipStatus; ActionStatus get actionStatus; int get completedOperationId; Failure? get failure;
+ Map<String, Set<String>> get membership; Map<String, LoadStatus> get membershipStatus; ActionStatus get actionStatus; int get completedOperationId; Failure? get failure; Failure? get queuedWriteFailure;
 /// Create a copy of FoldersState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -833,16 +907,16 @@ $FoldersStateCopyWith<FoldersState> get copyWith => _$FoldersStateCopyWithImpl<F
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FoldersState&&(identical(other.status, status) || other.status == status)&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other.folders, folders)&&const DeepCollectionEquality().equals(other.items, items)&&const DeepCollectionEquality().equals(other.itemsStatus, itemsStatus)&&const DeepCollectionEquality().equals(other.membership, membership)&&const DeepCollectionEquality().equals(other.membershipStatus, membershipStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.completedOperationId, completedOperationId) || other.completedOperationId == completedOperationId)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FoldersState&&(identical(other.status, status) || other.status == status)&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other.folders, folders)&&const DeepCollectionEquality().equals(other.items, items)&&const DeepCollectionEquality().equals(other.itemsStatus, itemsStatus)&&const DeepCollectionEquality().equals(other.membership, membership)&&const DeepCollectionEquality().equals(other.membershipStatus, membershipStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.completedOperationId, completedOperationId) || other.completedOperationId == completedOperationId)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.queuedWriteFailure, queuedWriteFailure) || other.queuedWriteFailure == queuedWriteFailure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,userId,const DeepCollectionEquality().hash(folders),const DeepCollectionEquality().hash(items),const DeepCollectionEquality().hash(itemsStatus),const DeepCollectionEquality().hash(membership),const DeepCollectionEquality().hash(membershipStatus),actionStatus,completedOperationId,failure);
+int get hashCode => Object.hash(runtimeType,status,userId,const DeepCollectionEquality().hash(folders),const DeepCollectionEquality().hash(items),const DeepCollectionEquality().hash(itemsStatus),const DeepCollectionEquality().hash(membership),const DeepCollectionEquality().hash(membershipStatus),actionStatus,completedOperationId,failure,queuedWriteFailure);
 
 @override
 String toString() {
-  return 'FoldersState(status: $status, userId: $userId, folders: $folders, items: $items, itemsStatus: $itemsStatus, membership: $membership, membershipStatus: $membershipStatus, actionStatus: $actionStatus, completedOperationId: $completedOperationId, failure: $failure)';
+  return 'FoldersState(status: $status, userId: $userId, folders: $folders, items: $items, itemsStatus: $itemsStatus, membership: $membership, membershipStatus: $membershipStatus, actionStatus: $actionStatus, completedOperationId: $completedOperationId, failure: $failure, queuedWriteFailure: $queuedWriteFailure)';
 }
 
 
@@ -853,7 +927,7 @@ abstract mixin class $FoldersStateCopyWith<$Res>  {
   factory $FoldersStateCopyWith(FoldersState value, $Res Function(FoldersState) _then) = _$FoldersStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, String userId, List<FolderEntity> folders, Map<String, List<FavouriteWallEntity>> items, Map<String, LoadStatus> itemsStatus, Map<String, Set<String>> membership, Map<String, LoadStatus> membershipStatus, ActionStatus actionStatus, int completedOperationId, Failure? failure
+ LoadStatus status, String userId, List<FolderEntity> folders, Map<String, List<FavouriteWallEntity>> items, Map<String, LoadStatus> itemsStatus, Map<String, Set<String>> membership, Map<String, LoadStatus> membershipStatus, ActionStatus actionStatus, int completedOperationId, Failure? failure, Failure? queuedWriteFailure
 });
 
 
@@ -870,7 +944,7 @@ class _$FoldersStateCopyWithImpl<$Res>
 
 /// Create a copy of FoldersState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? userId = null,Object? folders = null,Object? items = null,Object? itemsStatus = null,Object? membership = null,Object? membershipStatus = null,Object? actionStatus = null,Object? completedOperationId = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? userId = null,Object? folders = null,Object? items = null,Object? itemsStatus = null,Object? membership = null,Object? membershipStatus = null,Object? actionStatus = null,Object? completedOperationId = null,Object? failure = freezed,Object? queuedWriteFailure = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -882,6 +956,7 @@ as Map<String, Set<String>>,membershipStatus: null == membershipStatus ? _self.m
 as Map<String, LoadStatus>,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
 as ActionStatus,completedOperationId: null == completedOperationId ? _self.completedOperationId : completedOperationId // ignore: cast_nullable_to_non_nullable
 as int,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as Failure?,queuedWriteFailure: freezed == queuedWriteFailure ? _self.queuedWriteFailure : queuedWriteFailure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }
@@ -967,10 +1042,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure,  Failure? queuedWriteFailure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FoldersState() when $default != null:
-return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure);case _:
+return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure,_that.queuedWriteFailure);case _:
   return orElse();
 
 }
@@ -988,10 +1063,10 @@ return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure,  Failure? queuedWriteFailure)  $default,) {final _that = this;
 switch (_that) {
 case _FoldersState():
-return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure);case _:
+return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure,_that.queuedWriteFailure);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1008,10 +1083,10 @@ return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String userId,  List<FolderEntity> folders,  Map<String, List<FavouriteWallEntity>> items,  Map<String, LoadStatus> itemsStatus,  Map<String, Set<String>> membership,  Map<String, LoadStatus> membershipStatus,  ActionStatus actionStatus,  int completedOperationId,  Failure? failure,  Failure? queuedWriteFailure)?  $default,) {final _that = this;
 switch (_that) {
 case _FoldersState() when $default != null:
-return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure);case _:
+return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsStatus,_that.membership,_that.membershipStatus,_that.actionStatus,_that.completedOperationId,_that.failure,_that.queuedWriteFailure);case _:
   return null;
 
 }
@@ -1023,7 +1098,7 @@ return $default(_that.status,_that.userId,_that.folders,_that.items,_that.itemsS
 
 
 class _FoldersState extends FoldersState {
-  const _FoldersState({required this.status, required this.userId, required final  List<FolderEntity> folders, final  Map<String, List<FavouriteWallEntity>> items = const <String, List<FavouriteWallEntity>>{}, final  Map<String, LoadStatus> itemsStatus = const <String, LoadStatus>{}, final  Map<String, Set<String>> membership = const <String, Set<String>>{}, final  Map<String, LoadStatus> membershipStatus = const <String, LoadStatus>{}, this.actionStatus = ActionStatus.idle, this.completedOperationId = 0, this.failure}): _folders = folders,_items = items,_itemsStatus = itemsStatus,_membership = membership,_membershipStatus = membershipStatus,super._();
+  const _FoldersState({required this.status, required this.userId, required final  List<FolderEntity> folders, final  Map<String, List<FavouriteWallEntity>> items = const <String, List<FavouriteWallEntity>>{}, final  Map<String, LoadStatus> itemsStatus = const <String, LoadStatus>{}, final  Map<String, Set<String>> membership = const <String, Set<String>>{}, final  Map<String, LoadStatus> membershipStatus = const <String, LoadStatus>{}, this.actionStatus = ActionStatus.idle, this.completedOperationId = 0, this.failure, this.queuedWriteFailure}): _folders = folders,_items = items,_itemsStatus = itemsStatus,_membership = membership,_membershipStatus = membershipStatus,super._();
   
 
 @override final  LoadStatus status;
@@ -1070,6 +1145,7 @@ class _FoldersState extends FoldersState {
 @override@JsonKey() final  ActionStatus actionStatus;
 @override@JsonKey() final  int completedOperationId;
 @override final  Failure? failure;
+@override final  Failure? queuedWriteFailure;
 
 /// Create a copy of FoldersState
 /// with the given fields replaced by the non-null parameter values.
@@ -1081,16 +1157,16 @@ _$FoldersStateCopyWith<_FoldersState> get copyWith => __$FoldersStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FoldersState&&(identical(other.status, status) || other.status == status)&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other._folders, _folders)&&const DeepCollectionEquality().equals(other._items, _items)&&const DeepCollectionEquality().equals(other._itemsStatus, _itemsStatus)&&const DeepCollectionEquality().equals(other._membership, _membership)&&const DeepCollectionEquality().equals(other._membershipStatus, _membershipStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.completedOperationId, completedOperationId) || other.completedOperationId == completedOperationId)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FoldersState&&(identical(other.status, status) || other.status == status)&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other._folders, _folders)&&const DeepCollectionEquality().equals(other._items, _items)&&const DeepCollectionEquality().equals(other._itemsStatus, _itemsStatus)&&const DeepCollectionEquality().equals(other._membership, _membership)&&const DeepCollectionEquality().equals(other._membershipStatus, _membershipStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.completedOperationId, completedOperationId) || other.completedOperationId == completedOperationId)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.queuedWriteFailure, queuedWriteFailure) || other.queuedWriteFailure == queuedWriteFailure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,userId,const DeepCollectionEquality().hash(_folders),const DeepCollectionEquality().hash(_items),const DeepCollectionEquality().hash(_itemsStatus),const DeepCollectionEquality().hash(_membership),const DeepCollectionEquality().hash(_membershipStatus),actionStatus,completedOperationId,failure);
+int get hashCode => Object.hash(runtimeType,status,userId,const DeepCollectionEquality().hash(_folders),const DeepCollectionEquality().hash(_items),const DeepCollectionEquality().hash(_itemsStatus),const DeepCollectionEquality().hash(_membership),const DeepCollectionEquality().hash(_membershipStatus),actionStatus,completedOperationId,failure,queuedWriteFailure);
 
 @override
 String toString() {
-  return 'FoldersState(status: $status, userId: $userId, folders: $folders, items: $items, itemsStatus: $itemsStatus, membership: $membership, membershipStatus: $membershipStatus, actionStatus: $actionStatus, completedOperationId: $completedOperationId, failure: $failure)';
+  return 'FoldersState(status: $status, userId: $userId, folders: $folders, items: $items, itemsStatus: $itemsStatus, membership: $membership, membershipStatus: $membershipStatus, actionStatus: $actionStatus, completedOperationId: $completedOperationId, failure: $failure, queuedWriteFailure: $queuedWriteFailure)';
 }
 
 
@@ -1101,7 +1177,7 @@ abstract mixin class _$FoldersStateCopyWith<$Res> implements $FoldersStateCopyWi
   factory _$FoldersStateCopyWith(_FoldersState value, $Res Function(_FoldersState) _then) = __$FoldersStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, String userId, List<FolderEntity> folders, Map<String, List<FavouriteWallEntity>> items, Map<String, LoadStatus> itemsStatus, Map<String, Set<String>> membership, Map<String, LoadStatus> membershipStatus, ActionStatus actionStatus, int completedOperationId, Failure? failure
+ LoadStatus status, String userId, List<FolderEntity> folders, Map<String, List<FavouriteWallEntity>> items, Map<String, LoadStatus> itemsStatus, Map<String, Set<String>> membership, Map<String, LoadStatus> membershipStatus, ActionStatus actionStatus, int completedOperationId, Failure? failure, Failure? queuedWriteFailure
 });
 
 
@@ -1118,7 +1194,7 @@ class __$FoldersStateCopyWithImpl<$Res>
 
 /// Create a copy of FoldersState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? userId = null,Object? folders = null,Object? items = null,Object? itemsStatus = null,Object? membership = null,Object? membershipStatus = null,Object? actionStatus = null,Object? completedOperationId = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? userId = null,Object? folders = null,Object? items = null,Object? itemsStatus = null,Object? membership = null,Object? membershipStatus = null,Object? actionStatus = null,Object? completedOperationId = null,Object? failure = freezed,Object? queuedWriteFailure = freezed,}) {
   return _then(_FoldersState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -1130,6 +1206,7 @@ as Map<String, Set<String>>,membershipStatus: null == membershipStatus ? _self._
 as Map<String, LoadStatus>,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
 as ActionStatus,completedOperationId: null == completedOperationId ? _self.completedOperationId : completedOperationId // ignore: cast_nullable_to_non_nullable
 as int,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as Failure?,queuedWriteFailure: freezed == queuedWriteFailure ? _self.queuedWriteFailure : queuedWriteFailure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }

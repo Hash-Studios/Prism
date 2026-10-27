@@ -62,6 +62,7 @@ import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/folders/folders.dart';
+import 'package:Prism/features/folders/views/widgets/folder_write_failure_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -878,6 +879,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 : 'guest';
             getIt<NotificationsLocalDataSource>().setOwner(ownerId);
             context.read<FoldersBloc>().add(const FoldersEvent.cleared());
+            if (ownerId != 'guest') {
+              context.read<FoldersBloc>().add(FoldersEvent.started(userId: state.session.userId));
+            }
             getIt<NotificationTombstones>().setOwner(ownerId);
             clearInAppNotificationSyncGateAll();
             if (getIt.isRegistered<InAppNotificationsBloc>()) {
@@ -914,7 +918,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                     data: theme.copyWith(
                       snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
                     ),
-                    child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                    child: FolderWriteFailureListener(
+                      child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                    ),
                   );
                 },
                 routerConfig: _appRouter.config(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -16,17 +18,29 @@ class _FakeFoldersRepository implements FoldersRepository {
   final List<String> calls = <String>[];
   final List<int?> fetchItemLimits = <int?>[];
   bool fail = false;
+  bool failItems = false;
+  Future<Result<List<FolderEntity>>> Function(String)? fetchFoldersOverride;
+  Completer<Result<void>>? addGate;
+  final writeFailureController = StreamController<FolderWriteFailure>.broadcast();
+  @override
+  Stream<FolderWriteFailure> get writeFailures => writeFailureController.stream;
+  @override
+  int writeRevision = 0;
+  String? failAddFolderId;
+  String? failCreateName;
+  void Function()? afterAdd;
 
   @override
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) async {
+    if (fetchFoldersOverride case final fetch?) return fetch(userId);
     if (fail) return Result.error<List<FolderEntity>>(const ServerFailure('boom'));
     return Result.success(folders.where((folder) => folder.ownerId == userId).toList());
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {int? limit}) async {
+  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     fetchItemLimits.add(limit);
-    if (fail) return Result.error<List<FavouriteWallEntity>?>(const ServerFailure('boom'));
+    if (fail || failItems) return Result.error<List<FavouriteWallEntity>?>(const ServerFailure('boom'));
     if (folders.every((folder) => folder.id != folderId)) return Result.success(null);
     final List<FavouriteWallEntity> list = items[folderId] ?? <FavouriteWallEntity>[];
     return Result.success(limit == null ? list : list.take(limit).toList());
@@ -45,7 +59,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> createFolder(FolderEntity folder, {FavouriteWallEntity? firstWall}) async {
     calls.add('createFolder:${folder.name}:${folder.itemCount}:${firstWall != null}');
-    if (fail) return Result.error<void>(const ServerFailure('boom'));
+    if (fail || folder.name == failCreateName) return Result.error<void>(const ServerFailure('boom'));
     folders = <FolderEntity>[...folders, folder];
     items[folder.id] = <FavouriteWallEntity>[?firstWall];
     return Result.success<void>(null);
@@ -60,7 +74,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> deleteFolder(String folderId) async {
+  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) async {
     calls.add('deleteFolder:$folderId');
     if (fail) return Result.error<void>(const ServerFailure('boom'));
     folders = folders.where((folder) => folder.id != folderId).toList();
@@ -71,13 +85,18 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async {
     calls.add('addItem:${folder.id}:${folder.itemCount}:${folder.covers.join(',')}');
-    if (fail) return Result.error<void>(const ServerFailure('boom'));
+    if (addGate case final gate?) {
+      final Result<void> result = await gate.future;
+      if (result.isFailure) return result;
+    }
+    if (fail || folder.id == failAddFolderId) return Result.error<void>(const ServerFailure('boom'));
     _replaceFolder(folder);
     final List<FavouriteWallEntity> existing = items[folder.id] ?? <FavouriteWallEntity>[];
     items[folder.id] = <FavouriteWallEntity>[
       wall,
       ...existing.where((item) => folderItemKey(item) != folderItemKey(wall)),
     ];
+    afterAdd?.call();
     return Result.success<void>(null);
   }
 
@@ -135,6 +154,7 @@ FolderEntity folder(String id, {int count = 0, List<String> covers = const <Stri
 
 FoldersBloc _blocFor(_FakeFoldersRepository repo) {
   final FoldersBloc bloc = FoldersBloc(repo);
+  addTearDown(repo.writeFailureController.close);
   addTearDown(bloc.close);
   return bloc;
 }
@@ -143,6 +163,234 @@ Future<bool> _started(FoldersBloc bloc, {String userId = 'u1'}) =>
     bloc.run((id) => FoldersEvent.started(userId: userId, operationId: id));
 
 void main() {
+  test('sign-out between completed Save steps does not start the next write', () async {
+    final repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a'), folder('b')];
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    repo.afterAdd = () => scheduleMicrotask(() => bloc.add(const FoldersEvent.cleared()));
+
+    expect(
+      await bloc.run(
+        (id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a', 'b'}, operationId: id),
+      ),
+      isFalse,
+    );
+    await pumpEventQueue();
+    expect(repo.calls, <String>['addItem:a:1:${thumb('w1')}']);
+    expect(bloc.state, FoldersState.initial());
+  });
+
+  test('retry resumes created folders rather than duplicating a partial Save', () async {
+    final repo = _FakeFoldersRepository()..failCreateName = 'B';
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    Future<bool> save() => bloc.run(
+      (id) => FoldersEvent.saveRequested(
+        wall: wall('w1'),
+        folderIds: <String>{},
+        newNames: <String>['A', 'B'],
+        operationId: id,
+      ),
+    );
+    expect(await save(), isFalse);
+    repo.failCreateName = null;
+    expect(await save(), isTrue);
+    expect(bloc.state.folders.map((folder) => folder.name).toList()..sort(), <String>['A', 'B']);
+    expect(bloc.state.folders.every((folder) => folder.itemCount == 1), isTrue);
+    expect(repo.calls.where((call) => call == 'createFolder:A:1:true'), hasLength(1));
+    expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
+  });
+
+  test('refresh invalidates old membership before saving an externally added wall', () async {
+    final repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a')];
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    repo.folders = <FolderEntity>[folder('a', count: 1)];
+    repo.items['a'] = <FavouriteWallEntity>[wall('w1')];
+    await _started(bloc);
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a'}, operationId: id)),
+      isTrue,
+    );
+    expect(repo.calls, isEmpty);
+    expect(bloc.state.folder('a')?.itemCount, 1);
+  });
+
+  test('late rejection from an earlier login of the same user is ignored', () async {
+    final repo = _FakeFoldersRepository();
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    repo.writeRevision = 1;
+    bloc.add(const FoldersEvent.cleared());
+    await _started(bloc);
+    final before = bloc.state;
+    repo.writeFailureController.add((ownerId: 'u1', revision: 1, failure: const ServerFailure('old login')));
+    await pumpEventQueue();
+    expect(bloc.state, before);
+  });
+
+  test('each pending late failure invalidates a subsequent reload', () async {
+    final repo = _FakeFoldersRepository();
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    repo.writeRevision = 2;
+    repo.writeFailureController.add((ownerId: 'u1', revision: 1, failure: const ServerFailure('first')));
+    await pumpEventQueue();
+    expect(bloc.state.status, LoadStatus.failure);
+    await _started(bloc);
+    expect(bloc.state.status, LoadStatus.success);
+    repo.writeFailureController.add((ownerId: 'u1', revision: 2, failure: const ServerFailure('second')));
+    await pumpEventQueue();
+    expect(bloc.state.status, LoadStatus.failure);
+    expect(bloc.state.failure?.message, 'second');
+  });
+
+  test('late queued rejection clears optimistic caches only for its owner', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: 1)]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    final before = bloc.state;
+    repo.writeRevision = 1;
+    repo.writeFailureController.add((ownerId: 'u2', revision: 1, failure: const ServerFailure('other user')));
+    await pumpEventQueue();
+    expect(bloc.state, before);
+
+    repo.writeFailureController.add((ownerId: 'u1', revision: 1, failure: const ServerFailure('queued rejected')));
+    await pumpEventQueue();
+    expect(bloc.state.status, LoadStatus.failure);
+    expect(bloc.state.actionStatus, ActionStatus.failure);
+    expect(bloc.state.failure?.message, 'queued rejected');
+    expect(bloc.state.items, isEmpty);
+    expect(bloc.state.membership, isEmpty);
+    expect(bloc.state.folders, isEmpty);
+  });
+
+  test('a repeated removal from an unopened folder does not decrement twice', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: 2)]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1'), wall('w2')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    for (var i = 0; i < 2; i++) {
+      expect(
+        await bloc.run((id) => FoldersEvent.itemRemoved(folderId: 'a', wall: wall('w1'), operationId: id)),
+        isTrue,
+      );
+    }
+    expect(bloc.state.folder('a')?.itemCount, 1);
+    expect(repo.calls, hasLength(1));
+  });
+
+  test('cleared cancels an in-flight load and its run without waiting for the network', () async {
+    final pending = Completer<Result<List<FolderEntity>>>();
+    final repo = _FakeFoldersRepository()..fetchFoldersOverride = (_) => pending.future;
+    final bloc = _blocFor(repo);
+    final loading = _started(bloc);
+    await pumpEventQueue();
+
+    bloc.add(const FoldersEvent.cleared());
+    await pumpEventQueue();
+    final stateAfterClear = bloc.state;
+    pending.complete(Result.success(<FolderEntity>[folder('private')]));
+
+    expect(await loading, isFalse);
+    await pumpEventQueue();
+    expect(stateAfterClear, FoldersState.initial());
+    expect(bloc.state, FoldersState.initial());
+  });
+
+  test('a new user loads without waiting for the previous user and ignores the old response', () async {
+    final pending = Completer<Result<List<FolderEntity>>>();
+    final repo = _FakeFoldersRepository()
+      ..fetchFoldersOverride = (userId) =>
+          userId == 'u1' ? pending.future : Future.value(Result.success(<FolderEntity>[]));
+    final bloc = _blocFor(repo);
+    final oldLoad = _started(bloc);
+    await pumpEventQueue();
+    final newLoad = _started(bloc, userId: 'u2');
+    await pumpEventQueue();
+    final stateAfterSwitch = bloc.state;
+    pending.complete(Result.success(<FolderEntity>[folder('private')]));
+
+    expect(await oldLoad, isFalse);
+    expect(await newLoad, isTrue);
+    expect(stateAfterSwitch.userId, 'u2');
+    expect(stateAfterSwitch.status, LoadStatus.success);
+    expect(bloc.state.userId, 'u2');
+    expect(bloc.state.folders, isEmpty);
+  });
+
+  test('clear drops queued saves and stops the remaining writes of an active save', () async {
+    final gate = Completer<Result<void>>();
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a'), folder('b')]
+      ..addGate = gate;
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    final first = bloc.run(
+      (id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a', 'b'}, operationId: id),
+    );
+    await pumpEventQueue();
+    final queued = bloc.run(
+      (id) => FoldersEvent.saveRequested(wall: wall('w2'), folderIds: <String>{'a'}, operationId: id),
+    );
+    bloc.add(const FoldersEvent.cleared());
+    await pumpEventQueue();
+    final stateAfterClear = bloc.state;
+    gate.complete(Result.success<void>(null));
+
+    expect(await first, isFalse);
+    expect(await queued, isFalse);
+    await pumpEventQueue();
+    expect(stateAfterClear, FoldersState.initial());
+    expect(bloc.state, FoldersState.initial());
+    expect(repo.calls, <String>['addItem:a:1:${thumb('w1')}']);
+  });
+
+  test('a failed cover read does not remove an unloaded item or change its count', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[
+        folder('a', count: 2, covers: <String>[thumb('w1'), thumb('w2')]),
+      ]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1'), wall('w2')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    repo.failItems = true;
+
+    expect(await bloc.run((id) => FoldersEvent.itemRemoved(folderId: 'a', wall: wall('w1'), operationId: id)), isFalse);
+    expect(repo.calls, isEmpty);
+    expect(bloc.state.folder('a')?.itemCount, 2);
+    expect(bloc.state.folder('a')?.covers, <String>[thumb('w1'), thumb('w2')]);
+  });
+
+  test('opening a removed folder clears previously loaded items and membership', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: 1)]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    repo.folders = <FolderEntity>[];
+
+    expect(await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id)), isTrue);
+    expect(bloc.state.items.containsKey('a'), isFalse);
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], isEmpty);
+  });
+
   test("started loads the user's folders newest update first", () async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository()
       ..folders = <FolderEntity>[
@@ -333,7 +581,7 @@ void main() {
     expect(await bloc.run((id) => FoldersEvent.itemRemoved(folderId: 'a', wall: wall('w1'), operationId: id)), isTrue);
 
     expect(bloc.state.folder('a')?.itemCount, 0);
-    expect(repo.calls, <String>['removeItem:a:0:']);
+    expect(repo.calls, isEmpty);
   });
 
   test('folderOpened loads the folder items', () async {

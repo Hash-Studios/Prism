@@ -13,6 +13,10 @@ Future<void> ensureFoldersLoaded(BuildContext context) async {
   final String userId = app_state.prismUser.id;
   if (userId.isEmpty) return;
   final FoldersBloc bloc = context.read<FoldersBloc>();
+  if (bloc.state.userId == userId && bloc.state.status == LoadStatus.loading) {
+    await bloc.stream.firstWhere((state) => state.userId != userId || state.status != LoadStatus.loading);
+    return;
+  }
   if (bloc.state.userId != userId ||
       bloc.state.status == LoadStatus.initial ||
       bloc.state.status == LoadStatus.failure) {

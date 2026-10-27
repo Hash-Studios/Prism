@@ -66,7 +66,6 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
   void initState() {
     super.initState();
     _controller.forward();
-    // Errors stay longer: the user has to read what went wrong.
     // Errors stay longer, and so does a toast with a button: the user needs time to reach it.
     final int ms = widget.kind == PrismToastKind.error || widget.action != null ? 3600 : 2400;
     _timer = Timer(Duration(milliseconds: ms + widget.message.length * 20), _dismiss);
@@ -166,6 +165,7 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
                                 padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
                               ),
                               onPressed: () {
+                                if (_dismissing) return;
                                 unawaited(_dismiss());
                                 action.onPressed();
                               },

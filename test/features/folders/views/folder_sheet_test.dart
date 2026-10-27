@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -43,6 +45,9 @@ class _FakeFoldersRepository implements FoldersRepository {
   });
 
   final List<FolderEntity> folders;
+  bool failLoad = false;
+  Completer<void>? loadGate;
+  Completer<void>? saveGate;
 
   /// Folder ids that hold each item, keyed by folderItemKey.
   final Map<String, Set<String>> containing;
@@ -54,13 +59,21 @@ class _FakeFoldersRepository implements FoldersRepository {
   final List<String> calls = <String>[];
 
   @override
+  Stream<FolderWriteFailure> get writeFailures => const Stream.empty();
+
+  @override
+  int get writeRevision => 0;
+
+  @override
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) async {
     calls.add('fetchFolders:$userId');
+    await loadGate?.future;
+    if (failLoad) return Result.error(const NetworkFailure('offline'));
     return Result.success(folders);
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {int? limit}) async {
+  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
     return Result.success(const <FavouriteWallEntity>[]);
   }
@@ -85,7 +98,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> deleteFolder(String folderId) async {
+  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) async {
     calls.add('deleteFolder:$folderId');
     return Result.success<void>(null);
   }
@@ -93,6 +106,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async {
     calls.add('addItem:${folder.id}');
+    await saveGate?.future;
     return Result.success<void>(null);
   }
 
@@ -347,5 +361,125 @@ void main() {
     await settle(tester);
 
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Done')).onPressed, isNotNull);
+  });
+
+  testWidgets('failed folder loading keeps Done disabled until retry succeeds', (tester) async {
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..failLoad = true;
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+
+    expect(find.text('Try again'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Done')).onPressed, isNull);
+    repo.failLoad = false;
+    await tester.tap(find.text('Try again'));
+    await settle(tester);
+
+    expect(find.text('Blue'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Done')).onPressed, isNotNull);
+  });
+
+  testWidgets('an open picker closes and discards its draft when the account changes', (tester) async {
+    final repo = _FakeFoldersRepository();
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.enterText(find.byType(TextField), 'Private draft');
+    await tester.tap(find.byTooltip('Create folder'));
+    await settle(tester);
+    expect(find.text('Private draft'), findsOneWidget);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
+    verifyNever(() => toggleUseCase(any()));
+  });
+
+  testWidgets('switching accounts during the first load closes the original picker', (tester) async {
+    final gate = Completer<void>();
+    final repo = _FakeFoldersRepository()..loadGate = gate;
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    expect(find.byType(FolderSheet), findsNothing);
+    gate.complete();
+    await settle(tester);
+    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
+  });
+
+  testWidgets('a save completed after an account change cannot favourite for the new account', (tester) async {
+    final gate = Completer<void>();
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..saveGate = gate;
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Blue'));
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+    expect(repo.calls, contains('addItem:blue'));
+
+    // App state changes before the debounced SessionBloc notification reaches the folder bloc.
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    gate.complete();
+    await settle(tester);
+
+    verifyNever(() => toggleUseCase(any()));
+  });
+
+  testWidgets('opening a picker during an existing folder load waits and then loads membership', (tester) async {
+    final gate = Completer<void>();
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..loadGate = gate;
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    final started = bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
+    await tester.pump();
+    expect(bloc.state.status, LoadStatus.loading);
+    await openSheet(tester, bloc, _wall());
+
+    gate.complete();
+    await settle(tester);
+    expect(await started, isTrue);
+    expect(find.text('Blue'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Done')).onPressed, isNotNull);
+  });
+
+  testWidgets('clear then a new account closes only the picker, not the page beneath it', (tester) async {
+    final repo = _FakeFoldersRepository();
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.cleared());
+    await tester.pump();
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await tester.pump();
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an account clear during Done dismissal does not pop the page beneath the picker', (tester) async {
+    final repo = _FakeFoldersRepository();
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    bloc.add(const FoldersEvent.cleared());
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
   });
 }

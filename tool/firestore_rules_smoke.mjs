@@ -27,7 +27,7 @@ async function transformFollowers(uid, operation, emails, auth) {
   });
   return r.status;
 }
-const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = '') => {
+const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = '', options = {}) => {
   const r = await fetch(`${B}${parent ? `/${parent}` : ''}:runQuery`, {
     method: 'POST',
     headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' },
@@ -35,6 +35,7 @@ const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = ''
       structuredQuery: {
         from: [{ collectionId }],
         where: { compositeFilter: { op: 'AND', filters } },
+        ...options,
       },
     }),
   });
@@ -70,6 +71,14 @@ const ts = () => ({ timestampValue: new Date().toISOString() });
 const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
 const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
+const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
+const commitDocs = async (auth, docs) => {
+  const r = await fetch(`${B}:commit`, {
+    method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ writes: docs.map(([path, fields]) => ({ update: { name: `projects/${P}/databases/(default)/documents/${path}`, fields } })) }),
+  });
+  return r.status;
+};
 const seed = () => Promise.all([
   req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
   req('PATCH', 'profiles/a', {
@@ -119,11 +128,14 @@ const seed = () => Promise.all([
   req('PATCH', 'leaderboards/current', { weekKey: { stringValue: '2026-W42' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy', { rev: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'creatorWallCredits/test-wall', { creatorUid: { stringValue: 'b' } }, 'owner'),
-  req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: false } }, 'owner'),
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
   req('PATCH', 'folders/fb', folderFields('b'), 'owner'),
   req('PATCH', 'folders/fb/items/wallhaven_abc', itemFields('b'), 'owner'),
+  req('PATCH', 'folders/reused', folderFields('b'), 'owner'),
+  req('PATCH', 'folders/reused/items/wallhaven_private', itemFields('b', 'private'), 'owner'),
+  req('PATCH', 'folders/absent/items/wallhaven_orphan', itemFields('b', 'orphan'), 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
@@ -452,24 +464,42 @@ const cases = [
   ['owner updates another field and leaves searchTerms and visionLabels untouched', () => req('PATCH', 'walls/w14', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
   ['owner creates a folder', () => req('PATCH', 'folders/f1', folderFields('b'), Bu), 200],
   ['owner reads own folder', () => req('GET', 'folders/fb', null, Bu), 200],
-  ['owner lists own folders by ownerId', () => runQuery(Bu, [ownerFilter('b')], 'folders'), 200],
+  ['owner lists own folders by ownerId newest first', () => runQuery(Bu, [ownerFilter('b')], 'folders', '', newestFirst('updatedAt')), 200],
   ['owner renames own folder', () => req('PATCH', 'folders/f1', { name: str('Calm'), updatedAt: ts() }, Bu, ['name', 'updatedAt']), 200],
   ['owner adds an item with a provider_id key', () => req('PATCH', 'folders/f1/items/wallhaven_abc', itemFields('b'), Bu), 200],
   ['owner reads own folder item', () => req('GET', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
-  ['owner lists own folder items', () => runCollectionQuery(Bu, 'items', 'folders/fb'), 200],
+  ['owner lists own folder items newest first with preview limit', () => runQuery(Bu, [ownerFilter('b')], 'items', 'folders/fb', newestFirst('addedAt', 4)), 200],
+  ['owner fetches own items for local sorting and deletion without a composite index', () => runQuery(Bu, [ownerFilter('b')], 'items', 'folders/fb'), 200],
+  ['owner can check missing folder membership', () => req('GET', 'folders/fb/items/wallhaven_missing', null, Bu), 404],
+  ['stranger cannot check missing folder membership', () => req('GET', 'folders/fb/items/wallhaven_missing', null, C), 403],
+  ['owner updates own folder item', () => req('PATCH', 'folders/f1/items/wallhaven_abc', { thumb: str('https://example.com/new.jpg') }, Bu, ['thumb']), 200],
   ['owner removes an item', () => req('DELETE', 'folders/f1/items/wallhaven_abc', null, Bu), 200],
   ['owner deletes own folder', () => req('DELETE', 'folders/f1', null, Bu), 200],
   ['stranger cannot read a folder', () => req('GET', 'folders/fb', null, C), 403],
   ['stranger cannot list folders of another user', () => runQuery(C, [ownerFilter('b')], 'folders'), 403],
+  ['owner cannot list all users folders without a filter', () => runCollectionQuery(Bu, 'folders'), 403],
   ['stranger cannot rename a folder', () => req('PATCH', 'folders/fb', { name: str('Mine'), updatedAt: ts() }, C, ['name', 'updatedAt']), 403],
   ['stranger cannot delete a folder', () => req('DELETE', 'folders/fb', null, C), 403],
   ['stranger cannot read folder items', () => req('GET', 'folders/fb/items/wallhaven_abc', null, C), 403],
+  ['stranger cannot list folder items', () => runQuery(C, [ownerFilter('c')], 'items', 'folders/fb', newestFirst('addedAt')), 403],
   ['stranger cannot add an item to a folder', () => req('PATCH', 'folders/fb/items/pexels_9', itemFields('c', '9', 'Pexels'), C), 403],
+  ['stranger cannot update a folder item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', itemFields('c'), C), 403],
   ['stranger cannot delete a folder item', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, C), 403],
   ['signed-out user cannot read a folder', () => req('GET', 'folders/fb'), 403],
+  ['signed-out user cannot list folders', () => runQuery(undefined, [ownerFilter('b')], 'folders'), 403],
+  ['signed-out user cannot create a folder', () => req('PATCH', 'folders/signed-out', folderFields('b')), 403],
+  ['signed-out user cannot update a folder', () => req('PATCH', 'folders/fb', { name: str('Mine') }, undefined, ['name']), 403],
+  ['signed-out user cannot delete a folder', () => req('DELETE', 'folders/fb'), 403],
+  ['signed-out user cannot read an item', () => req('GET', 'folders/fb/items/wallhaven_abc'), 403],
+  ['signed-out user cannot list items', () => runQuery(undefined, [ownerFilter('b')], 'items', 'folders/fb'), 403],
+  ['signed-out user cannot create an item', () => req('PATCH', 'folders/fb/items/pexels_9', itemFields('b', '9', 'Pexels')), 403],
+  ['signed-out user cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', itemFields('b')), 403],
+  ['signed-out user cannot delete an item', () => req('DELETE', 'folders/fb/items/wallhaven_abc'), 403],
   ['folder for another owner is refused', () => req('PATCH', 'folders/f2', folderFields('c'), Bu), 403],
   ['empty folder name is refused', () => req('PATCH', 'folders/f3', folderFields('b', ''), Bu), 403],
   ['folder name over 50 chars is refused', () => req('PATCH', 'folders/f4', folderFields('b', 'x'.repeat(51)), Bu), 403],
+  ['folder name with 50 chars is accepted', () => req('PATCH', 'folders/length50', folderFields('b', 'x'.repeat(50)), Bu), 200],
+  ['whitespace-only folder name is refused', () => req('PATCH', 'folders/spaces', folderFields('b', ' \t\n'), Bu), 403],
   ['untrimmed folder name is refused', () => req('PATCH', 'folders/f5', folderFields('b', ' Blue '), Bu), 403],
   ['folder with a public field is refused', () => req('PATCH', 'folders/f6', folderFields('b', 'Blue', { public: { booleanValue: true } }), Bu), 403],
   ['folder with five covers is refused', () => req('PATCH', 'folders/f7', folderFields('b', 'Blue', { covers: arr(['a', 'b', 'c', 'd', 'e']) }), Bu), 403],
@@ -479,9 +509,47 @@ const cases = [
   ['item key without the provider is refused', () => req('PATCH', 'folders/fb/items/abc', itemFields('b'), Bu), 403],
   ['item key for another provider is refused', () => req('PATCH', 'folders/fb/items/pexels_abc', itemFields('b'), Bu), 403],
   ['item with an unknown provider is refused', () => req('PATCH', 'folders/fb/items/unknown_abc', itemFields('b', 'abc', 'Unknown'), Bu), 403],
+  ...['Prism', 'wall_of_the_day', 'WallOfTheDay', 'WallHaven', 'Pexels'].map((provider) => [
+    `folder accepts favourite provider ${provider} with its lowercased key`,
+    () => req('PATCH', `folders/fb/items/${provider.toLowerCase()}_parity`, {
+      ...itemFields('b', 'parity', provider), category: str('Blue'), views: str('1'), resolution: str('10x20'),
+      fav: str('2'), size: str('200'), photographer: str('Artist'), collections: arr(['Blue']),
+      depth: depth('person'), createdAt: ts(), favouritedAt: ts(),
+    }, Bu), 200,
+  ]),
+  ['empty folder item id is refused', () => req('PATCH', 'folders/fb/items/wallhaven_', itemFields('b', ''), Bu), 403],
+  ['item can preserve the source wallpaper document id', () => req('PATCH', 'folders/fb/items/prism_source', { ...itemFields('b', 'source', 'Prism'), wallpaperDocumentId: str('source-doc') }, Bu), 200],
+  ['item source document id must be a string', () => req('PATCH', 'folders/fb/items/prism_invalid', { ...itemFields('b', 'invalid', 'Prism'), wallpaperDocumentId: { integerValue: '5' } }, Bu), 403],
+  ['item source document id cannot be empty', () => req('PATCH', 'folders/fb/items/prism_empty', { ...itemFields('b', 'empty', 'Prism'), wallpaperDocumentId: str('') }, Bu), 403],
+  ['changing an item ownerId is refused', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { ownerId: str('c') }, Bu, ['ownerId']), 403],
   ['item with an extra field is refused', () => req('PATCH', 'folders/fb/items/wallhaven_extra', { ...itemFields('b', 'extra'), public: { booleanValue: true } }, Bu), 403],
   ['item in a missing folder is refused', () => req('PATCH', 'folders/missing/items/wallhaven_abc', itemFields('b'), Bu), 403],
   ['owner updates own seeded folder count', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, Bu, ['itemCount', 'covers', 'updatedAt']), 200],
+  ['owner creates a folder and first item atomically', () => commitDocs(Bu, [
+    ['folders/atomic', folderFields('b', 'Atomic', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']) })],
+    ['folders/atomic/items/wallhaven_first', itemFields('b', 'first')],
+  ]), 200],
+  ['atomic folder creation cannot insert another owner item', () => commitDocs(Bu, [
+    ['folders/atomic-bad', folderFields('b')], ['folders/atomic-bad/items/wallhaven_first', itemFields('c', 'first')],
+  ]), 403],
+  ['owner can delete a parent with remaining items', () => req('DELETE', 'folders/reused', null, Bu), 200],
+  ['another user can reuse a deleted folder id', () => req('PATCH', 'folders/reused', folderFields('c'), C), 200],
+  ['recreated folder owner cannot read the previous owner item', () => req('GET', 'folders/reused/items/wallhaven_private', null, C), 403],
+  ['previous item owner cannot read through another owner parent', () => req('GET', 'folders/reused/items/wallhaven_private', null, Bu), 403],
+  ['recreated folder owner cannot overwrite the previous owner item', () => req('PATCH', 'folders/reused/items/wallhaven_private', itemFields('c', 'private'), C), 403],
+  ['recreated folder owner cannot delete the previous owner item', () => req('DELETE', 'folders/reused/items/wallhaven_private', null, C), 403],
+  ['recreated folder owner cannot list the previous owner items without a filter', () => runCollectionQuery(C, 'items', 'folders/reused'), 403],
+  ['recreated folder owner can query only own items', () => runQuery(C, [ownerFilter('c')], 'items', 'folders/reused'), 200],
+  ['previous item owner cannot delete in a recreated folder owned by another user', () => req('DELETE', 'folders/reused/items/wallhaven_private', null, Bu), 403],
+  ['orphan item cannot be read while its parent is absent', () => req('GET', 'folders/absent/items/wallhaven_orphan', null, Bu), 403],
+  ['previous item owner can delete an orphan with no parent', () => req('DELETE', 'folders/absent/items/wallhaven_orphan', null, Bu), 200],
+  ['account deletion closes the folder write barrier', () => req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'), 200],
+  ['deleting account cannot create more folders', () => req('PATCH', 'folders/after-close', folderFields('b'), Bu), 403],
+  ['deleting account cannot update a folder', () => req('PATCH', 'folders/fb', { name: str('Too late') }, Bu, ['name']), 403],
+  ['deleting account cannot create an item', () => req('PATCH', 'folders/fb/items/prism_late', itemFields('b', 'late', 'Prism'), Bu), 403],
+  ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
+  ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
+  ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
 ];
 await seed();
 let bad = 0;

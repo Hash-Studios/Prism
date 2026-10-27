@@ -37,13 +37,14 @@ class _FoldersRowState extends State<FoldersRow> {
 
   Future<void> _create() async {
     final FoldersBloc bloc = context.read<FoldersBloc>();
+    final String ownerId = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     final String? name = await showFolderNameSheet(
       context,
       title: l10n.foldersNewFolder,
       actionLabel: l10n.foldersCreate,
     );
-    if (name == null) return;
+    if (name == null || !mounted || app_state.prismUser.id != ownerId || bloc.state.userId != ownerId) return;
     final bool ok = await bloc.run((id) => FoldersEvent.createRequested(name: name, operationId: id));
     if (!ok) {
       toasts.error(l10n.foldersUpdateFailed);
@@ -59,9 +60,12 @@ class _FoldersRowState extends State<FoldersRow> {
 
   @override
   Widget build(BuildContext context) {
-    if (app_state.prismUser.id.isEmpty) return const SizedBox.shrink();
+    final FoldersBloc? bloc = context.read<FoldersBloc?>();
+    if (bloc == null) return const SizedBox.shrink();
     return BlocBuilder<FoldersBloc, FoldersState>(
+      bloc: bloc,
       builder: (context, state) {
+        if (app_state.prismUser.id.isEmpty) return const SizedBox.shrink();
         final AppLocalizations l10n = context.l10n;
         final bool loading = state.status == LoadStatus.initial || state.status == LoadStatus.loading;
         return Column(
@@ -96,6 +100,23 @@ class _FoldersRowState extends State<FoldersRow> {
                       const SizedBox(width: PrismSpace.sm),
                       const PrismBone(width: FoldersRow.cardSize, height: FoldersRow.cardSize, radius: PrismRadius.sm),
                     ]
+                  else if (state.status == LoadStatus.failure)
+                    Padding(
+                      padding: const EdgeInsets.only(left: PrismSpace.md),
+                      child: SizedBox(
+                        width: 180,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Text(l10n.foldersLoadError, style: PrismTextStyles.body(context)),
+                            PrismButton(
+                              label: l10n.wallpaperTryAgain,
+                              onPressed: () => unawaited(ensureFoldersLoaded(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
                   else if (state.folders.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(left: PrismSpace.md, top: PrismSpace.xl),

@@ -111,8 +111,16 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
   // Items go before their folder, so a retry still finds them through the folder query.
+  // A reused folder id can contain another owner's orphaned items. Never delete those.
   const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
-  for (const folder of folders.docs) await db.recursiveDelete(folder.ref.collection("items"));
+  for (const folder of folders.docs) {
+    const items = await folder.ref.collection("items").where("ownerId", "==", callerUid).get();
+    for (let start = 0; start < items.docs.length; start += 400) {
+      const batch = db.batch();
+      for (const item of items.docs.slice(start, start + 400)) batch.delete(item.ref);
+      await batch.commit();
+    }
+  }
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();

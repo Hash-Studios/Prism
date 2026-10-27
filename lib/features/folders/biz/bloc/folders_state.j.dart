@@ -17,6 +17,7 @@ abstract class FoldersState with _$FoldersState {
     @Default(ActionStatus.idle) ActionStatus actionStatus,
     @Default(0) int completedOperationId,
     Failure? failure,
+    Failure? queuedWriteFailure,
   }) = _FoldersState;
 
   const FoldersState._();

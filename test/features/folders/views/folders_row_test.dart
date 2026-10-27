@@ -1,10 +1,14 @@
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/folders/views/widgets/folders_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -12,22 +16,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class _OnlineConnectivity implements ConnectivityService {
+  @override
+  Future<bool> hasConnection() async => true;
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
+}
+
 class _FakeFoldersRepository implements FoldersRepository {
   _FakeFoldersRepository({this.folders = const <FolderEntity>[]});
 
   final List<FolderEntity> folders;
+  bool failLoad = false;
 
   /// One entry per repository call.
   final List<String> calls = <String>[];
 
   @override
+  Stream<FolderWriteFailure> get writeFailures => const Stream.empty();
+
+  @override
+  int get writeRevision => 0;
+
+  @override
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) async {
     calls.add('fetchFolders:$userId');
+    if (failLoad) return Result.error(const NetworkFailure('offline'));
     return Result.success(folders);
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {int? limit}) async {
+  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
     return Result.success(const <FavouriteWallEntity>[]);
   }
@@ -51,7 +71,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> deleteFolder(String folderId) async {
+  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) async {
     calls.add('deleteFolder:$folderId');
     return Result.success<void>(null);
   }
@@ -93,7 +113,7 @@ void main() {
     }
   }
 
-  Future<void> pumpSignedIn(WidgetTester tester, _FakeFoldersRepository repo) async {
+  Future<FoldersBloc> pumpSignedIn(WidgetTester tester, _FakeFoldersRepository repo) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     final FoldersBloc bloc = FoldersBloc(repo);
     addTearDown(bloc.close);
@@ -109,6 +129,7 @@ void main() {
       ),
     );
     await settle(tester);
+    return bloc;
   }
 
   testWidgets('signed in with two folders shows the heading, New folder, and each folder with its count', (
@@ -132,6 +153,97 @@ void main() {
 
     expect(find.text('New folder'), findsOneWidget);
     expect(find.text('Sort your saved wallpapers into folders.'), findsOneWidget);
+  });
+
+  testWidgets('a failed load shows a retry action, not the empty-folder hint', (tester) async {
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')])..failLoad = true;
+    await pumpSignedIn(tester, repo);
+
+    expect(find.text('Sort your saved wallpapers into folders.'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+    repo.failLoad = false;
+    await tester.tap(find.text('Try again'));
+    await settle(tester);
+
+    expect(find.text('Work'), findsOneWidget);
+    expect(repo.calls.where((call) => call == 'fetchFolders:u1'), hasLength(2));
+  });
+
+  testWidgets('a name prompt opened by one account cannot create a folder for the next account', (tester) async {
+    final repo = _FakeFoldersRepository();
+    final bloc = await pumpSignedIn(tester, repo);
+    await tester.tap(find.text('New folder'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Private draft');
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    await tester.tap(find.text('Create'));
+    await settle(tester);
+
+    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
+  });
+
+  testWidgets('a folder page shows a load error with retry when the folder list fails', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    final repo = _FakeFoldersRepository()..failLoad = true;
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: BlocProvider<FoldersBloc>.value(
+          value: bloc,
+          child: const FolderScreen(folderId: 'work'),
+        ),
+      ),
+    );
+    await settle(tester);
+
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text('Folder not found'), findsNothing);
+    expect(repo.calls.where((call) => call.startsWith('fetchItems:')), isEmpty);
+    await tester.tap(find.text('Try again'));
+    await settle(tester);
+    expect(repo.calls.where((call) => call == 'fetchFolders:u1'), hasLength(2));
+  });
+
+  testWidgets('a mounted folder page reloads its items after switching accounts and hides them on sign-out', (
+    tester,
+  ) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    final repo = _FakeFoldersRepository();
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: BlocProvider<FoldersBloc>.value(
+          value: bloc,
+          child: const FolderScreen(folderId: 'work'),
+        ),
+      ),
+    );
+    await settle(tester);
+    expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(1));
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(2));
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    bloc.add(const FoldersEvent.cleared());
+    await settle(tester);
+    expect(find.text('Sign in to use folders'), findsOneWidget);
   });
 
   testWidgets('a guest sees no folders row and makes no repository call, with no FoldersBloc provided', (tester) async {
@@ -163,5 +275,19 @@ void main() {
     expect(tester.getSemantics(find.bySemanticsLabel('Work')).label, 'Work');
     expect(tester.getSemantics(find.bySemanticsLabel('Trips')).label, 'Trips');
     handle.dispose();
+  });
+
+  testWidgets('a mounted row hides on sign-out and returns after signing in again', (tester) async {
+    final bloc = await pumpSignedIn(tester, _FakeFoldersRepository());
+    expect(find.text('Folders'), findsOneWidget);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    bloc.add(const FoldersEvent.cleared());
+    await settle(tester);
+    expect(find.text('Folders'), findsNothing);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    expect(find.text('Folders'), findsOneWidget);
   });
 }
