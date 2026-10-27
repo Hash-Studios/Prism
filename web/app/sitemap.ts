@@ -4,7 +4,7 @@ import { SITE_URL } from "@/lib/site-config";
 
 export const dynamic = "force-static";
 
-const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`)];
+const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`), "/changelog"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

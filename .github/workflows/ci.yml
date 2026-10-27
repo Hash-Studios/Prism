@@ -322,6 +322,7 @@ jobs:
         run: |
           npm ci
           node --test test/analytics.test.cjs
+          node --test test/changelog.test.mjs
           npx playwright install --with-deps chromium
           npm run test:e2e
           npx tsc --noEmit
