@@ -270,7 +270,7 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
               ?widget.child,
               if (drag)
                 Align(
-                  alignment: const Alignment(0, 0.55),
+                  alignment: const Alignment(0, -0.1),
                   child: IgnorePointer(child: _DragHint(label: context.l10n.wallpaperSpatialDragHint)),
                 ),
             ],
