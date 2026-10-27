@@ -33,6 +33,11 @@ This outputs static files in `web/out`.
 
 This repo is configured to deploy the static output from `web/out` through `wrangler.toml`.
 
+A push to `master` that changes `web/`, `CHANGELOG.md` or the Proxima Nova fonts deploys the site
+automatically (`.github/workflows/deploy_web.yml`). It needs the `CLOUDFLARE_API_TOKEN` repository
+secret. Set the `NEXT_PUBLIC_MIXPANEL_TOKEN` repository variable to build with analytics. Run it by hand
+from the Actions tab. The steps below are for a manual deploy.
+
 ### 1) First-time login
 
 ```bash
