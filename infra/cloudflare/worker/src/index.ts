@@ -1144,7 +1144,8 @@ async function generateUniqueCode(env: Env): Promise<string> {
 }
 
 function generateCode(length: number): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // People retype codes from the share sheet and card text, so leave out 0/O/o and 1/I/l.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   const bytes = crypto.getRandomValues(new Uint8Array(length));
   let out = '';
   for (let i = 0; i < bytes.length; i += 1) {
