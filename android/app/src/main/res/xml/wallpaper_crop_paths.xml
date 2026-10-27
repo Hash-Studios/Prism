@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The one cache folder that the system wallpaper cropper may read (see MainActivity.cropContentUri). -->
+<!-- Cache folders that other apps may read: the system wallpaper cropper (wallpaper_crop, see MainActivity.cropContentUri)
+     and Instagram Stories (share_cards, see PrismShareHostApiImpl). -->
 <paths>
     <cache-path name="wallpaper_crop" path="wallpaper_crop/" />
+    <cache-path name="share_cards" path="share_cards/" />
 </paths>

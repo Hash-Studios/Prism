@@ -2777,6 +2777,44 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Beitrag';
+
+  @override
+  String get coreShareFormatClean => 'Schlicht';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Link kopieren';
+
+  @override
+  String get coreShareTargetSaveImage => 'Bild speichern';
+
+  @override
+  String get coreShareTargetMore => 'Mehr';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'von $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Bild gespeichert';
+
+  @override
+  String get coreShareImageFailed => 'Das Bild konnte nicht gespeichert werden. Versuch es erneut.';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram konnte nicht geöffnet werden. Versuch es erneut.';
+
+  @override
+  String get coreSharePreviewFailed => 'Dieses Bild konnte nicht erstellt werden. Über „Mehr“ wird der Link geteilt.';
+
+  @override
   String get coreShareLinkCopied => 'Freigabelink kopiert!';
 
   @override

@@ -2772,6 +2772,44 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'स्टोरी';
+
+  @override
+  String get coreShareFormatPost => 'पोस्ट';
+
+  @override
+  String get coreShareFormatClean => 'सादा';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'लिंक कॉपी करें';
+
+  @override
+  String get coreShareTargetSaveImage => 'इमेज सेव करें';
+
+  @override
+  String get coreShareTargetMore => 'और';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return '$creator द्वारा';
+  }
+
+  @override
+  String get coreShareImageSaved => 'इमेज सेव हो गई';
+
+  @override
+  String get coreShareImageFailed => 'इमेज सेव नहीं हो सकी। फिर से कोशिश करें।';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram नहीं खुल सका। फिर से कोशिश करें।';
+
+  @override
+  String get coreSharePreviewFailed => 'यह इमेज नहीं बन सकी। इसके बजाय “और” से लिंक शेयर करें।';
+
+  @override
   String get coreShareLinkCopied => 'शेयर करने का लिंक कॉपी हो गया!';
 
   @override

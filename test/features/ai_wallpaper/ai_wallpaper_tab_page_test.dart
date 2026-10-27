@@ -11,7 +11,6 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -396,9 +395,10 @@ void main() {
       ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    final Completer<ShareCardResult> share = Completer<ShareCardResult>();
+    final Completer<void> share = Completer<void>();
     var shareCalls = 0;
     String? sharedImageUrl;
+    String? sharedSourceContext;
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -409,14 +409,13 @@ void main() {
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
             Completer<AiSubmissionMetadata>(),
           ),
-          shareCard: (context, {required imageUrl, required link, contextLine}) {
+          shareSheet: (context, content, sourceContext) {
             shareCalls++;
-            sharedImageUrl = imageUrl;
-            expect(link, 'https://prismwalls.com');
-            expect(contextLine, 'Made with Prism AI');
-            return shareCalls == 1
-                ? share.future
-                : Future<ShareCardResult>.value((format: ShareFormatValue.text, dismissed: false));
+            sharedImageUrl = content.imageUrl;
+            sharedSourceContext = sourceContext;
+            expect(content.link, 'https://prismwalls.com');
+            expect(content.contextLine, 'Made with Prism AI');
+            return shareCalls == 1 ? share.future : Future<void>.value();
           },
         ),
       ),
@@ -432,23 +431,21 @@ void main() {
 
     expect(shareCalls, 1);
     expect(sharedImageUrl, 'https://cdn/watermarked.png');
+    expect(sharedSourceContext, 'ai_wallpaper');
     expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
 
-    share.complete((format: ShareFormatValue.card, dismissed: false));
+    share.complete();
     await tester.pumpAndSettle();
-    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
-    expect(result.result, EventResultValue.success);
-    expect(result.format, ShareFormatValue.card);
-    expect(result.sourceContext, 'ai_wallpaper');
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
     expect(find.byTooltip('Share'), findsOneWidget);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
-    final List<InviteShareResultEvent> results = analytics.events.whereType<InviteShareResultEvent>().toList();
-    expect(results, hasLength(2));
-    expect(results.last.format, ShareFormatValue.text);
+    expect(shareCalls, 2);
+    expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(2));
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
   });
 
   testWidgets('AI share failure records failure and restores the action', (tester) async {
@@ -484,10 +481,10 @@ void main() {
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
             Completer<AiSubmissionMetadata>(),
           ),
-          shareCard: (_, {required imageUrl, required link, contextLine}) {
+          shareSheet: (_, content, sourceContext) {
             shareCalls++;
-            expect(imageUrl, 'https://cdn/full.png');
-            return Future<ShareCardResult>.error(StateError('share unavailable'));
+            expect(content.imageUrl, 'https://cdn/full.png');
+            return Future<void>.error(StateError('share unavailable'));
           },
         ),
       ),
@@ -509,55 +506,6 @@ void main() {
     expect(shareCalls, 2);
     expect(analytics.events.whereType<InviteShareResultEvent>(), hasLength(2));
     await tester.pump(const Duration(seconds: 1));
-  });
-
-  testWidgets('AI share dismissed by the user is tracked as cancelled without an error toast', (tester) async {
-    final analytics = FakeAppAnalytics();
-    AnalyticsRuntime.instance = analytics;
-    tester.view.physicalSize = const Size(1000, 2200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
-    addTearDown(getIt.reset);
-    app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-1'
-      ..loggedIn = true;
-    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
-    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
-    final List<MethodCall> toastCalls = <MethodCall>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      if (call.method == 'showToast') toastCalls.add(call);
-      return true;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
-
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-
-        home: AiWallpaperTabPage(
-          repository: _FakeAiGenerationRepository(
-            _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
-            Completer<AiSubmissionMetadata>(),
-          ),
-          shareCard: (_, {required imageUrl, required link, contextLine}) async =>
-              (format: ShareFormatValue.card, dismissed: true),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final Finder shareButton = find.byTooltip('Share');
-    await tester.ensureVisible(shareButton);
-    await tester.tap(shareButton);
-    await tester.pumpAndSettle();
-
-    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
-    expect(result.result, EventResultValue.cancelled);
-    expect(result.reason, AnalyticsReasonValue.userCancelled);
-    expect(result.format, ShareFormatValue.card);
-    expect(toastCalls, isEmpty);
   });
 
   testWidgets('AI share still completes and unlocks when tap analytics throws', (tester) async {
@@ -582,9 +530,8 @@ void main() {
 
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
-          shareCard: (_, {required imageUrl, required link, contextLine}) async {
+          shareSheet: (_, content, sourceContext) async {
             shareCalls++;
-            return (format: ShareFormatValue.card, dismissed: false);
           },
         ),
       ),
@@ -596,7 +543,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(shareCalls, 1);
-    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
     expect(find.byTooltip('Share'), findsOneWidget);
 
     final asyncAnalytics = _AsyncThrowingShareTapAnalytics();
@@ -605,7 +552,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(shareCalls, 2);
-    expect(asyncAnalytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(asyncAnalytics.events.whereType<InviteShareResultEvent>(), isEmpty);
     expect(find.byTooltip('Share'), findsOneWidget);
   });
 
@@ -631,9 +578,8 @@ void main() {
 
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
-          shareCard: (_, {required imageUrl, required link, contextLine}) async {
+          shareSheet: (_, content, sourceContext) async {
             shareCalls++;
-            return (format: ShareFormatValue.card, dismissed: false);
           },
         ),
       ),
@@ -646,7 +592,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(shareCalls, 1);
-    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
     expect(find.byTooltip('Share'), findsOneWidget);
   });
 
@@ -664,7 +610,7 @@ void main() {
       ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    final Completer<ShareCardResult> share = Completer<ShareCardResult>();
+    final Completer<void> share = Completer<void>();
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -672,7 +618,7 @@ void main() {
 
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
-          shareCard: (_, {required imageUrl, required link, contextLine}) => share.future,
+          shareSheet: (_, content, sourceContext) => share.future,
         ),
       ),
     );
@@ -688,7 +634,7 @@ void main() {
         home: SizedBox.shrink(),
       ),
     );
-    share.complete((format: ShareFormatValue.card, dismissed: false));
+    share.complete();
     await tester.pump();
 
     expect(tester.takeException(), isNull);

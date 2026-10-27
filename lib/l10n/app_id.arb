@@ -2753,6 +2753,26 @@
     },
     "description": "Text shared with a wallpaper image card."
   },
+  "coreShareFormatStory": "Story",
+  "coreShareFormatPost": "Postingan",
+  "coreShareFormatClean": "Polos",
+  "coreShareTargetInstagram": "Instagram",
+  "coreShareTargetCopyLink": "Salin tautan",
+  "coreShareTargetSaveImage": "Simpan gambar",
+  "coreShareTargetMore": "Lainnya",
+  "coreShareCardBy": "oleh {creator}",
+  "@coreShareCardBy": {
+    "description": "Byline on a shared wallpaper image. creator is a handle such as @maya.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "coreShareImageSaved": "Gambar disimpan",
+  "coreShareImageFailed": "Gambar tidak dapat disimpan. Coba lagi.",
+  "coreShareInstagramFailed": "Instagram tidak dapat dibuka. Coba lagi.",
+  "coreSharePreviewFailed": "Gambar ini tidak dapat dibuat. Gunakan Lainnya untuk membagikan tautan.",
   "coreShareLinkCopied": "Tautan berbagi disalin!",
   "coreShareProfileClipboard": "Hai, lihat profil saya di Prism ➜ {link}",
   "@coreShareProfileClipboard": {

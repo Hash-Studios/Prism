@@ -2751,6 +2751,44 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Post';
+
+  @override
+  String get coreShareFormatClean => 'Clean';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copy link';
+
+  @override
+  String get coreShareTargetSaveImage => 'Save image';
+
+  @override
+  String get coreShareTargetMore => 'More';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'by $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Image saved';
+
+  @override
+  String get coreShareImageFailed => 'Couldn\'t save the image. Try again.';
+
+  @override
+  String get coreShareInstagramFailed => 'Couldn\'t open Instagram. Try again.';
+
+  @override
+  String get coreSharePreviewFailed => 'Couldn\'t make this image. More shares the link instead.';
+
+  @override
   String get coreShareLinkCopied => 'Sharing link copied!';
 
   @override

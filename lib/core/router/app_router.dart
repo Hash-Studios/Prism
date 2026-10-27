@@ -7,6 +7,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/share/share_sheet.dart' show ShareSheetOpen;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/data/upload/github_content_api.dart' show GitHubContent;

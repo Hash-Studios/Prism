@@ -113,22 +113,24 @@ Future<Finder> _waitForThumbnailFallback(WidgetTester tester) async {
   return thumbnail;
 }
 
-FeedItemEntity _prism({List<String> collections = const <String>[], int? width, int? height}) => FeedItemEntity.prism(
-  id: 'prism-1',
-  wallpaper: PrismWallpaper(
-    core: WallpaperCore(
+FeedItemEntity _prism({List<String> collections = const <String>[], int? width, int? height, List<String>? colors}) =>
+    FeedItemEntity.prism(
       id: 'prism-1',
-      source: WallpaperSource.prism,
-      fullUrl: 'https://img.test/full.jpg',
-      thumbnailUrl: 'https://img.test/thumb.jpg',
-      authorName: 'Akshay',
-      width: width,
-      height: height,
-    ),
-    collections: collections,
-    tags: const <String>['space', 'stars'],
-  ),
-);
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'prism-1',
+          source: WallpaperSource.prism,
+          fullUrl: 'https://img.test/full.jpg',
+          thumbnailUrl: 'https://img.test/thumb.jpg',
+          authorName: 'Akshay',
+          width: width,
+          height: height,
+        ),
+        collections: collections,
+        tags: const <String>['space', 'stars'],
+        colors: colors,
+      ),
+    );
 
 Future<List<double>> _hues(Uint8List png) async {
   final ui.Codec codec = await ui.instantiateImageCodec(png);
@@ -346,6 +348,21 @@ void main() {
     expect(left(find.byType(FavouriteWallpaperButton)), card.left);
     expect(tester.getRect(primary).right, bar.right - 8);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('the share button gets the creator and the stored palette colours of a Prism wall', (tester) async {
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(colors: const <String>['blue', 'pink']),
+        paletteLoading: false,
+      ),
+    );
+
+    final ShareButton share = tester.widget<ShareButton>(find.byType(ShareButton));
+    expect(share.palette, const <Color>[Color(0xFF0066CC), Color(0xFFEA4C88)]);
+    expect(share.creator, 'Akshay');
+  });
 
   testWidgets('a wall in a premium collection is a premium download', (tester) async {
     await pumpDetail(

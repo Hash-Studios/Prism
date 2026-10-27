@@ -118,13 +118,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
     Key? key,
     AiGenerationRepositoryImpl? repository,
     Future<WallSubmissionResult> Function()? submitForTesting,
-    Future<({bool dismissed, ShareFormatValue format})> Function(
-      BuildContext, {
-      required String imageUrl,
-      required String link,
-      String? contextLine,
-    })?
-    shareCard,
+    ShareSheetOpen? shareSheet,
     List<PageRouteInfo>? children,
   }) : super(
          AiTabRoute.name,
@@ -132,7 +126,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
            key: key,
            repository: repository,
            submitForTesting: submitForTesting,
-           shareCard: shareCard,
+           shareSheet: shareSheet,
          ),
          initialChildren: children,
        );
@@ -149,7 +143,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
         key: args.key,
         repository: args.repository,
         submitForTesting: args.submitForTesting,
-        shareCard: args.shareCard,
+        shareSheet: args.shareSheet,
       );
     },
   );
@@ -160,7 +154,7 @@ class AiTabRouteArgs {
     this.key,
     this.repository,
     this.submitForTesting,
-    this.shareCard,
+    this.shareSheet,
   });
 
   final Key? key;
@@ -169,28 +163,24 @@ class AiTabRouteArgs {
 
   final Future<WallSubmissionResult> Function()? submitForTesting;
 
-  final Future<({bool dismissed, ShareFormatValue format})> Function(
-    BuildContext, {
-    required String imageUrl,
-    required String link,
-    String? contextLine,
-  })?
-  shareCard;
+  final ShareSheetOpen? shareSheet;
 
   @override
   String toString() {
-    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareCard: $shareCard}';
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareSheet: $shareSheet}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! AiTabRouteArgs) return false;
-    return key == other.key && repository == other.repository;
+    return key == other.key &&
+        repository == other.repository &&
+        shareSheet == other.shareSheet;
   }
 
   @override
-  int get hashCode => key.hashCode ^ repository.hashCode;
+  int get hashCode => key.hashCode ^ repository.hashCode ^ shareSheet.hashCode;
 }
 
 /// generated route for

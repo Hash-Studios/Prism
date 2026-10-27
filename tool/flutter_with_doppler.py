@@ -14,7 +14,7 @@ from prepare_release_firebase import prepare
 # development switches. Keep this list in sync with Env.
 APP_KEYS = (
     'GH_REPO_WALLS', 'GH_USERNAME', 'R2_PREVIEW_BASE_URL',
-    'RC_API_KEY', 'RC_ANDROID_API_KEY', 'RC_IOS_API_KEY', 'PEXELS_API_KEY',
+    'RC_API_KEY', 'RC_ANDROID_API_KEY', 'RC_IOS_API_KEY', 'PEXELS_API_KEY', 'META_APP_ID',
     'SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED',
     'MIXPANEL_TOKEN', 'MIXPANEL_ENABLED',
 )

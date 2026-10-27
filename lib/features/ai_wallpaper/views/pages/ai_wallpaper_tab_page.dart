@@ -17,7 +17,8 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/share/share_card_renderer.dart';
+import 'package:Prism/core/share/share_card.dart';
+import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
@@ -69,18 +70,12 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet});
 
   final AiGenerationRepositoryImpl? repository;
 
-  /// Builds and shares the branded image card. Tests replace it.
-  final Future<ShareCardResult> Function(
-    BuildContext context, {
-    required String imageUrl,
-    required String link,
-    String? contextLine,
-  })?
-  shareCard;
+  /// Opens the share sheet. Tests replace it.
+  final ShareSheetOpen? shareSheet;
   final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
   @override
@@ -766,21 +761,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _sharing = true);
     _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
     try {
-      final ShareCardResult shared = await (widget.shareCard ?? shareWallpaperCard)(
+      final AppLocalizations l10n = context.l10n;
+      await (widget.shareSheet ?? showShareSheet)(
         context,
-        imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
-        link: 'https://prismwalls.com',
-        contextLine: context.l10n.economyAiMadeWithPrism,
-      );
-      if (!mounted) return;
-      _trackShareEvent(
-        InviteShareResultEvent(
-          channel: ShareChannelValue.shareSheet,
-          result: shared.dismissed ? EventResultValue.cancelled : EventResultValue.success,
-          reason: shared.dismissed ? AnalyticsReasonValue.userCancelled : null,
-          sourceContext: 'ai_wallpaper',
-          format: shared.format,
+        ShareCardContent(
+          imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
+          link: 'https://prismwalls.com',
+          brandName: l10n.appTitle,
+          contextLine: l10n.economyAiMadeWithPrism,
         ),
+        'ai_wallpaper',
       );
     } catch (error, stackTrace) {
       logger.w('AI share failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
