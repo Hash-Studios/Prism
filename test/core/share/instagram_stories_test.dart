@@ -60,7 +60,7 @@ void main() {
     expect(target.iosUrl, isNot(contains('&c')));
   });
 
-  for (final String blank in <String>['', '  ']) {
+  for (final String blank in <String>['', '  ', '""', "' '"]) {
     test('available is false and never calls the api when the app id is "$blank"', () async {
       final _FakeShareApi fake = _FakeShareApi();
       _installFake(fake, appId: blank);
@@ -101,5 +101,16 @@ void main() {
     expect(await InstagramStories.share('/tmp/card.png'), isTrue);
     expect(fake.sharedPath, '/tmp/card.png');
     expect(fake.shareTarget?.appId, '123');
+  });
+
+  test('a quoted Doppler app id reaches Meta without its quotes', () async {
+    final _FakeShareApi fake = _FakeShareApi();
+    _installFake(fake, appId: ' "123" ');
+
+    expect(await InstagramStories.available(), isTrue);
+    expect(await InstagramStories.share('/tmp/card.png'), isTrue);
+    expect(fake.canTarget?.appId, '123');
+    expect(fake.shareTarget?.appId, '123');
+    expect(fake.shareTarget?.iosUrl, 'instagram-stories://share?source_application=123');
   });
 }

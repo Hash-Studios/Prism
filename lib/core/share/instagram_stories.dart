@@ -25,18 +25,20 @@ class InstagramStories {
 
   /// True only when the Meta app ID is set and Instagram can take a story.
   static Future<bool> available() async {
-    if (appId.trim().isEmpty) return false;
+    final String id = Env.normalize(appId);
+    if (id.isEmpty) return false;
     try {
-      return await api.canShareInstagramStory(instagramStoryTarget(appId.trim()));
+      return await api.canShareInstagramStory(instagramStoryTarget(id));
     } on PlatformException {
       return false;
     }
   }
 
   static Future<bool> share(String imagePath) async {
-    if (appId.trim().isEmpty) return false;
+    final String id = Env.normalize(appId);
+    if (id.isEmpty) return false;
     try {
-      return await api.shareInstagramStory(instagramStoryTarget(appId.trim()), imagePath);
+      return await api.shareInstagramStory(instagramStoryTarget(id), imagePath);
     } on PlatformException {
       return false;
     }
