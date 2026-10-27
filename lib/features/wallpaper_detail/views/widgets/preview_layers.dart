@@ -51,7 +51,7 @@ const List<int> _iosGrid = <int>[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 const List<int> _androidDock = <int>[0, 2, 1, 7, 6];
 const List<int> _androidGrid = <int>[4, 5, 8, 9, 10, 11, 12, 13, 14, 16];
 
-/// Key of the dock row, for tests and the position studio.
+/// Key of the dock row, so tests can find it.
 const ValueKey<String> previewDockKey = ValueKey<String>('preview-dock');
 
 /// How big the layer is drawn compared with a full screen. A phone-shaped frame on a smaller area scales down.
