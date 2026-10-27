@@ -202,8 +202,19 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
-  card,
+  story,
+  post,
+  clean,
   text;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ShareTargetValue {
+  instagramStories,
+  copyLink,
+  saveImage,
+  more;
 
   String get wireValue => _snakeCase(name);
 }

@@ -191,8 +191,17 @@ enums:
   - name: share_format
     dart_type: ShareFormatValue
     values:
-      - card
+      - story
+      - post
+      - clean
       - text
+  - name: share_target
+    dart_type: ShareTargetValue
+    values:
+      - instagram_stories
+      - copy_link
+      - save_image
+      - more
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
@@ -1343,6 +1352,11 @@ events:
         key: format
         type: enum
         enum: ShareFormatValue
+        required: false
+      - name: target
+        key: target
+        type: enum
+        enum: ShareTargetValue
         required: false
   - id: dynamic_link_create_result
     fields:

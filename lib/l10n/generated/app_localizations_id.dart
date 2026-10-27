@@ -2761,6 +2761,44 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Postingan';
+
+  @override
+  String get coreShareFormatClean => 'Polos';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Salin tautan';
+
+  @override
+  String get coreShareTargetSaveImage => 'Simpan gambar';
+
+  @override
+  String get coreShareTargetMore => 'Lainnya';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'oleh $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Gambar disimpan';
+
+  @override
+  String get coreShareImageFailed => 'Gambar tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram tidak dapat dibuka. Coba lagi.';
+
+  @override
+  String get coreSharePreviewFailed => 'Gambar ini tidak dapat dibuat. Gunakan Lainnya untuk membagikan tautan.';
+
+  @override
   String get coreShareLinkCopied => 'Tautan berbagi disalin!';
 
   @override

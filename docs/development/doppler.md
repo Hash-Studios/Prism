@@ -73,6 +73,10 @@ the app's defines. Nonempty `SENTRY_DSN`, `SENTRY_ENV`, `SENTRY_RELEASE`, `SENTR
 and `SENTRY_ENABLED` environment variables override their Doppler app settings.
 Do not print the configuration or enable shell tracing.
 
+`META_APP_ID` is optional. It is the Meta app ID for Instagram Stories sharing.
+When it is empty, the Instagram Stories share target is hidden. The owner adds it
+to Doppler `dev` and `prd`.
+
 ```sh
 DOPPLER_CONFIG=prd python3 tool/flutter_with_doppler.py --release-platform ios -- \
   fvm flutter build ios --config-only --release --build-number=401

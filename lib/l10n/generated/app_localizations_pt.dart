@@ -2802,6 +2802,44 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Publicação';
+
+  @override
+  String get coreShareFormatClean => 'Minimalista';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareTargetSaveImage => 'Salvar imagem';
+
+  @override
+  String get coreShareTargetMore => 'Mais';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'por $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Imagem salva';
+
+  @override
+  String get coreShareImageFailed => 'Não foi possível salvar a imagem. Tente novamente.';
+
+  @override
+  String get coreShareInstagramFailed => 'Não foi possível abrir o Instagram. Tente novamente.';
+
+  @override
+  String get coreSharePreviewFailed => 'Não foi possível criar esta imagem. Use Mais para compartilhar o link.';
+
+  @override
   String get coreShareLinkCopied => 'Link de compartilhamento copiado!';
 
   @override
@@ -12889,6 +12927,44 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String coreShareCardClipboard(String link) {
     return '🔥 Confira ➜ $link';
   }
+
+  @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Publicação';
+
+  @override
+  String get coreShareFormatClean => 'Minimalista';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareTargetSaveImage => 'Salvar imagem';
+
+  @override
+  String get coreShareTargetMore => 'Mais';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'por $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Imagem salva';
+
+  @override
+  String get coreShareImageFailed => 'Não foi possível salvar a imagem. Tente novamente.';
+
+  @override
+  String get coreShareInstagramFailed => 'Não foi possível abrir o Instagram. Tente novamente.';
+
+  @override
+  String get coreSharePreviewFailed => 'Não foi possível criar esta imagem. Use Mais para compartilhar o link.';
 
   @override
   String get coreShareLinkCopied => 'Link de compartilhamento copiado!';

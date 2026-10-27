@@ -7,6 +7,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -38,7 +39,6 @@ import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
@@ -69,12 +69,10 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_b
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/l10n/l10n.dart';
-
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -82,7 +80,6 @@ import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-
 import 'package:url_launcher/url_launcher.dart';
 
 @visibleForTesting
@@ -1555,9 +1552,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
   }
 
-  String? _shareContextLine(FeedItemEntity entity) {
-    final String? name = entity.wallpaperCore.authorName?.trim();
-    return name == null || name.isEmpty || name.contains('@') ? null : 'by $name';
+  /// Stored wall colours: Prism palette ids or Wallhaven hex values such as "#663399".
+  List<Color> _sharePalette(FeedItemEntity entity) {
+    final List<String> stored = entity.when(
+      prism: (_, wall) => wall.colors ?? const <String>[],
+      wallhaven: (_, wall) => wall.colors ?? const <String>[],
+      pexels: (_, _) => const <String>[],
+    );
+    return <Color>[
+      for (final String value in stored)
+        if (paletteColorById(value)?.color ?? _hexColor(value) case final Color color) color,
+    ];
+  }
+
+  static Color? _hexColor(String value) {
+    final String hex = value.replaceFirst('#', '');
+    final int? rgb = hex.length == 6 ? int.tryParse(hex, radix: 16) : null;
+    return rgb == null ? null : Color(0xFF000000 | rgb);
   }
 
   static String _tintKey(Color tint) => 'tint-${tint.rgbHex}';
@@ -1709,7 +1720,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             source: entity.source,
             url: entity.fullUrl,
             thumbUrl: entity.thumbnailUrl,
-            contextLine: _shareContextLine(entity),
+            creator: entity.wallpaperCore.authorName,
+            palette: _sharePalette(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
