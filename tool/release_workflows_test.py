@@ -3,10 +3,12 @@
 Uses Ruby's standard-library YAML parser, available on the hosted runners.
 """
 
+import base64
 import fnmatch
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import unittest
 
@@ -22,6 +24,12 @@ def yaml_data(text):
 
 def workflow(name):
     return yaml_data((fixture.ROOT / '.github/workflows' / name).read_text())
+
+
+def profile_bytes(bundle_id, name, uuid, team='X2955Z4CKQ'):
+    profile = {'Name': name, 'UUID': uuid, 'TeamIdentifier': [team],
+               'Entitlements': {'application-identifier': f'{team}.{bundle_id}'}}
+    return b'\x30\x82junk' + fixture.plistlib.dumps(profile) + b'\x00trailer'
 
 
 def scheduled(job, outputs):
@@ -40,14 +48,19 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
         value = ' spaces "quotes" \'apostrophe\' == \\ $(touch OWNED); & | *'
         self.values['PEXELS_API_KEY'] = value
         self.write_payload()
+        runner_temp = self.work / 'runner-temp'
         for name, job_name, platform, build_command in (
-            ('testflight.yml', 'build-and-upload', 'ios', ['build', 'ipa', '--release', '--build-number=401']),
+            ('testflight.yml', 'build-and-upload', 'ios',
+             ['build', 'ipa', '--release', '--build-number=401',
+              f'--export-options-plist={runner_temp}/ExportOptions.plist']),
             ('sentry_release_android.yml', 'build_android_with_sentry', 'android',
              ['build', 'appbundle', '--release', '--obfuscate', '--split-debug-info=build/symbols']),
         ):
             with self.subTest(workflow=name):
                 self.native(platform)
                 self.env['BUILD_NUMBER'] = '401'
+                if platform == 'ios':
+                    self.env['RUNNER_TEMP'] = str(runner_temp)
                 self.env['SENTRY_RELEASE'] = value
                 steps = workflow(name)['jobs'][job_name]['steps']
                 build = next(step for step in steps if step.get('name', '').startswith('Build '))
@@ -62,6 +75,70 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                 self.assertEqual(argv, expected)
                 self.assertEqual(result.stdout + result.stderr, '')
                 self.assertFalse((self.work / 'OWNED').exists())
+
+    def test_testflight_installs_and_cleans_every_profile(self):
+        if shutil.which('jq') is None:
+            self.skipTest('jq is not installed')
+        steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
+        install = next(step for step in steps if step.get('name') == 'Install provisioning profiles')
+        cleanup = next(step for step in steps if step.get('name') == 'Cleanup keychain & keys')
+        self.assertLessEqual({'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'},
+                             set(install['env']))
+        for name, value in install['env'].items():
+            self.assertTrue(name.endswith('PROVISIONING_PROFILE_BASE64'), name)
+            self.assertEqual(value, '${{ secrets.' + name + ' }}')
+        for name in list(self.env):
+            if name.endswith('PROVISIONING_PROFILE_BASE64'):
+                self.env.pop(name)
+        app_uuid, live_uuid, widget_uuid = 'A1B2C3D4-0001', 'A1B2C3D4-0002', 'A1B2C3D4-0003'
+        self.env['IOS_WIDGETS_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
+            profile_bytes('com.hash.prism.Widgets', 'Prism Widgets', widget_uuid)).decode()
+        self.env['IOS_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
+            profile_bytes('com.hash.prism', 'Prism App Store', app_uuid)).decode()
+        self.env['IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
+            profile_bytes('com.hash.prism.LiveActivities', 'Prism Live Activities', live_uuid)).decode()
+        self.env['HOME'] = str(self.work / 'home')
+        runner_temp = self.work / 'runner-temp'
+        runner_temp.mkdir()
+        self.env['RUNNER_TEMP'] = str(runner_temp)
+
+        result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', install['run'])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(len(list((self.work / 'home/Library').rglob('*.mobileprovision'))), 6)
+        export = fixture.plistlib.loads((runner_temp / 'ExportOptions.plist').read_bytes())
+        self.assertEqual(export['provisioningProfiles'],
+                         {'com.hash.prism': app_uuid, 'com.hash.prism.LiveActivities': live_uuid,
+                          'com.hash.prism.Widgets': widget_uuid})
+
+        result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', cleanup['run'])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(list((self.work / 'home/Library').rglob('*.mobileprovision')), [])
+        self.assertFalse((runner_temp / 'provisioning-profiles.json').exists())
+        self.assertFalse((runner_temp / 'ExportOptions.plist').exists())
+
+    def test_testflight_stops_when_flutter_exported_no_ipa(self):
+        steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
+        names = [step.get('name') for step in steps]
+        check_index = names.index('Check IPA was exported')
+        self.assertEqual(names[check_index - 1], 'Build IPA')
+        self.assertLess(check_index, names.index('Upload to TestFlight (Prism Alpha)'))
+        command = steps[check_index]['run']
+        result = self.run_tool('bash', '-e', '-c', command)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('did not export', result.stdout)
+        ipa = self.work / 'build/ios/ipa/Prism.ipa'
+        ipa.parent.mkdir(parents=True)
+        ipa.write_bytes(b'')
+        self.assertNotEqual(self.run_tool('bash', '-e', '-c', command).returncode, 0)
+        ipa.write_bytes(b'PK')
+        result = self.run_tool('bash', '-e', '-c', command)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_testflight_does_not_rewrite_the_removed_png_app_icon(self):
+        steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
+        run_bodies = '\n'.join(step.get('run', '') for step in steps)
+        self.assertNotIn('AppIcon.appiconset', run_bodies)
+        self.assertNotIn('ffmpeg', run_bodies)
 
     def test_ios_preparation_fails_before_signing_and_build(self):
         steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
