@@ -11,6 +11,7 @@ import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
+import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// The text roles this page used on the current app. The redesign theme sets its own roles, so the page names them.
@@ -38,9 +40,9 @@ TextStyle _chipLabelStyle(Color color) => TextStyle(
   color: color,
 );
 
-String _themePreviewSvg(ThemeData theme, Color accent) => themePicture
+String _themePreviewSvg(ThemeData theme) => themePicture
     .replaceAll('181818', theme.colorScheme.surface.rgbHex)
-    .replaceAll('E57697', accent.rgbHex)
+    .replaceAll('E57697', theme.colorScheme.primary.rgbHex)
     .replaceAll('F0F0F0', theme.colorScheme.secondary.rgbHex)
     .replaceAll('2F2F2F', theme.colorScheme.surfaceContainerHigh.rgbHex);
 
@@ -115,11 +117,27 @@ class _ThemeViewState extends State<ThemeView> {
     });
   }
 
+  void _selectTheme(PrismThemeOption option, {required bool light}) {
+    if (light) {
+      context.setPrismLightTheme(option.id);
+    } else {
+      context.setPrismDarkTheme(option.id);
+    }
+    setState(() => changingLight = light);
+    analytics.track(ThemeChangedEvent(themeId: option.id));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ThemeState themeState = context.watch<ThemeBloc>().state;
     final ThemeMode themeMode = context.prismThemeMode();
     final bool showLight = themeMode != ThemeMode.dark;
     final bool showDark = themeMode != ThemeMode.light;
+    final PrismThemeOption lightOption = themeState.themeOption(Brightness.light);
+    final PrismThemeOption darkOption = themeState.themeOption(Brightness.dark);
+    final bool showLightAccent = showLight && lightOption.usesAccent;
+    final bool showDarkAccent = showDark && darkOption.usesAccent;
+    final bool showMaterialYouNote = (showLight && !lightOption.usesAccent) || (showDark && !darkOption.usesAccent);
     final Color lightAccent = Color(context.prismLightAccentValue());
     final Color darkAccent = Color(context.prismDarkAccentValue());
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -200,8 +218,8 @@ class _ThemeViewState extends State<ThemeView> {
                         borderRadius: BorderRadius.circular(17),
                         child: SvgPicture.string(
                           showLight && (changingLight || !showDark)
-                              ? _themePreviewSvg(context.prismLightTheme(), lightAccent)
-                              : _themePreviewSvg(context.prismDarkTheme(), darkAccent),
+                              ? _themePreviewSvg(context.prismLightTheme())
+                              : _themePreviewSvg(context.prismDarkTheme()),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -211,29 +229,31 @@ class _ThemeViewState extends State<ThemeView> {
                   if (showLight) ...[
                     _SectionTitle(context.l10n.wallpaperThemeLightThemes),
                     _ThemeChipRow(
-                      themes: prismLightThemes,
-                      selectedId: context.prismLightThemeId(),
+                      themes: prismThemeOptions(Brightness.light, themeState.system),
+                      selectedId: lightOption.id,
                       legacyThemes: _legacyThemes,
-                      onSelect: (option) {
-                        context.setPrismLightTheme(option.id);
-                        setState(() => changingLight = true);
-                      },
+                      onSelect: (option) => _selectTheme(option, light: true),
                     ),
                   ],
                   if (showDark) ...[
                     _SectionTitle(context.l10n.wallpaperThemeDarkThemes),
                     _ThemeChipRow(
-                      themes: prismDarkThemes,
-                      selectedId: context.prismDarkThemeId(),
+                      themes: prismThemeOptions(Brightness.dark, themeState.system),
+                      selectedId: darkOption.id,
                       legacyThemes: _legacyThemes,
-                      onSelect: (option) {
-                        context.setPrismDarkTheme(option.id);
-                        setState(() => changingLight = false);
-                      },
+                      onSelect: (option) => _selectTheme(option, light: false),
                     ),
                   ],
                   const Divider(),
-                  if (_systemAccent != null)
+                  if (showMaterialYouNote)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        context.l10n.wallpaperThemeMaterialYouNote,
+                        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  if (_systemAccent != null && (showLightAccent || showDarkAccent))
                     SwitchListTile(
                       dense: true,
                       value: _matchSystemAccent,
@@ -244,7 +264,7 @@ class _ThemeViewState extends State<ThemeView> {
                       title: Text(context.l10n.wallpaperMatchSystemColour),
                       subtitle: Text(context.l10n.wallpaperUsePhoneAccent, style: const TextStyle(fontSize: 12)),
                     ),
-                  if (showLight) ...[
+                  if (showLightAccent) ...[
                     _SectionTitle(context.l10n.wallpaperThemeLightAccent),
                     _AccentRow(
                       selected: lightAccent,
@@ -256,7 +276,7 @@ class _ThemeViewState extends State<ThemeView> {
                       },
                     ),
                   ],
-                  if (showDark) ...[
+                  if (showDarkAccent) ...[
                     _SectionTitle(context.l10n.wallpaperThemeDarkAccent),
                     _AccentRow(
                       selected: darkAccent,

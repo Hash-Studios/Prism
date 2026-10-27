@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
@@ -8,7 +9,7 @@ import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.d
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/material.dart' show Brightness, ThemeMode;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -18,11 +19,19 @@ part 'theme_bloc.j.freezed.dart';
 
 @injectable
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
-  ThemeBloc(this._loadThemeUseCase, this._updateThemeUseCase, ThemeRepository repository)
-    : super(ThemeState.fromPreferences(repository.readSync())) {
+  ThemeBloc(
+    this._loadThemeUseCase,
+    this._updateThemeUseCase,
+    ThemeRepository repository,
+    SystemColorSchemesSource systemColors,
+  ) : super(ThemeState.fromPreferences(repository.readSync()).copyWith(system: systemColors.current)) {
     _accountChanges = repository.accountChanges.listen(
       (preferences) => add(ThemeEvent.accountSynced(preferences: preferences)),
     );
+    _systemColorChanges = systemColors.changes.listen(
+      (schemes) => add(ThemeEvent.systemColorsChanged(schemes: schemes)),
+    );
+    on<_SystemColorsChanged>((event, emit) => emit(state.copyWith(system: event.schemes)));
     on<_Started>(_onStarted);
     on<_AccountSynced>(
       (event, emit) => emit(
@@ -51,10 +60,12 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final LoadThemeUseCase _loadThemeUseCase;
   final UpdateThemeUseCase _updateThemeUseCase;
   StreamSubscription<ThemePreferences>? _accountChanges;
+  StreamSubscription<SystemColorSchemes?>? _systemColorChanges;
 
   @override
   Future<void> close() async {
     await _accountChanges?.cancel();
+    await _systemColorChanges?.cancel();
     return super.close();
   }
 

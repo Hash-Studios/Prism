@@ -2896,6 +2896,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreThemeMaterialDark => 'मटीरियल डार्क';
 
   @override
+  String get coreThemeMaterialYou => 'Material You';
+
+  @override
   String get coreThemeOlive => 'ऑलिव';
 
   @override
@@ -9581,6 +9584,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'अपने फ़ोन का ऐक्सेंट रंग इस्तेमाल करें';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You आपके वॉलपेपर से रंग लेता है।';
 
   @override
   String wallpaperViewCount(int count) {

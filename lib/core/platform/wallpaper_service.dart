@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -222,6 +223,9 @@ class WallpaperService {
       }
       final WallpaperSetResult mapped = mapStatus(result);
       final WallpaperTarget? recordTarget = mapped.isSuccess ? target : mapped.appliedTarget;
+      if (recordTarget != null && getIt.isRegistered<SystemColorSchemesSource>()) {
+        unawaited(getIt<SystemColorSchemesSource>().refreshAfterWallpaperSet());
+      }
       if (!canRecord || recordTarget == null) return mapped;
       final String? id = await _record(
         recordedSource,

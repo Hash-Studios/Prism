@@ -2899,6 +2899,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreThemeMaterialDark => 'Material oscuro';
 
   @override
+  String get coreThemeMaterialYou => 'Material You';
+
+  @override
   String get coreThemeOlive => 'Oliva';
 
   @override
@@ -9562,6 +9565,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Usar el color de acento de tu teléfono';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You toma los colores de tu fondo de pantalla.';
 
   @override
   String wallpaperViewCount(int count) {

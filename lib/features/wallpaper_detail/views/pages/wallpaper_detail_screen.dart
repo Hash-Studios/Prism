@@ -1166,7 +1166,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             child: Row(children: swatches),
           ),
         ),
-        if (state.colorChanged && accent != null)
+        if (state.colorChanged && accent != null && _themeTakesAccent(context))
           Padding(
             padding: const EdgeInsetsDirectional.only(start: _sheetHPad, top: PrismSpace.sm),
             child: PrismButton(
@@ -1774,7 +1774,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Color? color = state.colors?.firstOrNull;
     if (color == null) return null;
     final ThemeBloc? themeBloc = _themeBloc(context);
-    if (themeBloc == null) return null;
+    if (themeBloc == null || !_themeTakesAccent(context)) return null;
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return () {
       themeBloc.add(
@@ -1785,6 +1785,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       unawaited(analytics.track(const AccentMatchedFromWallEvent()));
     };
   }
+
+  /// False while the active theme brings its own accent (Material You), so accent actions do nothing there.
+  bool _themeTakesAccent(BuildContext context) =>
+      _themeBloc(context)?.state.themeOption(Theme.of(context).brightness).usesAccent ?? true;
 
   ThemeBloc? _themeBloc(BuildContext context) {
     try {

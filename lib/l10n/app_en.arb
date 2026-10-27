@@ -2748,6 +2748,10 @@
   "coreThemeJungle": "Jungle",
   "coreThemeLocked": "Locked",
   "coreThemeMaterialDark": "Material Dark",
+  "coreThemeMaterialYou": "Material You",
+  "@coreThemeMaterialYou": {
+    "description": "Theme name. Material You is Google's product name for wallpaper-based colours; keep it untranslated."
+  },
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pepper",
   "coreThemeRose": "Rose",
@@ -8938,6 +8942,10 @@
   "wallpaperUsePhoneAccent": "Use the accent colour of your phone",
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
+  },
+  "wallpaperThemeMaterialYouNote": "Material You takes its colours from your wallpaper.",
+  "@wallpaperThemeMaterialYouNote": {
+    "description": "One line on the theme screen, shown instead of the accent colour controls while the Material You theme is on."
   },
   "wallpaperViewCount": "{count, plural, one{1 view} other{{count} views}}",
   "@wallpaperViewCount": {

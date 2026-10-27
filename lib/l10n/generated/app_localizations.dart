@@ -5007,6 +5007,12 @@ abstract class AppLocalizations {
   /// **'Material Dark'**
   String get coreThemeMaterialDark;
 
+  /// Theme name. Material You is Google's product name for wallpaper-based colours; keep it untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You'**
+  String get coreThemeMaterialYou;
+
   /// No description provided for @coreThemeOlive.
   ///
   /// In en, this message translates to:
@@ -14904,6 +14910,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use the accent colour of your phone'**
   String get wallpaperUsePhoneAccent;
+
+  /// One line on the theme screen, shown instead of the accent colour controls while the Material You theme is on.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You takes its colours from your wallpaper.'**
+  String get wallpaperThemeMaterialYouNote;
 
   /// Wallpaper interface text: wallpaperViewCount.
   ///

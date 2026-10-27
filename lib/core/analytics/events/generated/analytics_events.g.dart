@@ -255,6 +255,20 @@ class AccentChangedEvent extends AnalyticsEvent {
   }
 }
 
+class ThemeChangedEvent extends AnalyticsEvent {
+  const ThemeChangedEvent({required this.themeId});
+
+  final String themeId;
+
+  @override
+  String get eventName => 'theme_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'theme_id': themeId};
+  }
+}
+
 class PaywallImpressionEvent extends AnalyticsEvent {
   const PaywallImpressionEvent({required this.source, required this.placement, required this.rcOrFallback});
 
