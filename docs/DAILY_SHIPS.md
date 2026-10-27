@@ -15,7 +15,7 @@ tool/record_clip.sh ios clip.mp4 --trim 2-12 # keep seconds 2 to 12
 IOS_SIM='<udid>' tool/record_clip.sh ios     # replace <udid> with a booted simulator's UDID
 ```
 
-Press Ctrl-C to stop the recording. Black bars pad the clip. It is never stretched.
+Press Ctrl-C to stop the recording. Black bars pad the clip. It is never stretched. If the conversion fails (for example, a `--trim` range past the end), the script keeps the raw take as `<out>-raw.mp4`.
 
 ### Morning post
 

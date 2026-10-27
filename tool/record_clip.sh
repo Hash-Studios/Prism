@@ -72,5 +72,8 @@ fi
 
 ffmpeg -hide_banner -loglevel error -y -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
   -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
-  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$out"
+  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$out" || {
+  rm -f "$out"; mv "$tmp/raw.mp4" "${out%.*}-raw.mp4"
+  die "conversion failed. The raw recording is kept at ${out%.*}-raw.mp4"
+}
 echo "$out"
