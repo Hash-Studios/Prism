@@ -10,8 +10,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 
 /// Widgets need iOS 17 here: the extension needs iOS 16.2, and the version check reads only the major number.
-Future<bool> iosSupportsWidgets() async =>
-    defaultTargetPlatform == TargetPlatform.iOS && (await iosMajorVersion() ?? 0) >= 17;
+Future<bool> iosSupportsWidgets() async => defaultTargetPlatform == TargetPlatform.iOS && await iosAtLeast(17);
 
 Future<void> showWidgetGuideSheet(BuildContext context, {required WidgetGuideSourceValue source}) async {
   unawaited(analytics.track(WidgetGuideOpenedEvent(source: source)));
