@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-web
+  group: deploy-web-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -21,16 +21,17 @@ permissions:
 jobs:
   deploy:
     name: Build and deploy prismwalls.com
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
       run:
         working-directory: web
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      NEXT_PUBLIC_MIXPANEL_TOKEN: ${{ vars.NEXT_PUBLIC_MIXPANEL_TOKEN }}
     steps:
       - name: Require the Cloudflare token
+        working-directory: .
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo '::error::Add the CLOUDFLARE_API_TOKEN repository secret (Edit Cloudflare Workers template, prismwalls.com zone).'
@@ -38,6 +39,8 @@ jobs:
           fi
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: master
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -49,4 +52,7 @@ jobs:
           npm ci
           node --test test/changelog.test.mjs
       - name: Build and deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NEXT_PUBLIC_MIXPANEL_TOKEN: ${{ vars.NEXT_PUBLIC_MIXPANEL_TOKEN }}
         run: npm run deploy

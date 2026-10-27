@@ -107,6 +107,7 @@ jobs:
               # The changelog pages and share cards build from these.
               - 'CHANGELOG.md'
               - 'assets/fonts/Proxima*'
+              - '.github/workflows/deploy_web.yml'
             rules:
               - 'firestore.rules'
               - 'firebase.json'
