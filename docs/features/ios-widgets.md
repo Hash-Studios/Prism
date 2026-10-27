@@ -47,7 +47,8 @@ widget timeline -> GoogleService-Info.plist of Prism.app (API_KEY, PROJECT_ID)
 ```
 
 - The widget downloads `wallpaper_thumb` only. It never downloads the original. A wall without a thumbnail keeps the cached wall.
-- The image is decoded with ImageIO at the widget's pixel size and cropped to fill. This keeps the extension under its memory limit and under WidgetKit's image size limit.
+- The download stops at 15 MiB. The image is decoded with ImageIO at the widget's pixel size, at most 718,080 pixels (`PrismWotdImageBudget`), and cropped to fill. This keeps the extension under its memory limit and under WidgetKit's image size limit.
+- Two sizes that refresh at the same time share one download. The cache writes the image first, then a manifest that names it, so the wall and its image always match.
 - When the fetch fails, the widget shows the cached wall.
 - Refresh: the server picks a new wall at 03:30 UTC (`functions/src/wallOfTheDay.ts`). The widget reloads at 03:40 UTC. If the fetch fails, or the server has not picked yet, it tries again after 30 minutes, but never later than 03:40 UTC.
 - The app also reloads the widget each time it becomes active (`AppDelegate`), and when a Wall of the Day push arrives in the foreground (`lib/notifications/local_notification.dart`).
@@ -72,6 +73,7 @@ widget timeline -> GoogleService-Info.plist of Prism.app (API_KEY, PROJECT_ID)
 - The widget needs `GoogleService-Info.plist` in the app bundle. Without it the widget shows the cache only.
 - iOS decides when a timeline reload runs. The 03:40 UTC reload can come late.
 - The streak widget shows the last snapshot the app wrote. A claim on another device shows after Prism opens on this device.
+- Checked on the iOS 27 simulator on 2026-10-27: all sizes, tinted mode, Lock Screen widgets, taps, and the guide. Not checked on a real device.
 
 ## How to test
 
@@ -86,7 +88,7 @@ Automated tests:
 
 ```sh
 cd ios && swift test --filter PrismWidgetCoreTests
-xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner -destination 'platform=iOS Simulator,name=<simulator>' -only-testing:RunnerTests/PrismWidgetCoreTests
+xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner -destination 'platform=iOS Simulator,name=<simulator>' -parallel-testing-enabled NO -only-testing:RunnerTests/PrismWidgetCoreTests
 fvm flutter test --no-pub test/core/platform/ios_widget_channel_test.dart test/core/platform/streak_widget_sync_test.dart \
   test/features/ios_widgets test/core/router/deep_link_dispatcher_test.dart test/auth/sign_out_test.dart
 ```
