@@ -355,6 +355,10 @@ events:
         key: used_default
         type: bool
         required: false
+      - name: target_changed
+        key: target_changed
+        type: bool
+        required: false
       - name: operation_id
         key: operation_id
         type: string

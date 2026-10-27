@@ -10,6 +10,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -454,4 +455,109 @@ void main() {
 
     expect(find.byType(MakeItLiveChip), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  group('the Set screen opens from each entry point', () {
+    Future<void> waitUntil(WidgetTester tester, bool Function() done) async {
+      for (int i = 0; i < 80 && !done(); i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+      }
+    }
+
+    void stubSetScreen(List<SetScreenRequest> opened, {SetWallpaperChoice? choice}) {
+      final original = SetWallpaperFlow.screenOpener;
+      SetWallpaperFlow.screenOpener = (context, request) async {
+        opened.add(request);
+        return choice;
+      };
+      addTearDown(() => SetWallpaperFlow.screenOpener = original);
+    }
+
+    testWidgets('the Set button opens the Set screen when no default is saved', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'ask');
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      stubSetScreen(opened);
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+      );
+
+      await tester.tap(find.text('Set'));
+      await tester.pump();
+      await waitUntil(tester, () => opened.isNotEmpty);
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, _prism().fullUrl);
+      expect(opened.single.thumbnailUrl, _prism().thumbnailUrl);
+      expect(opened.single.onAdjust, isNotNull);
+      expect(client.requests, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Preview on your screen opens the Set screen as wallpaper_preview', (tester) async {
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      stubSetScreen(opened, choice: const SetWallpaperChoice(WallpaperTarget.home));
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Preview on your screen'));
+      await tester.pump();
+      await waitUntil(tester, () => analytics.events.whereType<SetWallEvent>().isNotEmpty);
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, _prism().fullUrl);
+      expect(opened.single.onAdjust, isNotNull);
+      final List<SetWallEvent> events = analytics.events.whereType<SetWallEvent>().toList();
+      expect(events, hasLength(1));
+      expect(events.single.entryPoint, 'wallpaper_preview');
+      expect(events.single.wallpaperTarget, WallpaperTarget.home);
+      expect(client.requests, hasLength(1));
+      await tester.pump(const Duration(seconds: 10));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('on iOS Preview on your screen opens the preview with Save to Photos, not the Set screen', (
+      tester,
+    ) async {
+      // A wall nobody has saved yet. A saved one shows Saved on the button instead of Save to Photos.
+      const FeedItemEntity unsaved = FeedItemEntity.prism(
+        id: 'prism-unsaved',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'prism-unsaved',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.com/prism-unsaved.jpg',
+            thumbnailUrl: '',
+          ),
+        ),
+      );
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      stubSetScreen(opened);
+      await pump(
+        tester,
+        const WallpaperDetailLoaded(
+          recommendations: RecommendationState.exhausted(),
+          entity: unsaved,
+          paletteLoading: false,
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Preview on your screen'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.textContaining('Save to Photos'), findsOneWidget);
+      expect(opened, isEmpty);
+      Navigator.of(tester.element(find.textContaining('Save to Photos'))).pop();
+      await tester.pump(const Duration(seconds: 1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
 }

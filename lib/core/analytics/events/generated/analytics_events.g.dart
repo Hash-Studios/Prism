@@ -102,6 +102,7 @@ class SetWallEvent extends AnalyticsEvent {
     this.fit,
     this.entryPoint,
     this.usedDefault,
+    this.targetChanged,
     this.operationId,
     this.itemId,
     this.provider,
@@ -115,6 +116,7 @@ class SetWallEvent extends AnalyticsEvent {
   final String? fit;
   final String? entryPoint;
   final bool? usedDefault;
+  final bool? targetChanged;
   final String? operationId;
   final String? itemId;
   final String? provider;
@@ -133,6 +135,7 @@ class SetWallEvent extends AnalyticsEvent {
       if (fit != null) 'fit': fit!,
       if (entryPoint != null) 'entry_point': entryPoint!,
       if (usedDefault != null) 'used_default': usedDefault! ? 1 : 0,
+      if (targetChanged != null) 'target_changed': targetChanged! ? 1 : 0,
       if (operationId != null) 'operation_id': operationId!,
       if (itemId != null) 'item_id': itemId!,
       if (provider != null) 'provider': provider!,

@@ -2118,16 +2118,10 @@
   },
   "appLinkRetryWhenOnline": "No connection. We will open this link when you are back online.",
   "appTitle": "Prism",
-  "coreAdjustPositionPreview": "Adjust position and preview",
-  "coreAdjustPositionPreviewBody": "Pan, zoom and dim before you set it.",
-  "coreAlwaysUseThis": "Always use this",
-  "coreAlwaysUseThisBody": "Next time, Set uses the screen you pick and skips this sheet.",
   "coreBack": "Back",
   "coreBio": "Bio",
   "coreBlockCreatorAfterReport": "Also block this creator",
-  "coreBoth": "Both",
   "coreBothScreens": "both screens",
-  "coreBothSetsScreens": "Both sets it on your home screen and lock screen.",
   "coreCancel": "Cancel",
   "coreCancelSelection": "Cancel selection",
   "coreCancelSignIn": "Not now",
@@ -2180,7 +2174,6 @@
   "coreChangeWallpaperTarget": "Change where wallpaper is set",
   "coreChangelogLatest": "Latest",
   "coreChooseReportReason": "Choose a reason",
-  "coreChooseSystemEditorArea": "Choose the exact area in the system editor.",
   "coreChooseUsername": "Pick an available username.",
   "coreCoinAiWallpaper": "AI wallpaper",
   "coreCoinAutoRotatePass": "Auto-rotate pass, 7 days",
@@ -2336,7 +2329,6 @@
   "coreCouldNotLoadWallpaperForEditing": "Could not load wallpaper for editing",
   "coreCouldNotUpdateFavourites": "Couldn't update favourites. Try again.",
   "coreCreatorPreviewDescription": "Check out this creator profile on Prism.",
-  "coreCropAndPosition": "Crop and position...",
   "coreDefaultBanner": "Join our Telegram",
   "@coreDefaultBanner": {
     "description": "Default title for the home feed banner when Remote Config has no campaign copy."
@@ -2348,7 +2340,6 @@
   "coreDepthEffectMenuShortTip": "Tap ••• then Depth Effect.",
   "coreDepthEffectMenuTip": "In the Lock Screen editor, tap ••• then Depth Effect.",
   "coreDeviceCannotSetScreen": "This device can't set that screen.",
-  "coreDifferentLockWallpaper": "Different wallpaper for lock screen",
   "coreDone": "Done",
   "coreDown": "down {coins}",
   "@coreDown": {
@@ -2433,8 +2424,6 @@
     },
     "description": "Megabyte file size shown in wallpaper details."
   },
-  "coreFillScreen": "Fill screen",
-  "coreFitWholeImage": "Fit whole image",
   "coreGenericSignInError": "Something went wrong, please try again!",
   "coreGoHome": "Go home",
   "coreGooglePlayServicesSignInError": "Google Play services on this device cannot sign in.",
@@ -2763,7 +2752,6 @@
   "diwaliBannerSubtitle": "Diyas, fireworks and gold. Free. Tap to try it.",
   "diwaliAnnouncementTitle": "New: the Diwali theme 🪔",
   "diwaliAnnouncementBody": "Diyas, fireworks and gold. It is free. Tap to try it.",
-  "coreThisGoesOnHome": "This one goes on the home screen.",
   "coreThisPageDoesNotExist": "This page does not exist",
   "coreTryAgain": "Try again",
   "coreUndo": "Undo",
@@ -8010,10 +7998,6 @@
   "@wallpaperPositionApproximate": {
     "description": "Notice that wallpaper placement preview may differ by launcher."
   },
-  "wallpaperPositionTitle": "Position",
-  "@wallpaperPositionTitle": {
-    "description": "Title of the wallpaper placement screen."
-  },
   "wallpaperPremium": "Premium",
   "@wallpaperPremium": {
     "description": "Accessibility label for premium content."
@@ -8292,6 +8276,50 @@
         "format": "decimalPattern"
       }
     }
+  },
+  "setScreenTargetHome": "Home screen",
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
+  "setScreenTargetLock": "Lock screen",
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
+  "setScreenTargetBoth": "Both",
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
+  "setScreenTargetGroup": "Where to set it",
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
+  "setScreenRemember": "Remember this choice",
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
+  "setScreenRememberHint": "Set skips this screen next time. Touch and hold Set to come back.",
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
+  "setScreenAdjust": "Adjust",
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
+  "setScreenMore": "More",
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
+  "setScreenPairLock": "Use another wall for the lock screen",
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
+  "setScreenOpenSystemEditor": "Open system editor",
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
+  "setScreenClose": "Close",
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
   },
   "wallpaperShare": "Share",
   "@wallpaperShare": {

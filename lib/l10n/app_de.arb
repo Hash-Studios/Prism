@@ -2110,16 +2110,10 @@
   },
   "appLinkRetryWhenOnline": "Keine Verbindung. Wir öffnen diesen Link, sobald du wieder online bist.",
   "appTitle": "Prism",
-  "coreAdjustPositionPreview": "Position anpassen und Vorschau ansehen",
-  "coreAdjustPositionPreviewBody": "Verschiebe, zoome und dimme das Bild, bevor du es einstellst.",
-  "coreAlwaysUseThis": "Immer dies verwenden",
-  "coreAlwaysUseThisBody": "Beim nächsten Mal verwendet „Einstellen“ den ausgewählten Bildschirm und überspringt diese Ansicht.",
   "coreBack": "Zurück",
   "coreBio": "Bio",
   "coreBlockCreatorAfterReport": "Diesen Creator ebenfalls blockieren",
-  "coreBoth": "Beide",
   "coreBothScreens": "beide Bildschirme",
-  "coreBothSetsScreens": "„Beide“ stellt es auf dem Start- und Sperrbildschirm ein.",
   "coreCancel": "Abbrechen",
   "coreCancelSelection": "Auswahl abbrechen",
   "coreCancelSignIn": "Jetzt nicht",
@@ -2172,7 +2166,6 @@
   "coreChangeWallpaperTarget": "Festlegen des Hintergrundbilds ändern",
   "coreChangelogLatest": "Neueste",
   "coreChooseReportReason": "Wähle einen Grund",
-  "coreChooseSystemEditorArea": "Wähle im Systemeditor den genauen Bereich aus.",
   "coreChooseUsername": "Wähle einen verfügbaren Nutzernamen.",
   "coreCoinAiWallpaper": "KI-Hintergrundbild",
   "coreCoinAutoRotatePass": "Automatischer Wechsel, 7 Tage",
@@ -2328,7 +2321,6 @@
   "coreCouldNotLoadWallpaperForEditing": "Hintergrundbild konnte nicht zur Bearbeitung geladen werden",
   "coreCouldNotUpdateFavourites": "Favoriten konnten nicht aktualisiert werden. Versuch es erneut.",
   "coreCreatorPreviewDescription": "Sieh dir dieses Creator-Profil auf Prism an.",
-  "coreCropAndPosition": "Zuschneiden und positionieren …",
   "coreDefaultBanner": "Tritt unserem Telegram-Kanal bei",
   "@coreDefaultBanner": {
     "description": "Default title for the home feed banner when Remote Config has no campaign copy."
@@ -2340,7 +2332,6 @@
   "coreDepthEffectMenuShortTip": "Tippe auf ••• und dann auf Tiefeneffekt.",
   "coreDepthEffectMenuTip": "Tippe im Sperrbildschirm-Editor auf ••• und dann auf Tiefeneffekt.",
   "coreDeviceCannotSetScreen": "Dieses Gerät kann dieses Bild nicht als Hintergrundbild festlegen.",
-  "coreDifferentLockWallpaper": "Anderes Hintergrundbild für den Sperrbildschirm",
   "coreDone": "Fertig",
   "coreDown": "−{coins}",
   "@coreDown": {
@@ -2425,8 +2416,6 @@
     },
     "description": "Megabyte file size shown in wallpaper details."
   },
-  "coreFillScreen": "Bildschirm ausfüllen",
-  "coreFitWholeImage": "Ganzes Bild einpassen",
   "coreGenericSignInError": "Etwas ist schiefgelaufen. Bitte versuch es erneut!",
   "coreGoHome": "Zur Startseite",
   "coreGooglePlayServicesSignInError": "Du kannst dich mit Google Play-Diensten auf diesem Gerät nicht anmelden.",
@@ -2755,7 +2744,6 @@
   "diwaliBannerSubtitle": "Diyas, Feuerwerk und Gold. Kostenlos. Tippen zum Ausprobieren.",
   "diwaliAnnouncementTitle": "Neu: das Diwali-Theme 🪔",
   "diwaliAnnouncementBody": "Diyas, Feuerwerk und Gold. Es ist kostenlos. Tippen zum Ausprobieren.",
-  "coreThisGoesOnHome": "Dieses Bild kommt auf den Startbildschirm.",
   "coreThisPageDoesNotExist": "Diese Seite gibt es nicht",
   "coreTryAgain": "Erneut versuchen",
   "coreUndo": "Rückgängig",
@@ -7996,10 +7984,6 @@
   "@wallpaperPositionApproximate": {
     "description": "Notice that wallpaper placement preview may differ by launcher."
   },
-  "wallpaperPositionTitle": "Position",
-  "@wallpaperPositionTitle": {
-    "description": "Title of the wallpaper placement screen."
-  },
   "wallpaperPremium": "Premium",
   "@wallpaperPremium": {
     "description": "Accessibility label for premium content."
@@ -8278,6 +8262,50 @@
         "format": "decimalPattern"
       }
     }
+  },
+  "setScreenTargetHome": "Startbildschirm",
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
+  "setScreenTargetLock": "Sperrbildschirm",
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
+  "setScreenTargetBoth": "Beide",
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
+  "setScreenTargetGroup": "Wo festlegen",
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
+  "setScreenRemember": "Auswahl merken",
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
+  "setScreenRememberHint": "Festlegen überspringt diesen Bildschirm beim nächsten Mal. Halte Festlegen gedrückt, um zurückzukehren.",
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
+  "setScreenAdjust": "Anpassen",
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
+  "setScreenMore": "Mehr",
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
+  "setScreenPairLock": "Anderes Hintergrundbild für den Sperrbildschirm verwenden",
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
+  "setScreenOpenSystemEditor": "Systemeditor öffnen",
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
+  "setScreenClose": "Schließen",
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
   },
   "wallpaperShare": "Teilen",
   "@wallpaperShare": {
@@ -8986,9 +9014,13 @@
     "description": "Accessibility label for the profile button."
   },
   "coreSignInCreatorSearchFeature": "Suche nach Kreativen",
-  "@coreSignInCreatorSearchFeature": {"description":"Feature name inserted into the sign-in title for creator search."},
+  "@coreSignInCreatorSearchFeature": {
+    "description": "Feature name inserted into the sign-in title for creator search."
+  },
   "debugLogExportSubject": "Prism-Debugprotokolle",
-  "@debugLogExportSubject": {"description":"Subject of the shared diagnostic log export."},
+  "@debugLogExportSubject": {
+    "description": "Subject of the shared diagnostic log export."
+  },
   "economyAiPromptSceneAnime1": "Anime-Stadtsilhouette über schwebenden Inseln",
   "economyAiPromptSceneAnime2": "Einsamer Samurai auf regennasser Neonstraße",
   "economyAiPromptSceneAnime3": "Futuristischer Schrein, Kirschblüten, Hologramme",
@@ -9041,9 +9073,38 @@
   "economyAiPromptQualityNaturalColors": "kräftige, natürliche Farben",
   "economyAiPromptSuffix": "Smartphone-Hintergrund hochkant, ohne Text",
   "economyAiPromptComposition": "{scene}, {lighting}, {mood}, {quality}, {suffix}",
-  "@economyAiPromptComposition": {"description":"A complete AI wallpaper prompt. Translate the whole message naturally.","placeholders":{"scene":{"type":"String"},"lighting":{"type":"String"},"mood":{"type":"String"},"quality":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptComposition": {
+    "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "lighting": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiPromptSceneOnly": "{scene}, {suffix}",
-  "@economyAiPromptSceneOnly": {"description":"An AI wallpaper scene prompt with wallpaper instructions.","placeholders":{"scene":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptSceneOnly": {
+    "description": "An AI wallpaper scene prompt with wallpaper instructions.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiMadeWithPrism": "Mit Prism AI erstellt",
   "onboardingAiPromptFallback": "ein wunderschönes Hintergrundbild",
   "onboardingAiPromptNature1": "Eine neblige Bergkette im Morgenlicht, in warmes Gold getaucht",
@@ -9082,4 +9143,3 @@
   "onboardingAiPromptCyberpunk4": "Ein Cyberpunk-Dach mit Blick auf eine Stadt voller leuchtender Türme",
   "onboardingAiPromptCyberpunk5": "Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht"
 }
-

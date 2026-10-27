@@ -255,6 +255,30 @@ void main() {
       expect(find.byType(SetWallpaperButton), findsNothing);
     });
 
+    testWidgets('selecting one download and tapping Set opens the Set screen', (tester) async {
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      final original = SetWallpaperFlow.screenOpener;
+      SetWallpaperFlow.screenOpener = (context, request) async {
+        opened.add(request);
+        return null;
+      };
+      addTearDown(() => SetWallpaperFlow.screenOpener = original);
+
+      await pumpScreen(tester);
+      await tester.longPress(find.byKey(ValueKey<String>(a.path)));
+      await tester.pump();
+      await tester.tap(find.byType(SetWallpaperButton));
+      await tester.pump();
+      for (int i = 0; i < 80 && opened.isEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+      }
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, a.path);
+      expect(opened.single.onAdjust, isNotNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('never shows on iOS', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       try {

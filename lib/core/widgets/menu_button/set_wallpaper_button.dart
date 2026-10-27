@@ -19,10 +19,10 @@ import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
-import 'package:Prism/core/widgets/menu_button/set_options_panel.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -32,39 +32,27 @@ import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-export 'package:Prism/core/widgets/menu_button/set_options_panel.dart';
 export 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
-
-/// Opens the set sheet. [canAdjust] adds the position studio and the lock screen pair rows, which need a wall URL.
-Future<SetWallpaperChoice?> showSetWallpaperSheet(
-  BuildContext context, {
-  String? thumbnailUrl,
-  List<String> notes = const <String>[],
-  bool canAdjust = false,
-}) {
-  return showPrismSheet<SetWallpaperChoice>(
-    context,
-    builder: (sheetContext) => SetOptionsPanel(
-      thumbnailUrl: thumbnailUrl,
-      notes: notes,
-      canAdjust: canAdjust,
-      onSelected: (choice) => Navigator.of(sheetContext).pop(choice),
-    ),
-  );
-}
+export 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart' show SetScreenRequest, showSetScreen;
 
 // ignore: avoid_classes_with_only_static_members
 class SetWallpaperFlow {
-  /// Opens the position studio and returns what it set. Tests replace it.
+  /// Opens the Set screen and returns what the user picked. Tests replace it.
   @visibleForTesting
-  static Future<WallpaperSetResult?> Function(
+  static Future<SetWallpaperChoice?> Function(BuildContext context, SetScreenRequest request) screenOpener =
+      showSetScreen;
+
+  /// Opens the Set screen through [screenOpener]. Screens that set the wall themselves call this.
+  static Future<SetWallpaperChoice?> openScreen(BuildContext context, SetScreenRequest request) =>
+      screenOpener(context, request);
+
+  /// Opens the position studio and returns the wall as placed. Tests replace it.
+  @visibleForTesting
+  static Future<StudioResult?> Function(
     BuildContext context, {
     required String url,
     String? thumbnailUrl,
     String? entryPoint,
-    String? requestId,
-    String? wallpaperId,
-    WallpaperSource? wallpaperSource,
   })
   studioOpener = _openStudio;
 
@@ -72,24 +60,14 @@ class SetWallpaperFlow {
   @visibleForTesting
   static Future<PairPick?> Function(BuildContext context, {String? excludeUrl}) pairPicker = showPairPickerSheet;
 
-  static Future<WallpaperSetResult?> _openStudio(
+  static Future<StudioResult?> _openStudio(
     BuildContext context, {
     required String url,
     String? thumbnailUrl,
     String? entryPoint,
-    String? requestId,
-    String? wallpaperId,
-    WallpaperSource? wallpaperSource,
   }) {
-    return context.router.push<WallpaperSetResult>(
-      WallpaperPositionRoute(
-        imageUrl: url,
-        thumbnailUrl: thumbnailUrl,
-        entryPoint: entryPoint,
-        requestId: requestId,
-        wallpaperId: wallpaperId,
-        wallpaperSource: wallpaperSource,
-      ),
+    return context.router.push<StudioResult>(
+      WallpaperPositionRoute(imageUrl: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint),
     );
   }
 
@@ -110,20 +88,31 @@ class SetWallpaperFlow {
     return null;
   }
 
-  /// Applies straight to the default target when one is saved, else opens the sheet.
-  /// Returns null when the user closed the sheet.
+  /// Saves [target] as the default, so Set skips the Set screen. Null forgets it, so Set asks again.
+  static void saveDefaultTarget(WallpaperTarget? target) {
+    try {
+      if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
+      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.defaultApplyTarget, target?.name ?? 'ask'));
+    } catch (error) {
+      logger.w('SetWallpaperFlow: could not save the default target', error: error);
+    }
+  }
+
+  /// Applies straight to the default target when one is saved, else opens the Set screen.
+  /// Returns null when the user closed it.
   ///
-  /// [target] sets that screen without the sheet, like a saved default. [forceSheet] still opens the sheet.
+  /// [target] sets that screen without the Set screen, like a saved default. [forceScreen] still opens it.
   ///
-  /// [notes] are short warnings for the sheet, [entryPoint] names the screen for analytics, and [onMatchAccent] adds
-  /// "Match accent" to the success snackbar.
+  /// [notes] are short warnings for the Set screen, [entryPoint] names the screen for analytics, and [onMatchAccent]
+  /// adds "Match accent" to the success snackbar. [previewTint] is the colour variation [prepareAuthorized] applies
+  /// later, so the Set screen can show it now.
   static Future<WallpaperSetResult?> run(
     BuildContext context, {
     required String url,
     String? thumbnailUrl,
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
-    bool forceSheet = false,
+    bool forceScreen = false,
     WallpaperTarget? target,
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
@@ -132,6 +121,7 @@ class SetWallpaperFlow {
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
     Future<String> Function(String source)? prepareAuthorized,
+    Color? previewTint,
   }) async {
     if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
         !context.mounted) {
@@ -150,21 +140,61 @@ class SetWallpaperFlow {
     final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
     if (!context.mounted) return null;
     SetWallpaperChoice? choice;
-    final WallpaperTarget? saved = forceSheet ? null : target ?? defaultTarget();
+    final WallpaperTarget? saved = forceScreen ? null : target ?? defaultTarget();
     bool usedDefault = false;
     if (saved != null && await supportsTarget(saved)) {
       choice = SetWallpaperChoice(saved);
       usedDefault = target == null;
     }
     if (!context.mounted) return null;
-    choice ??= await showSetWallpaperSheet(context, thumbnailUrl: thumbnailUrl, notes: notes, canAdjust: true);
-    if (choice == null || !context.mounted || app_state.prismUser.id != owner) return null;
+    String? authorizedUrl;
+    // Consent and the colour variation run once, on Adjust or on Set, whichever comes first.
+    Future<String?> authorize(BuildContext context) async {
+      final String? done = authorizedUrl;
+      if (done != null) return done;
+      onBusy?.call(true);
+      try {
+        final String? authorized = await resolveOriginalWithConsent(
+          context,
+          url: url,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
+          action: OriginalAccessAction.set,
+          requestId: requestId,
+          label: l10n.coreSetWallpaper,
+        );
+        if (authorized == null || prepareAuthorized == null) return authorizedUrl = authorized;
+        return authorizedUrl = await runPrepareSource(() => prepareAuthorized(authorized), l10n: l10n);
+      } finally {
+        onBusy?.call(false);
+      }
+    }
+
+    choice ??= await openScreen(
+      context,
+      SetScreenRequest(
+        url: url,
+        thumbnailUrl: thumbnailUrl,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+        tint: previewTint,
+        notes: notes,
+        onAdjust: (screenContext) async {
+          final String? source = await authorize(screenContext);
+          if (source == null || !screenContext.mounted || app_state.prismUser.id != owner) return null;
+          return studioOpener(screenContext, url: source, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
+        },
+      ),
+    );
+    if (choice == null || !context.mounted || app_state.prismUser.id != owner) {
+      await choice?.placed?.discard();
+      return null;
+    }
     if (choice.kind == SetChoiceKind.pair) {
       return _pair(
         context,
         url: url,
         thumbnailUrl: thumbnailUrl,
-        fit: choice.fit,
         recordHistory: recordHistory,
         onBusy: onBusy,
         entryPoint: entryPoint,
@@ -176,79 +206,27 @@ class SetWallpaperFlow {
         prepareAuthorized: prepareAuthorized,
       );
     }
-    onBusy?.call(true);
-    try {
-      final authorized = await resolveOriginalWithConsent(
-        context,
-        url: url,
-        wallpaperId: wallpaperId,
-        wallpaperSource: wallpaperSource,
-        action: OriginalAccessAction.set,
-        requestId: requestId,
-        label: l10n.coreSetWallpaper,
-      );
-      if (authorized == null) return null;
-      url = authorized;
-      if (prepareAuthorized != null) {
-        final source = url;
-        final prepared = await runPrepareSource(() => prepareAuthorized(source), l10n: l10n);
-        if (prepared == null) return null;
-        url = prepared;
-      }
-    } finally {
-      onBusy?.call(false);
+    final String? source = context.mounted ? await authorize(context) : null;
+    if (source == null || !context.mounted || app_state.prismUser.id != owner) {
+      await choice.placed?.discard();
+      return null;
     }
-    if (!context.mounted || app_state.prismUser.id != owner) return null;
-    switch (choice.kind) {
-      case SetChoiceKind.adjust:
-        onBusy?.call(true);
-        try {
-          if (!context.mounted) return null;
-          return await studioOpener(
-            context,
-            url: url,
-            thumbnailUrl: thumbnailUrl,
-            entryPoint: entryPoint,
-            requestId: requestId,
-            wallpaperId: wallpaperId,
-            wallpaperSource: wallpaperSource,
-          );
-        } finally {
-          onBusy?.call(false);
-        }
-      case SetChoiceKind.pair:
-        return _pair(
-          context,
-          url: url,
-          thumbnailUrl: thumbnailUrl,
-          fit: choice.fit,
-          recordHistory: recordHistory,
-          onBusy: onBusy,
-          entryPoint: entryPoint,
-          messenger: messenger,
-          onMatchAccent: onMatchAccent,
-          l10n: l10n,
-          wallpaperId: wallpaperId,
-          wallpaperSource: wallpaperSource,
-        );
-      case SetChoiceKind.apply:
-        return apply(
-          context,
-          url: url,
-          choice: choice,
-          thumbnailUrl: thumbnailUrl,
-          recordHistory: recordHistory,
-          onBusy: onBusy,
-          entryPoint: entryPoint,
-          requestId: requestId,
-          usedDefault: usedDefault,
-          historyOriginalIdentity: historyOriginalIdentity,
-          messenger: messenger,
-          onMatchAccent: onMatchAccent,
-          wallpaperId: wallpaperId,
-          wallpaperSource: wallpaperSource,
-        );
-    }
+    return apply(
+      context,
+      url: source,
+      choice: choice,
+      thumbnailUrl: thumbnailUrl,
+      recordHistory: recordHistory,
+      onBusy: onBusy,
+      entryPoint: entryPoint,
+      requestId: requestId,
+      usedDefault: usedDefault,
+      historyOriginalIdentity: historyOriginalIdentity,
+      messenger: messenger,
+      onMatchAccent: onMatchAccent,
+      wallpaperId: wallpaperId,
+      wallpaperSource: wallpaperSource,
+    );
   }
 
   /// True when the device can set [target]. If the plugin cannot answer, the answer is yes and the apply reports any error.
@@ -286,23 +264,33 @@ class SetWallpaperFlow {
     final owner = app_state.prismUser.id;
     final ScaffoldMessengerState? host = messenger ?? (context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
     final String operationId = AnalyticsCorrelation.newId();
+    final PlacedWallpaper? placed = choice.placed;
     onBusy?.call(true);
     final WallpaperSetResult result;
     try {
-      result = await WallpaperService.setWallpaper(
-        url,
-        choice.target,
-        fit: choice.fit,
-        useSystemCropper: choice.useSystemCropper,
-        thumbnailUrl: thumbnailUrl,
-        recordHistory: recordHistory,
-        wallpaperId: wallpaperId,
-        wallpaperSource: wallpaperSource,
-        historyOriginalIdentity: historyOriginalIdentity,
-      );
+      // A placed wall is a rendered copy, so history keeps the original instead, as the studio always did.
+      result = placed == null
+          ? await WallpaperService.setWallpaper(
+              url,
+              choice.target,
+              useSystemCropper: choice.useSystemCropper,
+              thumbnailUrl: thumbnailUrl,
+              recordHistory: recordHistory,
+              wallpaperId: wallpaperId,
+              wallpaperSource: wallpaperSource,
+              historyOriginalIdentity: historyOriginalIdentity,
+            )
+          : await WallpaperService.setWallpaper(
+              placed.path,
+              choice.target,
+              recordHistory: recordHistory,
+              historySource: url,
+              historyThumbnail: thumbnailUrl,
+            );
     } finally {
       onBusy?.call(false);
     }
+    if (placed != null) _trackPlacement(placed, choice.target, result);
     reportWallpaperSetResult(
       context.mounted ? context : null,
       result,
@@ -310,9 +298,10 @@ class SetWallpaperFlow {
       target: choice.target,
       messenger: host,
       setContext: WallpaperSetContext(
-        fit: choice.fit.name,
+        fit: placed == null ? WallpaperFit.fill.name : 'studio_${placed.placement.fit.name}',
         entryPoint: entryPoint,
         usedDefault: usedDefault,
+        targetChanged: choice.targetChanged,
         operationId: operationId,
         itemId: wallpaperId,
         provider: wallpaperSource?.name,
@@ -339,7 +328,12 @@ class SetWallpaperFlow {
         await apply(
           context,
           url: retryUrl,
-          choice: SetWallpaperChoice(retryTarget, fit: choice.fit, useSystemCropper: choice.useSystemCropper),
+          choice: SetWallpaperChoice(
+            retryTarget,
+            useSystemCropper: choice.useSystemCropper,
+            placed: placed,
+            targetChanged: choice.targetChanged,
+          ),
           thumbnailUrl: thumbnailUrl,
           recordHistory: recordHistory,
           onBusy: onBusy,
@@ -355,6 +349,7 @@ class SetWallpaperFlow {
         );
       }()),
     );
+    if (result.isSuccess && placed != null) unawaited(placed.discard());
     if (result.isSuccess && wallpaperId != null && wallpaperSource == WallpaperSource.prism) {
       await OriginalAccessService.instance.complete(
         owner: owner,
@@ -369,7 +364,6 @@ class SetWallpaperFlow {
     BuildContext context, {
     required String url,
     required String? thumbnailUrl,
-    required WallpaperFit fit,
     required bool recordHistory,
     required ValueChanged<bool>? onBusy,
     required String? entryPoint,
@@ -425,7 +419,6 @@ class SetWallpaperFlow {
       url: url,
       thumbnailUrl: thumbnailUrl,
       pick: pick,
-      fit: fit,
       recordHistory: recordHistory,
       onBusy: onBusy,
       entryPoint: entryPoint,
@@ -447,7 +440,6 @@ class SetWallpaperFlow {
     required String url,
     required String? thumbnailUrl,
     required PairPick pick,
-    required WallpaperFit fit,
     required bool recordHistory,
     required ValueChanged<bool>? onBusy,
     required String? entryPoint,
@@ -520,7 +512,6 @@ class SetWallpaperFlow {
           await WallpaperService.setWallpaper(
             homeFile!.path,
             WallpaperTarget.home,
-            fit: fit,
             thumbnailUrl: thumbnailUrl,
             recordHistory: recordHistory,
             wallpaperId: wallpaperId,
@@ -539,7 +530,6 @@ class SetWallpaperFlow {
         lock = await WallpaperService.setWallpaper(
           lockFile.path,
           WallpaperTarget.lock,
-          fit: fit,
           thumbnailUrl: pick.candidate.thumbnailUrl,
           recordHistory: recordHistory,
           wallpaperId: pick.candidate.wallpaperId,
@@ -571,7 +561,6 @@ class SetWallpaperFlow {
             url: url,
             thumbnailUrl: thumbnailUrl,
             pick: pick,
-            fit: fit,
             recordHistory: recordHistory,
             onBusy: onBusy,
             entryPoint: entryPoint,
@@ -617,6 +606,25 @@ class SetWallpaperFlow {
     );
   }
 
+  static void _trackPlacement(PlacedWallpaper placed, WallpaperTarget target, WallpaperSetResult result) {
+    if (!result.isSuccess && !result.isFailure) return;
+    try {
+      unawaited(
+        analytics.track(
+          WallpaperPlacementAppliedEvent(
+            fit: placed.placement.fit.name,
+            zoomed: placed.placement.isZoomed,
+            dimBucket: placed.placement.dimBucket,
+            wallpaperTarget: target,
+            result: result.isSuccess ? BinaryResultValue.success : BinaryResultValue.failure,
+          ),
+        ),
+      );
+    } catch (error) {
+      logger.w('Wallpaper placement analytics failed', error: error);
+    }
+  }
+
   static void _trackPair(String? entryPoint, PairPick pick, WallpaperSetResult combined) {
     try {
       unawaited(
@@ -655,16 +663,19 @@ class SetWallpaperButton extends StatefulWidget {
   final String? entryPoint;
   final String? requestId;
 
-  /// Short warnings about this wall, shown as chips in the set sheet.
+  /// Short warnings about this wall, shown on the Set screen.
   final List<String> notes;
 
   /// Adds "Match accent" to the success snackbar when set.
   final VoidCallback? onMatchAccent;
 
-  /// Makes the image to set, such as a colour variation, and returns its local path. It runs on tap, before the sheet
-  /// opens, and the path replaces [url]. If it throws, the user is told and nothing is set.
+  /// Makes the image to set, such as a colour variation, and returns its local path. It runs on tap, before the Set
+  /// screen opens, and the path replaces [url]. If it throws, the user is told and nothing is set.
   final Future<String> Function()? prepareSource;
   final Future<String> Function(String source)? prepareAuthorized;
+
+  /// The colour variation [prepareAuthorized] applies, so the Set screen can show it before consent.
+  final Color? previewTint;
 
   /// Draws a compact accent button with a label instead of a round icon button.
   final bool primary;
@@ -672,7 +683,7 @@ class SetWallpaperButton extends StatefulWidget {
   /// Shows a caption under the round icon button.
   final bool labelled;
 
-  /// Sets this screen straight away, without the sheet or the saved default. Long press still opens the sheet.
+  /// Sets this screen straight away, without the Set screen or the saved default. Long press still opens it.
   final WallpaperTarget? target;
 
   const SetWallpaperButton({
@@ -690,16 +701,17 @@ class SetWallpaperButton extends StatefulWidget {
     this.onMatchAccent,
     this.prepareSource,
     this.prepareAuthorized,
+    this.previewTint,
     this.primary = false,
     this.labelled = false,
     this.target,
   });
 
   @override
-  _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
+  SetWallpaperButtonState createState() => SetWallpaperButtonState();
 }
 
-class _SetWallpaperButtonState extends State<SetWallpaperButton> {
+class SetWallpaperButtonState extends State<SetWallpaperButton> {
   bool isLoading = false;
   bool _flowActive = false;
 
@@ -715,7 +727,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> _start({bool forceSheet = false, bool playTapHaptic = true}) async {
+  /// Opens the Set screen even when a default is saved, as a long press does. [entryPoint] overrides the widget's.
+  Future<void> openSetScreen({String? entryPoint}) => _start(forceScreen: true, entryPoint: entryPoint);
+
+  Future<void> _start({bool forceScreen = false, bool playTapHaptic = true, String? entryPoint}) async {
     final String owner = app_state.prismUser.id;
     final String? url = widget.url;
     if (isLoading || _flowActive || url == null) return;
@@ -741,9 +756,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         wallpaperId: widget.wallpaperId,
         wallpaperSource: widget.wallpaperSource,
         prepareAuthorized: widget.prepareAuthorized,
-        forceSheet: forceSheet,
+        previewTint: widget.previewTint,
+        forceScreen: forceScreen,
         target: widget.target,
-        entryPoint: widget.entryPoint,
+        entryPoint: entryPoint ?? widget.entryPoint,
         requestId: widget.requestId,
         notes: widget.notes,
         onMatchAccent: widget.onMatchAccent,
@@ -803,7 +819,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     final Widget setTarget = GestureDetector(
       behavior: label == null && !widget.primary ? HitTestBehavior.deferToChild : HitTestBehavior.opaque,
       onTap: widget.primary ? null : _start,
-      onLongPress: () => _start(forceSheet: true),
+      onLongPress: () => _start(forceScreen: true),
       child: button,
     );
     if (saved == null || widget.target != null) return setTarget;
@@ -818,7 +834,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           child: GestureDetector(
             key: const ValueKey<String>('set-tune-badge'),
             behavior: HitTestBehavior.opaque,
-            onTap: () => _start(forceSheet: true),
+            onTap: () => _start(forceScreen: true),
             child: SizedBox(
               width: 48,
               height: 48,

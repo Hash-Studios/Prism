@@ -1928,18 +1928,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get appTitle => 'Prism';
 
   @override
-  String get coreAdjustPositionPreview => 'Atur posisi dan pratinjau';
-
-  @override
-  String get coreAdjustPositionPreviewBody => 'Geser, perbesar, dan redupkan sebelum memasangnya.';
-
-  @override
-  String get coreAlwaysUseThis => 'Selalu gunakan ini';
-
-  @override
-  String get coreAlwaysUseThisBody => 'Lain kali, pilih layar yang Anda inginkan dan lewati lembar ini.';
-
-  @override
   String get coreBack => 'Kembali';
 
   @override
@@ -1949,13 +1937,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreBlockCreatorAfterReport => 'Blokir kreator ini juga';
 
   @override
-  String get coreBoth => 'Keduanya';
-
-  @override
   String get coreBothScreens => 'kedua layar';
-
-  @override
-  String get coreBothSetsScreens => 'Keduanya akan memasang wallpaper di layar utama dan layar kunci.';
 
   @override
   String get coreCancel => 'Batal';
@@ -2112,9 +2094,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreChooseReportReason => 'Pilih alasan';
-
-  @override
-  String get coreChooseSystemEditorArea => 'Pilih area yang tepat di editor sistem.';
 
   @override
   String get coreChooseUsername => 'Pilih nama pengguna yang tersedia.';
@@ -2324,9 +2303,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreCreatorPreviewDescription => 'Lihat profil kreator ini di Prism.';
 
   @override
-  String get coreCropAndPosition => 'Potong dan atur posisi...';
-
-  @override
   String get coreDefaultBanner => 'Gabung ke Telegram kami';
 
   @override
@@ -2350,9 +2326,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreDeviceCannotSetScreen => 'Perangkat ini tidak dapat memasang wallpaper di layar itu.';
-
-  @override
-  String get coreDifferentLockWallpaper => 'Wallpaper layar kunci yang berbeda';
 
   @override
   String get coreDone => 'Selesai';
@@ -2451,12 +2424,6 @@ class AppLocalizationsId extends AppLocalizations {
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
-
-  @override
-  String get coreFillScreen => 'Penuhi layar';
-
-  @override
-  String get coreFitWholeImage => 'Tampilkan seluruh gambar';
 
   @override
   String get coreGenericSignInError => 'Terjadi kesalahan. Silakan coba lagi!';
@@ -2929,9 +2896,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get diwaliAnnouncementBody => 'Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.';
-
-  @override
-  String get coreThisGoesOnHome => 'Yang ini dipasang di layar utama.';
 
   @override
   String get coreThisPageDoesNotExist => 'Halaman ini tidak ada';
@@ -8775,9 +8739,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperPositionApproximate => 'Perkiraan. Tampilan mungkin berbeda di peluncur Anda.';
 
   @override
-  String get wallpaperPositionTitle => 'Posisi';
-
-  @override
   String get wallpaperPremium => 'Premium';
 
   @override
@@ -8991,6 +8952,39 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get setScreenTargetHome => 'Layar utama';
+
+  @override
+  String get setScreenTargetLock => 'Layar kunci';
+
+  @override
+  String get setScreenTargetBoth => 'Keduanya';
+
+  @override
+  String get setScreenTargetGroup => 'Pasang di mana';
+
+  @override
+  String get setScreenRemember => 'Ingat pilihan ini';
+
+  @override
+  String get setScreenRememberHint => 'Pasang melewati layar ini lain kali. Tahan Pasang untuk kembali.';
+
+  @override
+  String get setScreenAdjust => 'Sesuaikan';
+
+  @override
+  String get setScreenMore => 'Lainnya';
+
+  @override
+  String get setScreenPairLock => 'Pakai wallpaper lain untuk layar kunci';
+
+  @override
+  String get setScreenOpenSystemEditor => 'Buka editor sistem';
+
+  @override
+  String get setScreenClose => 'Tutup';
 
   @override
   String get wallpaperShare => 'Bagikan';

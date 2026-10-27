@@ -639,16 +639,10 @@
   "adminWriteCount": "{count, plural, one{{count} escritura} other{{count} escrituras}}",
   "appLinkRetryWhenOnline": "No hay conexión. Abriremos este enlace cuando vuelvas a estar conectado.",
   "appTitle": "Prism",
-  "coreAdjustPositionPreview": "Ajusta la posición y previsualiza",
-  "coreAdjustPositionPreviewBody": "Desplaza, amplía y oscurece la imagen antes de aplicarla.",
-  "coreAlwaysUseThis": "Usar siempre esta opción",
-  "coreAlwaysUseThisBody": "La próxima vez, al tocar Aplicar se usará la pantalla que elijas y se omitirá este panel.",
   "coreBack": "Atrás",
   "coreBio": "Biografía",
   "coreBlockCreatorAfterReport": "Bloquear también a este creador",
-  "coreBoth": "Ambas",
   "coreBothScreens": "ambas pantallas",
-  "coreBothSetsScreens": "Se aplicará a la pantalla de inicio y a la pantalla de bloqueo.",
   "coreCancel": "Cancelar",
   "coreCancelSelection": "Cancelar selección",
   "coreCancelSignIn": "Ahora no",
@@ -701,7 +695,6 @@
   "coreChangeWallpaperTarget": "Cambiar dónde se aplica el fondo de pantalla",
   "coreChangelogLatest": "Más reciente",
   "coreChooseReportReason": "Elige un motivo",
-  "coreChooseSystemEditorArea": "Elige el área exacta en el editor del sistema.",
   "coreChooseUsername": "Elige un nombre de usuario disponible.",
   "coreCoinAiWallpaper": "Fondo de pantalla con IA",
   "coreCoinAutoRotatePass": "Pase de rotación automática, 7 días",
@@ -766,7 +759,6 @@
   "coreCouldNotLoadWallpaperForEditing": "No se pudo cargar el fondo de pantalla para editarlo",
   "coreCouldNotUpdateFavourites": "No se pudieron actualizar tus favoritos. Inténtalo de nuevo.",
   "coreCreatorPreviewDescription": "Descubre este perfil de creador en Prism.",
-  "coreCropAndPosition": "Recortar y ajustar…",
   "coreDefaultBanner": "Únete a nuestro Telegram",
   "coreDepthEffectAutoLongTip": "El efecto de profundidad se activa automáticamente. En iOS 18 o versiones anteriores, deja libre de widgets el espacio debajo del reloj.",
   "coreDepthEffectAutoTip": "El efecto de profundidad se activa automáticamente.",
@@ -775,7 +767,6 @@
   "coreDepthEffectMenuShortTip": "Toca ••• y luego Efecto de profundidad.",
   "coreDepthEffectMenuTip": "En el editor de la pantalla de bloqueo, toca ••• y luego Efecto de profundidad.",
   "coreDeviceCannotSetScreen": "Este dispositivo no puede configurar esa pantalla.",
-  "coreDifferentLockWallpaper": "Fondo distinto para la pantalla bloqueada",
   "coreDone": "Listo",
   "coreDown": "bajada de {coins}",
   "coreDownloadNotFinishedCoinsReturned": "La descarga anterior no se completó. Se devolvieron las monedas.",
@@ -801,8 +792,6 @@
   "coreEditUsernameTakenSemantic": "Nombre de usuario en uso",
   "coreFavourite": "Favorito",
   "coreFileSizeMegabytes": "{size} MB",
-  "coreFillScreen": "Rellenar pantalla",
-  "coreFitWholeImage": "Ajustar imagen completa",
   "coreGenericSignInError": "Se produjo un error. ¡Inténtalo de nuevo!",
   "coreGoHome": "Ir al inicio",
   "coreGooglePlayServicesSignInError": "No se puede iniciar sesión con Google Play Services en este dispositivo.",
@@ -927,7 +916,6 @@
   "diwaliBannerSubtitle": "Diyas, fuegos artificiales y oro. Gratis. Toca para probarlo.",
   "diwaliAnnouncementTitle": "Nuevo: el tema Diwali 🪔",
   "diwaliAnnouncementBody": "Diyas, fuegos artificiales y oro. Es gratis. Toca para probarlo.",
-  "coreThisGoesOnHome": "Este se usará en la pantalla de inicio.",
   "coreThisPageDoesNotExist": "Esta página no existe",
   "coreTryAgain": "Volver a intentar",
   "coreUndo": "Deshacer",
@@ -2354,7 +2342,6 @@
   "wallpaperPastPicksTitle": "Selecciones anteriores",
   "wallpaperPlacementDim": "Oscurecer",
   "wallpaperPositionApproximate": "Es aproximado. El resultado puede variar según el launcher.",
-  "wallpaperPositionTitle": "Posición",
   "wallpaperPremium": "Premium",
   "wallpaperPremiumCollection": "Colección Premium",
   "wallpaperPremiumCollectionNamed": "Colección Premium, {name}",
@@ -2414,6 +2401,50 @@
   "wallpaperSetAgain": "Volver a aplicar este fondo de pantalla",
   "wallpaperSetAsWallpaper": "Establecer como fondo de pantalla",
   "wallpaperSetCount": "{count, plural, one{Aplicado una vez} other{Aplicado {count} veces}}",
+  "setScreenTargetHome": "Pantalla de inicio",
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
+  "setScreenTargetLock": "Pantalla de bloqueo",
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
+  "setScreenTargetBoth": "Ambas",
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
+  "setScreenTargetGroup": "Dónde configurarlo",
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
+  "setScreenRemember": "Recordar esta elección",
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
+  "setScreenRememberHint": "Configurar omite esta pantalla la próxima vez. Mantén pulsado Configurar para volver.",
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
+  "setScreenAdjust": "Ajustar",
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
+  "setScreenMore": "Más",
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
+  "setScreenPairLock": "Usar otro fondo para la pantalla de bloqueo",
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
+  "setScreenOpenSystemEditor": "Abrir editor del sistema",
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
+  "setScreenClose": "Cerrar",
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
+  },
   "wallpaperShare": "Compartir",
   "wallpaperShareLink": "Compartir enlace",
   "wallpaperShortcutsAddActionsSteps": "Añade la acción \"Get Prism Wallpaper\". Después, añade la acción \"Set Wallpaper\".",

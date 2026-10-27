@@ -1,33 +1,32 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Fit choice, dim slider, reset and the set buttons under the preview.
+/// Fit choice, dim slider, reset, and Done under the preview.
 class PlacementPanel extends StatelessWidget {
   const PlacementPanel({
     super.key,
     required this.placement,
     required this.busy,
-    required this.targets,
     required this.onFit,
     required this.onDim,
     required this.onReset,
-    required this.onSet,
+    required this.onDone,
+    this.onSystemEditor,
   });
 
   final WallpaperPlacement placement;
   final bool busy;
-
-  /// The screens this device can set.
-  final List<WallpaperTarget> targets;
   final ValueChanged<PlacementFit> onFit;
   final ValueChanged<double> onDim;
   final VoidCallback onReset;
-  final ValueChanged<WallpaperTarget> onSet;
+  final VoidCallback onDone;
+
+  /// Opens the Android system editor. Null hides the button.
+  final VoidCallback? onSystemEditor;
 
   String _fitLabel(AppLocalizations l10n, PlacementFit fit) => switch (fit) {
     PlacementFit.fill => l10n.wallpaperFitFill,
@@ -35,16 +34,9 @@ class PlacementPanel extends StatelessWidget {
     PlacementFit.fitColor => l10n.wallpaperFitColour,
   };
 
-  String _targetLabel(AppLocalizations l10n, WallpaperTarget target) => switch (target) {
-    WallpaperTarget.home => l10n.wallpaperAutoRotateHomeScreen,
-    WallpaperTarget.lock => l10n.wallpaperAutoRotateLockScreen,
-    WallpaperTarget.both => l10n.wallpaperHistoryBothScreens,
-  };
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
     return Material(
       color: theme.primaryColor,
       child: SafeArea(
@@ -97,32 +89,23 @@ class PlacementPanel extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton(onPressed: busy ? null : onReset, child: Text(context.l10n.wallpaperReset)),
               ),
-              if (busy) ...<Widget>[
-                LinearProgressIndicator(color: scheme.error, backgroundColor: scheme.error.withValues(alpha: 0.2)),
-                const SizedBox(height: 12),
-              ],
               Row(
                 children: <Widget>[
-                  for (final WallpaperTarget target in targets)
+                  if (onSystemEditor != null) ...<Widget>[
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: scheme.error,
-                            foregroundColor: scheme.onError,
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                          onPressed: busy
-                              ? null
-                              : () {
-                                  PrismHaptics.tap();
-                                  onSet(target);
-                                },
-                          child: Text(_targetLabel(context.l10n, target)),
-                        ),
+                      child: PrismButton(
+                        label: context.l10n.setScreenOpenSystemEditor,
+                        variant: PrismButtonVariant.tonal,
+                        icon: Icons.crop_rounded,
+                        onPressed: busy ? null : onSystemEditor,
+                        expand: true,
                       ),
                     ),
+                    const SizedBox(width: PrismSpace.sm),
+                  ],
+                  Expanded(
+                    child: PrismButton(label: context.l10n.coreDone, loading: busy, onPressed: onDone, expand: true),
+                  ),
                 ],
               ),
             ],

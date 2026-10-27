@@ -16,7 +16,9 @@ import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -35,6 +37,9 @@ import '../../../support/in_memory_local_store.dart';
 import '../../../support/offline_asset_fixture.dart';
 
 final AppLocalizationsEn l10n = AppLocalizationsEn();
+
+/// The Set screen that [SetWallpaperFlow] opens over the page.
+Finder get setScreen => find.byType(ClockOverlay);
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -93,6 +98,7 @@ void main() {
   late String thumbnailFilePath;
   final studioOpener = SetWallpaperFlow.studioOpener;
   final pairPicker = SetWallpaperFlow.pairPicker;
+  final screenOpener = SetWallpaperFlow.screenOpener;
   final signIn = originalSignIn;
 
   setUp(() async {
@@ -112,6 +118,7 @@ void main() {
   tearDown(() async {
     SetWallpaperFlow.studioOpener = studioOpener;
     SetWallpaperFlow.pairPicker = pairPicker;
+    SetWallpaperFlow.screenOpener = screenOpener;
     originalSignIn = signIn;
     await getIt.reset();
     AnalyticsRuntime.reset();
@@ -172,9 +179,36 @@ void main() {
     );
   }
 
-  testWidgets('cancelling the target sheet never quotes, grants, charges, or applies a protected original', (
-    tester,
-  ) async {
+  /// Taps Set on the button, which opens the Set screen.
+  Future<void> openSetScreen(WidgetTester tester) async {
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+    await tester.pumpAndSettle();
+  }
+
+  /// On the open Set screen, picks [target] (Home is the default) and taps Set.
+  Future<void> setOn(WidgetTester tester, WallpaperTarget target) async {
+    if (target != WallpaperTarget.home) {
+      final String label = switch (target) {
+        WallpaperTarget.lock => l10n.setScreenTargetLock,
+        WallpaperTarget.both => l10n.setScreenTargetBoth,
+        WallpaperTarget.home => l10n.setScreenTargetHome,
+      };
+      await tester.tap(find.text(label));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-set')));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+  }
+
+  /// A PNG in a folder of its own, as the studio hands it back. The flow deletes that folder after a set.
+  String placedWallFile() {
+    final Directory dir = Directory.systemTemp.createTempSync('set-screen-placed');
+    final File file = File('${dir.path}/placed.png')..writeAsBytesSync(File(wallFilePath).readAsBytesSync());
+    assets.mapSource(file.path, file);
+    return file.path;
+  }
+
+  testWidgets('closing the Set screen never quotes, grants, charges, or applies a protected original', (tester) async {
     final backend = CoinsTestBackend();
     await backend.install();
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
@@ -186,11 +220,10 @@ void main() {
     final client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    await openSetScreen(tester);
+    expect(setScreen, findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    await tester.tapAt(const Offset(5, 5));
+    await tester.tap(find.byTooltip(l10n.setScreenClose));
     await tester.pumpAndSettle();
     expect(callableCount, 0);
     expect(client.requests, isEmpty);
@@ -252,7 +285,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(signIns, 1);
-      expect(find.byType(SetOptionsPanel), findsNothing);
+      expect(setScreen, findsNothing);
       expect(calls, isEmpty);
       expect(client.requests, isEmpty);
     });
@@ -336,6 +369,39 @@ void main() {
       expect(client.requests.map((r) => r.source.filePath), [wallFilePath]);
     });
 
+    testWidgets('Adjust then Set on a protected wall asks for consent once and sets the placed file', (tester) async {
+      await asGuest(tester, signsIn: true);
+      assets.mapSource('https://signed.test/protected-wall', File(wallFilePath));
+      final String placedPath = placedWallFile();
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final List<String> studioUrls = <String>[];
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        studioUrls.add(url);
+        return PlacedWallpaper(path: placedPath, placement: const WallpaperPlacement());
+      };
+      await pumpButton(
+        tester,
+        source: WallpaperSource.prism,
+        wallpaperId: 'protected-wall',
+        url: '',
+        thumbnailUrl: thumbnailFilePath,
+      );
+
+      await openSetScreen(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await setOn(tester, WallpaperTarget.home);
+
+      expect(signIns, 1);
+      expect(studioUrls, <String>['https://signed.test/protected-wall']);
+      expect(calls.map((call) => (call['assetId'], call['action'], call['mode'])), [
+        ('protected-wall', 'set', 'quote'),
+        ('protected-wall', 'set', null),
+      ]);
+      expect(client.requests.map((r) => r.source.filePath), <String>[placedPath]);
+    });
+
     PairPick protectedPick() => PairPick(
       source: PairSource.favourites,
       candidate: PairCandidate(
@@ -347,10 +413,10 @@ void main() {
     );
 
     Future<void> openPair(WidgetTester tester) async {
-      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+      await openSetScreen(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-more')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text(l10n.coreDifferentLockWallpaper));
-      await tester.tap(find.text(l10n.coreDifferentLockWallpaper));
+      await tester.tap(find.text(l10n.setScreenPairLock));
       await tester.pumpAndSettle(const Duration(seconds: 2));
     }
 
@@ -434,23 +500,42 @@ void main() {
     expect(store.items().single.originalIdentity, 'prism:same-original');
   });
 
-  testWidgets('with the default ask, tapping Set opens the sheet and applies the chosen target', (tester) async {
+  testWidgets('with the default ask, tapping Set opens the Set screen and applies the chosen target', (tester) async {
     final _Client client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    await openSetScreen(tester);
+    expect(setScreen, findsOneWidget);
     expect(client.requests, isEmpty);
 
-    await tester.tap(find.text(l10n.coreLockScreen));
-    await tester.pumpAndSettle();
+    await setOn(tester, WallpaperTarget.lock);
     expect(client.requests.single.target, aw.WallpaperTarget.lock);
     expect(client.requests.single.scaleMode, aw.WallpaperScaleMode.centerCrop);
     expect(analytics.events.whereType<SetWallEvent>().single.result, BinaryResultValue.success);
     await tester.pumpAndSettle(const Duration(seconds: 2));
   });
+
+  const List<(WallpaperTarget, aw.WallpaperTarget)> targetCases = <(WallpaperTarget, aw.WallpaperTarget)>[
+    (WallpaperTarget.home, aw.WallpaperTarget.home),
+    (WallpaperTarget.lock, aw.WallpaperTarget.lock),
+    (WallpaperTarget.both, aw.WallpaperTarget.both),
+  ];
+  for (final (WallpaperTarget target, aw.WallpaperTarget requested) in targetCases) {
+    testWidgets('Set on the Set screen for ${target.name} applies exactly one ${requested.name} request', (
+      tester,
+    ) async {
+      final _Client client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester);
+
+      await openSetScreen(tester);
+      await setOn(tester, target);
+
+      expect(client.requests.map((r) => r.target), <aw.WallpaperTarget>[requested]);
+      expect(setScreen, findsNothing);
+    });
+  }
 
   testWidgets('tapping the label beside the circle triggers the same action', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
@@ -476,12 +561,14 @@ void main() {
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.byType(SetOptionsPanel), findsNothing);
+    expect(setScreen, findsNothing);
     expect(client.requests.single.target, aw.WallpaperTarget.home);
     expect(onSetCalls, 1);
   });
 
-  testWidgets('a fixed target applies that screen without the sheet, even with another saved default', (tester) async {
+  testWidgets('a fixed target applies that screen without the Set screen, even with another saved default', (
+    tester,
+  ) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
     const String wallpaperUrl = 'https://example.test/fixed-target-wallpaper.jpg';
     assets.mapSource(wallpaperUrl, File(wallFilePath));
@@ -511,7 +598,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.byType(SetOptionsPanel), findsNothing);
+    expect(setScreen, findsNothing);
     expect(client.requests.single.target, aw.WallpaperTarget.lock);
     expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'home');
     expect(history.items().first.target, 'lock');
@@ -538,7 +625,7 @@ void main() {
     expect(find.byKey(const ValueKey<String>('set-tune-badge')), findsNothing);
   });
 
-  testWidgets('long press on a fixed target still opens the sheet', (tester) async {
+  testWidgets('long press on a fixed target still opens the Set screen', (tester) async {
     final _Client client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester, target: WallpaperTarget.lock);
@@ -546,11 +633,11 @@ void main() {
     await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
     expect(client.requests, isEmpty);
   });
 
-  testWidgets('a fixed target the device cannot set falls back to the sheet', (tester) async {
+  testWidgets('a fixed target the device cannot set falls back to the Set screen', (tester) async {
     final _Client client = _Client(
       capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
     );
@@ -560,11 +647,11 @@ void main() {
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
     expect(client.requests, isEmpty);
   });
 
-  testWidgets('long press opens the sheet even with a saved default', (tester) async {
+  testWidgets('long press opens the Set screen even with a saved default', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'both');
     final _Client client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
@@ -573,7 +660,7 @@ void main() {
     await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreBothScreens)));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
     expect(client.requests, isEmpty);
   });
 
@@ -590,7 +677,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
     expect(played, <Object?>['tap'], reason: 'the PrismButton owns the pointer tap haptic');
-    expect(find.byType(SetOptionsPanel), findsOneWidget, reason: 'pointer activation still opens the set flow');
+    expect(setScreen, findsOneWidget, reason: 'pointer activation still opens the set flow');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpButton(tester, primary: true);
@@ -602,7 +689,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(played, <Object?>['tap'], reason: 'the outer semantic action bypasses PrismButton.onPressed');
-    expect(find.byType(SetOptionsPanel), findsOneWidget, reason: 'semantics activation still opens the set flow');
+    expect(setScreen, findsOneWidget, reason: 'semantics activation still opens the set flow');
     semantics.dispose();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -622,7 +709,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(played, <Object?>['tap']);
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the circular button plays one tap haptic', (tester) async {
@@ -639,10 +726,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(played, <Object?>['tap']);
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('a saved default the device cannot set falls back to the sheet', (tester) async {
+  testWidgets('a saved default the device cannot set falls back to the Set screen', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');
     final _Client client = _Client(
       capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
@@ -653,39 +740,48 @@ void main() {
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(setScreen, findsOneWidget);
     expect(client.requests, isEmpty);
   });
 
-  testWidgets('the sheet hides Lock and Both when the device does not support them', (tester) async {
+  testWidgets('Both is absent when the device cannot set both screens', (tester) async {
+    aw.AsyncWallpaper.debugSetClient(
+      _Client(
+        capabilities: const aw.WallpaperCapabilities(
+          supportsStaticWallpaper: true,
+          supportsHomeWallpaper: true,
+          supportsLockWallpaper: true,
+        ),
+      ),
+    );
+    await pumpButton(tester);
+
+    await openSetScreen(tester);
+
+    expect(find.text(l10n.setScreenTargetHome), findsOneWidget);
+    expect(find.text(l10n.setScreenTargetLock), findsOneWidget);
+    expect(find.text(l10n.setScreenTargetBoth), findsNothing);
+  });
+
+  testWidgets('Lock and Both are absent when the device cannot set the lock screen', (tester) async {
     aw.AsyncWallpaper.debugSetClient(
       _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true)),
     );
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
+    await openSetScreen(tester);
 
-    expect(find.text(l10n.coreHomeScreen), findsOneWidget);
-    expect(find.text(l10n.coreLockScreen), findsNothing);
-    expect(find.text(l10n.coreBoth), findsNothing);
+    expect(find.text(l10n.setScreenTargetHome), findsNothing);
+    expect(find.text(l10n.setScreenTargetLock), findsNothing);
+    expect(find.text(l10n.setScreenTargetBoth), findsNothing);
+    expect(find.bySemanticsLabel(l10n.setScreenTargetGroup), findsNothing);
   });
 
-  testWidgets('Fit whole image changes the request, and Crop and position opens the system cropper', (tester) async {
+  testWidgets('Adjust then the system editor sets one wall through the system cropper', (tester) async {
     final _Client client = _Client(status: aw.WallpaperOperationStatus.awaitingUserConfirmation);
     aw.AsyncWallpaper.debugSetClient(client);
-    await pumpButton(tester);
-
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.coreFitWholeImage));
-    await tester.pump();
-    await tester.tap(find.text(l10n.coreHomeScreen));
-    await tester.pumpAndSettle();
-    expect(client.requests.last.scaleMode, aw.WallpaperScaleMode.fitCenter);
-    expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.direct);
-    expect(find.text(l10n.coreConfirmWallpaperPreview), findsOneWidget);
-
+    SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async =>
+        const SystemEditorRequested();
     // The system cropper reads a content URI, which MainActivity makes through this channel.
     const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -696,15 +792,17 @@ void main() {
       () =>
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null),
     );
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.coreCropAndPosition));
-    await tester.pump();
-    await tester.tap(find.text(l10n.coreBoth));
-    await tester.pumpAndSettle();
-    expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.systemCropper);
-    expect(client.requests.last.target, aw.WallpaperTarget.both);
-    expect(client.requests.last.source.contentUri, startsWith('content://'));
+    await pumpButton(tester);
+
+    await openSetScreen(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(setScreen, findsNothing);
+    expect(client.requests, hasLength(1));
+    expect(client.requests.single.strategy, aw.WallpaperApplyStrategy.systemCropper);
+    expect(client.requests.single.target, aw.WallpaperTarget.home);
+    expect(client.requests.single.source.contentUri, startsWith('content://'));
   });
 
   testWidgets('a failed set shows Try again and tracks a failure', (tester) async {
@@ -737,7 +835,7 @@ void main() {
     expect(analytics.events.whereType<SetWallEvent>(), isEmpty);
   });
 
-  testWidgets('the sheet shows the wall, the low resolution note and the landscape note as chips', (tester) async {
+  testWidgets('the Set screen shows the low resolution note and the landscape note as chips', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(
       tester,
@@ -753,51 +851,129 @@ void main() {
     expect(find.byType(Image), findsOneWidget);
   });
 
-  testWidgets('Always use this saves the target the user picks as the default', (tester) async {
+  testWidgets('without Remember the default stays on ask', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(tester);
 
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text(l10n.coreAlwaysUseThis));
-    await tester.tap(find.text(l10n.coreAlwaysUseThis));
-    await tester.pump();
-    await tester.tap(find.text(l10n.coreLockScreen));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
-
-    expect(SetWallpaperFlow.defaultTarget(), WallpaperTarget.lock);
-  });
-
-  testWidgets('without Always use this the default stays on ask', (tester) async {
-    aw.AsyncWallpaper.debugSetClient(_Client());
-    await pumpButton(tester);
-
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.coreLockScreen));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await openSetScreen(tester);
+    await setOn(tester, WallpaperTarget.lock);
 
     expect(SetWallpaperFlow.defaultTarget(), isNull);
+    expect(settings.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask'), 'ask');
   });
 
-  testWidgets('the Both line shows only when Both is offered', (tester) async {
+  testWidgets('Remember this choice saves Lock as the default, and the next Set applies it without the Set screen', (
+    tester,
+  ) async {
+    final _Client client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester);
+
+    await openSetScreen(tester);
+    await tester.tap(find.text(l10n.setScreenRemember));
+    await tester.pump();
+    await setOn(tester, WallpaperTarget.lock);
+
+    expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'lock');
+    expect(client.requests.map((r) => r.target), <aw.WallpaperTarget>[aw.WallpaperTarget.lock]);
+
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(setScreen, findsNothing);
+    expect(client.requests.map((r) => r.target), <aw.WallpaperTarget>[
+      aw.WallpaperTarget.lock,
+      aw.WallpaperTarget.lock,
+    ]);
+  });
+
+  testWidgets('a saved default Both opens the Set screen on long press with Both and Remember checked', (tester) async {
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'both');
+    final _Client client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester);
+
+    await tester.longPress(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreBothScreens)));
+    await tester.pumpAndSettle();
+
+    expect(setScreen, findsOneWidget);
+    expect(tester.getSemantics(find.bySemanticsLabel(l10n.setScreenTargetBoth)), isSemantics(isSelected: true));
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+
+    await tester.tap(find.text(l10n.setScreenRemember));
+    await tester.pump();
+    await tester.tap(find.text(l10n.setScreenTargetHome));
+    await tester.pump();
+    await setOn(tester, WallpaperTarget.home);
+
+    expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'ask');
+    expect(client.requests.map((r) => r.target), <aw.WallpaperTarget>[aw.WallpaperTarget.home]);
+  });
+
+  testWidgets('closing the Set screen saves nothing and applies nothing', (tester) async {
+    final _Client client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester);
+
+    await openSetScreen(tester);
+    await tester.tap(find.text(l10n.setScreenRemember));
+    await tester.pump();
+    await tester.tap(find.text(l10n.setScreenTargetLock));
+    await tester.pump();
+    await tester.tap(find.byTooltip(l10n.setScreenClose));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(setScreen, findsNothing);
+    expect(SetWallpaperFlow.defaultTarget(), isNull);
+    expect(client.requests, isEmpty);
+    expect(analytics.events.whereType<SetWallEvent>(), isEmpty);
+  });
+
+  testWidgets(
+    'set_wall says the default was used and the target did not change when a saved default skips the screen',
+    (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      aw.AsyncWallpaper.debugSetClient(_Client());
+      await pumpButton(tester, entryPoint: 'favourites');
+
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      final SetWallEvent event = analytics.events.whereType<SetWallEvent>().single;
+      expect(event.entryPoint, 'favourites');
+      expect(event.usedDefault, isTrue);
+      expect(event.targetChanged, isNull);
+    },
+  );
+
+  testWidgets('set_wall records target_changed true when the user moves from Home to Lock on the Set screen', (
+    tester,
+  ) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
-    await pumpButton(tester);
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
-    expect(find.text(l10n.coreBothSetsScreens), findsOneWidget);
+    await pumpButton(tester, entryPoint: 'wallpaper_detail');
+
+    await openSetScreen(tester);
+    await setOn(tester, WallpaperTarget.lock);
+
+    final SetWallEvent event = analytics.events.whereType<SetWallEvent>().single;
+    expect(event.entryPoint, 'wallpaper_detail');
+    expect(event.usedDefault, isFalse);
+    expect(event.targetChanged, isTrue);
   });
 
-  testWidgets('the Both line is hidden when the device cannot set both screens', (tester) async {
-    aw.AsyncWallpaper.debugSetClient(
-      _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true)),
-    );
-    await pumpButton(tester);
-    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
-    await tester.pumpAndSettle();
+  testWidgets('set_wall records target_changed false when the user sets the initial Home target on the Set screen', (
+    tester,
+  ) async {
+    aw.AsyncWallpaper.debugSetClient(_Client());
+    await pumpButton(tester, entryPoint: 'wallpaper_detail');
 
-    expect(find.text(l10n.coreBoth), findsNothing);
-    expect(find.text(l10n.coreBothSetsScreens), findsNothing);
+    await openSetScreen(tester);
+    await setOn(tester, WallpaperTarget.home);
+
+    final SetWallEvent event = analytics.events.whereType<SetWallEvent>().single;
+    expect(event.entryPoint, 'wallpaper_detail');
+    expect(event.usedDefault, isFalse);
+    expect(event.targetChanged, isFalse);
   });
 
   testWidgets('the set_wall event records the fit, the entry point and that the default was used', (tester) async {
@@ -922,7 +1098,7 @@ void main() {
       expect(tester.getSize(find.byKey(const ValueKey<String>('set-tune-badge'))), const Size(48, 48));
     });
 
-    testWidgets('opens the sheet and does not apply', (tester) async {
+    testWidgets('opens the Set screen and does not apply', (tester) async {
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
@@ -931,7 +1107,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('set-tune-badge')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SetOptionsPanel), findsOneWidget);
+      expect(setScreen, findsOneWidget);
       expect(client.requests, isEmpty);
     });
 
@@ -944,7 +1120,7 @@ void main() {
       await tester.tap(find.text(l10n.coreSet));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      expect(find.byType(SetOptionsPanel), findsNothing);
+      expect(setScreen, findsNothing);
       expect(client.requests.single.target, aw.WallpaperTarget.home);
     });
 
@@ -958,18 +1134,17 @@ void main() {
 
   group('position studio entry', () {
     testWidgets('keeps the original source identity while the position studio opens', (tester) async {
-      final Completer<WallpaperSetResult?> studio = Completer<WallpaperSetResult?>();
+      final Completer<StudioResult?> studio = Completer<StudioResult?>();
       final List<String> opened = <String>[];
-      SetWallpaperFlow.studioOpener =
-          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
-            opened.add(url);
-            return studio.future;
-          };
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) {
+        opened.add(url);
+        return studio.future;
+      };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath);
 
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -981,20 +1156,19 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('Adjust position and preview opens the studio with the wall and its entry point', (tester) async {
+    testWidgets('Adjust opens the studio with the wall and its entry point', (tester) async {
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
       final List<(String, String?, String?)> opened = <(String, String?, String?)>[];
-      SetWallpaperFlow.studioOpener =
-          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
-            opened.add((url, thumbnailUrl, entryPoint));
-            return null;
-          };
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        opened.add((url, thumbnailUrl, entryPoint));
+        return null;
+      };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath, entryPoint: 'wallpaper_detail');
 
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
       await tester.pumpAndSettle();
 
       expect(opened, [('/tmp/wall.png', thumbnailFilePath, 'wallpaper_detail')]);
@@ -1007,7 +1181,7 @@ void main() {
       registerFallbackValue(WallpaperPositionRoute(imageUrl: 'unused'));
       final _MockStackRouter router = _MockStackRouter();
       PageRouteInfo<dynamic>? pushed;
-      when(() => router.push<WallpaperSetResult>(any())).thenAnswer((invocation) async {
+      when(() => router.push<StudioResult>(any())).thenAnswer((invocation) async {
         pushed = invocation.positionalArguments.first as PageRouteInfo<dynamic>;
         return null;
       });
@@ -1019,15 +1193,12 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
-          home: StackRouterScope(
-            controller: router,
-            stateHash: 0,
-            child: Scaffold(
-              body: SetWallpaperButton(
-                url: '/tmp/wall.png',
-                thumbnailUrl: thumbnailFilePath,
-                entryPoint: 'download_screen',
-              ),
+          builder: (context, child) => StackRouterScope(controller: router, stateHash: 0, child: child!),
+          home: Scaffold(
+            body: SetWallpaperButton(
+              url: '/tmp/wall.png',
+              thumbnailUrl: thumbnailFilePath,
+              entryPoint: 'download_screen',
             ),
           ),
         ),
@@ -1035,7 +1206,7 @@ void main() {
 
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
       await tester.pumpAndSettle();
 
       expect(pushed?.routeName, WallpaperPositionRoute.name);
@@ -1044,6 +1215,38 @@ void main() {
         (args.imageUrl, args.thumbnailUrl, args.entryPoint),
         ('/tmp/wall.png', thumbnailFilePath, 'download_screen'),
       );
+    });
+
+    testWidgets('Adjust places the wall, and Set applies the placed file with the studio fit and entry point', (
+      tester,
+    ) async {
+      final _Client client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final String placedPath = placedWallFile();
+      final List<(String, String?)> opened = <(String, String?)>[];
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        opened.add((url, entryPoint));
+        return PlacedWallpaper(
+          path: placedPath,
+          placement: const WallpaperPlacement(fit: PlacementFit.fitBlur),
+        );
+      };
+      await pumpButton(tester, thumbnailUrl: thumbnailFilePath, entryPoint: 'wallpaper_detail');
+
+      await openSetScreen(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
+      await tester.pumpAndSettle();
+      expect(opened, <(String, String?)>[('/tmp/wall.png', 'wallpaper_detail')]);
+      expect(client.requests, isEmpty);
+
+      await setOn(tester, WallpaperTarget.home);
+
+      expect(client.requests.map((r) => (r.target, r.source.filePath)), <(aw.WallpaperTarget, String)>[
+        (aw.WallpaperTarget.home, placedPath),
+      ]);
+      final Map<String, Object?> wire = analytics.events.whereType<SetWallEvent>().single.toWireParameters();
+      expect(wire, containsPair('fit', 'studio_fitBlur'));
+      expect(wire, containsPair('entry_point', 'wallpaper_detail'));
     });
   });
 
@@ -1054,10 +1257,10 @@ void main() {
     );
 
     Future<void> openPair(WidgetTester tester) async {
-      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+      await openSetScreen(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-more')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text(l10n.coreDifferentLockWallpaper));
-      await tester.tap(find.text(l10n.coreDifferentLockWallpaper));
+      await tester.tap(find.text(l10n.setScreenPairLock));
       await tester.pumpAndSettle(const Duration(seconds: 2));
     }
 
@@ -1105,7 +1308,7 @@ void main() {
       expect(store.items().where((item) => item.target == 'lock').single.fullUrl, '/tmp/lock.png');
     });
 
-    testWidgets('the row is hidden when the device cannot set the lock screen', (tester) async {
+    testWidgets('More is hidden when the device cannot set the lock screen', (tester) async {
       aw.AsyncWallpaper.debugSetClient(
         _Client(
           capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
@@ -1116,7 +1319,7 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.coreDifferentLockWallpaper), findsNothing);
+      expect(find.byKey(const ValueKey<String>('set-screen-more')), findsNothing);
     });
 
     testWidgets('closing the picker sets nothing', (tester) async {
@@ -1201,11 +1404,10 @@ void main() {
     expect(client.requests.single.target, aw.WallpaperTarget.home);
   });
 
-  testWidgets('an unexpected error in the flow tells the user instead of failing silently', (tester) async {
+  testWidgets('an unexpected error while opening Adjust tells the user instead of failing silently', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
-    SetWallpaperFlow.studioOpener =
-        (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async =>
-            throw StateError('router gone');
+    SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async =>
+        throw StateError('router gone');
     final List<MethodCall> toasts = <MethodCall>[];
     await pumpButton(tester);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (
@@ -1217,7 +1419,7 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.coreAdjustPositionPreview));
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
     await tester.pumpAndSettle();
 
     expect(
@@ -1303,15 +1505,14 @@ void main() {
       expect(client.requests.single.source.filePath, preparedPath);
     });
 
-    testWidgets('prepares before the sheet opens and opens the position studio on the prepared file', (tester) async {
+    testWidgets('prepares before the Set screen opens and opens the studio on the prepared file', (tester) async {
       aw.AsyncWallpaper.debugSetClient(_Client());
       String? studioUrl;
       final String preparedPath = assets.createImageSync('tinted.png').path;
-      SetWallpaperFlow.studioOpener =
-          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
-            studioUrl = url;
-            return null;
-          };
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        studioUrl = url;
+        return null;
+      };
       int prepared = 0;
       await pumpPrepared(tester, () async {
         prepared++;
@@ -1321,8 +1522,8 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
       expect(prepared, 1);
-      expect(find.byType(SetOptionsPanel), findsOneWidget);
-      await tester.tap(find.text(l10n.coreAdjustPositionPreview));
+      expect(setScreen, findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
       await tester.pumpAndSettle();
 
       expect(studioUrl, preparedPath);
@@ -1368,7 +1569,7 @@ void main() {
 
       expect(toasted("Couldn't apply the colour. Try again."), isTrue);
       expect(client.requests, isEmpty);
-      expect(find.byType(SetOptionsPanel), findsNothing);
+      expect(setScreen, findsNothing);
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
 
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));

@@ -746,6 +746,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                         wallpaperId: selectedWalls.first.id,
                         wallpaperSource: selectedWalls.first.source,
                         onSet: _exitSelection,
+                        entryPoint: 'favourites',
                       ),
                     CircularMenuButton(
                       label: context.l10n.wallpaperShare,

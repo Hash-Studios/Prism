@@ -346,7 +346,11 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
-  Widget Function(WallpaperTarget target, String label)? _previewAction;
+  /// The Set button in the action bar. On Android the phone preview opens its Set screen.
+  final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
+
+  /// iOS only: builds Save to Photos for the phone preview.
+  Widget Function(String label)? _saveAction;
   static const double _sheetHPad = PrismSpace.md;
 
   /// Text and icons in the panel that sit one step below the title.
@@ -895,6 +899,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                   : () {
                       final entity = state.entity;
                       _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
+                      if (!hideSetWallpaperUi) {
+                        unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
+                        return;
+                      }
                       pushClockPreview(
                         context,
                         link:
@@ -905,7 +913,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         wallpaperSource: entity.source,
                         thumbnailUrl: entity.thumbnailUrl,
                         tint: state.tint,
-                        setAction: _previewAction,
+                        saveAction: _saveAction,
                       );
                     },
             ),
@@ -1627,28 +1635,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       return label == null ? button : PressScale(child: button);
     }
 
-    Widget setButton({required String label, WallpaperTarget? target, String entryPoint = 'wallpaper_detail'}) =>
-        PressScale(
-          child: SetWallpaperButton(
-            label: label,
-            target: target,
-            url: source,
-            wallpaperId: entity.id,
-            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-            prepareSource: prepareSource,
-            prepareAuthorized: prepareAuthorized,
-            thumbnailUrl: entity.thumbnailUrl,
-            promptNotificationPermissionOnSuccess: true,
-            entryPoint: entryPoint,
-            requestId: widget.requestId,
-            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-            onMatchAccent: _matchAccentAction(context, state),
-            onSet: () => _onWallpaperSet(entity),
-          ),
-        );
-    _previewAction = (target, label) => hideSetWallpaperUi
-        ? downloadButton(label: label)
-        : setButton(label: label, target: target, entryPoint: 'wallpaper_preview');
+    Widget setButton({required String label}) => PressScale(
+      child: SetWallpaperButton(
+        key: _setButtonKey,
+        label: label,
+        url: source,
+        wallpaperId: entity.id,
+        wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+        prepareSource: prepareSource,
+        prepareAuthorized: prepareAuthorized,
+        thumbnailUrl: entity.thumbnailUrl,
+        promptNotificationPermissionOnSuccess: true,
+        entryPoint: 'wallpaper_detail',
+        requestId: widget.requestId,
+        previewTint: tint,
+        notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+        onMatchAccent: _matchAccentAction(context, state),
+        onSet: () => _onWallpaperSet(entity),
+      ),
+    );
+    _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: context.l10n.wallpaperSaveToPhotos,

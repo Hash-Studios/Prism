@@ -184,13 +184,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
       path,
       choice.target,
-      fit: choice.fit,
       useSystemCropper: choice.useSystemCropper,
       recordHistory: false,
     );
     if (mounted) {
       try {
-        reportWallpaperSetResult(context, result, l10n: l10n, target: choice.target);
+        reportWallpaperSetResult(
+          context,
+          result,
+          l10n: l10n,
+          target: choice.target,
+          setContext: WallpaperSetContext(
+            fit: WallpaperFit.fill.name,
+            entryPoint: 'wallpaper_filter',
+            targetChanged: choice.targetChanged,
+          ),
+        );
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
       }
@@ -345,7 +354,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return false;
     }
     try {
-      final SetWallpaperChoice? choice = await showSetWallpaperSheet(context);
+      final SetWallpaperChoice? choice = await SetWallpaperFlow.openScreen(
+        context,
+        SetScreenRequest(url: imageFile.path),
+      );
       if (!mounted || choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
       if (result.isSuccess || result.isInfo) {

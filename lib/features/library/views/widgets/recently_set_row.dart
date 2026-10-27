@@ -27,7 +27,15 @@ class RecentlySetRow extends StatelessWidget {
 
   void _setAgain(BuildContext context, AppliedWallpaper item) {
     PrismHaptics.tap();
-    unawaited(SetWallpaperFlow.run(context, url: item.fullUrl, thumbnailUrl: item.thumbnailUrl, forceSheet: true));
+    unawaited(
+      SetWallpaperFlow.run(
+        context,
+        url: item.fullUrl,
+        thumbnailUrl: item.thumbnailUrl,
+        forceScreen: true,
+        entryPoint: 'recently_set',
+      ),
+    );
   }
 
   Widget _thumbnail(AppliedWallpaper item) {

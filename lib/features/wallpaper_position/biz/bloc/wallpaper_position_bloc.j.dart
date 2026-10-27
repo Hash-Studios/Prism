@@ -4,7 +4,7 @@ import 'dart:ui' show Size;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -47,16 +47,12 @@ class WallpaperPositionBloc extends Bloc<WallpaperPositionEvent, WallpaperPositi
         ),
       ),
     );
-    on<_ApplyRequested>(_onApplyRequested);
+    on<_DoneRequested>(_onDoneRequested);
   }
 
   final WallpaperPositionRepository _repository;
-  String _imageUrl = '';
-  String? _thumbnailUrl;
 
   Future<void> _onStarted(_Started event, Emitter<WallpaperPositionState> emit) async {
-    _imageUrl = event.imageUrl;
-    _thumbnailUrl = event.thumbnailUrl;
     emit(WallpaperPositionState.initial());
     unawaited(analytics.track(WallpaperPositionOpenedEvent(source: event.entryPoint ?? 'unknown')));
     try {
@@ -72,49 +68,30 @@ class WallpaperPositionBloc extends Bloc<WallpaperPositionEvent, WallpaperPositi
     }
   }
 
-  Future<void> _onApplyRequested(_ApplyRequested event, Emitter<WallpaperPositionState> emit) async {
+  Future<void> _onDoneRequested(_DoneRequested event, Emitter<WallpaperPositionState> emit) async {
     final PlacementSource? source = state.source;
     if (source == null || state.status != WallpaperPositionStatus.ready) return;
     final WallpaperPlacement placement = state.placement;
-    emit(state.copyWith(status: WallpaperPositionStatus.applying));
-    WallpaperSetResult result;
-    File? file;
+    emit(state.copyWith(status: WallpaperPositionStatus.rendering));
     try {
-      file = await _repository.render(source, placement, event.outputSize);
-      result = await WallpaperService.setWallpaper(
-        file.path,
-        event.target,
-        historySource: _imageUrl,
-        historyThumbnail: _thumbnailUrl,
+      final File file = await _repository.render(source, placement, event.outputSize);
+      if (isClosed) {
+        await PlacedWallpaper(path: file.path, placement: placement).discard();
+        return;
+      }
+      emit(
+        state.copyWith(
+          status: WallpaperPositionStatus.ready,
+          placed: PlacedWallpaper(path: file.path, placement: placement),
+          placedToken: state.placedToken + 1,
+        ),
       );
     } catch (error, stackTrace) {
-      logger.e('WallpaperPositionBloc: could not set the wallpaper', error: error, stackTrace: stackTrace);
-      result = const WallpaperSetResult(
-        WallpaperSetStatus.failed,
-        "Couldn't prepare the wallpaper. Try again.",
-        errorCode: 'render_failed',
-      );
+      logger.e('WallpaperPositionBloc: could not render the wallpaper', error: error, stackTrace: stackTrace);
+      if (!isClosed) {
+        emit(state.copyWith(status: WallpaperPositionStatus.ready, renderErrorToken: state.renderErrorToken + 1));
+      }
     }
-    // The plugin may still read the file while the system preview is open.
-    if (file != null && !result.isInfo) await _repository.discard(file);
-    _track(placement, event.target, result);
-    if (isClosed) return;
-    emit(state.copyWith(status: WallpaperPositionStatus.ready, result: result, resultToken: state.resultToken + 1));
-  }
-
-  void _track(WallpaperPlacement placement, WallpaperTarget target, WallpaperSetResult result) {
-    if (!result.isSuccess && !result.isFailure) return;
-    unawaited(
-      analytics.track(
-        WallpaperPlacementAppliedEvent(
-          fit: placement.fit.name,
-          zoomed: placement.isZoomed,
-          dimBucket: placement.dimBucket,
-          wallpaperTarget: target,
-          result: result.isSuccess ? BinaryResultValue.success : BinaryResultValue.failure,
-        ),
-      ),
-    );
   }
 
   @override

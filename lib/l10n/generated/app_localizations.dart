@@ -3369,30 +3369,6 @@ abstract class AppLocalizations {
   /// **'Prism'**
   String get appTitle;
 
-  /// No description provided for @coreAdjustPositionPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Adjust position and preview'**
-  String get coreAdjustPositionPreview;
-
-  /// No description provided for @coreAdjustPositionPreviewBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Pan, zoom and dim before you set it.'**
-  String get coreAdjustPositionPreviewBody;
-
-  /// No description provided for @coreAlwaysUseThis.
-  ///
-  /// In en, this message translates to:
-  /// **'Always use this'**
-  String get coreAlwaysUseThis;
-
-  /// No description provided for @coreAlwaysUseThisBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Next time, Set uses the screen you pick and skips this sheet.'**
-  String get coreAlwaysUseThisBody;
-
   /// No description provided for @coreBack.
   ///
   /// In en, this message translates to:
@@ -3411,23 +3387,11 @@ abstract class AppLocalizations {
   /// **'Also block this creator'**
   String get coreBlockCreatorAfterReport;
 
-  /// No description provided for @coreBoth.
-  ///
-  /// In en, this message translates to:
-  /// **'Both'**
-  String get coreBoth;
-
   /// No description provided for @coreBothScreens.
   ///
   /// In en, this message translates to:
   /// **'both screens'**
   String get coreBothScreens;
-
-  /// No description provided for @coreBothSetsScreens.
-  ///
-  /// In en, this message translates to:
-  /// **'Both sets it on your home screen and lock screen.'**
-  String get coreBothSetsScreens;
 
   /// No description provided for @coreCancel.
   ///
@@ -3740,12 +3704,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a reason'**
   String get coreChooseReportReason;
-
-  /// No description provided for @coreChooseSystemEditorArea.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the exact area in the system editor.'**
-  String get coreChooseSystemEditorArea;
 
   /// No description provided for @coreChooseUsername.
   ///
@@ -4131,12 +4089,6 @@ abstract class AppLocalizations {
   /// **'Check out this creator profile on Prism.'**
   String get coreCreatorPreviewDescription;
 
-  /// No description provided for @coreCropAndPosition.
-  ///
-  /// In en, this message translates to:
-  /// **'Crop and position...'**
-  String get coreCropAndPosition;
-
   /// Default title for the home feed banner when Remote Config has no campaign copy.
   ///
   /// In en, this message translates to:
@@ -4184,12 +4136,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This device can\'t set that screen.'**
   String get coreDeviceCannotSetScreen;
-
-  /// No description provided for @coreDifferentLockWallpaper.
-  ///
-  /// In en, this message translates to:
-  /// **'Different wallpaper for lock screen'**
-  String get coreDifferentLockWallpaper;
 
   /// No description provided for @coreDone.
   ///
@@ -4340,18 +4286,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{size} MB'**
   String coreFileSizeMegabytes(String size);
-
-  /// No description provided for @coreFillScreen.
-  ///
-  /// In en, this message translates to:
-  /// **'Fill screen'**
-  String get coreFillScreen;
-
-  /// No description provided for @coreFitWholeImage.
-  ///
-  /// In en, this message translates to:
-  /// **'Fit whole image'**
-  String get coreFitWholeImage;
 
   /// No description provided for @coreGenericSignInError.
   ///
@@ -5096,12 +5030,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Diyas, fireworks and gold. It is free. Tap to try it.'**
   String get diwaliAnnouncementBody;
-
-  /// No description provided for @coreThisGoesOnHome.
-  ///
-  /// In en, this message translates to:
-  /// **'This one goes on the home screen.'**
-  String get coreThisGoesOnHome;
 
   /// No description provided for @coreThisPageDoesNotExist.
   ///
@@ -13717,12 +13645,6 @@ abstract class AppLocalizations {
   /// **'Approximate. Your launcher may differ.'**
   String get wallpaperPositionApproximate;
 
-  /// Title of the wallpaper placement screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Position'**
-  String get wallpaperPositionTitle;
-
   /// Accessibility label for premium content.
   ///
   /// In en, this message translates to:
@@ -14076,6 +13998,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{Set once} other{Set {count} times}}'**
   String wallpaperSetCount(int count);
+
+  /// Segment on the Set screen that targets the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen'**
+  String get setScreenTargetHome;
+
+  /// Segment on the Set screen that targets the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock screen'**
+  String get setScreenTargetLock;
+
+  /// Segment on the Set screen that targets the home and lock screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Both'**
+  String get setScreenTargetBoth;
+
+  /// Screen reader label for the group of target segments on the Set screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to set it'**
+  String get setScreenTargetGroup;
+
+  /// Check on the Set screen. When on, Set uses this screen next time without showing the Set screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember this choice'**
+  String get setScreenRemember;
+
+  /// Caption under "Remember this choice" when it is checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Set skips this screen next time. Touch and hold Set to come back.'**
+  String get setScreenRememberHint;
+
+  /// Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get setScreenAdjust;
+
+  /// Button on the Set screen that shows more ways to set the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get setScreenMore;
+
+  /// Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another wall for the lock screen'**
+  String get setScreenPairLock;
+
+  /// Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Open system editor'**
+  String get setScreenOpenSystemEditor;
+
+  /// Tooltip for the close button on the Set screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get setScreenClose;
 
   /// Action to share selected wallpapers.
   ///

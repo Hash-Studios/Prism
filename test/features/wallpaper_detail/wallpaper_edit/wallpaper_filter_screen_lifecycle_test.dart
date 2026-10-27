@@ -4,7 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -312,6 +314,14 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(client);
     addTearDown(aw.AsyncWallpaper.debugResetClient);
 
+    final List<SetScreenRequest> opened = <SetScreenRequest>[];
+    final originalOpener = SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async {
+      opened.add(request);
+      return const SetWallpaperChoice(WallpaperTarget.home);
+    };
+    addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
     const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
@@ -328,21 +338,14 @@ void main() {
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(
       tester,
-      () => find.text('home screen').evaluate().isNotEmpty,
-      reason: 'wallpaper target options open',
-    );
-    expect(find.text('home screen'), findsOneWidget);
-    final Finder homeTarget = find.ancestor(of: find.text('home screen'), matching: find.byType(GestureDetector)).last;
-    tester.widget<GestureDetector>(homeTarget).onTap!();
-    await tester.pump(const Duration(milliseconds: 500));
-
-    await waitForRealIo(
-      tester,
       () => client.requests.isNotEmpty && !File(client.requests.single.source.filePath!).existsSync(),
       reason: 'wallpaper preview request and edited export cleanup',
     );
 
+    expect(opened, hasLength(1));
+    expect(opened.single.onAdjust, isNull);
     expect(client.requests, hasLength(1));
+    expect(opened.single.url, client.requests.single.source.filePath);
     expect(client.requests.single.source.filePath, isNotNull);
     expect(File(client.requests.single.source.filePath!).existsSync(), isFalse);
     await tester.pump(const Duration(seconds: 1));

@@ -2239,16 +2239,10 @@
   },
   "appLinkRetryWhenOnline": "Tidak ada koneksi. Tautan ini akan dibuka saat Anda kembali online.",
   "appTitle": "Prism",
-  "coreAdjustPositionPreview": "Atur posisi dan pratinjau",
-  "coreAdjustPositionPreviewBody": "Geser, perbesar, dan redupkan sebelum memasangnya.",
-  "coreAlwaysUseThis": "Selalu gunakan ini",
-  "coreAlwaysUseThisBody": "Lain kali, pilih layar yang Anda inginkan dan lewati lembar ini.",
   "coreBack": "Kembali",
   "coreBio": "Bio",
   "coreBlockCreatorAfterReport": "Blokir kreator ini juga",
-  "coreBoth": "Keduanya",
   "coreBothScreens": "kedua layar",
-  "coreBothSetsScreens": "Keduanya akan memasang wallpaper di layar utama dan layar kunci.",
   "coreCancel": "Batal",
   "coreCancelSelection": "Batalkan pilihan",
   "coreCancelSignIn": "Jangan sekarang",
@@ -2301,7 +2295,6 @@
   "coreChangeWallpaperTarget": "Ubah layar tempat wallpaper dipasang",
   "coreChangelogLatest": "Terbaru",
   "coreChooseReportReason": "Pilih alasan",
-  "coreChooseSystemEditorArea": "Pilih area yang tepat di editor sistem.",
   "coreChooseUsername": "Pilih nama pengguna yang tersedia.",
   "coreCoinAiWallpaper": "Wallpaper AI",
   "coreCoinAutoRotatePass": "Akses putar otomatis, 7 hari",
@@ -2457,7 +2450,6 @@
   "coreCouldNotLoadWallpaperForEditing": "Wallpaper tidak dapat dimuat untuk diedit",
   "coreCouldNotUpdateFavourites": "Favorit tidak dapat diperbarui. Coba lagi.",
   "coreCreatorPreviewDescription": "Lihat profil kreator ini di Prism.",
-  "coreCropAndPosition": "Potong dan atur posisi...",
   "coreDefaultBanner": "Gabung ke Telegram kami",
   "@coreDefaultBanner": {
     "description": "Default title for the home feed banner when Remote Config has no campaign copy."
@@ -2469,7 +2461,6 @@
   "coreDepthEffectMenuShortTip": "Ketuk ••• lalu Efek Kedalaman.",
   "coreDepthEffectMenuTip": "Di editor Layar Kunci, ketuk ••• lalu Efek Kedalaman.",
   "coreDeviceCannotSetScreen": "Perangkat ini tidak dapat memasang wallpaper di layar itu.",
-  "coreDifferentLockWallpaper": "Wallpaper layar kunci yang berbeda",
   "coreDone": "Selesai",
   "coreDown": "turun {coins}",
   "@coreDown": {
@@ -2554,8 +2545,6 @@
     },
     "description": "Megabyte file size shown in wallpaper details."
   },
-  "coreFillScreen": "Penuhi layar",
-  "coreFitWholeImage": "Tampilkan seluruh gambar",
   "coreGenericSignInError": "Terjadi kesalahan. Silakan coba lagi!",
   "coreGoHome": "Ke beranda",
   "coreGooglePlayServicesSignInError": "Layanan Google Play di perangkat ini tidak dapat digunakan untuk masuk.",
@@ -2884,7 +2873,6 @@
   "diwaliBannerSubtitle": "Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.",
   "diwaliAnnouncementTitle": "Baru: tema Diwali 🪔",
   "diwaliAnnouncementBody": "Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.",
-  "coreThisGoesOnHome": "Yang ini dipasang di layar utama.",
   "coreThisPageDoesNotExist": "Halaman ini tidak ada",
   "coreTryAgain": "Coba lagi",
   "coreUndo": "Urungkan",
@@ -8122,10 +8110,6 @@
   "@wallpaperPositionApproximate": {
     "description": "Notice that wallpaper placement preview may differ by launcher."
   },
-  "wallpaperPositionTitle": "Posisi",
-  "@wallpaperPositionTitle": {
-    "description": "Title of the wallpaper placement screen."
-  },
   "wallpaperPremium": "Premium",
   "@wallpaperPremium": {
     "description": "Accessibility label for premium content."
@@ -8404,6 +8388,50 @@
         "format": "decimalPattern"
       }
     }
+  },
+  "setScreenTargetHome": "Layar utama",
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
+  "setScreenTargetLock": "Layar kunci",
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
+  "setScreenTargetBoth": "Keduanya",
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
+  "setScreenTargetGroup": "Pasang di mana",
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
+  "setScreenRemember": "Ingat pilihan ini",
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
+  "setScreenRememberHint": "Pasang melewati layar ini lain kali. Tahan Pasang untuk kembali.",
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
+  "setScreenAdjust": "Sesuaikan",
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
+  "setScreenMore": "Lainnya",
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
+  "setScreenPairLock": "Pakai wallpaper lain untuk layar kunci",
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
+  "setScreenOpenSystemEditor": "Buka editor sistem",
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
+  "setScreenClose": "Tutup",
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
   },
   "wallpaperShare": "Bagikan",
   "@wallpaperShare": {
