@@ -2165,6 +2165,18 @@ function postLink(env, body, headers = {}) {
 
 const LINK_BODY = { type: 'share', canonical_url: 'https://prismwalls.com/share?id=wall-1' };
 
+test('new short codes never use look-alike characters, so a retyped link still opens', async () => {
+  const env = workerEnv();
+  for (let i = 0; i < 200; i += 1) {
+    const response = await postLink(env, LINK_BODY, { 'CF-Connecting-IP': `203.0.113.${i}` });
+    assert.equal(response.status, 201);
+    const { code } = await response.json();
+    assert.match(code, /^[A-Za-z0-9]{8}$/);
+    assert.doesNotMatch(code, /[0Oo1Il]/, code);
+    assert.equal((await worker.fetch(new Request(`https://prismwalls.com/api/links/${code}`), env)).status, 200);
+  }
+});
+
 test('Prism share links keep supplied opaque R2 preview URLs only from a valid configured base', async () => {
   const hash = 'b'.repeat(64);
   const env = workerEnv({ R2_PREVIEW_BASE_URL: 'https://cdn.example.test/media' });
