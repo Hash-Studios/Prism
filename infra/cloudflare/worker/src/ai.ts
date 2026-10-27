@@ -3198,13 +3198,19 @@ function deriveTagsFromPrompt(prompt: string, stylePreset: string): string[] {
   return unique.slice(0, 12);
 }
 
-function classifyCategory(stylePreset: string, tags: string[]): string {
+export function classifyCategory(stylePreset: string, tags: string[]): string {
   const style = stylePreset.toLowerCase();
   if (style.includes('nature') || tags.includes('nature')) {
     return 'Nature';
   }
   if (style.includes('anime')) {
     return 'Anime';
+  }
+  if (style.includes('space')) {
+    return 'Space';
+  }
+  if (style.includes('3d render')) {
+    return '3D Render';
   }
   if (style.includes('cyber')) {
     return 'Technology';

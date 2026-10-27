@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { AiQuotaCoordinator, gptImageSize, seedreamImageSize } from '../src/ai.ts';
+import { AiQuotaCoordinator, classifyCategory, gptImageSize, seedreamImageSize } from '../src/ai.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
@@ -722,6 +722,14 @@ test('a watermark failure still returns success, keeps the original and defers t
     monthKey: new Date().toISOString().slice(0, 7),
   }));
   assert.ok((await responseJson(budget)).dailySpentUsd > 0);
+});
+
+test('AI prefill files the Space and 3D Render styles under their app categories', () => {
+  assert.equal(classifyCategory('space art', []), 'Space');
+  assert.equal(classifyCategory('3d render', []), '3D Render');
+  assert.equal(classifyCategory('nature', []), 'Nature');
+  assert.equal(classifyCategory('cyberpunk', []), 'Technology');
+  assert.equal(classifyCategory('pixel art', []), 'General');
 });
 
 test('Seedream sizing keeps the requested aspect ratio and meets the fal pixel minimum', () => {
