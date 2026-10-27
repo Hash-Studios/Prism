@@ -54,6 +54,16 @@ void main() {
     expect(find.text('3D'), findsOneWidget);
   });
 
+  testWidgets('the 3D toggle is as tall as the Lock and Home pill', (tester) async {
+    await _pumpOverlay(tester, spatialMapUrl: 'https://x/m.png');
+
+    final Finder toggle = find.ancestor(of: find.text('3D'), matching: find.byType(Tooltip)).first;
+    final Finder pill = find.ancestor(of: find.text('Lock'), matching: find.byType(SizedBox)).last;
+    expect(tester.getSize(toggle).height, 48);
+    expect(tester.getSize(pill).height, 48);
+    expect(tester.getCenter(toggle).dy, tester.getCenter(pill).dy);
+  });
+
   testWidgets('turning 3D off removes the tilt view, and closing while on returns to the caller', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
