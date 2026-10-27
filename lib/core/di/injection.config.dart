@@ -240,6 +240,7 @@ import '../persistence/data_sources/session_local_data_source.dart' as _i704;
 import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
 import '../personalization/taste_signals.dart' as _i731;
+import '../platform/system_color_schemes.dart' as _i565;
 import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
 
@@ -268,6 +269,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i290.NotificationsLocalDataSource>(
     () => _i290.NotificationsLocalDataSource(),
+  );
+  gh.lazySingleton<_i565.SystemColorSchemesSource>(
+    () => _i565.SystemColorSchemesSource(),
   );
   gh.lazySingleton<_i150.NotificationTombstones>(
     () => _i150.NotificationTombstones(),
@@ -641,6 +645,14 @@ _i174.GetIt initGetIt(
     () =>
         _i446.SearchUsersByUsernameUseCase(gh<_i817.PublicProfileRepository>()),
   );
+  gh.factory<_i583.ThemeBloc>(
+    () => _i583.ThemeBloc(
+      gh<_i937.LoadThemeUseCase>(),
+      gh<_i937.UpdateThemeUseCase>(),
+      gh<_i428.ThemeRepository>(),
+      gh<_i565.SystemColorSchemesSource>(),
+    ),
+  );
   gh.factory<_i717.PublicProfileBloc>(
     () => _i717.PublicProfileBloc(
       gh<_i446.FetchPublicProfileWallsUseCase>(),
@@ -677,13 +689,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
-  );
-  gh.factory<_i583.ThemeBloc>(
-    () => _i583.ThemeBloc(
-      gh<_i937.LoadThemeUseCase>(),
-      gh<_i937.UpdateThemeUseCase>(),
-      gh<_i428.ThemeRepository>(),
-    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(

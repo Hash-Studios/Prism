@@ -67,7 +67,7 @@ void sample(String name) {
   PrismTextField(hint: 'https://');
   SignInPrompt(feature: 'your saved wallpapers');
   CoinGateSpec(spendErrorMessage: 'Could not spend coins');
-  shareWallpaperCard(context, contextLine: 'Shared from your collection');
+  ShareCardContent(contextLine: 'Shared from your collection');
   ShortcutItem(type: 'internal_key', localizedTitle: 'Downloads');
   BottomText(errorText: enabled ? 'Could not save changes' : null);
   ApiRequest(feature: 'protocol_feature', hint: 'wire_hint');

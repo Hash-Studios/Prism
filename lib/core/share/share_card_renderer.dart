@@ -3,81 +3,20 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/analytics/events/analytics_enums.dart';
-import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/share/share_card.dart';
-import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
-typedef ShareCardRender =
-    Future<File> Function({
-      required String imageUrl,
-      required String link,
-      required String brandName,
-      String? contextLine,
-    });
+typedef ShareCardRender = Future<File> Function(ShareCardFormat format, ShareCardContent content);
 typedef ShareCardImageResolver = Future<ui.Image> Function(ImageProvider provider);
-typedef ShareCardSend =
-    Future<ShareResult> Function({required String text, required File file, required BuildContext context});
-typedef ShareTextSend = Future<ShareResult> Function({required String text, required BuildContext context});
-typedef ShareCardResult = ({ShareFormatValue format, bool dismissed});
 
-Future<ShareResult> _sendCard({required String text, required File file, required BuildContext context}) =>
-    ShareService.shareFile(file: file, text: text, context: context);
-
-Future<ShareResult> _sendText({required String text, required BuildContext context}) =>
-    ShareService.shareText(text: text, context: context);
-
-/// Shares [link] with a branded image card, falling back to plain text if the card cannot be made or sent.
-Future<ShareCardResult> shareWallpaperCard(
-  BuildContext context, {
-  required String imageUrl,
-  required String link,
-  String? contextLine,
-  ShareCardRender render = renderShareCardFile,
-  ShareCardSend sendCard = _sendCard,
-  ShareTextSend sendText = _sendText,
-}) async {
-  final String text = context.l10n.coreShareCardClipboard(link);
-  File? file;
-  try {
-    file = await render(
-      imageUrl: imageUrl,
-      link: link,
-      brandName: context.l10n.appTitle,
-      contextLine: shareSafeText(contextLine),
-    );
-    if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
-    final ShareResult sent = await sendCard(text: text, file: file, context: context);
-    return (format: ShareFormatValue.card, dismissed: sent.status == ShareResultStatus.dismissed);
-  } catch (error, stackTrace) {
-    logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
-  } finally {
-    if (file != null) {
-      try {
-        if (await file.exists()) await file.delete();
-      } catch (error, stackTrace) {
-        logger.w('Could not delete temporary share card', error: error, stackTrace: stackTrace);
-      }
-    }
-  }
-  if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
-  final ShareResult sent = await sendText(text: text, context: context);
-  return (format: ShareFormatValue.text, dismissed: sent.status == ShareResultStatus.dismissed);
-}
-
-/// Renders the card off-screen and writes it to the temp dir as a PNG.
-Future<File> renderShareCardFile({
-  required String imageUrl,
-  required String link,
-  required String brandName,
-  String? contextLine,
+/// Renders [format] off-screen and writes it to the temp dir as a PNG.
+Future<File> renderShareCardFile(
+  ShareCardFormat format,
+  ShareCardContent content, {
   ImageProvider? wallpaperProvider,
   ImageProvider? logoProvider,
   ShareCardImageResolver resolveImage = _resolve,
@@ -90,17 +29,25 @@ Future<File> renderShareCardFile({
     if (wallpaperProvider != null) {
       provider = wallpaperProvider;
     } else {
-      final File source = await WallpaperService.resolveToLocalFile(imageUrl);
+      final File source = await WallpaperService.resolveToLocalFile(content.imageUrl);
       provider = FileImage(source);
     }
-    wallpaper = await resolveImage(ResizeImage(provider, width: 1080, height: 1920, policy: ResizeImagePolicy.fit));
+    wallpaper = await resolveImage(
+      ResizeImage(
+        provider,
+        width: format.size.width.toInt(),
+        height: format.size.height.toInt(),
+        policy: ResizeImagePolicy.fit,
+      ),
+    );
     logo = await resolveImage(logoProvider ?? const AssetImage(ShareCardStyle.logoAsset));
     final ByteData? bytes = await paintShareCard(
-      ShareCard(wallpaper: wallpaper, logo: logo, link: link, brandName: brandName, contextLine: contextLine),
+      ShareCard(wallpaper: wallpaper, logo: logo, content: content, format: format),
+      size: format.size,
     );
     if (bytes == null) throw StateError('share card encode failed');
     final Directory dir = await getTemporaryDirectory();
-    final File file = File('${dir.path}/prism_share_${DateTime.now().microsecondsSinceEpoch}.png');
+    final File file = File('${dir.path}/prism_share_${format.name}_${DateTime.now().microsecondsSinceEpoch}.png');
     try {
       await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
       return file;
@@ -172,13 +119,13 @@ class _ShareCardElement extends RenderObjectToWidgetElement<RenderBox> {
 }
 
 /// Lays out and paints [card] in its own render tree, so it never needs to be on screen.
-Future<ByteData?> paintShareCard(Widget card) async {
+Future<ByteData?> paintShareCard(Widget card, {Size size = const Size(1080, 1920)}) async {
   final RenderRepaintBoundary boundary = RenderRepaintBoundary();
   final PipelineOwner pipelineOwner = PipelineOwner();
   final RenderPositionedBox positionedBox = RenderPositionedBox(child: boundary);
   final RenderView renderView = RenderView(
     view: WidgetsBinding.instance.platformDispatcher.views.first,
-    configuration: ViewConfiguration(logicalConstraints: BoxConstraints.tight(ShareCardStyle.size)),
+    configuration: ViewConfiguration(logicalConstraints: BoxConstraints.tight(size)),
     child: positionedBox,
   );
   pipelineOwner.rootNode = renderView;

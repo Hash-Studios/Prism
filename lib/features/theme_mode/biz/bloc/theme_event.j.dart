@@ -9,4 +9,5 @@ abstract class ThemeEvent with _$ThemeEvent {
   const factory ThemeEvent.darkThemeChanged({required String themeId, ThemeMode? mode}) = _DarkThemeChanged;
   const factory ThemeEvent.darkAccentChanged({required int accentColorValue}) = _DarkAccentChanged;
   const factory ThemeEvent.modeChanged({required ThemeMode mode}) = _ModeChanged;
+  const factory ThemeEvent.systemColorsChanged({SystemColorSchemes? schemes}) = _SystemColorsChanged;
 }

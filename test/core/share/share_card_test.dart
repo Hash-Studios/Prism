@@ -6,8 +6,38 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const List<Color> _palette = <Color>[
+  Color(0xFF1A1A2E),
+  Color(0xFF16213E),
+  Color(0xFF0F3460),
+  Color(0xFFE94560),
+  Color(0xFF533483),
+  Color(0xFF00ADB5),
+];
+
+const ShareCardContent _withCreator = ShareCardContent(
+  imageUrl: '',
+  link: 'https://prismwalls.com/s/abc',
+  brandName: 'Prism',
+  contextLine: 'Wall of the Day',
+  creator: '@maya',
+  creatorLine: 'by @maya',
+  palette: _palette,
+);
+
+const ShareCardContent _bare = ShareCardContent(imageUrl: '', link: 'https://prismwalls.com/s/abc', brandName: 'Prism');
+
+final Finder _dots = find.byWidgetPredicate(
+  (Widget widget) =>
+      widget.key is ValueKey<String> && (widget.key! as ValueKey<String>).value.startsWith('share-card-dot-'),
+);
+
 void main() {
-  Future<void> pumpCard(WidgetTester tester, {String? contextLine}) async {
+  Future<void> pumpCard(
+    WidgetTester tester, {
+    required ShareCardContent content,
+    ShareCardFormat format = ShareCardFormat.story,
+  }) async {
     late ui.Image wall;
     late ui.Image logo;
     await tester.runAsync(() async {
@@ -19,37 +49,74 @@ void main() {
         textDirection: TextDirection.ltr,
         child: Center(
           child: FittedBox(
-            child: ShareCard(
-              wallpaper: wall,
-              logo: logo,
-              link: 'https://prismwalls.com/s/abc',
-              brandName: 'Prism',
-              contextLine: contextLine,
-            ),
+            child: ShareCard(wallpaper: wall, logo: logo, content: content, format: format),
           ),
         ),
       ),
     );
   }
 
-  for (final String line in <String>['Wall of the Day', 'Made with Prism AI', 'by Akshay']) {
-    testWidgets('lays out logo, wordmark, "$line" and link at 1080x1920', (tester) async {
-      await pumpCard(tester, contextLine: line);
+  const Map<ShareCardFormat, Size> expectedSizes = <ShareCardFormat, Size>{
+    ShareCardFormat.story: Size(1080, 1920),
+    ShareCardFormat.post: Size(1080, 1350),
+    ShareCardFormat.clean: Size(1080, 1920),
+  };
 
-      expect(tester.getSize(find.byType(ShareCard)), ShareCardStyle.size);
-      expect(find.byType(RawImage), findsNWidgets(2));
-      expect(find.text('Prism'), findsOneWidget);
-      expect(find.text(line), findsOneWidget);
-      expect(find.text('prismwalls.com/s/abc'), findsOneWidget);
+  for (final ShareCardFormat format in ShareCardFormat.values) {
+    testWidgets('${format.name} format sizes the card to its fixed pixel size', (tester) async {
+      await pumpCard(tester, content: _withCreator, format: format);
+
+      expect(format.size, expectedSizes[format]);
+      expect(tester.getSize(find.byType(ShareCard)), format.size);
     });
   }
 
-  testWidgets('omits the context line when none is given', (tester) async {
-    await pumpCard(tester);
+  testWidgets('story with creator and palette shows brand, context, byline, link and 4 dots', (tester) async {
+    await pumpCard(tester, content: _withCreator);
+
+    expect(find.text('Prism'), findsOneWidget);
+    expect(find.text('Wall of the Day'), findsOneWidget);
+    expect(find.text('by @maya'), findsOneWidget);
+    expect(find.text('prismwalls.com/s/abc'), findsOneWidget);
+    expect(_dots, findsNWidgets(4));
+  });
+
+  testWidgets('story with no creator and no palette has no byline and no dots', (tester) async {
+    await pumpCard(tester, content: _bare);
 
     expect(find.text('Prism'), findsOneWidget);
     expect(find.text('prismwalls.com/s/abc'), findsOneWidget);
+    expect(find.textContaining('by '), findsNothing);
     expect(find.byType(Text), findsNWidgets(2));
+    expect(_dots, findsNothing);
+  });
+
+  testWidgets('post with creator and palette shows the same content with 4 dots', (tester) async {
+    await pumpCard(tester, content: _withCreator, format: ShareCardFormat.post);
+
+    expect(tester.getSize(find.byType(ShareCard)), const Size(1080, 1350));
+    expect(find.text('Prism'), findsOneWidget);
+    expect(find.text('Wall of the Day'), findsOneWidget);
+    expect(find.text('by @maya'), findsOneWidget);
+    expect(find.text('prismwalls.com/s/abc'), findsOneWidget);
+    expect(_dots, findsNWidgets(4));
+  });
+
+  testWidgets('clean with creator shows only the creator mark and the logo', (tester) async {
+    await pumpCard(tester, content: _withCreator, format: ShareCardFormat.clean);
+
+    expect(find.text('@maya'), findsOneWidget);
+    expect(find.text('Prism'), findsNothing);
+    expect(find.text('prismwalls.com/s/abc'), findsNothing);
+    expect(find.text('Wall of the Day'), findsNothing);
+    expect(_dots, findsNothing);
+  });
+
+  testWidgets('clean with no creator has no text and draws the wallpaper and logo', (tester) async {
+    await pumpCard(tester, content: _bare, format: ShareCardFormat.clean);
+
+    expect(find.byType(Text), findsNothing);
+    expect(find.byType(RawImage), findsNWidgets(2));
   });
 
   testWidgets('paints mixed RTL and very long unbroken text inside the fixed card bounds', (tester) async {
@@ -65,7 +132,11 @@ void main() {
 
         Future<Uint8List> render({required String link, String? contextLine}) async {
           final ByteData? bytes = await paintShareCard(
-            ShareCard(wallpaper: wall, logo: logo, link: link, brandName: 'Prism', contextLine: contextLine),
+            ShareCard(
+              wallpaper: wall,
+              logo: logo,
+              content: ShareCardContent(imageUrl: '', link: link, brandName: 'Prism', contextLine: contextLine),
+            ),
           );
           expect(bytes, isNotNull);
           return bytes!.buffer.asUint8List();

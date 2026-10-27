@@ -1212,6 +1212,23 @@ void main() {
       );
     });
 
+    for (final (category, style) in <(String, AiStylePreset)>[
+      ('Space', AiStylePreset.space),
+      ('Galaxy', AiStylePreset.space),
+      ('Vintage', AiStylePreset.oilPainting),
+      ('3D Render', AiStylePreset.render3d),
+    ]) {
+      test('$category uses its matching style before later selected categories', () async {
+        final bloc = buildBloc();
+        addTearDown(bloc.close);
+
+        final state = await confirmStarterPackWith(bloc, <String>[category, 'Anime', 'Nature']);
+
+        expect(state.aiData.stylePreset, style);
+        expect(OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), style), contains(state.aiData.prompt));
+      });
+    }
+
     test('a very short interest name does not match a keyword by accident', () async {
       final bloc = buildBloc();
       addTearDown(bloc.close);

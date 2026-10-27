@@ -1,3 +1,4 @@
+import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -25,6 +26,14 @@ ThemeData withPrismAccent(ThemeData baseTheme, int accentColorValue) {
   );
 }
 
+/// The theme [state] shows for [brightness], with the user accent when that theme takes one.
+ThemeData prismThemeFor(ThemeState state, Brightness brightness) {
+  final PrismThemeOption option = state.themeOption(brightness);
+  if (!option.usesAccent) return option.theme;
+  final ThemeSelection selection = brightness == Brightness.dark ? state.dark : state.light;
+  return withPrismAccent(option.theme, selection.accentColorValue);
+}
+
 String _modeAbsoluteLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode) {
   ThemeMode.light => l10n.wallpaperThemeModeLight,
   ThemeMode.dark => l10n.wallpaperThemeModeDark,
@@ -34,21 +43,9 @@ String _modeAbsoluteLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode
 extension PrismThemeContextX on BuildContext {
   ThemeState _themeState(bool listen) => (listen ? watch<ThemeBloc>() : read<ThemeBloc>()).state;
 
-  ThemeData prismLightTheme({bool listen = true}) {
-    final light = _themeState(listen).light;
-    return withPrismAccent(
-      (prismThemeById(prismLightThemes, light.themeId) ?? prismLightThemes.first).theme,
-      light.accentColorValue,
-    );
-  }
+  ThemeData prismLightTheme({bool listen = true}) => prismThemeFor(_themeState(listen), Brightness.light);
 
-  ThemeData prismDarkTheme({bool listen = true}) {
-    final dark = _themeState(listen).dark;
-    return withPrismAccent(
-      (prismThemeById(prismDarkThemes, dark.themeId) ?? prismDarkThemes.first).theme,
-      dark.accentColorValue,
-    );
-  }
+  ThemeData prismDarkTheme({bool listen = true}) => prismThemeFor(_themeState(listen), Brightness.dark);
 
   String prismLightThemeId({bool listen = true}) => _themeState(listen).light.themeId;
 

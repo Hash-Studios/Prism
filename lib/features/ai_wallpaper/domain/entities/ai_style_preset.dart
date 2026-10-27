@@ -7,7 +7,13 @@ enum AiStylePreset {
   watercolor('watercolor', 'Watercolor', <Color>[Color(0xFFFFB6C1), Color(0xFFE6E6FA)]),
   meshGradient('mesh gradient', 'Mesh Gradient', <Color>[Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFFFFE66D)]),
   abstract('abstract', 'Abstract', <Color>[Color(0xFFFF6B35), Color(0xFFD63031)]),
-  nature('nature', 'Nature', <Color>[Color(0xFF00B894), Color(0xFF00CEC9)]);
+  nature('nature', 'Nature', <Color>[Color(0xFF00B894), Color(0xFF00CEC9)]),
+  space('space art', 'Space', <Color>[Color(0xFF0B1D51), Color(0xFF6A4C93), Color(0xFFE0AAFF)]),
+  synthwave('synthwave', 'Synthwave', <Color>[Color(0xFFFF2A6D), Color(0xFF2B0F54), Color(0xFF05D9E8)]),
+  pixelArt('pixel art', 'Pixel Art', <Color>[Color(0xFF3EC1D3), Color(0xFFFF9A00), Color(0xFFFF165D)]),
+  render3d('3d render', '3D Render', <Color>[Color(0xFFB8C6FF), Color(0xFFFFC8DD)]),
+  oilPainting('oil painting', 'Oil Painting', <Color>[Color(0xFF8C5A3C), Color(0xFFE9C46A)]),
+  ukiyoE('ukiyo-e', 'Ukiyo-e', <Color>[Color(0xFF1D3557), Color(0xFFE63946), Color(0xFFF1FAEE)]);
 
   const AiStylePreset(this.apiValue, this.label, this.swatchColors);
 

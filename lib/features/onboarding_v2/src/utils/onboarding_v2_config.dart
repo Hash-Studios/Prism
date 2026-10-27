@@ -27,11 +27,18 @@ class OnboardingV2Config {
     AiStylePreset.watercolor,
     AiStylePreset.minimal,
     AiStylePreset.cyberpunk,
+    AiStylePreset.space,
+    AiStylePreset.render3d,
   ];
 
   /// Maps lowercase interest-category keywords to the best-matching AI style.
   /// Keyword matching is done with `contains`, so partial names work too.
   static const Map<String, AiStylePreset> aiInterestStyleMap = {
+    'space': AiStylePreset.space,
+    'galaxy': AiStylePreset.space,
+    '3d render': AiStylePreset.render3d,
+    'retro': AiStylePreset.synthwave,
+    'vintage': AiStylePreset.oilPainting,
     'nature': AiStylePreset.nature,
     'landscape': AiStylePreset.nature,
     'forest': AiStylePreset.nature,
@@ -65,7 +72,6 @@ class OnboardingV2Config {
     'abstract': AiStylePreset.abstract,
     'digital': AiStylePreset.abstract,
     'geometric': AiStylePreset.abstract,
-    'space': AiStylePreset.abstract,
     'dark': AiStylePreset.abstract,
   };
 
@@ -118,6 +124,48 @@ class OnboardingV2Config {
       l10n.onboardingAiPromptCyberpunk3,
       l10n.onboardingAiPromptCyberpunk4,
       l10n.onboardingAiPromptCyberpunk5,
+    ],
+    AiStylePreset.space => <String>[
+      l10n.onboardingAiPromptSpace1,
+      l10n.onboardingAiPromptSpace2,
+      l10n.onboardingAiPromptSpace3,
+      l10n.onboardingAiPromptSpace4,
+      l10n.onboardingAiPromptSpace5,
+    ],
+    AiStylePreset.synthwave => <String>[
+      l10n.onboardingAiPromptSynthwave1,
+      l10n.onboardingAiPromptSynthwave2,
+      l10n.onboardingAiPromptSynthwave3,
+      l10n.onboardingAiPromptSynthwave4,
+      l10n.onboardingAiPromptSynthwave5,
+    ],
+    AiStylePreset.pixelArt => <String>[
+      l10n.onboardingAiPromptPixelArt1,
+      l10n.onboardingAiPromptPixelArt2,
+      l10n.onboardingAiPromptPixelArt3,
+      l10n.onboardingAiPromptPixelArt4,
+      l10n.onboardingAiPromptPixelArt5,
+    ],
+    AiStylePreset.render3d => <String>[
+      l10n.onboardingAiPromptRender3d1,
+      l10n.onboardingAiPromptRender3d2,
+      l10n.onboardingAiPromptRender3d3,
+      l10n.onboardingAiPromptRender3d4,
+      l10n.onboardingAiPromptRender3d5,
+    ],
+    AiStylePreset.oilPainting => <String>[
+      l10n.onboardingAiPromptOilPainting1,
+      l10n.onboardingAiPromptOilPainting2,
+      l10n.onboardingAiPromptOilPainting3,
+      l10n.onboardingAiPromptOilPainting4,
+      l10n.onboardingAiPromptOilPainting5,
+    ],
+    AiStylePreset.ukiyoE => <String>[
+      l10n.onboardingAiPromptUkiyoE1,
+      l10n.onboardingAiPromptUkiyoE2,
+      l10n.onboardingAiPromptUkiyoE3,
+      l10n.onboardingAiPromptUkiyoE4,
+      l10n.onboardingAiPromptUkiyoE5,
     ],
   };
 
