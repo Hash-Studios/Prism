@@ -35,7 +35,7 @@ trap 'rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>
 if [ "$platform" = ios ]; then
   simctl=$(xcrun -f simctl 2>/dev/null) || die "simctl not found. Install Xcode and its command line tools."
   devices=$("$simctl" list devices booted) || die "could not list iOS Simulators"
-  booted=$(printf '%s\n' "$devices" | sed -n 's/.*(\([^()]*\)) (Booted)$/\1/p')
+  booted=$(printf '%s\n' "$devices" | sed -n 's/.*(\([^()]*\)) (Booted)[[:space:]]*$/\1/p')
   count=$(printf '%s\n' "$booted" | grep -c . || true)
   [ "$count" -ge 1 ] || die "no booted iOS Simulator"
   sim=${IOS_SIM:-booted}
