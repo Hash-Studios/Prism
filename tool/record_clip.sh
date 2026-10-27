@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: tool/record_clip.sh ios|android [out.mp4] [--trim START-END]
 # Records Prism from the booted iOS Simulator or Android emulator; Ctrl-C stops. Output is 1080x1920 MP4.
+# With more than one booted iOS Simulator, set IOS_SIM=<udid>. With more than one Android device, set ANDROID_SERIAL.
 set -euo pipefail
 
 usage() { echo "usage: tool/record_clip.sh ios|android [out.mp4] [--trim START-END]" >&2; exit 2; }
@@ -33,9 +34,20 @@ trap 'rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>
 
 if [ "$platform" = ios ]; then
   simctl=$(xcrun -f simctl 2>/dev/null) || die "simctl not found. Install Xcode and its command line tools."
-  grep -q Booted <<<"$("$simctl" list devices booted)" || die "no booted iOS Simulator"
+  devices=$("$simctl" list devices booted) || die "could not list iOS Simulators"
+  booted=$(printf '%s\n' "$devices" | sed -n 's/.*(\([^()]*\)) (Booted)$/\1/p')
+  count=$(printf '%s\n' "$booted" | grep -c . || true)
+  [ "$count" -ge 1 ] || die "no booted iOS Simulator"
+  sim=${IOS_SIM:-booted}
+  if [ "$sim" = booted ]; then
+    [ "$count" -eq 1 ] || die "$count simulators are booted. Set IOS_SIM=<udid>."
+    sim=$booted
+  else
+    [[ $sim != *$'\n'* ]] || die "IOS_SIM must be a booted simulator UDID"
+    printf '%s\n' "$booted" | grep -Fxi -- "$sim" >/dev/null || die "IOS_SIM is not a booted simulator UDID: $sim"
+  fi
   stop() { stopping=1; kill -INT "$rec" 2>/dev/null || true; }
-  "$simctl" io booted recordVideo --codec h264 --force "$tmp/raw.mp4" &
+  "$simctl" io "$sim" recordVideo --codec h264 --force "$tmp/raw.mp4" &
   rec=$!
   trap stop INT
   echo "Recording. Press Ctrl-C to stop." >&2
