@@ -182,6 +182,8 @@ Never hand-edit `lib/core/constants/app_constants.dart`. `version-sync` derives 
 same commit, or the popup shows the new version badge over the old notes. Write 5 to 8 short,
 user-facing lines in the style of the earlier sections; end with "Security and stability fixes".
 No rebuild is needed to fix this file later, but the fix must reach `master`.
+The website `/changelog` reads the same file at build time. A merge to `master` that changes it runs
+`.github/workflows/deploy_web.yml`, which rebuilds the latest `master` and deploys prismwalls.com.
 
 **Getting the bump onto `master`.** A direct push to `master` is refused: the ruleset needs the
 `ci` check, and rebase merges are off. After the human says go, ship the bump commit (pubspec,
