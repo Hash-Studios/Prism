@@ -22,6 +22,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef LocalClearStep = ({String name, Future<void> Function(String userId) run});
@@ -41,6 +42,13 @@ class LocalAccountDataCleaner {
     }
   }
 
+  /// Leaves the widget alone when another account signed in before the deleted account's cleanup ran.
+  @visibleForTesting
+  static Future<void> clearIosWidgetStreakForUser(String userId) async {
+    if (app_state.prismUser.loggedIn && app_state.prismUser.id != userId) return;
+    await IosWidgetChannel.clearStreak();
+  }
+
   static List<LocalClearStep> _defaultSteps() => <LocalClearStep>[
     (name: 'private economy', run: CoinsService.instance.clearForUser),
     (name: 'draw ticket snapshots', run: DrawRepositoryImpl.clearForUser),
@@ -52,7 +60,7 @@ class LocalAccountDataCleaner {
     ),
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
-    (name: 'iOS widget streak', run: (_) => IosWidgetChannel.clearStreak()),
+    (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),

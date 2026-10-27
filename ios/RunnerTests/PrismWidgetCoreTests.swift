@@ -60,14 +60,20 @@ struct PrismWidgetCoreTests {
     let bounded = PrismWotdImageBudget.boundedPixels(requested)
     #expect(bounded.width * bounded.height <= CGFloat(PrismWotdImageBudget.maximumPixels))
     #expect(bounded == CGSize(width: 599, height: 1_198))
-    #expect(PrismWotdImageBudget.thumbnailMaxPixelSize(source: CGSize(width: 4_000, height: 6_000), filling: bounded) == 847)
+    #expect(PrismWotdImageBudget.thumbnailMaxPixelSize(source: CGSize(width: 4_000, height: 6_000), filling: bounded) == 1_198)
   }
 
   @Test func panoramaDecodeDoesNotUseItsUnboundedSourceLongEdge() {
     let requested = PrismWotdImageBudget.boundedPixels(CGSize(width: 1_200, height: 1_200))
     #expect(PrismWotdImageBudget.thumbnailMaxPixelSize(
       source: CGSize(width: 100_000, height: 1_000), filling: requested
-    ) == 847)
+    ) == 17_320)
+  }
+
+  @Test func portraitWallKeepsItsWidthInAWideWidget() {
+    #expect(PrismWotdImageBudget.thumbnailMaxPixelSize(
+      source: CGSize(width: 1_080, height: 2_340), filling: CGSize(width: 1_092, height: 510)
+    ) == 2_340)
   }
 
   @Test func streamedImageBytesStopAtTheConfiguredLimit() async throws {
@@ -206,11 +212,17 @@ struct PrismWidgetCoreTests {
     let source = try #require(CGImageSourceCreateWithURL(file as CFURL, nil))
     let requested = CGSize(width: 1_200, height: 2_400)
     let thumbnail = try #require(PrismWotdImage.thumbnail(source, filling: requested))
-    #expect(thumbnail.width <= PrismWotdImageBudget.maximumDecodeEdge)
-    #expect(thumbnail.width * thumbnail.height <= PrismWotdImageBudget.maximumPixels)
+    #expect(thumbnail.width * thumbnail.height <= PrismWotdImageBudget.maximumDecodePixels)
     let cropped = try #require(PrismWotdImage.decode(source, filling: requested))
     #expect(cropped.width * cropped.height <= PrismWotdImageBudget.maximumPixels)
     #expect(abs(Double(cropped.width) / Double(cropped.height) - 0.5) < 0.01)
+  }
+
+  @Test func portraitWallFillsAMediumWidgetAtFullWidth() throws {
+    let data = try imageData(width: 1_080, height: 2_340)
+    let cropped = try #require(PrismWotdImage.decode(data, filling: CGSize(width: 1_092, height: 510)))
+    #expect(cropped.width == 1_080)
+    #expect(abs(Double(cropped.width) / Double(cropped.height) - 1_092.0 / 510.0) < 0.01)
   }
 
   @Test func metadataOnlyRefreshNeverRequestsOrDecodesAnImage() async throws {

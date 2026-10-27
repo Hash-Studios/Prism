@@ -10,7 +10,8 @@ enum PrismWidgetKind {
 
 enum PrismWotdImageBudget {
   static let maximumPixels = 718_080
-  static let maximumDecodeEdge = Int(floor(sqrt(Double(maximumPixels))))
+  /// The decode before the crop. A portrait wall in a wide widget needs its full width; a panorama stays bounded.
+  static let maximumDecodePixels = 3_000_000
 
   static func boundedPixels(_ pixels: CGSize) -> CGSize {
     guard pixels.width > 0, pixels.height > 0 else { return CGSize(width: 0, height: 0) }
@@ -21,7 +22,10 @@ enum PrismWotdImageBudget {
   }
 
   static func thumbnailMaxPixelSize(source: CGSize, filling pixels: CGSize) -> Int {
-    min(Self.maximumDecodeEdge, Int(ceil(min(max(source.width, source.height), max(pixels.width, pixels.height)))))
+    let fill = min(1, max(pixels.width / source.width, pixels.height / source.height))
+    let area = min(1, sqrt(CGFloat(maximumDecodePixels) / (source.width * source.height)))
+    let long = max(source.width, source.height)
+    return max(1, Int(min(ceil(long * fill), floor(long * area))))
   }
 }
 

@@ -47,7 +47,7 @@ widget timeline -> GoogleService-Info.plist of Prism.app (API_KEY, PROJECT_ID)
 ```
 
 - The widget downloads `wallpaper_thumb` only. It never downloads the original. A wall without a thumbnail keeps the cached wall.
-- The download stops at 15 MiB. The image is decoded with ImageIO at the widget's pixel size, at most 718,080 pixels (`PrismWotdImageBudget`), and cropped to fill. This keeps the extension under its memory limit and under WidgetKit's image size limit.
+- The download stops at 15 MiB. ImageIO decodes only what the widget needs to fill, at most 3,000,000 pixels, then crops to the widget's size, at most 718,080 pixels (`PrismWotdImageBudget`). This keeps the extension under its memory limit and under WidgetKit's image size limit.
 - Two sizes that refresh at the same time share one download. The cache writes the image first, then a manifest that names it, so the wall and its image always match.
 - When the fetch fails, the widget shows the cached wall.
 - Refresh: the server picks a new wall at 03:30 UTC (`functions/src/wallOfTheDay.ts`). The widget reloads at 03:40 UTC. If the fetch fails, or the server has not picked yet, it tries again after 30 minutes, but never later than 03:40 UTC.
