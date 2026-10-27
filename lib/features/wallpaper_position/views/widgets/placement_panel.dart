@@ -89,25 +89,17 @@ class PlacementPanel extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton(onPressed: busy ? null : onReset, child: Text(context.l10n.wallpaperReset)),
               ),
-              Row(
-                children: <Widget>[
-                  if (onSystemEditor != null) ...<Widget>[
-                    Expanded(
-                      child: PrismButton(
-                        label: context.l10n.setScreenOpenSystemEditor,
-                        variant: PrismButtonVariant.tonal,
-                        icon: Icons.crop_rounded,
-                        onPressed: busy ? null : onSystemEditor,
-                        expand: true,
-                      ),
-                    ),
-                    const SizedBox(width: PrismSpace.sm),
-                  ],
-                  Expanded(
-                    child: PrismButton(label: context.l10n.coreDone, loading: busy, onPressed: onDone, expand: true),
-                  ),
-                ],
-              ),
+              if (onSystemEditor != null) ...<Widget>[
+                PrismButton(
+                  label: context.l10n.setScreenOpenSystemEditor,
+                  variant: PrismButtonVariant.tonal,
+                  icon: Icons.crop_rounded,
+                  onPressed: busy ? null : onSystemEditor,
+                  expand: true,
+                ),
+                const SizedBox(height: PrismSpace.xs),
+              ],
+              PrismButton(label: context.l10n.coreDone, loading: busy, onPressed: onDone, expand: true),
             ],
           ),
         ),
