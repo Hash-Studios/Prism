@@ -78,3 +78,9 @@ test("quest event rate docs expire through a TTL policy on expireAt", () => {
   assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === "questEventRate" && o.fieldPath === "expireAt" &&
     o.ttl === true));
 });
+
+test("folders have the owner index: ownerId, newest update first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "folders");
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]);
+});

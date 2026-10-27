@@ -9946,4 +9946,134 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'आपकी प्रोफ़ाइल';
+
+  @override
+  String get foldersTitle => 'फ़ोल्डर';
+
+  @override
+  String get foldersSaveToFolder => 'फ़ोल्डर में सहेजें';
+
+  @override
+  String get foldersAddToFolder => 'फ़ोल्डर में जोड़ें';
+
+  @override
+  String get foldersNewFolder => 'नया फ़ोल्डर';
+
+  @override
+  String get foldersNameHint => 'फ़ोल्डर का नाम';
+
+  @override
+  String get foldersCreate => 'बनाएँ';
+
+  @override
+  String get foldersCreateFolder => 'फ़ोल्डर बनाएँ';
+
+  @override
+  String get foldersSuggested => 'सुझाया गया';
+
+  @override
+  String get foldersNewTag => 'नया';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString फ़ोल्डरों में सहेजा गया।',
+      one: '1 फ़ोल्डर में सहेजा गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'फ़ोल्डर अपडेट किए गए।';
+
+  @override
+  String get foldersSaveFailed => 'फ़ोल्डरों में सहेजा नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersUpdateFailed => 'फ़ोल्डर अपडेट नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersRename => 'नाम बदलें';
+
+  @override
+  String get foldersRenameTitle => 'फ़ोल्डर का नाम बदलें';
+
+  @override
+  String get foldersDelete => 'हटाएँ';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return '$name हटाएँ?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'वॉलपेपर आपके पसंदीदा में रहेंगे।';
+
+  @override
+  String get foldersDeleteConfirm => 'फ़ोल्डर हटाएँ';
+
+  @override
+  String get foldersDeleted => 'फ़ोल्डर हटा दिया गया।';
+
+  @override
+  String get foldersRemoveTitle => 'इस फ़ोल्डर से हटाएँ?';
+
+  @override
+  String get foldersRemoveMessage => 'यह आपके पसंदीदा में रहेगा।';
+
+  @override
+  String get foldersRemoveConfirm => 'हटाएँ';
+
+  @override
+  String get foldersRemoved => 'फ़ोल्डर से हटा दिया गया।';
+
+  @override
+  String get foldersEmptyTitle => 'यह फ़ोल्डर खाली है';
+
+  @override
+  String get foldersEmptyBody => 'यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।';
+
+  @override
+  String get foldersNoFolders => 'अपने सहेजे गए वॉलपेपर को फ़ोल्डरों में व्यवस्थित करें।';
+
+  @override
+  String get foldersLoadError => 'यह फ़ोल्डर लोड नहीं हो सका।';
+
+  @override
+  String get foldersNotFoundTitle => 'यह फ़ोल्डर उपलब्ध नहीं है';
+
+  @override
+  String get foldersNotFoundBody => 'हो सकता है इसे हटा दिया गया हो।';
+
+  @override
+  String get foldersSignInFeature => 'फ़ोल्डर';
+
+  @override
+  String get foldersMoreOptions => 'और विकल्प';
+
+  @override
+  String get foldersSuggestionLockScreen => 'लॉक स्क्रीन';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'होम स्क्रीन';
 }

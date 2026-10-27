@@ -26,6 +26,7 @@ enum DeepLinkPageTarget {
   favourites,
   downloads,
   library,
+  folder,
   uploadInput,
   editWallInput,
   review,
@@ -125,6 +126,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/fav-walls', DeepLinkPageTarget.favourites),
     DeepLinkRouteExample('/downloads', DeepLinkPageTarget.downloads),
     DeepLinkRouteExample('/library?tab=downloads', DeepLinkPageTarget.library),
+    DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -252,6 +254,9 @@ final class DeepLinkRouteCatalog {
       target = DeepLinkPageTarget.dropPreview;
       pathParams['weekKey'] = segments[1];
       pathParams['wallId'] = segments[3];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'folder') {
+      target = DeepLinkPageTarget.folder;
+      pathParams['folderId'] = segments[1];
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'collection') {
       target = DeepLinkPageTarget.collectionView;
       pathParams['collectionName'] = segments[1];
@@ -405,7 +410,14 @@ final class DeepLinkRouteCatalog {
     final String path = '/${segments.join('/')}';
     if (_staticTargets.containsKey(path.toLowerCase())) return true;
     if (segments.length == 2 &&
-        const <String>{'user', 'drops', 'collection', 'category', 'wallpaper'}.contains(segments[0].toLowerCase())) {
+        const <String>{
+          'user',
+          'drops',
+          'collection',
+          'category',
+          'wallpaper',
+          'folder',
+        }.contains(segments[0].toLowerCase())) {
       return true;
     }
     return segments.length == 3 &&

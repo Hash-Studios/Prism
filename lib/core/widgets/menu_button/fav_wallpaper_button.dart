@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -52,6 +53,18 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     // The glass action bar keeps the heart of the current app: the theme ink, 30 points, in a 53 point target.
     final bool flat = FlatMenuButtons.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final FavouriteWallEntity? wall = widget.wall;
+    final VoidCallback? openFolders = wall == null || wall is LegacyFavouriteWall
+        ? null
+        : () => unawaited(showFolderSheet(context, wall));
+    return Semantics(
+      onLongPressHint: context.l10n.foldersSaveToFolder,
+      onLongPress: openFolders,
+      child: GestureDetector(onLongPress: openFolders, child: _heart(context, isFavorite, flat, cs)),
+    );
+  }
+
+  Widget _heart(BuildContext context, bool isFavorite, bool flat, ColorScheme cs) {
     return CircularMenuButton(
       label: context.l10n.coreFavourite,
       selected: isFavorite,
@@ -101,7 +114,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         _followUp(() => widget.onFavourited?.call());
       }
       if (desired) {
-        if (mounted) _followUp(() => showGlintToast(context, mood: GlintMood.love));
+        if (mounted) {
+          _followUp(() => showGlintToast(context, mood: GlintMood.love));
+          _followUp(() => _offerFolders(l10n, wall));
+        }
         if (app_state.prismUser.id.isEmpty) {
           try {
             await _noteGuestSave(l10n);
@@ -121,6 +137,20 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       Navigator.pop(context);
     }
     return success;
+  }
+
+  void _offerFolders(AppLocalizations l10n, FavouriteWallEntity wall) {
+    if (wall is LegacyFavouriteWall) return;
+    toasts.success(
+      l10n.wallpaperFavouriteAddedToast,
+      haptic: false,
+      action: (
+        label: l10n.foldersAddToFolder,
+        onPressed: () {
+          if (mounted) unawaited(showFolderSheet(context, wall));
+        },
+      ),
+    );
   }
 
   void _followUp(VoidCallback step) {

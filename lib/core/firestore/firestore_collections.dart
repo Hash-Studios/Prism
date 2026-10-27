@@ -20,6 +20,10 @@ class FirebaseCollections {
   static const String draws = 'draws';
   static const String drawTickets = 'drawTickets';
   static const String leaderboards = 'leaderboards';
+  static const String folders = 'folders';
+
+  /// `folders/{folderId}/items`, one doc per saved wall.
+  static String folderItems(String folderId) => '$folders/$folderId/items';
 
   /// `usersv2/{uid}/private`, the owner-only subcollection that holds the `economy` doc.
   static String userPrivate(String uid) => '$usersV2/$uid/private';

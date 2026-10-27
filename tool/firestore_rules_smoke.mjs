@@ -66,6 +66,10 @@ const publicWall = {
   originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, ...redactedProvenance,
 };
 const str = (v) => ({ stringValue: v });
+const ts = () => ({ timestampValue: new Date().toISOString() });
+const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
+const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
+const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const seed = () => Promise.all([
   req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
   req('PATCH', 'profiles/a', {
@@ -118,6 +122,8 @@ const seed = () => Promise.all([
   req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'),
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
+  req('PATCH', 'folders/fb', folderFields('b'), 'owner'),
+  req('PATCH', 'folders/fb/items/wallhaven_abc', itemFields('b'), 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
@@ -444,6 +450,38 @@ const cases = [
     [`admin sets ${key} on a wall`, () => req('PATCH', 'walls/w14', { [key]: arr(['admin']) }, ADM, [key]), 200],
   ]),
   ['owner updates another field and leaves searchTerms and visionLabels untouched', () => req('PATCH', 'walls/w14', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
+  ['owner creates a folder', () => req('PATCH', 'folders/f1', folderFields('b'), Bu), 200],
+  ['owner reads own folder', () => req('GET', 'folders/fb', null, Bu), 200],
+  ['owner lists own folders by ownerId', () => runQuery(Bu, [ownerFilter('b')], 'folders'), 200],
+  ['owner renames own folder', () => req('PATCH', 'folders/f1', { name: str('Calm'), updatedAt: ts() }, Bu, ['name', 'updatedAt']), 200],
+  ['owner adds an item with a provider_id key', () => req('PATCH', 'folders/f1/items/wallhaven_abc', itemFields('b'), Bu), 200],
+  ['owner reads own folder item', () => req('GET', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
+  ['owner lists own folder items', () => runCollectionQuery(Bu, 'items', 'folders/fb'), 200],
+  ['owner removes an item', () => req('DELETE', 'folders/f1/items/wallhaven_abc', null, Bu), 200],
+  ['owner deletes own folder', () => req('DELETE', 'folders/f1', null, Bu), 200],
+  ['stranger cannot read a folder', () => req('GET', 'folders/fb', null, C), 403],
+  ['stranger cannot list folders of another user', () => runQuery(C, [ownerFilter('b')], 'folders'), 403],
+  ['stranger cannot rename a folder', () => req('PATCH', 'folders/fb', { name: str('Mine'), updatedAt: ts() }, C, ['name', 'updatedAt']), 403],
+  ['stranger cannot delete a folder', () => req('DELETE', 'folders/fb', null, C), 403],
+  ['stranger cannot read folder items', () => req('GET', 'folders/fb/items/wallhaven_abc', null, C), 403],
+  ['stranger cannot add an item to a folder', () => req('PATCH', 'folders/fb/items/pexels_9', itemFields('c', '9', 'Pexels'), C), 403],
+  ['stranger cannot delete a folder item', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, C), 403],
+  ['signed-out user cannot read a folder', () => req('GET', 'folders/fb'), 403],
+  ['folder for another owner is refused', () => req('PATCH', 'folders/f2', folderFields('c'), Bu), 403],
+  ['empty folder name is refused', () => req('PATCH', 'folders/f3', folderFields('b', ''), Bu), 403],
+  ['folder name over 50 chars is refused', () => req('PATCH', 'folders/f4', folderFields('b', 'x'.repeat(51)), Bu), 403],
+  ['untrimmed folder name is refused', () => req('PATCH', 'folders/f5', folderFields('b', ' Blue '), Bu), 403],
+  ['folder with a public field is refused', () => req('PATCH', 'folders/f6', folderFields('b', 'Blue', { public: { booleanValue: true } }), Bu), 403],
+  ['folder with five covers is refused', () => req('PATCH', 'folders/f7', folderFields('b', 'Blue', { covers: arr(['a', 'b', 'c', 'd', 'e']) }), Bu), 403],
+  ['changing a folder ownerId is refused', () => req('PATCH', 'folders/fb', { ownerId: str('c') }, Bu, ['ownerId']), 403],
+  ['negative itemCount is refused', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '-1' }, updatedAt: ts() }, Bu, ['itemCount', 'updatedAt']), 403],
+  ['item with another ownerId is refused', () => req('PATCH', 'folders/fb/items/wallhaven_xyz', itemFields('c', 'xyz'), Bu), 403],
+  ['item key without the provider is refused', () => req('PATCH', 'folders/fb/items/abc', itemFields('b'), Bu), 403],
+  ['item key for another provider is refused', () => req('PATCH', 'folders/fb/items/pexels_abc', itemFields('b'), Bu), 403],
+  ['item with an unknown provider is refused', () => req('PATCH', 'folders/fb/items/unknown_abc', itemFields('b', 'abc', 'Unknown'), Bu), 403],
+  ['item with an extra field is refused', () => req('PATCH', 'folders/fb/items/wallhaven_extra', { ...itemFields('b', 'extra'), public: { booleanValue: true } }, Bu), 403],
+  ['item in a missing folder is refused', () => req('PATCH', 'folders/missing/items/wallhaven_abc', itemFields('b'), Bu), 403],
+  ['owner updates own seeded folder count', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, Bu, ['itemCount', 'covers', 'updatedAt']), 200],
 ];
 await seed();
 let bad = 0;

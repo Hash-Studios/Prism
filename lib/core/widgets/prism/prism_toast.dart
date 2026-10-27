@@ -6,10 +6,19 @@ import 'package:flutter/material.dart';
 
 enum PrismToastKind { success, error, plain }
 
+/// A button on a toast, for example "Add to folder" after a favourite.
+typedef PrismToastAction = ({String label, VoidCallback onPressed});
+
 OverlayEntry? _current;
 
 /// Shows one short message in a pill above the bottom bar. A new toast replaces the one on screen.
-void showPrismToast(OverlayState overlay, String message, {PrismToastKind kind = PrismToastKind.plain, Color? color}) {
+void showPrismToast(
+  OverlayState overlay,
+  String message, {
+  PrismToastKind kind = PrismToastKind.plain,
+  Color? color,
+  PrismToastAction? action,
+}) {
   _current?.remove();
   late final OverlayEntry entry;
   entry = OverlayEntry(
@@ -17,6 +26,7 @@ void showPrismToast(OverlayState overlay, String message, {PrismToastKind kind =
       message: message,
       kind: kind,
       color: color,
+      action: action,
       onDone: () {
         // A replaced entry was already removed but stays mounted until the next build.
         if (_current != entry) return;
@@ -30,11 +40,12 @@ void showPrismToast(OverlayState overlay, String message, {PrismToastKind kind =
 }
 
 class _PrismToast extends StatefulWidget {
-  const _PrismToast({required this.message, required this.kind, required this.onDone, this.color});
+  const _PrismToast({required this.message, required this.kind, required this.onDone, this.color, this.action});
 
   final String message;
   final PrismToastKind kind;
   final Color? color;
+  final PrismToastAction? action;
   final VoidCallback onDone;
 
   @override
@@ -56,7 +67,8 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
     super.initState();
     _controller.forward();
     // Errors stay longer: the user has to read what went wrong.
-    final int ms = widget.kind == PrismToastKind.error ? 3600 : 2400;
+    // Errors stay longer, and so does a toast with a button: the user needs time to reach it.
+    final int ms = widget.kind == PrismToastKind.error || widget.action != null ? 3600 : 2400;
     _timer = Timer(Duration(milliseconds: ms + widget.message.length * 20), _dismiss);
   }
 
@@ -145,6 +157,21 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
                               ),
                             ),
                           ),
+                          if (widget.action case final PrismToastAction action) ...<Widget>[
+                            const SizedBox(width: PrismSpace.xs),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: cs.inversePrimary,
+                                minimumSize: const Size(44, 44),
+                                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
+                              ),
+                              onPressed: () {
+                                unawaited(_dismiss());
+                                action.onPressed();
+                              },
+                              child: Text(action.label),
+                            ),
+                          ],
                         ],
                       ),
                     ),

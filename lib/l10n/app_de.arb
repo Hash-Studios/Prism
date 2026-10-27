@@ -9102,6 +9102,163 @@
   "onboardingAiPromptCyberpunk2": "Eine futuristische Gasse mit holografischen Werbetafeln und türkis-magenta Licht",
   "onboardingAiPromptCyberpunk3": "Eine nächtliche Hightech-Silhouette mit leuchtenden Verkehrsschneisen",
   "onboardingAiPromptCyberpunk4": "Ein Cyberpunk-Dach mit Blick auf eine Stadt voller leuchtender Türme",
-  "onboardingAiPromptCyberpunk5": "Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht"
+  "onboardingAiPromptCyberpunk5": "Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht",
+  "foldersTitle": "Ordner",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "In Ordner speichern",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "Zu Ordner hinzufügen",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "Neuer Ordner",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "Ordnername",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "Erstellen",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "Ordner erstellen",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "Vorschlag",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "Neu",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{Keine Hintergrundbilder} =1{1 Hintergrundbild} other{{count} Hintergrundbilder}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{In 1 Ordner gespeichert.} other{In {count} Ordnern gespeichert.}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "Ordner aktualisiert.",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "Speichern in Ordnern fehlgeschlagen. Bitte versuche es erneut.",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "Ordner konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "Umbenennen",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "Ordner umbenennen",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "Löschen",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "{name} löschen?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "Die Hintergrundbilder bleiben in deinen Favoriten.",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "Ordner löschen",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "Ordner gelöscht.",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "Aus diesem Ordner entfernen?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "Es bleibt in deinen Favoriten.",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "Entfernen",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "Aus dem Ordner entfernt.",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "Dieser Ordner ist leer",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "Halte das Herz bei einem Hintergrundbild gedrückt, um es hier zu speichern.",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersNoFolders": "Sortiere deine gespeicherten Hintergrundbilder in Ordnern.",
+  "@foldersNoFolders": {
+    "description": "Hint next to the New folder card when the user has no folders."
+  },
+  "foldersLoadError": "Dieser Ordner konnte nicht geladen werden.",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "Dieser Ordner ist nicht verfügbar",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "Er wurde möglicherweise gelöscht.",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "Ordner",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "Weitere Optionen",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "Sperrbildschirm",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "Startbildschirm",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
+  }
 }
 

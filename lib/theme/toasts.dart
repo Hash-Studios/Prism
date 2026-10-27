@@ -21,10 +21,11 @@ void _show(
   Color? color,
   ToastGravity gravity = ToastGravity.BOTTOM,
   Color textColor = Colors.white,
+  PrismToastAction? action,
 }) {
   final OverlayState? overlay = overlayResolver?.call();
   if (overlay != null && overlay.mounted) {
-    showPrismToast(overlay, msg, kind: kind, color: color);
+    showPrismToast(overlay, msg, kind: kind, color: color, action: action);
     return;
   }
   // Channel calls keep their order, so the old toast is gone before the new one shows.
@@ -40,9 +41,10 @@ void _show(
   );
 }
 
-void success(String msg, {bool haptic = true}) {
+/// [action] shows only on the in-app toast, not on the platform fallback.
+void success(String msg, {bool haptic = true, PrismToastAction? action}) {
   if (haptic) PrismHaptics.success();
-  _show(msg, PrismToastKind.success, _fallbackSuccess);
+  _show(msg, PrismToastKind.success, _fallbackSuccess, action: action);
 }
 
 void error(String msg, {bool haptic = true}) {

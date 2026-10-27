@@ -32,6 +32,7 @@ import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/pages/drops_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
+import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
 import 'package:Prism/features/leaderboard/leaderboard.dart';
@@ -179,6 +180,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
     AutoRoute(path: '/downloads', page: DownloadRoute.page),
     AutoRoute(path: '/library', page: LibraryRoute.page),
+    AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),

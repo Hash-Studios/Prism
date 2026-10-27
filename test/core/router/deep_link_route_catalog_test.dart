@@ -119,7 +119,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(56));
+    expect(appPages, hasLength(57));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -435,6 +435,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.sharePrism => 'SharePrismRoute',
   DeepLinkPageTarget.settings => 'SettingsRoute',
   DeepLinkPageTarget.blockedAccounts => 'BlockedAccountsRoute',
+  DeepLinkPageTarget.folder => 'FolderRoute',
   DeepLinkPageTarget.about => 'AboutRoute',
   DeepLinkPageTarget.favourites => 'FavouriteWallpaperRoute',
   DeepLinkPageTarget.downloads => 'DownloadRoute',

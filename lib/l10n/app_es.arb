@@ -2574,5 +2574,162 @@
   "wallpaperWotdPickedOn": "{wallpaper}, seleccionado el {date}",
   "wallpaperWotdSeePast": "Ver fondos del día anteriores",
   "wallpaperWotdTitle": "Fondo del día",
-  "wallpaperYourProfile": "Tu perfil"
+  "wallpaperYourProfile": "Tu perfil",
+  "foldersTitle": "Carpetas",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "Guardar en carpeta",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "Añadir a carpeta",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "Nueva carpeta",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "Nombre de la carpeta",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "Crear",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "Crear carpeta",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "Sugerida",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "Nueva",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{Sin fondos de pantalla} =1{1 fondo de pantalla} other{{count} fondos de pantalla}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{Guardado en 1 carpeta.} other{Guardado en {count} carpetas.}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "Carpetas actualizadas.",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "No se pudo guardar en las carpetas. Inténtalo de nuevo.",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "No se pudo actualizar la carpeta. Inténtalo de nuevo.",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "Cambiar nombre",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "Cambiar nombre de la carpeta",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "Eliminar",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "¿Eliminar {name}?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "Los fondos de pantalla seguirán en tus favoritos.",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "Eliminar carpeta",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "Carpeta eliminada.",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "¿Quitar de esta carpeta?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "Seguirá en tus favoritos.",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "Quitar",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "Quitado de la carpeta.",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "Esta carpeta está vacía",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "Mantén pulsado el corazón de un fondo de pantalla para guardarlo aquí.",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersNoFolders": "Organiza tus fondos de pantalla guardados en carpetas.",
+  "@foldersNoFolders": {
+    "description": "Hint next to the New folder card when the user has no folders."
+  },
+  "foldersLoadError": "No se pudo cargar esta carpeta.",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "Esta carpeta no está disponible",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "Es posible que se haya eliminado.",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "carpetas",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "Más opciones",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "Pantalla de bloqueo",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "Pantalla de inicio",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
+  }
 }

@@ -9942,4 +9942,134 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Tu perfil';
+
+  @override
+  String get foldersTitle => 'Carpetas';
+
+  @override
+  String get foldersSaveToFolder => 'Guardar en carpeta';
+
+  @override
+  String get foldersAddToFolder => 'Añadir a carpeta';
+
+  @override
+  String get foldersNewFolder => 'Nueva carpeta';
+
+  @override
+  String get foldersNameHint => 'Nombre de la carpeta';
+
+  @override
+  String get foldersCreate => 'Crear';
+
+  @override
+  String get foldersCreateFolder => 'Crear carpeta';
+
+  @override
+  String get foldersSuggested => 'Sugerida';
+
+  @override
+  String get foldersNewTag => 'Nueva';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fondos de pantalla',
+      one: '1 fondo de pantalla',
+      zero: 'Sin fondos de pantalla',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Guardado en $countString carpetas.',
+      one: 'Guardado en 1 carpeta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Carpetas actualizadas.';
+
+  @override
+  String get foldersSaveFailed => 'No se pudo guardar en las carpetas. Inténtalo de nuevo.';
+
+  @override
+  String get foldersUpdateFailed => 'No se pudo actualizar la carpeta. Inténtalo de nuevo.';
+
+  @override
+  String get foldersRename => 'Cambiar nombre';
+
+  @override
+  String get foldersRenameTitle => 'Cambiar nombre de la carpeta';
+
+  @override
+  String get foldersDelete => 'Eliminar';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return '¿Eliminar $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Los fondos de pantalla seguirán en tus favoritos.';
+
+  @override
+  String get foldersDeleteConfirm => 'Eliminar carpeta';
+
+  @override
+  String get foldersDeleted => 'Carpeta eliminada.';
+
+  @override
+  String get foldersRemoveTitle => '¿Quitar de esta carpeta?';
+
+  @override
+  String get foldersRemoveMessage => 'Seguirá en tus favoritos.';
+
+  @override
+  String get foldersRemoveConfirm => 'Quitar';
+
+  @override
+  String get foldersRemoved => 'Quitado de la carpeta.';
+
+  @override
+  String get foldersEmptyTitle => 'Esta carpeta está vacía';
+
+  @override
+  String get foldersEmptyBody => 'Mantén pulsado el corazón de un fondo de pantalla para guardarlo aquí.';
+
+  @override
+  String get foldersNoFolders => 'Organiza tus fondos de pantalla guardados en carpetas.';
+
+  @override
+  String get foldersLoadError => 'No se pudo cargar esta carpeta.';
+
+  @override
+  String get foldersNotFoundTitle => 'Esta carpeta no está disponible';
+
+  @override
+  String get foldersNotFoundBody => 'Es posible que se haya eliminado.';
+
+  @override
+  String get foldersSignInFeature => 'carpetas';
+
+  @override
+  String get foldersMoreOptions => 'Más opciones';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Pantalla de bloqueo';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Pantalla de inicio';
 }

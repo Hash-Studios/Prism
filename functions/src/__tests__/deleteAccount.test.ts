@@ -29,7 +29,8 @@ function fake(t: TestContext, options: Options = {}) {
     },
   };
   const docsFor = (collection: string) => [{
-    id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {}, ref: {path: `${collection}/d1`},
+    id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {},
+    ref: {path: `${collection}/d1`, collection: (name: string) => ({path: `${collection}/d1/${name}`})},
   }];
   const query = (collection: string) => {
     const q = {
@@ -368,4 +369,14 @@ test("SV-S12 failed reservation cleanup preserves the profile and can be retried
   await call();
   assert.equal(store.has("usernames/oldname"), false);
   assert.equal(store.get("usersv2/u1")?.deleted, true);
+});
+
+test("deleting an account removes the caller's folders, items first", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("query:folders.ownerId==u1"));
+  assert.ok(log.includes("recursive:folders/d1/items"));
+  assert.ok(log.includes("delete:folders/d1"));
+  assert.ok(log.indexOf("recursive:folders/d1/items") < log.indexOf("delete:folders/d1"));
+  assert.ok(log.indexOf("delete:folders/d1") < log.indexOf("anonymize"));
 });

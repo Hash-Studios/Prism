@@ -2332,6 +2332,52 @@ class OnboardingStepCompletedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderCreatedEvent extends AnalyticsEvent {
+  const FolderCreatedEvent({required this.source, required this.withWall});
+
+  final String source;
+  final bool withWall;
+
+  @override
+  String get eventName => 'folder_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'with_wall': withWall ? 1 : 0};
+  }
+}
+
+class WallSavedToFolderEvent extends AnalyticsEvent {
+  const WallSavedToFolderEvent({required this.wallId, required this.provider, required this.folderCount});
+
+  final String wallId;
+  final String provider;
+  final int folderCount;
+
+  @override
+  String get eventName => 'wall_saved_to_folder';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'provider': provider, 'folder_count': folderCount};
+  }
+}
+
+class FolderOpenedEvent extends AnalyticsEvent {
+  const FolderOpenedEvent({required this.source, required this.itemCount});
+
+  final String source;
+  final int itemCount;
+
+  @override
+  String get eventName => 'folder_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count': itemCount};
+  }
+}
+
 class LibraryTabChangedEvent extends AnalyticsEvent {
   const LibraryTabChangedEvent({required this.tab});
 

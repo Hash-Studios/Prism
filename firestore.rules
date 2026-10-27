@@ -270,6 +270,60 @@ service cloud.firestore {
       }
     }
 
+    // Private folders of saved walls. Only the owner reads or writes them; deleteAccount removes them.
+    match /folders/{folderId} {
+      function validFolderName(name) {
+        return name is string && name.size() >= 1 && name.size() <= 50 && name == name.trim();
+      }
+
+      function validFolderFields(data) {
+        return validFolderName(data.name)
+            && data.itemCount is int && data.itemCount >= 0
+            && data.covers is list && data.covers.size() <= 4
+            && data.createdAt is timestamp && data.updatedAt is timestamp;
+      }
+
+      // A folder item is a favourite doc plus ownerId and addedAt. Its id is "<provider lowercased>_<wall id>".
+      function validFolderItem(itemKey) {
+        let data = request.resource.data;
+        return data.keys().hasOnly([
+              'id', 'url', 'thumb', 'provider', 'category', 'views', 'resolution', 'fav', 'size',
+              'photographer', 'collections', 'depth', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt'
+            ])
+            && data.id is string && data.id.size() > 0
+            && data.provider is string
+            && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels']
+            && itemKey == data.provider.lower() + '_' + data.id
+            && data.ownerId == request.auth.uid
+            && data.addedAt is timestamp;
+      }
+
+      allow read, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn()
+          && request.resource.data.keys().hasOnly(['ownerId', 'name', 'createdAt', 'updatedAt', 'itemCount', 'covers'])
+          && request.resource.data.ownerId == request.auth.uid
+          && validFolderFields(request.resource.data);
+      allow update: if isSignedIn()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt', 'itemCount', 'covers'])
+          && validFolderFields(request.resource.data);
+
+      // getAfter lets one batch create a folder with its first item.
+      match /items/{itemKey} {
+        allow read: if isSignedIn()
+            && get(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid;
+        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isSignedIn()
+            && getAfter(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid
+            && validFolderItem(itemKey);
+        allow update: if isSignedIn()
+            && resource.data.ownerId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid
+            && validFolderItem(itemKey);
+      }
+    }
+
     // Public profile documents contain only the server-projected profile allowlist.
     // Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
