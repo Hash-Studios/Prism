@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -153,6 +154,7 @@ Map<String, dynamic> _prismDoc(
   String creatorUid = 'creator-id',
   List<String> colors = const <String>[],
   String? depthTier,
+  String? spatialTier,
   String? category,
 }) => <String, dynamic>{
   'id': id,
@@ -164,6 +166,7 @@ Map<String, dynamic> _prismDoc(
   'review': true,
   'colors': colors,
   'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
+  'spatial': ?(spatialTier == null ? null : <String, dynamic>{'tier': spatialTier}),
   'category': ?category,
 };
 
@@ -768,6 +771,27 @@ void main() {
     });
   });
 
+  Future<WallpaperSearchService> serviceWithSaved(
+    List<FeedItemEntity> saved, {
+    required FakeFirestoreClient firestore,
+    required _FakeWallhavenRepository wallhaven,
+    required _FakePexelsRepository pexels,
+  }) async {
+    final Directory directory = await Directory.systemTemp.createTemp('depth-search-catalog-');
+    addTearDown(() => directory.delete(recursive: true));
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: directory),
+    );
+    await catalog.remember(saved);
+    return WallpaperSearchService(
+      wallhaven,
+      pexels,
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+      catalog,
+    );
+  }
+
   group('depth', () {
     const SearchFilters depthOnly = SearchFilters(depthOnly: true);
 
@@ -784,27 +808,6 @@ void main() {
         depthTier: tier,
       ),
     );
-
-    Future<WallpaperSearchService> serviceWithSaved(
-      List<FeedItemEntity> saved, {
-      required FakeFirestoreClient firestore,
-      required _FakeWallhavenRepository wallhaven,
-      required _FakePexelsRepository pexels,
-    }) async {
-      final Directory directory = await Directory.systemTemp.createTemp('depth-search-catalog-');
-      addTearDown(() => directory.delete(recursive: true));
-      final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
-        store: DurableJsonStore('catalog', directory: directory),
-      );
-      await catalog.remember(saved);
-      return WallpaperSearchService(
-        wallhaven,
-        pexels,
-        SettingsLocalDataSource(InMemoryLocalStore()),
-        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
-        catalog,
-      );
-    }
 
     test('lists only Prism auto and menu walls and never asks Wallhaven or Pexels', () async {
       final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
@@ -922,6 +925,92 @@ void main() {
 
       expect(page.provider, SearchProviderValue.wallhaven);
       expect(page.results.map((wall) => wall.id), <String>['a']);
+    });
+  });
+
+  group('spatial', () {
+    const SearchFilters spatialOnly = SearchFilters(spatialOnly: true);
+
+    PrismFeedItem savedSpatial(String id, WallSpatialTier? tier) => PrismFeedItem(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://prism/$id.jpg',
+          thumbnailUrl: 'https://prism/$id-thumb.jpg',
+        ),
+        title: 'Moss forest $id',
+        spatial: tier == null ? null : WallSpatial(tier: tier),
+      ),
+    );
+
+    test('lists only Prism great and ok walls and never asks Wallhaven or Pexels', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (id: 'd1', data: _prismDoc('great1', spatialTier: 'great')),
+          (id: 'd2', data: _prismDoc('none1', spatialTier: 'none')),
+          (id: 'd3', data: _prismDoc('ok1', spatialTier: 'ok')),
+          (id: 'd4', data: _prismDoc('unchecked')),
+        ],
+      );
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('', filters: spatialOnly);
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['great1', 'ok1']);
+      expect(page.prismResults, isEmpty);
+      expect(page.isLocal, isFalse);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.spatial');
+    });
+
+    test('a spatial browse asks Prism search for 48 walls and a text query keeps 12', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          for (int i = 0; i < spec.limit!; i++) (id: 's$i', data: _prismDoc('w$i', spatialTier: 'great')),
+        ],
+      );
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      final browse = await service.search('', filters: spatialOnly);
+
+      expect(firestore.querySpecs.single.limit, 48);
+      expect(browse.results, hasLength(48));
+
+      final text = await service.search('moss', filters: spatialOnly);
+
+      expect(text.results, hasLength(12));
+    });
+
+    test('saved walls fill in when Prism has no match, and only great and ok Prism walls stay', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[]));
+      final service = await serviceWithSaved(
+        <FeedItemEntity>[
+          savedSpatial('saved-great', WallSpatialTier.great),
+          savedSpatial('saved-ok', WallSpatialTier.ok),
+          savedSpatial('saved-none', WallSpatialTier.none),
+          savedSpatial('saved-unchecked', null),
+        ],
+        firestore: FakeFirestoreClient()..queryError = StateError('offline'),
+        wallhaven: wallhaven,
+        pexels: pexels,
+      );
+
+      final page = await service.search('moss', filters: spatialOnly);
+
+      expect(page.results.map((wall) => wall.id).toSet(), <String>{'saved-great', 'saved-ok'});
+      expect(page.isLocal, isTrue);
+      expect(wallhaven.calls, 0);
     });
   });
 

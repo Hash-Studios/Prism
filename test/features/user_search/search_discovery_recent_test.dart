@@ -106,34 +106,39 @@ void main() {
     });
   });
 
-  group('Depth Effect row', () {
-    Future<void> pumpDiscovery(WidgetTester tester, {VoidCallback? onDepthPressed}) async {
-      const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
-      final bloc = _MockSearchDiscoveryBloc();
-      when(() => bloc.state).thenReturn(state);
-      whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
-      await tester.pumpWidget(
-        BlocProvider<SearchDiscoveryBloc>.value(
-          value: bloc,
-          child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
+  Future<void> pumpDiscovery(
+    WidgetTester tester, {
+    VoidCallback? onDepthPressed,
+    VoidCallback? onSpatialPressed,
+  }) async {
+    const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
+    final bloc = _MockSearchDiscoveryBloc();
+    when(() => bloc.state).thenReturn(state);
+    whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+    await tester.pumpWidget(
+      BlocProvider<SearchDiscoveryBloc>.value(
+        value: bloc,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-            home: Scaffold(
-              body: SearchDiscoveryWidget(
-                tags: const <String>[],
-                selectedTag: '',
-                onTagPressed: (_) {},
-                onColorPressed: (_) {},
-                onDepthPressed: onDepthPressed,
-              ),
+          home: Scaffold(
+            body: SearchDiscoveryWidget(
+              tags: const <String>[],
+              selectedTag: '',
+              onTagPressed: (_) {},
+              onColorPressed: (_) {},
+              onDepthPressed: onDepthPressed,
+              onSpatialPressed: onSpatialPressed,
             ),
           ),
         ),
-      );
-      await tester.pump();
-    }
+      ),
+    );
+    await tester.pump();
+  }
 
+  group('Depth Effect row', () {
     testWidgets('shows above Browse by colour and calls the handler on tap', (tester) async {
       int taps = 0;
       await pumpDiscovery(tester, onDepthPressed: () => taps++);
@@ -158,6 +163,32 @@ void main() {
 
       expect(find.text('Depth Effect'), findsNothing);
       expect(find.byIcon(Icons.layers_rounded), findsNothing);
+      expect(find.text('Find creators'), findsOneWidget);
+    });
+  });
+
+  group('Spatial Scene row', () {
+    testWidgets('shows below the Depth Effect row and calls the handler on tap', (tester) async {
+      int taps = 0;
+      await pumpDiscovery(tester, onDepthPressed: () {}, onSpatialPressed: () => taps++);
+
+      expect(find.text('Spatial'), findsOneWidget);
+      expect(find.text('Walls with clear 3D depth'), findsOneWidget);
+      expect(find.byIcon(Icons.view_in_ar_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel('Spatial, walls with clear 3D depth'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Spatial')).dy, greaterThan(tester.getTopLeft(find.text('Depth Effect')).dy));
+
+      await tester.tap(find.text('Spatial'));
+      await tester.pump();
+
+      expect(taps, 1);
+    });
+
+    testWidgets('is absent without a handler', (tester) async {
+      await pumpDiscovery(tester);
+
+      expect(find.text('Spatial'), findsNothing);
+      expect(find.byIcon(Icons.view_in_ar_rounded), findsNothing);
       expect(find.text('Find creators'), findsOneWidget);
     });
   });
