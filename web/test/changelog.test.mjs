@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { parseChangelog, readChangelog, versionSlug } from '../lib/changelog.ts';
 import { shareLink } from '../lib/share-link.ts';
 
@@ -59,19 +60,57 @@ test('the real CHANGELOG.md parses', () => {
   assert.equal(new Set(slugs).size, slugs.length);
 });
 
-test('readChangelog fails the build when no release has bullets', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'changelog-'));
-  const path = join(dir, 'CHANGELOG.md');
-  writeFileSync(path, '## Changelog\n\n### v1.0.0\n');
-  assert.throws(() => readChangelog(path), /has no releases with bullets/);
+test('the CI web filter includes changelog and consumed Proxima fonts', () => {
+  const workflow = readFileSync(fileURLToPath(new URL('../../.github/workflows/ci.yml', import.meta.url)), 'utf8');
+  const webFilter = workflow.split('            web:\n')[1].split('            rules:\n')[0];
+  const patterns = [...webFilter.matchAll(/^\s+- '([^']+)'$/gm)].map((match) => match[1]);
+  const picomatch = createRequire(import.meta.url)('next/dist/compiled/picomatch');
+  const matches = (path) => patterns.some((pattern) => picomatch(pattern)(path));
+  for (const path of ['CHANGELOG.md', 'assets/fonts/ProximaNova-Regular.otf',
+    'assets/fonts/Proxima Nova Bold.otf', 'assets/fonts/Proxima Nova Extrabold.otf']) {
+    assert.equal(matches(path), true, `${path} should trigger web CI`);
+  }
+  assert.equal(matches('assets/fonts/Unrelated.otf'), false);
 });
 
-test('shareLink uses native share, and treats a cancel as a cancel', async () => {
+test('readChangelog retains six ordered releases from an explicit file', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'changelog-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, 'CHANGELOG.md');
+  const markdown = Array.from({ length: 6 }, (_, index) => `### v1.0.${6 - index}\n- Release ${6 - index}`).join('\n\n');
+  writeFileSync(path, markdown);
+  assert.deepEqual(readChangelog(path).map(({ version }) => version),
+    ['v1.0.6', 'v1.0.5', 'v1.0.4', 'v1.0.3', 'v1.0.2', 'v1.0.1']);
+});
+
+test('readChangelog defaults to the complete repository changelog', () => {
+  const markdown = readFileSync(fileURLToPath(new URL('../../CHANGELOG.md', import.meta.url)), 'utf8');
+  assert.deepEqual(readChangelog(), parseChangelog(markdown));
+});
+
+test('readChangelog rejects empty files and headers without bullets', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'changelog-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, 'CHANGELOG.md');
+  for (const contents of ['', '## Changelog\n\n### v1.0.0\n']) {
+    writeFileSync(path, contents);
+    assert.throws(() => readChangelog(path), /has no releases with bullets/);
+  }
+});
+
+test('shareLink uses the native receiver and does not copy on success or cancel', async () => {
   const data = { title: 'Prism v1.0.0', url: 'https://prismwalls.com/changelog/v1-0-0' };
-  assert.equal(await shareLink({ share: async () => {} }, data), 'shared');
-  const cancel = Object.assign(new Error('cancelled'), { name: 'AbortError' });
   const copied = [];
-  const target = { share: async () => { throw cancel; }, clipboard: { writeText: async (text) => { copied.push(text); } } };
+  const target = {
+    clipboard: { writeText: async (text) => { copied.push(text); } },
+    share: async function (sent) {
+      assert.equal(this, target);
+      assert.deepEqual(sent, data);
+    },
+  };
+  assert.equal(await shareLink(target, data), 'shared');
+  const cancel = Object.assign(new Error('cancelled'), { name: 'AbortError' });
+  target.share = async function () { assert.equal(this, target); throw cancel; };
   assert.equal(await shareLink(target, data), 'cancelled');
   assert.deepEqual(copied, []);
 });
