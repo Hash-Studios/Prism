@@ -10445,6 +10445,61 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Seu perfil';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Adicione o Prism à Tela de Início e à Tela Bloqueada';
+
+  @override
+  String get widgetsGuideTitle => 'Adicionar widgets do Prism';
+
+  @override
+  String get widgetsGuideHomeTab => 'Tela de Início';
+
+  @override
+  String get widgetsGuideLockTab => 'Tela Bloqueada';
+
+  @override
+  String get widgetsGuideHomeStep1 =>
+      'Toque e mantenha pressionada uma área vazia da Tela de Início até os apps tremerem.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Toque em Editar e depois em Adicionar Widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Busque por Prism, escolha um tamanho e toque em Adicionar Widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Toque e mantenha pressionada a Tela Bloqueada e toque em Personalizar.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Toque em Tela Bloqueada e depois na área de widgets abaixo do relógio.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Escolha Prism e toque em um widget para adicioná-lo.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'Um celular com o widget Papel de parede do dia na Tela de Início';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Um celular com widgets do Prism na Tela Bloqueada';
+
+  @override
+  String get widgetsGuideDone => 'OK';
+
+  @override
+  String get widgetsCardTitle => 'O papel de parede do dia na sua Tela de Início';
+
+  @override
+  String get widgetsCardBody => 'Adicione o widget e veja um papel de parede novo todo dia.';
+
+  @override
+  String get widgetsCardAction => 'Mostrar como';
+
+  @override
+  String get widgetsCardDismiss => 'Dispensar';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -20886,4 +20941,59 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperYourProfile => 'Seu perfil';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Adicione o Prism à Tela de Início e à Tela Bloqueada';
+
+  @override
+  String get widgetsGuideTitle => 'Adicionar widgets do Prism';
+
+  @override
+  String get widgetsGuideHomeTab => 'Tela de Início';
+
+  @override
+  String get widgetsGuideLockTab => 'Tela Bloqueada';
+
+  @override
+  String get widgetsGuideHomeStep1 =>
+      'Toque e mantenha pressionada uma área vazia da Tela de Início até os apps tremerem.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Toque em Editar e depois em Adicionar Widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Busque por Prism, escolha um tamanho e toque em Adicionar Widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Toque e mantenha pressionada a Tela Bloqueada e toque em Personalizar.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Toque em Tela Bloqueada e depois na área de widgets abaixo do relógio.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Escolha Prism e toque em um widget para adicioná-lo.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'Um celular com o widget Papel de parede do dia na Tela de Início';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Um celular com widgets do Prism na Tela Bloqueada';
+
+  @override
+  String get widgetsGuideDone => 'OK';
+
+  @override
+  String get widgetsCardTitle => 'O papel de parede do dia na sua Tela de Início';
+
+  @override
+  String get widgetsCardBody => 'Adicione o widget e veja um papel de parede novo todo dia.';
+
+  @override
+  String get widgetsCardAction => 'Mostrar como';
+
+  @override
+  String get widgetsCardDismiss => 'Dispensar';
 }

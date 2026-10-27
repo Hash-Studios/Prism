@@ -10121,4 +10121,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Your profile';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Add Prism to your Home Screen and Lock Screen';
+
+  @override
+  String get widgetsGuideTitle => 'Add Prism widgets';
+
+  @override
+  String get widgetsGuideHomeTab => 'Home Screen';
+
+  @override
+  String get widgetsGuideLockTab => 'Lock Screen';
+
+  @override
+  String get widgetsGuideHomeStep1 => 'Touch and hold an empty area of your Home Screen until the apps jiggle.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Tap Edit, then tap Add Widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Search for Prism, pick a size, then tap Add Widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Touch and hold your Lock Screen, then tap Customize.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Tap Lock Screen, then tap the widget area under the clock.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Pick Prism, then tap a widget to add it.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'A phone with the Wall of the Day widget on the Home Screen';
+
+  @override
+  String get widgetsGuideLockIllustration => 'A phone with Prism widgets on the Lock Screen';
+
+  @override
+  String get widgetsGuideDone => 'Done';
+
+  @override
+  String get widgetsCardTitle => 'Wall of the Day on your Home Screen';
+
+  @override
+  String get widgetsCardBody => 'Add the widget and see a new wall every day.';
+
+  @override
+  String get widgetsCardAction => 'Show me how';
+
+  @override
+  String get widgetsCardDismiss => 'Dismiss';
 }

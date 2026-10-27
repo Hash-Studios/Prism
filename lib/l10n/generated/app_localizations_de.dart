@@ -10265,4 +10265,60 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Dein Profil';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Prism zum Home-Bildschirm und Sperrbildschirm hinzufügen';
+
+  @override
+  String get widgetsGuideTitle => 'Prism-Widgets hinzufügen';
+
+  @override
+  String get widgetsGuideHomeTab => 'Home-Bildschirm';
+
+  @override
+  String get widgetsGuideLockTab => 'Sperrbildschirm';
+
+  @override
+  String get widgetsGuideHomeStep1 =>
+      'Lege den Finger auf eine freie Stelle des Home-Bildschirms, bis die Apps wackeln.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Tippe auf „Bearbeiten“ und dann auf „Widget hinzufügen“.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Suche nach Prism, wähle eine Größe und tippe auf „Widget hinzufügen“.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Lege den Finger auf den Sperrbildschirm und tippe auf „Anpassen“.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Tippe auf „Sperrbildschirm“ und dann auf den Widget-Bereich unter der Uhr.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Wähle Prism und tippe auf ein Widget, um es hinzuzufügen.';
+
+  @override
+  String get widgetsGuideHomeIllustration =>
+      'Ein Telefon mit dem Widget „Hintergrundbild des Tages“ auf dem Home-Bildschirm';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Ein Telefon mit Prism-Widgets auf dem Sperrbildschirm';
+
+  @override
+  String get widgetsGuideDone => 'Fertig';
+
+  @override
+  String get widgetsCardTitle => 'Hintergrundbild des Tages auf deinem Home-Bildschirm';
+
+  @override
+  String get widgetsCardBody => 'Füge das Widget hinzu und sieh jeden Tag ein neues Hintergrundbild.';
+
+  @override
+  String get widgetsCardAction => 'Zeig mir, wie';
+
+  @override
+  String get widgetsCardDismiss => 'Schließen';
 }

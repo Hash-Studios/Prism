@@ -10249,4 +10249,59 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Tu perfil';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Añade Prism a tu pantalla de inicio y a la pantalla bloqueada';
+
+  @override
+  String get widgetsGuideTitle => 'Añadir widgets de Prism';
+
+  @override
+  String get widgetsGuideHomeTab => 'Pantalla de inicio';
+
+  @override
+  String get widgetsGuideLockTab => 'Pantalla bloqueada';
+
+  @override
+  String get widgetsGuideHomeStep1 =>
+      'Mantén pulsada una zona vacía de la pantalla de inicio hasta que las apps se muevan.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Toca Editar y después Añadir widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Busca Prism, elige un tamaño y toca Añadir widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Mantén pulsada la pantalla bloqueada y toca Personalizar.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Toca Pantalla bloqueada y después la zona de widgets bajo el reloj.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Elige Prism y toca un widget para añadirlo.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'Un teléfono con el widget Fondo del día en la pantalla de inicio';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Un teléfono con widgets de Prism en la pantalla bloqueada';
+
+  @override
+  String get widgetsGuideDone => 'Listo';
+
+  @override
+  String get widgetsCardTitle => 'El fondo del día en tu pantalla de inicio';
+
+  @override
+  String get widgetsCardBody => 'Añade el widget y ve un fondo nuevo cada día.';
+
+  @override
+  String get widgetsCardAction => 'Muéstrame cómo';
+
+  @override
+  String get widgetsCardDismiss => 'Descartar';
 }

@@ -267,6 +267,24 @@ enum DeepLinkSourceValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum WidgetKindValue {
+  wotdSmall,
+  wotdMedium,
+  wotdLarge,
+  wotdLock,
+  streakCircular,
+  streakInline;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WidgetGuideSourceValue {
+  settings,
+  wallOfTheDay;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum ShareTypeValue {
   wallpaper,
   user,

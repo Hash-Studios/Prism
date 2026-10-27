@@ -16218,6 +16218,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile'**
   String get wallpaperYourProfile;
+
+  /// Settings row title that opens the iOS widget guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Widgets'**
+  String get widgetsSettingsTitle;
+
+  /// Settings row subtitle for the iOS widget guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Prism to your Home Screen and Lock Screen'**
+  String get widgetsSettingsSubtitle;
+
+  /// Title of the sheet that teaches how to add Prism iOS widgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Prism widgets'**
+  String get widgetsGuideTitle;
+
+  /// Segment label for the Home Screen widget steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Screen'**
+  String get widgetsGuideHomeTab;
+
+  /// Segment label for the Lock Screen widget steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Screen'**
+  String get widgetsGuideLockTab;
+
+  /// Step 1 to add a widget to the Home Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Touch and hold an empty area of your Home Screen until the apps jiggle.'**
+  String get widgetsGuideHomeStep1;
+
+  /// Step 2 to add a widget to the Home Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Edit, then tap Add Widget.'**
+  String get widgetsGuideHomeStep2;
+
+  /// Step 3 to add a widget to the Home Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for Prism, pick a size, then tap Add Widget.'**
+  String get widgetsGuideHomeStep3;
+
+  /// Step 1 to add a widget to the Lock Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Touch and hold your Lock Screen, then tap Customize.'**
+  String get widgetsGuideLockStep1;
+
+  /// Step 2 to add a widget to the Lock Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Lock Screen, then tap the widget area under the clock.'**
+  String get widgetsGuideLockStep2;
+
+  /// Step 3 to add a widget to the Lock Screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Prism, then tap a widget to add it.'**
+  String get widgetsGuideLockStep3;
+
+  /// Accessibility label for the Home Screen widget illustration.
+  ///
+  /// In en, this message translates to:
+  /// **'A phone with the Wall of the Day widget on the Home Screen'**
+  String get widgetsGuideHomeIllustration;
+
+  /// Accessibility label for the Lock Screen widget illustration.
+  ///
+  /// In en, this message translates to:
+  /// **'A phone with Prism widgets on the Lock Screen'**
+  String get widgetsGuideLockIllustration;
+
+  /// Button that closes the widget guide sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get widgetsGuideDone;
+
+  /// Title of the card on Wall of the Day that promotes the Home Screen widget.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall of the Day on your Home Screen'**
+  String get widgetsCardTitle;
+
+  /// Body of the card on Wall of the Day that promotes the Home Screen widget.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the widget and see a new wall every day.'**
+  String get widgetsCardBody;
+
+  /// Button on the Wall of the Day widget card that opens the widget guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Show me how'**
+  String get widgetsCardAction;
+
+  /// Tooltip and label for the button that dismisses the Wall of the Day widget card.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get widgetsCardDismiss;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
