@@ -10142,7 +10142,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersTitle => 'Pastas';
 
   @override
-  String get foldersSaveToFolder => 'Guardar na pasta';
+  String get foldersSaveToFolder => 'Salvar na pasta';
 
   @override
   String get foldersAddToFolder => 'Adicionar à pasta';
@@ -10188,8 +10188,8 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Guardado em $countString pastas.',
-      one: 'Guardado em 1 pasta.',
+      other: 'Salvo em $countString pastas.',
+      one: 'Salvo em 1 pasta.',
     );
     return '$_temp0';
   }
@@ -10198,7 +10198,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersUpdated => 'Pastas atualizadas.';
 
   @override
-  String get foldersSaveFailed => 'Não foi possível guardar nas pastas. Tente novamente.';
+  String get foldersSaveFailed => 'Não foi possível salvar nas pastas. Tente novamente.';
 
   @override
   String get foldersUpdateFailed => 'Não foi possível atualizar a pasta. Tente novamente.';
@@ -10210,21 +10210,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersRenameTitle => 'Renomear pasta';
 
   @override
-  String get foldersDelete => 'Eliminar';
+  String get foldersDelete => 'Excluir';
 
   @override
   String foldersDeleteTitle(String name) {
-    return 'Eliminar $name?';
+    return 'Excluir $name?';
   }
 
   @override
   String get foldersDeleteMessage => 'Os papéis de parede continuam nos seus favoritos.';
 
   @override
-  String get foldersDeleteConfirm => 'Eliminar pasta';
+  String get foldersDeleteConfirm => 'Excluir pasta';
 
   @override
-  String get foldersDeleted => 'Pasta eliminada.';
+  String get foldersDeleted => 'Pasta excluída.';
 
   @override
   String get foldersRemoveTitle => 'Remover desta pasta?';
@@ -10242,10 +10242,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersEmptyTitle => 'Esta pasta está vazia';
 
   @override
-  String get foldersEmptyBody => 'Mantenha o coração premido num papel de parede para o guardar aqui.';
+  String get foldersEmptyBody => 'Segure o coração em um papel de parede para salvá-lo aqui.';
 
   @override
-  String get foldersNoFolders => 'Organize os seus papéis de parede guardados em pastas.';
+  String get foldersNoFolders => 'Organize seus papéis de parede salvos em pastas.';
 
   @override
   String get foldersLoadError => 'Não foi possível carregar esta pasta.';
@@ -10254,7 +10254,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersNotFoundTitle => 'Esta pasta não está disponível';
 
   @override
-  String get foldersNotFoundBody => 'Pode ter sido eliminada.';
+  String get foldersNotFoundBody => 'Talvez ela tenha sido excluída.';
 
   @override
   String get foldersSignInFeature => 'pastas';
@@ -10263,10 +10263,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersMoreOptions => 'Mais opções';
 
   @override
-  String get foldersSuggestionLockScreen => 'Ecrã de bloqueio';
+  String get foldersSuggestionLockScreen => 'Tela de bloqueio';
 
   @override
-  String get foldersSuggestionHomeScreen => 'Ecrã inicial';
+  String get foldersSuggestionHomeScreen => 'Tela inicial';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
