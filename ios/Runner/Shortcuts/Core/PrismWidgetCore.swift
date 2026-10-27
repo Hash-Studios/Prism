@@ -1,9 +1,100 @@
 import Foundation
+#if canImport(ImageIO)
+import ImageIO
+#endif
 
 enum PrismWidgetKind {
   static let wallOfTheDay = "PrismWallOfTheDay"
   static let streak = "PrismStreak"
 }
+
+enum PrismWotdImageBudget {
+  static let maximumPixels = 718_080
+  static let maximumDecodeEdge = Int(floor(sqrt(Double(maximumPixels))))
+
+  static func boundedPixels(_ pixels: CGSize) -> CGSize {
+    guard pixels.width > 0, pixels.height > 0 else { return CGSize(width: 0, height: 0) }
+    let area = pixels.width * pixels.height
+    guard area > CGFloat(maximumPixels) else { return pixels }
+    let scale = sqrt(CGFloat(maximumPixels) / area)
+    return CGSize(width: floor(pixels.width * scale), height: floor(pixels.height * scale))
+  }
+
+  static func thumbnailMaxPixelSize(source: CGSize, filling pixels: CGSize) -> Int {
+    min(Self.maximumDecodeEdge, Int(ceil(min(max(source.width, source.height), max(pixels.width, pixels.height)))))
+  }
+}
+
+enum PrismWotdBytes {
+  static func read<Bytes: AsyncSequence>(_ bytes: Bytes, limit: Int) async throws -> Data where Bytes.Element == UInt8 {
+    guard limit > 0 else { throw URLError(.dataLengthExceedsMaximum) }
+    var data = Data()
+    for try await byte in bytes {
+      guard data.count < limit else { throw URLError(.dataLengthExceedsMaximum) }
+      data.append(byte)
+    }
+    guard !data.isEmpty else { throw URLError(.badServerResponse) }
+    return data
+  }
+}
+
+actor PrismWotdRefreshCoordinator {
+  typealias Result = (wall: PrismWotdWall?, pickedDay: String?)
+  private var inFlight: Task<Result, Never>?
+
+  func task(load: @escaping @Sendable () async -> Result) -> Task<Result, Never> {
+    if let inFlight { return inFlight }
+    let task = Task {
+      let result = await load()
+      inFlight = nil
+      return result
+    }
+    inFlight = task
+    return task
+  }
+}
+
+#if canImport(ImageIO)
+enum PrismWotdImage {
+  static func decode(_ data: Data, filling pixels: CGSize) -> CGImage? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    return decode(source, filling: pixels)
+  }
+
+  static func decode(_ source: CGImageSource, filling pixels: CGSize) -> CGImage? {
+    let pixels = PrismWotdImageBudget.boundedPixels(pixels)
+    guard let thumbnail = thumbnail(source, filling: pixels) else { return nil }
+    let width = CGFloat(thumbnail.width)
+    let height = CGFloat(thumbnail.height)
+    let fit = min(width / pixels.width, height / pixels.height)
+    let crop = CGRect(
+      x: floor((width - pixels.width * fit) / 2), y: floor((height - pixels.height * fit) / 2),
+      width: max(1, floor(pixels.width * fit)), height: max(1, floor(pixels.height * fit))
+    )
+    return thumbnail.cropping(to: crop)
+  }
+
+  static func thumbnail(_ source: CGImageSource, filling pixels: CGSize) -> CGImage? {
+    guard pixels.width > 0, pixels.height > 0, CGImageSourceGetStatus(source) == .statusComplete,
+      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+      let width = properties[kCGImagePropertyPixelWidth] as? CGFloat, width > 0,
+      let height = properties[kCGImagePropertyPixelHeight] as? CGFloat, height > 0
+    else { return nil }
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceShouldCacheImmediately: true,
+      kCGImageSourceThumbnailMaxPixelSize: PrismWotdImageBudget.thumbnailMaxPixelSize(
+        source: CGSize(width: width, height: height), filling: pixels
+      ),
+    ]
+    guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
+      CGImageSourceGetStatusAtIndex(source, 0) == .statusComplete
+    else { return nil }
+    return thumbnail
+  }
+}
+#endif
 
 /// What the app writes for the streak widgets. The app owns the streak; the widget only reads this copy.
 struct PrismStreakSnapshot: Codable, Equatable, Sendable {
@@ -46,7 +137,7 @@ enum PrismStreakRule {
     guard snapshot.count > 0, let gap = dayGap(from: snapshot.lastKeptDay, to: today),
       gap <= 1 + max(0, snapshot.freezes)
     else { return PrismStreakDisplay(count: 0, keptToday: false) }
-    return PrismStreakDisplay(count: snapshot.count, keptToday: gap <= 0)
+    return PrismStreakDisplay(count: snapshot.count, keptToday: gap == 0)
   }
 
   static func dayKey(_ date: Date, utcOffsetMinutes: Int) -> String {
@@ -93,6 +184,66 @@ struct PrismWotdWall: Codable, Equatable, Sendable {
   let pickedDay: String
 }
 
+struct PrismWotdCacheManifest: Codable, Equatable {
+  let wall: PrismWotdWall
+  let imageFileName: String
+
+  func imageFile(in directory: URL, for expectedWall: PrismWotdWall) -> URL? {
+    guard wall == expectedWall else { return nil }
+    let file = directory.appendingPathComponent(imageFileName)
+    return FileManager.default.fileExists(atPath: file.path) ? file : nil
+  }
+}
+
+struct PrismWotdDiskCache {
+  let directory: URL
+  private var manifestFile: URL { directory.appendingPathComponent("wall.json") }
+
+  func load() -> PrismWotdCacheManifest? {
+    guard let data = try? Data(contentsOf: manifestFile),
+      let record = try? JSONDecoder().decode(PrismWotdCacheManifest.self, from: data),
+      record.imageFile(in: directory, for: record.wall) != nil
+    else { return nil }
+    return record
+  }
+
+  func update(_ wall: PrismWotdWall, includeImage: Bool, image: () async throws -> Data) async throws {
+    guard includeImage else { return }
+    try save(wall, image: await image())
+  }
+
+  func save(
+    _ wall: PrismWotdWall, image: Data,
+    publish: (Data, URL) throws -> Void = { try $0.write(to: $1, options: .atomic) }
+  ) throws {
+    #if canImport(ImageIO)
+    guard PrismWotdImage.decode(image, filling: CGSize(width: 32, height: 32)) != nil else {
+      throw URLError(.cannotDecodeContentData)
+    }
+    #endif
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let imageFile = directory.appendingPathComponent("image-\(UUID().uuidString)")
+    try image.write(to: imageFile, options: .atomic)
+    do {
+      let record = PrismWotdCacheManifest(wall: wall, imageFileName: imageFile.lastPathComponent)
+      try publish(JSONEncoder().encode(record), manifestFile)
+    } catch {
+      try? FileManager.default.removeItem(at: imageFile)
+      throw error
+    }
+    let cutoff = Date().addingTimeInterval(-7 * 86_400)
+    for file in (try? FileManager.default.contentsOfDirectory(
+      at: directory, includingPropertiesForKeys: [.contentModificationDateKey]
+    )) ?? [] where file.lastPathComponent.hasPrefix("image-") {
+      if let modified = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+        modified < cutoff
+      {
+        try? FileManager.default.removeItem(at: file)
+      }
+    }
+  }
+}
+
 enum PrismWotdParser {
   /// Nil when the wall has no display image. The widget never falls back to the original: it is too large.
   static func wall(pointer: PrismShortcutWotdIdentity, document: Data) -> PrismWotdWall? {
@@ -115,6 +266,15 @@ enum PrismWotdParser {
   }
 }
 
+enum PrismWotdSelection {
+  static func resolve(pointer: PrismShortcutWotdIdentity, document: Data, cached: PrismWotdWall?)
+    -> (wall: PrismWotdWall?, pickedDay: String?)
+  {
+    guard let wall = PrismWotdParser.wall(pointer: pointer, document: document) else { return (cached, nil) }
+    return (wall, pointer.day)
+  }
+}
+
 enum PrismWotdSchedule {
   /// functions/src/wallOfTheDay.ts picks a new wall every day at 03:30 UTC.
   static let rotationSecondOfDay: TimeInterval = 3 * 3_600 + 30 * 60
@@ -130,7 +290,8 @@ enum PrismWotdSchedule {
   /// After the next rotation. Sooner when the fetch failed or the server has not rotated yet, but never later.
   static func nextRefresh(after now: Date, pickedDay: String?) -> Date {
     let last = lastRotation(atOrBefore: now)
-    let next = last.addingTimeInterval(86_400 + settle)
+    let settleDeadline = last.addingTimeInterval(settle)
+    let next = settleDeadline > now ? settleDeadline : last.addingTimeInterval(86_400 + settle)
     guard pickedDay == PrismShortcutWotdIdentity.utcDay(last) else { return min(now.addingTimeInterval(retry), next) }
     return next
   }

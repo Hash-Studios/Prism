@@ -11,7 +11,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
+import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
@@ -56,14 +56,20 @@ String googleSignInErrorMessage(Object error, AppLocalizations l10n, {TargetPlat
 }
 
 class GoogleAuth {
-  GoogleAuth({FirebaseAuth? auth, GoogleSignIn? googleSignIn, FirebaseMessaging? messaging})
-    : _auth = auth ?? FirebaseAuth.instance,
-      googleSignIn = googleSignIn ?? GoogleSignIn.instance,
-      _messaging = messaging;
+  GoogleAuth({
+    FirebaseAuth? auth,
+    GoogleSignIn? googleSignIn,
+    FirebaseMessaging? messaging,
+    Future<void> Function()? clearShortcutsFavourites,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       googleSignIn = googleSignIn ?? GoogleSignIn.instance,
+       _messaging = messaging,
+       _clearShortcutsFavourites = clearShortcutsFavourites ?? ShortcutsFavouritesStore.clear;
 
   final FirebaseAuth _auth;
   final GoogleSignIn googleSignIn;
   final FirebaseMessaging? _messaging;
+  final Future<void> Function() _clearShortcutsFavourites;
   bool _googleSignInInitialized = false;
 
   Future<void> _ensureGoogleSignInInitialized() async {
@@ -440,11 +446,12 @@ class GoogleAuth {
     if (!operation.isCurrent) return;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       try {
-        await ShortcutsFavouritesStore.clear();
+        await _clearShortcutsFavourites();
       } catch (e, st) {
         logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
-      await IosWidgetChannel.clearStreak();
+      if (!operation.isCurrent) return;
+      await StreakWidgetSync.clear();
     }
   }
 

@@ -12,57 +12,35 @@ enum PrismWotdCache {
       .appendingPathComponent("Library/Caches/WallOfTheDayWidget", isDirectory: true)
   }
 
-  private static var wallFile: URL? { directory?.appendingPathComponent("wall.json") }
-  private static var imageFile: URL? { directory?.appendingPathComponent("image") }
+  private static var cache: PrismWotdDiskCache? { directory.map { PrismWotdDiskCache(directory: $0) } }
 
   static func wall() -> PrismWotdWall? {
-    guard let wallFile, let imageFile, FileManager.default.fileExists(atPath: imageFile.path),
-      let data = try? Data(contentsOf: wallFile)
-    else { return nil }
-    return try? JSONDecoder().decode(PrismWotdWall.self, from: data)
+    cache?.load()?.wall
   }
 
-  static func save(_ wall: PrismWotdWall, image: Data) throws {
-    guard let directory, let wallFile, let imageFile else { throw CocoaError(.fileNoSuchFile) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try image.write(to: imageFile, options: .atomic)
-    try JSONEncoder().encode(wall).write(to: wallFile, options: .atomic)
+  static func update(_ wall: PrismWotdWall, includeImage: Bool, image: () async throws -> Data) async throws {
+    guard let cache else {
+      if includeImage { throw CocoaError(.fileNoSuchFile) }
+      return
+    }
+    try await cache.update(wall, includeImage: includeImage, image: image)
   }
 
   /// Decodes the cached thumbnail at no more than the widget's pixel size and crops it to fill. WidgetKit refuses
   /// images larger than the widget, and a full decode can pass the extension's memory limit.
-  static func image(filling pixels: CGSize) -> UIImage? {
-    guard pixels.width > 0, pixels.height > 0, let imageFile,
+  static func image(filling pixels: CGSize, expectedWall: PrismWotdWall) -> UIImage? {
+    guard pixels.width > 0, pixels.height > 0, let record = cache?.load(), let directory,
+      let imageFile = record.imageFile(in: directory, for: expectedWall),
       let source = CGImageSourceCreateWithURL(imageFile as CFURL, nil),
-      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-      let width = properties[kCGImagePropertyPixelWidth] as? CGFloat, width > 0,
-      let height = properties[kCGImagePropertyPixelHeight] as? CGFloat, height > 0
+      let image = PrismWotdImage.decode(source, filling: pixels)
     else { return nil }
-    let oriented = (properties[kCGImagePropertyOrientation] as? UInt32).map { $0 >= 5 } ?? false
-    let size = oriented ? CGSize(width: height, height: width) : CGSize(width: width, height: height)
-    let scale = min(1, max(pixels.width / size.width, pixels.height / size.height))
-    let options: [CFString: Any] = [
-      kCGImageSourceCreateThumbnailFromImageAlways: true,
-      kCGImageSourceCreateThumbnailWithTransform: true,
-      kCGImageSourceShouldCacheImmediately: true,
-      kCGImageSourceThumbnailMaxPixelSize: ceil(max(size.width, size.height) * scale),
-    ]
-    guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-    let thumbWidth = CGFloat(thumbnail.width)
-    let thumbHeight = CGFloat(thumbnail.height)
-    let fit = min(thumbWidth / pixels.width, thumbHeight / pixels.height)
-    let crop = CGRect(
-      x: ((thumbWidth - pixels.width * fit) / 2).rounded(.down),
-      y: ((thumbHeight - pixels.height * fit) / 2).rounded(.down),
-      width: (pixels.width * fit).rounded(.down),
-      height: (pixels.height * fit).rounded(.down)
-    )
-    return UIImage(cgImage: thumbnail.cropping(to: crop) ?? thumbnail)
+    return UIImage(cgImage: image)
   }
 }
 
 enum PrismWotdLoader {
   private static let maxImageBytes = 15 * 1024 * 1024
+  private static let refreshCoordinator = PrismWotdRefreshCoordinator()
 
   private static let session: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
@@ -92,7 +70,12 @@ enum PrismWotdLoader {
   }
 
   /// The wall to show, and the pick day when the fetch reached the server. A nil day means offline or failed.
-  static func refresh() async -> (wall: PrismWotdWall?, pickedDay: String?) {
+  static func refresh(includeImage: Bool) async -> (wall: PrismWotdWall?, pickedDay: String?) {
+    if !includeImage { return await load(includeImage: false) }
+    return await refreshCoordinator.task { await load(includeImage: true) }.value
+  }
+
+  private static func load(includeImage: Bool) async -> (wall: PrismWotdWall?, pickedDay: String?) {
     let cached = PrismWotdCache.wall()
     guard let config else { return (cached, nil) }
     do {
@@ -102,11 +85,12 @@ enum PrismWotdLoader {
       if let cached, cached.documentId == pointer.documentId, cached.pickedDay == pointer.day {
         return (cached, pointer.day)
       }
-      guard let wall = PrismWotdParser.wall(pointer: pointer, document: try await document(
-        config, collection: "walls", id: pointer.documentId
-      )) else { return (cached, pointer.day) }
-      try PrismWotdCache.save(wall, image: try await image(wall.imageURL))
-      return (wall, pointer.day)
+      let result = PrismWotdSelection.resolve(
+        pointer: pointer, document: try await document(config, collection: "walls", id: pointer.documentId), cached: cached
+      )
+      guard let wall = result.wall, result.pickedDay != nil else { return result }
+      try await PrismWotdCache.update(wall, includeImage: includeImage) { try await image(wall.imageURL) }
+      return result
     } catch {
       return (cached, nil)
     }
@@ -122,19 +106,16 @@ enum PrismWotdLoader {
   }
 
   private static func image(_ url: URL) async throws -> Data {
-    let data = try await fetch(URLRequest(url: url), limit: maxImageBytes)
-    guard let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) > 0 else {
-      throw URLError(.cannotDecodeContentData)
-    }
-    return data
+    try await fetch(URLRequest(url: url), limit: maxImageBytes)
   }
 
   private static func fetch(_ request: URLRequest, limit: Int) async throws -> Data {
-    let (data, response) = try await session.data(for: request)
-    guard (response as? HTTPURLResponse)?.statusCode == 200, !data.isEmpty, data.count <= limit else {
+    let (bytes, response) = try await session.bytes(for: request)
+    defer { bytes.task.cancel() }
+    guard (response as? HTTPURLResponse)?.statusCode == 200, limit > 0 else {
       throw URLError(.badServerResponse)
     }
-    return data
+    return try await PrismWotdBytes.read(bytes, limit: limit)
   }
 }
 
@@ -158,8 +139,10 @@ struct PrismWotdProvider: TimelineProvider {
       return
     }
     Task {
-      let wall = await PrismWotdLoader.refresh().wall
-      completion(PrismWotdEntry(date: .now, wall: wall, image: wall == nil ? nil : PrismWotdCache.image(filling: pixels)))
+      let wall = await PrismWotdLoader.refresh(includeImage: pixels.width > 0).wall
+      completion(PrismWotdEntry(
+        date: .now, wall: wall, image: wall.flatMap { PrismWotdCache.image(filling: pixels, expectedWall: $0) }
+      ))
     }
   }
 
@@ -167,8 +150,8 @@ struct PrismWotdProvider: TimelineProvider {
     let pixels = Self.pixels(context)
     Task {
       let now = Date.now
-      let result = await PrismWotdLoader.refresh()
-      let image = result.wall == nil ? nil : PrismWotdCache.image(filling: pixels)
+      let result = await PrismWotdLoader.refresh(includeImage: pixels.width > 0)
+      let image = result.wall.flatMap { PrismWotdCache.image(filling: pixels, expectedWall: $0) }
       completion(Timeline(
         entries: [PrismWotdEntry(date: now, wall: result.wall, image: image)],
         policy: .after(PrismWotdSchedule.nextRefresh(after: now, pickedDay: result.pickedDay))
@@ -180,7 +163,10 @@ struct PrismWotdProvider: TimelineProvider {
   private static func pixels(_ context: Context) -> CGSize {
     switch context.family {
     case .accessoryRectangular, .accessoryCircular, .accessoryInline: return .zero
-    default: return CGSize(width: context.displaySize.width * 3, height: context.displaySize.height * 3)
+    default:
+      return PrismWotdImageBudget.boundedPixels(
+        CGSize(width: context.displaySize.width * 3, height: context.displaySize.height * 3)
+      )
     }
   }
 }

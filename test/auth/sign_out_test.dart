@@ -14,6 +14,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
+import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -376,6 +377,7 @@ void main() {
     addTearDown(() {
       IosWidgetChannel.api = PrismWidgetHostApi();
       IosWidgetChannel.isSupportedPlatform = () => false;
+      StreakWidgetSync.resetForTest();
     });
     app_state.prismUser = profileUser();
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
@@ -384,6 +386,42 @@ void main() {
     await auth.signOutGoogle();
 
     expect(widgets.snapshots, <StreakWidgetSnapshot?>[null]);
+  });
+
+  test('a switch during Shortcuts cleanup cannot clear the replacement account widget', () async {
+    final started = Completer<void>();
+    final gate = Completer<void>();
+    final widgets = _FakeWidgetApi();
+    IosWidgetChannel.api = widgets;
+    IosWidgetChannel.isSupportedPlatform = () => true;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      IosWidgetChannel.api = PrismWidgetHostApi();
+      IosWidgetChannel.isSupportedPlatform = () => false;
+      StreakWidgetSync.resetForTest();
+    });
+    app_state.prismUser = profileUser();
+    final firebase = _FakeAuth(user: _FakeUser());
+    final pending = GoogleAuth(
+      auth: firebase,
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+      clearShortcutsFavourites: () async {
+        started.complete();
+        await gate.future;
+      },
+    ).signOutGoogle();
+    await started.future;
+    app_state.prismUser = profileUser(id: 'replacement');
+    firebase.user = _FakeUser(uid: 'replacement');
+    final snapshot = StreakWidgetSnapshot(count: 7, lastKeptDay: '2026-10-27', utcOffsetMinutes: 0, freezes: 0);
+    await IosWidgetChannel.setStreak(snapshot);
+    gate.complete();
+    expect(await pending, isFalse);
+    expect(widgets.snapshots, <StreakWidgetSnapshot?>[snapshot]);
+    expect(firebase.currentUser?.uid, 'replacement');
+    expect(_log, isNot(contains('auth.signOut')));
   });
 
   test('marks the user logged out and drops their topics before Firebase sign-out', () async {
