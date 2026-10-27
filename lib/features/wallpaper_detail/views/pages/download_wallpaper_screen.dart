@@ -117,8 +117,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
             top: topPad,
             end: PrismSpace.md,
             child: PrismIconButton(
-              icon: Icons.schedule_rounded,
-              tooltip: context.l10n.wallpaperClockPreview,
+              icon: Icons.smartphone_rounded,
+              tooltip: context.l10n.wallpaperPreviewOnScreen,
               onImage: true,
               onPressed: () {
                 _trackAction(AnalyticsActionValue.clockOverlayOpened);

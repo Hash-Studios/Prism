@@ -210,7 +210,7 @@ void main() {
     expect(localImages.length, greaterThan(1));
     expect(localImages.every((image) => image.file.path == file.path), isTrue);
     expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).url, file.path);
-    await tester.tap(find.byTooltip('Clock preview'));
+    await tester.tap(find.byTooltip('Preview on your screen'));
     await tester.pumpAndSettle();
     final clock = tester.widget<ClockOverlay>(find.byType(ClockOverlay));
     expect(clock.link, file.path);

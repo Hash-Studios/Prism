@@ -12103,12 +12103,6 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get wallpaperClearSearch;
 
-  /// Wallpaper interface text: wallpaperClockPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Clock preview'**
-  String get wallpaperClockPreview;
-
   /// Accessibility label for closing the wallpaper clock preview.
   ///
   /// In en, this message translates to:
@@ -12997,6 +12991,12 @@ abstract class AppLocalizations {
   /// **'Got it. You\'ll see fewer like this.'**
   String get wallpaperGotItFewerLikeThis;
 
+  /// Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide controls'**
+  String get wallpaperHidePreviewControls;
+
   /// Target label when a wallpaper is set on both screens.
   ///
   /// In en, this message translates to:
@@ -13747,11 +13747,71 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get wallpaperPreviewHome;
 
+  /// Home screen preview icon style: clear glass app icons (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get wallpaperPreviewIconClear;
+
+  /// Home screen preview icon style: dark app icons (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get wallpaperPreviewIconDark;
+
+  /// Home screen preview icon style: normal colourful app icons.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get wallpaperPreviewIconDefault;
+
+  /// Accessibility label of the picker that changes how app icons look in the home screen preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon style'**
+  String get wallpaperPreviewIconStyle;
+
+  /// Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You).
+  ///
+  /// In en, this message translates to:
+  /// **'Themed'**
+  String get wallpaperPreviewIconThemed;
+
+  /// Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Tinted'**
+  String get wallpaperPreviewIconTinted;
+
   /// Preview mode option for the lock screen.
   ///
   /// In en, this message translates to:
   /// **'Lock'**
   String get wallpaperPreviewLock;
+
+  /// Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview on your screen'**
+  String get wallpaperPreviewOnScreen;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the lock and home screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on both screens'**
+  String get wallpaperPreviewSetBoth;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on home screen'**
+  String get wallpaperPreviewSetHome;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on lock screen'**
+  String get wallpaperPreviewSetLock;
 
   /// Action to spend coins on a premium collection preview.
   ///
@@ -14124,6 +14184,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show less like this'**
   String get wallpaperShowLessLikeThis;
+
+  /// Accessibility label of the wallpaper preview background: a tap shows the buttons again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show controls'**
+  String get wallpaperShowPreviewControls;
 
   /// Action to sign in to Prism.
   ///

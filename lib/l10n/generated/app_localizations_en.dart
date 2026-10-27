@@ -7792,9 +7792,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperClearSearch => 'Clear search';
 
   @override
-  String get wallpaperClockPreview => 'Clock preview';
-
-  @override
   String get wallpaperClosePreview => 'Close preview';
 
   @override
@@ -8348,6 +8345,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Got it. You\'ll see fewer like this.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Hide controls';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Both screens';
 
   @override
@@ -8760,7 +8760,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperPreviewHome => 'Home';
 
   @override
+  String get wallpaperPreviewIconClear => 'Clear';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Dark';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Default';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Icon style';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Themed';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Tinted';
+
+  @override
   String get wallpaperPreviewLock => 'Lock';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Preview on your screen';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Set on both screens';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Set on home screen';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Set on lock screen';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -8984,6 +9014,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Show less like this';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Show controls';
 
   @override
   String get wallpaperSignIn => 'Sign in';

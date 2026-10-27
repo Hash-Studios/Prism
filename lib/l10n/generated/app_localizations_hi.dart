@@ -7922,9 +7922,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperClearSearch => 'खोज मिटाएँ';
 
   @override
-  String get wallpaperClockPreview => 'घड़ी का पूर्वावलोकन';
-
-  @override
   String get wallpaperClosePreview => 'पूर्वावलोकन बंद करें';
 
   @override
@@ -8479,6 +8476,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'ठीक है। अब ऐसे कम वॉलपेपर दिखेंगे।';
 
   @override
+  String get wallpaperHidePreviewControls => 'नियंत्रण छिपाएँ';
+
+  @override
   String get wallpaperHistoryBothScreens => 'दोनों स्क्रीन';
 
   @override
@@ -8890,7 +8890,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperPreviewHome => 'होम';
 
   @override
+  String get wallpaperPreviewIconClear => 'पारदर्शी';
+
+  @override
+  String get wallpaperPreviewIconDark => 'डार्क';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'डिफ़ॉल्ट';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'आइकन शैली';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'थीम वाले';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'टिंटेड';
+
+  @override
   String get wallpaperPreviewLock => 'लॉक';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'आपकी स्क्रीन पर पूर्वावलोकन';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'दोनों स्क्रीन पर लगाएँ';
+
+  @override
+  String get wallpaperPreviewSetHome => 'होम स्क्रीन पर लगाएँ';
+
+  @override
+  String get wallpaperPreviewSetLock => 'लॉक स्क्रीन पर लगाएँ';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9120,6 +9150,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'ऐसे कम दिखाएं';
+
+  @override
+  String get wallpaperShowPreviewControls => 'नियंत्रण दिखाएँ';
 
   @override
   String get wallpaperSignIn => 'साइन इन करें';

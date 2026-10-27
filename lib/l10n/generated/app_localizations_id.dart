@@ -7824,9 +7824,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperClearSearch => 'Hapus pencarian';
 
   @override
-  String get wallpaperClockPreview => 'Pratinjau jam';
-
-  @override
   String get wallpaperClosePreview => 'Tutup pratinjau';
 
   @override
@@ -8377,6 +8374,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Mengerti. Anda akan melihat lebih sedikit wallpaper seperti ini.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Sembunyikan kontrol';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Kedua layar';
 
   @override
@@ -8792,7 +8792,37 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperPreviewHome => 'Layar utama';
 
   @override
+  String get wallpaperPreviewIconClear => 'Bening';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Gelap';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Default';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Gaya ikon';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Bertema';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Berwarna';
+
+  @override
   String get wallpaperPreviewLock => 'Layar kunci';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Pratinjau di layar Anda';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Pasang di kedua layar';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Pasang di layar utama';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Pasang di layar kunci';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9022,6 +9052,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Tampilkan lebih sedikit seperti ini';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Tampilkan kontrol';
 
   @override
   String get wallpaperSignIn => 'Masuk';

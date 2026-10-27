@@ -7892,9 +7892,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperClearSearch => 'Borrar búsqueda';
 
   @override
-  String get wallpaperClockPreview => 'Vista previa del reloj';
-
-  @override
   String get wallpaperClosePreview => 'Cerrar vista previa';
 
   @override
@@ -8452,6 +8449,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Entendido. Verás menos fondos como este.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Ocultar controles';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Ambas pantallas';
 
   @override
@@ -8869,7 +8869,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperPreviewHome => 'Inicio';
 
   @override
+  String get wallpaperPreviewIconClear => 'Transparente';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Oscuro';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Predeterminado';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Estilo de iconos';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Temático';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Tintado';
+
+  @override
   String get wallpaperPreviewLock => 'Bloqueo';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Vista previa en tu pantalla';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Configurar en ambas pantallas';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Configurar en pantalla de inicio';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Configurar en pantalla de bloqueo';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9099,6 +9129,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Mostrar menos como este';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Mostrar controles';
 
   @override
   String get wallpaperSignIn => 'Iniciar sesión';
