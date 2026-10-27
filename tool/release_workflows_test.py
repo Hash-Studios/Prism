@@ -82,14 +82,17 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
         steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
         install = next(step for step in steps if step.get('name') == 'Install provisioning profiles')
         cleanup = next(step for step in steps if step.get('name') == 'Cleanup keychain & keys')
-        secrets = {'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'}
-        self.assertEqual(set(install['env']), secrets)
-        for name in secrets:
-            self.assertEqual(install['env'][name], '${{ secrets.' + name + ' }}')
+        self.assertLessEqual({'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'},
+                             set(install['env']))
+        for name, value in install['env'].items():
+            self.assertTrue(name.endswith('PROVISIONING_PROFILE_BASE64'), name)
+            self.assertEqual(value, '${{ secrets.' + name + ' }}')
         for name in list(self.env):
             if name.endswith('PROVISIONING_PROFILE_BASE64'):
                 self.env.pop(name)
-        app_uuid, live_uuid = 'A1B2C3D4-0001', 'A1B2C3D4-0002'
+        app_uuid, live_uuid, widget_uuid = 'A1B2C3D4-0001', 'A1B2C3D4-0002', 'A1B2C3D4-0003'
+        self.env['IOS_WIDGETS_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
+            profile_bytes('com.hash.prism.Widgets', 'Prism Widgets', widget_uuid)).decode()
         self.env['IOS_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
             profile_bytes('com.hash.prism', 'Prism App Store', app_uuid)).decode()
         self.env['IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'] = base64.b64encode(
@@ -101,16 +104,35 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
 
         result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', install['run'])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(len(list((self.work / 'home/Library').rglob('*.mobileprovision'))), 4)
+        self.assertEqual(len(list((self.work / 'home/Library').rglob('*.mobileprovision'))), 6)
         export = fixture.plistlib.loads((runner_temp / 'ExportOptions.plist').read_bytes())
         self.assertEqual(export['provisioningProfiles'],
-                         {'com.hash.prism': app_uuid, 'com.hash.prism.LiveActivities': live_uuid})
+                         {'com.hash.prism': app_uuid, 'com.hash.prism.LiveActivities': live_uuid,
+                          'com.hash.prism.Widgets': widget_uuid})
 
         result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', cleanup['run'])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(list((self.work / 'home/Library').rglob('*.mobileprovision')), [])
         self.assertFalse((runner_temp / 'provisioning-profiles.json').exists())
         self.assertFalse((runner_temp / 'ExportOptions.plist').exists())
+
+    def test_testflight_stops_when_flutter_exported_no_ipa(self):
+        steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
+        names = [step.get('name') for step in steps]
+        check_index = names.index('Check IPA was exported')
+        self.assertEqual(names[check_index - 1], 'Build IPA')
+        self.assertLess(check_index, names.index('Upload to TestFlight (Prism Alpha)'))
+        command = steps[check_index]['run']
+        result = self.run_tool('bash', '-e', '-c', command)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('did not export', result.stdout)
+        ipa = self.work / 'build/ios/ipa/Prism.ipa'
+        ipa.parent.mkdir(parents=True)
+        ipa.write_bytes(b'')
+        self.assertNotEqual(self.run_tool('bash', '-e', '-c', command).returncode, 0)
+        ipa.write_bytes(b'PK')
+        result = self.run_tool('bash', '-e', '-c', command)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_ios_preparation_fails_before_signing_and_build(self):
         steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']

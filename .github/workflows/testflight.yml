@@ -81,6 +81,8 @@ jobs:
             -P "$CERTIFICATE_PASSWORD" \
             -A -t cert -f pkcs12 \
             -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" > /dev/null
 
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
@@ -116,6 +118,14 @@ jobs:
           python3 tool/flutter_with_doppler.py --release-platform ios -- \
             flutter build ipa --release --build-number="$BUILD_NUMBER" \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
+
+      # flutter build ipa exits 0 even when the IPA export fails.
+      - name: Check IPA was exported
+        run: |
+          if [ ! -s build/ios/ipa/Prism.ipa ]; then
+            echo "::error::flutter build ipa did not export build/ios/ipa/Prism.ipa. See the Build IPA log."
+            exit 1
+          fi
 
       - name: Install asc CLI
         run: brew install rudrankriyam/tap/asc

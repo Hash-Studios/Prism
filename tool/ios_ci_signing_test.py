@@ -123,6 +123,23 @@ class IosCiSigningTest(unittest.TestCase):
         self.assertNotIn('secretvalue', result.stderr)
         self.assertNotIn('secretvalue', result.stdout)
 
+    def test_malformed_profile_xml_is_not_echoed(self):
+        data = b'\x30\x82<?xml version="1.0"?><plist><dict><key>Name</key><integer>CANARY</integer></dict></plist>'
+        result = self.run_signing({APP_SECRET: encode(data)})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(APP_SECRET, result.stderr)
+        self.assertNotIn('CANARY', result.stdout + result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+
+    def test_app_id_prefix_that_differs_from_team_maps_to_bundle(self):
+        legacy = plist_profile({'Name': APP_PROFILE, 'UUID': 'EEEE-5', 'TeamIdentifier': [TEAM],
+                                'Entitlements': {'application-identifier': f'ABCDE12345.{APP}'}})
+        result = self.run_signing({APP_SECRET: encode(legacy)})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(plistlib.loads(self.export_options.read_bytes())['provisioningProfiles'], {APP: 'EEEE-5'})
+        self.assertEqual([profile['bundle_id'] for profile in json.loads(self.manifest.read_text())['profiles']],
+                         [APP])
+
     def test_development_profile_is_rejected(self):
         dev = profile_bytes(APP, 'Prism Development', 'CCCC-3', ProvisionedDevices=['00008030-ABC'])
         result = self.run_signing({APP_SECRET: encode(dev)})

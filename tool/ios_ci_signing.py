@@ -6,7 +6,6 @@ Secret values are never printed.
 
 import argparse
 import base64
-import binascii
 import json
 import os
 from pathlib import Path
@@ -32,11 +31,11 @@ def read_profile(secret, value):
         profile = plistlib.loads(match.group())
         team = profile['TeamIdentifier'][0]
         entitlements = profile['Entitlements']
-        bundle_id = entitlements['application-identifier'].removeprefix(team + '.')
+        # The App ID prefix can differ from the team ID on older App IDs.
+        bundle_id = entitlements['application-identifier'].split('.', 1)[1]
         info = {'secret': secret, 'bundle_id': bundle_id, 'name': profile['Name'], 'uuid': profile['UUID'],
                 'team_id': team}
-    except (binascii.Error, AttributeError, ExpatError, KeyError, IndexError, TypeError,
-            plistlib.InvalidFileException) as error:
+    except (AttributeError, ExpatError, KeyError, IndexError, TypeError, ValueError) as error:
         raise SigningError(f'{secret} is not a base64 provisioning profile ({type(error).__name__}).') from None
     if profile.get('ProvisionedDevices') or profile.get('ProvisionsAllDevices') or entitlements.get('get-task-allow'):
         raise SigningError(f'{secret} holds "{info["name"]}", which is not an App Store profile.')
