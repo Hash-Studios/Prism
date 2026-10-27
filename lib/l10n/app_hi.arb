@@ -2782,6 +2782,7 @@
   "coreThemeJungle": "जंगल",
   "coreThemeLocked": "लॉक है",
   "coreThemeMaterialDark": "मटीरियल डार्क",
+  "coreThemeMaterialYou": "मटीरियल यू",
   "coreThemeOlive": "ऑलिव",
   "coreThemePepper": "काली मिर्च",
   "coreThemeRose": "गुलाब",
@@ -8947,6 +8948,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "मटीरियल यू आपके वॉलपेपर से रंग लेता है।",
   "wallpaperViewCount": "{count, plural, one{{count} बार देखा गया} other{{count} बार देखा गया}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

@@ -2889,6 +2889,7 @@
   "coreThemeJungle": "Rimba",
   "coreThemeLocked": "Terkunci",
   "coreThemeMaterialDark": "Gelap Material",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Zaitun",
   "coreThemePepper": "Lada",
   "coreThemeRose": "Mawar",
@@ -9071,6 +9072,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You mengambil warna dari wallpaper Anda.",
   "wallpaperViewCount": "{count, plural, one{1 kali dilihat} other{{count} kali dilihat}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

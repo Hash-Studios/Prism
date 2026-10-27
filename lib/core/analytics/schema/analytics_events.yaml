@@ -453,6 +453,11 @@ events:
       - name: color
         key: color
         type: string
+  - id: theme_changed
+    fields:
+      - name: theme_id
+        key: theme_id
+        type: string
   - id: paywall_impression
     fields:
       - name: source

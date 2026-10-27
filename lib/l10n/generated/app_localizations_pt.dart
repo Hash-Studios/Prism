@@ -2965,6 +2965,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreThemeMaterialDark => 'Material escuro';
 
   @override
+  String get coreThemeMaterialYou => 'Material You';
+
+  @override
   String get coreThemeOlive => 'Oliva';
 
   @override
@@ -9790,6 +9793,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Use a cor de destaque do seu telefone';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'O Material You usa as cores do seu papel de parede.';
 
   @override
   String wallpaperViewCount(int count) {
@@ -13092,6 +13098,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get coreThemeMaterialDark => 'Material escuro';
 
   @override
+  String get coreThemeMaterialYou => 'Material You';
+
+  @override
   String get coreThemeOlive => 'Oliva';
 
   @override
@@ -19917,6 +19926,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperUsePhoneAccent => 'Use a cor de destaque do seu telefone';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'O Material You usa as cores do seu papel de parede.';
 
   @override
   String wallpaperViewCount(int count) {

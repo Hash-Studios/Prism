@@ -2768,6 +2768,7 @@
   "coreThemeJungle": "Jungle",
   "coreThemeLocked": "Locked",
   "coreThemeMaterialDark": "Material Dark",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pepper",
   "coreThemeRose": "Rose",
@@ -8959,6 +8960,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You takes its colours from your wallpaper.",
   "wallpaperViewCount": "{count, plural, one{1 view} other{{count} views}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

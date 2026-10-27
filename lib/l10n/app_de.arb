@@ -2760,6 +2760,7 @@
   "coreThemeJungle": "Dschungel",
   "coreThemeLocked": "Gesperrt",
   "coreThemeMaterialDark": "Material Dunkel",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pfeffer",
   "coreThemeRose": "Rose",
@@ -8945,6 +8946,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You übernimmt die Farben von deinem Hintergrundbild.",
   "wallpaperViewCount": "{count, plural, one{1 Aufruf} other{{count} Aufrufe}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

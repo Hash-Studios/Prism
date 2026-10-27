@@ -60,6 +60,8 @@ class AccountTheme {
 
 /// The account copy applied over [local]. A light or dark slot keeps the local selection
 /// when this device may not use the account's theme for that slot. The mode always follows the account.
+/// Material You is always kept, even where the phone has no Material You colours: that device shows the default
+/// theme for the slot, and the account keeps Material You for the devices that have them.
 ThemePreferences mergeAccountTheme({
   required ThemePreferences account,
   required ThemePreferences local,
@@ -67,8 +69,8 @@ ThemePreferences mergeAccountTheme({
   required Set<String> legacyThemes,
 }) {
   return ThemePreferences(
-    light: _mergeSlot(account.light, local.light, prismLightThemes, owned, legacyThemes),
-    dark: _mergeSlot(account.dark, local.dark, prismDarkThemes, owned, legacyThemes),
+    light: _mergeSlot(account.light, local.light, prismLightThemes, prismMaterialYouLightThemeId, owned, legacyThemes),
+    dark: _mergeSlot(account.dark, local.dark, prismDarkThemes, prismMaterialYouDarkThemeId, owned, legacyThemes),
     mode: account.mode,
   );
 }
@@ -77,9 +79,11 @@ ThemeSelection _mergeSlot(
   ThemeSelection account,
   ThemeSelection local,
   List<PrismThemeOption> options,
+  String materialYouId,
   Set<String> owned,
   Set<String> legacyThemes,
 ) {
+  if (account.themeId == materialYouId) return account;
   final PrismThemeOption? option = prismThemeById(options, account.themeId);
   if (option == null) return local;
   final String? shopItemId = option.shopItemId;

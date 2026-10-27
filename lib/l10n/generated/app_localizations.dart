@@ -5079,6 +5079,12 @@ abstract class AppLocalizations {
   /// **'Material Dark'**
   String get coreThemeMaterialDark;
 
+  /// No description provided for @coreThemeMaterialYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You'**
+  String get coreThemeMaterialYou;
+
   /// No description provided for @coreThemeOlive.
   ///
   /// In en, this message translates to:
@@ -14976,6 +14982,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use the accent colour of your phone'**
   String get wallpaperUsePhoneAccent;
+
+  /// No description provided for @wallpaperThemeMaterialYouNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You takes its colours from your wallpaper.'**
+  String get wallpaperThemeMaterialYouNote;
 
   /// Wallpaper interface text: wallpaperViewCount.
   ///

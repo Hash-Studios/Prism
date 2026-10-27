@@ -2924,6 +2924,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreThemeMaterialDark => 'Gelap Material';
 
   @override
+  String get coreThemeMaterialYou => 'Material You';
+
+  @override
   String get coreThemeOlive => 'Zaitun';
 
   @override
@@ -9522,6 +9525,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Gunakan warna aksen ponsel Anda';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You mengambil warna dari wallpaper Anda.';
 
   @override
   String wallpaperViewCount(int count) {
