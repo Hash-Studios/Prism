@@ -9121,21 +9121,75 @@
   "onboardingAiPromptWatercolor4": "पेस्टल जलरंग प्रतिबिंबों वाला शांत नदी-तट",
   "onboardingAiPromptWatercolor5": "सूर्यास्त के गर्म रंगों में जलरंगों से चित्रित कलात्मक तटरेखा",
   "widgetsSettingsTitle": "विजेट",
+  "@widgetsSettingsTitle": {
+    "description": "Settings row title that opens the iOS widget guide."
+  },
   "widgetsSettingsSubtitle": "Prism को अपनी होम स्क्रीन और लॉक स्क्रीन पर जोड़ें",
+  "@widgetsSettingsSubtitle": {
+    "description": "Settings row subtitle for the iOS widget guide."
+  },
   "widgetsGuideTitle": "Prism विजेट जोड़ें",
+  "@widgetsGuideTitle": {
+    "description": "Title of the sheet that teaches how to add Prism iOS widgets."
+  },
   "widgetsGuideHomeTab": "होम स्क्रीन",
+  "@widgetsGuideHomeTab": {
+    "description": "Segment label for the Home Screen widget steps."
+  },
   "widgetsGuideLockTab": "लॉक स्क्रीन",
+  "@widgetsGuideLockTab": {
+    "description": "Segment label for the Lock Screen widget steps."
+  },
   "widgetsGuideHomeStep1": "होम स्क्रीन की किसी खाली जगह को तब तक दबाकर रखें जब तक ऐप्स हिलने न लगें।",
+  "@widgetsGuideHomeStep1": {
+    "description": "Step 1 to add a widget to the Home Screen."
+  },
   "widgetsGuideHomeStep2": "संपादित करें पर टैप करें, फिर विजेट जोड़ें पर टैप करें।",
+  "@widgetsGuideHomeStep2": {
+    "description": "Step 2 to add a widget to the Home Screen."
+  },
   "widgetsGuideHomeStep3": "Prism खोजें, एक साइज़ चुनें, फिर विजेट जोड़ें पर टैप करें।",
+  "@widgetsGuideHomeStep3": {
+    "description": "Step 3 to add a widget to the Home Screen."
+  },
   "widgetsGuideLockStep1": "लॉक स्क्रीन को दबाकर रखें, फिर कस्टमाइज़ करें पर टैप करें।",
+  "@widgetsGuideLockStep1": {
+    "description": "Step 1 to add a widget to the Lock Screen."
+  },
   "widgetsGuideLockStep2": "लॉक स्क्रीन पर टैप करें, फिर घड़ी के नीचे विजेट वाली जगह पर टैप करें।",
+  "@widgetsGuideLockStep2": {
+    "description": "Step 2 to add a widget to the Lock Screen."
+  },
   "widgetsGuideLockStep3": "Prism चुनें, फिर जोड़ने के लिए किसी विजेट पर टैप करें।",
+  "@widgetsGuideLockStep3": {
+    "description": "Step 3 to add a widget to the Lock Screen."
+  },
   "widgetsGuideHomeIllustration": "होम स्क्रीन पर आज के वॉलपेपर विजेट वाला फ़ोन",
+  "@widgetsGuideHomeIllustration": {
+    "description": "Accessibility label for the Home Screen widget illustration."
+  },
   "widgetsGuideLockIllustration": "लॉक स्क्रीन पर Prism विजेट वाला फ़ोन",
+  "@widgetsGuideLockIllustration": {
+    "description": "Accessibility label for the Lock Screen widget illustration."
+  },
   "widgetsGuideDone": "हो गया",
+  "@widgetsGuideDone": {
+    "description": "Button that closes the widget guide sheet."
+  },
   "widgetsCardTitle": "आज का वॉलपेपर आपकी होम स्क्रीन पर",
+  "@widgetsCardTitle": {
+    "description": "Title of the card on Wall of the Day that promotes the Home Screen widget."
+  },
   "widgetsCardBody": "विजेट जोड़ें और हर दिन नया वॉलपेपर देखें।",
+  "@widgetsCardBody": {
+    "description": "Body of the card on Wall of the Day that promotes the Home Screen widget."
+  },
   "widgetsCardAction": "तरीका दिखाएँ",
-  "widgetsCardDismiss": "हटाएँ"
+  "@widgetsCardAction": {
+    "description": "Button on the Wall of the Day widget card that opens the widget guide."
+  },
+  "widgetsCardDismiss": "हटाएँ",
+  "@widgetsCardDismiss": {
+    "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  }
 }
