@@ -8,10 +8,15 @@ final class PrismShareHostApiImpl: @preconcurrency PrismShareHostApi {
   }
 
   func shareInstagramStory(target: InstagramStoryTarget, imagePath: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-    let temp = URL(fileURLWithPath: NSTemporaryDirectory()).standardizedFileURL.resolvingSymlinksInPath().path
-    let tempDirectory = temp.hasSuffix("/") ? temp : temp + "/"
     let file = URL(fileURLWithPath: imagePath).standardizedFileURL.resolvingSymlinksInPath()
-    guard file.path.hasPrefix(tempDirectory),
+    // path_provider's getTemporaryDirectory uses Library/Caches on iOS.
+    let directories = [URL(fileURLWithPath: NSTemporaryDirectory())]
+      + FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+    guard directories.contains(where: { directory in
+            let path = directory.standardizedFileURL.resolvingSymlinksInPath().path
+            return file.path.hasPrefix(path.hasSuffix("/") ? path : path + "/")
+          }),
+          (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
           let url = URL(string: target.iosUrl),
           UIApplication.shared.canOpenURL(url),
           let data = try? Data(contentsOf: file)

@@ -13,6 +13,8 @@ internal class PrismShareHostApiImpl(private val activity: Activity) : PrismShar
         activity.packageManager.resolveActivity(storyIntent(target).setType(target.mimeType), 0) != null
 
     override fun shareInstagramStory(target: InstagramStoryTarget, imagePath: String, callback: (Result<Boolean>) -> Unit) {
+        var copy: File? = null
+        var handedOff = false
         try {
             val cache = activity.cacheDir.canonicalFile
             val source = File(imagePath).canonicalFile
@@ -21,20 +23,36 @@ internal class PrismShareHostApiImpl(private val activity: Activity) : PrismShar
                 return
             }
             val dir = File(cache, "share_cards").apply { mkdirs() }
-            val copy = source.copyTo(File(dir, "story.png"), overwrite = true)
-            val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.wallpaper_crop", copy)
+            val shareCopy = File.createTempFile("story_", ".png", dir)
+            copy = shareCopy
+            try {
+                source.copyTo(shareCopy, overwrite = true)
+            } catch (error: Exception) {
+                shareCopy.delete()
+                throw error
+            }
+            val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.wallpaper_crop", shareCopy)
             val intent = storyIntent(target)
                 .setDataAndType(uri, target.mimeType)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 .putExtra(target.androidAppIdExtra, target.appId)
             if (activity.packageManager.resolveActivity(intent, 0) == null) {
+                shareCopy.delete()
                 callback(Result.success(false))
                 return
             }
             activity.grantUriPermission(target.androidPackage, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            activity.startActivityForResult(intent, 0)
+            try {
+                activity.startActivityForResult(intent, 0)
+            } catch (error: Exception) {
+                activity.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                shareCopy.delete()
+                throw error
+            }
+            handedOff = true
             callback(Result.success(true))
         } catch (error: Exception) {
+            if (!handedOff) copy?.delete()
             callback(Result.success(false))
         }
     }

@@ -81,14 +81,30 @@ class _ShareButtonState extends State<ShareButton> {
     final String? id = widget.id;
     final WallpaperSource source = widget.source;
     final String? url = widget.url;
-    final String thumbUrl = safeWallpaperShareThumbnail(id ?? '', source, widget.thumbUrl);
+    final String originalUrl = url?.trim() ?? '';
+    final String rawThumbUrl = widget.thumbUrl.trim();
+    final String itemId = id ?? '';
+    final bool isBundledStarter = BundledWallpapers.isStarterIdentity(itemId, source);
+    final bool originalThumbnailFallback =
+        !isBundledStarter &&
+        originalUrl.isNotEmpty &&
+        rawThumbUrl == originalUrl &&
+        (source == WallpaperSource.prism || source == WallpaperSource.wallhaven || source == WallpaperSource.pexels);
+    final String thumbUrl = safeWallpaperShareThumbnail(
+      id ?? '',
+      source,
+      originalThumbnailFallback ? '' : widget.thumbUrl,
+    );
     // Link thumbnails have a stricter allowlist than the server-owned display derivative.
     // Never use widget.url here: acquiring an original requires a separate authorization.
     final String imageUrl =
-        source == WallpaperSource.prism && widget.thumbUrl.trim().isNotEmpty && Firebase.apps.isNotEmpty
+        source == WallpaperSource.prism &&
+            rawThumbUrl.isNotEmpty &&
+            !originalThumbnailFallback &&
+            Firebase.apps.isNotEmpty
         ? Uri.https('us-central1-${Firebase.app().options.projectId}.cloudfunctions.net', '/wallpaperPreview', {
             'id': id ?? '',
-            'thumb': widget.thumbUrl.trim(),
+            'thumb': rawThumbUrl,
           }).toString()
         : thumbUrl.trim();
     final String? contextLine = widget.contextLine;
@@ -103,8 +119,6 @@ class _ShareButtonState extends State<ShareButton> {
     });
 
     try {
-      final String itemId = id ?? '';
-      final bool isBundledStarter = BundledWallpapers.isStarterIdentity(itemId, source);
       final AppLocalizations l10n = context.l10n;
       final String canonicalLink = isBundledStarter
           ? l10n.coreShareWallpaperGeneric

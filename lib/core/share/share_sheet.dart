@@ -99,6 +99,7 @@ class ShareSheet extends StatefulWidget {
 class _ShareSheetState extends State<ShareSheet> {
   final PageController _pages = PageController(viewportFraction: 0.62);
   final Map<ShareCardFormat, Future<File>> _renders = <ShareCardFormat, Future<File>>{};
+  final Set<ShareCardFormat> _failedRenders = <ShareCardFormat>{};
   ShareCardFormat _format = ShareCardFormat.values.first;
   bool _instagram = false;
   ShareTargetValue? _busy;
@@ -122,17 +123,29 @@ class _ShareSheetState extends State<ShareSheet> {
   @override
   void dispose() {
     _pages.dispose();
+    if (_busy == null) _deleteRenders();
+    super.dispose();
+  }
+
+  void _deleteRenders() {
     for (final Future<File> render in _renders.values) {
       unawaited(
         render.then((File file) => file.delete()).then<void>((_) {}, onError: (Object error, StackTrace stackTrace) {}),
       );
     }
-    super.dispose();
   }
 
-  /// Renders each format at most once while the sheet is open.
-  Future<File> _render(ShareCardFormat format) =>
-      _renders.putIfAbsent(format, () => widget.services.render(format, widget.content));
+  /// Keeps successful renders, but lets an explicit target action retry a failed preview.
+  Future<File> _render(ShareCardFormat format, {bool retry = false}) {
+    if (retry && _failedRenders.remove(format)) _renders.remove(format);
+    return _renders.putIfAbsent(
+      format,
+      () => widget.services.render(format, widget.content).onError((Object error, StackTrace stackTrace) {
+        _failedRenders.add(format);
+        Error.throwWithStackTrace(error, stackTrace);
+      }),
+    );
+  }
 
   String get _text => context.l10n.coreShareCardClipboard(widget.content.link);
 
@@ -161,27 +174,40 @@ class _ShareSheetState extends State<ShareSheet> {
     try {
       done = await action();
     } finally {
-      if (mounted) setState(() => _busy = null);
+      if (mounted) {
+        setState(() => _busy = null);
+      } else {
+        _deleteRenders();
+      }
     }
     if (done && mounted) Navigator.of(context).maybePop();
   }
 
   Future<bool> _copyLink() async {
     final AppLocalizations l10n = context.l10n;
-    await widget.services.copyText(widget.content.link);
-    _track(ShareTargetValue.copyLink, EventResultValue.success);
-    toasts.success(l10n.coreShareLinkCopied);
-    return true;
+    try {
+      await widget.services.copyText(widget.content.link);
+      _track(ShareTargetValue.copyLink, EventResultValue.success, format: ShareFormatValue.text);
+      if (mounted) toasts.success(l10n.coreShareLinkCopied);
+      return true;
+    } catch (error, stackTrace) {
+      logger.w('Share link copy failed', error: error, stackTrace: stackTrace);
+      _track(ShareTargetValue.copyLink, EventResultValue.failure, format: ShareFormatValue.text);
+      if (mounted) toasts.error(l10n.coreWallpaperLinkCopyFailed);
+      return false;
+    }
   }
 
   Future<bool> _saveImage() async {
     final ShareCardFormat format = _format;
     final AppLocalizations l10n = context.l10n;
     try {
-      final OperationResult result = await widget.services.saveImage(await _render(format));
+      final File file = await _render(format, retry: true);
+      if (!mounted) return false;
+      final OperationResult result = await widget.services.saveImage(file);
       if (result.success) {
         _track(ShareTargetValue.saveImage, EventResultValue.success, format: format.analytics);
-        toasts.success(l10n.coreShareImageSaved);
+        if (mounted) toasts.success(l10n.coreShareImageSaved);
         return true;
       }
       _track(ShareTargetValue.saveImage, EventResultValue.failure, format: format.analytics);
@@ -194,7 +220,7 @@ class _ShareSheetState extends State<ShareSheet> {
     } catch (error, stackTrace) {
       logger.w('Share card save failed', error: error, stackTrace: stackTrace);
       _track(ShareTargetValue.saveImage, EventResultValue.failure, format: format.analytics);
-      toasts.error(l10n.coreShareImageFailed);
+      if (mounted) toasts.error(l10n.coreShareImageFailed);
     }
     return false;
   }
@@ -204,7 +230,9 @@ class _ShareSheetState extends State<ShareSheet> {
     final AppLocalizations l10n = context.l10n;
     bool opened = false;
     try {
-      opened = await widget.services.shareToInstagram((await _render(format)).path);
+      final File file = await _render(format, retry: true);
+      if (!mounted) return false;
+      opened = await widget.services.shareToInstagram(file.path);
     } catch (error, stackTrace) {
       logger.w('Instagram story share failed', error: error, stackTrace: stackTrace);
     }
@@ -213,7 +241,7 @@ class _ShareSheetState extends State<ShareSheet> {
       opened ? EventResultValue.success : EventResultValue.failure,
       format: format.analytics,
     );
-    if (!opened) toasts.error(l10n.coreShareInstagramFailed);
+    if (!opened && mounted) toasts.error(l10n.coreShareInstagramFailed);
     return opened;
   }
 
@@ -223,15 +251,25 @@ class _ShareSheetState extends State<ShareSheet> {
     final String text = _text;
     File? file;
     try {
-      file = await _render(format);
+      file = await _render(format, retry: true);
     } catch (error, stackTrace) {
       logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
     }
     if (!mounted) return false;
     try {
-      final ShareResult sent = file == null
-          ? await widget.services.shareText(text: text, context: context)
-          : await widget.services.shareFile(text: text, file: file, context: context);
+      ShareResult sent;
+      if (file == null) {
+        sent = await widget.services.shareText(text: text, context: context);
+      } else {
+        try {
+          sent = await widget.services.shareFile(text: text, file: file, context: context);
+        } catch (error, stackTrace) {
+          logger.w('Share card send failed; sharing text', error: error, stackTrace: stackTrace);
+          if (!mounted) rethrow;
+          file = null;
+          sent = await widget.services.shareText(text: text, context: context);
+        }
+      }
       final bool dismissed = sent.status == ShareResultStatus.dismissed;
       _track(
         ShareTargetValue.more,
@@ -241,7 +279,11 @@ class _ShareSheetState extends State<ShareSheet> {
       return !dismissed;
     } catch (error, stackTrace) {
       logger.w('System share failed', error: error, stackTrace: stackTrace);
-      _track(ShareTargetValue.more, EventResultValue.failure, format: file == null ? ShareFormatValue.text : null);
+      _track(
+        ShareTargetValue.more,
+        EventResultValue.failure,
+        format: file == null ? ShareFormatValue.text : format.analytics,
+      );
       if (mounted) toasts.error(context.l10n.coreWallpaperShareRetryFailed);
       return false;
     }
@@ -464,6 +506,7 @@ class _ShareTarget extends StatelessWidget {
         button: true,
         label: label,
         excludeSemantics: true,
+        onTap: onTap,
         child: PressScale(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
