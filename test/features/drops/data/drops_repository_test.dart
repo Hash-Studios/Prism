@@ -56,7 +56,15 @@ Map<String, dynamic> _doc({required int startsAt, required int endsAt}) => <Stri
   'pricePack': 150,
   'count': 2,
   'walls': <Map<String, Object?>>[
-    <String, Object?>{'id': 'A', 'title': 'One', 'thumb': 't1', 'resolution': '1x1', 'by': 'Ana', 'seriesId': 's'},
+    <String, Object?>{
+      'id': 'A',
+      'title': 'One',
+      'thumb': 't1',
+      'resolution': '1x1',
+      'by': 'Ana',
+      'seriesId': 's',
+      'creatorUid': 'uid-ana',
+    },
     <String, Object?>{'id': '', 'title': 'No id'},
     <String, Object?>{'id': 'B', 'title': 'Two', 'thumb': 't2'},
   ],
@@ -121,6 +129,9 @@ void main() {
       expect((drop.priceWall, drop.pricePack, drop.count), (30, 150, 2));
       expect(drop.walls.map((w) => w.id), <String>['A', 'B']);
       expect(drop.walls.first.by, 'Ana');
+      expect(drop.walls.first.creatorUid, 'uid-ana');
+      // Drops planned before the snapshot copied creatorUid hold only Studio walls.
+      expect(drop.walls.last.creatorUid, 'prism-studio');
     });
 
     test('is null when the next Drop has not started yet', () async {
@@ -165,7 +176,9 @@ void main() {
       store: DurableJsonStore('drops', directory: directory),
       readTimeout: const Duration(milliseconds: 10),
     );
-    expect((await restarted.fetchLive(now)).data!.weekKey, '2026-W42');
+    final DropEntity savedDrop = (await restarted.fetchLive(now)).data!;
+    expect(savedDrop.weekKey, '2026-W42');
+    expect(savedDrop.walls.first.creatorUid, 'uid-ana');
 
     final FakeFirestoreClient empty = _MetadataFirestoreClient();
     final DropsRepositoryImpl authoritative = DropsRepositoryImpl(
@@ -175,6 +188,36 @@ void main() {
     expect((await authoritative.fetchLive(now)).data, isNull);
     empty.queryError = FirestoreError(code: 'unavailable', message: 'offline');
     expect((await authoritative.fetchLive(now)).isFailure, isTrue);
+  });
+
+  test('reads legacy and blank creator UIDs from saved Drops as Prism Studio', () async {
+    final DurableJsonStore store = DurableJsonStore('drops', directory: directory);
+    await store.write('recent', <String, Object?>{
+      'drops': <Object?>[
+        <String, Object?>{
+          'weekKey': '2026-W42',
+          'title': 'Autumn',
+          'startsAt': ms - 1000,
+          'endsAt': ms + 5000,
+          'walls': <Object?>[
+            <String, Object?>{'id': 'legacy'},
+            <String, Object?>{'id': 'blank', 'creatorUid': ''},
+            <String, Object?>{'id': 'whitespace', 'creatorUid': '   '},
+          ],
+        },
+      ],
+    });
+    final FakeFirestoreClient offline = _MetadataFirestoreClient()
+      ..queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final DropsRepositoryImpl restarted = DropsRepositoryImpl(offline, store: store);
+
+    final DropEntity? savedDrop = (await restarted.fetchLive(now)).data;
+
+    expect(savedDrop!.walls.map((DropWall wall) => wall.creatorUid), <String>[
+      'prism-studio',
+      'prism-studio',
+      'prism-studio',
+    ]);
   });
 
   test('skips malformed saved Drops and persists a successful server result', () async {

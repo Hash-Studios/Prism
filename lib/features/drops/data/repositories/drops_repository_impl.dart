@@ -215,6 +215,7 @@ class DropsRepositoryImpl implements DropsRepository {
             'resolution': wall.resolution,
             'by': wall.by,
             'seriesId': wall.seriesId,
+            'creatorUid': wall.creatorUid,
           },
         )
         .toList(growable: false),

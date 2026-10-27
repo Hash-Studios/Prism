@@ -31,11 +31,18 @@ DropEntity? dropFromMap(Map<String, dynamic> data, String weekKey) {
   );
 }
 
-DropWall _wallFromMap(Map<String, dynamic> m) => DropWall(
-  id: parseString(m['id']),
-  title: parseString(m['title']),
-  thumb: parseString(m['thumb']),
-  resolution: parseString(m['resolution']),
-  by: parseString(m['by']),
-  seriesId: parseString(m['seriesId']),
-);
+/// The planner puts only Prism Studio walls in a Drop. Drops planned before it copied `creatorUid` fall back to Studio.
+const String _studioCreatorUid = 'prism-studio';
+
+DropWall _wallFromMap(Map<String, dynamic> m) {
+  final String creatorUid = parseString(m['creatorUid']).trim();
+  return DropWall(
+    id: parseString(m['id']),
+    title: parseString(m['title']),
+    thumb: parseString(m['thumb']),
+    resolution: parseString(m['resolution']),
+    by: parseString(m['by']),
+    seriesId: parseString(m['seriesId']),
+    creatorUid: creatorUid.isEmpty ? _studioCreatorUid : creatorUid,
+  );
+}
