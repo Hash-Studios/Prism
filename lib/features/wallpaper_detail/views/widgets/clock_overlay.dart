@@ -59,7 +59,7 @@ class ClockOverlay extends StatefulWidget {
   final Color? tint;
 
   /// Builds the main button for [target] with [label]. On iOS the target is ignored and the label says Save to Photos.
-  /// Null sets [link] with a plain set button on Android and shows no button on iOS.
+  /// Null sets a local [link] file with a plain set button on Android. Otherwise there is no button.
   final Widget Function(WallpaperTarget target, String label)? setAction;
 
   @override
@@ -293,16 +293,19 @@ class _ClockOverlayState extends State<ClockOverlay> {
       WallpaperTarget.home => l10n.wallpaperPreviewSetHome,
       WallpaperTarget.both => l10n.wallpaperPreviewSetBoth,
     };
-    return widget.setAction?.call(target, label) ??
-        SetWallpaperButton(
-          url: widget.link,
-          wallpaperId: widget.wallpaperId,
-          wallpaperSource: widget.file ? WallpaperSource.downloaded : widget.wallpaperSource,
-          thumbnailUrl: widget.thumbnailUrl,
-          entryPoint: 'wallpaper_preview',
-          target: target,
-          label: label,
-        );
+    final setAction = widget.setAction;
+    if (setAction != null) return setAction(target, label);
+    // A linked Prism wall previews its thumbnail, so only a local file is safe to set from here.
+    if (!widget.file) return null;
+    return SetWallpaperButton(
+      url: widget.link,
+      wallpaperId: widget.wallpaperId,
+      wallpaperSource: WallpaperSource.downloaded,
+      thumbnailUrl: widget.thumbnailUrl,
+      entryPoint: 'wallpaper_preview',
+      target: target,
+      label: label,
+    );
   }
 
   @override
@@ -355,16 +358,6 @@ class _ClockOverlayState extends State<ClockOverlay> {
                 child: SafeArea(
                   child: Stack(
                     children: <Widget>[
-                      PositionedDirectional(
-                        top: PrismSpace.xs,
-                        start: PrismSpace.md,
-                        child: PrismIconButton(
-                          icon: Icons.close_rounded,
-                          tooltip: l10n.wallpaperClosePreview,
-                          onImage: true,
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Padding(
@@ -403,19 +396,26 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                 },
                                 onChanged: (mode) => setState(() => _mode = mode),
                               ),
-                              if (action != null) ...<Widget>[
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  PrismIconButton(
+                                    icon: Icons.close_rounded,
+                                    tooltip: l10n.wallpaperClosePreview,
+                                    onImage: true,
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                  if (action != null) ...<Widget>[
+                                    const SizedBox(width: 8),
                                     action,
                                     if (_canSetBoth) ...<Widget>[
                                       const SizedBox(width: 8),
                                       _BothToggle(selected: _both, onChanged: (both) => setState(() => _both = both)),
                                     ],
                                   ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ],
                           ),
                         ),

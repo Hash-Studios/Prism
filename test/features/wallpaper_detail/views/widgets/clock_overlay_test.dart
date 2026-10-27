@@ -1,26 +1,69 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
+import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file/file.dart' as pkg_file;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../../support/fake_app_analytics.dart';
+import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
+
+final String _previewPath = File('assets/images/prism.webp').absolute.path;
+
+class _Client implements WallpaperClient {
+  _Client({this.capabilities = const aw.WallpaperCapabilities()});
+
+  final aw.WallpaperCapabilities capabilities;
+  final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
+
+  @override
+  Future<aw.WallpaperCapabilities> getCapabilities() async => capabilities;
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    requests.add(request);
+    return aw.WallpaperOperationResult(status: aw.WallpaperOperationStatus.applied, requestedTarget: request.target);
+  }
+
+  @override
+  Future<aw.WallpaperOperationResult> prepareVideoWallpaper(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> openLiveWallpaperPreview(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
+      throw UnimplementedError();
+}
 
 Widget _withMedia(BuildContext context, Widget? child, EdgeInsets safeArea, bool reduceMotion, double textScale) {
   return MediaQuery(
@@ -152,6 +195,35 @@ Future<Color> _pixelAt(WidgetTester tester, RenderRepaintBoundary boundary, Offs
   return pixel;
 }
 
+Finder _modePill() => find.ancestor(of: find.text('Lock'), matching: find.byType(PrismGlass));
+
+void _mockSetChannels(WidgetTester tester) {
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  final TestDefaultBinaryMessenger messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(toastChannel, (call) async => true);
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+  addTearDown(() {
+    messenger.setMockMethodCallHandler(toastChannel, null);
+    messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+  });
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 30));
+  });
+}
+
+Future<void> _pumpPreview(WidgetTester tester, {Widget Function(WallpaperTarget target, String label)? setAction}) {
+  return tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: ClockOverlay(link: _previewPath, file: true, setAction: setAction),
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('iOS previews a lock screen without the Android dock', (WidgetTester tester) async {
     await _openPreview(tester);
@@ -163,16 +235,31 @@ void main() {
   testWidgets('Android keeps the launcher preview', (WidgetTester tester) async {
     await _openPreview(tester);
 
-    expect(find.byWidgetPredicate(_isDockIcon), findsOneWidget);
+    expect(find.byKey(previewDockKey), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the preview closes from a labelled button', (WidgetTester tester) async {
     await _openPreview(tester);
 
-    await tester.tap(find.bySemanticsLabel('Close preview'));
+    await tester.tap(find.byTooltip('Close preview'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ClockOverlay), findsNothing);
+  });
+
+  testWidgets('tapping the wallpaper hides the controls and tapping again shows them', (tester) async {
+    await _openPreview(tester);
+    final Finder controls = find.ancestor(of: find.byTooltip('Close preview'), matching: find.byType(AnimatedOpacity));
+
+    await tester.tap(find.bySemanticsLabel('Hide controls'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay), findsOneWidget);
+    expect(tester.widget<AnimatedOpacity>(controls).opacity, 0);
+
+    await tester.tap(find.bySemanticsLabel('Show controls'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay), findsOneWidget);
+    expect(tester.widget<AnimatedOpacity>(controls).opacity, 1);
   });
 
   testWidgets('the preview mode toggle uses localized lock and home labels', (WidgetTester tester) async {
@@ -429,7 +516,7 @@ void main() {
     setUp(() => directory = Directory.systemTemp.createTempSync('clock_overlay_pixels_'));
     tearDown(() => directory.deleteSync(recursive: true));
 
-    Future<Color> centrePixel(WidgetTester tester, {Color? tint}) async {
+    Future<Color> wallPixel(WidgetTester tester, {Color? tint}) async {
       final File file = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFCC3333))))!;
       final GlobalKey boundary = GlobalKey();
       await tester.pumpWidget(
@@ -448,7 +535,7 @@ void main() {
         () => (boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary).toImage(),
       ))!;
       final ByteData data = (await tester.runAsync(() async => (await shot.toByteData())!))!;
-      final int offset = ((shot.height ~/ 2) * shot.width + shot.width ~/ 2) * 4;
+      final int offset = ((shot.height ~/ 2) * shot.width + 16) * 4;
       final Color pixel = Color.fromARGB(
         255,
         data.getUint8(offset),
@@ -460,10 +547,10 @@ void main() {
     }
 
     testWidgets('a blue tint turns a red wall blue and no tint leaves it red', (tester) async {
-      final Color plain = await centrePixel(tester);
+      final Color plain = await wallPixel(tester);
       expect(plain.r, greaterThan(plain.b));
 
-      final Color tinted = await centrePixel(tester, tint: const Color(0xFF2255EE));
+      final Color tinted = await wallPixel(tester, tint: const Color(0xFF2255EE));
       expect(tinted.b, greaterThan(tinted.r));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
@@ -568,8 +655,7 @@ void main() {
     testWidgets('the Android dock stays above the Lock and Home pill', (tester) async {
       await _openPreview(tester, safeArea: deviceInsets);
 
-      final Finder dock = find.descendant(of: find.byType(HomePreviewLayer), matching: find.byType(Row));
-      expect(tester.getBottomLeft(dock).dy, lessThan(tester.getTopLeft(find.byType(PrismGlass)).dy));
+      expect(tester.getBottomLeft(find.byKey(previewDockKey)).dy, lessThan(tester.getTopLeft(_modePill()).dy));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('the image fills the screen from the top left whatever the safe area', (tester) async {
@@ -580,8 +666,10 @@ void main() {
   });
 
   group('Lock and Home toggle', () {
-    Finder indicator() =>
-        find.descendant(of: find.byType(AnimatedPositionedDirectional), matching: find.byType(DecoratedBox));
+    Finder indicator() => find.descendant(
+      of: find.descendant(of: _modePill(), matching: find.byType(AnimatedPositionedDirectional)),
+      matching: find.byType(DecoratedBox),
+    );
 
     double layerOpacity(WidgetTester tester, Type layer) => tester
         .widget<FadeTransition>(find.ancestor(of: find.byType(layer), matching: find.byType(FadeTransition)).first)
@@ -593,7 +681,7 @@ void main() {
         .style
         .color!;
 
-    double pillWidth(WidgetTester tester) => tester.getSize(find.byType(PrismGlass)).width;
+    double pillWidth(WidgetTester tester) => tester.getSize(_modePill()).width;
 
     testWidgets('a tap swaps the layer and never closes the preview', (tester) async {
       await _openPreview(tester);
@@ -712,26 +800,28 @@ void main() {
     testWidgets('the glass is a 60 percent scrim with the thin 16 refraction of a small pill', (tester) async {
       await _openPreview(tester);
 
-      final PrismGlass glass = tester.widget<PrismGlass>(find.byType(PrismGlass));
+      final PrismGlass glass = tester.widget<PrismGlass>(_modePill());
 
       expect(glass.thickness, 16);
       expect(glass.glassColor!.a, closeTo(0.6, 0.001));
     });
 
-    testWidgets('the pill is 48 tall, 24 above the bottom safe area, and the whole height taps', (tester) async {
+    testWidgets('the pill is 48 tall, sits 12 above the close row, and the whole height taps', (tester) async {
       await _openPreview(tester, safeArea: const EdgeInsets.only(bottom: 34));
       await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
 
-      expect(tester.getSize(find.byType(PrismGlass)).height, 48);
-      expect(tester.getBottomLeft(find.byType(PrismGlass)).dy, 600 - 34 - 24);
+      expect(tester.getSize(_modePill()).height, 48);
+      final Finder close = find.byTooltip('Close preview');
+      expect(tester.getBottomLeft(close).dy, closeTo(600 - 34 - 16, 2));
+      expect(tester.getTopLeft(close).dy - tester.getBottomLeft(_modePill()).dy, closeTo(12, 2));
 
-      await tester.tapAt(tester.getBottomLeft(find.byType(PrismGlass)) + const Offset(20, -2));
+      await tester.tapAt(tester.getBottomLeft(_modePill()) + const Offset(20, -2));
       await tester.pumpAndSettle();
 
       expect(find.byType(LockPreviewLayer), findsOneWidget);
       expect(find.byType(ClockOverlay), findsOneWidget);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     group('text size', () {
       Future<void> openAt(WidgetTester tester, double textScale) async {
@@ -754,14 +844,14 @@ void main() {
 
         expect(large, greaterThan(normal));
         expect(pillWidth(tester), large);
-        expect(tester.getSize(find.byType(PrismGlass)).height, 48);
+        expect(tester.getSize(_modePill()).height, 48);
         expect(tester.renderObject<RenderParagraph>(find.text('Home')).textScaler.scale(10), 15);
       });
 
       testWidgets('at 2x text both labels sit inside their own half of the pill', (tester) async {
         await openAt(tester, 2);
 
-        final Rect pill = tester.getRect(find.byType(PrismGlass));
+        final Rect pill = tester.getRect(_modePill());
         final Rect lock = tester.getRect(find.text('Lock'));
         final Rect home = tester.getRect(find.text('Home'));
 
@@ -832,7 +922,7 @@ void main() {
       await _settleImages(tester);
       await tester.pumpAndSettle();
 
-      final Rect pill = tester.getRect(find.byType(PrismGlass));
+      final Rect pill = tester.getRect(_modePill());
       final Color pixel = await _pixelAt(
         tester,
         boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary,
@@ -893,6 +983,207 @@ void main() {
 
     testWidgets('follows the tint: the bright wall shown in blue keeps black text', (tester) async {
       expect(await sampledClockColor(tester, const Color(0xFFF2F2F2), tint: const Color(0xFF0000FF)), Colors.black);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
+
+  group('set and style controls', () {
+    late SettingsLocalDataSource settings;
+    late OfflineAssetFixture assets;
+
+    setUp(() async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      AnalyticsRuntime.instance = FakeAppAnalytics();
+      assets = await OfflineAssetFixture.create();
+      assets.install(immediateResolver: true);
+      assets.mapSource(_previewPath, File(_previewPath));
+      aw.AsyncWallpaper.debugSetClient(_Client());
+    });
+
+    tearDown(() async {
+      aw.AsyncWallpaper.debugResetClient();
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+      await assets.dispose();
+      app_state.prismUser = app_constants.createGuestPrismUser();
+    });
+
+    testWidgets('Android without a setAction sets lock, home and both through the button, never the sheet', (
+      tester,
+    ) async {
+      _mockSetChannels(tester);
+      final _Client client = _Client(
+        capabilities: const aw.WallpaperCapabilities(
+          supportsStaticWallpaper: true,
+          supportsHomeWallpaper: true,
+          supportsLockWallpaper: true,
+          supportsBothWallpapers: true,
+        ),
+      );
+      aw.AsyncWallpaper.debugSetClient(client);
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+      expect(find.text('Set on lock screen'), findsOneWidget);
+      await tester.tap(find.text('Set on lock screen'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      expect(client.requests.map((r) => r.target), [aw.WallpaperTarget.lock]);
+      expect(find.byType(SetOptionsPanel), findsNothing);
+
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(find.text('Set on home screen'), findsOneWidget);
+      await tester.tap(find.text('Set on home screen'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      expect(client.requests.map((r) => r.target), [aw.WallpaperTarget.lock, aw.WallpaperTarget.home]);
+      expect(find.byType(SetOptionsPanel), findsNothing);
+
+      await tester.tap(find.text('Both'));
+      await tester.pumpAndSettle();
+      expect(find.text('Set on both screens'), findsOneWidget);
+      await tester.tap(find.text('Set on both screens'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      expect(client.requests.length, 3);
+      expect(client.requests.last.target, aw.WallpaperTarget.both);
+      expect(find.byType(SetOptionsPanel), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Android setAction receives the lock and home target with its label', (tester) async {
+      final List<(WallpaperTarget, String)> calls = <(WallpaperTarget, String)>[];
+      await _pumpPreview(
+        tester,
+        setAction: (target, label) {
+          calls.add((target, label));
+          return Text(label);
+        },
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+      expect(find.text('Set on lock screen'), findsOneWidget);
+      expect(calls.last, (WallpaperTarget.lock, 'Set on lock screen'));
+
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(find.text('Set on home screen'), findsOneWidget);
+      expect(calls.last, (WallpaperTarget.home, 'Set on home screen'));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Android hides the Both toggle when the device cannot set both screens', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(
+          capabilities: const aw.WallpaperCapabilities(
+            supportsStaticWallpaper: true,
+            supportsHomeWallpaper: true,
+            supportsLockWallpaper: true,
+          ),
+        ),
+      );
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Set on home screen'), findsOneWidget);
+      expect(find.text('Both'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('iOS sends the save action to the caller as both, with no set labels or Both toggle', (tester) async {
+      final List<(WallpaperTarget, String)> calls = <(WallpaperTarget, String)>[];
+      await _pumpPreview(
+        tester,
+        setAction: (target, label) {
+          calls.add((target, label));
+          return Text(label);
+        },
+      );
+      await tester.pumpAndSettle();
+
+      expect(calls.last, (WallpaperTarget.both, 'Save to Photos'));
+      expect(find.text('Save to Photos'), findsOneWidget);
+      expect(find.textContaining('Set on'), findsNothing);
+      expect(find.text('Both'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('iOS without a setAction shows no save button and no set labels', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Save to Photos'), findsNothing);
+      expect(find.textContaining('Set on'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the icon style pill is absent in Lock mode and shows Default and Themed on Android', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.text('Themed'), findsOneWidget);
+      expect(find.text('Dark'), findsNothing);
+      expect(find.text('Clear'), findsNothing);
+      expect(find.text('Tinted'), findsNothing);
+
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+      expect(find.text('Default'), findsNothing);
+      expect(find.text('Themed'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('iOS offers Default, Dark, Clear and Tinted in Home mode only', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      expect(find.text('Default'), findsNothing);
+
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.text('Dark'), findsOneWidget);
+      expect(find.text('Clear'), findsOneWidget);
+      expect(find.text('Tinted'), findsOneWidget);
+      expect(find.text('Themed'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('picking Dark on iOS saves it and a new preview starts with Dark', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.dark);
+      expect(settings.get<String>(PersistenceKeys.previewIconStyle, defaultValue: ''), 'dark');
+
+      await tester.pumpWidget(const SizedBox());
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.dark);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a saved style the platform does not offer falls back to standard', (tester) async {
+      await settings.set(PersistenceKeys.previewIconStyle, 'themed');
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.standard);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the tap area says Hide controls, then Show controls after a tap', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Hide controls'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('Hide controls'));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Show controls'), findsOneWidget);
+      handle.dispose();
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }

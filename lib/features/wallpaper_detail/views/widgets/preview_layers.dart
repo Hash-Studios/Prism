@@ -504,7 +504,7 @@ class _CalendarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double unit = size.width / 160;
+    final double unit = size.shortestSide / 160;
     final ShapeBorder shape = RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(size.width * 0.15));
     final (Color? fill, Color text, Color accent) = switch (style) {
       PreviewIconStyle.standard ||

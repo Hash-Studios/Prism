@@ -216,8 +216,7 @@ void main() {
 
       final Rect layer = tester.getRect(find.byType(HomePreviewLayer));
       final double scale = layer.width / 800;
-      final Finder dock = find.descendant(of: find.byType(HomePreviewLayer), matching: find.byType(Row));
-      expect(layer.bottom - tester.getBottomLeft(dock).dy, closeTo((34 + 100) * scale, 0.01));
+      expect(layer.bottom - tester.getBottomLeft(find.byKey(previewDockKey)).dy, closeTo(174 * scale, 0.01));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
