@@ -362,4 +362,52 @@ void main() {
     expect(firestore.writes, isEmpty);
     expect(store.data.containsKey('settings.theme.changed_at'), isFalse);
   });
+
+  test('sync applies an account Material You copy and does not write it back', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{
+        'themePrefs': _accountCopy(
+          lightId: 'kLMaterial You',
+          lightAccent: 0xff111111,
+          darkId: 'kDMaterial You',
+          darkAccent: 0xff222222,
+          changedAt: 1000,
+        ),
+      },
+    };
+
+    await repository.syncWithAccount('u1');
+
+    final ThemePreferences applied = repository.readSync();
+    expect(applied.light.themeId, 'kLMaterial You');
+    expect(applied.light.accentColorValue, 0xff111111);
+    expect(applied.dark.themeId, 'kDMaterial You');
+    expect(applied.dark.accentColorValue, 0xff222222);
+    expect(store.data['settings.theme.changed_at'], 1000);
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('a later dark change keeps the account Material You light theme', () async {
+    app_state.prismUser = profileUser();
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{
+        'themePrefs': _accountCopy(
+          lightId: 'kLMaterial You',
+          lightAccent: 0xff111111,
+          darkId: 'kDMaterial You',
+          darkAccent: 0xff222222,
+          changedAt: 1000,
+        ),
+      },
+    };
+    await repository.syncWithAccount('u1');
+
+    await repository.update(darkThemeId: 'kDAMOLED');
+    await pumpEventQueue();
+
+    expect(firestore.writes.single.op, 'update');
+    final Map<String, Object?> pushed = firestore.writes.single.data!['themePrefs'] as Map<String, Object?>;
+    expect(pushed['lightThemeId'], 'kLMaterial You');
+    expect(pushed['darkThemeId'], 'kDAMOLED');
+  });
 }

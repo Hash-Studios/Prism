@@ -2782,6 +2782,44 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Postingan';
+
+  @override
+  String get coreShareFormatClean => 'Polos';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Salin tautan';
+
+  @override
+  String get coreShareTargetSaveImage => 'Simpan gambar';
+
+  @override
+  String get coreShareTargetMore => 'Lainnya';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'oleh $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Gambar disimpan';
+
+  @override
+  String get coreShareImageFailed => 'Gambar tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram tidak dapat dibuka. Coba lagi.';
+
+  @override
+  String get coreSharePreviewFailed => 'Gambar ini tidak dapat dibuat. Gunakan Lainnya untuk membagikan tautan.';
+
+  @override
   String get coreShareLinkCopied => 'Tautan berbagi disalin!';
 
   @override
@@ -2905,6 +2943,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'Gelap Material';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Zaitun';
@@ -7845,9 +7886,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperClearSearch => 'Hapus pencarian';
 
   @override
-  String get wallpaperClockPreview => 'Pratinjau jam';
-
-  @override
   String get wallpaperClosePreview => 'Tutup pratinjau';
 
   @override
@@ -8435,6 +8473,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Mengerti. Anda akan melihat lebih sedikit wallpaper seperti ini.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Sembunyikan kontrol';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Kedua layar';
 
   @override
@@ -8850,7 +8891,37 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperPreviewHome => 'Layar utama';
 
   @override
+  String get wallpaperPreviewIconClear => 'Bening';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Gelap';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Default';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Gaya ikon';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Bertema';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Berwarna';
+
+  @override
   String get wallpaperPreviewLock => 'Layar kunci';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Pratinjau di layar Anda';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Pasang di kedua layar';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Pasang di layar utama';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Pasang di layar kunci';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9080,6 +9151,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Tampilkan lebih sedikit seperti ini';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Tampilkan kontrol';
 
   @override
   String get wallpaperSignIn => 'Masuk';
@@ -9509,6 +9583,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Gunakan warna aksen ponsel Anda';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You mengambil warna dari wallpaper Anda.';
 
   @override
   String wallpaperViewCount(int count) {

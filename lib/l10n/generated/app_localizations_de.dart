@@ -2798,6 +2798,44 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Beitrag';
+
+  @override
+  String get coreShareFormatClean => 'Schlicht';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Link kopieren';
+
+  @override
+  String get coreShareTargetSaveImage => 'Bild speichern';
+
+  @override
+  String get coreShareTargetMore => 'Mehr';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'von $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Bild gespeichert';
+
+  @override
+  String get coreShareImageFailed => 'Das Bild konnte nicht gespeichert werden. Versuch es erneut.';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram konnte nicht geöffnet werden. Versuch es erneut.';
+
+  @override
+  String get coreSharePreviewFailed => 'Dieses Bild konnte nicht erstellt werden. Über „Mehr“ wird der Link geteilt.';
+
+  @override
   String get coreShareLinkCopied => 'Freigabelink kopiert!';
 
   @override
@@ -2921,6 +2959,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'Material Dunkel';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Olive';
@@ -7917,9 +7958,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperClearSearch => 'Suche leeren';
 
   @override
-  String get wallpaperClockPreview => 'Uhr-Vorschau';
-
-  @override
   String get wallpaperClosePreview => 'Vorschau schließen';
 
   @override
@@ -8517,6 +8555,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'Verstanden. Du wirst weniger Hintergrundbilder dieser Art sehen.';
 
   @override
+  String get wallpaperHidePreviewControls => 'Steuerelemente ausblenden';
+
+  @override
   String get wallpaperHistoryBothScreens => 'Beide Bildschirme';
 
   @override
@@ -8939,7 +8980,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperPreviewHome => 'Startbildschirm';
 
   @override
+  String get wallpaperPreviewIconClear => 'Klar';
+
+  @override
+  String get wallpaperPreviewIconDark => 'Dunkel';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'Standard';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'Symbolstil';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'Themenbasiert';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'Getönt';
+
+  @override
   String get wallpaperPreviewLock => 'Sperrbildschirm';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'Vorschau auf deinem Bildschirm';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'Auf beiden Bildschirmen festlegen';
+
+  @override
+  String get wallpaperPreviewSetHome => 'Auf Startbildschirm festlegen';
+
+  @override
+  String get wallpaperPreviewSetLock => 'Auf Sperrbildschirm festlegen';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9170,6 +9241,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'Weniger davon anzeigen';
+
+  @override
+  String get wallpaperShowPreviewControls => 'Steuerelemente einblenden';
 
   @override
   String get wallpaperSignIn => 'Anmelden';
@@ -9603,6 +9677,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Akzentfarbe deines Smartphones verwenden';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You übernimmt die Farben von deinem Hintergrundbild.';
 
   @override
   String wallpaperViewCount(int count) {

@@ -7,6 +7,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -40,7 +41,6 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
-
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
@@ -72,12 +72,10 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_b
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/l10n/l10n.dart';
-
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -85,7 +83,6 @@ import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-
 import 'package:url_launcher/url_launcher.dart';
 
 @visibleForTesting
@@ -348,6 +345,8 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
+  /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
+  Widget Function(WallpaperTarget target, String label)? _previewAction;
   static const double _sheetHPad = PrismSpace.md;
 
   /// Text and icons in the panel that sit one step below the title.
@@ -662,7 +661,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         PositionedDirectional(
           end: padding.right + _cardInset + centring + _chromePad,
           top: top,
-          child: _chromeButton(icon: JamIcons.clock, tooltip: context.l10n.wallpaperClockPreview, onPressed: onClock),
+          child: _chromeButton(
+            icon: Icons.smartphone_rounded,
+            tooltip: context.l10n.wallpaperPreviewOnScreen,
+            onPressed: onClock,
+          ),
         ),
     ];
   }
@@ -903,6 +906,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         thumbnailUrl: entity.thumbnailUrl,
                         tint: state.tint,
                         spatialMapUrl: spatialOf(entity)?.mapUrl,
+                        setAction: _previewAction,
                       );
                     },
             ),
@@ -1163,7 +1167,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             child: Row(children: swatches),
           ),
         ),
-        if (state.colorChanged && accent != null)
+        if (state.colorChanged && accent != null && _themeTakesAccent(context))
           Padding(
             padding: const EdgeInsetsDirectional.only(start: _sheetHPad, top: PrismSpace.sm),
             child: PrismButton(
@@ -1552,9 +1556,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
   }
 
-  String? _shareContextLine(FeedItemEntity entity) {
-    final String? name = entity.wallpaperCore.authorName?.trim();
-    return name == null || name.isEmpty || name.contains('@') ? null : 'by $name';
+  /// Stored wall colours: Prism palette ids or Wallhaven hex values such as "#663399".
+  List<Color> _sharePalette(FeedItemEntity entity) {
+    final List<String> stored = entity.when(
+      prism: (_, wall) => wall.colors ?? const <String>[],
+      wallhaven: (_, wall) => wall.colors ?? const <String>[],
+      pexels: (_, _) => const <String>[],
+    );
+    return <Color>[
+      for (final String value in stored)
+        if (paletteColorById(value)?.color ?? _hexColor(value) case final Color color) color,
+    ];
+  }
+
+  static Color? _hexColor(String value) {
+    final String hex = value.replaceFirst('#', '');
+    final int? rgb = hex.length == 6 ? int.tryParse(hex, radix: 16) : null;
+    return rgb == null ? null : Color(0xFF000000 | rgb);
   }
 
   static String _tintKey(Color tint) => 'tint-${tint.rgbHex}';
@@ -1625,6 +1643,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       return label == null ? button : PressScale(child: button);
     }
 
+    Widget setButton({required String label, WallpaperTarget? target, String entryPoint = 'wallpaper_detail'}) =>
+        PressScale(
+          child: SetWallpaperButton(
+            label: label,
+            target: target,
+            url: source,
+            wallpaperId: entity.id,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+            prepareSource: prepareSource,
+            prepareAuthorized: prepareAuthorized,
+            thumbnailUrl: entity.thumbnailUrl,
+            promptNotificationPermissionOnSuccess: true,
+            entryPoint: entryPoint,
+            requestId: widget.requestId,
+            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+            onMatchAccent: _matchAccentAction(context, state),
+            onSet: () => _onWallpaperSet(entity),
+          ),
+        );
+    _previewAction = (target, label) => hideSetWallpaperUi
+        ? downloadButton(label: label)
+        : setButton(label: label, target: target, entryPoint: 'wallpaper_preview');
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: context.l10n.wallpaperSaveToPhotos,
@@ -1632,23 +1672,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           )
         : WallpaperBarAction(
             label: context.l10n.wallpaperSetAsWallpaper,
-            child: PressScale(
-              child: SetWallpaperButton(
-                label: context.l10n.wallpaperSet,
-                url: source,
-                wallpaperId: entity.id,
-                wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-                prepareSource: prepareSource,
-                prepareAuthorized: prepareAuthorized,
-                thumbnailUrl: entity.thumbnailUrl,
-                promptNotificationPermissionOnSuccess: true,
-                entryPoint: 'wallpaper_detail',
-                requestId: widget.requestId,
-                notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-                onMatchAccent: _matchAccentAction(context, state),
-                onSet: () => _onWallpaperSet(entity),
-              ),
-            ),
+            child: setButton(label: context.l10n.wallpaperSet),
           );
     final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
     final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
@@ -1701,7 +1725,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             source: entity.source,
             url: entity.fullUrl,
             thumbUrl: entity.thumbnailUrl,
-            contextLine: _shareContextLine(entity),
+            creator: entity.wallpaperCore.authorName,
+            palette: _sharePalette(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
@@ -1766,7 +1791,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Color? color = state.colors?.firstOrNull;
     if (color == null) return null;
     final ThemeBloc? themeBloc = _themeBloc(context);
-    if (themeBloc == null) return null;
+    if (themeBloc == null || !_themeTakesAccent(context)) return null;
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return () {
       themeBloc.add(
@@ -1777,6 +1802,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       unawaited(analytics.track(const AccentMatchedFromWallEvent()));
     };
   }
+
+  /// False while the active theme brings its own accent (Material You), so accent actions do nothing there.
+  bool _themeTakesAccent(BuildContext context) =>
+      _themeBloc(context)?.state.themeOption(Theme.of(context).brightness).usesAccent ?? true;
 
   ThemeBloc? _themeBloc(BuildContext context) {
     try {

@@ -437,7 +437,7 @@ void main() {
     expect(card.width, closeTo(card.height * 0.85, 0.01));
     expect(card.center.dx, closeTo(844 / 2, 0.01));
     expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(4, 4));
-    expect(tester.getRect(find.byTooltip('Clock preview')).topRight, card.topRight + const Offset(-4, 4));
+    expect(tester.getRect(find.byTooltip('Preview on your screen')).topRight, card.topRight + const Offset(-4, 4));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {

@@ -307,6 +307,22 @@ void main() {
       expect(route.args!.weekKey, '2026-W41');
     });
 
+    testWidgets('tapping a past vault wall passes its creator uid', (tester) async {
+      final old = dropEntity(
+        weekKey: '2026-W41',
+        startedAgo: const Duration(days: 9),
+        endsIn: const Duration(days: -2),
+      );
+      await pump(tester, loaded(null, past: <DropEntity>[old], unlocked: {'A': ownedA}), const DropsPage());
+
+      await tester.tap(find.byType(PrismWallTile).first);
+      await tester.pump();
+
+      final route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      final entity = route.args!.entity! as PrismFeedItem;
+      expect(entity.wallpaper.core.authorUid, 'uid-A');
+    });
+
     testWidgets('a failed load offers Try again', (tester) async {
       await pump(tester, DropsState(status: LoadStatus.failure, now: DateTime.now()), const DropsPage());
 
@@ -327,6 +343,7 @@ void main() {
       expect(entity.id, 'A');
       expect(entity.fullUrl, 'https://full.test/A.jpg');
       expect(entity.thumbnailUrl, 'https://example.test/A.jpg');
+      expect(entity.wallpaper.core.authorUid, 'uid-A');
     });
 
     testWidgets('tapping a locked tile hands the wall to the preview', (tester) async {

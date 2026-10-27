@@ -2793,6 +2793,44 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'स्टोरी';
+
+  @override
+  String get coreShareFormatPost => 'पोस्ट';
+
+  @override
+  String get coreShareFormatClean => 'सादा';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'लिंक कॉपी करें';
+
+  @override
+  String get coreShareTargetSaveImage => 'इमेज सेव करें';
+
+  @override
+  String get coreShareTargetMore => 'और';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return '$creator द्वारा';
+  }
+
+  @override
+  String get coreShareImageSaved => 'इमेज सेव हो गई';
+
+  @override
+  String get coreShareImageFailed => 'इमेज सेव नहीं हो सकी। फिर से कोशिश करें।';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram नहीं खुल सका। फिर से कोशिश करें।';
+
+  @override
+  String get coreSharePreviewFailed => 'यह इमेज नहीं बन सकी। इसके बजाय “और” से लिंक शेयर करें।';
+
+  @override
   String get coreShareLinkCopied => 'शेयर करने का लिंक कॉपी हो गया!';
 
   @override
@@ -2915,6 +2953,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'मटीरियल डार्क';
+
+  @override
+  String get coreThemeMaterialYou => 'मटीरियल यू';
 
   @override
   String get coreThemeOlive => 'ऑलिव';
@@ -7943,9 +7984,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperClearSearch => 'खोज मिटाएँ';
 
   @override
-  String get wallpaperClockPreview => 'घड़ी का पूर्वावलोकन';
-
-  @override
   String get wallpaperClosePreview => 'पूर्वावलोकन बंद करें';
 
   @override
@@ -8538,6 +8576,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperGotItFewerLikeThis => 'ठीक है। अब ऐसे कम वॉलपेपर दिखेंगे।';
 
   @override
+  String get wallpaperHidePreviewControls => 'नियंत्रण छिपाएँ';
+
+  @override
   String get wallpaperHistoryBothScreens => 'दोनों स्क्रीन';
 
   @override
@@ -8949,7 +8990,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperPreviewHome => 'होम';
 
   @override
+  String get wallpaperPreviewIconClear => 'पारदर्शी';
+
+  @override
+  String get wallpaperPreviewIconDark => 'डार्क';
+
+  @override
+  String get wallpaperPreviewIconDefault => 'डिफ़ॉल्ट';
+
+  @override
+  String get wallpaperPreviewIconStyle => 'आइकन शैली';
+
+  @override
+  String get wallpaperPreviewIconThemed => 'थीम वाले';
+
+  @override
+  String get wallpaperPreviewIconTinted => 'टिंटेड';
+
+  @override
   String get wallpaperPreviewLock => 'लॉक';
+
+  @override
+  String get wallpaperPreviewOnScreen => 'आपकी स्क्रीन पर पूर्वावलोकन';
+
+  @override
+  String get wallpaperPreviewSetBoth => 'दोनों स्क्रीन पर लगाएँ';
+
+  @override
+  String get wallpaperPreviewSetHome => 'होम स्क्रीन पर लगाएँ';
+
+  @override
+  String get wallpaperPreviewSetLock => 'लॉक स्क्रीन पर लगाएँ';
 
   @override
   String wallpaperPreviewUnlock24Hours(int cost) {
@@ -9179,6 +9250,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperShowLessLikeThis => 'ऐसे कम दिखाएं';
+
+  @override
+  String get wallpaperShowPreviewControls => 'नियंत्रण दिखाएँ';
 
   @override
   String get wallpaperSignIn => 'साइन इन करें';
@@ -9607,6 +9681,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'अपने फ़ोन का ऐक्सेंट रंग इस्तेमाल करें';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'मटीरियल यू आपके वॉलपेपर से रंग लेता है।';
 
   @override
   String wallpaperViewCount(int count) {

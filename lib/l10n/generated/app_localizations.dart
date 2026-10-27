@@ -4851,6 +4851,78 @@ abstract class AppLocalizations {
   /// **'🔥Check this out ➜ {link}'**
   String coreShareCardClipboard(String link);
 
+  /// No description provided for @coreShareFormatStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Story'**
+  String get coreShareFormatStory;
+
+  /// No description provided for @coreShareFormatPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get coreShareFormatPost;
+
+  /// No description provided for @coreShareFormatClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get coreShareFormatClean;
+
+  /// No description provided for @coreShareTargetInstagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram'**
+  String get coreShareTargetInstagram;
+
+  /// No description provided for @coreShareTargetCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get coreShareTargetCopyLink;
+
+  /// No description provided for @coreShareTargetSaveImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Save image'**
+  String get coreShareTargetSaveImage;
+
+  /// No description provided for @coreShareTargetMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get coreShareTargetMore;
+
+  /// Byline on a shared wallpaper image. creator is a handle such as @maya.
+  ///
+  /// In en, this message translates to:
+  /// **'by {creator}'**
+  String coreShareCardBy(String creator);
+
+  /// No description provided for @coreShareImageSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Image saved'**
+  String get coreShareImageSaved;
+
+  /// No description provided for @coreShareImageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the image. Try again.'**
+  String get coreShareImageFailed;
+
+  /// No description provided for @coreShareInstagramFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open Instagram. Try again.'**
+  String get coreShareInstagramFailed;
+
+  /// No description provided for @coreSharePreviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make this image. More shares the link instead.'**
+  String get coreSharePreviewFailed;
+
   /// No description provided for @coreShareLinkCopied.
   ///
   /// In en, this message translates to:
@@ -5048,6 +5120,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Material Dark'**
   String get coreThemeMaterialDark;
+
+  /// No description provided for @coreThemeMaterialYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You'**
+  String get coreThemeMaterialYou;
 
   /// No description provided for @coreThemeOlive.
   ///
@@ -12145,12 +12223,6 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get wallpaperClearSearch;
 
-  /// Wallpaper interface text: wallpaperClockPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Clock preview'**
-  String get wallpaperClockPreview;
-
   /// Accessibility label for closing the wallpaper clock preview.
   ///
   /// In en, this message translates to:
@@ -13111,6 +13183,12 @@ abstract class AppLocalizations {
   /// **'Got it. You\'ll see fewer like this.'**
   String get wallpaperGotItFewerLikeThis;
 
+  /// Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide controls'**
+  String get wallpaperHidePreviewControls;
+
   /// Target label when a wallpaper is set on both screens.
   ///
   /// In en, this message translates to:
@@ -13861,11 +13939,71 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get wallpaperPreviewHome;
 
+  /// Home screen preview icon style: clear glass app icons (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get wallpaperPreviewIconClear;
+
+  /// Home screen preview icon style: dark app icons (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get wallpaperPreviewIconDark;
+
+  /// Home screen preview icon style: normal colourful app icons.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get wallpaperPreviewIconDefault;
+
+  /// Accessibility label of the picker that changes how app icons look in the home screen preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon style'**
+  String get wallpaperPreviewIconStyle;
+
+  /// Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You).
+  ///
+  /// In en, this message translates to:
+  /// **'Themed'**
+  String get wallpaperPreviewIconThemed;
+
+  /// Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Tinted'**
+  String get wallpaperPreviewIconTinted;
+
   /// Preview mode option for the lock screen.
   ///
   /// In en, this message translates to:
   /// **'Lock'**
   String get wallpaperPreviewLock;
+
+  /// Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview on your screen'**
+  String get wallpaperPreviewOnScreen;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the lock and home screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on both screens'**
+  String get wallpaperPreviewSetBoth;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on home screen'**
+  String get wallpaperPreviewSetHome;
+
+  /// Button in the wallpaper preview that sets the wallpaper on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on lock screen'**
+  String get wallpaperPreviewSetLock;
 
   /// Action to spend coins on a premium collection preview.
   ///
@@ -14238,6 +14376,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show less like this'**
   String get wallpaperShowLessLikeThis;
+
+  /// Accessibility label of the wallpaper preview background: a tap shows the buttons again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show controls'**
+  String get wallpaperShowPreviewControls;
 
   /// Action to sign in to Prism.
   ///
@@ -14952,6 +15096,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use the accent colour of your phone'**
   String get wallpaperUsePhoneAccent;
+
+  /// No description provided for @wallpaperThemeMaterialYouNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You takes its colours from your wallpaper.'**
+  String get wallpaperThemeMaterialYouNote;
 
   /// Wallpaper interface text: wallpaperViewCount.
   ///

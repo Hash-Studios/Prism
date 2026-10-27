@@ -43,6 +43,7 @@ export interface DropWall {
   resolution: string;
   by: string;
   seriesId: string;
+  creatorUid: string;
 }
 
 export interface DropDoc {
@@ -76,6 +77,7 @@ export function snapshotWall(doc: {
     resolution: str(data.resolution),
     by: str(data.by),
     seriesId: str(data.seriesId),
+    creatorUid: str(data.creatorUid),
   };
 }
 

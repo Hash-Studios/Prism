@@ -27,6 +27,10 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
+    <queries>
+        <package android:name="com.instagram.android" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:extractNativeLibs="false"

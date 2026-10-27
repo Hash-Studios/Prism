@@ -7,6 +7,7 @@ import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
 import com.hash.prism.pigeon.PrismAppIconHostApi
+import com.hash.prism.pigeon.PrismShareHostApi
 import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -87,6 +88,7 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         PrismAppIconHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, PrismAppIconHostApiImpl(applicationContext))
+        PrismShareHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, PrismShareHostApiImpl(this))
         val quickSettings = PrismQuickSettings(this)
         quickSettingsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/quick_settings").apply {
             setMethodCallHandler(quickSettings::handle)
@@ -128,6 +130,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         PrismAppIconHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, null)
+        PrismShareHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, null)
         hapticsChannel?.setMethodCallHandler(null)
         hapticsChannel = null
         quickSettingsChannel?.setMethodCallHandler(null)

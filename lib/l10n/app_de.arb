@@ -2652,6 +2652,26 @@
     },
     "description": "Text shared with a wallpaper image card."
   },
+  "coreShareFormatStory": "Story",
+  "coreShareFormatPost": "Beitrag",
+  "coreShareFormatClean": "Schlicht",
+  "coreShareTargetInstagram": "Instagram",
+  "coreShareTargetCopyLink": "Link kopieren",
+  "coreShareTargetSaveImage": "Bild speichern",
+  "coreShareTargetMore": "Mehr",
+  "coreShareCardBy": "von {creator}",
+  "@coreShareCardBy": {
+    "description": "Byline on a shared wallpaper image. creator is a handle such as @maya.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "coreShareImageSaved": "Bild gespeichert",
+  "coreShareImageFailed": "Das Bild konnte nicht gespeichert werden. Versuch es erneut.",
+  "coreShareInstagramFailed": "Instagram konnte nicht geöffnet werden. Versuch es erneut.",
+  "coreSharePreviewFailed": "Dieses Bild konnte nicht erstellt werden. Über „Mehr“ wird der Link geteilt.",
   "coreShareLinkCopied": "Freigabelink kopiert!",
   "coreShareProfileClipboard": "Sieh dir mein Profil auf Prism an ➜ {link}",
   "@coreShareProfileClipboard": {
@@ -2768,6 +2788,7 @@
   "coreThemeJungle": "Dschungel",
   "coreThemeLocked": "Gesperrt",
   "coreThemeMaterialDark": "Material Dunkel",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pfeffer",
   "coreThemeRose": "Rose",
@@ -6782,10 +6803,6 @@
   "@wallpaperClearSearch": {
     "description": "Accessibility label for clearing the favourites search."
   },
-  "wallpaperClockPreview": "Uhr-Vorschau",
-  "@wallpaperClockPreview": {
-    "description": "Wallpaper interface text: wallpaperClockPreview."
-  },
   "wallpaperClosePreview": "Vorschau schließen",
   "@wallpaperClosePreview": {
     "description": "Accessibility label for closing the wallpaper clock preview."
@@ -7513,6 +7530,10 @@
   "@wallpaperGotItFewerLikeThis": {
     "description": "Confirmation after reducing similar wallpaper recommendations."
   },
+  "wallpaperHidePreviewControls": "Steuerelemente ausblenden",
+  "@wallpaperHidePreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+  },
   "wallpaperHistoryBothScreens": "Beide Bildschirme",
   "@wallpaperHistoryBothScreens": {
     "description": "Target label when a wallpaper is set on both screens."
@@ -8097,9 +8118,49 @@
   "@wallpaperPreviewHome": {
     "description": "Preview mode option for the home screen."
   },
+  "wallpaperPreviewIconClear": "Klar",
+  "@wallpaperPreviewIconClear": {
+    "description": "Home screen preview icon style: clear glass app icons (iOS)."
+  },
+  "wallpaperPreviewIconDark": "Dunkel",
+  "@wallpaperPreviewIconDark": {
+    "description": "Home screen preview icon style: dark app icons (iOS)."
+  },
+  "wallpaperPreviewIconDefault": "Standard",
+  "@wallpaperPreviewIconDefault": {
+    "description": "Home screen preview icon style: normal colourful app icons."
+  },
+  "wallpaperPreviewIconStyle": "Symbolstil",
+  "@wallpaperPreviewIconStyle": {
+    "description": "Accessibility label of the picker that changes how app icons look in the home screen preview."
+  },
+  "wallpaperPreviewIconThemed": "Themenbasiert",
+  "@wallpaperPreviewIconThemed": {
+    "description": "Home screen preview icon style: Android themed icons coloured from the wallpaper (Material You)."
+  },
+  "wallpaperPreviewIconTinted": "Getönt",
+  "@wallpaperPreviewIconTinted": {
+    "description": "Home screen preview icon style: one-colour app icons tinted from the wallpaper (iOS)."
+  },
   "wallpaperPreviewLock": "Sperrbildschirm",
   "@wallpaperPreviewLock": {
     "description": "Preview mode option for the lock screen."
+  },
+  "wallpaperPreviewOnScreen": "Vorschau auf deinem Bildschirm",
+  "@wallpaperPreviewOnScreen": {
+    "description": "Tooltip for the button that opens a full-screen preview of the wallpaper on a mock phone lock and home screen."
+  },
+  "wallpaperPreviewSetBoth": "Auf beiden Bildschirmen festlegen",
+  "@wallpaperPreviewSetBoth": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock and home screens."
+  },
+  "wallpaperPreviewSetHome": "Auf Startbildschirm festlegen",
+  "@wallpaperPreviewSetHome": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the home screen."
+  },
+  "wallpaperPreviewSetLock": "Auf Sperrbildschirm festlegen",
+  "@wallpaperPreviewSetLock": {
+    "description": "Button in the wallpaper preview that sets the wallpaper on the lock screen."
   },
   "wallpaperPreviewUnlock24Hours": "Für 24 Stunden freischalten (−{cost})",
   "@wallpaperPreviewUnlock24Hours": {
@@ -8386,6 +8447,10 @@
   "wallpaperShowLessLikeThis": "Weniger davon anzeigen",
   "@wallpaperShowLessLikeThis": {
     "description": "Wallpaper menu action to reduce similar recommendations."
+  },
+  "wallpaperShowPreviewControls": "Steuerelemente einblenden",
+  "@wallpaperShowPreviewControls": {
+    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
   },
   "wallpaperSignIn": "Anmelden",
   "@wallpaperSignIn": {
@@ -8957,6 +9022,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You übernimmt die Farben von deinem Hintergrundbild.",
   "wallpaperViewCount": "{count, plural, one{1 Aufruf} other{{count} Aufrufe}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

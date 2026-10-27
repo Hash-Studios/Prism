@@ -138,14 +138,14 @@ void main() {
     );
     expect(clip.borderRadius, const BorderRadius.all(Radius.circular(20)));
     final back = tester.getRect(find.byTooltip('Back'));
-    final clock = tester.getRect(find.byTooltip('Clock preview'));
+    final clock = tester.getRect(find.byTooltip('Preview on your screen'));
     expect(back, Rect.fromLTWH(card.left + 4, card.top + 4, 44, 44));
     expect(clock, Rect.fromLTWH(card.right - 4 - 44, card.top + 4, 44, 44));
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byTooltip('Back')), back);
-    expect(tester.getRect(find.byTooltip('Clock preview')), clock);
+    expect(tester.getRect(find.byTooltip('Preview on your screen')), clock);
   });
 
   testWidgets('Back and the clock sit on the theme scrim with the light on-scrim ink', (tester) async {
@@ -154,7 +154,7 @@ void main() {
       tester,
       theme: ThemeData(colorScheme: const ColorScheme.light(scrim: scrim)),
     );
-    for (final String tooltip in <String>['Back', 'Clock preview']) {
+    for (final String tooltip in <String>['Back', 'Preview on your screen']) {
       final IconButton button = tester.widget<IconButton>(
         find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton)),
       );

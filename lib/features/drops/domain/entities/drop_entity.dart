@@ -14,6 +14,7 @@ class DropWall extends Equatable {
     required this.resolution,
     required this.by,
     required this.seriesId,
+    this.creatorUid = '',
   });
 
   final String id;
@@ -23,8 +24,11 @@ class DropWall extends Equatable {
   final String by;
   final String seriesId;
 
+  /// The `usersv2` id of the creator. The detail page links the author to this profile.
+  final String creatorUid;
+
   @override
-  List<Object?> get props => [id, title, thumb, resolution, by, seriesId];
+  List<Object?> get props => [id, title, thumb, resolution, by, seriesId, creatorUid];
 }
 
 /// Where a Drop is in its week. [lastCall] is the final [DropEntity.lastCallWindow] before it ends.
