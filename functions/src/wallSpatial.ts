@@ -35,6 +35,8 @@ const SPATIAL_TIERS: ReadonlyArray<{tier: Exclude<SpatialTier, "none">; split: n
 const FAL_DEPTH_URL = "https://fal.run/fal-ai/image-preprocessors/depth-anything/v2";
 const FAL_TIMEOUT_MS = 60_000;
 const MAX_MAP_BYTES = 10 * 1024 * 1024;
+/** The map is only SPATIAL_MAP_SIZE, so fal never needs the full wall. */
+const FAL_INPUT_SIZE = 1536;
 const WALL_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 export type SpatialFetch = (url: string, init: RequestInit) => Promise<Response>;
@@ -150,7 +152,8 @@ export async function wallSpatialFor(
     if ("url" in image) {
       const bytes = await fetchImageBuffer(checkedImageUrl(image.url).href, deps.fetch);
       const sharp = (await import("sharp")).default;
-      const jpeg = await sharp(bytes).rotate().jpeg().toBuffer();
+      const jpeg = await sharp(bytes, {limitInputPixels: 100_000_000}).rotate()
+        .resize(FAL_INPUT_SIZE, FAL_INPUT_SIZE, {fit: "inside", withoutEnlargement: true}).jpeg({quality: 90}).toBuffer();
       imageUrl = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
     } else {
       imageUrl = `data:image/jpeg;base64,${image.jpeg.toString("base64")}`;

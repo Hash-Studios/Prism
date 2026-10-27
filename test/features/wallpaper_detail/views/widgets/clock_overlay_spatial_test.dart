@@ -1,4 +1,3 @@
-import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -53,42 +52,6 @@ void main() {
 
     expect(find.byTooltip('Preview in 3D'), findsOneWidget);
     expect(find.text('3D'), findsOneWidget);
-  });
-
-  testWidgets('the selected 3D toggle uses its theme primary and on-primary colors', (tester) async {
-    const Color primary = Color(0xFF123456);
-    const Color onPrimary = Color(0xFFFEDCBA);
-    const ColorScheme colors = ColorScheme.light(primary: primary, onPrimary: onPrimary);
-    await _pumpOverlay(
-      tester,
-      spatialMapUrl: 'https://x/m.png',
-      theme: ThemeData(colorScheme: colors),
-    );
-
-    await tester.tap(find.text('3D'));
-    await tester.pump();
-
-    void expectColors({required Color background, required Color foreground, required Color glass}) {
-      final AnimatedContainer selected = tester.widget<AnimatedContainer>(
-        find.ancestor(of: find.text('3D'), matching: find.byType(AnimatedContainer)).first,
-      );
-      expect((selected.decoration! as BoxDecoration).color, background);
-      final AnimatedDefaultTextStyle label = tester.widget<AnimatedDefaultTextStyle>(
-        find.ancestor(of: find.text('3D'), matching: find.byType(AnimatedDefaultTextStyle)).first,
-      );
-      expect(label.style.color, foreground);
-      final Finder glassWidget = find.ancestor(of: find.text('3D'), matching: find.byType(PrismGlass));
-      expect(tester.widget<PrismGlass>(glassWidget).glassColor, glass);
-    }
-
-    expectColors(background: primary, foreground: onPrimary, glass: colors.scrim.withValues(alpha: 0.6));
-    await tester.tap(find.text('3D'));
-    await tester.pump();
-    expectColors(
-      background: Colors.transparent,
-      foreground: colors.onInverseSurface,
-      glass: colors.inverseSurface,
-    );
   });
 
   testWidgets('turning 3D off removes the tilt view, and closing while on returns to the caller', (tester) async {

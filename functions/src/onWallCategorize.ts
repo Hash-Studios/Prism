@@ -34,7 +34,7 @@ export const onWallCategorize = onDocumentCreated(
     const [colors, depth, spatial, labels] = await Promise.all([
       hasPaletteColors(data.colors) ? undefined : wallColorsFor(wallId, data),
       data.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
-      data.spatial == null ? wallSpatialFor(wallId, {url: wallpaperUrl}) : undefined,
+      data.spatial == null ? wallSpatialFor(wallId, {url: String(data.wallpaper_thumb || wallpaperUrl).trim()}) : undefined,
       detectLabelsIfAble(wallId, wallpaperUrl),
     ]);
     await writeWallCategorization({wallId, initial: event.data,

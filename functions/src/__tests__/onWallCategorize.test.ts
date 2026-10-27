@@ -266,3 +266,10 @@ test("a failed Spatial Scene check writes no spatial field and keeps the colours
   assert.deepEqual(wall?.colors, ["blue"]);
   assert.equal(wall?.category, "Nature");
 });
+
+test("the Spatial Scene check reads the thumbnail when the wall has one", async (t) => {
+  const thumb = "https://raw.githubusercontent.com/o/r/main/thumb.jpg";
+  const {spatialMock} = setup(t, {wallpaper_url: WALL_URL, wallpaper_thumb: thumb}, async () => DETECTED);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL, wallpaper_thumb: thumb}));
+  assert.deepEqual(spatialMock.mock.calls[0].arguments.slice(0, 2), ["w1", {url: thumb}]);
+});

@@ -265,3 +265,21 @@ test("a JPEG input is sent to fal as a data URI", async () => {
   const body = JSON.parse(calls[0].init.body as string) as {image_url: string};
   assert.equal(body.image_url, `data:image/jpeg;base64,${jpeg.toString("base64")}`);
 });
+
+test("a large source is shrunk to 1536 px on the long side before fal receives it", async () => {
+  const sharp = (await import("sharp")).default;
+  const source = await sharp({create: {width: 2000, height: 4000, channels: 3, background: "red"}}).jpeg().toBuffer();
+  const calls: Array<{url: string; init: RequestInit}> = [];
+  const result = await wallSpatialFor("w1", {url: WALL_URL}, deps({
+    fetch: async (url, init) => {
+      calls.push({url, init});
+      if (url === WALL_URL) return new Response(new Uint8Array(source), {headers: {"content-type": "image/jpeg"}});
+      if (url.startsWith("https://fal.run/")) return Response.json({image: {url: MAP_URL}});
+      return new Response(new Uint8Array(await twoLevelPng()));
+    },
+  }));
+  assert.ok(result);
+  const request = JSON.parse(calls[1].init.body as string) as {image_url: string};
+  const sent = await sharp(Buffer.from(request.image_url.slice("data:image/jpeg;base64,".length), "base64")).metadata();
+  assert.deepEqual([sent.width, sent.height], [768, 1536]);
+});

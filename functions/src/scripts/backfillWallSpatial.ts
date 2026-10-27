@@ -105,7 +105,7 @@ export async function backfillWallSpatial(
 
     for (let i = 0; i < pending.length; i += CONCURRENCY) {
       await Promise.all(pending.slice(i, i + CONCURRENCY).map(async (doc) => {
-        const url = String(doc.get("wallpaper_url") || doc.get("wallpaper_thumb") || "").trim();
+        const url = String(doc.get("wallpaper_thumb") || doc.get("wallpaper_url") || "").trim();
         const spatial = url ? await wallSpatialFor(doc.id, {url}, spatialDeps) : undefined;
         if (!spatial) {
           counts.failed += 1;
