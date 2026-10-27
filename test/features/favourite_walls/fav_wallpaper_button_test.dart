@@ -394,4 +394,27 @@ void main() {
       expect(shownToasts(), isEmpty);
     });
   });
+
+  testWidgets('the heart fills when the wall is favourited from somewhere else, such as the folder sheet', (
+    tester,
+  ) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async {
+      await favorites.setWallFavourite('user_1', 'wall_1', true);
+      return Result.success(true);
+    });
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+    await pumpButton(tester, bloc);
+    expect(tester.widget<FavoriteIcon>(find.byType(FavoriteIcon)).isFavorite, isFalse);
+
+    bloc.add(
+      const FavouriteWallsEvent.toggleRequested(
+        wall: LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
+        desired: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<FavoriteIcon>(find.byType(FavoriteIcon)).isFavorite, isTrue);
+  });
 }
