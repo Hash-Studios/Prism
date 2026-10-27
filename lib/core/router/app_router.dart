@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart' show WallpaperTarget;
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
