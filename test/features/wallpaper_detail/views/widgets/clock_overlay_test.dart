@@ -11,6 +11,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -114,6 +115,32 @@ bool _isDockIcon(Widget widget) =>
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 class _MockFile extends Mock implements pkg_file.File {}
+
+class _FailingSetLocalStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async => throw StateError('write failed');
+}
+
+class _DelayedLocalResolveStore extends OfflineAssetStore {
+  _DelayedLocalResolveStore({
+    required this.source,
+    required this.result,
+    required this.started,
+    required super.directory,
+    required super.cacheManager,
+  });
+
+  final String source;
+  final Completer<File> result;
+  final Completer<void> started;
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) {
+    if (source != this.source) return super.resolve(source, allowNetwork: allowNetwork);
+    if (!started.isCompleted) started.complete();
+    return result.future;
+  }
+}
 
 class _RetainedPreview {
   const _RetainedPreview({required this.root, required this.assets, required this.cache, required this.retained});
@@ -235,6 +262,19 @@ Future<void> _pumpPreview(
 }
 
 void main() {
+  test('ClockPreviewRoute carries the public set action callback', () {
+    final ClockPreviewRoute route = ClockPreviewRoute(
+      link: _previewPath,
+      file: true,
+      setAction: (target, label) => Text('${target.name}:$label'),
+    );
+
+    expect(
+      route.args!.setAction!(WallpaperTarget.home, 'Set at home'),
+      isA<Text>().having((text) => text.data, 'data', 'home:Set at home'),
+    );
+  });
+
   testWidgets('iOS previews a lock screen without the Android dock', (WidgetTester tester) async {
     await _openPreview(tester);
 
@@ -490,6 +530,78 @@ void main() {
       expect(image.memCacheWidth, isNotNull);
       expect(image.memCacheWidth, lessThanOrEqualTo(2160));
       await tester.pumpAndSettle();
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a stale local-file lookup cannot replace a newer preview after it completes', (tester) async {
+      final Completer<void> lookupStarted = Completer<void>();
+      final Completer<File> staleLookup = Completer<File>();
+      OfflineAssetStore.testOverride = _DelayedLocalResolveStore(
+        source: 'https://img.test/stale.jpg',
+        result: staleLookup,
+        started: lookupStarted,
+        directory: Directory('${offlineDirectory.path}/late'),
+        cacheManager: cache,
+      );
+      final File stale = (await tester.runAsync(() => _solidPng(offlineDirectory, const Color(0xFFFF0000))))!;
+      final File current = (await tester.runAsync(() => _solidPng(offlineDirectory, const Color(0xFF00CC00))))!;
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: 'https://img.test/stale.jpg', file: false),
+        ),
+      );
+      await _waitForCompleter(tester, lookupStarted);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: current.path, file: true),
+        ),
+      );
+      await _settleImages(tester);
+      staleLookup.complete(stale);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+
+      final Image image = tester.widget<Image>(find.byType(Image).first);
+      expect(
+        _unwrapResizeImage(image.image),
+        isA<FileImage>().having((provider) => provider.file.path, 'path', current.path),
+      );
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('disposing during a local-file lookup ignores its late completion', (tester) async {
+      final Completer<void> lookupStarted = Completer<void>();
+      final Completer<File> staleLookup = Completer<File>();
+      OfflineAssetStore.testOverride = _DelayedLocalResolveStore(
+        source: 'https://img.test/disposed.jpg',
+        result: staleLookup,
+        started: lookupStarted,
+        directory: Directory('${offlineDirectory.path}/late'),
+        cacheManager: cache,
+      );
+      final File stale = (await tester.runAsync(() => _solidPng(offlineDirectory, const Color(0xFFFF0000))))!;
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: 'https://img.test/disposed.jpg', file: false),
+        ),
+      );
+      await _waitForCompleter(tester, lookupStarted);
+      await tester.pumpWidget(const SizedBox.shrink());
+      staleLookup.complete(stale);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('a failed load shows a message icon instead of an empty screen', (tester) async {
@@ -1053,7 +1165,9 @@ void main() {
       expect(client.requests.map((r) => r.target), [aw.WallpaperTarget.lock, aw.WallpaperTarget.home]);
       expect(find.byType(SetOptionsPanel), findsNothing);
 
-      await tester.tap(find.text('Both'));
+      final Rect bothTarget = tester.getRect(find.bySemanticsLabel('Set on both screens'));
+      expect(bothTarget.height, greaterThanOrEqualTo(44));
+      await tester.tapAt(bothTarget.bottomLeft + const Offset(12, -2));
       await tester.pumpAndSettle();
       expect(find.text('Set on both screens'), findsOneWidget);
       await tester.tap(find.text('Set on both screens'));
@@ -1171,6 +1285,21 @@ void main() {
       expect(find.text('Themed'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+    testWidgets('the compact icon style keeps a 44 point tappable control', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+
+      final Finder clear = find.bySemanticsLabel('Clear');
+      final Rect clearTarget = tester.getRect(clear);
+      expect(clearTarget.height, greaterThanOrEqualTo(44));
+      await tester.tapAt(clearTarget.bottomLeft + const Offset(8, -2));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.clear);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('picking Dark on iOS saves it and a new preview starts with Dark', (tester) async {
       await _pumpPreview(tester);
       await tester.pumpAndSettle();
@@ -1199,6 +1328,151 @@ void main() {
 
       expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.standard);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('updating the preview image and tint refreshes its image and filter', (tester) async {
+      await settings.set(PersistenceKeys.previewIconStyle, 'tinted');
+      final Directory directory = Directory.systemTemp.createTempSync('clock_overlay_update_');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final File first = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFFF0000))))!;
+      final File second = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+
+      Widget preview(String link, Color tint) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ClockOverlay(link: link, file: true, tint: tint),
+      );
+
+      await tester.pumpWidget(preview(first.path, const Color(0xFFFF0000)));
+      await _settleImages(tester);
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(preview(second.uri.toString(), const Color(0xFF0000FF)));
+      await _settleImages(tester);
+      await tester.pumpAndSettle();
+
+      final Image image = tester.widget<Image>(find.byType(Image).first);
+      expect(
+        _unwrapResizeImage(image.image),
+        isA<FileImage>().having((provider) => provider.file.path, 'path', second.path),
+      );
+      expect(
+        tester.widget<ColorFiltered>(find.byType(ColorFiltered)).colorFilter,
+        const ColorFilter.mode(Color(0xFF0000FF), BlendMode.hue),
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a file URI resolves to the local image path on first mount', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('clock_overlay_file_uri_');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final File file = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF224466))))!;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: file.uri.toString(), file: true),
+        ),
+      );
+      await _settleImages(tester);
+
+      final Image image = tester.widget<Image>(find.byType(Image).first);
+      expect(
+        _unwrapResizeImage(image.image),
+        isA<FileImage>().having((provider) => provider.file.path, 'path', file.path),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a failed icon style save does not escape as an unhandled future error', (tester) async {
+      await getIt.reset();
+      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(_FailingSetLocalStore()));
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).iconStyle, PreviewIconStyle.dark);
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the Portuguese icon style controls fit a narrow screen at large text', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('pt'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: ClockOverlay(link: _previewPath, file: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tela inicial'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final Rect clearLabel = tester.getRect(find.text('Transparente'));
+      final Rect clearSegment = tester.getRect(find.bySemanticsLabel('Transparente'));
+      final RenderParagraph paragraph = tester.renderObject(find.text('Transparente'));
+      final List<TextBox> glyphs = paragraph.getBoxesForSelection(
+        TextSelection(baseOffset: 0, extentOffset: paragraph.text.toPlainText().length),
+      );
+      final Rect glyphBounds = glyphs
+          .map((glyph) => MatrixUtils.transformRect(paragraph.getTransformTo(null), glyph.toRect()))
+          .reduce((bounds, glyph) => bounds.expandToInclude(glyph));
+      expect(clearLabel.left, greaterThanOrEqualTo(0));
+      expect(clearLabel.right, lessThanOrEqualTo(320));
+      expect(glyphBounds.left, greaterThanOrEqualTo(clearSegment.left));
+      expect(glyphBounds.right, lessThanOrEqualTo(clearSegment.right));
+      expect(glyphBounds.top, greaterThanOrEqualTo(clearSegment.top));
+      expect(glyphBounds.bottom, lessThanOrEqualTo(clearSegment.bottom));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the German set action wraps upward from the close control on a narrow screen', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(
+          capabilities: const aw.WallpaperCapabilities(
+            supportsStaticWallpaper: true,
+            supportsHomeWallpaper: true,
+            supportsLockWallpaper: true,
+            supportsBothWallpapers: true,
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('de'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: ClockOverlay(link: _previewPath, file: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final Rect close = tester.getRect(find.byTooltip('Vorschau schließen'));
+      final Rect action = tester.getRect(find.text('Auf Startbildschirm festlegen'));
+      final Rect both = tester.getRect(find.bySemanticsLabel('Auf beiden Bildschirmen festlegen'));
+      expect(close.left, greaterThanOrEqualTo(0));
+      expect(both.right, lessThanOrEqualTo(320));
+      expect(action.left, greaterThanOrEqualTo(0));
+      expect(action.right, lessThanOrEqualTo(320));
+      expect(close.bottom, greaterThanOrEqualTo(action.bottom));
+      expect(close.bottom, greaterThanOrEqualTo(both.bottom));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('the tap area says Hide controls, then Show controls after a tap', (tester) async {
       final SemanticsHandle handle = tester.ensureSemantics();

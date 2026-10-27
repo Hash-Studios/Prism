@@ -26,6 +26,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+export 'package:Prism/core/platform/wallpaper_service.dart' show WallpaperTarget;
+
 enum ClockPreviewMode { lock, home }
 
 /// Width of the decode used to pick the clock text colour.
@@ -77,6 +79,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   bool _controls = true;
   bool _both = false;
   bool _canSetBoth = false;
+  int _inputGeneration = 0;
   ImageStream? _sampleStream;
   ImageStreamListener? _sampleListener;
   Future<File?>? _localFileFuture;
@@ -105,6 +108,27 @@ class _ClockOverlayState extends State<ClockOverlay> {
     }
   }
 
+  @override
+  void didUpdateWidget(ClockOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.link == widget.link &&
+        oldWidget.file == widget.file &&
+        oldWidget.wallpaperId == widget.wallpaperId &&
+        oldWidget.wallpaperSource == widget.wallpaperSource &&
+        oldWidget.tint == widget.tint) {
+      return;
+    }
+    _inputGeneration++;
+    _stopSampling();
+    _localFile = null;
+    _localFileFuture = _resolveLocalFile();
+    _textColor = null;
+    _scheme = null;
+    _schemeRead = false;
+    unawaited(_sampleText());
+    _readSchemeOnce();
+  }
+
   static PreviewIconStyle _savedIconStyle() {
     final List<PreviewIconStyle> offered = PreviewIconStyle.forPlatform(defaultTargetPlatform);
     try {
@@ -123,34 +147,48 @@ class _ClockOverlayState extends State<ClockOverlay> {
   void _pickIconStyle(PreviewIconStyle style) {
     setState(() => _iconStyle = style);
     _readSchemeOnce();
+    unawaited(_saveIconStyle(style));
+  }
+
+  Future<void> _saveIconStyle(PreviewIconStyle style) async {
     try {
       if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
-      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.previewIconStyle, style.name));
-    } catch (error) {
-      logger.w('ClockOverlay: could not save the icon style', error: error);
+      await getIt<SettingsLocalDataSource>().set(PersistenceKeys.previewIconStyle, style.name);
+    } catch (error, stackTrace) {
+      logger.w('ClockOverlay: could not save the icon style', error: error, stackTrace: stackTrace);
     }
   }
 
   /// Reads the wallpaper colours the first time a style needs them.
   void _readSchemeOnce() {
-    if (_schemeRead || (_iconStyle != PreviewIconStyle.tinted && _iconStyle != PreviewIconStyle.themed)) return;
+    if (_mode != ClockPreviewMode.home ||
+        _schemeRead ||
+        (_iconStyle != PreviewIconStyle.tinted && _iconStyle != PreviewIconStyle.themed)) {
+      return;
+    }
     _schemeRead = true;
     unawaited(_readScheme());
   }
 
   Future<void> _readScheme() async {
+    final int generation = _inputGeneration;
     final File? local = await _localFileFuture;
+    if (generation != _inputGeneration) return;
     _localFile ??= local;
     if (!mounted) return;
     final Color? tint = widget.tint;
     final ColorScheme? scheme = tint != null
         ? ColorScheme.fromSeed(seedColor: tint, brightness: Brightness.dark)
         : await wallpaperScheme(_provider);
+    if (generation != _inputGeneration) return;
     if (mounted) setState(() => _scheme = scheme);
   }
 
   Future<File?> _resolveLocalFile() async {
-    if (widget.file) return File(widget.link);
+    if (widget.file) {
+      final Uri? uri = Uri.tryParse(widget.link);
+      return File(uri?.scheme == 'file' ? uri!.toFilePath() : widget.link);
+    }
     if (widget.link.startsWith('assets/')) return null;
     try {
       return await WallpaperService.resolveToLocalFile(
@@ -165,12 +203,15 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 
   Future<void> _sampleText() async {
-    _localFile = await _localFileFuture;
+    final int generation = _inputGeneration;
+    final File? localFile = await _localFileFuture;
+    if (generation != _inputGeneration) return;
+    _localFile = localFile;
     if (!mounted) return;
     final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
     final ImageStreamListener listener = ImageStreamListener(
       (info, _) {
-        unawaited(_applySample(info.image));
+        unawaited(_applySample(info.image, generation));
         _stopSampling();
       },
       onError: (error, stackTrace) {
@@ -183,9 +224,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     stream.addListener(listener);
   }
 
-  Future<void> _applySample(ui.Image image) async {
+  Future<void> _applySample(ui.Image image, int generation) async {
     final Color color = await textColorForTopThird(image, tint: widget.tint);
-    if (mounted) setState(() => _textColor = color);
+    if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
   }
 
   void _stopSampling() {
@@ -395,11 +436,17 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                   ClockPreviewMode.lock => l10n.wallpaperPreviewLock,
                                   ClockPreviewMode.home => l10n.wallpaperPreviewHome,
                                 },
-                                onChanged: (mode) => setState(() => _mode = mode),
+                                onChanged: (mode) {
+                                  setState(() => _mode = mode);
+                                  if (mode == ClockPreviewMode.home) _readSchemeOnce();
+                                },
                               ),
                               const SizedBox(height: 12),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                verticalDirection: VerticalDirection.up,
                                 children: <Widget>[
                                   PrismIconButton(
                                     icon: Icons.close_rounded,
@@ -407,14 +454,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                     onImage: true,
                                     onPressed: () => Navigator.pop(context),
                                   ),
-                                  if (action != null) ...<Widget>[
-                                    const SizedBox(width: 8),
-                                    action,
-                                    if (_canSetBoth) ...<Widget>[
-                                      const SizedBox(width: 8),
-                                      _BothToggle(selected: _both, onChanged: (both) => setState(() => _both = both)),
-                                    ],
-                                  ],
+                                  if (action != null) action,
+                                  if (action != null && _canSetBoth)
+                                    _BothToggle(selected: _both, onChanged: (both) => setState(() => _both = both)),
                                 ],
                               ),
                             ],
@@ -463,7 +505,7 @@ class _GlassSegments<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Duration duration = context.motion(_slideDuration);
-    final double height = compact ? 36 : 48;
+    const double height = 48;
     final int index = values.indexOf(selected);
     final Widget pill = MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.5,
@@ -523,8 +565,13 @@ class _GlassSegments<T> extends StatelessWidget {
         ),
       ),
     );
-    if (groupLabel == null) return pill;
-    return Semantics(container: true, label: groupLabel, child: pill);
+    final double screenWidth = MediaQuery.sizeOf(context).width;
+    final Widget constrainedPill = ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: screenWidth > 32 ? screenWidth - 32 : double.infinity),
+      child: pill,
+    );
+    if (groupLabel == null) return constrainedPill;
+    return Semantics(container: true, label: groupLabel, child: constrainedPill);
   }
 }
 
@@ -573,7 +620,7 @@ class _Segment extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: selected ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88),
                   ),
-                  child: Text(label),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false)),
                 ),
               ),
             ),
@@ -591,7 +638,7 @@ class _BothToggle extends StatelessWidget {
   final bool selected;
   final ValueChanged<bool> onChanged;
 
-  static const double _height = 40;
+  static const double _height = 44;
 
   @override
   Widget build(BuildContext context) {

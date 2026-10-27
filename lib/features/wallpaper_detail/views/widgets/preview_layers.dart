@@ -64,6 +64,11 @@ double _layerScale(BuildContext context, BoxConstraints constraints) {
 /// Height of the status bar as the layer draws it. It scales with the frame, like the text.
 double _statusBarInset(BuildContext context, double scale) => MediaQuery.viewPaddingOf(context).top * scale;
 
+Widget _withoutTextScaling(BuildContext context, Widget child) => MediaQuery(
+  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+  child: child,
+);
+
 /// Centres [child] in the top third of the space below the status bar.
 Widget _topThird(BoxConstraints constraints, double inset, Widget child) {
   return Align(
@@ -171,7 +176,7 @@ class LockPreviewLayer extends StatelessWidget {
     final DateTime time = now ?? DateTime.now();
     final bool use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
     final String clock = DateFormat(use24Hour ? 'HH:mm' : 'h:mm', context.l10n.localeName).format(time);
-    return LayoutBuilder(
+    final Widget layer = LayoutBuilder(
       builder: (context, constraints) {
         final double scale = _layerScale(context, constraints);
         final double inset = _statusBarInset(context, scale);
@@ -257,6 +262,7 @@ class LockPreviewLayer extends StatelessWidget {
             ),
           );
         }
+        final double clockFontSize = math.min(72 * scale, math.max(0.0, constraints.maxHeight - inset) / 3 * 0.48);
         return _topThird(
           constraints,
           inset,
@@ -269,7 +275,7 @@ class LockPreviewLayer extends StatelessWidget {
                 style: TextStyle(
                   color: textColor,
                   fontFamily: 'Roboto',
-                  fontSize: 72 * scale,
+                  fontSize: clockFontSize,
                   fontWeight: FontWeight.w200,
                 ),
               ),
@@ -289,6 +295,7 @@ class LockPreviewLayer extends StatelessWidget {
         );
       },
     );
+    return _withoutTextScaling(context, layer);
   }
 }
 
@@ -314,7 +321,7 @@ class HomePreviewLayer extends StatelessWidget {
     final DateTime time = now ?? DateTime.now();
     final ColorScheme palette = scheme ?? _neutralScheme;
     final bool ios = defaultTargetPlatform == TargetPlatform.iOS;
-    return LayoutBuilder(
+    final Widget preview = LayoutBuilder(
       builder: (context, constraints) {
         final double s = _layerScale(context, constraints);
         final Size screen = MediaQuery.sizeOf(context);
@@ -328,6 +335,7 @@ class HomePreviewLayer extends StatelessWidget {
         return BackdropGroup(child: layer);
       },
     );
+    return _withoutTextScaling(context, preview);
   }
 
   Widget _icon(int app, double size, ColorScheme palette, {required bool ios}) =>
@@ -349,7 +357,7 @@ class HomePreviewLayer extends StatelessWidget {
     final double top = device.top + w * 0.04;
     final double dockInset = w * 0.03;
     final double dockHeight = icon + w * 0.08;
-    final double dotsBottom = dockInset + dockHeight + w * 0.035;
+    final double dotsBottom = device.bottom + dockInset + dockHeight + w * 0.035;
     const double dot = 7;
     final int rows = math.max(0, math.min(4, ((h - dotsBottom - dot - top) / rowPitch).floor()));
     final bool showWidget = rows >= 2;
@@ -405,7 +413,7 @@ class HomePreviewLayer extends StatelessWidget {
         Positioned(
           left: dockInset * s,
           right: dockInset * s,
-          bottom: dockInset * s,
+          bottom: (device.bottom + dockInset) * s,
           height: dockHeight * s,
           child: _glass(
             shape: _withEdge(

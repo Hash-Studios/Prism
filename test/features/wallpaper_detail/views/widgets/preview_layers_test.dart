@@ -1,24 +1,28 @@
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(
   Widget child, {
   Size size = const Size(400, 800),
+  Size viewport = const Size(400, 800),
   double statusBar = 0,
   double navigationBar = 0,
   bool alwaysUse24HourFormat = true,
+  double textScale = 1,
 }) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
 
   home: MediaQuery(
     data: MediaQueryData(
-      size: const Size(400, 800),
+      size: viewport,
       padding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
       viewPadding: EdgeInsets.only(top: statusBar, bottom: navigationBar),
       alwaysUse24HourFormat: alwaysUse24HourFormat,
+      textScaler: TextScaler.linear(textScale),
     ),
     child: Scaffold(
       body: Center(
@@ -39,11 +43,22 @@ void main() {
     Size frame = const Size(400, 800),
     double statusBar = 0,
     double navigationBar = 0,
+    Size viewport = const Size(400, 800),
+    double textScale = 1,
   }) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(400, 800);
+    tester.view.physicalSize = viewport;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_host(layer, size: frame, statusBar: statusBar, navigationBar: navigationBar));
+    await tester.pumpWidget(
+      _host(
+        layer,
+        size: frame,
+        viewport: viewport,
+        statusBar: statusBar,
+        navigationBar: navigationBar,
+        textScale: textScale,
+      ),
+    );
   }
 
   double top(WidgetTester tester, Finder finder, Type layer) =>
@@ -56,6 +71,13 @@ void main() {
       tester.getBottomLeft(finder).dy - tester.getTopLeft(find.byType(layer)).dy;
 
   Finder dockIcons() => find.descendant(of: find.byKey(previewDockKey), matching: find.byType(Icon));
+
+  Finder pageDots() => find.byWidgetPredicate(
+    (widget) =>
+        widget is DecoratedBox &&
+        widget.decoration is BoxDecoration &&
+        (widget.decoration as BoxDecoration).shape == BoxShape.circle,
+  );
 
   Finder homeIcons() => find.descendant(of: find.byType(HomePreviewLayer), matching: find.byType(Icon));
 
@@ -106,6 +128,54 @@ void main() {
 
     expect(tester.widget<Text>(find.text('15:07')).style?.fontSize, 36);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  for (final layout in <({String label, Size viewport, Size frame, double textScale})>[
+    (label: 'small studio with large text', viewport: const Size(400, 800), frame: const Size(100, 200), textScale: 2),
+    (label: 'tablet landscape', viewport: const Size(1024, 768), frame: const Size(640, 480), textScale: 2),
+    (label: 'phone landscape', viewport: const Size(844, 390), frame: const Size(400, 185), textScale: 2),
+  ]) {
+    for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.iOS, TargetPlatform.android]) {
+      testWidgets('${layout.label} ${platform.name} layers stay within layout', (tester) async {
+        await pumpOnPhoneScreen(
+          tester,
+          HomePreviewLayer(textColor: Colors.white, now: now),
+          frame: layout.frame,
+          viewport: layout.viewport,
+          textScale: layout.textScale,
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(previewDockKey), findsOneWidget);
+        expect(pageDots(), platform == TargetPlatform.iOS ? findsNWidgets(3) : findsNothing);
+        final Rect homeBounds = tester.getRect(find.byType(HomePreviewLayer));
+        final Rect dockBounds = tester.getRect(find.byKey(previewDockKey));
+        expect(homeBounds.contains(dockBounds.topLeft), isTrue);
+        expect(homeBounds.contains(dockBounds.bottomRight), isTrue);
+        final Finder previewLabel = find.text(platform == TargetPlatform.iOS ? 'Wednesday' : 'Wed, Mar 4');
+        if (previewLabel.evaluate().isNotEmpty) {
+          final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(previewLabel);
+          final double fontSize = paragraph.text.style!.fontSize!;
+          expect(paragraph.textScaler.scale(fontSize), fontSize);
+        }
+
+        await tester.pumpWidget(
+          _host(
+            LockPreviewLayer(textColor: Colors.white, now: now),
+            size: layout.frame,
+            viewport: layout.viewport,
+            textScale: layout.textScale,
+          ),
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('15:07'), findsOneWidget);
+        expect(
+          tester.getRect(find.byType(LockPreviewLayer)).contains(tester.getRect(find.text('15:07')).center),
+          isTrue,
+        );
+      }, variant: TargetPlatformVariant.only(platform));
+    }
+  }
 
   group('status bar', () {
     testWidgets('the iOS lock date starts 24 below the status bar', (tester) async {
@@ -180,6 +250,15 @@ void main() {
 
       expect(gapBelowDock(tester), 126);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('the iOS dock sits above the home indicator safe area', (tester) async {
+      await pumpOnPhoneScreen(tester, HomePreviewLayer(textColor: Colors.white, now: now), navigationBar: 34);
+
+      expect(gapBelowDock(tester), 46);
+      final double gapBetweenDotsAndDock =
+          tester.getTopLeft(find.byKey(previewDockKey)).dy - tester.getBottomLeft(pageDots().first).dy;
+      expect(gapBetweenDotsAndDock, closeTo(400 * 0.035, 0.01));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a layer in a half-size frame scales the dock offset with the frame', (tester) async {
       await pumpOnPhoneScreen(
