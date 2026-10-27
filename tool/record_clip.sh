@@ -74,8 +74,11 @@ else
 fi
 while kill -0 "$rec" 2>/dev/null; do wait "$rec" || true; done
 rc=0; wait "$rec" || rc=$?
-[ "$rc" -eq 0 ] || { [ "$stopping" -eq 1 ] && [ "$rc" -eq 130 ]; } || die "recorder failed (exit $rc)"
-trap - INT TERM HUP
+[ "$rc" -eq 0 ] || {
+  [ "$stopping" -eq 1 ] && { [ "$rc" -eq 129 ] || [ "$rc" -eq 130 ] || [ "$rc" -eq 143 ]; }
+} || die "recorder failed (exit $rc)"
+# Wait for conversion or raw recovery before cleanup, even after another stop signal.
+trap ':' INT TERM HUP
 if [ "$platform" = android ]; then
   sleep 1; adb pull -q "$remote" "$tmp/raw.mp4"
 fi
