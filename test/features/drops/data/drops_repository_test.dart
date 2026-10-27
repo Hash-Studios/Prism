@@ -56,7 +56,15 @@ Map<String, dynamic> _doc({required int startsAt, required int endsAt}) => <Stri
   'pricePack': 150,
   'count': 2,
   'walls': <Map<String, Object?>>[
-    <String, Object?>{'id': 'A', 'title': 'One', 'thumb': 't1', 'resolution': '1x1', 'by': 'Ana', 'seriesId': 's'},
+    <String, Object?>{
+      'id': 'A',
+      'title': 'One',
+      'thumb': 't1',
+      'resolution': '1x1',
+      'by': 'Ana',
+      'seriesId': 's',
+      'creatorUid': 'uid-ana',
+    },
     <String, Object?>{'id': '', 'title': 'No id'},
     <String, Object?>{'id': 'B', 'title': 'Two', 'thumb': 't2'},
   ],
@@ -121,6 +129,9 @@ void main() {
       expect((drop.priceWall, drop.pricePack, drop.count), (30, 150, 2));
       expect(drop.walls.map((w) => w.id), <String>['A', 'B']);
       expect(drop.walls.first.by, 'Ana');
+      expect(drop.walls.first.creatorUid, 'uid-ana');
+      // Drops planned before the snapshot copied creatorUid hold only Studio walls.
+      expect(drop.walls.last.creatorUid, 'prism-studio');
     });
 
     test('is null when the next Drop has not started yet', () async {

@@ -322,6 +322,7 @@ void main() {
       expect(entity.id, 'A');
       expect(entity.fullUrl, 'https://full.test/A.jpg');
       expect(entity.thumbnailUrl, 'https://example.test/A.jpg');
+      expect(entity.wallpaper.core.authorUid, 'uid-A');
     });
 
     testWidgets('tapping a locked tile hands the wall to the preview', (tester) async {

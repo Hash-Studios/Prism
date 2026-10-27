@@ -33,6 +33,7 @@ PrismFeedItem dropWallFeedItem(DropWall wall, DropUnlock unlock) {
       thumbnailUrl: wall.thumb,
       resolution: wall.resolution.isEmpty ? null : wall.resolution,
       authorName: wall.by.isEmpty ? null : wall.by,
+      authorUid: wall.creatorUid.isEmpty ? null : wall.creatorUid,
     ),
     title: wall.title.isEmpty ? null : wall.title,
     review: true,

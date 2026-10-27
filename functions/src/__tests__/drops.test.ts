@@ -31,6 +31,7 @@ const wall = (n: number, extra: Doc = {}): Doc => ({
   resolution: "1440x3200",
   by: "Prism Studio",
   seriesId: "dusk",
+  creatorUid: "prism-studio",
   origin: "studio",
   review: false,
   dropReserved: true,
@@ -63,6 +64,7 @@ test("snapshotWall keeps the thumb and drops the full url", () => {
     resolution: "1440x3200",
     by: "Prism Studio",
     seriesId: "dusk",
+    creatorUid: "prism-studio",
   });
 });
 
@@ -598,6 +600,7 @@ const pushDrop = (extra: Partial<DropDoc> = {}): Doc => {
           resolution: "",
           by: "",
           seriesId: "",
+          creatorUid: "",
         },
       ],
       ...extra,

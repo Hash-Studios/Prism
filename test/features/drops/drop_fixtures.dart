@@ -7,6 +7,7 @@ DropWall dropWall(String id, {String by = 'Ana'}) => DropWall(
   resolution: '1080x2400',
   by: by,
   seriesId: 's1',
+  creatorUid: 'uid-$id',
 );
 
 DropEntity dropEntity({
