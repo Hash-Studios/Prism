@@ -102,12 +102,6 @@ jobs:
           gem install xcodeproj --conservative --no-document
           ruby tool/ios_ci_manual_signing.rb ios/Runner.xcodeproj "$RUNNER_TEMP/provisioning-profiles.json"
 
-      - name: Strip alpha from app icon
-        run: |
-          ICON="ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png"
-          ffmpeg -y -i "$ICON" -vf "format=rgb24" -update 1 /tmp/icon_no_alpha.png
-          cp /tmp/icon_no_alpha.png "$ICON"
-
       - name: Build IPA
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
