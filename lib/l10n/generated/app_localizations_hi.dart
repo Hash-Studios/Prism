@@ -8028,7 +8028,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperDepthSubjectSubtitle => 'आपका विषय घड़ी के सामने दिखाई देता है।';
 
   @override
-  String get wallpaperSpatialScene => 'Spatial Scene';
+  String get wallpaperSpatialScene => 'स्पेशियल सीन';
 
   @override
   String get wallpaperSpatialGreatSubtitle => 'साफ़ गहराई। एक मज़बूत 3D लॉक स्क्रीन बनाती है।';
@@ -8037,7 +8037,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperSpatialOkSubtitle => 'थोड़ी गहराई। 3D इफ़ेक्ट हल्का है।';
 
   @override
-  String get wallpaperSpatialGuideTitle => 'इसे Spatial Scene के रूप में सेट करें';
+  String get wallpaperSpatialGuideTitle => 'इसे स्पेशियल सीन के रूप में सेट करें';
 
   @override
   String get wallpaperSpatialGuideBody => 'iOS 26 वाले iPhone 12 या उसके बाद के मॉडल पर:';

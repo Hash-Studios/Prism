@@ -8200,7 +8200,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperSpatialStepPick =>
-      'Na tela de bloqueio, toque e segure a tela. Toque no botão Adicionar, toque em Fotos e depois selecione a foto.';
+      'Na tela de bloqueio, toque e mantenha pressionada a tela. Toque no botão Adicionar, toque em Fotos e depois selecione a foto.';
 
   @override
   String get wallpaperSpatialStepButton =>

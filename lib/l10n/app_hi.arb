@@ -6881,7 +6881,7 @@
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
   },
-  "wallpaperSpatialScene": "Spatial Scene",
+  "wallpaperSpatialScene": "स्पेशियल सीन",
   "@wallpaperSpatialScene": {
     "description": "Spatial Scene text: wallpaperSpatialScene."
   },
@@ -6893,7 +6893,7 @@
   "@wallpaperSpatialOkSubtitle": {
     "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
   },
-  "wallpaperSpatialGuideTitle": "इसे Spatial Scene के रूप में सेट करें",
+  "wallpaperSpatialGuideTitle": "इसे स्पेशियल सीन के रूप में सेट करें",
   "@wallpaperSpatialGuideTitle": {
     "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
   },
