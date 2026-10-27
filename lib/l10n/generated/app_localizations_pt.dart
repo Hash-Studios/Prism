@@ -9235,7 +9235,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get setScreenRememberHint =>
-      'Definir pula esta tela da próxima vez. Mantenha Definir pressionado para voltar.';
+      'Definir pula esta tela na próxima vez. Mantenha Definir pressionado para voltar.';
 
   @override
   String get setScreenAdjust => 'Ajustar';

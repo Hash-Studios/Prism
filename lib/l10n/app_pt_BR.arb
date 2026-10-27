@@ -2312,49 +2312,16 @@
   "wallpaperSetAsWallpaper": "Definir como papel de parede",
   "wallpaperSetCount": "{count, plural, =0{Definido {count} vezes} one{Definido uma vez} other{Definido {count} vezes}}",
   "setScreenTargetHome": "Tela inicial",
-  "@setScreenTargetHome": {
-    "description": "Segment on the Set screen that targets the home screen."
-  },
   "setScreenTargetLock": "Tela de bloqueio",
-  "@setScreenTargetLock": {
-    "description": "Segment on the Set screen that targets the lock screen."
-  },
   "setScreenTargetBoth": "Ambas",
-  "@setScreenTargetBoth": {
-    "description": "Segment on the Set screen that targets the home and lock screens."
-  },
   "setScreenTargetGroup": "Onde definir",
-  "@setScreenTargetGroup": {
-    "description": "Screen reader label for the group of target segments on the Set screen."
-  },
   "setScreenRemember": "Lembrar esta escolha",
-  "@setScreenRemember": {
-    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
-  },
   "setScreenRememberHint": "Definir pula esta tela na próxima vez. Mantenha Definir pressionado para voltar.",
-  "@setScreenRememberHint": {
-    "description": "Caption under \"Remember this choice\" when it is checked."
-  },
   "setScreenAdjust": "Ajustar",
-  "@setScreenAdjust": {
-    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
-  },
   "setScreenMore": "Mais",
-  "@setScreenMore": {
-    "description": "Button on the Set screen that shows more ways to set the wallpaper."
-  },
   "setScreenPairLock": "Usar outro papel de parede para a tela de bloqueio",
-  "@setScreenPairLock": {
-    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
-  },
   "setScreenOpenSystemEditor": "Abrir editor do sistema",
-  "@setScreenOpenSystemEditor": {
-    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
-  },
   "setScreenClose": "Fechar",
-  "@setScreenClose": {
-    "description": "Tooltip for the close button on the Set screen."
-  },
   "wallpaperShare": "Compartilhar",
   "wallpaperShareLink": "Compartilhar link",
   "wallpaperShortcutsAddActionsSteps": "Adicione a ação \"Obter papel de parede do Prism\". Em seguida, adicione a ação \"Definir papel de parede\".",
