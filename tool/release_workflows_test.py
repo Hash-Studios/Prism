@@ -134,6 +134,12 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
         result = self.run_tool('bash', '-e', '-c', command)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_testflight_does_not_rewrite_the_removed_png_app_icon(self):
+        steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
+        run_bodies = '\n'.join(step.get('run', '') for step in steps)
+        self.assertNotIn('AppIcon.appiconset', run_bodies)
+        self.assertNotIn('ffmpeg', run_bodies)
+
     def test_ios_preparation_fails_before_signing_and_build(self):
         steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
         preparation_index = next(i for i, step in enumerate(steps)
