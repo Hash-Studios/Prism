@@ -7167,6 +7167,42 @@ abstract class AppLocalizations {
   /// **'Watercolor'**
   String get economyAiStyleWatercolor;
 
+  /// No description provided for @economyAiStyleSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get economyAiStyleSpace;
+
+  /// No description provided for @economyAiStyleSynthwave.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthwave'**
+  String get economyAiStyleSynthwave;
+
+  /// No description provided for @economyAiStylePixelArt.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel Art'**
+  String get economyAiStylePixelArt;
+
+  /// No description provided for @economyAiStyleRender3d.
+  ///
+  /// In en, this message translates to:
+  /// **'3D Render'**
+  String get economyAiStyleRender3d;
+
+  /// No description provided for @economyAiStyleOilPainting.
+  ///
+  /// In en, this message translates to:
+  /// **'Oil Painting'**
+  String get economyAiStyleOilPainting;
+
+  /// No description provided for @economyAiStyleUkiyoE.
+  ///
+  /// In en, this message translates to:
+  /// **'Ukiyo-e'**
+  String get economyAiStyleUkiyoE;
+
   /// No description provided for @economyAiSubmissionUnconfirmed.
   ///
   /// In en, this message translates to:
@@ -15010,302 +15046,722 @@ abstract class AppLocalizations {
   /// No description provided for @economyAiPromptSceneAnime1.
   ///
   /// In en, this message translates to:
-  /// **'an anime skyline above floating islands'**
+  /// **'a cat napping on a sunlit train platform'**
   String get economyAiPromptSceneAnime1;
 
   /// No description provided for @economyAiPromptSceneAnime2.
   ///
   /// In en, this message translates to:
-  /// **'a lone samurai on a neon-lit rainy street'**
+  /// **'towering summer clouds over rice fields'**
   String get economyAiPromptSceneAnime2;
 
   /// No description provided for @economyAiPromptSceneAnime3.
   ///
   /// In en, this message translates to:
-  /// **'a futuristic shrine with cherry blossoms and holograms'**
+  /// **'a ramen stall glowing on a rainy back street'**
   String get economyAiPromptSceneAnime3;
 
   /// No description provided for @economyAiPromptSceneAnime4.
   ///
   /// In en, this message translates to:
-  /// **'a dreamy anime night market with lantern glow'**
+  /// **'a hilltop shrine gate above a sea of clouds'**
   String get economyAiPromptSceneAnime4;
 
   /// No description provided for @economyAiPromptSceneAnime5.
   ///
   /// In en, this message translates to:
-  /// **'a cyber-anime city horizon at blue hour'**
+  /// **'fireworks over a river at a summer festival'**
   String get economyAiPromptSceneAnime5;
+
+  /// No description provided for @economyAiPromptSceneAnime6.
+  ///
+  /// In en, this message translates to:
+  /// **'a quiet classroom with petals drifting in'**
+  String get economyAiPromptSceneAnime6;
+
+  /// No description provided for @economyAiPromptSceneAnime7.
+  ///
+  /// In en, this message translates to:
+  /// **'a seaside road with a lone bus stop at dusk'**
+  String get economyAiPromptSceneAnime7;
+
+  /// No description provided for @economyAiPromptSceneAnime8.
+  ///
+  /// In en, this message translates to:
+  /// **'a sky whale drifting over a sleepy town'**
+  String get economyAiPromptSceneAnime8;
 
   /// No description provided for @economyAiPromptSceneMinimal1.
   ///
   /// In en, this message translates to:
-  /// **'minimal dunes and a single sun disk'**
+  /// **'a single paper boat on still pale water'**
   String get economyAiPromptSceneMinimal1;
 
   /// No description provided for @economyAiPromptSceneMinimal2.
   ///
   /// In en, this message translates to:
-  /// **'clean geometric mountain layers'**
+  /// **'one arch of light over an empty plain'**
   String get economyAiPromptSceneMinimal2;
 
   /// No description provided for @economyAiPromptSceneMinimal3.
   ///
   /// In en, this message translates to:
-  /// **'a serene monochrome ocean horizon'**
+  /// **'a lone tree on a gentle snowy slope'**
   String get economyAiPromptSceneMinimal3;
 
   /// No description provided for @economyAiPromptSceneMinimal4.
   ///
   /// In en, this message translates to:
-  /// **'simple abstract lines with balanced spacing'**
+  /// **'two overlapping circles on soft grain'**
   String get economyAiPromptSceneMinimal4;
 
   /// No description provided for @economyAiPromptSceneMinimal5.
   ///
   /// In en, this message translates to:
-  /// **'a soft gradient sky over flat hills'**
+  /// **'a thin horizon line splitting sea and sky'**
   String get economyAiPromptSceneMinimal5;
+
+  /// No description provided for @economyAiPromptSceneMinimal6.
+  ///
+  /// In en, this message translates to:
+  /// **'a single feather falling through empty space'**
+  String get economyAiPromptSceneMinimal6;
+
+  /// No description provided for @economyAiPromptSceneMinimal7.
+  ///
+  /// In en, this message translates to:
+  /// **'stacked smooth pebbles on a pale backdrop'**
+  String get economyAiPromptSceneMinimal7;
+
+  /// No description provided for @economyAiPromptSceneMinimal8.
+  ///
+  /// In en, this message translates to:
+  /// **'a crescent shadow on a soft plaster wall'**
+  String get economyAiPromptSceneMinimal8;
 
   /// No description provided for @economyAiPromptSceneCyberpunk1.
   ///
   /// In en, this message translates to:
-  /// **'a neon megacity street with wet reflections'**
+  /// **'a rain-soaked noodle bar under neon glow'**
   String get economyAiPromptSceneCyberpunk1;
 
   /// No description provided for @economyAiPromptSceneCyberpunk2.
   ///
   /// In en, this message translates to:
-  /// **'a futuristic alley with holographic billboards'**
+  /// **'a hover train threading between megatowers'**
   String get economyAiPromptSceneCyberpunk2;
 
   /// No description provided for @economyAiPromptSceneCyberpunk3.
   ///
   /// In en, this message translates to:
-  /// **'a high-tech skyline with flying traffic lanes'**
+  /// **'a lone android on a rooftop in the rain'**
   String get economyAiPromptSceneCyberpunk3;
 
   /// No description provided for @economyAiPromptSceneCyberpunk4.
   ///
   /// In en, this message translates to:
-  /// **'a cyberpunk rooftop overlooking glowing towers'**
+  /// **'a glowing data highway into a vast city'**
   String get economyAiPromptSceneCyberpunk4;
 
   /// No description provided for @economyAiPromptSceneCyberpunk5.
   ///
   /// In en, this message translates to:
-  /// **'a midnight city crossing with teal-magenta lights'**
+  /// **'a night market under a tangle of cables'**
   String get economyAiPromptSceneCyberpunk5;
+
+  /// No description provided for @economyAiPromptSceneCyberpunk6.
+  ///
+  /// In en, this message translates to:
+  /// **'a chrome motorbike parked in a neon alley'**
+  String get economyAiPromptSceneCyberpunk6;
+
+  /// No description provided for @economyAiPromptSceneCyberpunk7.
+  ///
+  /// In en, this message translates to:
+  /// **'a hologram moon rising over city towers'**
+  String get economyAiPromptSceneCyberpunk7;
+
+  /// No description provided for @economyAiPromptSceneCyberpunk8.
+  ///
+  /// In en, this message translates to:
+  /// **'a flooded street mirroring a wall of screens'**
+  String get economyAiPromptSceneCyberpunk8;
 
   /// No description provided for @economyAiPromptSceneWatercolor1.
   ///
   /// In en, this message translates to:
-  /// **'a watercolor forest valley at dawn'**
+  /// **'a lavender field fading into morning mist'**
   String get economyAiPromptSceneWatercolor1;
 
   /// No description provided for @economyAiPromptSceneWatercolor2.
   ///
   /// In en, this message translates to:
-  /// **'a hand-painted mountain lake scene'**
+  /// **'a small fishing village by a calm harbor'**
   String get economyAiPromptSceneWatercolor2;
 
   /// No description provided for @economyAiPromptSceneWatercolor3.
   ///
   /// In en, this message translates to:
-  /// **'soft watercolor clouds above rolling hills'**
+  /// **'wild poppies swaying beside a country lane'**
   String get economyAiPromptSceneWatercolor3;
 
   /// No description provided for @economyAiPromptSceneWatercolor4.
   ///
   /// In en, this message translates to:
-  /// **'a tranquil riverbank with pastel tones'**
+  /// **'a hot air balloon over soft green hills'**
   String get economyAiPromptSceneWatercolor4;
 
   /// No description provided for @economyAiPromptSceneWatercolor5.
   ///
   /// In en, this message translates to:
-  /// **'an artistic watercolor coastline at sunset'**
+  /// **'a heron standing in a reed-filled pond'**
   String get economyAiPromptSceneWatercolor5;
+
+  /// No description provided for @economyAiPromptSceneWatercolor6.
+  ///
+  /// In en, this message translates to:
+  /// **'a rainy city street with blurred lamps'**
+  String get economyAiPromptSceneWatercolor6;
+
+  /// No description provided for @economyAiPromptSceneWatercolor7.
+  ///
+  /// In en, this message translates to:
+  /// **'a teacup steaming beside an open window'**
+  String get economyAiPromptSceneWatercolor7;
+
+  /// No description provided for @economyAiPromptSceneWatercolor8.
+  ///
+  /// In en, this message translates to:
+  /// **'snowy pines along a winding frozen creek'**
+  String get economyAiPromptSceneWatercolor8;
 
   /// No description provided for @economyAiPromptSceneMeshGradient1.
   ///
   /// In en, this message translates to:
-  /// **'a smooth mesh gradient flow with layered blobs'**
+  /// **'soft color blobs melting into each other'**
   String get economyAiPromptSceneMeshGradient1;
 
   /// No description provided for @economyAiPromptSceneMeshGradient2.
   ///
   /// In en, this message translates to:
-  /// **'vibrant fluid gradient waves with depth'**
+  /// **'a silky gradient wave folding on itself'**
   String get economyAiPromptSceneMeshGradient2;
 
   /// No description provided for @economyAiPromptSceneMeshGradient3.
   ///
   /// In en, this message translates to:
-  /// **'soft multi-color mesh forms and gentle curves'**
+  /// **'glowing orbs blending on a velvet backdrop'**
   String get economyAiPromptSceneMeshGradient3;
 
   /// No description provided for @economyAiPromptSceneMeshGradient4.
   ///
   /// In en, this message translates to:
-  /// **'high-contrast mesh gradient ribbons'**
+  /// **'an aurora-like gradient sweeping upward'**
   String get economyAiPromptSceneMeshGradient4;
 
   /// No description provided for @economyAiPromptSceneMeshGradient5.
   ///
   /// In en, this message translates to:
-  /// **'pastel mesh gradient bloom with subtle texture'**
+  /// **'liquid color pools with a fine grain'**
   String get economyAiPromptSceneMeshGradient5;
+
+  /// No description provided for @economyAiPromptSceneMeshGradient6.
+  ///
+  /// In en, this message translates to:
+  /// **'a warm-to-cool gradient with soft noise'**
+  String get economyAiPromptSceneMeshGradient6;
+
+  /// No description provided for @economyAiPromptSceneMeshGradient7.
+  ///
+  /// In en, this message translates to:
+  /// **'overlapping translucent gradient petals'**
+  String get economyAiPromptSceneMeshGradient7;
+
+  /// No description provided for @economyAiPromptSceneMeshGradient8.
+  ///
+  /// In en, this message translates to:
+  /// **'a blurred sunset of fluid color bands'**
+  String get economyAiPromptSceneMeshGradient8;
 
   /// No description provided for @economyAiPromptSceneAbstract1.
   ///
   /// In en, this message translates to:
-  /// **'an abstract fractal composition with dynamic curves'**
+  /// **'interlocking glass shards catching light'**
   String get economyAiPromptSceneAbstract1;
 
   /// No description provided for @economyAiPromptSceneAbstract2.
   ///
   /// In en, this message translates to:
-  /// **'layered liquid forms with modern depth'**
+  /// **'flowing ink clouds suspended in water'**
   String get economyAiPromptSceneAbstract2;
 
   /// No description provided for @economyAiPromptSceneAbstract3.
   ///
   /// In en, this message translates to:
-  /// **'bold abstract shapes with soft edges'**
+  /// **'a spiral of folded ribbons in motion'**
   String get economyAiPromptSceneAbstract3;
 
   /// No description provided for @economyAiPromptSceneAbstract4.
   ///
   /// In en, this message translates to:
-  /// **'a surreal abstract field of floating geometry'**
+  /// **'shattered marble with veins of gold'**
   String get economyAiPromptSceneAbstract4;
 
   /// No description provided for @economyAiPromptSceneAbstract5.
   ///
   /// In en, this message translates to:
-  /// **'organic abstract waves with cinematic contrast'**
+  /// **'rippling topographic lines in layers'**
   String get economyAiPromptSceneAbstract5;
+
+  /// No description provided for @economyAiPromptSceneAbstract6.
+  ///
+  /// In en, this message translates to:
+  /// **'floating spheres casting long shadows'**
+  String get economyAiPromptSceneAbstract6;
+
+  /// No description provided for @economyAiPromptSceneAbstract7.
+  ///
+  /// In en, this message translates to:
+  /// **'smoke trails curling into a vortex'**
+  String get economyAiPromptSceneAbstract7;
+
+  /// No description provided for @economyAiPromptSceneAbstract8.
+  ///
+  /// In en, this message translates to:
+  /// **'a field of soft cubes rising in waves'**
+  String get economyAiPromptSceneAbstract8;
 
   /// No description provided for @economyAiPromptSceneNature1.
   ///
   /// In en, this message translates to:
-  /// **'a misty mountain range at sunrise'**
+  /// **'a waterfall pouring into a mossy gorge'**
   String get economyAiPromptSceneNature1;
 
   /// No description provided for @economyAiPromptSceneNature2.
   ///
   /// In en, this message translates to:
-  /// **'a dense evergreen forest with sun rays'**
+  /// **'a field of sunflowers under a big sky'**
   String get economyAiPromptSceneNature2;
 
   /// No description provided for @economyAiPromptSceneNature3.
   ///
   /// In en, this message translates to:
-  /// **'a dramatic coastal cliff with crashing waves'**
+  /// **'a frozen lake with cracks of blue ice'**
   String get economyAiPromptSceneNature3;
 
   /// No description provided for @economyAiPromptSceneNature4.
   ///
   /// In en, this message translates to:
-  /// **'a calm alpine lake under twilight sky'**
+  /// **'cherry trees lining a quiet river path'**
   String get economyAiPromptSceneNature4;
 
   /// No description provided for @economyAiPromptSceneNature5.
   ///
   /// In en, this message translates to:
-  /// **'a desert canyon with warm golden light'**
+  /// **'a tropical lagoon seen from above'**
   String get economyAiPromptSceneNature5;
 
-  /// No description provided for @economyAiPromptLightingSoftAmbient.
+  /// No description provided for @economyAiPromptSceneNature6.
   ///
   /// In en, this message translates to:
-  /// **'soft ambient'**
-  String get economyAiPromptLightingSoftAmbient;
+  /// **'autumn maples reflected in a still pond'**
+  String get economyAiPromptSceneNature6;
 
-  /// No description provided for @economyAiPromptLightingCinematicRim.
+  /// No description provided for @economyAiPromptSceneNature7.
   ///
   /// In en, this message translates to:
-  /// **'cinematic rim'**
-  String get economyAiPromptLightingCinematicRim;
+  /// **'a lone fox in fresh snow at dawn'**
+  String get economyAiPromptSceneNature7;
+
+  /// No description provided for @economyAiPromptSceneNature8.
+  ///
+  /// In en, this message translates to:
+  /// **'storm clouds rolling over green highlands'**
+  String get economyAiPromptSceneNature8;
+
+  /// No description provided for @economyAiPromptSceneSpace1.
+  ///
+  /// In en, this message translates to:
+  /// **'a ringed planet rising over a moon horizon'**
+  String get economyAiPromptSceneSpace1;
+
+  /// No description provided for @economyAiPromptSceneSpace2.
+  ///
+  /// In en, this message translates to:
+  /// **'a spiral galaxy glowing in deep space'**
+  String get economyAiPromptSceneSpace2;
+
+  /// No description provided for @economyAiPromptSceneSpace3.
+  ///
+  /// In en, this message translates to:
+  /// **'an astronaut floating above a blue planet'**
+  String get economyAiPromptSceneSpace3;
+
+  /// No description provided for @economyAiPromptSceneSpace4.
+  ///
+  /// In en, this message translates to:
+  /// **'a nebula shaped like a blooming flower'**
+  String get economyAiPromptSceneSpace4;
+
+  /// No description provided for @economyAiPromptSceneSpace5.
+  ///
+  /// In en, this message translates to:
+  /// **'twin suns setting over an alien desert'**
+  String get economyAiPromptSceneSpace5;
+
+  /// No description provided for @economyAiPromptSceneSpace6.
+  ///
+  /// In en, this message translates to:
+  /// **'a space station orbiting a gas giant'**
+  String get economyAiPromptSceneSpace6;
+
+  /// No description provided for @economyAiPromptSceneSpace7.
+  ///
+  /// In en, this message translates to:
+  /// **'a meteor shower over a quiet observatory'**
+  String get economyAiPromptSceneSpace7;
+
+  /// No description provided for @economyAiPromptSceneSpace8.
+  ///
+  /// In en, this message translates to:
+  /// **'an eclipse with a bright diamond ring'**
+  String get economyAiPromptSceneSpace8;
+
+  /// No description provided for @economyAiPromptSceneSynthwave1.
+  ///
+  /// In en, this message translates to:
+  /// **'a neon grid road racing toward a sunset'**
+  String get economyAiPromptSceneSynthwave1;
+
+  /// No description provided for @economyAiPromptSceneSynthwave2.
+  ///
+  /// In en, this message translates to:
+  /// **'a palm-lined coast under a striped sun'**
+  String get economyAiPromptSceneSynthwave2;
+
+  /// No description provided for @economyAiPromptSceneSynthwave3.
+  ///
+  /// In en, this message translates to:
+  /// **'a retro sports car on an endless highway'**
+  String get economyAiPromptSceneSynthwave3;
+
+  /// No description provided for @economyAiPromptSceneSynthwave4.
+  ///
+  /// In en, this message translates to:
+  /// **'wireframe mountains under a magenta sky'**
+  String get economyAiPromptSceneSynthwave4;
+
+  /// No description provided for @economyAiPromptSceneSynthwave5.
+  ///
+  /// In en, this message translates to:
+  /// **'a chrome sun sinking into a glowing sea'**
+  String get economyAiPromptSceneSynthwave5;
+
+  /// No description provided for @economyAiPromptSceneSynthwave6.
+  ///
+  /// In en, this message translates to:
+  /// **'a retro arcade glowing on a rainy night'**
+  String get economyAiPromptSceneSynthwave6;
+
+  /// No description provided for @economyAiPromptSceneSynthwave7.
+  ///
+  /// In en, this message translates to:
+  /// **'a cassette tape floating in neon space'**
+  String get economyAiPromptSceneSynthwave7;
+
+  /// No description provided for @economyAiPromptSceneSynthwave8.
+  ///
+  /// In en, this message translates to:
+  /// **'a lone palm tree against a laser horizon'**
+  String get economyAiPromptSceneSynthwave8;
+
+  /// No description provided for @economyAiPromptScenePixelArt1.
+  ///
+  /// In en, this message translates to:
+  /// **'a cozy cabin in a snowy forest at night'**
+  String get economyAiPromptScenePixelArt1;
+
+  /// No description provided for @economyAiPromptScenePixelArt2.
+  ///
+  /// In en, this message translates to:
+  /// **'a castle on a cliff above the sea'**
+  String get economyAiPromptScenePixelArt2;
+
+  /// No description provided for @economyAiPromptScenePixelArt3.
+  ///
+  /// In en, this message translates to:
+  /// **'a tiny town with glowing windows'**
+  String get economyAiPromptScenePixelArt3;
+
+  /// No description provided for @economyAiPromptScenePixelArt4.
+  ///
+  /// In en, this message translates to:
+  /// **'a starship over a purple alien world'**
+  String get economyAiPromptScenePixelArt4;
+
+  /// No description provided for @economyAiPromptScenePixelArt5.
+  ///
+  /// In en, this message translates to:
+  /// **'a waterfall in a lush jungle valley'**
+  String get economyAiPromptScenePixelArt5;
+
+  /// No description provided for @economyAiPromptScenePixelArt6.
+  ///
+  /// In en, this message translates to:
+  /// **'a fishing pier under a full moon'**
+  String get economyAiPromptScenePixelArt6;
+
+  /// No description provided for @economyAiPromptScenePixelArt7.
+  ///
+  /// In en, this message translates to:
+  /// **'a cherry blossom temple in spring'**
+  String get economyAiPromptScenePixelArt7;
+
+  /// No description provided for @economyAiPromptScenePixelArt8.
+  ///
+  /// In en, this message translates to:
+  /// **'a train crossing a bridge at sunset'**
+  String get economyAiPromptScenePixelArt8;
+
+  /// No description provided for @economyAiPromptSceneRender3d1.
+  ///
+  /// In en, this message translates to:
+  /// **'glossy clay shapes stacked in balance'**
+  String get economyAiPromptSceneRender3d1;
+
+  /// No description provided for @economyAiPromptSceneRender3d2.
+  ///
+  /// In en, this message translates to:
+  /// **'frosted glass ribbons on a pastel stage'**
+  String get economyAiPromptSceneRender3d2;
+
+  /// No description provided for @economyAiPromptSceneRender3d3.
+  ///
+  /// In en, this message translates to:
+  /// **'a tiny island floating on a soft cloud'**
+  String get economyAiPromptSceneRender3d3;
+
+  /// No description provided for @economyAiPromptSceneRender3d4.
+  ///
+  /// In en, this message translates to:
+  /// **'inflated chrome bubbles in soft light'**
+  String get economyAiPromptSceneRender3d4;
+
+  /// No description provided for @economyAiPromptSceneRender3d5.
+  ///
+  /// In en, this message translates to:
+  /// **'a miniature desert with a lone cactus'**
+  String get economyAiPromptSceneRender3d5;
+
+  /// No description provided for @economyAiPromptSceneRender3d6.
+  ///
+  /// In en, this message translates to:
+  /// **'a cozy room diorama inside a cube'**
+  String get economyAiPromptSceneRender3d6;
+
+  /// No description provided for @economyAiPromptSceneRender3d7.
+  ///
+  /// In en, this message translates to:
+  /// **'floating marble arches over still water'**
+  String get economyAiPromptSceneRender3d7;
+
+  /// No description provided for @economyAiPromptSceneRender3d8.
+  ///
+  /// In en, this message translates to:
+  /// **'candy-colored waves frozen in motion'**
+  String get economyAiPromptSceneRender3d8;
+
+  /// No description provided for @economyAiPromptSceneOilPainting1.
+  ///
+  /// In en, this message translates to:
+  /// **'a stormy sea crashing against a rocky shore'**
+  String get economyAiPromptSceneOilPainting1;
+
+  /// No description provided for @economyAiPromptSceneOilPainting2.
+  ///
+  /// In en, this message translates to:
+  /// **'a sunlit poppy meadow with a farmhouse'**
+  String get economyAiPromptSceneOilPainting2;
+
+  /// No description provided for @economyAiPromptSceneOilPainting3.
+  ///
+  /// In en, this message translates to:
+  /// **'a still life of lemons and a blue vase'**
+  String get economyAiPromptSceneOilPainting3;
+
+  /// No description provided for @economyAiPromptSceneOilPainting4.
+  ///
+  /// In en, this message translates to:
+  /// **'a misty harbor at dawn with old ships'**
+  String get economyAiPromptSceneOilPainting4;
+
+  /// No description provided for @economyAiPromptSceneOilPainting5.
+  ///
+  /// In en, this message translates to:
+  /// **'a forest path ablaze with autumn color'**
+  String get economyAiPromptSceneOilPainting5;
+
+  /// No description provided for @economyAiPromptSceneOilPainting6.
+  ///
+  /// In en, this message translates to:
+  /// **'a moonlit canal lined with old houses'**
+  String get economyAiPromptSceneOilPainting6;
+
+  /// No description provided for @economyAiPromptSceneOilPainting7.
+  ///
+  /// In en, this message translates to:
+  /// **'a wheat field rippling before a storm'**
+  String get economyAiPromptSceneOilPainting7;
+
+  /// No description provided for @economyAiPromptSceneOilPainting8.
+  ///
+  /// In en, this message translates to:
+  /// **'a single rose in a glass on a dark table'**
+  String get economyAiPromptSceneOilPainting8;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE1.
+  ///
+  /// In en, this message translates to:
+  /// **'a great wave curling beneath a pale moon'**
+  String get economyAiPromptSceneUkiyoE1;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE2.
+  ///
+  /// In en, this message translates to:
+  /// **'a snow-covered pagoda at twilight'**
+  String get economyAiPromptSceneUkiyoE2;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE3.
+  ///
+  /// In en, this message translates to:
+  /// **'cranes flying over a misty mountain'**
+  String get economyAiPromptSceneUkiyoE3;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE4.
+  ///
+  /// In en, this message translates to:
+  /// **'a wooden bridge under falling cherry petals'**
+  String get economyAiPromptSceneUkiyoE4;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE5.
+  ///
+  /// In en, this message translates to:
+  /// **'fishing boats on a rough indigo sea'**
+  String get economyAiPromptSceneUkiyoE5;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE6.
+  ///
+  /// In en, this message translates to:
+  /// **'a red sun over a volcanic peak'**
+  String get economyAiPromptSceneUkiyoE6;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE7.
+  ///
+  /// In en, this message translates to:
+  /// **'a koi pond beneath weeping willows'**
+  String get economyAiPromptSceneUkiyoE7;
+
+  /// No description provided for @economyAiPromptSceneUkiyoE8.
+  ///
+  /// In en, this message translates to:
+  /// **'rain falling over a quiet riverside town'**
+  String get economyAiPromptSceneUkiyoE8;
+
+  /// No description provided for @economyAiPromptLightingMorningHaze.
+  ///
+  /// In en, this message translates to:
+  /// **'soft morning haze'**
+  String get economyAiPromptLightingMorningHaze;
 
   /// No description provided for @economyAiPromptLightingGoldenHour.
   ///
   /// In en, this message translates to:
-  /// **'golden hour'**
+  /// **'golden hour glow'**
   String get economyAiPromptLightingGoldenHour;
 
-  /// No description provided for @economyAiPromptLightingMoonlit.
+  /// No description provided for @economyAiPromptLightingMoonlight.
   ///
   /// In en, this message translates to:
-  /// **'moonlit'**
-  String get economyAiPromptLightingMoonlit;
+  /// **'cool moonlight'**
+  String get economyAiPromptLightingMoonlight;
 
-  /// No description provided for @economyAiPromptLightingVolumetric.
+  /// No description provided for @economyAiPromptLightingNeonRim.
   ///
   /// In en, this message translates to:
-  /// **'volumetric'**
-  String get economyAiPromptLightingVolumetric;
+  /// **'neon rim light'**
+  String get economyAiPromptLightingNeonRim;
 
-  /// No description provided for @economyAiPromptMoodCalm.
+  /// No description provided for @economyAiPromptLightingBacklight.
   ///
   /// In en, this message translates to:
-  /// **'calm'**
-  String get economyAiPromptMoodCalm;
+  /// **'warm backlight'**
+  String get economyAiPromptLightingBacklight;
 
-  /// No description provided for @economyAiPromptMoodDreamy.
+  /// No description provided for @economyAiPromptLightingGodRays.
   ///
   /// In en, this message translates to:
-  /// **'dreamy'**
-  String get economyAiPromptMoodDreamy;
+  /// **'soft god rays'**
+  String get economyAiPromptLightingGodRays;
 
-  /// No description provided for @economyAiPromptMoodEpic.
+  /// No description provided for @economyAiPromptLightingStudio.
   ///
   /// In en, this message translates to:
-  /// **'epic'**
-  String get economyAiPromptMoodEpic;
+  /// **'even studio light'**
+  String get economyAiPromptLightingStudio;
 
-  /// No description provided for @economyAiPromptMoodMoody.
+  /// No description provided for @economyAiPromptLightingTwilight.
   ///
   /// In en, this message translates to:
-  /// **'moody'**
-  String get economyAiPromptMoodMoody;
+  /// **'deep blue twilight'**
+  String get economyAiPromptLightingTwilight;
 
-  /// No description provided for @economyAiPromptMoodUplifting.
+  /// No description provided for @economyAiPromptPaletteTealAmber.
   ///
   /// In en, this message translates to:
-  /// **'uplifting'**
-  String get economyAiPromptMoodUplifting;
+  /// **'teal and amber hues'**
+  String get economyAiPromptPaletteTealAmber;
 
-  /// No description provided for @economyAiPromptQualityHighDetail.
+  /// No description provided for @economyAiPromptPaletteIndigoRose.
   ///
   /// In en, this message translates to:
-  /// **'high detail'**
-  String get economyAiPromptQualityHighDetail;
+  /// **'indigo and rose hues'**
+  String get economyAiPromptPaletteIndigoRose;
 
-  /// No description provided for @economyAiPromptQualityCleanComposition.
+  /// No description provided for @economyAiPromptPaletteSageCream.
   ///
   /// In en, this message translates to:
-  /// **'ultra clean composition'**
-  String get economyAiPromptQualityCleanComposition;
+  /// **'sage green and cream'**
+  String get economyAiPromptPaletteSageCream;
 
-  /// No description provided for @economyAiPromptQualityCrispTextures.
+  /// No description provided for @economyAiPromptPaletteBlackNeonPink.
   ///
   /// In en, this message translates to:
-  /// **'crisp textures'**
-  String get economyAiPromptQualityCrispTextures;
+  /// **'black with neon pink'**
+  String get economyAiPromptPaletteBlackNeonPink;
 
-  /// No description provided for @economyAiPromptQualityBalancedContrast.
+  /// No description provided for @economyAiPromptPalettePastelPeach.
   ///
   /// In en, this message translates to:
-  /// **'balanced contrast'**
-  String get economyAiPromptQualityBalancedContrast;
+  /// **'soft pastel peach'**
+  String get economyAiPromptPalettePastelPeach;
 
-  /// No description provided for @economyAiPromptQualityNaturalColors.
+  /// No description provided for @economyAiPromptPaletteEmeraldGold.
   ///
   /// In en, this message translates to:
-  /// **'vibrant but natural colors'**
-  String get economyAiPromptQualityNaturalColors;
+  /// **'emerald and gold'**
+  String get economyAiPromptPaletteEmeraldGold;
+
+  /// No description provided for @economyAiPromptPaletteOceanBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'shades of ocean blue'**
+  String get economyAiPromptPaletteOceanBlue;
+
+  /// No description provided for @economyAiPromptPaletteCrimsonCharcoal.
+  ///
+  /// In en, this message translates to:
+  /// **'crimson and charcoal'**
+  String get economyAiPromptPaletteCrimsonCharcoal;
 
   /// No description provided for @economyAiPromptSuffix.
   ///
@@ -15316,8 +15772,8 @@ abstract class AppLocalizations {
   /// A complete AI wallpaper prompt. Translate the whole message naturally.
   ///
   /// In en, this message translates to:
-  /// **'{scene}, {lighting} lighting, {mood} mood, {quality}, {suffix}'**
-  String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix);
+  /// **'{scene}, {lighting}, {palette}, {suffix}'**
+  String economyAiPromptComposition(String scene, String lighting, String palette, String suffix);
 
   /// An AI wallpaper scene prompt with wallpaper instructions.
   ///
@@ -15340,212 +15796,392 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingAiPromptNature1.
   ///
   /// In en, this message translates to:
-  /// **'a misty mountain range at sunrise with warm golden light'**
+  /// **'a glacier lake at sunrise with mirror-still water and pink mountain peaks'**
   String get onboardingAiPromptNature1;
 
   /// No description provided for @onboardingAiPromptNature2.
   ///
   /// In en, this message translates to:
-  /// **'a dense evergreen forest with sun rays breaking through the canopy'**
+  /// **'a moss-covered forest stream with soft light falling through tall ferns'**
   String get onboardingAiPromptNature2;
 
   /// No description provided for @onboardingAiPromptNature3.
   ///
   /// In en, this message translates to:
-  /// **'a dramatic coastal cliff with crashing waves and moody sky'**
+  /// **'a field of wildflowers under a vast evening sky with drifting clouds'**
   String get onboardingAiPromptNature3;
 
   /// No description provided for @onboardingAiPromptNature4.
   ///
   /// In en, this message translates to:
-  /// **'a calm alpine lake under a twilight sky with star reflections'**
+  /// **'a black sand beach with turquoise waves and sea stacks at dusk'**
   String get onboardingAiPromptNature4;
 
   /// No description provided for @onboardingAiPromptNature5.
   ///
   /// In en, this message translates to:
-  /// **'a desert canyon with warm golden light and dramatic rock formations'**
+  /// **'northern lights over a snowy pine forest beside a frozen lake'**
   String get onboardingAiPromptNature5;
 
   /// No description provided for @onboardingAiPromptAbstract1.
   ///
   /// In en, this message translates to:
-  /// **'an abstract fractal composition with dynamic curves and vivid color'**
+  /// **'translucent glass ribbons twisting through soft light with iridescent edges'**
   String get onboardingAiPromptAbstract1;
 
   /// No description provided for @onboardingAiPromptAbstract2.
   ///
   /// In en, this message translates to:
-  /// **'layered liquid forms with modern depth and metallic sheen'**
+  /// **'ink clouds blooming in water in deep blue and gold with rich soft detail'**
   String get onboardingAiPromptAbstract2;
 
   /// No description provided for @onboardingAiPromptAbstract3.
   ///
   /// In en, this message translates to:
-  /// **'bold abstract shapes with soft edges and cinematic contrast'**
+  /// **'layered paper-like waves in warm sunset colors with gentle shadows'**
   String get onboardingAiPromptAbstract3;
 
   /// No description provided for @onboardingAiPromptAbstract4.
   ///
   /// In en, this message translates to:
-  /// **'a surreal abstract field of floating geometry bathed in neon light'**
+  /// **'a sculpted marble swirl with gold veins on a deep charcoal background'**
   String get onboardingAiPromptAbstract4;
 
   /// No description provided for @onboardingAiPromptAbstract5.
   ///
   /// In en, this message translates to:
-  /// **'organic abstract waves with rich texture and depth of field'**
+  /// **'floating chrome spheres reflecting a pastel sky in calm open space'**
   String get onboardingAiPromptAbstract5;
 
   /// No description provided for @onboardingAiPromptWatercolor1.
   ///
   /// In en, this message translates to:
-  /// **'a watercolor forest valley at dawn with soft pastel mist'**
+  /// **'a watercolor seaside village with pastel houses and boats at sunrise'**
   String get onboardingAiPromptWatercolor1;
 
   /// No description provided for @onboardingAiPromptWatercolor2.
   ///
   /// In en, this message translates to:
-  /// **'a hand-painted mountain lake scene in dreamy watercolor tones'**
+  /// **'loose watercolor wildflowers in blush pink and sage on textured paper'**
   String get onboardingAiPromptWatercolor2;
 
   /// No description provided for @onboardingAiPromptWatercolor3.
   ///
   /// In en, this message translates to:
-  /// **'soft watercolor clouds above rolling hills at golden hour'**
+  /// **'a misty watercolor lake with a small wooden dock and distant hills'**
   String get onboardingAiPromptWatercolor3;
 
   /// No description provided for @onboardingAiPromptWatercolor4.
   ///
   /// In en, this message translates to:
-  /// **'a tranquil riverbank with pastel watercolor reflections'**
+  /// **'a watercolor night sky with soft violet clouds and a glowing moon'**
   String get onboardingAiPromptWatercolor4;
 
   /// No description provided for @onboardingAiPromptWatercolor5.
   ///
   /// In en, this message translates to:
-  /// **'an artistic watercolor coastline at sunset with warm hues'**
+  /// **'a watercolor autumn forest in warm washes of orange and gold'**
   String get onboardingAiPromptWatercolor5;
 
   /// No description provided for @onboardingAiPromptMinimal1.
   ///
   /// In en, this message translates to:
-  /// **'minimal sand dunes and a single sun disk on the horizon'**
+  /// **'a single sun setting over a calm sea with flat colors and a wide empty sky'**
   String get onboardingAiPromptMinimal1;
 
   /// No description provided for @onboardingAiPromptMinimal2.
   ///
   /// In en, this message translates to:
-  /// **'clean geometric mountain layers in soft muted tones'**
+  /// **'soft layered hills in muted sand tones under a pale gradient sky'**
   String get onboardingAiPromptMinimal2;
 
   /// No description provided for @onboardingAiPromptMinimal3.
   ///
   /// In en, this message translates to:
-  /// **'a serene monochrome ocean horizon at dusk'**
+  /// **'one bare tree on a snowy hill with plenty of quiet empty space'**
   String get onboardingAiPromptMinimal3;
 
   /// No description provided for @onboardingAiPromptMinimal4.
   ///
   /// In en, this message translates to:
-  /// **'simple abstract lines with perfectly balanced negative space'**
+  /// **'a lone sailboat on a still lake at dawn in simple shapes and soft tones'**
   String get onboardingAiPromptMinimal4;
 
   /// No description provided for @onboardingAiPromptMinimal5.
   ///
   /// In en, this message translates to:
-  /// **'a soft gradient sky over flat minimalist hills'**
+  /// **'gentle concentric arches in terracotta and cream with fine grain'**
   String get onboardingAiPromptMinimal5;
 
   /// No description provided for @onboardingAiPromptAnime1.
   ///
   /// In en, this message translates to:
-  /// **'an anime style city rooftop at golden hour with drifting cherry blossoms'**
+  /// **'an anime summer sky with towering clouds over a quiet seaside railway'**
   String get onboardingAiPromptAnime1;
 
   /// No description provided for @onboardingAiPromptAnime2.
   ///
   /// In en, this message translates to:
-  /// **'a dreamy anime countryside train crossing under a huge cloudy sky'**
+  /// **'an anime night city seen from a hilltop with warm lights and a sky of stars'**
   String get onboardingAiPromptAnime2;
 
   /// No description provided for @onboardingAiPromptAnime3.
   ///
   /// In en, this message translates to:
-  /// **'an anime mountain village at dusk with glowing lanterns and soft mist'**
+  /// **'an anime forest shrine with glowing spirits drifting in soft green light'**
   String get onboardingAiPromptAnime3;
 
   /// No description provided for @onboardingAiPromptAnime4.
   ///
   /// In en, this message translates to:
-  /// **'a quiet anime seaside town under a pastel sunset and towering clouds'**
+  /// **'an anime rainy street at dusk with glowing shop lights and puddle reflections'**
   String get onboardingAiPromptAnime4;
 
   /// No description provided for @onboardingAiPromptAnime5.
   ///
   /// In en, this message translates to:
-  /// **'an anime starry night over a calm lake with floating lights'**
+  /// **'an anime meadow at golden hour with wind sweeping through tall grass'**
   String get onboardingAiPromptAnime5;
 
   /// No description provided for @onboardingAiPromptMeshGradient1.
   ///
   /// In en, this message translates to:
-  /// **'a smooth mesh gradient of coral, teal and warm yellow with soft grain'**
+  /// **'a smooth mesh gradient of tangerine, pink and violet with soft grain'**
   String get onboardingAiPromptMeshGradient1;
 
   /// No description provided for @onboardingAiPromptMeshGradient2.
   ///
   /// In en, this message translates to:
-  /// **'a flowing mesh gradient in deep violet and electric blue with gentle glow'**
+  /// **'a deep mesh gradient of navy and teal with a glowing lime highlight'**
   String get onboardingAiPromptMeshGradient2;
 
   /// No description provided for @onboardingAiPromptMeshGradient3.
   ///
   /// In en, this message translates to:
-  /// **'a pastel mesh gradient of peach, lilac and mint blending into each other'**
+  /// **'a soft mesh gradient of sky blue, lavender and warm cream'**
   String get onboardingAiPromptMeshGradient3;
 
   /// No description provided for @onboardingAiPromptMeshGradient4.
   ///
   /// In en, this message translates to:
-  /// **'a vibrant mesh gradient sunset with layered magenta and orange tones'**
+  /// **'a bold mesh gradient of crimson and gold flowing like silk'**
   String get onboardingAiPromptMeshGradient4;
 
   /// No description provided for @onboardingAiPromptMeshGradient5.
   ///
   /// In en, this message translates to:
-  /// **'a calm mesh gradient of ocean blues and seafoam with subtle light bloom'**
+  /// **'a calm mesh gradient of sage, mint and pale sand with gentle light'**
   String get onboardingAiPromptMeshGradient5;
 
   /// No description provided for @onboardingAiPromptCyberpunk1.
   ///
   /// In en, this message translates to:
-  /// **'a neon megacity street with wet reflections and flying vehicles'**
+  /// **'a cyberpunk street at night in the rain with neon reflections and steam'**
   String get onboardingAiPromptCyberpunk1;
 
   /// No description provided for @onboardingAiPromptCyberpunk2.
   ///
   /// In en, this message translates to:
-  /// **'a futuristic alley with holographic billboards and teal-magenta light'**
+  /// **'a towering neon city seen from a rooftop with flying cars streaking past'**
   String get onboardingAiPromptCyberpunk2;
 
   /// No description provided for @onboardingAiPromptCyberpunk3.
   ///
   /// In en, this message translates to:
-  /// **'a high-tech skyline at night with glowing traffic lanes'**
+  /// **'a quiet cyberpunk canal lined with glowing shops and floating lanterns'**
   String get onboardingAiPromptCyberpunk3;
 
   /// No description provided for @onboardingAiPromptCyberpunk4.
   ///
   /// In en, this message translates to:
-  /// **'a cyberpunk rooftop overlooking a city of glowing towers'**
+  /// **'a cyberpunk skyline at dawn with glass towers in pink and teal haze'**
   String get onboardingAiPromptCyberpunk4;
 
   /// No description provided for @onboardingAiPromptCyberpunk5.
   ///
   /// In en, this message translates to:
-  /// **'a midnight city crossing drenched in teal and magenta neon'**
+  /// **'a lone motorbike on a neon bridge over a misty futuristic city'**
   String get onboardingAiPromptCyberpunk5;
+
+  /// No description provided for @onboardingAiPromptSpace1.
+  ///
+  /// In en, this message translates to:
+  /// **'a ringed gas giant rising over a rocky moon with stars filling the black sky'**
+  String get onboardingAiPromptSpace1;
+
+  /// No description provided for @onboardingAiPromptSpace2.
+  ///
+  /// In en, this message translates to:
+  /// **'a colorful nebula in violet and teal with bright young stars'**
+  String get onboardingAiPromptSpace2;
+
+  /// No description provided for @onboardingAiPromptSpace3.
+  ///
+  /// In en, this message translates to:
+  /// **'a spiral galaxy seen face-on with a glowing core and dusty blue arms'**
+  String get onboardingAiPromptSpace3;
+
+  /// No description provided for @onboardingAiPromptSpace4.
+  ///
+  /// In en, this message translates to:
+  /// **'an astronaut drifting above Earth at sunrise with a thin blue atmosphere'**
+  String get onboardingAiPromptSpace4;
+
+  /// No description provided for @onboardingAiPromptSpace5.
+  ///
+  /// In en, this message translates to:
+  /// **'a total solar eclipse over a silent mountain range'**
+  String get onboardingAiPromptSpace5;
+
+  /// No description provided for @onboardingAiPromptSynthwave1.
+  ///
+  /// In en, this message translates to:
+  /// **'a synthwave sunset with a striped sun over a glowing neon grid'**
+  String get onboardingAiPromptSynthwave1;
+
+  /// No description provided for @onboardingAiPromptSynthwave2.
+  ///
+  /// In en, this message translates to:
+  /// **'a retro car driving toward a magenta sun on an empty coastal road'**
+  String get onboardingAiPromptSynthwave2;
+
+  /// No description provided for @onboardingAiPromptSynthwave3.
+  ///
+  /// In en, this message translates to:
+  /// **'wireframe mountains under a starry purple sky with a chrome sun'**
+  String get onboardingAiPromptSynthwave3;
+
+  /// No description provided for @onboardingAiPromptSynthwave4.
+  ///
+  /// In en, this message translates to:
+  /// **'a synthwave beach with palm silhouettes and a glowing pink horizon'**
+  String get onboardingAiPromptSynthwave4;
+
+  /// No description provided for @onboardingAiPromptSynthwave5.
+  ///
+  /// In en, this message translates to:
+  /// **'a retro city skyline at night in pink and cyan neon haze'**
+  String get onboardingAiPromptSynthwave5;
+
+  /// No description provided for @onboardingAiPromptPixelArt1.
+  ///
+  /// In en, this message translates to:
+  /// **'a pixel art cabin in a snowy forest with warm glowing windows at night'**
+  String get onboardingAiPromptPixelArt1;
+
+  /// No description provided for @onboardingAiPromptPixelArt2.
+  ///
+  /// In en, this message translates to:
+  /// **'a pixel art seaside town at sunset with boats in the harbor'**
+  String get onboardingAiPromptPixelArt2;
+
+  /// No description provided for @onboardingAiPromptPixelArt3.
+  ///
+  /// In en, this message translates to:
+  /// **'a pixel art castle on a floating island above the clouds'**
+  String get onboardingAiPromptPixelArt3;
+
+  /// No description provided for @onboardingAiPromptPixelArt4.
+  ///
+  /// In en, this message translates to:
+  /// **'a pixel art night sky over a quiet lake with fireflies'**
+  String get onboardingAiPromptPixelArt4;
+
+  /// No description provided for @onboardingAiPromptPixelArt5.
+  ///
+  /// In en, this message translates to:
+  /// **'a pixel art cherry blossom path leading to a small temple'**
+  String get onboardingAiPromptPixelArt5;
+
+  /// No description provided for @onboardingAiPromptRender3d1.
+  ///
+  /// In en, this message translates to:
+  /// **'a 3D render of soft clay shapes in pastel colors with gentle shadows'**
+  String get onboardingAiPromptRender3d1;
+
+  /// No description provided for @onboardingAiPromptRender3d2.
+  ///
+  /// In en, this message translates to:
+  /// **'a 3D render of a tiny floating island with a waterfall and trees'**
+  String get onboardingAiPromptRender3d2;
+
+  /// No description provided for @onboardingAiPromptRender3d3.
+  ///
+  /// In en, this message translates to:
+  /// **'a 3D render of glossy glass waves in blue and violet under studio light'**
+  String get onboardingAiPromptRender3d3;
+
+  /// No description provided for @onboardingAiPromptRender3d4.
+  ///
+  /// In en, this message translates to:
+  /// **'a 3D render of a cozy miniature room inside a glowing cube'**
+  String get onboardingAiPromptRender3d4;
+
+  /// No description provided for @onboardingAiPromptRender3d5.
+  ///
+  /// In en, this message translates to:
+  /// **'a 3D render of chrome bubbles floating over a calm pink sea'**
+  String get onboardingAiPromptRender3d5;
+
+  /// No description provided for @onboardingAiPromptOilPainting1.
+  ///
+  /// In en, this message translates to:
+  /// **'an oil painting of a stormy sea with a small ship under a dramatic sky'**
+  String get onboardingAiPromptOilPainting1;
+
+  /// No description provided for @onboardingAiPromptOilPainting2.
+  ///
+  /// In en, this message translates to:
+  /// **'an oil painting of a sunlit poppy field with a distant farmhouse'**
+  String get onboardingAiPromptOilPainting2;
+
+  /// No description provided for @onboardingAiPromptOilPainting3.
+  ///
+  /// In en, this message translates to:
+  /// **'an oil painting of a misty harbor at dawn with old wooden boats'**
+  String get onboardingAiPromptOilPainting3;
+
+  /// No description provided for @onboardingAiPromptOilPainting4.
+  ///
+  /// In en, this message translates to:
+  /// **'an oil painting of an autumn forest path in thick, rich brushstrokes'**
+  String get onboardingAiPromptOilPainting4;
+
+  /// No description provided for @onboardingAiPromptOilPainting5.
+  ///
+  /// In en, this message translates to:
+  /// **'an oil painting of a moonlit canal town with warm glowing windows'**
+  String get onboardingAiPromptOilPainting5;
+
+  /// No description provided for @onboardingAiPromptUkiyoE1.
+  ///
+  /// In en, this message translates to:
+  /// **'a ukiyo-e great wave under a pale moon with a snowy mountain far away'**
+  String get onboardingAiPromptUkiyoE1;
+
+  /// No description provided for @onboardingAiPromptUkiyoE2.
+  ///
+  /// In en, this message translates to:
+  /// **'a ukiyo-e snowy village at night with glowing paper lanterns'**
+  String get onboardingAiPromptUkiyoE2;
+
+  /// No description provided for @onboardingAiPromptUkiyoE3.
+  ///
+  /// In en, this message translates to:
+  /// **'a ukiyo-e scene of cranes flying over misty mountains at dawn'**
+  String get onboardingAiPromptUkiyoE3;
+
+  /// No description provided for @onboardingAiPromptUkiyoE4.
+  ///
+  /// In en, this message translates to:
+  /// **'a ukiyo-e wooden bridge under cherry blossoms on a spring day'**
+  String get onboardingAiPromptUkiyoE4;
+
+  /// No description provided for @onboardingAiPromptUkiyoE5.
+  ///
+  /// In en, this message translates to:
+  /// **'a ukiyo-e red sun over a calm indigo sea with small fishing boats'**
+  String get onboardingAiPromptUkiyoE5;
 
   /// Creator byline for the daily featured wallpaper.
   ///
