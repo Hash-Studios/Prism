@@ -34,12 +34,14 @@ int? shortSideOf(SearchFilters filters) {
 }
 
 /// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort], [color] and [depthOnly] in the sheet.
+/// [spatialOnly] comes from the Spatial row, which the sheet keeps unless Depth Effect is turned on.
 SearchFilters buildSearchFilters({
   required bool portraitOnly,
   required int? shortSide,
   required SearchSort sort,
   PrismPaletteColor? color,
   bool depthOnly = false,
+  bool spatialOnly = false,
 }) {
   return SearchFilters(
     portraitOnly: portraitOnly,
@@ -47,6 +49,7 @@ SearchFilters buildSearchFilters({
     sort: sort,
     color: color,
     depthOnly: depthOnly,
+    spatialOnly: spatialOnly && !depthOnly,
   );
 }
 
@@ -118,6 +121,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               sort: _sort,
               color: _color,
               depthOnly: _depthOnly,
+              spatialOnly: widget.initial.spatialOnly,
             ),
           ),
         ),

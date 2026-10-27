@@ -306,5 +306,27 @@ void main() {
 
       expect(result!.depthOnly, isFalse);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Apply keeps the Spatial list on', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(spatialOnly: true), (picked) => result = picked);
+
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters(spatialOnly: true));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('turning Depth Effect on in the sheet replaces the Spatial list', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(spatialOnly: true), (picked) => result = picked);
+
+      await tester.tap(depthSwitch);
+      await tester.pump();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters(depthOnly: true));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 }
