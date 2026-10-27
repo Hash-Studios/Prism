@@ -55,7 +55,7 @@ extension ThemeEventPatterns on ThemeEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AccountSynced value)?  accountSynced,TResult Function( _LightThemeChanged value)?  lightThemeChanged,TResult Function( _LightAccentChanged value)?  lightAccentChanged,TResult Function( _DarkThemeChanged value)?  darkThemeChanged,TResult Function( _DarkAccentChanged value)?  darkAccentChanged,TResult Function( _ModeChanged value)?  modeChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AccountSynced value)?  accountSynced,TResult Function( _LightThemeChanged value)?  lightThemeChanged,TResult Function( _LightAccentChanged value)?  lightAccentChanged,TResult Function( _DarkThemeChanged value)?  darkThemeChanged,TResult Function( _DarkAccentChanged value)?  darkAccentChanged,TResult Function( _ModeChanged value)?  modeChanged,TResult Function( _SystemColorsChanged value)?  systemColorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -65,7 +65,8 @@ return lightThemeChanged(_that);case _LightAccentChanged() when lightAccentChang
 return lightAccentChanged(_that);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that);case _ModeChanged() when modeChanged != null:
-return modeChanged(_that);case _:
+return modeChanged(_that);case _SystemColorsChanged() when systemColorsChanged != null:
+return systemColorsChanged(_that);case _:
   return orElse();
 
 }
@@ -83,7 +84,7 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AccountSynced value)  accountSynced,required TResult Function( _LightThemeChanged value)  lightThemeChanged,required TResult Function( _LightAccentChanged value)  lightAccentChanged,required TResult Function( _DarkThemeChanged value)  darkThemeChanged,required TResult Function( _DarkAccentChanged value)  darkAccentChanged,required TResult Function( _ModeChanged value)  modeChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AccountSynced value)  accountSynced,required TResult Function( _LightThemeChanged value)  lightThemeChanged,required TResult Function( _LightAccentChanged value)  lightAccentChanged,required TResult Function( _DarkThemeChanged value)  darkThemeChanged,required TResult Function( _DarkAccentChanged value)  darkAccentChanged,required TResult Function( _ModeChanged value)  modeChanged,required TResult Function( _SystemColorsChanged value)  systemColorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -93,7 +94,8 @@ return lightThemeChanged(_that);case _LightAccentChanged():
 return lightAccentChanged(_that);case _DarkThemeChanged():
 return darkThemeChanged(_that);case _DarkAccentChanged():
 return darkAccentChanged(_that);case _ModeChanged():
-return modeChanged(_that);case _:
+return modeChanged(_that);case _SystemColorsChanged():
+return systemColorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -110,7 +112,7 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AccountSynced value)?  accountSynced,TResult? Function( _LightThemeChanged value)?  lightThemeChanged,TResult? Function( _LightAccentChanged value)?  lightAccentChanged,TResult? Function( _DarkThemeChanged value)?  darkThemeChanged,TResult? Function( _DarkAccentChanged value)?  darkAccentChanged,TResult? Function( _ModeChanged value)?  modeChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AccountSynced value)?  accountSynced,TResult? Function( _LightThemeChanged value)?  lightThemeChanged,TResult? Function( _LightAccentChanged value)?  lightAccentChanged,TResult? Function( _DarkThemeChanged value)?  darkThemeChanged,TResult? Function( _DarkAccentChanged value)?  darkAccentChanged,TResult? Function( _ModeChanged value)?  modeChanged,TResult? Function( _SystemColorsChanged value)?  systemColorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -120,7 +122,8 @@ return lightThemeChanged(_that);case _LightAccentChanged() when lightAccentChang
 return lightAccentChanged(_that);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that);case _ModeChanged() when modeChanged != null:
-return modeChanged(_that);case _:
+return modeChanged(_that);case _SystemColorsChanged() when systemColorsChanged != null:
+return systemColorsChanged(_that);case _:
   return null;
 
 }
@@ -137,7 +140,7 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( ThemePreferences preferences)?  accountSynced,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( ThemePreferences preferences)?  accountSynced,TResult Function( String themeId)?  lightThemeChanged,TResult Function( int accentColorValue)?  lightAccentChanged,TResult Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult Function( int accentColorValue)?  darkAccentChanged,TResult Function( ThemeMode mode)?  modeChanged,TResult Function( SystemColorSchemes? schemes)?  systemColorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AccountSynced() when accountSynced != null:
@@ -146,7 +149,8 @@ return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAcc
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged() when modeChanged != null:
-return modeChanged(_that.mode);case _:
+return modeChanged(_that.mode);case _SystemColorsChanged() when systemColorsChanged != null:
+return systemColorsChanged(_that.schemes);case _:
   return orElse();
 
 }
@@ -164,7 +168,7 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( ThemePreferences preferences)  accountSynced,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId,  ThemeMode? mode)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( ThemePreferences preferences)  accountSynced,required TResult Function( String themeId)  lightThemeChanged,required TResult Function( int accentColorValue)  lightAccentChanged,required TResult Function( String themeId,  ThemeMode? mode)  darkThemeChanged,required TResult Function( int accentColorValue)  darkAccentChanged,required TResult Function( ThemeMode mode)  modeChanged,required TResult Function( SystemColorSchemes? schemes)  systemColorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _AccountSynced():
@@ -173,7 +177,8 @@ return lightThemeChanged(_that.themeId);case _LightAccentChanged():
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged():
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged():
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged():
-return modeChanged(_that.mode);case _:
+return modeChanged(_that.mode);case _SystemColorsChanged():
+return systemColorsChanged(_that.schemes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -190,7 +195,7 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( ThemePreferences preferences)?  accountSynced,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( ThemePreferences preferences)?  accountSynced,TResult? Function( String themeId)?  lightThemeChanged,TResult? Function( int accentColorValue)?  lightAccentChanged,TResult? Function( String themeId,  ThemeMode? mode)?  darkThemeChanged,TResult? Function( int accentColorValue)?  darkAccentChanged,TResult? Function( ThemeMode mode)?  modeChanged,TResult? Function( SystemColorSchemes? schemes)?  systemColorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AccountSynced() when accountSynced != null:
@@ -199,7 +204,8 @@ return lightThemeChanged(_that.themeId);case _LightAccentChanged() when lightAcc
 return lightAccentChanged(_that.accentColorValue);case _DarkThemeChanged() when darkThemeChanged != null:
 return darkThemeChanged(_that.themeId,_that.mode);case _DarkAccentChanged() when darkAccentChanged != null:
 return darkAccentChanged(_that.accentColorValue);case _ModeChanged() when modeChanged != null:
-return modeChanged(_that.mode);case _:
+return modeChanged(_that.mode);case _SystemColorsChanged() when systemColorsChanged != null:
+return systemColorsChanged(_that.schemes);case _:
   return null;
 
 }
@@ -212,7 +218,7 @@ return modeChanged(_that.mode);case _:
 
 class _Started implements ThemeEvent {
   const _Started();
-  
+
 
 
 
@@ -244,7 +250,7 @@ String toString() {
 
 class _AccountSynced implements ThemeEvent {
   const _AccountSynced({required this.preferences});
-  
+
 
  final  ThemePreferences preferences;
 
@@ -310,7 +316,7 @@ as ThemePreferences,
 
 class _LightThemeChanged implements ThemeEvent {
   const _LightThemeChanged({required this.themeId});
-  
+
 
  final  String themeId;
 
@@ -376,7 +382,7 @@ as String,
 
 class _LightAccentChanged implements ThemeEvent {
   const _LightAccentChanged({required this.accentColorValue});
-  
+
 
  final  int accentColorValue;
 
@@ -442,7 +448,7 @@ as int,
 
 class _DarkThemeChanged implements ThemeEvent {
   const _DarkThemeChanged({required this.themeId, this.mode});
-  
+
 
  final  String themeId;
  final  ThemeMode? mode;
@@ -510,7 +516,7 @@ as ThemeMode?,
 
 class _DarkAccentChanged implements ThemeEvent {
   const _DarkAccentChanged({required this.accentColorValue});
-  
+
 
  final  int accentColorValue;
 
@@ -576,7 +582,7 @@ as int,
 
 class _ModeChanged implements ThemeEvent {
   const _ModeChanged({required this.mode});
-  
+
 
  final  ThemeMode mode;
 
@@ -638,9 +644,76 @@ as ThemeMode,
 }
 
 /// @nodoc
+
+
+class _SystemColorsChanged implements ThemeEvent {
+  const _SystemColorsChanged({this.schemes});
+
+
+ final  SystemColorSchemes? schemes;
+
+/// Create a copy of ThemeEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SystemColorsChangedCopyWith<_SystemColorsChanged> get copyWith => __$SystemColorsChangedCopyWithImpl<_SystemColorsChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SystemColorsChanged&&(identical(other.schemes, schemes) || other.schemes == schemes));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,schemes);
+
+@override
+String toString() {
+  return 'ThemeEvent.systemColorsChanged(schemes: $schemes)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SystemColorsChangedCopyWith<$Res> implements $ThemeEventCopyWith<$Res> {
+  factory _$SystemColorsChangedCopyWith(_SystemColorsChanged value, $Res Function(_SystemColorsChanged) _then) = __$SystemColorsChangedCopyWithImpl;
+@useResult
+$Res call({
+ SystemColorSchemes? schemes
+});
+
+
+
+
+}
+/// @nodoc
+class __$SystemColorsChangedCopyWithImpl<$Res>
+    implements _$SystemColorsChangedCopyWith<$Res> {
+  __$SystemColorsChangedCopyWithImpl(this._self, this._then);
+
+  final _SystemColorsChanged _self;
+  final $Res Function(_SystemColorsChanged) _then;
+
+/// Create a copy of ThemeEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? schemes = freezed,}) {
+  return _then(_SystemColorsChanged(
+schemes: freezed == schemes ? _self.schemes : schemes // ignore: cast_nullable_to_non_nullable
+as SystemColorSchemes?,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$ThemeState {
 
- LoadStatus get status; ActionStatus get actionStatus; ThemeSelection get light; ThemeSelection get dark; ThemeMode get mode; Failure? get failure;
+ LoadStatus get status; ActionStatus get actionStatus; ThemeSelection get light; ThemeSelection get dark; ThemeMode get mode; Failure? get failure;/// The phone's Material You schemes. Null where the phone has none.
+ SystemColorSchemes? get system;
 /// Create a copy of ThemeState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -651,16 +724,16 @@ $ThemeStateCopyWith<ThemeState> get copyWith => _$ThemeStateCopyWithImpl<ThemeSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.light, light) || other.light == light)&&(identical(other.dark, dark) || other.dark == dark)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.light, light) || other.light == light)&&(identical(other.dark, dark) || other.dark == dark)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.system, system) || other.system == system));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,light,dark,mode,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,light,dark,mode,failure,system);
 
 @override
 String toString() {
-  return 'ThemeState(status: $status, actionStatus: $actionStatus, light: $light, dark: $dark, mode: $mode, failure: $failure)';
+  return 'ThemeState(status: $status, actionStatus: $actionStatus, light: $light, dark: $dark, mode: $mode, failure: $failure, system: $system)';
 }
 
 
@@ -671,7 +744,7 @@ abstract mixin class $ThemeStateCopyWith<$Res>  {
   factory $ThemeStateCopyWith(ThemeState value, $Res Function(ThemeState) _then) = _$ThemeStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, ThemeSelection light, ThemeSelection dark, ThemeMode mode, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, ThemeSelection light, ThemeSelection dark, ThemeMode mode, Failure? failure, SystemColorSchemes? system
 });
 
 
@@ -688,7 +761,7 @@ class _$ThemeStateCopyWithImpl<$Res>
 
 /// Create a copy of ThemeState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? light = null,Object? dark = null,Object? mode = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? light = null,Object? dark = null,Object? mode = null,Object? failure = freezed,Object? system = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -696,7 +769,8 @@ as ActionStatus,light: null == light ? _self.light : light // ignore: cast_nulla
 as ThemeSelection,dark: null == dark ? _self.dark : dark // ignore: cast_nullable_to_non_nullable
 as ThemeSelection,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as Failure?,system: freezed == system ? _self.system : system // ignore: cast_nullable_to_non_nullable
+as SystemColorSchemes?,
   ));
 }
 
@@ -781,10 +855,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure,  SystemColorSchemes? system)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ThemeState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure,_that.system);case _:
   return orElse();
 
 }
@@ -802,10 +876,10 @@ return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure,  SystemColorSchemes? system)  $default,) {final _that = this;
 switch (_that) {
 case _ThemeState():
-return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure,_that.system);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -822,10 +896,10 @@ return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  ThemeSelection light,  ThemeSelection dark,  ThemeMode mode,  Failure? failure,  SystemColorSchemes? system)?  $default,) {final _that = this;
 switch (_that) {
 case _ThemeState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mode,_that.failure,_that.system);case _:
   return null;
 
 }
@@ -837,8 +911,8 @@ return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mod
 
 
 class _ThemeState implements ThemeState {
-  const _ThemeState({required this.status, required this.actionStatus, required this.light, required this.dark, required this.mode, this.failure});
-  
+  const _ThemeState({required this.status, required this.actionStatus, required this.light, required this.dark, required this.mode, this.failure, this.system});
+
 
 @override final  LoadStatus status;
 @override final  ActionStatus actionStatus;
@@ -846,6 +920,8 @@ class _ThemeState implements ThemeState {
 @override final  ThemeSelection dark;
 @override final  ThemeMode mode;
 @override final  Failure? failure;
+/// The phone's Material You schemes. Null where the phone has none.
+@override final  SystemColorSchemes? system;
 
 /// Create a copy of ThemeState
 /// with the given fields replaced by the non-null parameter values.
@@ -857,16 +933,16 @@ _$ThemeStateCopyWith<_ThemeState> get copyWith => __$ThemeStateCopyWithImpl<_The
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.light, light) || other.light == light)&&(identical(other.dark, dark) || other.dark == dark)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.light, light) || other.light == light)&&(identical(other.dark, dark) || other.dark == dark)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.system, system) || other.system == system));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,light,dark,mode,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,light,dark,mode,failure,system);
 
 @override
 String toString() {
-  return 'ThemeState(status: $status, actionStatus: $actionStatus, light: $light, dark: $dark, mode: $mode, failure: $failure)';
+  return 'ThemeState(status: $status, actionStatus: $actionStatus, light: $light, dark: $dark, mode: $mode, failure: $failure, system: $system)';
 }
 
 
@@ -877,7 +953,7 @@ abstract mixin class _$ThemeStateCopyWith<$Res> implements $ThemeStateCopyWith<$
   factory _$ThemeStateCopyWith(_ThemeState value, $Res Function(_ThemeState) _then) = __$ThemeStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, ThemeSelection light, ThemeSelection dark, ThemeMode mode, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, ThemeSelection light, ThemeSelection dark, ThemeMode mode, Failure? failure, SystemColorSchemes? system
 });
 
 
@@ -894,7 +970,7 @@ class __$ThemeStateCopyWithImpl<$Res>
 
 /// Create a copy of ThemeState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? light = null,Object? dark = null,Object? mode = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? light = null,Object? dark = null,Object? mode = null,Object? failure = freezed,Object? system = freezed,}) {
   return _then(_ThemeState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -902,7 +978,8 @@ as ActionStatus,light: null == light ? _self.light : light // ignore: cast_nulla
 as ThemeSelection,dark: null == dark ? _self.dark : dark // ignore: cast_nullable_to_non_nullable
 as ThemeSelection,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as Failure?,system: freezed == system ? _self.system : system // ignore: cast_nullable_to_non_nullable
+as SystemColorSchemes?,
   ));
 }
 

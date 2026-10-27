@@ -4809,6 +4809,78 @@ abstract class AppLocalizations {
   /// **'🔥Check this out ➜ {link}'**
   String coreShareCardClipboard(String link);
 
+  /// No description provided for @coreShareFormatStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Story'**
+  String get coreShareFormatStory;
+
+  /// No description provided for @coreShareFormatPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get coreShareFormatPost;
+
+  /// No description provided for @coreShareFormatClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get coreShareFormatClean;
+
+  /// No description provided for @coreShareTargetInstagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram'**
+  String get coreShareTargetInstagram;
+
+  /// No description provided for @coreShareTargetCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get coreShareTargetCopyLink;
+
+  /// No description provided for @coreShareTargetSaveImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Save image'**
+  String get coreShareTargetSaveImage;
+
+  /// No description provided for @coreShareTargetMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get coreShareTargetMore;
+
+  /// Byline on a shared wallpaper image. creator is a handle such as @maya.
+  ///
+  /// In en, this message translates to:
+  /// **'by {creator}'**
+  String coreShareCardBy(String creator);
+
+  /// No description provided for @coreShareImageSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Image saved'**
+  String get coreShareImageSaved;
+
+  /// No description provided for @coreShareImageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the image. Try again.'**
+  String get coreShareImageFailed;
+
+  /// No description provided for @coreShareInstagramFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open Instagram. Try again.'**
+  String get coreShareInstagramFailed;
+
+  /// No description provided for @coreSharePreviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make this image. More shares the link instead.'**
+  String get coreSharePreviewFailed;
+
   /// No description provided for @coreShareLinkCopied.
   ///
   /// In en, this message translates to:
@@ -5006,6 +5078,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Material Dark'**
   String get coreThemeMaterialDark;
+
+  /// No description provided for @coreThemeMaterialYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You'**
+  String get coreThemeMaterialYou;
 
   /// No description provided for @coreThemeOlive.
   ///
@@ -14940,6 +15018,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use the accent colour of your phone'**
   String get wallpaperUsePhoneAccent;
+
+  /// No description provided for @wallpaperThemeMaterialYouNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Material You takes its colours from your wallpaper.'**
+  String get wallpaperThemeMaterialYouNote;
 
   /// Wallpaper interface text: wallpaperViewCount.
   ///

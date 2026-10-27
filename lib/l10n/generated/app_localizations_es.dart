@@ -2775,6 +2775,44 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Historia';
+
+  @override
+  String get coreShareFormatPost => 'Publicación';
+
+  @override
+  String get coreShareFormatClean => 'Minimalista';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copiar enlace';
+
+  @override
+  String get coreShareTargetSaveImage => 'Guardar imagen';
+
+  @override
+  String get coreShareTargetMore => 'Más';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'por $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Imagen guardada';
+
+  @override
+  String get coreShareImageFailed => 'No se pudo guardar la imagen. Inténtalo de nuevo.';
+
+  @override
+  String get coreShareInstagramFailed => 'No se pudo abrir Instagram. Inténtalo de nuevo.';
+
+  @override
+  String get coreSharePreviewFailed => 'No se pudo crear esta imagen. Con Más se comparte el enlace en su lugar.';
+
+  @override
   String get coreShareLinkCopied => '¡Se copió el enlace para compartir!';
 
   @override
@@ -2897,6 +2935,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'Material oscuro';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Oliva';
@@ -9580,6 +9621,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Usar el color de acento de tu teléfono';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'Material You toma los colores de tu fondo de pantalla.';
 
   @override
   String wallpaperViewCount(int count) {

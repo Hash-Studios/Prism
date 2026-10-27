@@ -69,7 +69,7 @@ const Map<String, Set<String>> _uiNamedArguments = <String, Set<String>>{
   'SignInPrompt': <String>{'feature'},
   'CoinGateSpec': <String>{'adErrorMessage', 'spendErrorMessage', 'failureLabel'},
   'ShortcutItem': <String>{'localizedTitle'},
-  'shareWallpaperCard': <String>{'contextLine'},
+  'ShareCardContent': <String>{'contextLine', 'creatorLine'},
 };
 
 class _LiteralFinding {

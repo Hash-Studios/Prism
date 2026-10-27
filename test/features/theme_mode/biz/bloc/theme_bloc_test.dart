@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -8,6 +9,8 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +25,11 @@ class _MockThemeRepository extends Mock implements ThemeRepository {}
 const _light = ThemeSelection(themeId: 'kLCoffee', accentColorValue: 0xff123456);
 const _dark = ThemeSelection(themeId: 'kDAMOLED', accentColorValue: 0xff654321);
 
+final SystemColorSchemes schemes = SystemColorSchemes(
+  light: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC)),
+  dark: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC), brightness: Brightness.dark),
+);
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const UpdateThemeParams());
@@ -31,12 +39,16 @@ void main() {
   late _MockUpdateThemeUseCase updateUseCase;
   late _MockThemeRepository repository;
   late StreamController<ThemePreferences> accountChanges;
+  late SystemColorSchemesSource systemColors;
+  SystemColorSchemes? systemValue;
 
   setUp(() {
     loadUseCase = _MockLoadThemeUseCase();
     updateUseCase = _MockUpdateThemeUseCase();
     repository = _MockThemeRepository();
     accountChanges = StreamController<ThemePreferences>.broadcast();
+    systemValue = null;
+    systemColors = SystemColorSchemesSource.withReader(() async => systemValue);
     when(() => repository.accountChanges).thenAnswer((_) => accountChanges.stream);
     final defaults = ThemeState.initial();
     when(
@@ -53,7 +65,68 @@ void main() {
 
   tearDown(() => accountChanges.close());
 
-  ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository);
+  ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository, systemColors);
+
+  test('the first state carries the schemes the source already holds', () async {
+    systemValue = schemes;
+    await systemColors.refresh();
+
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+
+    expect(bloc.state.system, schemes);
+  });
+
+  test('new schemes from the source reach the state', () async {
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    final states = expectLater(bloc.stream, emits(ThemeState.initial().copyWith(system: schemes)));
+
+    systemValue = schemes;
+    await systemColors.refresh();
+    await states;
+
+    expect(bloc.state.system, schemes);
+  });
+
+  group('Material You selection', () {
+    const ThemeSelection materialYouLight = ThemeSelection(themeId: 'kLMaterial You', accentColorValue: 0xff123456);
+    const ThemeSelection materialYouDark = ThemeSelection(themeId: 'kDMaterial You', accentColorValue: 0xff123456);
+
+    test('resolves to the default light theme when the phone has no schemes', () {
+      final ThemeState state = ThemeState.initial().copyWith(light: materialYouLight);
+
+      expect(state.themeOption(Brightness.light).id, 'kLFrost White');
+    });
+
+    test('resolves to Material You light when the phone gives schemes', () {
+      final ThemeState state = ThemeState.initial().copyWith(light: materialYouLight, system: schemes);
+
+      expect(state.themeOption(Brightness.light).id, 'kLMaterial You');
+    });
+
+    test('Material You light takes the phone primary and ignores the user accent', () {
+      final ThemeState state = ThemeState.initial().copyWith(light: materialYouLight, system: schemes);
+
+      expect(prismThemeFor(state, Brightness.light).colorScheme.primary, schemes.light.primary);
+    });
+
+    test('Material You light falls back to Frost White with the user accent when the phone has no schemes', () {
+      final ThemeState state = ThemeState.initial().copyWith(light: materialYouLight);
+      final ThemeData theme = prismThemeFor(state, Brightness.light);
+
+      expect(theme.colorScheme.surface, kLightTheme.colorScheme.surface);
+      expect(theme.colorScheme.primary, const Color(0xff123456));
+    });
+
+    test('Material You dark falls back to Material Dark with the user accent when the phone has no schemes', () {
+      final ThemeState state = ThemeState.initial().copyWith(dark: materialYouDark);
+      final ThemeData theme = prismThemeFor(state, Brightness.dark);
+
+      expect(theme.colorScheme.surface, kDarkTheme.colorScheme.surface);
+      expect(theme.colorScheme.primary, const Color(0xff123456));
+    });
+  });
 
   test('the first state already holds the stored selection, before any event', () {
     when(
@@ -78,7 +151,7 @@ void main() {
     when(
       () => repository.update(darkThemeId: 'kDSpooky', mode: ThemeMode.dark),
     ).thenAnswer((_) async => Result.success(spooky));
-    final bloc = ThemeBloc(LoadThemeUseCase(repository), UpdateThemeUseCase(repository), repository);
+    final bloc = ThemeBloc(LoadThemeUseCase(repository), UpdateThemeUseCase(repository), repository, systemColors);
     addTearDown(bloc.close);
     final states = expectLater(
       bloc.stream,

@@ -2850,6 +2850,26 @@
     },
     "description": "Text shared with a wallpaper image card."
   },
+  "coreShareFormatStory": "Story",
+  "coreShareFormatPost": "Postingan",
+  "coreShareFormatClean": "Polos",
+  "coreShareTargetInstagram": "Instagram",
+  "coreShareTargetCopyLink": "Salin tautan",
+  "coreShareTargetSaveImage": "Simpan gambar",
+  "coreShareTargetMore": "Lainnya",
+  "coreShareCardBy": "oleh {creator}",
+  "@coreShareCardBy": {
+    "description": "Byline on a shared wallpaper image. creator is a handle such as @maya.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "coreShareImageSaved": "Gambar disimpan",
+  "coreShareImageFailed": "Gambar tidak dapat disimpan. Coba lagi.",
+  "coreShareInstagramFailed": "Instagram tidak dapat dibuka. Coba lagi.",
+  "coreSharePreviewFailed": "Gambar ini tidak dapat dibuat. Gunakan Lainnya untuk membagikan tautan.",
   "coreShareLinkCopied": "Tautan berbagi disalin!",
   "coreShareProfileClipboard": "Hai, lihat profil saya di Prism ➜ {link}",
   "@coreShareProfileClipboard": {
@@ -2966,6 +2986,7 @@
   "coreThemeJungle": "Rimba",
   "coreThemeLocked": "Terkunci",
   "coreThemeMaterialDark": "Gelap Material",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Zaitun",
   "coreThemePepper": "Lada",
   "coreThemeRose": "Mawar",
@@ -9154,6 +9175,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You mengambil warna dari wallpaper Anda.",
   "wallpaperViewCount": "{count, plural, one{1 kali dilihat} other{{count} kali dilihat}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

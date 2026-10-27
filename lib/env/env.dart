@@ -28,6 +28,9 @@ class Env {
   // Pexels
   static const String pexelsApiKey = String.fromEnvironment('PEXELS_API_KEY');
 
+  // Meta (Instagram Stories sharing). Optional: empty hides the Instagram target.
+  static const String metaAppId = String.fromEnvironment('META_APP_ID');
+
   // Sentry
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
   static const String sentryEnvironment = String.fromEnvironment('SENTRY_ENV');

@@ -2646,6 +2646,26 @@
     },
     "description": "Text shared with a wallpaper image card."
   },
+  "coreShareFormatStory": "स्टोरी",
+  "coreShareFormatPost": "पोस्ट",
+  "coreShareFormatClean": "सादा",
+  "coreShareTargetInstagram": "Instagram",
+  "coreShareTargetCopyLink": "लिंक कॉपी करें",
+  "coreShareTargetSaveImage": "इमेज सेव करें",
+  "coreShareTargetMore": "और",
+  "coreShareCardBy": "{creator} द्वारा",
+  "@coreShareCardBy": {
+    "description": "Byline on a shared wallpaper image. creator is a handle such as @maya.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "coreShareImageSaved": "इमेज सेव हो गई",
+  "coreShareImageFailed": "इमेज सेव नहीं हो सकी। फिर से कोशिश करें।",
+  "coreShareInstagramFailed": "Instagram नहीं खुल सका। फिर से कोशिश करें।",
+  "coreSharePreviewFailed": "यह इमेज नहीं बन सकी। इसके बजाय “और” से लिंक शेयर करें।",
   "coreShareLinkCopied": "शेयर करने का लिंक कॉपी हो गया!",
   "coreShareProfileClipboard": "Prism पर मेरी प्रोफ़ाइल देखें ➜ {link}",
   "@coreShareProfileClipboard": {
@@ -2762,6 +2782,7 @@
   "coreThemeJungle": "जंगल",
   "coreThemeLocked": "लॉक है",
   "coreThemeMaterialDark": "मटीरियल डार्क",
+  "coreThemeMaterialYou": "मटीरियल यू",
   "coreThemeOlive": "ऑलिव",
   "coreThemePepper": "काली मिर्च",
   "coreThemeRose": "गुलाब",
@@ -8933,6 +8954,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "मटीरियल यू आपके वॉलपेपर से रंग लेता है।",
   "wallpaperViewCount": "{count, plural, one{{count} बार देखा गया} other{{count} बार देखा गया}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

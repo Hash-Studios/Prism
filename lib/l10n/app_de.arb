@@ -2624,6 +2624,26 @@
     },
     "description": "Text shared with a wallpaper image card."
   },
+  "coreShareFormatStory": "Story",
+  "coreShareFormatPost": "Beitrag",
+  "coreShareFormatClean": "Schlicht",
+  "coreShareTargetInstagram": "Instagram",
+  "coreShareTargetCopyLink": "Link kopieren",
+  "coreShareTargetSaveImage": "Bild speichern",
+  "coreShareTargetMore": "Mehr",
+  "coreShareCardBy": "von {creator}",
+  "@coreShareCardBy": {
+    "description": "Byline on a shared wallpaper image. creator is a handle such as @maya.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "coreShareImageSaved": "Bild gespeichert",
+  "coreShareImageFailed": "Das Bild konnte nicht gespeichert werden. Versuch es erneut.",
+  "coreShareInstagramFailed": "Instagram konnte nicht geöffnet werden. Versuch es erneut.",
+  "coreSharePreviewFailed": "Dieses Bild konnte nicht erstellt werden. Über „Mehr“ wird der Link geteilt.",
   "coreShareLinkCopied": "Freigabelink kopiert!",
   "coreShareProfileClipboard": "Sieh dir mein Profil auf Prism an ➜ {link}",
   "@coreShareProfileClipboard": {
@@ -2740,6 +2760,7 @@
   "coreThemeJungle": "Dschungel",
   "coreThemeLocked": "Gesperrt",
   "coreThemeMaterialDark": "Material Dunkel",
+  "coreThemeMaterialYou": "Material You",
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pfeffer",
   "coreThemeRose": "Rose",
@@ -8931,6 +8952,7 @@
   "@wallpaperUsePhoneAccent": {
     "description": "Description of matching the device accent colour."
   },
+  "wallpaperThemeMaterialYouNote": "Material You übernimmt die Farben von deinem Hintergrundbild.",
   "wallpaperViewCount": "{count, plural, one{1 Aufruf} other{{count} Aufrufe}}",
   "@wallpaperViewCount": {
     "description": "Wallpaper interface text: wallpaperViewCount.",

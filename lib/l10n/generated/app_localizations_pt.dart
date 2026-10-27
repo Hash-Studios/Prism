@@ -2802,6 +2802,44 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Publicação';
+
+  @override
+  String get coreShareFormatClean => 'Minimalista';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareTargetSaveImage => 'Salvar imagem';
+
+  @override
+  String get coreShareTargetMore => 'Mais';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'por $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Imagem salva';
+
+  @override
+  String get coreShareImageFailed => 'Não foi possível salvar a imagem. Tente novamente.';
+
+  @override
+  String get coreShareInstagramFailed => 'Não foi possível abrir o Instagram. Tente novamente.';
+
+  @override
+  String get coreSharePreviewFailed => 'Não foi possível criar esta imagem. Use Mais para compartilhar o link.';
+
+  @override
   String get coreShareLinkCopied => 'Link de compartilhamento copiado!';
 
   @override
@@ -2925,6 +2963,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'Material escuro';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Oliva';
@@ -9770,6 +9811,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperUsePhoneAccent => 'Use a cor de destaque do seu telefone';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'O Material You usa as cores do seu papel de parede.';
 
   @override
   String wallpaperViewCount(int count) {
@@ -13199,6 +13243,44 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Publicação';
+
+  @override
+  String get coreShareFormatClean => 'Minimalista';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareTargetSaveImage => 'Salvar imagem';
+
+  @override
+  String get coreShareTargetMore => 'Mais';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'por $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Imagem salva';
+
+  @override
+  String get coreShareImageFailed => 'Não foi possível salvar a imagem. Tente novamente.';
+
+  @override
+  String get coreShareInstagramFailed => 'Não foi possível abrir o Instagram. Tente novamente.';
+
+  @override
+  String get coreSharePreviewFailed => 'Não foi possível criar esta imagem. Use Mais para compartilhar o link.';
+
+  @override
   String get coreShareLinkCopied => 'Link de compartilhamento copiado!';
 
   @override
@@ -13322,6 +13404,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreThemeMaterialDark => 'Material escuro';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Oliva';
@@ -20167,6 +20252,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperUsePhoneAccent => 'Use a cor de destaque do seu telefone';
+
+  @override
+  String get wallpaperThemeMaterialYouNote => 'O Material You usa as cores do seu papel de parede.';
 
   @override
   String wallpaperViewCount(int count) {
