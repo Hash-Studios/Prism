@@ -176,7 +176,9 @@ void main() {
       store: DurableJsonStore('drops', directory: directory),
       readTimeout: const Duration(milliseconds: 10),
     );
-    expect((await restarted.fetchLive(now)).data!.weekKey, '2026-W42');
+    final DropEntity savedDrop = (await restarted.fetchLive(now)).data!;
+    expect(savedDrop.weekKey, '2026-W42');
+    expect(savedDrop.walls.first.creatorUid, 'uid-ana');
 
     final FakeFirestoreClient empty = _MetadataFirestoreClient();
     final DropsRepositoryImpl authoritative = DropsRepositoryImpl(
@@ -186,6 +188,36 @@ void main() {
     expect((await authoritative.fetchLive(now)).data, isNull);
     empty.queryError = FirestoreError(code: 'unavailable', message: 'offline');
     expect((await authoritative.fetchLive(now)).isFailure, isTrue);
+  });
+
+  test('reads legacy and blank creator UIDs from saved Drops as Prism Studio', () async {
+    final DurableJsonStore store = DurableJsonStore('drops', directory: directory);
+    await store.write('recent', <String, Object?>{
+      'drops': <Object?>[
+        <String, Object?>{
+          'weekKey': '2026-W42',
+          'title': 'Autumn',
+          'startsAt': ms - 1000,
+          'endsAt': ms + 5000,
+          'walls': <Object?>[
+            <String, Object?>{'id': 'legacy'},
+            <String, Object?>{'id': 'blank', 'creatorUid': ''},
+            <String, Object?>{'id': 'whitespace', 'creatorUid': '   '},
+          ],
+        },
+      ],
+    });
+    final FakeFirestoreClient offline = _MetadataFirestoreClient()
+      ..queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final DropsRepositoryImpl restarted = DropsRepositoryImpl(offline, store: store);
+
+    final DropEntity? savedDrop = (await restarted.fetchLive(now)).data;
+
+    expect(savedDrop!.walls.map((DropWall wall) => wall.creatorUid), <String>[
+      'prism-studio',
+      'prism-studio',
+      'prism-studio',
+    ]);
   });
 
   test('skips malformed saved Drops and persists a successful server result', () async {
