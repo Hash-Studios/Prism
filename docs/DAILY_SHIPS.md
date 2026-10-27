@@ -17,11 +17,9 @@ IOS_SIM='<udid>' tool/record_clip.sh ios     # replace <udid> with a booted simu
 
 Press Ctrl-C to stop the recording. Black bars pad the clip. It is never stretched.
 
-If conversion fails, the script exits with status 1 and removes empty outputs if it can. The failure handler leaves nonempty outputs alone. A `--trim` range past the end can cause conversion to fail.
+The script refuses to start if the output file already exists, if its folder does not exist, or if the `--trim` end is not after the start. Timestamps are seconds (`12.5`) or `M:SS` / `H:MM:SS`.
 
-The script saves the raw take beside the output and replaces the filename extension with `-raw.mp4`. For example, `clips/clip.mp4` and extensionless `clips/clip` both use `clips/clip-raw.mp4`. Dots in directory names do not affect this name.
-
-If the move fails, the script keeps its temporary directory and reports the raw file's path. It still attempts to remove the Android device file.
+If conversion fails (for example, a `--trim` range past the end of the take), the script exits with status 1, deletes the partial output, and keeps the raw take beside it as `<name>-raw.mp4` (`clips/clip.mp4` gives `clips/clip-raw.mp4`). If it cannot move the raw take, it keeps its temp folder and prints the raw file path.
 
 ### Morning post
 

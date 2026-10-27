@@ -20,11 +20,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$out" ] || out="prism-$platform-$(date +%Y%m%d-%H%M%S).mp4"
+[ ! -e "$out" ] || die "$out already exists. Pick another name."
+[ -d "$(dirname -- "$out")" ] || die "folder for $out does not exist"
 
 trim_args=()
 if [ -n "$trim" ]; then
-  [[ $trim =~ ^[0-9:.]+-[0-9:.]+$ ]] || die "--trim needs START-END timestamps, got: $trim"
+  ts='([0-9]+:){0,2}[0-9]+(\.[0-9]+)?'
+  [[ $trim =~ ^$ts-$ts$ ]] || die "--trim needs START-END timestamps, got: $trim"
   start=${trim%%-*}; end=${trim#*-}
+  secs() { awk -v t="$1" 'BEGIN { n = split(t, p, ":"); s = 0; for (i = 1; i <= n; i++) s = s * 60 + p[i]; print s }'; }
+  awk -v a="$(secs "$start")" -v b="$(secs "$end")" 'BEGIN { exit !(b > a) }' || die "--trim end must be after start, got: $trim"
   trim_args=(-ss "$start" -to "$end")
 fi
 
@@ -70,10 +75,10 @@ if [ "$platform" = android ]; then
 fi
 [ -s "$tmp/raw.mp4" ] || die "recording is empty"
 
-ffmpeg -hide_banner -loglevel error -y -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
+ffmpeg -hide_banner -loglevel error -n -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
   -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
   -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$out" || {
-  if [ -f "$out" ] && [ ! -s "$out" ]; then rm -f "$out" || true; fi
+  rm -f "$out" || true # this run made it: $out was refused if it existed and ffmpeg runs with -n
   raw_name=${out##*/}; raw_stem=$raw_name
   case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
   raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
