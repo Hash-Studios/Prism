@@ -39,6 +39,8 @@ export function ogImagePath(slug: string): string {
 }
 
 // The site builds from a full repo checkout (`npm run deploy` in web/, and CI checks out the whole repo).
-export function readChangelog(): Release[] {
-  return parseChangelog(readFileSync(join(process.cwd(), "..", "CHANGELOG.md"), "utf8"));
+export function readChangelog(path = join(process.cwd(), "..", "CHANGELOG.md")): Release[] {
+  const releases = parseChangelog(readFileSync(path, "utf8"));
+  if (releases.length === 0) throw new Error(`${path} has no releases with bullets`);
+  return releases;
 }

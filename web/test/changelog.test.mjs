@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseChangelog, versionSlug } from '../lib/changelog.ts';
+import { parseChangelog, readChangelog, versionSlug } from '../lib/changelog.ts';
+import { shareLink } from '../lib/share-link.ts';
 
 test('parses versions with bullets in file order', () => {
   const markdown =
@@ -54,4 +57,39 @@ test('the real CHANGELOG.md parses', () => {
   }
   const slugs = releases.map((release) => release.slug);
   assert.equal(new Set(slugs).size, slugs.length);
+});
+
+test('readChangelog fails the build when no release has bullets', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'changelog-'));
+  const path = join(dir, 'CHANGELOG.md');
+  writeFileSync(path, '## Changelog\n\n### v1.0.0\n');
+  assert.throws(() => readChangelog(path), /has no releases with bullets/);
+});
+
+test('shareLink uses native share, and treats a cancel as a cancel', async () => {
+  const data = { title: 'Prism v1.0.0', url: 'https://prismwalls.com/changelog/v1-0-0' };
+  assert.equal(await shareLink({ share: async () => {} }, data), 'shared');
+  const cancel = Object.assign(new Error('cancelled'), { name: 'AbortError' });
+  const copied = [];
+  const target = { share: async () => { throw cancel; }, clipboard: { writeText: async (text) => { copied.push(text); } } };
+  assert.equal(await shareLink(target, data), 'cancelled');
+  assert.deepEqual(copied, []);
+});
+
+test('shareLink copies the link when native share fails or is missing', async () => {
+  const data = { title: 'Prism v1.0.0', url: 'https://prismwalls.com/changelog/v1-0-0' };
+  const copied = [];
+  const clipboard = { writeText: async (text) => { copied.push(text); } };
+  const broken = { share: async () => { throw new TypeError('not allowed'); }, clipboard };
+  assert.equal(await shareLink(broken, data), 'copied');
+  assert.equal(await shareLink({ clipboard }, data), 'copied');
+  assert.deepEqual(copied, [data.url, data.url]);
+});
+
+test('shareLink reports a failure when the clipboard is missing or refuses', async () => {
+  const data = { title: 'Prism v1.0.0', url: 'https://prismwalls.com/changelog/v1-0-0' };
+  assert.equal(await shareLink({}, data), 'failed');
+  assert.equal(await shareLink({ clipboard: {} }, data), 'failed');
+  const refused = { clipboard: { writeText: async () => { throw new Error('denied'); } } };
+  assert.equal(await shareLink(refused, data), 'failed');
 });

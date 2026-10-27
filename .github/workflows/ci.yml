@@ -104,6 +104,9 @@ jobs:
               - '.fvmrc'
             web:
               - 'web/**'
+              # The changelog pages and share cards build from these.
+              - 'CHANGELOG.md'
+              - 'assets/fonts/Proxima*'
             rules:
               - 'firestore.rules'
               - 'firebase.json'
