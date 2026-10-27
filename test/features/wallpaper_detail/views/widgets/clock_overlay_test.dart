@@ -171,6 +171,18 @@ Future<void> _settleImages(WidgetTester tester) async {
   }
 }
 
+Future<void> _expectFileExists(WidgetTester tester, File file, bool expected) async {
+  final bool? actual = await tester.runAsync(() async {
+    for (var i = 0; i < 20; i++) {
+      final bool exists = await file.exists();
+      if (exists == expected) return exists;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    return file.exists();
+  });
+  expect(actual, expected);
+}
+
 Future<void> _waitForFinder(WidgetTester tester, Finder finder) async {
   for (var i = 0; i < 50 && finder.evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
@@ -1008,6 +1020,14 @@ void main() {
       ]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+    testWidgets('an empty original URL previews the available thumbnail', (tester) async {
+      await _openSetScreen(tester, SetScreenRequest(url: '', thumbnailUrl: _previewPath), <SetWallpaperChoice?>[]);
+      await _settleImages(tester);
+
+      expect(tester.widget<ClockOverlay>(find.byType(ClockOverlay)).link, _previewPath);
+      expect(_filePaths(tester), contains(_previewPath));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('Remember this choice starts unchecked and shows its hint once checked', (tester) async {
       await _openSetScreen(tester, _request(), <SetWallpaperChoice?>[]);
 
@@ -1084,6 +1104,167 @@ void main() {
       expect(find.text('Lock screen'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+    testWidgets('a device that only supports Lock opens on Lock and never offers Home', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(
+          capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsLockWallpaper: true),
+        ),
+      );
+      final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+      await _openSetScreen(tester, _request(), results);
+
+      expect(find.text('Home screen'), findsNothing);
+      expect(find.text('Set on lock screen'), findsOneWidget);
+      expect(find.byType(LockPreviewLayer), findsOneWidget);
+      await tester.tap(find.byKey(_setKey));
+      await tester.pumpAndSettle();
+      expect(results.single?.target, WallpaperTarget.lock);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Set is disabled when no static target is supported', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true)),
+      );
+      await _openSetScreen(tester, _request(), <SetWallpaperChoice?>[]);
+
+      expect(tester.widget<PrismButton>(find.byKey(_setKey)).onPressed, isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a local preview Set action is disabled when no target is supported', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true)),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: _previewPath, file: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<PrismButton>(find.byKey(_setKey)).onPressed, isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('an unsupported saved Lock target falls back to the Home preview and action', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(
+          capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
+        ),
+      );
+      await _openSetScreen(tester, _request(), <SetWallpaperChoice?>[]);
+
+      expect(find.text('Set on home screen'), findsOneWidget);
+      expect(find.byType(HomePreviewLayer), findsOneWidget);
+      expect(find.byType(LockPreviewLayer), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a Lock fallback reads the saved themed icon scheme for Home', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');
+      await settings.set(PersistenceKeys.previewIconStyle, 'themed');
+      aw.AsyncWallpaper.debugSetClient(
+        _Client(
+          capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true),
+        ),
+      );
+      await _openSetScreen(tester, _request(), <SetWallpaperChoice?>[]);
+      await _settleImages(tester);
+      // The wallpaper colours decode on the real event loop, which can take longer than a settle.
+      for (var i = 0; i < 40; i++) {
+        if (tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer)).scheme != null) break;
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump();
+      }
+
+      final HomePreviewLayer home = tester.widget<HomePreviewLayer>(find.byType(HomePreviewLayer));
+      expect(home.iconStyle, PreviewIconStyle.themed);
+      expect(home.scheme, isNotNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('two Set taps before the next frame keep the calling page open', (tester) async {
+      final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () async => results.add(await showSetScreen(context, _request())),
+                      child: const Text('open Set'),
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('open detail'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open detail'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open Set'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(_setKey));
+      await tester.tap(find.byKey(_setKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('open Set'), findsOneWidget);
+      expect(results, hasLength(1));
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a repeated Set tap keeps the placed file owned by the returned choice', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('set_screen_double_set_');
+      addTearDown(() {
+        if (directory.existsSync()) directory.deleteSync(recursive: true);
+      });
+      final File placed = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+      final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+      await _openSetScreen(
+        tester,
+        _request(
+          onAdjust: (_) async => PlacedWallpaper(path: placed.path, placement: const WallpaperPlacement()),
+        ),
+        results,
+      );
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(_setKey));
+      await tester.tap(find.byKey(_setKey));
+      await tester.pumpAndSettle();
+
+      expect(results, hasLength(1));
+      expect(results.single?.placed?.path, placed.path);
+      await _expectFileExists(tester, placed, true);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('two Adjust taps while the studio is opening call it once', (tester) async {
+      final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
+      int calls = 0;
+      await _openSetScreen(
+        tester,
+        _request(
+          onAdjust: (_) {
+            calls++;
+            return adjusted.future;
+          },
+        ),
+        <SetWallpaperChoice?>[],
+      );
+
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.tap(find.byKey(_adjustKey));
+      expect(calls, 1);
+      adjusted.complete(null);
+      await tester.pumpAndSettle();
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('Adjust with a placed wall shows it on the preview, and Set returns it', (tester) async {
       final Directory directory = Directory.systemTemp.createTempSync('set_screen_placed_');
       addTearDown(() {
@@ -1117,6 +1298,179 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(results.single?.useSystemCropper, isTrue);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('replacing the wallpaper discards its earlier studio placement', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('set_screen_replace_');
+      addTearDown(() {
+        if (directory.existsSync()) directory.deleteSync(recursive: true);
+      });
+      final File placed = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+      final ValueNotifier<String> link = ValueNotifier<String>(_previewPath);
+      addTearDown(link.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ValueListenableBuilder<String>(
+            valueListenable: link,
+            builder: (context, value, _) => ClockOverlay(
+              link: value,
+              file: true,
+              request: SetScreenRequest(
+                url: value,
+                onAdjust: (_) async => PlacedWallpaper(path: placed.path, placement: const WallpaperPlacement()),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      await _settleImages(tester);
+      expect(_filePaths(tester), contains(placed.path));
+
+      link.value = File('assets/images/prism.webp').uri.toString();
+      await tester.pumpAndSettle();
+      await _settleImages(tester);
+
+      expect(_filePaths(tester), isNot(contains(placed.path)));
+      await _expectFileExists(tester, placed, false);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('closing the Set screen discards its studio placement', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('set_screen_close_');
+      addTearDown(() {
+        if (directory.existsSync()) directory.deleteSync(recursive: true);
+      });
+      final File placed = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+      await _openSetScreen(
+        tester,
+        _request(
+          onAdjust: (_) async => PlacedWallpaper(path: placed.path, placement: const WallpaperPlacement()),
+        ),
+        <SetWallpaperChoice?>[],
+      );
+
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(l10n.setScreenClose));
+      await tester.pumpAndSettle();
+
+      await _expectFileExists(tester, placed, false);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('an Adjust placement that completes during close is discarded', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('set_screen_close_pending_');
+      addTearDown(() {
+        if (directory.existsSync()) directory.deleteSync(recursive: true);
+      });
+      final File placed = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+      final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
+      await _openSetScreen(tester, _request(onAdjust: (_) => adjusted.future), <SetWallpaperChoice?>[]);
+
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pump();
+      await tester.tap(find.byTooltip(l10n.setScreenClose));
+      await tester.pump();
+      adjusted.complete(PlacedWallpaper(path: placed.path, placement: const WallpaperPlacement()));
+      await tester.pumpAndSettle();
+
+      await _expectFileExists(tester, placed, false);
+      expect(find.text('open'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a system editor result that completes during close keeps the caller open', (tester) async {
+      final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
+      final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () async =>
+                          results.add(await showSetScreen(context, _request(onAdjust: (_) => adjusted.future))),
+                      child: const Text('open Set'),
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('open detail'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open detail'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open Set'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pump();
+      await tester.tap(find.byTooltip(l10n.setScreenClose));
+      await tester.pump();
+      adjusted.complete(const SystemEditorRequested());
+      await tester.pumpAndSettle();
+
+      expect(find.text('open Set'), findsOneWidget);
+      expect(results, <SetWallpaperChoice?>[null]);
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('system back invalidates a pending Adjust result', (tester) async {
+      final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
+      await _openSetScreen(tester, _request(onAdjust: (_) => adjusted.future), <SetWallpaperChoice?>[]);
+
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pump();
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      adjusted.complete(const SystemEditorRequested());
+      await tester.pumpAndSettle();
+
+      expect(find.text('open'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('an Adjust result for a replaced wallpaper is discarded', (tester) async {
+      final Directory directory = Directory.systemTemp.createTempSync('set_screen_stale_adjust_');
+      addTearDown(() {
+        if (directory.existsSync()) directory.deleteSync(recursive: true);
+      });
+      final File placed = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF00CC00))))!;
+      final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
+      final ValueNotifier<String> link = ValueNotifier<String>(_previewPath);
+      addTearDown(link.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ValueListenableBuilder<String>(
+            valueListenable: link,
+            builder: (context, value, _) => ClockOverlay(
+              link: value,
+              file: true,
+              request: SetScreenRequest(url: value, onAdjust: (_) => adjusted.future),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pump();
+      link.value = File('assets/images/prism.webp').uri.toString();
+      await tester.pump();
+      adjusted.complete(PlacedWallpaper(path: placed.path, placement: const WallpaperPlacement()));
+      await tester.pumpAndSettle();
+      await _settleImages(tester);
+
+      expect(_filePaths(tester), isNot(contains(placed.path)));
+      await _expectFileExists(tester, placed, false);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('More pops a pair choice for the lock screen', (tester) async {

@@ -123,11 +123,7 @@ class SetWallpaperFlow {
     Future<String> Function(String source)? prepareAuthorized,
     Color? previewTint,
   }) async {
-    if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
-        !context.mounted) {
-      return null;
-    }
-    final String owner = app_state.prismUser.id;
+    String owner = app_state.prismUser.id;
     final String? historyOriginalIdentity =
         prepareAuthorized == null &&
             wallpaperSource == WallpaperSource.prism &&
@@ -148,12 +144,20 @@ class SetWallpaperFlow {
     }
     if (!context.mounted) return null;
     String? authorizedUrl;
+    String? authorizedOriginalUrl;
     // Consent and the colour variation run once, on Adjust or on Set, whichever comes first.
-    Future<String?> authorize(BuildContext context) async {
-      final String? done = authorizedUrl;
-      if (done != null) return done;
+    Future<String?>? authorization;
+    Future<String?> authorizeOnce(BuildContext context) async {
       onBusy?.call(true);
       try {
+        final bool wasLoggedIn = app_state.prismUser.loggedIn;
+        final bool requiresSignIn = OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource);
+        if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
+            !context.mounted ||
+            (owner != app_state.prismUser.id && (wasLoggedIn || !requiresSignIn))) {
+          return null;
+        }
+        owner = app_state.prismUser.id;
         final String? authorized = await resolveOriginalWithConsent(
           context,
           url: url,
@@ -163,11 +167,18 @@ class SetWallpaperFlow {
           requestId: requestId,
           label: l10n.coreSetWallpaper,
         );
+        if (!context.mounted || owner != app_state.prismUser.id) return null;
+        authorizedOriginalUrl = authorized;
         if (authorized == null || prepareAuthorized == null) return authorizedUrl = authorized;
         return authorizedUrl = await runPrepareSource(() => prepareAuthorized(authorized), l10n: l10n);
       } finally {
         onBusy?.call(false);
       }
+    }
+
+    Future<String?> authorize(BuildContext context) {
+      if (owner != app_state.prismUser.id) return Future<String?>.value();
+      return authorization ??= authorizeOnce(context);
     }
 
     choice ??= await openScreen(
@@ -204,12 +215,37 @@ class SetWallpaperFlow {
         wallpaperId: wallpaperId,
         wallpaperSource: wallpaperSource,
         prepareAuthorized: prepareAuthorized,
+        authorizedHomeUrl: authorizedOriginalUrl,
+        preparedHomeSource: authorizedUrl,
       );
     }
     final String? source = context.mounted ? await authorize(context) : null;
     if (source == null || !context.mounted || app_state.prismUser.id != owner) {
       await choice.placed?.discard();
       return null;
+    }
+    String? originalHistorySource;
+    if (choice.placed != null || prepareAuthorized != null) {
+      final String original = authorizedOriginalUrl ?? source;
+      if (wallpaperSource == WallpaperSource.prism && (wallpaperId?.isNotEmpty ?? false)) {
+        try {
+          originalHistorySource = (await WallpaperService.resolveToLocalFile(
+            original,
+            wallpaperId: wallpaperId,
+            wallpaperSource: wallpaperSource,
+          )).path;
+        } catch (_) {
+          final PlacedWallpaper? placed = choice.placed;
+          if (placed != null) await placed.discard();
+          rethrow;
+        }
+      } else {
+        originalHistorySource = original;
+      }
+      if (!context.mounted || app_state.prismUser.id != owner) {
+        await choice.placed?.discard();
+        return null;
+      }
     }
     return apply(
       context,
@@ -221,11 +257,17 @@ class SetWallpaperFlow {
       entryPoint: entryPoint,
       requestId: requestId,
       usedDefault: usedDefault,
-      historyOriginalIdentity: historyOriginalIdentity,
       messenger: messenger,
       onMatchAccent: onMatchAccent,
       wallpaperId: wallpaperId,
       wallpaperSource: wallpaperSource,
+      historySource: originalHistorySource,
+      historyOriginalIdentity:
+          originalHistorySource != null &&
+              wallpaperSource == WallpaperSource.prism &&
+              (wallpaperId?.isNotEmpty ?? false)
+          ? 'prism:$wallpaperId'
+          : historyOriginalIdentity,
     );
   }
 
@@ -254,6 +296,8 @@ class SetWallpaperFlow {
     String? requestId,
     bool usedDefault = false,
     String? historyOriginalIdentity,
+    String? historySource,
+    WallpaperSetResult? priorResult,
     ScaffoldMessengerState? messenger,
     AppLocalizations? localizations,
     VoidCallback? onMatchAccent,
@@ -266,16 +310,17 @@ class SetWallpaperFlow {
     final String operationId = AnalyticsCorrelation.newId();
     final PlacedWallpaper? placed = choice.placed;
     onBusy?.call(true);
-    final WallpaperSetResult result;
+    final WallpaperSetResult serviceResult;
     try {
       // A placed wall is a rendered copy, so history keeps the original instead, as the studio always did.
-      result = placed == null
+      serviceResult = placed == null
           ? await WallpaperService.setWallpaper(
               url,
               choice.target,
               useSystemCropper: choice.useSystemCropper,
               thumbnailUrl: thumbnailUrl,
               recordHistory: recordHistory,
+              historySource: historySource,
               wallpaperId: wallpaperId,
               wallpaperSource: wallpaperSource,
               historyOriginalIdentity: historyOriginalIdentity,
@@ -284,12 +329,21 @@ class SetWallpaperFlow {
               placed.path,
               choice.target,
               recordHistory: recordHistory,
-              historySource: url,
+              wallpaperId: wallpaperId,
+              wallpaperSource: wallpaperSource,
+              historySource: historySource ?? url,
               historyThumbnail: thumbnailUrl,
+              historyOriginalIdentity: historyOriginalIdentity,
             );
     } finally {
       onBusy?.call(false);
     }
+    final WallpaperSetResult result = priorResult == null
+        ? serviceResult
+        : serviceResult.withHistory(
+            restore: <WallpaperRestore>[...priorResult.restore, ...serviceResult.restore],
+            historyIds: <String>[...priorResult.historyIds, ...serviceResult.historyIds],
+          );
     if (placed != null) _trackPlacement(placed, choice.target, result);
     reportWallpaperSetResult(
       context.mounted ? context : null,
@@ -312,8 +366,10 @@ class SetWallpaperFlow {
       onRetry: (retryTarget) => unawaited(() async {
         if (owner != app_state.prismUser.id) return;
         final isLocal = url.startsWith('/') || url.startsWith('file:');
-        if (!isLocal && !context.mounted) return;
-        final retryUrl = isLocal
+        if (placed == null && !isLocal && !context.mounted) return;
+        final retryUrl = placed != null
+            ? placed.path
+            : isLocal
             ? url
             : await resolveOriginalWithConsent(
                 context,
@@ -340,6 +396,8 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           usedDefault: usedDefault,
           historyOriginalIdentity: historyOriginalIdentity,
+          historySource: historySource,
+          priorResult: result,
           requestId: requestId,
           messenger: host,
           localizations: l10n,
@@ -349,7 +407,9 @@ class SetWallpaperFlow {
         );
       }()),
     );
-    if (result.isSuccess && placed != null) unawaited(placed.discard());
+    if (placed != null && (result.isSuccess || result.isSilent || (result.isFailure && !result.canRetry))) {
+      unawaited(placed.discard());
+    }
     if (result.isSuccess && wallpaperId != null && wallpaperSource == WallpaperSource.prism) {
       await OriginalAccessService.instance.complete(
         owner: owner,
@@ -373,6 +433,8 @@ class SetWallpaperFlow {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
     Future<String> Function(String source)? prepareAuthorized,
+    String? authorizedHomeUrl,
+    String? preparedHomeSource,
   }) async {
     String owner = app_state.prismUser.id;
     final PairPick? pick = await pairPicker(context, excludeUrl: url);
@@ -380,13 +442,28 @@ class SetWallpaperFlow {
     if (!context.mounted) return null;
     if (owner != app_state.prismUser.id) return null;
     final PairCandidate candidate = pick.candidate;
+    final bool wasLoggedIn = app_state.prismUser.loggedIn;
+    final bool candidateRequiresSignIn = OriginalAccessService.requiresGrant(
+      candidate.fullUrl,
+      candidate.wallpaperId,
+      candidate.wallpaperSource,
+    );
     if (!await signInForOriginal(
           context,
           url: candidate.fullUrl,
           wallpaperId: candidate.wallpaperId,
           wallpaperSource: candidate.wallpaperSource,
         ) ||
-        !context.mounted) {
+        !context.mounted ||
+        (owner != app_state.prismUser.id && (wasLoggedIn || !candidateRequiresSignIn))) {
+      return null;
+    }
+    owner = app_state.prismUser.id;
+    final bool loggedInBeforeHome = app_state.prismUser.loggedIn;
+    final bool homeRequiresSignIn = OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource);
+    if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
+        !context.mounted ||
+        (owner != app_state.prismUser.id && (loggedInBeforeHome || !homeRequiresSignIn))) {
       return null;
     }
     owner = app_state.prismUser.id;
@@ -397,7 +474,7 @@ class SetWallpaperFlow {
       if (!protectedAssets.contains(id)) protectedAssets.add(id);
     }
 
-    addProtected(url, wallpaperId, wallpaperSource);
+    if (authorizedHomeUrl == null) addProtected(url, wallpaperId, wallpaperSource);
     addProtected(pick.candidate.fullUrl, pick.candidate.wallpaperId, pick.candidate.wallpaperSource);
     int maxCoins = 0;
     if (protectedAssets.isNotEmpty) {
@@ -430,6 +507,8 @@ class SetWallpaperFlow {
       protectedAssets: protectedAssets,
       maxCoins: maxCoins,
       prepareAuthorized: prepareAuthorized,
+      authorizedHomeUrl: authorizedHomeUrl,
+      preparedHomeSource: preparedHomeSource,
     );
   }
 
@@ -452,6 +531,8 @@ class SetWallpaperFlow {
     List<String> protectedAssets = const [],
     int maxCoins = 0,
     Future<String> Function(String source)? prepareAuthorized,
+    String? authorizedHomeUrl,
+    String? preparedHomeSource,
   }) async {
     final owner = app_state.prismUser.id;
     onBusy?.call(true);
@@ -460,6 +541,7 @@ class SetWallpaperFlow {
     try {
       final grants = await OriginalAccessService.instance.resolvePair(protectedAssets, maxCoins: maxCoins);
       var homeUrl =
+          authorizedHomeUrl ??
           grants[wallpaperId] ??
           await OriginalAccessService.instance.resolve(
             url: url,
@@ -485,10 +567,13 @@ class SetWallpaperFlow {
               wallpaperSource: wallpaperSource,
             )
           : null;
-      if (prepareAuthorized != null && homeDone == null) {
+      if (preparedHomeSource != null && homeDone == null) {
+        homeUrl = preparedHomeSource;
+      } else if (prepareAuthorized != null && homeDone == null) {
         final source = homeUrl;
         final prepared = await runPrepareSource(() => prepareAuthorized(source), l10n: l10n);
         if (prepared == null) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+        preparedHomeSource = prepared;
         homeUrl = prepared;
       }
       if (owner != app_state.prismUser.id) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
@@ -544,6 +629,17 @@ class SetWallpaperFlow {
     if (home.isSuccess && lock?.isSuccess == true && protectedAssets.isNotEmpty) {
       await OriginalAccessService.instance.completePair(protectedAssets, owner: owner);
     }
+    if (home.isSuccess &&
+        lock?.isSuccess == true &&
+        authorizedHomeUrl != null &&
+        wallpaperId != null &&
+        OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource)) {
+      await OriginalAccessService.instance.complete(
+        owner: owner,
+        wallpaperId: wallpaperId,
+        action: OriginalAccessAction.set,
+      );
+    }
     _trackPair(entryPoint, pick, combined);
     reportWallpaperSetResult(
       context != null && context.mounted ? context : null,
@@ -573,6 +669,8 @@ class SetWallpaperFlow {
             protectedAssets: protectedAssets,
             maxCoins: maxCoins,
             prepareAuthorized: prepareAuthorized,
+            authorizedHomeUrl: authorizedHomeUrl,
+            preparedHomeSource: preparedHomeSource,
           ),
         );
       },

@@ -145,11 +145,13 @@ class _ClockOverlayState extends State<ClockOverlay> {
   aw.WallpaperCapabilities? _capabilities;
   late bool _remember = widget.request != null && SetWallpaperFlow.defaultTarget() != null;
   bool _busy = false;
+  bool _completed = false;
 
   /// The wall as placed in the studio. The screen deletes it unless it hands it to the flow.
   PlacedWallpaper? _placed;
   bool _placedHandedOff = false;
   int _inputGeneration = 0;
+  int _adjustGeneration = 0;
   ImageStream? _sampleStream;
   ImageStreamListener? _sampleListener;
   Future<File?>? _localFileFuture;
@@ -175,7 +177,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 
   List<WallpaperTarget> get _targets => <WallpaperTarget>[
-    WallpaperTarget.home,
+    if (_supported(WallpaperTarget.home)) WallpaperTarget.home,
     if (_supported(WallpaperTarget.lock)) WallpaperTarget.lock,
     if (_supported(WallpaperTarget.both)) WallpaperTarget.both,
   ];
@@ -200,8 +202,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
       if (!mounted) return;
       setState(() {
         _capabilities = capabilities;
-        if (!_targets.contains(_target)) _target = WallpaperTarget.home;
+        if (!_targets.contains(_target)) {
+          _target = _targets.firstOrNull ?? WallpaperTarget.home;
+          _mode = _target == WallpaperTarget.lock ? ClockPreviewMode.lock : ClockPreviewMode.home;
+        }
       });
+      _readSchemeOnce();
     } catch (error, stackTrace) {
       logger.w('ClockOverlay: could not read capabilities', error: error, stackTrace: stackTrace);
     }
@@ -217,6 +223,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
         oldWidget.tint == widget.tint) {
       return;
     }
+    _adjustGeneration++;
+    final PlacedWallpaper? placed = _placed;
+    _placed = null;
+    if (placed != null) unawaited(placed.discard());
     _reloadImage();
   }
 
@@ -442,9 +452,24 @@ class _ClockOverlayState extends State<ClockOverlay> {
 
   /// Hands [choice] to the flow. A remembered choice becomes the saved default, and clearing the check forgets it.
   void _choose(SetWallpaperChoice choice) {
+    if (_completed) return;
+    _completed = true;
     if (choice.kind == SetChoiceKind.apply) SetWallpaperFlow.saveDefaultTarget(_remember ? choice.target : null);
     _placedHandedOff = choice.placed != null;
     Navigator.of(context).pop<SetWallpaperChoice>(choice);
+  }
+
+  void _close() {
+    if (_completed) return;
+    _completed = true;
+    _adjustGeneration++;
+    Navigator.of(context).pop();
+  }
+
+  void _handlePop(bool didPop) {
+    if (!didPop || _completed) return;
+    _completed = true;
+    _adjustGeneration++;
   }
 
   void _set() => _choose(SetWallpaperChoice(_target, placed: _placed, targetChanged: _targetChanged));
@@ -452,6 +477,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   Future<void> _adjust() async {
     final Future<StudioResult?> Function(BuildContext context)? onAdjust = widget.request?.onAdjust;
     if (onAdjust == null || _busy) return;
+    final int generation = _adjustGeneration;
     setState(() => _busy = true);
     final AppLocalizations l10n = context.l10n;
     StudioResult? result;
@@ -464,6 +490,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
       if (mounted) setState(() => _busy = false);
     }
     if (!mounted) {
+      if (result is PlacedWallpaper) unawaited(result.discard());
+      return;
+    }
+    if (_completed || generation != _adjustGeneration) {
       if (result is PlacedWallpaper) unawaited(result.discard());
       return;
     }
@@ -519,7 +549,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
       key: const ValueKey<String>('set-screen-set'),
       label: _setLabel(l10n),
       loading: _busy && widget.request == null,
-      onPressed: _busy ? null : onSet,
+      onPressed: _busy || _completed || ((widget.request != null || widget.file) && !_supported(_target))
+          ? null
+          : onSet,
       expand: true,
     );
   }
@@ -567,128 +599,131 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Widget? primary = _primary(context);
     final List<String> notes = widget.request?.notes ?? const <String>[];
     // A Scaffold, so the set result and its Undo show over the preview and not under it.
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: Stack(
-        children: <Widget>[
-          Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: fade,
-              switchInCurve: PrismCurves.enter,
-              switchOutCurve: PrismCurves.enter.flipped,
-              layoutBuilder: (current, previous) =>
-                  Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
-              child: lock
-                  ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
-                  : HomePreviewLayer(
-                      key: ValueKey<ClockPreviewMode>(_mode),
-                      textColor: textColor,
-                      iconStyle: _iconStyle,
-                      scheme: _scheme,
-                    ),
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _controls = !_controls),
-              child: SizedBox(height: size.height, width: size.width),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: !_controls,
-              child: AnimatedOpacity(
-                opacity: _controls ? 1 : 0,
+    return PopScope<Object?>(
+      onPopInvokedWithResult: (didPop, _) => _handlePop(didPop),
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        body: Stack(
+          children: <Widget>[
+            Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
+            Positioned.fill(
+              child: AnimatedSwitcher(
                 duration: fade,
-                curve: PrismCurves.enter,
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(PrismSpace.sm, 0, PrismSpace.sm, PrismSpace.xs),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          AnimatedSwitcher(
-                            duration: fade,
-                            child: lock || styles.length < 2
-                                ? const SizedBox.shrink()
-                                : Padding(
-                                    padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-                                    child: _GlassSegments<PreviewIconStyle>(
-                                      values: styles,
-                                      selected: _iconStyle,
-                                      label: (style) => switch (style) {
-                                        PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
-                                        PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
-                                        PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
-                                        PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
-                                        PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
-                                      },
-                                      groupLabel: l10n.wallpaperPreviewIconStyle,
-                                      onChanged: _pickIconStyle,
-                                      compact: true,
+                switchInCurve: PrismCurves.enter,
+                switchOutCurve: PrismCurves.enter.flipped,
+                layoutBuilder: (current, previous) =>
+                    Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+                child: lock
+                    ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+                    : HomePreviewLayer(
+                        key: ValueKey<ClockPreviewMode>(_mode),
+                        textColor: textColor,
+                        iconStyle: _iconStyle,
+                        scheme: _scheme,
+                      ),
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _controls = !_controls),
+                child: SizedBox(height: size.height, width: size.width),
+              ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !_controls,
+                child: AnimatedOpacity(
+                  opacity: _controls ? 1 : 0,
+                  duration: fade,
+                  curve: PrismCurves.enter,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(PrismSpace.sm, 0, PrismSpace.sm, PrismSpace.xs),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            AnimatedSwitcher(
+                              duration: fade,
+                              child: lock || styles.length < 2
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                                      child: _GlassSegments<PreviewIconStyle>(
+                                        values: styles,
+                                        selected: _iconStyle,
+                                        label: (style) => switch (style) {
+                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
+                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
+                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
+                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
+                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
+                                        },
+                                        groupLabel: l10n.wallpaperPreviewIconStyle,
+                                        onChanged: _pickIconStyle,
+                                        compact: true,
+                                      ),
                                     ),
-                                  ),
-                          ),
-                          _EnterFromBelow(
-                            child: _ControlCard(
-                              children: <Widget>[
-                                if (notes.isNotEmpty) ...<Widget>[
-                                  _NoteChips(notes: notes),
-                                  const SizedBox(height: PrismSpace.sm),
-                                ],
-                                _choices(context),
-                                const SizedBox(height: PrismSpace.sm),
-                                Row(
-                                  children: <Widget>[
-                                    PrismIconButton(
-                                      icon: Icons.close_rounded,
-                                      tooltip: widget.request == null
-                                          ? l10n.wallpaperClosePreview
-                                          : l10n.setScreenClose,
-                                      filled: true,
-                                      size: 48,
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                    if (primary != null) ...<Widget>[
-                                      const SizedBox(width: PrismSpace.xs),
-                                      Expanded(child: Center(child: primary)),
-                                    ],
-                                  ],
-                                ),
-                                if (widget.request != null && !hideSetWallpaperUi) ...<Widget>[
-                                  const SizedBox(height: PrismSpace.xxs),
-                                  _RememberCheck(
-                                    value: _remember,
-                                    onChanged: (value) => setState(() => _remember = value),
-                                  ),
-                                  if (_canAdjust)
-                                    _QuietActions(
-                                      busy: _busy,
-                                      onAdjust: _adjust,
-                                      onPair: _canPair
-                                          ? () => _choose(SetWallpaperChoice.pair(targetChanged: _targetChanged))
-                                          : null,
-                                    ),
-                                ],
-                              ],
                             ),
-                          ),
-                        ],
+                            _EnterFromBelow(
+                              child: _ControlCard(
+                                children: <Widget>[
+                                  if (notes.isNotEmpty) ...<Widget>[
+                                    _NoteChips(notes: notes),
+                                    const SizedBox(height: PrismSpace.sm),
+                                  ],
+                                  _choices(context),
+                                  const SizedBox(height: PrismSpace.sm),
+                                  Row(
+                                    children: <Widget>[
+                                      PrismIconButton(
+                                        icon: Icons.close_rounded,
+                                        tooltip: widget.request == null
+                                            ? l10n.wallpaperClosePreview
+                                            : l10n.setScreenClose,
+                                        filled: true,
+                                        size: 48,
+                                        onPressed: _close,
+                                      ),
+                                      if (primary != null) ...<Widget>[
+                                        const SizedBox(width: PrismSpace.xs),
+                                        Expanded(child: Center(child: primary)),
+                                      ],
+                                    ],
+                                  ),
+                                  if (widget.request != null && !hideSetWallpaperUi) ...<Widget>[
+                                    const SizedBox(height: PrismSpace.xxs),
+                                    _RememberCheck(
+                                      value: _remember,
+                                      onChanged: (value) => setState(() => _remember = value),
+                                    ),
+                                    if (_canAdjust)
+                                      _QuietActions(
+                                        busy: _busy,
+                                        onAdjust: _adjust,
+                                        onPair: _canPair
+                                            ? () => _choose(SetWallpaperChoice.pair(targetChanged: _targetChanged))
+                                            : null,
+                                      ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

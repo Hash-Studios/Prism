@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
@@ -32,6 +33,8 @@ class RecentlySetRow extends StatelessWidget {
         context,
         url: item.fullUrl,
         thumbnailUrl: item.thumbnailUrl,
+        wallpaperId: item.wallpaperId,
+        wallpaperSource: WallpaperSourceX.fromWire(item.source),
         forceScreen: true,
         entryPoint: 'recently_set',
       ),
