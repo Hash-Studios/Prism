@@ -465,6 +465,12 @@ abstract class AppLocalizations {
   /// **'Clear Depth Effect'**
   String get accountClearDepthEffect;
 
+  /// Spatial Scene text: accountClearSpatialScene.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Spatial'**
+  String get accountClearSpatialScene;
+
   /// Settings action for clearing all favourites.
   ///
   /// In en, this message translates to:
@@ -830,6 +836,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Depth Effect, subject in front of the clock'**
   String get accountDepthEffectClockSemanticLabel;
+
+  /// Spatial Scene text: accountSpatialScene.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial'**
+  String get accountSpatialScene;
+
+  /// Spatial Scene text: accountSpatialSceneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Walls with clear 3D depth'**
+  String get accountSpatialSceneSubtitle;
+
+  /// Spatial Scene text: accountSpatialSceneSemanticLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial, walls with clear 3D depth'**
+  String get accountSpatialSceneSemanticLabel;
 
   /// Subtitle describing downloaded files and retained offline copies.
   ///
@@ -4178,6 +4202,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In the Lock Screen editor, tap ••• then Depth Effect.'**
   String get coreDepthEffectMenuTip;
+
+  /// Spatial Scene text: coreSpatialBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial'**
+  String get coreSpatialBadge;
+
+  /// Spatial Scene text: coreSpatialBadgeSemantic.
+  ///
+  /// In en, this message translates to:
+  /// **'Works as a Spatial Scene'**
+  String get coreSpatialBadgeSemantic;
+
+  /// Spatial Scene text: coreSpatialSceneTip.
+  ///
+  /// In en, this message translates to:
+  /// **'In the Lock Screen editor, tap the Spatial Scene button.'**
+  String get coreSpatialSceneTip;
 
   /// No description provided for @coreDeviceCannotSetScreen.
   ///
@@ -12222,6 +12264,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your subject sits in front of the clock.'**
   String get wallpaperDepthSubjectSubtitle;
+
+  /// Spatial Scene text: wallpaperSpatialScene.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial Scene'**
+  String get wallpaperSpatialScene;
+
+  /// Spatial Scene text: wallpaperSpatialGreatSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear depth. Makes a strong 3D Lock Screen.'**
+  String get wallpaperSpatialGreatSubtitle;
+
+  /// Spatial Scene text: wallpaperSpatialOkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Some depth. The 3D effect is gentle.'**
+  String get wallpaperSpatialOkSubtitle;
+
+  /// Spatial Scene text: wallpaperSpatialGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set it as a Spatial Scene'**
+  String get wallpaperSpatialGuideTitle;
+
+  /// Spatial Scene text: wallpaperSpatialGuideBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On iPhone 12 or later with iOS 26:'**
+  String get wallpaperSpatialGuideBody;
+
+  /// Spatial Scene text: wallpaperSpatialStepSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this wall to Photos.'**
+  String get wallpaperSpatialStepSave;
+
+  /// Spatial Scene text: wallpaperSpatialStepPick.
+  ///
+  /// In en, this message translates to:
+  /// **'On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.'**
+  String get wallpaperSpatialStepPick;
+
+  /// Spatial Scene text: wallpaperSpatialStepButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the Spatial Scene button to turn the 3D effect on, then tap Add.'**
+  String get wallpaperSpatialStepButton;
+
+  /// Spatial Scene text: wallpaperSpatialPreviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'3D'**
+  String get wallpaperSpatialPreviewLabel;
+
+  /// Spatial Scene text: wallpaperSpatialPreviewOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview in 3D'**
+  String get wallpaperSpatialPreviewOn;
+
+  /// Spatial Scene text: wallpaperSpatialPreviewOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off the 3D preview'**
+  String get wallpaperSpatialPreviewOff;
+
+  /// Spatial Scene text: wallpaperSpatialDragHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to tilt'**
+  String get wallpaperSpatialDragHint;
 
   /// Toast shown after copying a wallpaper color's hex code.
   ///

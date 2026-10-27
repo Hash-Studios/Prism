@@ -208,6 +208,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountClearDepthEffect => 'डेप्थ इफ़ेक्ट साफ़ करें';
 
   @override
+  String get accountClearSpatialScene => 'स्पेशियल साफ़ करें';
+
+  @override
   String get accountClearFavouriteWallpapers => 'पसंदीदा वॉलपेपर हटाएँ';
 
   @override
@@ -451,6 +454,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'डेप्थ इफ़ेक्ट, विषय घड़ी के सामने';
+
+  @override
+  String get accountSpatialScene => 'स्पेशियल';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'स्पष्ट 3D गहराई वाले वॉलपेपर';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'स्पेशियल, स्पष्ट 3D गहराई वाले वॉलपेपर';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2346,6 +2358,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।';
+
+  @override
+  String get coreSpatialBadge => 'स्पेशियल';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'स्पेशियल सीन के रूप में काम करता है';
+
+  @override
+  String get coreSpatialSceneTip => 'लॉक स्क्रीन एडिटर में स्पेशियल सीन बटन पर टैप करें।';
 
   @override
   String get coreDeviceCannotSetScreen => 'यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।';
@@ -8005,6 +8026,44 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperDepthSubjectSubtitle => 'आपका विषय घड़ी के सामने दिखाई देता है।';
+
+  @override
+  String get wallpaperSpatialScene => 'Spatial Scene';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'साफ़ गहराई। एक मज़बूत 3D लॉक स्क्रीन बनाती है।';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'थोड़ी गहराई। 3D इफ़ेक्ट हल्का है।';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'इसे Spatial Scene के रूप में सेट करें';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'iOS 26 वाले iPhone 12 या उसके बाद के मॉडल पर:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'इस वॉलपेपर को फ़ोटो में सेव करें।';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'लॉक स्क्रीन पर, स्क्रीन को स्पर्श करके रखें। जोड़ें बटन पर टैप करें, फ़ोटो पर टैप करें, फिर फ़ोटो चुनें।';
+
+  @override
+  String get wallpaperSpatialStepButton =>
+      '3D इफ़ेक्ट चालू करने के लिए स्पेशियल सीन बटन पर टैप करें, फिर जोड़ें पर टैप करें।';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => '3D में प्रीव्यू देखें';
+
+  @override
+  String get wallpaperSpatialPreviewOff => '3D प्रीव्यू बंद करें';
+
+  @override
+  String get wallpaperSpatialDragHint => 'झुकाने के लिए खींचें';
 
   @override
   String get wallpaperDetailColorCodeCopied => 'रंग कोड क्लिपबोर्ड पर कॉपी हुआ';

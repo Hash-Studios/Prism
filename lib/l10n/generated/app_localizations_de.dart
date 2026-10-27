@@ -210,6 +210,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountClearDepthEffect => 'Tiefeneffekt zurücksetzen';
 
   @override
+  String get accountClearSpatialScene => 'Räumlich zurücksetzen';
+
+  @override
   String get accountClearFavouriteWallpapers => 'Favorisierte Hintergrundbilder entfernen';
 
   @override
@@ -462,6 +465,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Tiefeneffekt, Motiv vor der Uhr';
+
+  @override
+  String get accountSpatialScene => 'Räumlich';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Walls mit klarer 3D-Tiefe';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Räumlich, Walls mit klarer 3D-Tiefe';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2365,6 +2377,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'Tippe im Sperrbildschirm-Editor auf ••• und dann auf Tiefeneffekt.';
+
+  @override
+  String get coreSpatialBadge => 'Räumlich';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Funktioniert als räumliche Szene';
+
+  @override
+  String get coreSpatialSceneTip => 'Tippe im Sperrbildschirm-Editor auf die Schaltfläche Räumliche Szene.';
 
   @override
   String get coreDeviceCannotSetScreen => 'Dieses Gerät kann dieses Bild nicht als Hintergrundbild festlegen.';
@@ -7980,6 +8001,44 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperDepthSubjectSubtitle => 'Dein Motiv liegt vor der Uhr.';
+
+  @override
+  String get wallpaperSpatialScene => 'Räumliche Szene';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Klare Tiefe. Ergibt einen starken 3D-Sperrbildschirm.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Etwas Tiefe. Der 3D-Effekt ist sanft.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Als räumliche Szene festlegen';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'Auf dem iPhone 12 oder neuer mit iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Speichere dieses Wallpaper in Fotos.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'Berühre und halte auf dem Sperrbildschirm den Bildschirm. Tippe auf die Taste Hinzufügen, tippe auf Fotos und wähle dann das Foto aus.';
+
+  @override
+  String get wallpaperSpatialStepButton =>
+      'Tippe auf die Schaltfläche Räumliche Szene, um den 3D-Effekt einzuschalten, und dann auf Hinzufügen.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'In 3D ansehen';
+
+  @override
+  String get wallpaperSpatialPreviewOff => '3D-Vorschau ausschalten';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Ziehen zum Neigen';
 
   @override
   String get wallpaperDetailColorCodeCopied => 'Farbcode in die Zwischenablage kopiert';

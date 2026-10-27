@@ -393,6 +393,10 @@
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
   },
+  "accountClearSpatialScene": "Hapus Spasial",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
+  },
   "accountClearFavouriteWallpapers": "Hapus wallpaper favorit",
   "@accountClearFavouriteWallpapers": {
     "description": "Settings action for clearing all favourites."
@@ -684,6 +688,18 @@
   "accountDepthEffectClockSemanticLabel": "Efek Kedalaman, subjek berada di depan jam",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "Spasial",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "Wallpaper dengan kedalaman 3D yang jelas",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "Spasial, wallpaper dengan kedalaman 3D yang jelas",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{Tidak ada wallpaper yang diunduh; salinan offline tetap tersimpan} =1{1 wallpaper yang diunduh; salinan offline tetap tersimpan} other{{count} wallpaper yang diunduh; salinan offline tetap tersimpan}}",
   "@accountDownloadedWallpaperCount": {
@@ -2468,6 +2484,18 @@
   "coreDepthEffectBadgeSemantic": "Mendukung Efek Kedalaman",
   "coreDepthEffectMenuShortTip": "Ketuk ••• lalu Efek Kedalaman.",
   "coreDepthEffectMenuTip": "Di editor Layar Kunci, ketuk ••• lalu Efek Kedalaman.",
+  "coreSpatialBadge": "Spasial",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "Berfungsi sebagai Adegan Spasial",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "Di editor Layar Kunci, ketuk tombol Adegan Spasial.",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "Perangkat ini tidak dapat memasang wallpaper di layar itu.",
   "coreDifferentLockWallpaper": "Wallpaper layar kunci yang berbeda",
   "coreDone": "Selesai",
@@ -6982,6 +7010,54 @@
   "wallpaperDepthSubjectSubtitle": "Subjek Anda akan tampil di depan jam.",
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
+  },
+  "wallpaperSpatialScene": "Adegan Spasial",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "Kedalaman jelas. Membuat Layar Kunci 3D yang kuat.",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "Ada sedikit kedalaman. Efek 3D-nya lembut.",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "Atur sebagai Adegan Spasial",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "Di iPhone 12 atau yang lebih baru dengan iOS 26:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "Simpan wallpaper ini ke Foto.",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "Di Layar Kunci, sentuh dan tahan layar. Ketuk tombol Tambah, ketuk Foto, lalu pilih fotonya.",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "Ketuk tombol Adegan Spasial untuk mengaktifkan efek 3D, lalu ketuk Tambah.",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "Pratinjau dalam 3D",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "Matikan pratinjau 3D",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "Seret untuk memiringkan",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
   },
   "wallpaperDetailColorCodeCopied": "Kode warna disalin ke papan klip",
   "@wallpaperDetailColorCodeCopied": {

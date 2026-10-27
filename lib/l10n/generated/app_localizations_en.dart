@@ -208,6 +208,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountClearDepthEffect => 'Clear Depth Effect';
 
   @override
+  String get accountClearSpatialScene => 'Clear Spatial';
+
+  @override
   String get accountClearFavouriteWallpapers => 'Clear favourite wallpapers';
 
   @override
@@ -456,6 +459,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Depth Effect, subject in front of the clock';
+
+  @override
+  String get accountSpatialScene => 'Spatial';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Walls with clear 3D depth';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Spatial, walls with clear 3D depth';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2344,6 +2356,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'In the Lock Screen editor, tap ••• then Depth Effect.';
+
+  @override
+  String get coreSpatialBadge => 'Spatial';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Works as a Spatial Scene';
+
+  @override
+  String get coreSpatialSceneTip => 'In the Lock Screen editor, tap the Spatial Scene button.';
 
   @override
   String get coreDeviceCannotSetScreen => 'This device can\'t set that screen.';
@@ -7875,6 +7896,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperDepthSubjectSubtitle => 'Your subject sits in front of the clock.';
+
+  @override
+  String get wallpaperSpatialScene => 'Spatial Scene';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Clear depth. Makes a strong 3D Lock Screen.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Some depth. The 3D effect is gentle.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Set it as a Spatial Scene';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'On iPhone 12 or later with iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Save this wall to Photos.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.';
+
+  @override
+  String get wallpaperSpatialStepButton => 'Tap the Spatial Scene button to turn the 3D effect on, then tap Add.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'Preview in 3D';
+
+  @override
+  String get wallpaperSpatialPreviewOff => 'Turn off the 3D preview';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Drag to tilt';
 
   @override
   String get wallpaperDetailColorCodeCopied => 'Color code copied to clipboard';

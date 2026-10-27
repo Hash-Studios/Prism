@@ -286,6 +286,10 @@
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
   },
+  "accountClearSpatialScene": "स्पेशियल साफ़ करें",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
+  },
   "accountClearFavouriteWallpapers": "पसंदीदा वॉलपेपर हटाएँ",
   "@accountClearFavouriteWallpapers": {
     "description": "Settings action for clearing all favourites."
@@ -577,6 +581,18 @@
   "accountDepthEffectClockSemanticLabel": "डेप्थ इफ़ेक्ट, विषय घड़ी के सामने",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "स्पेशियल",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "स्पष्ट 3D गहराई वाले वॉलपेपर",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "स्पेशियल, स्पष्ट 3D गहराई वाले वॉलपेपर",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{कोई डाउनलोड किया हुआ वॉलपेपर नहीं; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} =1{1 डाउनलोड किया हुआ वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} other{{count} डाउनलोड किए हुए वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी}}",
   "@accountDownloadedWallpaperCount": {
@@ -2361,6 +2377,18 @@
   "coreDepthEffectBadgeSemantic": "डेप्थ इफ़ेक्ट के साथ काम करता है",
   "coreDepthEffectMenuShortTip": "••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "coreDepthEffectMenuTip": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
+  "coreSpatialBadge": "स्पेशियल",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "स्पेशियल सीन के रूप में काम करता है",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "लॉक स्क्रीन एडिटर में स्पेशियल सीन बटन पर टैप करें।",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।",
   "coreDifferentLockWallpaper": "लॉक स्क्रीन के लिए अलग वॉलपेपर",
   "coreDone": "हो गया",
@@ -6852,6 +6880,54 @@
   "wallpaperDepthSubjectSubtitle": "आपका विषय घड़ी के सामने दिखाई देता है।",
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
+  },
+  "wallpaperSpatialScene": "Spatial Scene",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "साफ़ गहराई। एक मज़बूत 3D लॉक स्क्रीन बनाती है।",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "थोड़ी गहराई। 3D इफ़ेक्ट हल्का है।",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "इसे Spatial Scene के रूप में सेट करें",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "iOS 26 वाले iPhone 12 या उसके बाद के मॉडल पर:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "इस वॉलपेपर को फ़ोटो में सेव करें।",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "लॉक स्क्रीन पर, स्क्रीन को स्पर्श करके रखें। जोड़ें बटन पर टैप करें, फ़ोटो पर टैप करें, फिर फ़ोटो चुनें।",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "3D इफ़ेक्ट चालू करने के लिए स्पेशियल सीन बटन पर टैप करें, फिर जोड़ें पर टैप करें।",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "3D में प्रीव्यू देखें",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "3D प्रीव्यू बंद करें",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "झुकाने के लिए खींचें",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
   },
   "wallpaperDetailColorCodeCopied": "रंग कोड क्लिपबोर्ड पर कॉपी हुआ",
   "@wallpaperDetailColorCodeCopied": {

@@ -9,6 +9,7 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -764,6 +765,28 @@ void main() {
 
       expect(restored.data!.items.map((wall) => wall.depthTier), <WallDepthTier?>[WallDepthTier.menu, null]);
       expect((restored.data!.items.first.toFeedItem() as PrismFeedItem).wallpaper.depthTier, WallDepthTier.menu);
+    });
+
+    test('a wall keeps its Spatial Scene tier and map, and a wall without spatial stays null', () async {
+      app_state.prismUser = profileUser(id: 'walls-spatial-owner');
+      client.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'spatial',
+          data: <String, dynamic>{
+            'wallpaper_url': 'https://example.test/a.jpg',
+            'email': 'creator@prism.test',
+            'spatial': <String, dynamic>{'tier': 'great', 'map': 'https://img.prismwalls.com/spatial/v1/w.png', 'v': 1},
+          },
+        ),
+        (id: 'unchecked', data: <String, dynamic>{'wallpaper_url': 'https://example.test/b.jpg'}),
+      ];
+
+      final result = await repo.fetchWalls(userId: 'creator-uid', refresh: true);
+
+      expect(result.data!.items.map((wall) => wall.spatial), <WallSpatial?>[
+        const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
+        null,
+      ]);
     });
   });
 }
