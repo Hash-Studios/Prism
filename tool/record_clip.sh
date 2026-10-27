@@ -92,7 +92,7 @@ if ! { ffmpeg -hide_banner -loglevel error -i "$tmp/raw.mp4" "${trim_args[@]+"${
   raw_name=${out##*/}; raw_stem=$raw_name
   case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
   raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
-  mv "$tmp/raw.mp4" "$raw_out" || {
+  { [ ! -e "$raw_out" ] && [ ! -L "$raw_out" ] && mv "$tmp/raw.mp4" "$raw_out"; } || {
     keep_tmp=1
     die "conversion or output save failed and could not move the raw recording. It is kept at $tmp/raw.mp4"
   }

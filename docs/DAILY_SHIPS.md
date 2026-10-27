@@ -21,7 +21,7 @@ The script refuses to start if the output path already exists, including a dangl
 
 Conversion uses the system temporary folder. Before moving the clip to the output, the script checks that the output path is still unused. This check has a small race with another writer. After recording, a stop signal sent only to the script does not interrupt conversion.
 
-If conversion or saving fails, the script exits with status 1 and keeps the raw take beside the output as `<name>-raw.mp4` (`clips/clip.mp4` gives `clips/clip-raw.mp4`). This includes a failed conversion after a signal to ffmpeg or a `--trim` start past the end of the take. It also includes an output path that exists at the final check. If it cannot move the raw take, it keeps its temp folder and prints the raw file path.
+If conversion or saving fails, the script exits with status 1 and keeps the raw take beside the output as `<name>-raw.mp4` (`clips/clip.mp4` gives `clips/clip-raw.mp4`). This includes a failed conversion after a signal to ffmpeg or a `--trim` start past the end of the take. It also includes an output path that exists at the final check. If that raw file already exists or the move fails, it keeps its temp folder and prints the raw file path.
 
 ### Morning post
 
