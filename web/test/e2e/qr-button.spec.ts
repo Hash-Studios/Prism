@@ -85,6 +85,8 @@ test.describe("mouse interaction", () => {
       await page.addStyleTag({ content: "html { font-size: 24px; }" });
       const button = page.getByRole("button", { name: "Scan QR Code" });
       const panel = page.getByRole("region", { name: "Scan to download Prism for Android" });
+      await page.evaluate(() => document.fonts.ready);
+      await button.hover();
       const bounds = await button.boundingBox();
       if (!bounds) throw new Error("QR button has no bounds");
       const x = edge === "left" ? 2 : bounds.width - 2;
