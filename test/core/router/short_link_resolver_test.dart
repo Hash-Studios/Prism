@@ -46,6 +46,40 @@ void main() {
     );
   });
 
+  test('a stored share link without a thumbnail still opens the wallpaper', () async {
+    final resolver = _resolverFor(
+      (_) async => http.Response(
+        jsonEncode(<String, String>{
+          'canonical_url': 'https://prismwalls.com/share?id=WBN0&source=prism&provider=Prism&thumb=',
+        }),
+        200,
+      ),
+    );
+
+    final result = await resolver.resolve('weslE10B');
+
+    expect(result, isA<ShortLinkResolved>());
+    expect(
+      (result as ShortLinkResolved).action,
+      isA<ShareLinkIntent>()
+          .having((action) => action.wallId, 'wallId', 'WBN0')
+          .having((action) => action.thumbnailUrl, 'thumbnailUrl', ''),
+    );
+  });
+
+  test('a stored share link without a wallpaper id fails with missing data', () async {
+    final resolver = _resolverFor(
+      (_) async => http.Response(
+        jsonEncode(<String, String>{'canonical_url': 'https://prismwalls.com/share?source=prism&thumb='}),
+        200,
+      ),
+    );
+
+    final result = await resolver.resolve('abc');
+
+    expect((result as ShortLinkFailed).reason, AnalyticsReasonValue.missingData);
+  });
+
   test('a 2xx response without a canonical url fails with missing data', () async {
     final resolver = _resolverFor((_) async => http.Response('{}', 200));
 

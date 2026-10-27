@@ -7,6 +7,7 @@ import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -121,6 +122,53 @@ void main() {
     }
     expect(events.whereType<DeepLinkReceivedEvent>().map((event) => event.source), DeepLinkSourceValue.values);
     expect(results().map((event) => event.source), DeepLinkSourceValue.values);
+    expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
+  });
+
+  testWidgets('id-only share URLs and pushes navigate with their own route args and success analytics', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> urlResult = dispatcher.openUri(
+      Uri.parse('https://prismwalls.com/share?id=url-wall&provider=Wallhaven'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(await urlResult, DeepLinkDispatchResult.navigated);
+    final WallpaperDetailRouteArgs urlArgs = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(urlArgs.wallId, 'url-wall');
+    expect(urlArgs.source, WallpaperSource.wallhaven);
+    expect(urlArgs.thumbnailUrl, isEmpty);
+    expect(urlArgs.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(urlArgs.entity, isNull);
+    expect(urlArgs.localFile, isNull);
+
+    final Future<DeepLinkDispatchResult> pushResult = dispatcher.openPush(<String, dynamic>{
+      'url': 'https://prismwalls.com/share?id=push-wall&provider=Pexels',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await pushResult, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'push-wall');
+    expect(args.source, WallpaperSource.pexels);
+    expect(args.thumbnailUrl, isEmpty);
+    expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
+
+    final List<DeepLinkReceivedEvent> received = events.whereType<DeepLinkReceivedEvent>().toList();
+    expect(received.map((event) => event.source), <DeepLinkSourceValue>[
+      DeepLinkSourceValue.appLinks,
+      DeepLinkSourceValue.push,
+    ]);
+    expect(received.map((event) => event.targetType), everyElement(TargetTypeValue.share));
+    final List<DeepLinkResolvedEvent> resolved = events.whereType<DeepLinkResolvedEvent>().toList();
+    expect(resolved.map((event) => event.targetType), everyElement(TargetTypeValue.share));
+    expect(resolved.map((event) => event.result), everyElement(EventResultValue.success));
+    expect(results().map((event) => event.targetType), everyElement(TargetTypeValue.share));
     expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
   });
 

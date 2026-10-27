@@ -2162,7 +2162,7 @@ test('a missing or malformed short link shows the unavailable page with a store 
   assert.match(await malformed.text(), /href="https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.hash\.prism"[^>]*>Open Prism</);
 });
 
-function postLink(env, body, headers = {}) {
+function postLink(env, body, headers = {}, ctx = { waitUntil() {} }) {
   return worker.fetch(
     new Request('https://prismwalls.com/api/links', {
       method: 'POST',
@@ -2170,11 +2170,176 @@ function postLink(env, body, headers = {}) {
       body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
     env,
-    { waitUntil() {} },
+    ctx,
   );
 }
 
 const LINK_BODY = { type: 'share', canonical_url: 'https://prismwalls.com/share?id=wall-1' };
+const NORMALIZED_LINK_URL = 'https://prismwalls.com/share?id=wall-1&thumb=';
+
+test('new short codes map every input byte to a safe symbol and resolve their canonical URL', async (t) => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const emitted = new Set();
+  let nextByte = 0;
+  const randomValues = t.mock.method(crypto, 'getRandomValues', (bytes) => {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = nextByte & 0xff;
+      nextByte += 1;
+    }
+    return bytes;
+  });
+
+  try {
+    for (let block = 0; block < 32; block += 1) {
+      const env = workerEnv();
+      const response = await postLink(env, LINK_BODY);
+      assert.equal(response.status, 201);
+      const { code, canonical_url: canonicalUrl } = await response.json();
+      assert.equal(canonicalUrl, NORMALIZED_LINK_URL);
+      assert.equal(code.length, 8);
+      assert.match(code, /^[A-Za-z2-9]{8}$/);
+      assert.doesNotMatch(code, /[0Oo1Il]/, code);
+      for (const symbol of code) emitted.add(symbol);
+
+      const lookup = await worker.fetch(new Request(`https://prismwalls.com/api/links/${code}`), env);
+      assert.equal(lookup.status, 200);
+      assert.equal((await lookup.json()).canonical_url, NORMALIZED_LINK_URL);
+    }
+  } finally {
+    randomValues.mock.restore();
+  }
+
+  assert.equal(nextByte, 256);
+  assert.deepEqual([...emitted].sort(), [...alphabet].sort());
+});
+
+test('legacy short codes keep exact lookup, landing, query alias and OG behavior', async () => {
+  const codes = ['0Oo1IlXY', 'lNJJdcM5', 'INJJdcM5'];
+  const links = new MemoryKv(codes.map((code, index) => [code, JSON.stringify({
+    code,
+    type: 'share',
+    canonical_url: `https://prismwalls.com/share?id=legacy-${index}`,
+    created_at: new Date().toISOString(),
+    preview: { title: `Legacy ${index}`, image_source_url: `https://images.example.test/${index}.jpg` },
+    version: 1,
+  })]));
+  const env = workerEnv({
+    LINKS_KV: links,
+    OG_FALLBACK_IMAGE: 'https://images.example.test/fallback.jpg',
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+
+  for (const [index, code] of codes.entries()) {
+    const lookup = await worker.fetch(new Request(`https://prismwalls.com/api/links/${code}`), env);
+    assert.equal(lookup.status, 200, code);
+    assert.equal((await lookup.json()).canonical_url, `https://prismwalls.com/share?id=legacy-${index}&thumb=`);
+
+    const landing = await getShare(ANDROID_UA, `/l/${code}`, env);
+    assert.equal(landing.status, 200, code);
+    assert.match(await landing.text(), new RegExp(`Legacy ${index}`));
+
+    const queryAlias = await getShare(ANDROID_UA, `/l?code=${code}`, env);
+    assert.equal(queryAlias.status, 200, code);
+    assert.match(await queryAlias.text(), new RegExp(`Legacy ${index}`));
+
+    const og = await getOg(env, `/og/${code}.jpg`);
+    assert.equal(og.status, 302, code);
+    assert.equal(og.headers.get('location'), 'https://images.example.test/fallback.jpg');
+  }
+});
+
+test('short-code fallback generation emits only safe symbols', async (t) => {
+  let randomCalls = 0;
+  const randomValues = t.mock.method(crypto, 'getRandomValues', (bytes) => {
+    bytes.fill(randomCalls++ < 10 ? 0 : 1);
+    return bytes;
+  });
+  const links = new MemoryKv([['AAAAAAAA', JSON.stringify({ marker: 'existing short code' })]]);
+  const env = workerEnv({ LINKS_KV: links });
+
+  try {
+    const response = await postLink(env, LINK_BODY);
+    assert.equal(response.status, 201);
+    const { code } = await response.json();
+    assert.equal(code, 'BBBBBBBBBB');
+    assert.equal(code.length, 10);
+    assert.doesNotMatch(code, /[0Oo1Il]/, code);
+    assert.equal(randomCalls, 11);
+  } finally {
+    randomValues.mock.restore();
+  }
+});
+
+test('short-code allocation retries a collided safe fallback and preserves existing records', async (t) => {
+  const fixedNow = 1_700_000_000_000;
+  assert.equal(fixedNow.toString(36), 'loyw3v28');
+  const dateNow = t.mock.method(Date, 'now', () => fixedNow);
+  let randomCalls = 0;
+  const randomValues = t.mock.method(crypto, 'getRandomValues', (bytes) => {
+    const value = randomCalls++ < 11 ? 0 : 1;
+    bytes.fill(value);
+    return bytes;
+  });
+  const links = new MemoryKv([
+    ['AAAAAAAA', JSON.stringify({ marker: 'eight-character record' })],
+    ['AAAAAAAAAA', JSON.stringify({ marker: 'ten-character record' })],
+  ]);
+  const env = workerEnv({ LINKS_KV: links });
+
+  try {
+    const response = await postLink(env, LINK_BODY);
+    assert.equal(response.status, 201);
+    const { code } = await response.json();
+    assert.equal(code, 'BBBBBBBBBB');
+    assert.match(code, /^[A-HJ-NP-Za-hj-km-np-z2-9]{10}$/);
+    assert.equal(randomCalls, 12);
+    assert.deepEqual(JSON.parse(await links.get('AAAAAAAA')), { marker: 'eight-character record' });
+    assert.deepEqual(JSON.parse(await links.get('AAAAAAAAAA')), { marker: 'ten-character record' });
+
+    const lookup = await worker.fetch(new Request(`https://prismwalls.com/api/links/${code}`), env);
+    assert.equal(lookup.status, 200);
+    assert.equal((await lookup.json()).canonical_url, NORMALIZED_LINK_URL);
+  } finally {
+    randomValues.mock.restore();
+    dateNow.mock.restore();
+  }
+});
+
+test('short-code allocation fails closed after ten collisions at each length', async (t) => {
+  const fixedNow = 1_700_000_000_000;
+  assert.equal(fixedNow.toString(36), 'loyw3v28');
+  const dateNow = t.mock.method(Date, 'now', () => fixedNow);
+  const randomValues = t.mock.method(crypto, 'getRandomValues', (bytes) => bytes.fill(0));
+  const fallbackCode = `${fixedNow.toString(36)}AA`;
+  const initial = new Map([
+    ['AAAAAAAA', JSON.stringify({ marker: 'eight-character record' })],
+    ['AAAAAAAAAA', JSON.stringify({ marker: 'ten-character record' })],
+    [fallbackCode, JSON.stringify({ marker: 'timestamp fallback record' })],
+  ]);
+  const writes = [];
+  const links = {
+    async get(key) { return initial.get(key) ?? null; },
+    async put(key, value) { writes.push([key, value]); initial.set(key, value); },
+  };
+  const env = workerEnv({ LINKS_KV: links });
+  const scheduled = [];
+
+  try {
+    const response = await postLink(env, LINK_BODY, {}, { waitUntil(promise) { scheduled.push(promise); } });
+    assert.deepEqual(JSON.parse(initial.get('AAAAAAAA')), { marker: 'eight-character record' });
+    assert.deepEqual(JSON.parse(initial.get('AAAAAAAAAA')), { marker: 'ten-character record' });
+    assert.deepEqual(JSON.parse(initial.get(fallbackCode)), { marker: 'timestamp fallback record' });
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: 'code_generation_exhausted' });
+    assert.equal(randomValues.mock.callCount(), 20);
+    assert.deepEqual(writes.filter(([key]) => !key.startsWith('rl:')), []);
+    assert.equal(scheduled.length, 0);
+  } finally {
+    randomValues.mock.restore();
+    dateNow.mock.restore();
+  }
+});
 
 test('Prism share links keep supplied opaque R2 preview URLs only from a valid configured base', async () => {
   const hash = 'b'.repeat(64);
