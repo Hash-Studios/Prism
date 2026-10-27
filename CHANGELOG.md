@@ -4,7 +4,7 @@
 - Swipe between wallpapers right on the card, and it shrinks back into its tile when you close it
 - Pick your own accent colour, and your theme now follows your account to every device
 - A free Diwali theme with diyas and fireworks, and a Default app icon to switch back to
-- Your first AI wallpaper is on us
+- Your first AI wallpaper is on us, and AI wallpapers use newer, sharper models
 - Drops are easier to spot, have real names, and guests can see the live Drop
 - On iPhone, AI generation shows as a Live Activity
 - Profile bio links you can tap, and usernames keep their own casing
