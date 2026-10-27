@@ -40,8 +40,7 @@ if [ -n "$trim" ]; then
 fi
 
 command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg not found. Install it (brew install ffmpeg)."
-tmp=$(mktemp -d "$(dirname -- "$out")/.prism-clip.XXXXXX"); keep_tmp=0
-converted="$tmp/converted-${out##*/}"
+tmp=$(mktemp -d); keep_tmp=0
 trap '[ "$keep_tmp" -eq 1 ] || rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>&1 || true' EXIT
 
 if [ "$platform" = ios ]; then
@@ -61,7 +60,7 @@ if [ "$platform" = ios ]; then
   stop() { stopping=1; kill -INT "$rec" 2>/dev/null || true; }
   "$simctl" io "$sim" recordVideo --codec h264 --force "$tmp/raw.mp4" &
   rec=$!
-  trap stop INT
+  trap stop INT TERM HUP
   echo "Recording. Press Ctrl-C to stop." >&2
 else
   command -v adb >/dev/null 2>&1 || die "adb not found. Install Android platform-tools."
@@ -70,23 +69,23 @@ else
   stop() { stopping=1; adb shell pkill -INT -f "$remote" >/dev/null 2>&1 || true; }
   adb shell screenrecord "$remote" &
   rec=$!
-  trap stop INT
+  trap stop INT TERM HUP
   echo "Recording. Press Ctrl-C to stop. Android stops itself at 3 minutes." >&2
 fi
 while kill -0 "$rec" 2>/dev/null; do wait "$rec" || true; done
 rc=0; wait "$rec" || rc=$?
 [ "$rc" -eq 0 ] || { [ "$stopping" -eq 1 ] && [ "$rc" -eq 130 ]; } || die "recorder failed (exit $rc)"
-trap - INT
+trap - INT TERM HUP
 if [ "$platform" = android ]; then
   sleep 1; adb pull -q "$remote" "$tmp/raw.mp4"
 fi
 [ -s "$tmp/raw.mp4" ] || die "recording is empty"
 
-# Stage on the output filesystem so link can publish without replacing any existing path.
-if ! { ffmpeg -hide_banner -loglevel error -n -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
+# ponytail: the exists check before mv has a tiny race with another writer; fine for a dev script.
+if ! { ffmpeg -hide_banner -loglevel error -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
   -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
-  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$converted" &&
-  link "$converted" "$out"; }; then
+  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$tmp/clip.mp4" &&
+  [ ! -e "$out" ] && [ ! -L "$out" ] && mv "$tmp/clip.mp4" "$out"; }; then
   raw_name=${out##*/}; raw_stem=$raw_name
   case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
   raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
