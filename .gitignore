@@ -64,6 +64,7 @@ android/android_keys.zip
 lib/firebase_options.dart
 ios/Runner/GoogleService-Info.plist
 docs/**
+!docs/DAILY_SHIPS.md
 !docs/development/
 !docs/development/doppler.md
 !docs/agents/

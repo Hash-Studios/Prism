@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Usage: tool/record_clip.sh ios|android [out.mp4] [--trim START-END]
+# Records Prism from the booted iOS Simulator or Android emulator; Ctrl-C stops. Output is 1080x1920 MP4.
+# With more than one booted iOS Simulator, set IOS_SIM=<udid>. With more than one Android device, set ANDROID_SERIAL.
+set -euo pipefail
+
+usage() { echo "usage: tool/record_clip.sh ios|android [out.mp4] [--trim START-END]" >&2; exit 2; }
+die() { echo "record_clip: $*" >&2; exit 1; }
+
+[ $# -ge 1 ] || usage
+platform=$1; shift
+case "$platform" in ios | android) ;; *) usage ;; esac
+
+out=""; trim=""; remote=""; stopping=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --trim) [ $# -ge 2 ] && [ -n "$2" ] || usage; trim=$2; shift 2 ;;
+    -*) usage ;;
+    *) [ -z "$out" ] || usage; out=$1; shift ;;
+  esac
+done
+[ -n "$out" ] || out="prism-$platform-$(date +%Y%m%d-%H%M%S).mp4"
+[ ! -e "$out" ] && [ ! -L "$out" ] || die "$out already exists. Pick another name."
+[ -d "$(dirname -- "$out")" ] || die "folder for $out does not exist"
+
+trim_args=()
+if [ -n "$trim" ]; then
+  ts='([0-9]+|([0-9]{1,4}:)?[0-5]?[0-9]:[0-5]?[0-9])(\.[0-9]+)?'
+  [[ $trim =~ ^$ts-$ts$ ]] || die "--trim needs START-END timestamps, got: $trim"
+  start=${trim%%-*}; end=${trim#*-}
+  awk -v a="$start" -v b="$end" '
+    function secs(t, p, n, s, i) {
+      n = split(t, p, ":"); s = 0
+      for (i = 1; i <= n; i++) s = s * 60 + p[i]
+      return s
+    }
+    BEGIN { exit !(secs(b) > secs(a)) }
+  ' || die "--trim end must be after start, got: $trim"
+  trim_args=(-ss "$start" -to "$end")
+fi
+
+command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg not found. Install it (brew install ffmpeg)."
+tmp=$(mktemp -d); keep_tmp=0
+trap '[ "$keep_tmp" -eq 1 ] || rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>&1 || true' EXIT
+
+if [ "$platform" = ios ]; then
+  simctl=$(xcrun -f simctl 2>/dev/null) || die "simctl not found. Install Xcode and its command line tools."
+  devices=$("$simctl" list devices booted) || die "could not list iOS Simulators"
+  booted=$(printf '%s\n' "$devices" | awk '/^-- /{ios=($2=="iOS")} ios' | sed -n 's/.*(\([^()]*\)) (Booted)[[:space:]]*$/\1/p')
+  count=$(printf '%s\n' "$booted" | grep -c . || true)
+  [ "$count" -ge 1 ] || die "no booted iOS Simulator"
+  sim=${IOS_SIM:-booted}
+  if [ "$sim" = booted ]; then
+    [ "$count" -eq 1 ] || die "$count simulators are booted. Set IOS_SIM=<udid>."
+    sim=$booted
+  else
+    [[ $sim != *$'\n'* ]] || die "IOS_SIM must be a booted simulator UDID"
+    printf '%s\n' "$booted" | grep -Fxi -- "$sim" >/dev/null || die "IOS_SIM is not a booted simulator UDID: $sim"
+  fi
+  stop() { stopping=1; kill -INT "$rec" 2>/dev/null || true; }
+  "$simctl" io "$sim" recordVideo --codec h264 --force "$tmp/raw.mp4" &
+  rec=$!
+  trap stop INT TERM HUP
+  echo "Recording. Press Ctrl-C to stop." >&2
+else
+  command -v adb >/dev/null 2>&1 || die "adb not found. Install Android platform-tools."
+  [ "$(adb get-state 2>/dev/null)" = device ] || die "need exactly one Android device or emulator (set ANDROID_SERIAL)"
+  remote=/sdcard/prism_clip_$$.mp4
+  stop() { stopping=1; adb shell pkill -INT -f "$remote" >/dev/null 2>&1 || true; }
+  adb shell screenrecord "$remote" &
+  rec=$!
+  trap stop INT TERM HUP
+  echo "Recording. Press Ctrl-C to stop. Android stops itself at 3 minutes." >&2
+fi
+while kill -0 "$rec" 2>/dev/null; do wait "$rec" || true; done
+rc=0; wait "$rec" || rc=$?
+[ "$rc" -eq 0 ] || {
+  [ "$stopping" -eq 1 ] && { [ "$rc" -eq 129 ] || [ "$rc" -eq 130 ] || [ "$rc" -eq 143 ]; }
+} || die "recorder failed (exit $rc)"
+# Wait for conversion or raw recovery before cleanup, even after another stop signal.
+trap ':' INT TERM HUP
+if [ "$platform" = android ]; then
+  sleep 1; adb pull -q "$remote" "$tmp/raw.mp4"
+fi
+[ -s "$tmp/raw.mp4" ] || die "recording is empty"
+
+# ponytail: the exists check before mv has a tiny race with another writer; fine for a dev script.
+if ! { ffmpeg -hide_banner -loglevel error -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
+  -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
+  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$tmp/clip.mp4" &&
+  [ ! -e "$out" ] && [ ! -L "$out" ] && mv "$tmp/clip.mp4" "$out"; }; then
+  raw_name=${out##*/}; raw_stem=$raw_name
+  case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
+  raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
+  { [ ! -e "$raw_out" ] && [ ! -L "$raw_out" ] && mv "$tmp/raw.mp4" "$raw_out"; } || {
+    keep_tmp=1
+    die "conversion or output save failed and could not move the raw recording. It is kept at $tmp/raw.mp4"
+  }
+  die "conversion or output save failed. The raw recording is kept at $raw_out"
+fi
+echo "$out"
