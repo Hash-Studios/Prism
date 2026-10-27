@@ -44,6 +44,8 @@
 		A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */; };
 		A33C00022F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */; };
 		A48BE21768F58C734FE49EBC /* PrismWidgetApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */; };
+		A44D00012F00000400D4D4D4 /* PrismShareApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44D00032F00000400D4D4D4 /* PrismShareApi.swift */; };
+		A44D00022F00000400D4D4D4 /* PrismShareHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */; };
 		AB12CD352F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */; };
 		B4368DB205ADE53330950D72 /* PrismWidgetCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D78DB29DC77CCF28588E2FCB /* PrismWidgetCoreTests.swift */; };
 		B6EF627DD1DDCBD71AFC22B0 /* PrismAiGenerationAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A531019312F124499790F0E /* PrismAiGenerationAttributes.swift */; };
@@ -160,6 +162,8 @@
 		A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutWallpaperFallback.swift; sourceTree = "<group>"; };
 		A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconApi.swift; sourceTree = "<group>"; };
 		A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconHostApiImpl.swift; sourceTree = "<group>"; };
+		A44D00032F00000400D4D4D4 /* PrismShareApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShareApi.swift; sourceTree = "<group>"; };
+		A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShareHostApiImpl.swift; sourceTree = "<group>"; };
 		A3D90DBEFE231CF039ED51FA /* PrismLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = PrismLiveActivities.appex; path = PrismLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8250CDAF72330F9342754DB /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AA15469276B281169B70FCEB /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
@@ -318,6 +322,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */,
 				A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */,
+				A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */,
 				A11A00122F00000100A1A1A1 /* PrismMediaFiles.swift */,
 				A11A00052F00000100A1A1A1 /* Pigeon */,
 				A22B000F2F00000200B2B2B2 /* Shortcuts */,
@@ -333,6 +338,7 @@
 			children = (
 				A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */,
 				A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */,
+				A44D00032F00000400D4D4D4 /* PrismShareApi.swift */,
 				2ADD13323370451410076B0B /* PrismLiveActivityApi.swift */,
 				EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */,
 			);
@@ -679,6 +685,8 @@
 				A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */,
 				A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */,
 				A33C00022F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift in Sources */,
+				A44D00012F00000400D4D4D4 /* PrismShareApi.swift in Sources */,
+				A44D00022F00000400D4D4D4 /* PrismShareHostApiImpl.swift in Sources */,
 				A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */,
 				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
 				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,

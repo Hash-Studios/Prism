@@ -24,6 +24,7 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
@@ -31,6 +32,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
@@ -294,6 +296,8 @@ Future<void> main() async {
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
       getIt<PersonalizedFeedRepository>().warmCache();
+      // Material You must be ready for the first frame, or the app opens on the fallback theme and then recolours.
+      await getIt<SystemColorSchemesSource>().refresh();
       unawaited(
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
@@ -807,6 +811,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         context.read<WotdBloc>().add(const WotdEvent.started());
       }
       unawaited(_refreshWotdTopics());
+      unawaited(getIt<SystemColorSchemesSource>().refresh());
       unawaited(NotificationSignals.instance.onResumed());
       unawaited(_shortLinkRetry.onResumed());
       if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
@@ -925,6 +930,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 theme: context.prismLightTheme(),
                 darkTheme: context.prismDarkTheme(),
                 themeMode: context.prismThemeMode(),
+                themeAnimationDuration: context.motion(PrismDurations.slow),
+                themeAnimationCurve: PrismCurves.move,
               ),
             ),
           ),

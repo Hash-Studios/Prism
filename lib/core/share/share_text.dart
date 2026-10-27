@@ -10,3 +10,12 @@ String? shareSafeText(String? text) {
   }
   return trimmed;
 }
+
+/// The creator as a handle ("@maya") when the name is one word, else the name as is. Null when it cannot be shared.
+String? shareCreatorMark(String? name) {
+  final String? safe = shareSafeText(name);
+  if (safe == null) return null;
+  final String bare = safe.replaceFirst(RegExp('^@+'), '');
+  if (bare.isEmpty) return null;
+  return bare.contains(RegExp(r'\s')) ? bare : '@$bare';
+}

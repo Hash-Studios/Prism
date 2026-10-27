@@ -7,11 +7,13 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/system_accent_channel.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -19,6 +21,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -164,6 +167,28 @@ void main() {
     verify(() => themeBloc.add(ThemeEvent.lightAccentChanged(accentColorValue: Colors.teal.toARGB32()))).called(1);
     expect(settings.get<bool>(SystemAccentChannel.settingsKey, defaultValue: true), isFalse);
     expect(analytics.events.whereType<AccentChangedEvent>().map((event) => event.color), <String>[Colors.teal.rgbHex]);
+    await tester.pump(const Duration(seconds: 10));
+  });
+
+  testWidgets('the app accent action is absent while the light theme is Material You', (tester) async {
+    when(() => themeBloc.state).thenReturn(
+      ThemeState.initial().copyWith(
+        light: const ThemeSelection(themeId: prismMaterialYouLightThemeId, accentColorValue: prismDefaultAccentValue),
+        system: SystemColorSchemes(
+          light: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC)),
+          dark: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC), brightness: Brightness.dark),
+        ),
+      ),
+    );
+    await pumpDetail(tester, _loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
+    await showPalette(tester);
+
+    await tester.tap(paletteSwatch);
+    await tester.pump();
+    detailStates.add(_loaded(colors: const <Color>[Colors.teal], accent: Colors.teal, colorChanged: true));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(useAsAppAccent, findsNothing);
     await tester.pump(const Duration(seconds: 10));
   });
 

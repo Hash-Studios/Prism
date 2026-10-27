@@ -19,4 +19,22 @@ void main() {
       expect(shareSafeText('   '), isNull);
     });
   });
+
+  group('shareCreatorMark', () {
+    test('turns a one-word name into a handle', () {
+      expect(shareCreatorMark('maya'), '@maya');
+      expect(shareCreatorMark('@maya'), '@maya');
+    });
+
+    test('keeps a multi-word name as is', () {
+      expect(shareCreatorMark('  Maya Rao '), 'Maya Rao');
+    });
+
+    test('returns null when there is nothing to share', () {
+      expect(shareCreatorMark('a@b.com'), isNull);
+      expect(shareCreatorMark(''), isNull);
+      expect(shareCreatorMark(null), isNull);
+      expect(shareCreatorMark('@@'), isNull);
+    });
+  });
 }

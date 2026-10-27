@@ -138,18 +138,25 @@ ThemeData _theme({
   required Color foreground,
   required Color accent,
 }) {
-  final bool dark = brightness == Brightness.dark;
-  return ThemeData(
-    // Transparent on purpose: plain `Material` wrappers must not paint over wallpapers.
-    canvasColor: Colors.transparent,
-    primaryColor: background,
-    brightness: brightness,
-    fontFamily: PrismFonts.proximaNova,
-    appBarTheme: AppBarTheme(systemOverlayStyle: dark ? _darkAppBarOverlayStyle : _lightAppBarOverlayStyle),
-  ).withPrismScheme(
+  return _baseTheme(brightness, background).withPrismScheme(
     prismColorScheme(brightness: brightness, background: background, foreground: foreground, accent: accent),
   );
 }
+
+ThemeData _baseTheme(Brightness brightness, Color background) => ThemeData(
+  // Transparent on purpose: plain `Material` wrappers must not paint over wallpapers.
+  canvasColor: Colors.transparent,
+  primaryColor: background,
+  brightness: brightness,
+  fontFamily: PrismFonts.proximaNova,
+  appBarTheme: AppBarTheme(
+    systemOverlayStyle: brightness == Brightness.dark ? _darkAppBarOverlayStyle : _lightAppBarOverlayStyle,
+  ),
+);
+
+/// The Material You theme: every role comes from the phone's wallpaper [scheme]. Prism keeps its type and shapes.
+ThemeData prismMaterialYouTheme(ColorScheme scheme) =>
+    _baseTheme(scheme.brightness, scheme.surface).withPrismScheme(scheme);
 
 // A light theme's text is a dark ink that keeps the theme's tint.
 ThemeData _lightTheme({required Color background, required Color accent, Color tint = const Color(0xFF2F2F2F)}) =>

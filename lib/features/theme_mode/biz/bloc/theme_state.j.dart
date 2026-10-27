@@ -9,6 +9,9 @@ abstract class ThemeState with _$ThemeState {
     required ThemeSelection dark,
     required ThemeMode mode,
     Failure? failure,
+
+    /// The phone's Material You schemes. Null where the phone has none.
+    SystemColorSchemes? system,
   }) = _ThemeState;
 
   factory ThemeState.initial() => const ThemeState(
@@ -21,4 +24,10 @@ abstract class ThemeState with _$ThemeState {
 
   factory ThemeState.fromPreferences(ThemePreferences preferences) =>
       ThemeState.initial().copyWith(light: preferences.light, dark: preferences.dark, mode: preferences.mode);
+}
+
+extension ThemeStateOptions on ThemeState {
+  /// The theme option shown for [brightness]. A theme this device cannot show resolves to the default one.
+  PrismThemeOption themeOption(Brightness brightness) =>
+      resolvePrismThemeOption((brightness == Brightness.dark ? dark : light).themeId, brightness, system);
 }

@@ -30,6 +30,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'launch_state': LaunchStateValue.values.map((value) => value.wireValue).toList(),
   'share_channel': ShareChannelValue.values.map((value) => value.wireValue).toList(),
   'share_format': ShareFormatValue.values.map((value) => value.wireValue).toList(),
+  'share_target': ShareTargetValue.values.map((value) => value.wireValue).toList(),
   'dismiss_mode': DismissModeValue.values.map((value) => value.wireValue).toList(),
   'notification_type': NotificationTypeValue.values.map((value) => value.wireValue).toList(),
   'auth_method': AuthMethodValue.values.map((value) => value.wireValue).toList(),
@@ -254,6 +255,20 @@ class AccentChangedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'color': color};
+  }
+}
+
+class ThemeChangedEvent extends AnalyticsEvent {
+  const ThemeChangedEvent({required this.themeId});
+
+  final String themeId;
+
+  @override
+  String get eventName => 'theme_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'theme_id': themeId};
   }
 }
 
@@ -1563,6 +1578,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
     this.reason,
     this.sourceContext,
     this.format,
+    this.target,
   });
 
   final ShareChannelValue channel;
@@ -1570,6 +1586,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
   final AnalyticsReasonValue? reason;
   final String? sourceContext;
   final ShareFormatValue? format;
+  final ShareTargetValue? target;
 
   @override
   String get eventName => 'invite_share_result';
@@ -1582,6 +1599,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
       if (reason != null) 'reason': reason!.wireValue,
       if (sourceContext != null) 'source_context': sourceContext!,
       if (format != null) 'format': format!.wireValue,
+      if (target != null) 'target': target!.wireValue,
     };
   }
 }

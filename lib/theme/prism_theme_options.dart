@@ -1,9 +1,12 @@
-import 'package:Prism/theme/theme.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 const String prismDefaultLightThemeId = 'kLFrost White';
 const String prismDefaultDarkThemeId = 'kDMaterial Dark';
+const String prismMaterialYouLightThemeId = 'kLMaterial You';
+const String prismMaterialYouDarkThemeId = 'kDMaterial You';
 const String prismAmoledDarkThemeId = 'kDAMOLED';
 const String prismSpookyThemeId = 'kDSpooky';
 const int prismSpookyAccentValue = 0xffff7a1a;
@@ -18,11 +21,15 @@ class PrismThemeOption {
     required this.theme,
     this.defaultAccentValue = prismDefaultAccentValue,
     this.shopItemId,
+    this.usesAccent = true,
   });
 
   final String id;
   final ThemeData theme;
   final int defaultAccentValue;
+
+  /// False when the theme brings its own accent. The user accent and its controls do not apply then.
+  final bool usesAccent;
 
   /// The coin shop item that unlocks this theme, or null when the theme is free.
   final String? shopItemId;
@@ -38,6 +45,7 @@ String prismThemeDisplayName(PrismThemeOption option, AppLocalizations l10n) => 
   'kLRose' => l10n.coreThemeRose,
   'kLCotton Blue' => l10n.coreThemeCottonBlue,
   prismDefaultDarkThemeId => l10n.coreThemeMaterialDark,
+  prismMaterialYouLightThemeId || prismMaterialYouDarkThemeId => l10n.coreThemeMaterialYou,
   prismAmoledDarkThemeId => l10n.coreThemeAmoled,
   'kDOlive' => l10n.coreThemeOlive,
   'kDDeep Ocean' => l10n.coreThemeDeepOcean,
@@ -79,3 +87,24 @@ final List<PrismThemeOption> prismDarkThemes = <PrismThemeOption>[
   PrismThemeOption(id: 'kDSky', theme: kDarkTheme7, defaultAccentValue: 0xff2d6079, shopItemId: 'theme_sky'),
   PrismThemeOption(id: 'kDSteel', theme: kDarkTheme8, defaultAccentValue: 0xff686e80, shopItemId: 'theme_steel'),
 ];
+
+/// Every theme this device can show for [brightness]. Material You leads when the phone gives its colours.
+List<PrismThemeOption> prismThemeOptions(Brightness brightness, SystemColorSchemes? system) {
+  final bool dark = brightness == Brightness.dark;
+  return <PrismThemeOption>[
+    if (system != null)
+      PrismThemeOption(
+        id: dark ? prismMaterialYouDarkThemeId : prismMaterialYouLightThemeId,
+        theme: prismMaterialYouTheme(system.of(brightness)),
+        usesAccent: false,
+      ),
+    ...(dark ? prismDarkThemes : prismLightThemes),
+  ];
+}
+
+/// The option [themeId] names on this device, or the default theme for [brightness] when it cannot show it.
+PrismThemeOption resolvePrismThemeOption(String themeId, Brightness brightness, SystemColorSchemes? system) {
+  final List<PrismThemeOption> options = prismThemeOptions(brightness, system);
+  return prismThemeById(options, themeId) ??
+      prismThemeById(options, brightness == Brightness.dark ? prismDefaultDarkThemeId : prismDefaultLightThemeId)!;
+}

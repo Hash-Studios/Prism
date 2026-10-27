@@ -55,6 +55,7 @@ UNCHANGED_ENGLISH = {
     'coreContributorGithub': 'GitHub',
     'coreContributorTwitter': 'Twitter',
     'coreFileSizeMegabytes': '{size} MB',
+    'coreShareTargetInstagram': 'Instagram',
     'coreThemeAmoled': 'AMOLED',
     'coreWallpaperSavedWithTip': '{saved} {tip}',
     'economyAiPromptSceneOnly': '{scene}, {suffix}',

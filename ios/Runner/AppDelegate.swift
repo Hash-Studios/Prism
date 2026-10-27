@@ -40,6 +40,10 @@ import WidgetKit
       binaryMessenger: engineBridge.applicationRegistrar.messenger(),
       api: PrismAppIconHostApiImpl()
     )
+    PrismShareHostApiSetup.setUp(
+      binaryMessenger: engineBridge.applicationRegistrar.messenger(),
+      api: PrismShareHostApiImpl()
+    )
     let messenger = engineBridge.applicationRegistrar.messenger()
     PrismLiveActivityHostApiSetup.setUp(
       binaryMessenger: messenger,
