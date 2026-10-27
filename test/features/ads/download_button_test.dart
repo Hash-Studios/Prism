@@ -9,6 +9,7 @@ import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -543,6 +544,7 @@ void main() {
       WidgetTester tester,
       OperationResult result, {
       WallDepthTier? depthTier,
+      WallSpatialTier? spatialTier,
       bool guideShown = false,
     }) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
@@ -573,6 +575,7 @@ void main() {
               wallpaperSource: WallpaperSource.wallhaven,
               link: 'https://example.com/wall.jpg',
               depthTier: depthTier,
+              spatialTier: spatialTier,
             ),
           ),
         ),
@@ -595,6 +598,13 @@ void main() {
       expect(find.text('Open Photos'), findsOneWidget);
       expect(find.text(AppLocalizationsEn().coreDepthEffectMenuShortTip), findsOneWidget);
       expect(toastMessages, <String>[AppLocalizationsEn().coreWallpaperSavedPhotos]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a saved Spatial Scene wall ends the guide with the Spatial Scene step', (tester) async {
+      await download(tester, OperationResult(success: true), spatialTier: WallSpatialTier.great);
+
+      expect(find.text('Open Photos'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().wallpaperSpatialStepButton), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('once the guide has shown, the saved toast carries the Depth Effect step', (tester) async {

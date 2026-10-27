@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -216,7 +217,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                   memCacheHeight: decodeHeight,
                   heroTag: prismHeroTag(this, index, wallId),
                   semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
-                  overlay: depthTagFor(depthTierOf(entity)),
+                  overlay: stackTags(<Widget?>[
+                    depthTagFor(depthTierOf(entity)),
+                    spatialTagFor(spatialOf(entity)?.tier),
+                  ]),
                   onTap: () {
                     PrismHaptics.tap();
                     unawaited(

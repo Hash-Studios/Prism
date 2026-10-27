@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
@@ -107,6 +108,46 @@ void main() {
     IosWallpaperGuideSession.shown = true;
 
     expect(savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.menu), l10n.coreWallpaperDownloadedPictures);
+  });
+
+  test('the Spatial Scene guide has three steps', () {
+    expect(SpatialSceneGuideSheet.steps(l10n), <String>[
+      'Save this wall to Photos.',
+      'On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.',
+      'Tap the Spatial Scene button to turn the 3D effect on, then tap Add.',
+    ]);
+  });
+
+  platformTest('after the guide, the saved toast carries the Spatial Scene step for a great wall', TargetPlatform.iOS, (
+    _,
+  ) async {
+    expect(savedWallpaperMessage(l10n: l10n, spatialTier: WallSpatialTier.great), l10n.coreWallpaperSavedPhotos);
+
+    IosWallpaperGuideSession.shown = true;
+
+    expect(
+      savedWallpaperMessage(l10n: l10n, spatialTier: WallSpatialTier.great),
+      l10n.coreWallpaperSavedWithTip(l10n.coreWallpaperSavedPhotos, l10n.coreSpatialSceneTip),
+    );
+    expect(savedWallpaperMessage(l10n: l10n, spatialTier: WallSpatialTier.none), l10n.coreWallpaperSavedPhotos);
+    expect(savedWallpaperMessage(l10n: l10n), l10n.coreWallpaperSavedPhotos);
+  });
+
+  platformTest('the saved message has no Spatial Scene step on Android', TargetPlatform.android, (_) async {
+    IosWallpaperGuideSession.shown = true;
+
+    expect(savedWallpaperMessage(l10n: l10n, spatialTier: WallSpatialTier.great), l10n.coreWallpaperDownloadedPictures);
+  });
+
+  platformTest('the Depth Effect tip wins over the Spatial Scene tip when a wall has both', TargetPlatform.iOS, (
+    _,
+  ) async {
+    IosWallpaperGuideSession.shown = true;
+
+    expect(
+      savedWallpaperMessage(l10n: l10n, depthTier: WallDepthTier.menu, spatialTier: WallSpatialTier.great),
+      l10n.coreWallpaperSavedWithTip(l10n.coreWallpaperSavedPhotos, l10n.coreDepthEffectMenuTip),
+    );
   });
 
   platformTest('shows once per session', TargetPlatform.iOS, (tester) async {
