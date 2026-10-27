@@ -29,8 +29,8 @@ if [ -n "$trim" ]; then
 fi
 
 command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg not found. Install it (brew install ffmpeg)."
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>&1 || true' EXIT
+tmp=$(mktemp -d); keep_tmp=0
+trap '[ "$keep_tmp" -eq 1 ] || rm -rf "$tmp"; [ -z "$remote" ] || adb shell rm -f "$remote" >/dev/null 2>&1 || true' EXIT
 
 if [ "$platform" = ios ]; then
   simctl=$(xcrun -f simctl 2>/dev/null) || die "simctl not found. Install Xcode and its command line tools."
@@ -73,7 +73,14 @@ fi
 ffmpeg -hide_banner -loglevel error -y -i "$tmp/raw.mp4" "${trim_args[@]+"${trim_args[@]}"}" \
   -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30" \
   -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart -abort_on empty_output -an "$out" || {
-  rm -f "$out"; mv "$tmp/raw.mp4" "${out%.*}-raw.mp4"
-  die "conversion failed. The raw recording is kept at ${out%.*}-raw.mp4"
+  if [ -f "$out" ] && [ ! -s "$out" ]; then rm -f "$out" || true; fi
+  raw_name=${out##*/}; raw_stem=$raw_name
+  case "$raw_name" in ?*.*) raw_stem=${raw_name%.*} ;; esac
+  raw_out="${out%"$raw_name"}$raw_stem-raw.mp4"
+  mv "$tmp/raw.mp4" "$raw_out" || {
+    keep_tmp=1
+    die "conversion failed and could not move the raw recording. It is kept at $tmp/raw.mp4"
+  }
+  die "conversion failed. The raw recording is kept at $raw_out"
 }
 echo "$out"
