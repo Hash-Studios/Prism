@@ -39,8 +39,8 @@ export function QrDisclosure({ children, className }: { children: ReactNode; cla
         Scan QR Code
       </button>
       <div id={panelId} hidden={!expanded} role="region" aria-label="Scan to download Prism for Android"
-        className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 z-50">
-        <div className="bg-white rounded-2xl shadow-xl p-2">
+        className="absolute bottom-full left-1/2 -translate-x-1/2 min-w-full pb-3 z-50">
+        <div className="mx-auto w-max bg-white rounded-2xl shadow-xl p-2">
           {children}
         </div>
       </div>

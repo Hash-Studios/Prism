@@ -78,4 +78,22 @@ test.describe("mouse interaction", () => {
     await button.press("Escape");
     await expect(panel).toBeHidden();
   });
+
+  for (const edge of ["left", "right"] as const) {
+    test(`hover stays open from the ${edge} button edge with enlarged text`, async ({ page }) => {
+      await page.goto("/");
+      await page.addStyleTag({ content: "html { font-size: 24px; }" });
+      const button = page.getByRole("button", { name: "Scan QR Code" });
+      const panel = page.getByRole("region", { name: "Scan to download Prism for Android" });
+      const bounds = await button.boundingBox();
+      if (!bounds) throw new Error("QR button has no bounds");
+      const x = edge === "left" ? 2 : bounds.width - 2;
+      await button.hover({ position: { x, y: bounds.height / 2 } });
+      await expect(panel).toBeVisible();
+      await page.mouse.move(bounds.x + x, bounds.y - 6, { steps: 10 });
+      await expect(panel).toBeVisible();
+      await panel.locator("svg").hover();
+      await expect(panel).toBeVisible();
+    });
+  }
 });
