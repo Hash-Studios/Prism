@@ -84,14 +84,21 @@ jobs:
 
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
-      - name: Install provisioning profile
+      # One App Store profile per signed bundle. Every env name ending in
+      # PROVISIONING_PROFILE_BASE64 is installed; empty secrets are skipped.
+      - name: Install provisioning profiles
         env:
-          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          PP_PATH=$RUNNER_TEMP/profile.mobileprovision
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          python3 tool/ios_ci_signing.py \
+            --export-options "$RUNNER_TEMP/ExportOptions.plist" \
+            --manifest "$RUNNER_TEMP/provisioning-profiles.json"
+
+      - name: Use manual signing with the installed profiles
+        run: |
+          gem install xcodeproj --conservative --no-document
+          ruby tool/ios_ci_manual_signing.rb ios/Runner.xcodeproj "$RUNNER_TEMP/provisioning-profiles.json"
 
       - name: Strip alpha from app icon
         run: |
@@ -107,7 +114,8 @@ jobs:
           BUILD_NUMBER: ${{ github.event.inputs.build_number }}
         run: |
           python3 tool/flutter_with_doppler.py --release-platform ios -- \
-            flutter build ipa --release --build-number="$BUILD_NUMBER"
+            flutter build ipa --release --build-number="$BUILD_NUMBER" \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Install asc CLI
         run: brew install rudrankriyam/tap/asc
@@ -150,4 +158,10 @@ jobs:
         if: always()
         run: |
           security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
-          rm -f /tmp/AuthKey.p8 $RUNNER_TEMP/certificate.p12 $RUNNER_TEMP/profile.mobileprovision
+          if [ -f "$RUNNER_TEMP/provisioning-profiles.json" ]; then
+            jq -r '.paths[]' "$RUNNER_TEMP/provisioning-profiles.json" | while IFS= read -r profile; do
+              rm -f "$profile"
+            done
+          fi
+          rm -f /tmp/AuthKey.p8 $RUNNER_TEMP/certificate.p12 \
+            "$RUNNER_TEMP/provisioning-profiles.json" "$RUNNER_TEMP/ExportOptions.plist"
