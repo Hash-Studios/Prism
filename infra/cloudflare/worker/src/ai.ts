@@ -3206,10 +3206,10 @@ export function classifyCategory(stylePreset: string, tags: string[]): string {
   if (style.includes('anime')) {
     return 'Anime';
   }
-  if (style.includes('space')) {
+  if (style === 'space art') {
     return 'Space';
   }
-  if (style.includes('3d render')) {
+  if (style === '3d render') {
     return '3D Render';
   }
   if (style.includes('cyber')) {

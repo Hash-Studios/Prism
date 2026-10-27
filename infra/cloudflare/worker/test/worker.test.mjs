@@ -730,6 +730,9 @@ test('AI prefill files the Space and 3D Render styles under their app categories
   assert.equal(classifyCategory('nature', []), 'Nature');
   assert.equal(classifyCategory('cyberpunk', []), 'Technology');
   assert.equal(classifyCategory('pixel art', []), 'General');
+  assert.equal(classifyCategory('workspace sketch', []), 'General');
+  assert.equal(classifyCategory('cyberpunk workspace', []), 'Technology');
+  assert.equal(classifyCategory('3d renderer', []), 'General');
 });
 
 test('Seedream sizing keeps the requested aspect ratio and meets the fal pixel minimum', () => {
