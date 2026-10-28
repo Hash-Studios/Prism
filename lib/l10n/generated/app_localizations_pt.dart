@@ -8958,7 +8958,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperLiveStyleDepthDescription =>
-      'A foto move-se em profundidade ao deslizar entre ecrãs principais e inclinar o telemóvel.';
+      'A foto se move em profundidade quando você desliza entre as telas iniciais e inclina o celular.';
 
   @override
   String get wallpaperLiveStyleStarfield => 'Campo Estelar';
