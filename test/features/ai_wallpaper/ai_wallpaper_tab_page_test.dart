@@ -10,6 +10,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
@@ -29,6 +30,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
   _FakeConnectivityService({this.online = true});
@@ -1018,52 +1020,82 @@ void main() {
     expect(repository.savedRecords.single.submittedWallId, 'AI26B598D3D55679CADFAA60FFA00EAAE58');
   });
 
-  testWidgets('real AI submit writes the same full-generation identity as backend provenance', (tester) async {
+  testWidgets('real AI submit writes backend identity and current premium image across premium transitions', (
+    tester,
+  ) async {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     addTearDown(AnalyticsRuntime.reset);
+    addTearDown(getIt.reset);
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
-    final firestore = FakeFirestoreClient();
-    getIt.registerSingleton<FirestoreClient>(firestore);
-    addTearDown(getIt.reset);
-    app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-1'
-      ..email = 'maker@example.com'
-      ..loggedIn = true
-      ..premium = true;
-    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    final List<Object?> toastArguments = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toastArguments.add(call.arguments);
+      return true;
+    });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
     const generation = 'gen_mlt7o22q_7a9688a037a47de6';
+    const originalUrl = 'https://prismwalls.com/api/ai/assets/ai/original/$generation.png';
     const previewUrl = 'https://prismwalls.com/api/ai/assets/ai/public/$generation.png';
-    final repository = _FakeAiGenerationRepository(
-      _record(id: generation, imageUrl: previewUrl, watermarkedImageUrl: previewUrl),
-      Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: AiWallpaperTabPage(repository: repository),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
-    await tester.ensureVisible(submitButton);
-    await tester.tap(submitButton);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
-    await tester.pumpAndSettle();
 
-    final wall = firestore.writes.singleWhere((write) => write.collection == 'walls').data!;
-    expect(wall['id'], 'AI2B83C297CF7C420FF33FA03823705EA95');
-    expect(wall['aiGenerationId'], generation);
-    expect(wall['isAiGenerated'], true);
-    expect(wall['wallpaper_url'], previewUrl);
-    expect(wall['wallpaper_thumb'], previewUrl);
-    expect(repository.savedRecords.single.submittedWallId, 'AI2B83C297CF7C420FF33FA03823705EA95');
+    for (final (bool initialPremium, bool confirmationPremium) in <(bool, bool)>[
+      (true, false),
+      (true, true),
+      (false, false),
+      (false, true),
+    ]) {
+      await getIt.reset();
+      getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+      final firestore = FakeFirestoreClient();
+      final localStore = InMemoryLocalStore();
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(localStore));
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-1'
+        ..email = 'maker@example.com'
+        ..loggedIn = true
+        ..premium = initialPremium;
+      toastArguments.clear();
+      final repository = _FakeAiGenerationRepository(
+        _record(id: generation, imageUrl: originalUrl, watermarkedImageUrl: previewUrl),
+        Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AiWallpaperTabPage(repository: repository),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
+      await tester.ensureVisible(submitButton);
+      await tester.tap(submitButton);
+      await tester.pumpAndSettle();
+      app_state.prismUser.premium = confirmationPremium;
+      await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
+      await tester.pumpAndSettle();
+
+      final wallWrites = firestore.writes.where((write) => write.collection == 'walls').toList();
+      expect(
+        wallWrites,
+        hasLength(1),
+        reason: '$initialPremium -> $confirmationPremium: quota=${localStore.data}, toasts=$toastArguments',
+      );
+      final wall = wallWrites.single.data!;
+      expect(wall['id'], 'AI2B83C297CF7C420FF33FA03823705EA95');
+      expect(wall['aiGenerationId'], generation);
+      expect(wall['isAiGenerated'], true);
+      expect(wall['wallpaper_url'], confirmationPremium ? originalUrl : previewUrl);
+      expect(wall['wallpaper_thumb'], previewUrl);
+      expect(repository.savedRecords.single.submittedWallId, 'AI2B83C297CF7C420FF33FA03823705EA95');
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    }
   });
 }

@@ -843,6 +843,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       final String communityId = aiCommunityId(record.id);
+      final String wallpaperUrl = record.displayUrl(isPremium: app_state.prismUser.premium);
       submissionStarted = true;
       final wallstore.WallSubmissionResult submissionResult =
           await (widget.submitForTesting?.call() ??
@@ -850,7 +851,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 communityId,
                 'Prism',
                 record.watermarkedImageUrl,
-                record.watermarkedImageUrl,
+                wallpaperUrl,
                 '${record.width}x${record.height}',
                 'AI',
                 edited.title,
