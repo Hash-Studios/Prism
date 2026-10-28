@@ -4,8 +4,10 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
@@ -14,7 +16,6 @@ import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.da
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -389,11 +390,9 @@ class _PhotoSection extends StatelessWidget {
           semanticLabel: context.l10n.wallpaperLiveApplyPhotoDescription(
             _motionStyleLabel(context.l10n, state.motionStyle),
           ),
-          child: CachedNetworkImage(
-            imageUrl: imageUrl,
-            fit: BoxFit.cover,
-            memCacheWidth: 720,
-            errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image_outlined)),
+          child: ProgressiveWallpaperImage(
+            display: WallpaperDisplaySource(thumbnail: '', full: imageUrl),
+            errorBuilder: (_, _) => const Center(child: Icon(Icons.broken_image_outlined)),
           ),
         ),
         const SizedBox(height: 16),

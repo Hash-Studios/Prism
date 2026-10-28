@@ -51,6 +51,7 @@ import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
   _DetailTestAssetStore({required super.directory, required this.sourceFile});
@@ -108,10 +109,16 @@ Future<void> _installEmptyOfflineAssetStore() async {
   });
 }
 
+bool _isNetworkThumbnail(Widget widget) {
+  if (widget is! Image) return false;
+  final ImageProvider provider = unwrapImageProvider(widget.image);
+  return provider is CachedNetworkImageProvider && provider.url.endsWith('thumb.jpg');
+}
+
 Future<Finder> _waitForThumbnailFallback(WidgetTester tester) async {
   final Finder thumbnail = find.descendant(
     of: find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
-    matching: find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg')),
+    matching: find.byWidgetPredicate(_isNetworkThumbnail),
   );
   for (int attempt = 0; attempt < 40 && thumbnail.evaluate().isEmpty; attempt++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));

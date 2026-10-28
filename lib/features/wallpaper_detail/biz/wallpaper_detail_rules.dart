@@ -4,11 +4,9 @@ import 'dart:ui' show Size;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 
-const int _maxPreviewCacheWidth = 2160;
 const int _maxTags = 10;
 
 /// Only Prism walls can sit in a premium collection. Wallhaven and Pexels walls are never premium.
@@ -17,12 +15,6 @@ bool isPremiumFeedItem(FeedItemEntity item, List<String> premiumCollections) {
     prism: (_, wall) => isPremiumWall(premiumCollections, wall.collections ?? const <String>[]),
     orElse: () => false,
   );
-}
-
-/// Decode width for a full-screen preview: the screen width in device pixels, capped so 4K originals stay cheap.
-int previewCacheWidth(double logicalWidth, double devicePixelRatio) {
-  final int pixels = (logicalWidth * devicePixelRatio).round();
-  return math.max(1, math.min(_maxPreviewCacheWidth, pixels));
 }
 
 final RegExp _resolutionPattern = RegExp(r'^\s*(\d+)\s*[x×]\s*(\d+)\s*$', caseSensitive: false);
@@ -94,16 +86,4 @@ List<String> wallpaperTags(FeedItemEntity item) {
     if (tags.length == _maxTags) break;
   }
   return tags;
-}
-
-/// Preview delivery is separate from acquiring an authorized original.
-String wallpaperDetailPreviewUrl(FeedItemEntity entity, {String? projectId}) {
-  if (entity.source != WallpaperSource.prism || BundledWallpapers.isStarter(entity)) {
-    return entity.fullUrl.trim();
-  }
-  if (projectId == null || projectId.isEmpty) return entity.thumbnailUrl.trim();
-  return Uri.https('us-central1-$projectId.cloudfunctions.net', '/wallpaperPreview', {
-    'id': entity.id,
-    'thumb': entity.thumbnailUrl.trim(),
-  }).toString();
 }
