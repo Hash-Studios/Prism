@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:Prism/features/live_wallpaper/data/live_apply_outcome_mapper.dart';
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/shaders/live_shader_sources.dart';
-import 'package:Prism/features/live_wallpaper/data/wallpaper_capabilities_tilt.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';

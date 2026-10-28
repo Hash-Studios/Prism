@@ -49,10 +49,11 @@ void main() {
   test('capabilities reflect the host and gradient request uses battery saver without textures', () async {
     when(
       client.getCapabilities,
-    ).thenAnswer((_) async => const aw.WallpaperCapabilities(supportsOpenGlLiveWallpaper: true));
+    ).thenAnswer((_) async => const aw.WallpaperCapabilities(supportsOpenGlLiveWallpaper: true, supportsTilt: true));
     final capabilities = await repository.getCapabilities();
     expect(capabilities.supportsShaders, isTrue);
     expect(capabilities.supportsVideo, isFalse);
+    expect(capabilities.supportsTilt, isTrue);
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => applied);
     final outcome = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: true);
     expect(outcome.status, LiveApplyStatus.applied);

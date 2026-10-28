@@ -92,12 +92,12 @@ Apply button -> LiveWallpaperBloc -> Pro gate
 
 ### Shader contract
 
-Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpaper` 3.5.0).
+Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpaper` 3.6.0).
 
 | Rule | Value |
 |---|---|
 | Language | GLSL ES 1.00, with `precision mediump float;` |
-| Uniforms Prism uses | `u_time` (float), `u_resolution` (vec2), `u_touch` (vec2), `u_offset` (vec2), `u_texture0` (sampler2D) |
+| Uniforms Prism uses | `u_time` (float), `u_resolution` (vec2), `u_touch` (vec2), `u_offset` (vec2), `u_tilt` (vec2, 3D only), `u_texture0` and `u_texture1` (sampler2D) |
 | Loops | No `while`. Only `for` with integer literal bounds. |
 | Source size | At most 64 KiB of UTF-8 source, enforced by the plugin validator. |
 | Plugin limits | Up to 4 textures, 32 uniform declarations, 128 static loop iterations. Prism uses at most one texture. |
@@ -160,8 +160,7 @@ Tilt:
 
 - async_wallpaper 3.6.0 adds the `u_tilt` uniform and `WallpaperCapabilities.supportsTilt`.
 - Prism declares `u_tilt` and adds it to motion only when `supportsTilt` is true.
-- Prism ships on `async_wallpaper ^3.5.0`. A Prism extension getter returns false for `supportsTilt` there. So the shader has no `u_tilt`.
-- Bumping to `^3.6.0` turns tilt on. No other change is needed, because the class member wins over the extension. After the bump, delete the extension in `lib/features/live_wallpaper/data/wallpaper_capabilities_tilt.dart`.
+- Prism uses `async_wallpaper ^3.6.0`. `supportsTilt` is false on iOS and on Android devices without a game rotation vector or accelerometer. Then the shader has no `u_tilt`.
 
 Frame rate: 30 fps. With battery saver, 15 fps.
 
