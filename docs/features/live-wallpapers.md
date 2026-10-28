@@ -19,15 +19,16 @@ The detail button shows only when two things are true:
 | Android | Supported when the device reports the capabilities below. |
 | iOS | Not available. The Settings row shows on Android only. |
 
-The screen reads two capabilities from the `async_wallpaper` plugin.
+The screen reads three capabilities from the `async_wallpaper` plugin.
 
 | Capability | Plugin field | What it enables |
 |---|---|---|
 | Shaders | `supportsOpenGlLiveWallpaper` | Make it live and Gradients |
 | Video | `supportsLiveWallpaper` | Video |
+| Tilt | `supportsTilt` | Sensor input for 3D only |
 
-- If both are false, the screen shows "Live wallpapers are not available".
-- If only one is false, that mode shows "Not available on this device".
+- If shader and video support are both false, the screen shows "Live wallpapers are not available".
+- If shader or video support is false, that mode shows "Not available on this device".
 - If the capability call throws, Prism treats the device as not supported.
 
 ## Free and Pro
@@ -100,7 +101,7 @@ Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpa
 | Uniforms Prism uses | `u_time` (float), `u_resolution` (vec2), `u_touch` (vec2), `u_offset` (vec2), `u_tilt` (vec2, 3D only), `u_texture0` and `u_texture1` (sampler2D) |
 | Loops | No `while`. Only `for` with integer literal bounds. |
 | Source size | At most 64 KiB of UTF-8 source, enforced by the plugin validator. |
-| Plugin limits | Up to 4 textures, 32 uniform declarations, 128 static loop iterations. Prism uses at most one texture. |
+| Plugin limits | Up to 4 textures, 32 uniform declarations, 128 static loop iterations. Prism uses at most two textures, for 3D. |
 | Texture orientation | `texture2D(u_texture0, v_uv)` shows the image upright. Do not flip `v_uv.y`. Plugin versions before 3.5.0 showed it upside down. |
 
 ### Frame rate and battery saver
@@ -171,10 +172,7 @@ Preview:
 
 Analytics: `live_wallpaper_applied` sends `style: 3d`.
 
-Release order for tilt:
-
-1. Merge and publish async_wallpaper 3.6.0.
-2. Bump Prism to `^3.6.0`.
+Tilt support ships in async_wallpaper 3.6.0. Prism requires `^3.6.0` and resolves 3.6.0 in `pubspec.lock`.
 
 ## Limits
 

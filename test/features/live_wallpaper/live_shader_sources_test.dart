@@ -75,7 +75,6 @@ void main() {
       });
 
       test('${style.name} samples the photo without a v flip', () {
-        // async_wallpaper 3.5 uploads textures bottom row first, so v_uv already samples them upright.
         final String shader = LiveShaderSources.motion(style, darkPalette);
         expect(RegExp(r'texture2D\(u_texture0, [^)]*\)').allMatches(shader).map((match) => match.group(0)), <String>[
           'texture2D(u_texture0, uv)',
@@ -105,9 +104,43 @@ void main() {
       expect(validateShaderContract(shader, textureCount: 2), isEmpty);
     });
 
-    test('meets the future contract when a renderer supports tilt', () {
+    test('meets the async_wallpaper 3.6 contract with tilt', () {
       final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
       expect(validateShaderContract(shader, textureCount: 2, tilt: true), isEmpty);
+    });
+
+    test('rejects invalid u_tilt declarations in a generated tilt shader', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      for (final (String label, String declaration) in <(String, String)>[
+        ('float', 'uniform float u_tilt;'),
+        ('vec3', 'uniform vec3 u_tilt;'),
+        ('vec2[1]', 'uniform vec2 u_tilt[1];'),
+        ('vec2[2]', 'uniform vec2 u_tilt[2];'),
+      ]) {
+        final String mutated = shader.replaceFirst('uniform vec2 u_tilt;', declaration);
+        expect(mutated, isNot(shader), reason: 'mutation for $label');
+        expect(
+          validateShaderContract(mutated, textureCount: 2, tilt: true),
+          contains('u_tilt must be vec2'),
+          reason: label,
+        );
+      }
+    });
+
+    test('rejects texture sampler arrays in a generated tilt shader', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      for (final String texture in <String>['u_texture0', 'u_texture1']) {
+        final String mutated = shader.replaceFirst(
+          'uniform sampler2D $texture;',
+          'uniform sampler2D $texture[2];',
+        );
+        expect(mutated, isNot(shader), reason: 'mutation for $texture');
+        expect(
+          validateShaderContract(mutated, textureCount: 2, tilt: true),
+          contains('sampler arrays must have length 1'),
+          reason: texture,
+        );
+      }
     });
 
     test('rejects tilt outside the Prism renderer contract', () {

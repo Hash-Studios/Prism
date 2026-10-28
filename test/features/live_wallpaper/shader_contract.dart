@@ -102,10 +102,14 @@ List<String> validateShaderContract(String shader, {required int textureCount, b
       components += cost * length;
     }
     final String? expected = rendererTypes[name];
-    if (expected != null && (type != expected || length != 1)) problems.add('$name must be $expected');
+    if (expected != null && (type != expected || length != 1 || (name == 'u_tilt' && declaration.group(3) != null))) {
+      problems.add('$name must be $expected');
+    }
     if (type.startsWith('sampler')) {
       final RegExpMatch? texture = RegExp(r'^u_texture([0-3])$').firstMatch(name);
-      if (texture == null || type != 'sampler2D') {
+      if (length != 1) {
+        problems.add('sampler arrays must have length 1');
+      } else if (texture == null || type != 'sampler2D') {
         problems.add('unsupported sampler $name');
       } else if (int.parse(texture.group(1)!) >= textureCount) {
         problems.add('$name has no texture');
