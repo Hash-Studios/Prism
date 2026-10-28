@@ -9344,5 +9344,153 @@
   "widgetsCardDismiss": "Dismiss",
   "@widgetsCardDismiss": {
     "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  },
+  "tasteQuizTitle": "Pick the one you like more",
+  "@tasteQuizTitle": {
+    "description": "Headline on each round of the This or that quiz, above two wallpapers side by side."
+  },
+  "tasteQuizWildCard": "Wild card",
+  "@tasteQuizWildCard": {
+    "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
+  },
+  "tasteQuizProgress": "{current} of {total}",
+  "@tasteQuizProgress": {
+    "description": "Quiz progress, for example 1 of 6.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizProgressLabel": "Round {current} of {total}",
+  "@tasteQuizProgressLabel": {
+    "description": "Screen reader label for the quiz progress.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizSkip": "Skip",
+  "@tasteQuizSkip": {
+    "description": "Button that ends the This or that quiz early and continues."
+  },
+  "tasteQuizPickLabel": "Pick this wallpaper, {position} of {total}",
+  "@tasteQuizPickLabel": {
+    "description": "Screen reader label for one of the two wallpapers in a quiz round.",
+    "placeholders": {
+      "position": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizTuningTitle": "Tuning your feed",
+  "@tasteQuizTuningTitle": {
+    "description": "Title of the short screen after the quiz that shows the wallpapers the feed will lead with."
+  },
+  "tasteQuizSummaryFull": "{tone, select, dark{Dark} other{Light}}, {density, select, minimal{minimal} other{detailed}}, a bit of {tag}",
+  "@tasteQuizSummaryFull": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{Dark} other{Light}} and {density, select, minimal{minimal} other{detailed}}",
+  "@tasteQuizSummaryToneDensity": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneTag": "{tone, select, dark{Dark} other{Light}}, with a bit of {tag}",
+  "@tasteQuizSummaryToneTag": {
+    "description": "One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{Minimal} other{Detailed}}, with a bit of {tag}",
+  "@tasteQuizSummaryDensityTag": {
+    "description": "One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTone": "{tone, select, dark{Mostly dark walls} other{Mostly light walls}}",
+  "@tasteQuizSummaryTone": {
+    "description": "One line that describes the user's picks. tone is dark or light.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensity": "{density, select, minimal{Mostly minimal walls} other{Mostly detailed walls}}",
+  "@tasteQuizSummaryDensity": {
+    "description": "One line that describes the user's picks. density is minimal or busy.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTag": "More {tag} walls",
+  "@tasteQuizSummaryTag": {
+    "description": "One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryReady": "Your feed is ready",
+  "@tasteQuizSummaryReady": {
+    "description": "Shown after the quiz when the picks do not clearly agree on a style."
+  },
+  "tasteQuizRetake": "Retake This or that",
+  "@tasteQuizRetake": {
+    "description": "Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name."
+  },
+  "tasteQuizRetakeFailed": "Couldn't load walls. Check your connection and try again.",
+  "@tasteQuizRetakeFailed": {
+    "description": "Toast when the walls for a quiz retake do not load."
   }
 }

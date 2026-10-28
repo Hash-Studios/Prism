@@ -9344,5 +9344,153 @@
   "widgetsCardDismiss": "हटाएँ",
   "@widgetsCardDismiss": {
     "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  },
+  "tasteQuizTitle": "जो आपको ज़्यादा पसंद हो, उसे चुनें",
+  "@tasteQuizTitle": {
+    "description": "Headline on each round of the This or that quiz, above two wallpapers side by side."
+  },
+  "tasteQuizWildCard": "वाइल्ड कार्ड",
+  "@tasteQuizWildCard": {
+    "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
+  },
+  "tasteQuizProgress": "{current} में से {total}",
+  "@tasteQuizProgress": {
+    "description": "Quiz progress, for example 1 of 6.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizProgressLabel": "राउंड {current} में से {total}",
+  "@tasteQuizProgressLabel": {
+    "description": "Screen reader label for the quiz progress.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizSkip": "छोड़ें",
+  "@tasteQuizSkip": {
+    "description": "Button that ends the This or that quiz early and continues."
+  },
+  "tasteQuizPickLabel": "यह वॉलपेपर चुनें, {position} में से {total}",
+  "@tasteQuizPickLabel": {
+    "description": "Screen reader label for one of the two wallpapers in a quiz round.",
+    "placeholders": {
+      "position": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizTuningTitle": "आपकी फ़ीड सेट हो रही है",
+  "@tasteQuizTuningTitle": {
+    "description": "Title of the short screen after the quiz that shows the wallpapers the feed will lead with."
+  },
+  "tasteQuizSummaryFull": "{tone, select, dark{गहरा} other{हल्का}}, {density, select, minimal{मिनिमल} other{विस्तृत}}, थोड़ा {tag}",
+  "@tasteQuizSummaryFull": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{गहरा} other{हल्का}} और {density, select, minimal{मिनिमल} other{विस्तृत}}",
+  "@tasteQuizSummaryToneDensity": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneTag": "{tone, select, dark{गहरा} other{हल्का}}, साथ में थोड़ा {tag}",
+  "@tasteQuizSummaryToneTag": {
+    "description": "One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{मिनिमल} other{विस्तृत}}, साथ में थोड़ा {tag}",
+  "@tasteQuizSummaryDensityTag": {
+    "description": "One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTone": "{tone, select, dark{ज़्यादातर गहरे वॉलपेपर} other{ज़्यादातर हल्के वॉलपेपर}}",
+  "@tasteQuizSummaryTone": {
+    "description": "One line that describes the user's picks. tone is dark or light.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensity": "{density, select, minimal{ज़्यादातर मिनिमल वॉलपेपर} other{ज़्यादातर विस्तृत वॉलपेपर}}",
+  "@tasteQuizSummaryDensity": {
+    "description": "One line that describes the user's picks. density is minimal or busy.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTag": "ज़्यादा {tag} वॉलपेपर",
+  "@tasteQuizSummaryTag": {
+    "description": "One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryReady": "आपकी फ़ीड तैयार है",
+  "@tasteQuizSummaryReady": {
+    "description": "Shown after the quiz when the picks do not clearly agree on a style."
+  },
+  "tasteQuizRetake": "यह या वह फिर से खेलें",
+  "@tasteQuizRetake": {
+    "description": "Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name."
+  },
+  "tasteQuizRetakeFailed": "वॉलपेपर लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@tasteQuizRetakeFailed": {
+    "description": "Toast when the walls for a quiz retake do not load."
   }
 }

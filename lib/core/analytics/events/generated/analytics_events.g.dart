@@ -7,9 +7,12 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
+  'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
+  'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
@@ -1882,6 +1885,88 @@ class OnboardingV2CompletedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'did_purchase': didPurchase ? 1 : 0, 'total_elapsed_ms': totalElapsedMs};
+  }
+}
+
+class TasteQuizStartedEvent extends AnalyticsEvent {
+  const TasteQuizStartedEvent({required this.source});
+
+  final TasteQuizSource source;
+
+  @override
+  String get eventName => 'taste_quiz_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class TasteQuizRoundPickedEvent extends AnalyticsEvent {
+  const TasteQuizRoundPickedEvent({
+    required this.source,
+    required this.roundIndex,
+    required this.side,
+    required this.wildCard,
+  });
+
+  final TasteQuizSource source;
+  final int roundIndex;
+  final QuizSide side;
+  final bool wildCard;
+
+  @override
+  String get eventName => 'taste_quiz_round_picked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source.wireValue,
+      'round_index': roundIndex,
+      'side': side.wireValue,
+      'wild_card': wildCard ? 1 : 0,
+    };
+  }
+}
+
+class TasteQuizSkippedEvent extends AnalyticsEvent {
+  const TasteQuizSkippedEvent({required this.source, required this.roundIndex});
+
+  final TasteQuizSource source;
+  final int roundIndex;
+
+  @override
+  String get eventName => 'taste_quiz_skipped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue, 'round_index': roundIndex};
+  }
+}
+
+class TasteQuizCompletedEvent extends AnalyticsEvent {
+  const TasteQuizCompletedEvent({required this.source});
+
+  final TasteQuizSource source;
+
+  @override
+  String get eventName => 'taste_quiz_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class TasteQuizRetakeOpenedEvent extends AnalyticsEvent {
+  const TasteQuizRetakeOpenedEvent();
+
+  @override
+  String get eventName => 'taste_quiz_retake_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }
 

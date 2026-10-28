@@ -2696,5 +2696,22 @@
   "widgetsCardTitle": "O papel de parede do dia na sua Tela de Início",
   "widgetsCardBody": "Adicione o widget e veja um papel de parede novo todo dia.",
   "widgetsCardAction": "Mostrar como",
-  "widgetsCardDismiss": "Dispensar"
+  "widgetsCardDismiss": "Dispensar",
+  "tasteQuizTitle": "Escolha a que você mais gosta",
+  "tasteQuizWildCard": "Coringa",
+  "tasteQuizProgress": "{current} de {total}",
+  "tasteQuizProgressLabel": "Rodada {current} de {total}",
+  "tasteQuizSkip": "Pular",
+  "tasteQuizPickLabel": "Escolher este papel de parede, {position} de {total}",
+  "tasteQuizTuningTitle": "Ajustando seu feed",
+  "tasteQuizSummaryFull": "{tone, select, dark{Escuro} other{Claro}}, {density, select, minimal{minimalista} other{detalhado}}, um toque de {tag}",
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{Escuro} other{Claro}} e {density, select, minimal{minimalista} other{detalhado}}",
+  "tasteQuizSummaryToneTag": "{tone, select, dark{Escuro} other{Claro}}, com um toque de {tag}",
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{Minimalista} other{Detalhado}}, com um toque de {tag}",
+  "tasteQuizSummaryTone": "{tone, select, dark{Papéis de parede mais escuros} other{Papéis de parede mais claros}}",
+  "tasteQuizSummaryDensity": "{density, select, minimal{Papéis de parede mais minimalistas} other{Papéis de parede mais detalhados}}",
+  "tasteQuizSummaryTag": "Mais papéis de parede de {tag}",
+  "tasteQuizSummaryReady": "Seu feed está pronto",
+  "tasteQuizRetake": "Refazer Isso ou aquilo",
+  "tasteQuizRetakeFailed": "Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente."
 }

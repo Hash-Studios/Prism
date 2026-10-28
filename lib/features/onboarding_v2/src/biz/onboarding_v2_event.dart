@@ -9,6 +9,9 @@ abstract class OnboardingV2Event with _$OnboardingV2Event {
   const factory OnboardingV2Event.loadRetried() = _LoadRetried;
   const factory OnboardingV2Event.interestsSkipped() = _InterestsSkipped;
   const factory OnboardingV2Event.starterPackSkipped() = _StarterPackSkipped;
+
+  /// [completed] is false when the user skipped the quiz.
+  const factory OnboardingV2Event.tasteQuizFinished({required bool completed}) = _TasteQuizFinished;
   const factory OnboardingV2Event.interestToggled(String categoryName) = _InterestToggled;
   const factory OnboardingV2Event.interestsConfirmed() = _InterestsConfirmed;
   const factory OnboardingV2Event.creatorFollowToggled(String creatorEmail) = _CreatorFollowToggled;

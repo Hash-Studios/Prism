@@ -41,6 +41,7 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_scroll
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_background.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/features/taste_quiz/taste_quiz.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -100,6 +101,12 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarIconBrightness: Brightness.light,
   );
+
+  /// The quiz sits on the theme surface, so its icons follow the theme.
+  static SystemUiOverlayStyle _themedUiStyle(BuildContext context) {
+    final Brightness icons = Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+    return edgeToEdgeOverlayStyle(statusBarIconBrightness: icons, systemNavigationBarIconBrightness: icons);
+  }
 
   @override
   void initState() {
@@ -309,7 +316,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
     switch (step) {
       case OnboardingV2Step.auth:
-        // The welcome page has its own buttons.
+      case OnboardingV2Step.tasteQuiz:
+        // The welcome page and the quiz have their own buttons.
         return;
       case OnboardingV2Step.interests:
         _bloc.add(const OnboardingV2Event.interestsConfirmed());
@@ -337,7 +345,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   /// The welcome page keeps the redesign. It draws its own art, copy and buttons, so it takes no part in the shared
   /// overlay of steps 1 to 4.
   Widget _welcomePage() => KeyedSubtree(
-    key: const ValueKey(true),
+    key: _welcomeKey,
     child: _RecoveryHost(
       bloc: _bloc,
       signingOut: _signingOut,
@@ -354,11 +362,26 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     ),
   );
 
+  /// The quiz shows the walls edge to edge, so like the welcome page it takes the whole canvas.
+  Widget _tasteQuizPage(OnboardingV2State state) => KeyedSubtree(
+    key: _tasteQuizKey,
+    child: TasteQuizView(
+      plan: state.tasteQuizPlan!,
+      source: TasteQuizSource.onboarding,
+      interests: state.interestsData.selected,
+      onFinished: (completed) => _bloc.add(OnboardingV2Event.tasteQuizFinished(completed: completed)),
+    ),
+  );
+
+  static const Key _welcomeKey = ValueKey<String>('welcome');
+  static const Key _tasteQuizKey = ValueKey<String>('taste_quiz');
+  static const Key _stepsKey = ValueKey<String>('steps');
+
   Widget _pageFor(OnboardingV2Step step) => KeyedSubtree(
     key: ValueKey(step),
     child: switch (step) {
-      // Never built: the welcome page replaces the whole canvas.
-      OnboardingV2Step.auth => const SizedBox.shrink(),
+      // Never built: the welcome page and the quiz replace the whole canvas.
+      OnboardingV2Step.auth || OnboardingV2Step.tasteQuiz => const SizedBox.shrink(),
       OnboardingV2Step.interests => const F1InterestsPage(),
       OnboardingV2Step.starterPack => const F2StarterPackPage(),
       OnboardingV2Step.aiGenerate => const F3AiGeneratePage(),
@@ -422,8 +445,13 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               prev.aiData != curr.aiData,
           builder: (context, state) {
             final bool welcome = state.step == OnboardingV2Step.auth;
+            final bool tasteQuiz = state.step == OnboardingV2Step.tasteQuiz && state.tasteQuizPlan != null;
             return AnnotatedRegion<SystemUiOverlayStyle>(
-              value: welcome ? _welcomeUiStyle : _systemUiStyle,
+              value: welcome
+                  ? _welcomeUiStyle
+                  : tasteQuiz
+                  ? _themedUiStyle(context)
+                  : _systemUiStyle,
               child: PopScope(
                 canPop: false,
                 onPopInvokedWithResult: (didPop, result) {
@@ -453,11 +481,17 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                         RepaintBoundary(child: WelcomeBackground(visible: welcome)),
 
                         _StepSwitcher(
-                          welcome: welcome,
+                          current: welcome
+                              ? _welcomeKey
+                              : tasteQuiz
+                              ? _tasteQuizKey
+                              : _stepsKey,
                           child: welcome
                               ? _welcomePage()
+                              : tasteQuiz
+                              ? _tasteQuizPage(state)
                               : KeyedSubtree(
-                                  key: const ValueKey(false),
+                                  key: _stepsKey,
                                   // Layers 1 and 2 share one scrollable canvas, so a short screen or large text
                                   // scrolls the page and its overlay together instead of overlapping them.
                                   child: OnboardingScrollableCanvas(
@@ -535,11 +569,12 @@ class _RecoveryHost extends StatelessWidget {
   }
 }
 
-/// Cross-fades between the welcome page and steps 1 to 4. The side that arrives also rises 8 points.
+/// Cross-fades between the welcome page, the quiz and steps 1 to 4. The page that arrives also rises 8 points.
 class _StepSwitcher extends StatelessWidget {
-  const _StepSwitcher({required this.welcome, required this.child});
+  const _StepSwitcher({required this.current, required this.child});
 
-  final bool welcome;
+  /// The key of the page on screen now.
+  final Key current;
   final Widget child;
 
   @override
@@ -549,7 +584,7 @@ class _StepSwitcher extends StatelessWidget {
       switchInCurve: PrismCurves.enter,
       switchOutCurve: PrismCurves.exit,
       transitionBuilder: (child, animation) {
-        final bool arriving = child.key == ValueKey(welcome);
+        final bool arriving = child.key == current;
         return FadeTransition(
           opacity: animation,
           child: arriving
@@ -703,7 +738,7 @@ class _Headline extends StatelessWidget {
   final Color wallpaperColor;
 
   static double _headlineX(OnboardingV2Step step) => switch (step) {
-    OnboardingV2Step.auth => 0,
+    OnboardingV2Step.auth || OnboardingV2Step.tasteQuiz => 0,
     OnboardingV2Step.interests => OnboardingLayout.interestsTitleX,
     OnboardingV2Step.starterPack => OnboardingLayout.starterPackTitleX,
     OnboardingV2Step.aiGenerate => OnboardingLayout.aiTitleX,
@@ -711,7 +746,7 @@ class _Headline extends StatelessWidget {
   };
 
   static String _headlineText(OnboardingV2Step step, AppLocalizations l10n) => switch (step) {
-    OnboardingV2Step.auth => '',
+    OnboardingV2Step.auth || OnboardingV2Step.tasteQuiz => '',
     OnboardingV2Step.interests => l10n.onboardingHeadlineInterests,
     OnboardingV2Step.starterPack => l10n.onboardingHeadlineCreators,
     OnboardingV2Step.aiGenerate => l10n.onboardingHeadlineGenerate,
@@ -770,6 +805,7 @@ class _CtaButton extends StatelessWidget {
     final isLoading = switch (step) {
       OnboardingV2Step.auth ||
       OnboardingV2Step.interests ||
+      OnboardingV2Step.tasteQuiz ||
       OnboardingV2Step.starterPack => signingOut || (!saveFailed && state.actionStatus == ActionStatus.inProgress),
       OnboardingV2Step.aiGenerate =>
         signingOut ||
@@ -790,8 +826,7 @@ class _CtaButton extends StatelessWidget {
         ((onboardingSaveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
             onboardingStarterPackShort(state) ||
             state.starterPackData.canContinue),
-      OnboardingV2Step.aiGenerate => true,
-      OnboardingV2Step.firstWallpaper => true,
+      OnboardingV2Step.tasteQuiz || OnboardingV2Step.aiGenerate || OnboardingV2Step.firstWallpaper => true,
     };
 
     final label = switch (step) {
@@ -804,7 +839,7 @@ class _CtaButton extends StatelessWidget {
             ? context.l10n.onboardingContinueSelected(selected)
             : context.l10n.onboardingContinue;
       }(),
-      OnboardingV2Step.starterPack => context.l10n.onboardingContinue,
+      OnboardingV2Step.tasteQuiz || OnboardingV2Step.starterPack => context.l10n.onboardingContinue,
       OnboardingV2Step.aiGenerate => context.l10n.onboardingGenerateWallpaper,
       OnboardingV2Step.firstWallpaper =>
         defaultTargetPlatform == TargetPlatform.android

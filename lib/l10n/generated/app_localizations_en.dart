@@ -10169,4 +10169,101 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Dismiss';
+
+  @override
+  String get tasteQuizTitle => 'Pick the one you like more';
+
+  @override
+  String get tasteQuizWildCard => 'Wild card';
+
+  @override
+  String tasteQuizProgress(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$currentString of $totalString';
+  }
+
+  @override
+  String tasteQuizProgressLabel(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Round $currentString of $totalString';
+  }
+
+  @override
+  String get tasteQuizSkip => 'Skip';
+
+  @override
+  String tasteQuizPickLabel(int position, int total) {
+    final intl.NumberFormat positionNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String positionString = positionNumberFormat.format(position);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Pick this wallpaper, $positionString of $totalString';
+  }
+
+  @override
+  String get tasteQuizTuningTitle => 'Tuning your feed';
+
+  @override
+  String tasteQuizSummaryFull(String tone, String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Dark', 'other': 'Light'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimal', 'other': 'detailed'});
+    return '$_temp0, $_temp1, a bit of $tag';
+  }
+
+  @override
+  String tasteQuizSummaryToneDensity(String tone, String density) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Dark', 'other': 'Light'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimal', 'other': 'detailed'});
+    return '$_temp0 and $_temp1';
+  }
+
+  @override
+  String tasteQuizSummaryToneTag(String tone, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Dark', 'other': 'Light'});
+    return '$_temp0, with a bit of $tag';
+  }
+
+  @override
+  String tasteQuizSummaryDensityTag(String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(density, {'minimal': 'Minimal', 'other': 'Detailed'});
+    return '$_temp0, with a bit of $tag';
+  }
+
+  @override
+  String tasteQuizSummaryTone(String tone) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Mostly dark walls', 'other': 'Mostly light walls'});
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryDensity(String density) {
+    String _temp0 = intl.Intl.selectLogic(density, {
+      'minimal': 'Mostly minimal walls',
+      'other': 'Mostly detailed walls',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryTag(String tag) {
+    return 'More $tag walls';
+  }
+
+  @override
+  String get tasteQuizSummaryReady => 'Your feed is ready';
+
+  @override
+  String get tasteQuizRetake => 'Retake This or that';
+
+  @override
+  String get tasteQuizRetakeFailed => 'Couldn\'t load walls. Check your connection and try again.';
 }

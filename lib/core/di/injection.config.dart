@@ -164,6 +164,10 @@ import '../../features/startup/domain/repositories/startup_repository.dart'
 import '../../features/startup/domain/usecases/bootstrap_app_usecase.dart'
     as _i415;
 import '../../features/streak/bloc/streak_shop_bloc.dart' as _i456;
+import '../../features/taste_quiz/data/repositories/taste_quiz_repository_impl.dart'
+    as _i939;
+import '../../features/taste_quiz/domain/repositories/taste_quiz_repository.dart'
+    as _i887;
 import '../../features/theme_mode/biz/bloc/theme_bloc.j.dart' as _i583;
 import '../../features/theme_mode/data/repositories/theme_repository_impl.dart'
     as _i593;
@@ -678,6 +682,12 @@ _i174.GetIt initGetIt(
       gh<_i727.PrismWallpaperRepository>(),
     ),
   );
+  gh.lazySingleton<_i887.TasteQuizRepository>(
+    () => _i939.TasteQuizRepositoryImpl(
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
   gh.lazySingleton<_i406.FetchFavouriteWallsUseCase>(
     () =>
         _i406.FetchFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
@@ -767,6 +777,7 @@ _i174.GetIt initGetIt(
       gh<_i563.CategoryFeedRepository>(),
       gh<_i897.OnboardingV2Repository>(),
       gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i887.TasteQuizRepository>(),
     ),
   );
   gh.factory<_i872.PersonalizedFeedBloc>(

@@ -16314,6 +16314,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get widgetsCardDismiss;
+
+  /// Headline on each round of the This or that quiz, above two wallpapers side by side.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the one you like more'**
+  String get tasteQuizTitle;
+
+  /// Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild card'**
+  String get tasteQuizWildCard;
+
+  /// Quiz progress, for example 1 of 6.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String tasteQuizProgress(int current, int total);
+
+  /// Screen reader label for the quiz progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {current} of {total}'**
+  String tasteQuizProgressLabel(int current, int total);
+
+  /// Button that ends the This or that quiz early and continues.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tasteQuizSkip;
+
+  /// Screen reader label for one of the two wallpapers in a quiz round.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick this wallpaper, {position} of {total}'**
+  String tasteQuizPickLabel(int position, int total);
+
+  /// Title of the short screen after the quiz that shows the wallpapers the feed will lead with.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuning your feed'**
+  String get tasteQuizTuningTitle;
+
+  /// One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.
+  ///
+  /// In en, this message translates to:
+  /// **'{tone, select, dark{Dark} other{Light}}, {density, select, minimal{minimal} other{detailed}}, a bit of {tag}'**
+  String tasteQuizSummaryFull(String tone, String density, String tag);
+
+  /// One line that describes the user's picks. tone is dark or light, density is minimal or busy.
+  ///
+  /// In en, this message translates to:
+  /// **'{tone, select, dark{Dark} other{Light}} and {density, select, minimal{minimal} other{detailed}}'**
+  String tasteQuizSummaryToneDensity(String tone, String density);
+
+  /// One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.
+  ///
+  /// In en, this message translates to:
+  /// **'{tone, select, dark{Dark} other{Light}}, with a bit of {tag}'**
+  String tasteQuizSummaryToneTag(String tone, String tag);
+
+  /// One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.
+  ///
+  /// In en, this message translates to:
+  /// **'{density, select, minimal{Minimal} other{Detailed}}, with a bit of {tag}'**
+  String tasteQuizSummaryDensityTag(String density, String tag);
+
+  /// One line that describes the user's picks. tone is dark or light.
+  ///
+  /// In en, this message translates to:
+  /// **'{tone, select, dark{Mostly dark walls} other{Mostly light walls}}'**
+  String tasteQuizSummaryTone(String tone);
+
+  /// One line that describes the user's picks. density is minimal or busy.
+  ///
+  /// In en, this message translates to:
+  /// **'{density, select, minimal{Mostly minimal walls} other{Mostly detailed walls}}'**
+  String tasteQuizSummaryDensity(String density);
+
+  /// One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.
+  ///
+  /// In en, this message translates to:
+  /// **'More {tag} walls'**
+  String tasteQuizSummaryTag(String tag);
+
+  /// Shown after the quiz when the picks do not clearly agree on a style.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feed is ready'**
+  String get tasteQuizSummaryReady;
+
+  /// Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake This or that'**
+  String get tasteQuizRetake;
+
+  /// Toast when the walls for a quiz retake do not load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load walls. Check your connection and try again.'**
+  String get tasteQuizRetakeFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
