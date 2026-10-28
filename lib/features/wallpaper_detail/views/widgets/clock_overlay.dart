@@ -68,7 +68,7 @@ class SetScreenRequest {
 
 /// What the Set screen shows for [request]: a file on the device as is, a Prism wall's display derivative (never its
 /// original), and otherwise the wall's own URL, or its thumbnail when there is none.
-WallpaperDisplaySource _setScreenDisplaySource(SetScreenRequest request) {
+WallpaperDisplaySource setScreenDisplaySource(SetScreenRequest request) {
   final String thumbnail = request.thumbnailUrl?.trim() ?? '';
   final String url = request.url.trim();
   final bool local = url.startsWith('/') || url.startsWith('file:');
@@ -89,12 +89,9 @@ WallpaperDisplaySource _setScreenDisplaySource(SetScreenRequest request) {
   return WallpaperDisplaySource(thumbnail: safeThumbnail, full: full);
 }
 
-@visibleForTesting
-String setScreenPreviewLink(SetScreenRequest request) => _setScreenDisplaySource(request).bestLink;
-
 /// Opens the Set screen over the current page. Returns what the user picked, or null when they closed it.
 Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest request) {
-  final WallpaperDisplaySource display = _setScreenDisplaySource(request);
+  final WallpaperDisplaySource display = setScreenDisplaySource(request);
   final String link = display.bestLink;
   final SetScreenRequest safeRequest = SetScreenRequest(
     url: link,

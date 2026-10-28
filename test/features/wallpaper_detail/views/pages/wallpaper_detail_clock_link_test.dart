@@ -149,77 +149,77 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
-  group('setScreenPreviewLink for the Android Set screen', () {
+  group('setScreenDisplaySource for the Android Set screen', () {
     const String thumb = 'https://img.test/thumb.jpg';
     const String previewW1 =
         'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=w1&thumb=https%3A%2F%2Fimg.test%2Fthumb.jpg';
 
     test('a Prism request with no url previews the display derivative', () {
       expect(
-        setScreenPreviewLink(
+        setScreenDisplaySource(
           const SetScreenRequest(
             url: '',
             thumbnailUrl: thumb,
             wallpaperId: 'w1',
             wallpaperSource: WallpaperSource.prism,
           ),
-        ),
+        ).bestLink,
         previewW1,
       );
     });
 
     test('a Prism request with the original url still previews, never the original', () {
       expect(
-        setScreenPreviewLink(
+        setScreenDisplaySource(
           const SetScreenRequest(
             url: 'https://img.test/original.jpg',
             thumbnailUrl: thumb,
             wallpaperId: 'w1',
             wallpaperSource: WallpaperSource.prism,
           ),
-        ),
+        ).bestLink,
         previewW1,
       );
     });
 
     test('a downloaded local file is passed through as is', () {
       expect(
-        setScreenPreviewLink(
+        setScreenDisplaySource(
           const SetScreenRequest(
             url: '/tmp/wall.png',
             thumbnailUrl: thumb,
             wallpaperId: 'w1',
             wallpaperSource: WallpaperSource.downloaded,
           ),
-        ),
+        ).bestLink,
         '/tmp/wall.png',
       );
     });
 
     test('a Wallhaven request uses its url', () {
       expect(
-        setScreenPreviewLink(
+        setScreenDisplaySource(
           const SetScreenRequest(
             url: 'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg',
             thumbnailUrl: 'https://th.wallhaven.cc/small/ab/wallhaven-ab.jpg',
             wallpaperId: 'wallhaven-ab',
             wallpaperSource: WallpaperSource.wallhaven,
           ),
-        ),
+        ).bestLink,
         'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg',
       );
     });
 
     test('a non-Prism request with an empty url falls back to the thumbnail', () {
       expect(
-        setScreenPreviewLink(
+        setScreenDisplaySource(
           const SetScreenRequest(
             url: '',
             thumbnailUrl: thumb,
             wallpaperId: 'w1',
             wallpaperSource: WallpaperSource.wallhaven,
           ),
-        ),
+        ).bestLink,
         thumb,
       );
     });

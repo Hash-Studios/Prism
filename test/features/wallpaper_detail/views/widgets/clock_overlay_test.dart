@@ -338,63 +338,65 @@ void main() {
     const String original = 'https://storage.example/private-original.jpg?token=secret';
 
     expect(
-      setScreenPreviewLink(
+      setScreenDisplaySource(
         const SetScreenRequest(
           url: original,
           thumbnailUrl: '',
           wallpaperId: 'wall-1',
           wallpaperSource: WallpaperSource.prism,
         ),
-      ),
+      ).bestLink,
       isEmpty,
     );
   });
 
   test('a Prism thumbnail is not accepted as a local file path', () {
     expect(
-      setScreenPreviewLink(
+      setScreenDisplaySource(
         const SetScreenRequest(
           url: 'https://storage.example/private-original.jpg',
           thumbnailUrl: '/private/original.jpg',
           wallpaperId: 'wall-1',
           wallpaperSource: WallpaperSource.prism,
         ),
-      ),
+      ).bestLink,
       isEmpty,
     );
   });
 
   test('a catalog Prism URL that looks local cannot become a file preview', () {
     expect(
-      setScreenPreviewLink(
+      setScreenDisplaySource(
         const SetScreenRequest(
           url: '/private/original.jpg',
           thumbnailUrl: 'https://storage.example/display.jpg',
           wallpaperId: 'wall-1',
           wallpaperSource: WallpaperSource.prism,
         ),
-      ),
+      ).bestLink,
       'https://storage.example/display.jpg',
     );
   });
 
   test('a spoofed bundled Prism identity cannot choose a local Set screen path', () {
     expect(
-      setScreenPreviewLink(
+      setScreenDisplaySource(
         const SetScreenRequest(
           url: '/etc/passwd',
           thumbnailUrl: '',
           wallpaperId: 'starter-sunset',
           wallpaperSource: WallpaperSource.prism,
         ),
-      ),
+      ).bestLink,
       '${Directory.systemTemp.path}/prism-bundled-wallpapers/starter-sunset.jpg',
     );
   });
 
   test('a downloaded local file remains eligible for its Set screen preview', () {
     expect(
-      setScreenPreviewLink(const SetScreenRequest(url: '/tmp/wall.png', wallpaperSource: WallpaperSource.downloaded)),
+      setScreenDisplaySource(
+        const SetScreenRequest(url: '/tmp/wall.png', wallpaperSource: WallpaperSource.downloaded),
+      ).bestLink,
       '/tmp/wall.png',
     );
   });
@@ -403,14 +405,14 @@ void main() {
     const String original = 'https://storage.example/private-original.jpg?token=secret';
 
     expect(
-      setScreenPreviewLink(
+      setScreenDisplaySource(
         const SetScreenRequest(
           url: original,
           thumbnailUrl: original,
           wallpaperId: 'wall-1',
           wallpaperSource: WallpaperSource.prism,
         ),
-      ),
+      ).bestLink,
       isEmpty,
     );
   });

@@ -97,6 +97,10 @@ class WallpaperDisplaySource {
   /// [full], or [thumbnail] when no full image may show. For a route that takes one link.
   String get bestLink => full.isNotEmpty ? full : thumbnail;
 
+  /// The quick picture a route shows before its wall loads: the thumbnail, else a public original. Never a Prism
+  /// original, so a Prism wall with no thumbnail gets none.
+  String get placeholder => thumbnail.isNotEmpty || source == WallpaperSource.prism ? thumbnail : full;
+
   @override
   bool operator ==(Object other) =>
       other is WallpaperDisplaySource &&

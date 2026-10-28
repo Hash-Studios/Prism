@@ -107,15 +107,7 @@ class _WotdCardContent extends StatelessWidget {
               entity: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
               heroTag: heroTag,
             )
-          : WallpaperDetailRoute(
-              wallId: entity.wallId,
-              source: source,
-              thumbnailUrl: display.thumbnail.isNotEmpty
-                  ? display.thumbnail
-                  : source == WallpaperSource.prism
-                  ? ''
-                  : display.full,
-            ),
+          : WallpaperDetailRoute(wallId: entity.wallId, source: source, thumbnailUrl: display.placeholder),
     );
   }
 
