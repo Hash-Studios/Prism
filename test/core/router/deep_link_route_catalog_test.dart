@@ -78,9 +78,7 @@ void main() {
   });
 
   test('gallery links resolve to the gallery page with the exact walls, in order', () async {
-    final DeepLinkActionEntity action = parser.parse(
-      Uri.parse('prism://gallery?ids=W1,W2,W3,W4&title=Night%20walls&source=push'),
-    );
+    final DeepLinkActionEntity action = parser.parse(Uri.parse('prism://gallery?ids=W1,W2,W3,W4&source=push'));
     expect(action, isA<PageLinkIntent>());
     final PageRouteInfo? route = await routeForPageLink(
       action as PageLinkIntent,
@@ -92,7 +90,6 @@ void main() {
     expect(route, isA<GalleryRoute>());
     final GalleryRouteArgs args = route!.args! as GalleryRouteArgs;
     expect(args.ids, 'W1,W2,W3,W4');
-    expect(args.title, 'Night walls');
     expect(args.source, 'push');
   });
 

@@ -21,18 +21,10 @@ List<String> galleryWallIds(String raw) =>
 /// The exact walls of a gallery push, in the order the push sent them.
 @RoutePage()
 class GalleryScreen extends StatefulWidget {
-  const GalleryScreen({
-    super.key,
-    @QueryParam('ids') this.ids = '',
-    @QueryParam('title') this.title = '',
-    @QueryParam('source') this.source = 'link',
-  });
+  const GalleryScreen({super.key, @QueryParam('ids') this.ids = '', @QueryParam('source') this.source = 'link'});
 
   /// Comma-separated wall ids.
   final String ids;
-
-  /// The page title, for example the push title. The default title is used when it is empty.
-  final String title;
 
   /// Where the user opened the page, for example 'push' or 'link'. For analytics.
   final String source;
@@ -71,9 +63,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final String title = widget.title.trim();
     return PrismPage(
-      title: title.isEmpty ? l10n.galleryScreenTitle : title,
+      title: l10n.galleryScreenTitle,
       body: BlocBuilder<GalleryWallsCubit, GalleryWallsState>(
         bloc: _cubit,
         builder: (_, state) {

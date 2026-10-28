@@ -202,7 +202,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.wallpaperDetail: <String>{'wallId', 'id', 'source', 'provider'},
     DeepLinkPageTarget.library: <String>{'tab'},
     DeepLinkPageTarget.collectionView: <String>{'collectionName', 'name'},
-    DeepLinkPageTarget.gallery: <String>{'ids', 'title', 'source'},
+    DeepLinkPageTarget.gallery: <String>{'ids', 'source'},
     DeepLinkPageTarget.followers: <String>{'user', 'identifier'},
     DeepLinkPageTarget.following: <String>{'user', 'identifier'},
     DeepLinkPageTarget.wallpaperPositionInput: <String>{'wallpaperId', 'source', 'provider', 'entryPoint'},
