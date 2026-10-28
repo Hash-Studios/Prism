@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -171,6 +172,76 @@ void main() {
     await tester.pump();
 
     expect(tester.getRect(targetTile).center.dy, closeTo(viewport.center.dy, 1));
+  });
+
+  testWidgets('a feed split over two grids reveals a wall at its place in its own grid', (tester) async {
+    final List<FeedItemEntity> items = List<FeedItemEntity>.generate(60, (index) => _prismWall('wall-$index'));
+    final List<FeedItemEntity> first = items.sublist(0, 30);
+    final List<FeedItemEntity> second = items.sublist(30);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+    tester.view.physicalSize = const Size(400, 450);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    Widget grid(List<FeedItemEntity> chunk, int offset) => SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.5),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => KeyedSubtree(
+          key: ValueKey<String>(chunk[index].id),
+          child: WallpaperTile(
+            item: chunk[index],
+            index: offset + index,
+            crossAxisCount: 3,
+            feed: items,
+            gridItems: chunk,
+          ),
+        ),
+        childCount: chunk.length,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: Scaffold(
+            body: CustomScrollView(
+              controller: controller,
+              slivers: <Widget>[
+                grid(first, 0),
+                const SliverToBoxAdapter(child: SizedBox(height: 300)),
+                grid(second, 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    controller.jumpTo(10 * 400 / 3 / 0.5 + 300);
+    await tester.pump();
+    await tester.tap(
+      find.descendant(of: find.byKey(const ValueKey<String>('wall-31')), matching: find.byType(PrismWallTile)),
+    );
+    await tester.pump();
+
+    final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+    final WallpaperFeed feed = route.args!.feed!;
+    expect(feed.tiles.map((tile) => tile.item.id), items.map((item) => item.id));
+    controller.jumpTo(0);
+    await tester.pump();
+
+    feed.reveal(feed.indexOf(_prismWall('wall-50')));
+    await tester.pump();
+
+    final Rect viewport = tester.getRect(find.byType(CustomScrollView));
+    expect(tester.getRect(find.byKey(const ValueKey<String>('wall-50'))).center.dy, closeTo(viewport.center.dy, 1));
   });
 }
 

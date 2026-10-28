@@ -572,6 +572,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       crossAxisCount,
       rowMoods,
     );
+    final List<List<FeedItemEntity>?> chunkItems = <List<FeedItemEntity>?>[
+      for (final (int start, int end, MoodList? _) in chunks)
+        chunks.length == 1 ? null : visibleItems.sublist(start, end),
+    ];
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         SliverPadding(
@@ -598,6 +602,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                     PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)]),
                   ),
                   feed: visibleItems,
+                  gridItems: chunkItems[i],
                 ),
               );
             }, childCount: chunks[i].$2 - chunks[i].$1),
