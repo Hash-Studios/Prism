@@ -416,6 +416,9 @@ test('direct app landings preserve encoded query values and reject unsupported w
     '/clock-preview?wallpaperId=wall1&provider=unsupported',
     '/wallpaper/wall1/position?provider=downloaded',
     '/dashboard/search?q=sunset',
+    '/gallery?ids=W1',
+    '/gallery?ids=W1,bad%2Fid',
+    '/gallery?ids=W1,W2&title=Picks',
   ]) {
     const invalid = await worker.fetch(new Request(`https://prismwalls.com${path}`), env, { waitUntil() {} });
     assert.equal(invalid.status, 302, path);
