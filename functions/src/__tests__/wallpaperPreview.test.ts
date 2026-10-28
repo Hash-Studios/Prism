@@ -77,8 +77,12 @@ async function setup(t: Parameters<typeof installFakeDb>[0]) {
     });
   const originalReads = () => get.mock.calls.filter((call) => call.arguments[1] === original.object).length;
   return {store, url, get, put, stored, original, originalReads,
-    setSourceBytes: (next: Buffer) => { sourceBytes = next; },
-    setOriginalHead: (patch: Partial<typeof originalHead>) => { originalHead = {...originalHead, ...patch}; }};
+    setSourceBytes: (next: Buffer) => {
+      sourceBytes = next;
+    },
+    setOriginalHead: (patch: Partial<typeof originalHead>) => {
+      originalHead = {...originalHead, ...patch};
+    }};
 }
 
 test("an approved protected wall returns display pixels without charging or signing an original", async (t) => {
