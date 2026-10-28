@@ -128,6 +128,7 @@ void main() {
           expect(tester.getSize(chip).height, 44);
           expect(tester.getSize(pill).height, 34);
           expect(paragraph.didExceedMaxLines, isFalse);
+          expect(paragraph.textScaler.scale(13), scale.clamp(0, 2) * 13);
           expect(paragraph.size.height, greaterThanOrEqualTo(paragraph.getMaxIntrinsicHeight(paragraph.size.width)));
           expect(tester.getRect(text).top, greaterThanOrEqualTo(tester.getRect(pill).top));
           expect(tester.getRect(text).bottom, lessThanOrEqualTo(tester.getRect(pill).bottom));

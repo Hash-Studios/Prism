@@ -144,6 +144,96 @@ void main() {
     expect(_idsOf(cubit.state), <String>['NEW']);
   });
 
+  test('ignores visibility changes before the first load', () async {
+    final MoodWallsCubit cubit = MoodWallsCubit(repository);
+    addTearDown(cubit.close);
+
+    repository.visibility.add(null);
+    await pumpEventQueue();
+
+    expect(repository.requested, isEmpty);
+
+    await cubit.load(WallMood.minimal);
+
+    expect(_idsOf(cubit.state), <String>['D']);
+  });
+
+  test('reloads each cubit with its own wall ids and limit', () async {
+    final MoodWallsCubit first = MoodWallsCubit(repository);
+    final MoodWallsCubit second = MoodWallsCubit(repository);
+    addTearDown(first.close);
+    addTearDown(second.close);
+
+    await first.load(WallMood.dreamy, limit: 1, wallIds: <String>['A', 'B']);
+    await second.load(WallMood.minimal, limit: 2, wallIds: <String>['D', 'E', 'F']);
+    repository.requested.clear();
+
+    repository.visibility.add(null);
+    await pumpEventQueue();
+
+    expect(repository.requested, hasLength(2));
+    expect(
+      repository.requested,
+      containsAll(<List<String>>[
+        <String>['A'],
+        <String>['D', 'E'],
+      ]),
+    );
+    expect(_idsOf(first.state), <String>['A']);
+    expect(_idsOf(second.state), <String>['D', 'E']);
+  });
+
+  test('a visibility reload keeps the stale-load guard', () async {
+    final Completer<List<PrismWallpaper>> oldWalls = Completer<List<PrismWallpaper>>();
+    final Completer<void> firstRequest = Completer<void>();
+    final Completer<void> reloadRequest = Completer<void>();
+    repository
+      ..pendingWalls['A'] = oldWalls
+      ..firstWallRequest = firstRequest
+      ..twoWallRequests = reloadRequest;
+    final MoodWallsCubit cubit = MoodWallsCubit(repository);
+    addTearDown(cubit.close);
+
+    final Future<void> oldLoad = cubit.load(WallMood.dreamy);
+    await firstRequest.future;
+
+    repository.moods = const <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: <String>['B']),
+    ];
+    repository.visibility.add(null);
+    await reloadRequest.future;
+    await pumpEventQueue();
+
+    expect(_idsOf(cubit.state), <String>['B']);
+
+    oldWalls.complete(<PrismWallpaper>[_wall('OLD')]);
+    await oldLoad;
+
+    expect(_idsOf(cubit.state), <String>['B']);
+  });
+
+  test('does not emit a pending wall result after close', () async {
+    final Completer<List<PrismWallpaper>> pendingWalls = Completer<List<PrismWallpaper>>();
+    final Completer<void> requestStarted = Completer<void>();
+    repository
+      ..pendingWalls['A'] = pendingWalls
+      ..firstWallRequest = requestStarted;
+    final MoodWallsCubit cubit = MoodWallsCubit(repository);
+    final List<MoodWallsState> states = <MoodWallsState>[];
+    final StreamSubscription<MoodWallsState> subscription = cubit.stream.listen(states.add);
+    addTearDown(subscription.cancel);
+
+    final Future<void> load = cubit.load(WallMood.dreamy);
+    await requestStarted.future;
+    await cubit.close();
+    pendingWalls.complete(<PrismWallpaper>[_wall('A')]);
+    await load;
+    await pumpEventQueue();
+
+    expect(states.whereType<MoodWallsLoaded>(), isEmpty);
+    expect(cubit.state, isA<MoodWallsLoading>());
+  });
+
   test('reloads the same walls when the user blocks or unblocks a creator, and stops after close', () async {
     final MoodWallsCubit cubit = MoodWallsCubit(repository);
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -84,12 +85,22 @@ class MoodRepositoryImpl implements MoodRepository {
 
   @override
   Stream<void> watchVisibilityChanges() {
-    Set<String> blocked = <String>{..._userBlockRepository.cachedBlockedCreatorUids};
-    return _userBlockRepository.watchBlockedCreatorUids().where((next) {
-      if (next.length == blocked.length && next.containsAll(blocked)) return false;
-      blocked = <String>{...next};
-      return true;
-    });
+    return Stream<void>.multi((controller) {
+      Set<String> blocked = <String>{..._userBlockRepository.cachedBlockedCreatorUids};
+      final StreamSubscription<Set<String>> subscription = _userBlockRepository.watchBlockedCreatorUids().listen(
+        (next) {
+          if (next.length == blocked.length && next.containsAll(blocked)) return;
+          blocked = <String>{...next};
+          controller.add(null);
+        },
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+      controller
+        ..onPause = subscription.pause
+        ..onResume = subscription.resume
+        ..onCancel = subscription.cancel;
+    }, isBroadcast: true);
   }
 
   @override

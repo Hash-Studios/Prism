@@ -238,4 +238,52 @@ void main() {
     await pumpEventQueue();
     expect(changes, 2);
   });
+
+  test('watchVisibilityChanges gives each listener an independent deduplication state', () async {
+    final Stream<void> changes = repository.watchVisibilityChanges();
+    int firstListenerChanges = 0;
+    int secondListenerChanges = 0;
+    final StreamSubscription<void> first = changes.listen((_) => firstListenerChanges++);
+    final StreamSubscription<void> second = changes.listen((_) => secondListenerChanges++);
+    addTearDown(first.cancel);
+    addTearDown(second.cancel);
+
+    blocks.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(firstListenerChanges, 0);
+    expect(secondListenerChanges, 0);
+
+    blocks.completeInitial(<String>{'creator-a'});
+    await pumpEventQueue();
+    expect(firstListenerChanges, 1);
+    expect(secondListenerChanges, 1);
+
+    blocks.completeInitial(<String>{'creator-a'});
+    await pumpEventQueue();
+    expect(firstListenerChanges, 1);
+    expect(secondListenerChanges, 1);
+
+    await first.cancel();
+    blocks.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(firstListenerChanges, 1);
+    expect(secondListenerChanges, 2);
+  });
+
+  test('separate visibility streams each emit blocked-creator changes', () async {
+    int firstListenerChanges = 0;
+    int secondListenerChanges = 0;
+    final StreamSubscription<void> first = repository.watchVisibilityChanges().listen((_) => firstListenerChanges++);
+    final StreamSubscription<void> second = repository.watchVisibilityChanges().listen((_) => secondListenerChanges++);
+    addTearDown(first.cancel);
+    addTearDown(second.cancel);
+
+    blocks.completeInitial(<String>{});
+    await pumpEventQueue();
+    blocks.completeInitial(<String>{'creator-a'});
+    await pumpEventQueue();
+
+    expect(firstListenerChanges, 1);
+    expect(secondListenerChanges, 1);
+  });
 }
