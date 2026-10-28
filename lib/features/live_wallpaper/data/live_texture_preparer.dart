@@ -90,14 +90,15 @@ class LiveTexturePreparer {
       codec.dispose();
       codec = null;
       recorder = ui.PictureRecorder();
-      final double decodedScale = decoded.width / descriptor.width;
+      final double decodedScaleX = decoded.width / descriptor.width;
+      final double decodedScaleY = decoded.height / descriptor.height;
       ui.Canvas(recorder).drawImageRect(
         decoded,
         ui.Rect.fromLTWH(
-          geometry.cropLeft * decodedScale,
-          geometry.cropTop * decodedScale,
-          geometry.cropWidth * decodedScale,
-          geometry.cropHeight * decodedScale,
+          geometry.cropLeft * decodedScaleX,
+          geometry.cropTop * decodedScaleY,
+          geometry.cropWidth * decodedScaleX,
+          geometry.cropHeight * decodedScaleY,
         ),
         ui.Rect.fromLTWH(0, 0, geometry.outputWidth.toDouble(), geometry.outputHeight.toDouble()),
         ui.Paint()..filterQuality = ui.FilterQuality.medium,

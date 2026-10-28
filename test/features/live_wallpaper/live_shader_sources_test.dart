@@ -13,7 +13,7 @@ void main() {
   final LivePalette lightPalette = LivePalette.fromAccent(const Color(0xFF2962FF), dark: false);
 
   group('shader lint negative controls', () {
-    final String shader = LiveShaderSources.gradient(GradientStyle.mesh, darkPalette);
+    final String shader = LiveShaderSources.gradient(GradientStyle.aurora, darkPalette);
 
     test('rejects generated shader comments exceeding 64 KiB in UTF-8', () {
       final String mutated = '$shader\n// ${'é' * (32 * 1024)}';
@@ -27,9 +27,19 @@ void main() {
       expect(validateShaderContract(mutated, textureCount: 0), contains('while or do loop'));
     });
 
+    test('rejects a sampler outside the renderer texture slots', () {
+      final String mutated = 'uniform sampler2D u_unknown;\n$shader';
+      expect(validateShaderContract(mutated, textureCount: 0), contains('unsupported sampler u_unknown'));
+    });
+
     test('rejects an unknown uniform added to a generated shader', () {
       final String mutated = 'uniform float u_unknown;\n$shader';
       expect(validateShaderContract(mutated, textureCount: 0), contains('unknown uniform u_unknown'));
+    });
+
+    test('rejects a float loop added to a generated shader', () {
+      final String mutated = shader.replaceFirst('for (int i', 'for (float i');
+      expect(validateShaderContract(mutated, textureCount: 0), anyElement(startsWith('dynamic for loop:')));
     });
 
     test('rejects dFdx added to a generated shader', () {
@@ -80,7 +90,7 @@ void main() {
   });
 
   group('3D shader', () {
-    test('has no u_tilt unless tilt is requested', () {
+    test('renderer contract without tilt omits u_tilt', () {
       expect(LiveShaderSources.motionTemplate(MotionStyle.depth), isNot(contains('u_tilt')));
     });
 
@@ -95,12 +105,12 @@ void main() {
       expect(validateShaderContract(shader, textureCount: 2), isEmpty);
     });
 
-    test('meets the contract with tilt when the renderer feeds u_tilt', () {
+    test('meets the future contract when a renderer supports tilt', () {
       final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
       expect(validateShaderContract(shader, textureCount: 2, tilt: true), isEmpty);
     });
 
-    test('fails the strict contract with tilt as an unknown uniform', () {
+    test('rejects tilt outside the Prism renderer contract', () {
       final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
       expect(validateShaderContract(shader, textureCount: 2), contains('unknown uniform u_tilt'));
     });
@@ -115,6 +125,24 @@ void main() {
         LiveShaderSources.motion(MotionStyle.drift, darkPalette, tilt: true),
         LiveShaderSources.motion(MotionStyle.drift, darkPalette),
       );
+    });
+
+    test('keeps valid depth endpoints and bounded motion within the zoom margin', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(shader, contains('float depth = texture2D(u_texture1, uv).r;'));
+      expect(shader, contains('motion = clamp(motion, -1.0, 1.0);'));
+
+      final double strength = double.parse(RegExp('const float strength = ([0-9.]+);').firstMatch(shader)!.group(1)!);
+      final double zoom = double.parse(
+        RegExp(r'uv = \(v_uv - 0.5\) / ([0-9.]+) \+ 0.5;').firstMatch(shader)!.group(1)!,
+      );
+      final double zoomMargin = (1 - 1 / zoom) / 2;
+      for (final double depth in <double>[0, 1]) {
+        for (final double motion in <double>[-1, 1]) {
+          final double shift = ((depth - 0.5) * strength * motion).abs();
+          expect(shift, lessThan(zoomMargin));
+        }
+      }
     });
 
     test('both depth sources carry the ponytail note', () {

@@ -28,7 +28,7 @@ List<String> validateShaderContract(String shader, {required int textureCount, b
   if (RegExp(r'\b(?:while|do)\b').hasMatch(source)) problems.add('while or do loop');
 
   final RegExp staticFor = RegExp(
-    r'(?:int|float)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*;\s*\1\s*(<=|<|>=|>)\s*(-?\d+)\s*;\s*((?:\1\s*(?:\+\+|--|\+=\s*\d+|-=\s*\d+))|(?:(?:\+\+|--)\s*\1))',
+    r'int\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*;\s*\1\s*(<=|<|>=|>)\s*(-?\d+)\s*;\s*((?:\1\s*(?:\+\+|--|\+=\s*\d+|-=\s*\d+))|(?:(?:\+\+|--)\s*\1))',
   );
   for (final RegExpMatch start in RegExp(r'\bfor\s*\(').allMatches(source)) {
     final int open = source.indexOf('(', start.start);

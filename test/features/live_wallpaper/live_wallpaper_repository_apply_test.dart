@@ -135,6 +135,43 @@ void main() {
     expect(request.fragmentShader, contains('uniform vec2 u_tilt;'));
   });
 
+  test('a depth-map download failure is reported and a later apply can retry', () async {
+    var prepareCalls = 0;
+    when(
+      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+    ).thenAnswer((_) async {
+      prepareCalls++;
+      if (prepareCalls == 1) throw const LiveTextureException(LiveApplyFailure.textureDownloadFailed);
+      return (photo: '/p.jpg', depth: '/d.jpg');
+    });
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
+
+    final first = await repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      depthMapUrl: 'https://example.test/map.png',
+    );
+    expect(first.failure, LiveApplyFailure.textureDownloadFailed);
+    verifyNever(() => client.applyOpenGlWallpaper(any()));
+
+    final retry = await repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      depthMapUrl: 'https://example.test/map.png',
+    );
+    expect(retry.status, LiveApplyStatus.confirmInPreview);
+    expect(prepareCalls, 2);
+    final request =
+        verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.textures.map((source) => source.filePath), <String>['/p.jpg', '/d.jpg']);
+  });
+
   test('texture preparation failure returns its reason without contacting the host', () async {
     when(() => texture.prepare('bad', 1)).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
     final outcome = await repository.applyMotion(
