@@ -1305,6 +1305,28 @@
       ]
     },
     {
+      "collectionGroup": "followedFolders",
+      "fieldPath": "folderId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
       "collectionGroup": "viewRate",
       "fieldPath": "expireAt",
       "ttl": true,

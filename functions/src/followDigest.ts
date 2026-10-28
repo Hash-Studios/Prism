@@ -154,12 +154,24 @@ async function deliverable(digest: Digest, offsets: number[]):
   };
 }
 
-/** Claims the follower's local day. A second run that day, or a retry after a send, finds the claim and stops. */
-export async function claimDay(uid: string, day: string, marker = "followDigest"): Promise<{previous: unknown} | null> {
+/** Claims the local day. Folder digests also fence recipient and owner deletion in the same transaction. */
+export async function claimDay(
+  uid: string, day: string, marker = "followDigest", ownerIds?: string[],
+): Promise<{previous: unknown} | null> {
   const ref = db.doc(`usersv2/${uid}/private/${marker}`);
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
     if (isLocalDay(data?.day) && data.day >= day) return null;
+    if (ownerIds) {
+      const open = await Promise.all([...new Set([uid, ...ownerIds])].map(async (accountId) => {
+        const [account, barrier] = await Promise.all([
+          tx.get(db.doc(`usersv2/${accountId}`)), tx.get(db.doc(`creatorDeletionState/${accountId}`)),
+        ]);
+        return account.exists && account.data()?.deleted !== true && barrier.data()?.closed !== true &&
+          (accountId !== uid || account.data()?.loggedIn !== false);
+      }));
+      if (open.some((value) => !value)) return null;
+    }
     tx.set(ref, {day, at: admin.firestore.FieldValue.serverTimestamp()});
     return {previous: data?.day ?? null};
   });

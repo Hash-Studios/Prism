@@ -36,7 +36,11 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
 
 class _FakeMoodRepository extends Fake implements MoodRepository {
   final List<String> requestedIds = <String>[];
+  final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
   bool? requestedKeepOrder;
+
+  @override
+  Stream<void> watchVisibilityChanges() => visibility.stream;
 
   @override
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
@@ -81,6 +85,8 @@ void main() {
     walls = _FakeMoodRepository();
   });
 
+  tearDown(() => walls.visibility.close());
+
   test('load shows the walls in folder order and the viewer follow state', () async {
     final PublicFolderCubit cubit = cubitFor(following: true);
     addTearDown(cubit.close);
@@ -97,6 +103,19 @@ void main() {
   test('load is unavailable when the folder read returns null', () async {
     repo.folder = Result.success(null);
     final PublicFolderCubit cubit = PublicFolderCubit(repo, walls);
+    addTearDown(cubit.close);
+
+    await cubit.load('f1', viewerId: 'u1');
+
+    expect(cubit.state.status, PublicFolderStatus.unavailable);
+    expect(cubit.state.folder, isNull);
+  });
+
+  test('load treats permission-denied item reads as private or unavailable', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    repo.wallIds = Result.error(
+      const PublicFolderFailure('private', refusal: PublicFolderRefusal.unavailable, code: 'permission-denied'),
+    );
     addTearDown(cubit.close);
 
     await cubit.load('f1', viewerId: 'u1');
@@ -160,20 +179,69 @@ void main() {
     expect(cubit.state.folder!.followerCount, 0);
   });
 
-  test('a refused toggleFollow restores the old follow state and count and returns the refusal', () async {
+  test('a temporary refused toggleFollow restores the old follow state and count and returns the refusal', () async {
     final PublicFolderCubit cubit = cubitFor(followerCount: 5, following: true);
     addTearDown(cubit.close);
     await cubit.load('f1', viewerId: 'u1');
     repo.onSetFollowing = () async =>
-        Result.error<void>(const PublicFolderFailure('x', refusal: PublicFolderRefusal.unavailable));
+        Result.error<void>(const PublicFolderFailure('x', refusal: PublicFolderRefusal.limit));
 
     final PublicFolderFailure? refusal = await cubit.toggleFollow();
 
     expect(refusal, isA<PublicFolderFailure>());
-    expect(refusal!.refusal, PublicFolderRefusal.unavailable);
+    expect(refusal!.refusal, PublicFolderRefusal.limit);
     expect(cubit.state.following, isTrue);
     expect(cubit.state.folder!.followerCount, 5);
     expect(cubit.state.followBusy, isFalse);
+  });
+
+  test('an unavailable follow refusal clears the folder and its walls', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    repo.onSetFollowing = () async =>
+        Result.error<void>(const PublicFolderFailure('private', refusal: PublicFolderRefusal.unavailable));
+
+    final PublicFolderFailure? refusal = await cubit.toggleFollow();
+
+    expect(refusal?.refusal, PublicFolderRefusal.unavailable);
+    expect(cubit.state.status, PublicFolderStatus.unavailable);
+    expect(cubit.state.folder, isNull);
+    expect(cubit.state.walls, isEmpty);
+    expect(cubit.state.followBusy, isFalse);
+  });
+
+  test('blocking the folder owner clears the loaded folder and ignores a pending follow result', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    final Completer<Result<void>> gate = Completer<Result<void>>();
+    repo.onSetFollowing = () => gate.future;
+    final Future<PublicFolderFailure?> pending = cubit.toggleFollow();
+
+    repo.folder = Result.success(null);
+    walls.visibility.add(null);
+    expect(cubit.state.folder, isNull);
+    expect(cubit.state.walls, isEmpty);
+    await pumpEventQueue();
+    expect(cubit.state.status, PublicFolderStatus.unavailable);
+
+    gate.complete(Result.success<void>(null));
+    await pending;
+    expect(cubit.state.status, PublicFolderStatus.unavailable);
+    expect(cubit.state.folder, isNull);
+    expect(cubit.state.walls, isEmpty);
+  });
+
+  test('closing cancels the visibility listener', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    await cubit.load('f1', viewerId: 'u1');
+    expect(walls.visibility.hasListener, isTrue);
+
+    await cubit.close();
+
+    expect(walls.visibility.hasListener, isFalse);
+    walls.visibility.add(null);
   });
 
   test('a second toggleFollow while the first is in flight does nothing', () async {
@@ -192,5 +260,36 @@ void main() {
     expect(await first, isNull);
     expect(cubit.state.followBusy, isFalse);
     expect(cubit.state.following, isTrue);
+  });
+
+  test('a stale follow response cannot overwrite a newer folder load', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    final Completer<Result<void>> gate = Completer<Result<void>>();
+    repo.onSetFollowing = () => gate.future;
+    final Future<PublicFolderFailure?> pending = cubit.toggleFollow();
+
+    repo
+      ..folder = Result.success(
+        const PublicFolderEntity(
+          id: 'f1',
+          ownerId: 'o1',
+          name: 'Updated',
+          itemCount: 4,
+          covers: <String>[],
+          followerCount: 10,
+        ),
+      )
+      ..following = Result.success(false)
+      ..wallIds = Result.success(<String>[]);
+    await cubit.load('f1', viewerId: 'u2');
+    gate.complete(Result.error<void>(const ServerFailure('refused')));
+    await pending;
+
+    expect(cubit.state.folder?.name, 'Updated');
+    expect(cubit.state.folder?.followerCount, 10);
+    expect(cubit.state.following, isFalse);
+    expect(cubit.state.followBusy, isFalse);
   });
 }

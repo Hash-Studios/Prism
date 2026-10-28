@@ -592,13 +592,17 @@ const cases = [
   ['stranger can get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, Bu), 200],
   ['user blocked by the owner cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, C), 403],
   ['user blocked by the owner cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, C), 403],
+  ['user blocked by the owner cannot list public folder items', () => runCollectionQuery(C, 'items', 'publicFolders/pf1'), 403],
   ['owner-blocked user cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, D), 403],
   ['owner-blocked user cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, D), 403],
+  ['owner-blocked user cannot list public folder items', () => runCollectionQuery(D, 'items', 'publicFolders/pf1'), 403],
   ['stranger cannot read an item under a missing public folder header', () => req('GET', 'publicFolders/orphan/items/prism_w1', null, Bu), 403],
+  ['stranger cannot list items under a missing public folder header', () => runCollectionQuery(Bu, 'items', 'publicFolders/orphan'), 403],
   ['owner cannot write a public folder projection', () => req('PATCH', 'publicFolders/pf1', { name: str('x') }, A, ['name']), 403],
   ['owner cannot write a public folder item projection', () => req('PATCH', 'publicFolders/pf1/items/prism_w1', { thumb: str('x') }, A, ['thumb']), 403],
   ['stranger cannot write a public folder follower', () => req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, Bu), 403],
   ['stranger cannot write a followed folder edge', () => req('PATCH', 'usersv2/b/followedFolders/pf1', { folderId: str('pf1') }, Bu), 403],
+  ['client cannot write root public folder repair state', () => req('PATCH', 'publicFolderState/pf1', { folderId: str('pf1') }, A), 403],
   ['owner cannot delete a public folder projection', () => req('DELETE', 'publicFolders/pf1', null, A), 403],
   ['owner cannot create a public folder projection', () => req('PATCH', 'publicFolders/new1', { ownerId: str('a'), name: str('New') }, A), 403],
   ['public folder followers are not readable', () => req('GET', 'publicFolders/pf1/followers/b', null, Bu), 403],
@@ -609,6 +613,7 @@ const cases = [
   ['owner cannot set public on a private folder', () => req('PATCH', 'folders/pf1', { public: { booleanValue: false } }, A, ['public']), 403],
   ['stranger can list public folders by owner', () => runQuery(Bu, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 200],
   ['blocked user cannot list public folders by owner', () => runQuery(C, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
+  ['owner-blocked user cannot list public folders by owner', () => runQuery(D, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
 ];
 await seed();
 let bad = 0;

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
@@ -103,6 +107,8 @@ FolderEntity _folder(String id, String name, {int itemCount = 0, List<String> co
 List<String> _urls(int count) => List<String>.generate(count, (i) => 'https://example.com/$i.jpg');
 
 class _NoPublicFolders implements PublicFoldersRepository {
+  final Map<String, List<PublicFolderEntity>> followedByUser = <String, List<PublicFolderEntity>>{};
+
   @override
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
@@ -115,7 +121,7 @@ class _NoPublicFolders implements PublicFoldersRepository {
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
-      Result.success(<PublicFolderEntity>[]);
+      Result.success(followedByUser[userId] ?? <PublicFolderEntity>[]);
 
   @override
   Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
@@ -125,6 +131,18 @@ class _NoPublicFolders implements PublicFoldersRepository {
 
   @override
   Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
+class _RacingPublicFolders extends _NoPublicFolders {
+  final Completer<Result<List<PublicFolderEntity>>> firstRead = Completer<Result<List<PublicFolderEntity>>>();
+  int fetchCalls = 0;
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) {
+    fetchCalls++;
+    if (fetchCalls == 1) return firstRead.future;
+    return Future<Result<List<PublicFolderEntity>>>.value(Result.success(<PublicFolderEntity>[]));
+  }
 }
 
 void main() {
@@ -183,6 +201,106 @@ void main() {
     );
     expect(find.byType(SliverGrid), findsNothing);
     expect(repo.calls.where((call) => call.startsWith('fetchFolders:')), isEmpty);
+  });
+
+  testWidgets('followed folders are cleared and reloaded when the signed-in account changes', (tester) async {
+    final _FakeFoldersRepository folders = _FakeFoldersRepository();
+    final _NoPublicFolders publicFolders = _NoPublicFolders()
+      ..followedByUser['u1'] = <PublicFolderEntity>[
+        const PublicFolderEntity(
+          id: 'old',
+          ownerId: 'owner',
+          name: 'Old account folder',
+          itemCount: 1,
+          covers: <String>[],
+          followerCount: 1,
+        ),
+      ]
+      ..followedByUser['u2'] = <PublicFolderEntity>[
+        const PublicFolderEntity(
+          id: 'new',
+          ownerId: 'owner',
+          name: 'New account folder',
+          itemCount: 1,
+          covers: <String>[],
+          followerCount: 1,
+        ),
+      ];
+    getIt.registerSingleton<PublicFoldersRepository>(publicFolders);
+    addTearDown(getIt.reset);
+    final FoldersBloc bloc = FoldersBloc(folders, publicFolders);
+    addTearDown(bloc.close);
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: const Scaffold(body: FoldersGrid()),
+          ),
+        ),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('Old account folder'), findsOneWidget);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    await bloc.run((id) => FoldersEvent.started(userId: 'u2', operationId: id));
+    await settle(tester);
+
+    expect(find.text('Old account folder'), findsNothing);
+    expect(find.text('New account folder'), findsOneWidget);
+  });
+
+  testWidgets('a stale followed-folder read cannot restore an unfollowed folder', (tester) async {
+    final _FakeFoldersRepository folders = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final _RacingPublicFolders publicFolders = _RacingPublicFolders();
+    getIt.registerSingleton<PublicFoldersRepository>(publicFolders);
+    addTearDown(getIt.reset);
+    final FoldersBloc bloc = FoldersBloc(folders, publicFolders);
+    addTearDown(bloc.close);
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(value: bloc, child: const Scaffold(body: FoldersGrid())),
+        ),
+      ),
+    );
+    await settle(tester);
+
+    await tester.tap(find.text('Work'));
+    await settle(tester);
+    publicFolders.firstRead.complete(
+      Result.success(<PublicFolderEntity>[
+        const PublicFolderEntity(
+          id: 'stale',
+          ownerId: 'owner',
+          name: 'Stale followed folder',
+          itemCount: 1,
+          covers: <String>[],
+          followerCount: 1,
+        ),
+      ]),
+    );
+    await settle(tester);
+
+    expect(publicFolders.fetchCalls, 2);
+    expect(find.text('Stale followed folder'), findsNothing);
   });
 
   testWidgets('renders nothing when no FoldersBloc is provided', (tester) async {
@@ -395,6 +513,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
     bloc.add(const FoldersEvent.started(userId: 'u2'));
     await settle(tester);
+    expect(bloc.state.userId, 'u2');
+    expect(bloc.state.status, LoadStatus.success);
+    expect(bloc.state.folders.map((folder) => folder.name), contains('Work'));
     expect(find.text('Work'), findsOneWidget);
   });
 

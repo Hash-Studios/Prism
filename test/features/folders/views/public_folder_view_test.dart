@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -60,6 +62,10 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
 }
 
 class _FakeMoodRepository implements MoodRepository {
+  _FakeMoodRepository({this.visibility = const Stream<void>.empty()});
+
+  final Stream<void> visibility;
+
   @override
   Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
 
@@ -68,7 +74,7 @@ class _FakeMoodRepository implements MoodRepository {
       const <PrismWallpaper>[];
 
   @override
-  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+  Stream<void> watchVisibilityChanges() => visibility;
 }
 
 PublicFolderEntity _folder({String ownerId = 'owner', int followerCount = 1}) => PublicFolderEntity(
@@ -160,10 +166,10 @@ void main() {
     expect(repo.followCalls, <(String, bool)>[('f1', false)]);
   });
 
-  testWidgets('a refused follow puts the button back to Follow', (tester) async {
+  testWidgets('a temporary refused follow puts the button back to Follow', (tester) async {
     final repo = _FakePublicFoldersRepository()
       ..folder = _folder()
-      ..followFailure = const PublicFolderFailure('refused', refusal: PublicFolderRefusal.unavailable);
+      ..followFailure = const PublicFolderFailure('refused', refusal: PublicFolderRefusal.limit);
     final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
     addTearDown(cubit.close);
     await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
@@ -175,6 +181,46 @@ void main() {
     expect(repo.followCalls, <(String, bool)>[('f1', true)]);
     expect(find.text('Follow'), findsOneWidget);
     expect(find.text('Following'), findsNothing);
+  });
+
+  testWidgets('an unavailable follow hides the stale header and Share action', (tester) async {
+    final repo = _FakePublicFoldersRepository()
+      ..folder = _folder()
+      ..followFailure = const PublicFolderFailure('private', refusal: PublicFolderRefusal.unavailable);
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+    expect(find.byTooltip('Share folder'), findsOneWidget);
+
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
+    expect(find.text('Night Owl'), findsNothing);
+    expect(find.byTooltip('Share folder'), findsNothing);
+    expect(find.text('Follow'), findsNothing);
+  });
+
+  testWidgets('blocking the owner while the folder is open hides its header and Share action', (tester) async {
+    final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
+    addTearDown(visibility.close);
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository(visibility: visibility.stream));
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+    expect(find.text('Night Owl'), findsOneWidget);
+    expect(find.byTooltip('Share folder'), findsOneWidget);
+
+    repo.folder = null;
+    visibility.add(null);
+    await _settle(tester);
+
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
+    expect(find.text('Night Owl'), findsNothing);
+    expect(find.byTooltip('Share folder'), findsNothing);
+    expect(find.text('Follow'), findsNothing);
   });
 
   testWidgets('the owner sees no follow button but can share the folder', (tester) async {

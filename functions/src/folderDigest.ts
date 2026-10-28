@@ -5,7 +5,7 @@ import {db, REGION, str} from "./common";
 import {claimDay, localDay, offsetsAtDigestTime, releaseDay} from "./followDigest";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
-import {FOLLOWED_FOLDERS, PUBLIC_FOLDERS} from "./publicFolders";
+import {FOLLOWED_FOLDERS, PUBLIC_FOLDERS, projectedItem, publicFolderDeps, publicFolderName} from "./publicFolders";
 import {galleryTags, galleryWall, tagsLine, type GalleryWall} from "./pushGallery";
 import {premiumCollections} from "./wallOfTheDay";
 
@@ -18,6 +18,7 @@ const MARKER = "folderDigest";
 
 /** A wall added to a public folder in the window. */
 export interface FolderWall {
+  itemKey: string;
   docId: string;
   addedMs: number;
   wall: GalleryWall;
@@ -98,12 +99,15 @@ export function folderDigestPayload(digest: FolderDigest, day: string) {
   };
 }
 
-async function recentFolders(nowMs: number): Promise<RecentFolder[]> {
+type IsAuthDisabled = (uid: string) => Promise<boolean>;
+
+async function recentFolders(nowMs: number, premium: string[]): Promise<RecentFolder[]> {
   const since = admin.firestore.Timestamp.fromMillis(nowMs - WINDOW_MS);
   const headers = await db.collection(PUBLIC_FOLDERS).where("lastAddedAt", ">=", since).get();
   if (headers.empty) return [];
-  const premium = await premiumCollections();
   return Promise.all(headers.docs.map(async (header) => {
+    const ownerId = str(header.data().ownerId);
+    if (!ownerId) return {folderId: header.id, ownerId, name: "", walls: []};
     const items = await header.ref.collection("items").where("projectedAt", ">=", since)
       .orderBy("projectedAt", "desc").limit(MAX_WALLS_PER_FOLDER).get();
     const walls = await Promise.all(items.docs.map(async (item): Promise<FolderWall | null> => {
@@ -113,15 +117,48 @@ async function recentFolders(nowMs: number): Promise<RecentFolder[]> {
       // The push uses the gallery gate: only approved walls that a free user can open.
       const wall = snap.exists ? galleryWall({id: snap.id, data: snap.data() ?? {}}, premium) : null;
       const projected = item.data().projectedAt as admin.firestore.Timestamp | undefined;
-      return wall ? {docId, addedMs: projected?.toMillis?.() ?? nowMs, wall} : null;
+      return wall ? {itemKey: item.id, docId, addedMs: projected?.toMillis?.() ?? nowMs, wall} : null;
     }));
     return {
       folderId: header.id,
-      ownerId: str(header.data().ownerId),
+      ownerId,
       name: str(header.data().name),
       walls: walls.filter((w): w is FolderWall => w !== null),
     };
   }));
+}
+
+/** Rechecks the public source and gallery gate immediately before a follower gets a digest. */
+async function currentFolder(
+  folder: RecentFolder,
+  premium: string[],
+  isAuthDisabled: IsAuthDisabled,
+): Promise<RecentFolder | null> {
+  const headerRef = db.collection(PUBLIC_FOLDERS).doc(folder.folderId);
+  const [header, source, owner, deletion] = await Promise.all([
+    headerRef.get(),
+    db.doc(`folders/${folder.folderId}`).get(),
+    db.doc(`usersv2/${folder.ownerId}`).get(),
+    db.doc(`creatorDeletionState/${folder.ownerId}`).get(),
+  ]);
+  const sourceData = source.data();
+  const name = publicFolderName(sourceData?.name);
+  if (!header.exists || str(header.data()?.ownerId) !== folder.ownerId || str(header.data()?.name) !== folder.name ||
+    !source.exists || sourceData?.public !== true || sourceData.moderationHidden === true ||
+    str(sourceData.ownerId) !== folder.ownerId || name !== folder.name || !owner.exists || owner.data()?.deleted === true ||
+    deletion.data()?.closed === true || await isAuthDisabled(folder.ownerId)) return null;
+  const walls = await Promise.all(folder.walls.map(async (recent): Promise<FolderWall | null> => {
+    const [sourceItem, snap] = await Promise.all([
+      db.doc(`folders/${folder.folderId}/items/${recent.itemKey}`).get(),
+      db.collection("walls").doc(recent.docId).get(),
+    ]);
+    const projected = await projectedItem(sourceItem.data(), folder.ownerId);
+    if (!snap.exists || projected?.wallpaperDocumentId !== recent.docId) return null;
+    const wall = galleryWall({id: snap.id, data: snap.data() ?? {}}, premium);
+    return wall ? {...recent, wall} : null;
+  }));
+  const valid = walls.filter((wall): wall is FolderWall => wall !== null);
+  return valid.length > 0 ? {...folder, walls: valid} : null;
 }
 
 /**
@@ -129,32 +166,40 @@ async function recentFolders(nowMs: number): Promise<RecentFolder[]> {
  * follows. Returns null when the follower must get no digest: deleted, signed out, not at 13:00 local, or without
  * the folder push switch on this device's token.
  */
-async function deliverable(digest: FolderDigest, offsets: number[]):
-  Promise<{digest: FolderDigest; offset: number; email: string} | null> {
-  const user = (await db.doc(`usersv2/${digest.uid}`).get()).data();
+async function deliverable(digest: FolderDigest, offsets: number[], premium: string[], isAuthDisabled: IsAuthDisabled):
+  Promise<{digest: FolderDigest; offset: number; email: string; token: string} | null> {
+  const [account, deletion] = await Promise.all([
+    db.doc(`usersv2/${digest.uid}`).get(), db.doc(`creatorDeletionState/${digest.uid}`).get(),
+  ]);
+  const user = account.data();
   const offset = user?.appOpenTimezoneOffsetMinutes;
   const email = str(user?.email);
-  if (!user || !email || user.deleted === true || user.loggedIn === false || !offsets.includes(offset)) return null;
+  if (!user || !email || user.deleted === true || user.loggedIn === false || deletion.data()?.closed === true ||
+    !offsets.includes(offset) || await isAuthDisabled(digest.uid)) return null;
   const session = (await db.doc(`usersv2/${digest.uid}/private/session`).get()).data();
   if (session?.folderAlerts !== true || typeof session.fcmToken !== "string" || !session.fcmToken.trim() ||
-    session.folderAlertsToken !== session.fcmToken) return null;
-  const keep = await Promise.all(digest.folders.map(async (folder) => {
-    const [mine, theirs, follows] = await Promise.all([
+    session.folderAlertsToken !== session.fcmToken || session.fcmTokenBindingVersion !== 1 ||
+    session.fcmTokenBindingToken !== session.fcmToken) return null;
+  const current = await Promise.all(digest.folders.map(async (folder) => {
+    const [mine, theirs, follows, fresh] = await Promise.all([
       db.doc(`usersv2/${digest.uid}/blockedUsers/${folder.ownerId}`).get(),
       db.doc(`usersv2/${folder.ownerId}/blockedUsers/${digest.uid}`).get(),
       db.doc(`usersv2/${digest.uid}/${FOLLOWED_FOLDERS}/${folder.folderId}`).get(),
+      currentFolder(folder, premium, isAuthDisabled),
     ]);
-    return !mine.exists && !theirs.exists && follows.exists;
+    return !mine.exists && !theirs.exists && follows.exists ? fresh : null;
   }));
-  const folders = digest.folders.filter((_, i) => keep[i]);
+  const folders = current.filter((folder): folder is RecentFolder => folder !== null);
   const replanned = planFolderDigests(folders, new Map(folders.map((f) => [f.folderId, [digest.uid]])))[0];
-  return replanned ? {digest: replanned, offset, email} : null;
+  return replanned ? {digest: replanned, offset, email, token: session.fcmToken} : null;
 }
 
 /** Sends the folder digests due at `nowMs`. Returns the number sent. */
 export async function sendDueFolderDigests(nowMs: number): Promise<number> {
   const offsets = offsetsAtDigestTime(nowMs, FOLDER_DIGEST_MINUTE);
-  const folders = (await recentFolders(nowMs)).filter((f) => f.walls.length > 0);
+  const premium = await premiumCollections();
+  const isAuthDisabled = (uid: string) => publicFolderDeps.authDisabled(uid);
+  const folders = (await recentFolders(nowMs, premium)).filter((f) => f.walls.length > 0);
   if (folders.length === 0) return 0;
   const followersByFolder = new Map<string, string[]>();
   for (const folder of folders) {
@@ -167,15 +212,18 @@ export async function sendDueFolderDigests(nowMs: number): Promise<number> {
   const failures: unknown[] = [];
   for (let i = 0; i < digests.length; i += CHUNK_SIZE) {
     const results = await Promise.allSettled(digests.slice(i, i + CHUNK_SIZE).map(async (planned) => {
-      const ready = await deliverable(planned, offsets);
+      const ready = await deliverable(planned, offsets, premium, isAuthDisabled);
       if (!ready) return false;
       const day = localDay(nowMs, ready.offset);
-      const claim = await claimDay(planned.uid, day, MARKER);
+      const claim = await claimDay(planned.uid, day, MARKER, ready.digest.folders.map((folder) => folder.ownerId));
       if (!claim) return false;
       let delivered = false;
       try {
-        delivered = await sendToUser({...folderDigestPayload(ready.digest, day), modifier: ready.email},
-          {uid: planned.uid, email: ready.email});
+        const latest = await deliverable(ready.digest, offsets, premium, isAuthDisabled);
+        if (!latest || localDay(nowMs, latest.offset) !== day || latest.token !== ready.token ||
+          latest.email !== ready.email) return false;
+        delivered = await sendToUser({...folderDigestPayload(latest.digest, day), modifier: latest.email},
+          {uid: planned.uid, email: latest.email, folderAlertsToken: latest.token});
         if (!delivered) throw new Error("folderDigest: push delivery failed.");
       } finally {
         if (!delivered) await releaseDay(planned.uid, day, claim.previous, MARKER);

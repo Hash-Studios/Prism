@@ -52,6 +52,7 @@ class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
     return FutureBuilder<Result<List<PublicFolderEntity>>>(
       future: _folders,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) return const SizedBox(width: double.infinity);
         final List<PublicFolderEntity> folders = snapshot.data?.data ?? const <PublicFolderEntity>[];
         return AnimatedSize(
           duration: context.motion(PrismDurations.fast),

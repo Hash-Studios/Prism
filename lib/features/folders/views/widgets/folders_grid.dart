@@ -33,6 +33,9 @@ class FoldersGrid extends StatefulWidget {
 
 class _FoldersGridState extends State<FoldersGrid> {
   List<PublicFolderEntity> _followed = const <PublicFolderEntity>[];
+  String _followedUserId = '';
+  String _requestedFollowedUserId = '';
+  int _followedRequestVersion = 0;
 
   @override
   void initState() {
@@ -44,9 +47,22 @@ class _FoldersGridState extends State<FoldersGrid> {
   /// The public folders the user follows. A failed read keeps the last list: the section is extra.
   Future<void> _loadFollowed() async {
     final String userId = app_state.prismUser.id;
-    if (userId.isEmpty || !getIt.isRegistered<PublicFoldersRepository>()) return;
+    if (userId.isEmpty) {
+      _followedRequestVersion++;
+      _requestedFollowedUserId = '';
+      if (mounted) setState(() => _followedUserId = '');
+      return;
+    }
+    if (!getIt.isRegistered<PublicFoldersRepository>()) return;
+    _requestedFollowedUserId = userId;
+    final int requestVersion = ++_followedRequestVersion;
     final Result<List<PublicFolderEntity>> result = await getIt<PublicFoldersRepository>().fetchFollowedFolders(userId);
-    if (mounted && result.isSuccess && app_state.prismUser.id == userId) setState(() => _followed = result.data!);
+    if (mounted && requestVersion == _followedRequestVersion && result.isSuccess && app_state.prismUser.id == userId) {
+      setState(() {
+        _followed = result.data!;
+        _followedUserId = userId;
+      });
+    }
   }
 
   Future<void> _open(String folderId) async {
@@ -142,15 +158,31 @@ class _FoldersGridState extends State<FoldersGrid> {
     final FoldersBloc? bloc = context.read<FoldersBloc?>();
     final AppLocalizations l10n = context.l10n;
     if (app_state.prismUser.id.isEmpty) {
+      _followedRequestVersion++;
+      _requestedFollowedUserId = '';
       return _message(SignInPrompt(feature: l10n.foldersSignInFeature));
     }
     if (bloc == null) return const SizedBox.shrink();
     return BlocBuilder<FoldersBloc, FoldersState>(
       bloc: bloc,
       builder: (context, state) {
-        if (app_state.prismUser.id.isEmpty) return _message(SignInPrompt(feature: l10n.foldersSignInFeature));
+        if (app_state.prismUser.id.isEmpty) {
+          _followedRequestVersion++;
+          _requestedFollowedUserId = '';
+          return _message(SignInPrompt(feature: l10n.foldersSignInFeature));
+        }
+        if (state.userId == app_state.prismUser.id &&
+            state.userId.isNotEmpty &&
+            getIt.isRegistered<PublicFoldersRepository>() &&
+            _requestedFollowedUserId != state.userId) {
+          _requestedFollowedUserId = state.userId;
+          scheduleMicrotask(_loadFollowed);
+        }
         // Until the bloc reloads for a new account, it still holds the last account's folders.
         final bool otherAccount = state.userId != app_state.prismUser.id;
+        final List<PublicFolderEntity> followed = _followedUserId == app_state.prismUser.id
+            ? _followed
+            : const <PublicFolderEntity>[];
         final bool loading = state.status == LoadStatus.initial || state.status == LoadStatus.loading;
         if (otherAccount || (state.folders.isEmpty && loading)) {
           return IgnorePointer(
@@ -175,7 +207,7 @@ class _FoldersGridState extends State<FoldersGrid> {
             ),
           );
         }
-        if (state.folders.isEmpty && _followed.isEmpty) {
+        if (state.folders.isEmpty && followed.isEmpty) {
           return _message(
             GlintState(
               kind: GlintStateKind.empty,
@@ -189,7 +221,7 @@ class _FoldersGridState extends State<FoldersGrid> {
         return _grid(
           context,
           itemCount: state.folders.length,
-          followed: _followed,
+          followed: followed,
           card: (index, width) {
             final FolderEntity folder = state.folders[index];
             return FolderCard(

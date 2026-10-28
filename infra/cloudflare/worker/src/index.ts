@@ -1595,6 +1595,9 @@ function getOgImageUrl(record: LinkRecord, env: Env): string {
   if (hasFolderShareImage(record)) {
     return record.preview.image_source_url;
   }
+  if (record.type === 'page' && isFolderPage(new URL(record.canonical_url))) {
+    return PRISM_APP_ICON_URL;
+  }
   if (isNonEmptyString(record.code)) {
     return `https://${DOMAIN}/og/${record.code}.jpg?v=${OG_CARD_VERSION}`;
   }

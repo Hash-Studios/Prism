@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -12,10 +14,11 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
   List<PublicFolderEntity> ownerFolders = const <PublicFolderEntity>[];
   Result<List<PublicFolderEntity>>? ownerFoldersResult;
+  Future<Result<List<PublicFolderEntity>>> Function(String ownerId)? ownerFoldersHandler;
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
-      ownerFoldersResult ?? Result.success(ownerFolders);
+      ownerFoldersHandler?.call(ownerId) ?? ownerFoldersResult ?? Result.success(ownerFolders);
 
   @override
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success(null);
@@ -122,5 +125,22 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Folders'), findsNothing);
+  });
+
+  testWidgets('changing profiles hides the old folders until the new profile read completes', (tester) async {
+    final Completer<Result<List<PublicFolderEntity>>> pending = Completer<Result<List<PublicFolderEntity>>>();
+    repo.ownerFolders = <PublicFolderEntity>[_folder('old', 'Old profile folder')];
+    await tester.pumpWidget(_host(const ProfileFoldersRow(ownerId: 'owner-a', ownProfile: false)));
+    await _settle(tester);
+    expect(find.text('Old profile folder'), findsOneWidget);
+
+    repo.ownerFoldersHandler = (_) => pending.future;
+    await tester.pumpWidget(_host(const ProfileFoldersRow(ownerId: 'owner-b', ownProfile: false)));
+    await tester.pump();
+    expect(find.text('Old profile folder'), findsNothing);
+
+    pending.complete(Result.success(<PublicFolderEntity>[_folder('new', 'New profile folder')]));
+    await _settle(tester);
+    expect(find.text('New profile folder'), findsOneWidget);
   });
 }

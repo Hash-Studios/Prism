@@ -142,6 +142,9 @@ export const blockUser = onCall(
       const callerEmailRaw = (callerData.email ?? "").toString().trim();
       const callerEmailNorm = callerEmailRaw ? normalizeEmailForMatch(callerEmailRaw) : "";
 
+      // The block already prevents new follows. Let this call repair any cleanup left by an earlier failure.
+      if (blockSnap.exists) return;
+
       if (targetRateSnap.exists) {
         const last = targetRateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
         if (isSameTargetCooldownActive(last?.toMillis(), nowMs)) {
@@ -220,6 +223,7 @@ export const blockUser = onCall(
       await removeFolderFollowsBetween(callerUid, blockedUid);
     } catch (err) {
       logger.error("blockUser: could not remove folder follows.", {callerUid, blockedUid, err});
+      throw new HttpsError("internal", "Could not remove folder follows. Try again.");
     }
 
     logger.info("blockUser: success", {callerUid, blockedUid, contentReportId: contentReportRef.id});

@@ -2619,6 +2619,20 @@ test('folder page links keep their push-gallery share image as og:image and skip
   assert.match(crawler, /og:image:height" content="545"/);
 });
 
+test('folder page links without an allowed preview image use the Prism icon, not a missing browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Night', description: '12 wallpapers', image_source_url: 'https://example.com/private.jpg' },
+  });
+  assert.equal(response.status, 201);
+  const { code } = await response.json();
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes('og:image" content="https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"'));
+  assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
+});
+
 test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
   const env = workerEnv(FOLDER_ENV);
   const hash = 'd'.repeat(64);

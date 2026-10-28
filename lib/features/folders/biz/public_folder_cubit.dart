@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
@@ -49,13 +51,30 @@ class PublicFolderState {
 /// A public folder seen by someone other than its owner: its walls, its header and the viewer's follow.
 @injectable
 class PublicFolderCubit extends Cubit<PublicFolderState> {
-  PublicFolderCubit(this._repository, this._walls) : super(const PublicFolderState());
+  PublicFolderCubit(this._repository, this._walls) : super(const PublicFolderState()) {
+    _visibility = _walls.watchVisibilityChanges().listen((_) {
+      final request = _request;
+      if (request != null) unawaited(load(request.folderId, viewerId: request.viewerId));
+    });
+  }
 
   final PublicFoldersRepository _repository;
   final MoodRepository _walls;
+  late final StreamSubscription<void> _visibility;
+  ({String folderId, String viewerId})? _request;
   int _loadVersion = 0;
 
+  @override
+  Future<void> close() async {
+    ++_loadVersion;
+    _request = null;
+    await _visibility.cancel();
+    return super.close();
+  }
+
   Future<void> load(String folderId, {required String viewerId}) async {
+    if (isClosed) return;
+    _request = (folderId: folderId, viewerId: viewerId);
     final int version = ++_loadVersion;
     bool current() => !isClosed && version == _loadVersion;
     emit(const PublicFolderState());
@@ -71,7 +90,11 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
           : _repository.isFollowing(folderId, viewerId),
     ).wait;
     if (!current()) return;
-    if (ids.isFailure) return emit(PublicFolderState(status: PublicFolderStatus.failure, folder: found));
+    if (ids.isFailure) {
+      final Object? failure = ids.failure;
+      final bool unavailable = failure is PublicFolderFailure && failure.refusal == PublicFolderRefusal.unavailable;
+      return emit(PublicFolderState(status: unavailable ? PublicFolderStatus.unavailable : PublicFolderStatus.failure));
+    }
     try {
       final List<PrismWallpaper> walls = await _walls.fetchMoodWalls(ids.data!, keepOrder: true);
       if (!current()) return;
@@ -93,6 +116,8 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
   Future<PublicFolderFailure?> toggleFollow() async {
     final PublicFolderEntity? folder = state.folder;
     if (folder == null || state.followBusy || state.status != PublicFolderStatus.ready) return null;
+    final int version = _loadVersion;
+    bool current() => !isClosed && version == _loadVersion;
     final bool next = !state.following;
     final int count = folder.followerCount;
     emit(
@@ -103,13 +128,17 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
       ),
     );
     final Result<void> result = await _repository.setFollowing(folder.id, following: next);
-    if (isClosed) return null;
+    if (!current()) return null;
     if (result.isSuccess) {
       emit(state.copyWith(followBusy: false));
       return null;
     }
-    emit(state.copyWith(following: !next, followBusy: false, folder: folder));
     final Object? failure = result.failure;
+    if (failure is PublicFolderFailure && failure.refusal == PublicFolderRefusal.unavailable) {
+      emit(const PublicFolderState(status: PublicFolderStatus.unavailable));
+    } else {
+      emit(state.copyWith(following: !next, followBusy: false, folder: folder));
+    }
     return failure is PublicFolderFailure ? failure : PublicFolderFailure(failure.toString());
   }
 }

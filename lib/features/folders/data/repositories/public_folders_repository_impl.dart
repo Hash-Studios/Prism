@@ -83,17 +83,33 @@ class PublicFoldersRepositoryImpl implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) => _guard(
-    'load folder walls',
-    () => _firestoreClient.query<String>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.publicFolderItems(folderId),
-        sourceTag: 'public_folders.fetch_items',
-        orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
-      ),
-      (data, docId) => parseString(data['id']),
-    ),
-  );
+  Future<Result<List<String>>> fetchWallIds(String folderId) async {
+    try {
+      return Result.success(
+        await _firestoreClient.query<String>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.publicFolderItems(folderId),
+            sourceTag: 'public_folders.fetch_items',
+            orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
+          ),
+          (data, docId) => parseString(data['id']),
+        ),
+      );
+    } catch (error) {
+      // The folder can become private or blocked after its header was read. Rules deny the item query in that case.
+      final FirestoreError firestoreError = mapFirestoreError(error);
+      if (firestoreError.code == 'permission-denied') {
+        return Result.error(
+          PublicFolderFailure(
+            'The folder is private or no longer available.',
+            refusal: PublicFolderRefusal.unavailable,
+            code: firestoreError.code,
+          ),
+        );
+      }
+      return Result.error(publicFolderFailure(error));
+    }
+  }
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) => _guard(

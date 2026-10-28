@@ -1,3 +1,4 @@
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/folders/data/repositories/public_folders_repository_impl.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
@@ -90,6 +91,18 @@ void main() {
       expect(result.isSuccess, isTrue);
       expect(calls.single.name, 'setFolderFollow');
       expect(calls.single.data, <String, Object?>{'folderId': 'f1', 'following': true});
+    });
+
+    test('a permission-denied item query is reported as an unavailable folder', () async {
+      final PublicFoldersRepositoryImpl repository = PublicFoldersRepositoryImpl(
+        FakeFirestoreClient()..queryError = FirestoreError(code: 'permission-denied', message: 'blocked'),
+      );
+
+      final Result<List<String>> result = await repository.fetchWallIds('f1');
+
+      expect(result.isFailure, isTrue);
+      expect(result.failure, isA<PublicFolderFailure>());
+      expect((result.failure! as PublicFolderFailure).refusal, PublicFolderRefusal.unavailable);
     });
   });
 }

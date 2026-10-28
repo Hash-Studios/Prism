@@ -17,7 +17,7 @@ interface ReportDoc {
 const HOLD_REPORTER_COUNT = 3;
 const MIN_REPORTER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Number of reporters, each counted once, whose account is older than 7 days. A failed lookup does not count. */
+/** Counts distinct reporters older than 7 days. Missing accounts do not count; transient lookup errors retry. */
 async function countTrustedReporters(
   reporterUids: Set<string>,
   nowMs: number,
@@ -32,6 +32,8 @@ async function countTrustedReporters(
         trusted += 1;
       }
     } catch (err) {
+      if ((err as {code?: string}).code !== "auth/user-not-found" &&
+        (err as Error).message !== "auth/user-not-found") throw err;
       logger.warn(
         "onContentReportCreated: could not read a reporter account.",
         {reporterUid: uid, err},
@@ -83,6 +85,7 @@ export const onContentReportCreated = onDocumentCreated(
   {
     document: "contentReports/{reportId}",
     region: REGION,
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data() as ReportDoc | undefined;
@@ -120,7 +123,11 @@ export const onContentReportCreated = onDocumentCreated(
           logger.warn("onContentReportCreated: public folder hidden after reports.", {reportId, targetId});
         }
       } catch (err) {
-        logger.error("onContentReportCreated: could not check the folder reports.", {reportId, targetId, err});
+        const code = (err as {code?: string | number}).code;
+        if (code !== "not-found" && code !== "NOT_FOUND" && code !== 5) {
+          logger.error("onContentReportCreated: could not check the folder reports.", {reportId, targetId, err});
+          throw err;
+        }
       }
     }
 

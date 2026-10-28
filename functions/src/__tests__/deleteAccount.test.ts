@@ -12,6 +12,7 @@ type Options = {
   failDelete?: boolean;
   failFirstDelete?: boolean;
   failUpdate?: boolean;
+  failFolderFollows?: boolean;
   slowQueries?: boolean;
   authError?: string;
   authEmail?: string;
@@ -104,6 +105,7 @@ function fake(t: TestContext, options: Options = {}) {
   });
   t.mock.method(publicFolders, "removeAllFolderFollows", async (uid: string) => {
     log.push(`folderFollows:${uid}`);
+    if (options.failFolderFollows) throw new Error("folder follow cleanup failed");
   });
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
@@ -301,6 +303,16 @@ test("public folders and folder follows go after the deletion barrier and before
   assert.ok(barrier >= 0 && projections > barrier && follows > barrier);
   assert.ok(follows < log.indexOf("recursive:usersv2/u1/followedFolders"));
   assert.ok(log.indexOf("recursive:usersv2/u1/private") < log.indexOf("anonymize"));
+});
+
+test("failed folder-follow cleanup stops deletion before private state is removed", async (t) => {
+  const log = fake(t, {failFolderFollows: true});
+  await assert.rejects(call, /folder follow cleanup failed/);
+  assert.ok(log.includes("publicFolders:u1"));
+  assert.ok(log.includes("folderFollows:u1"));
+  assert.ok(!log.includes("recursive:usersv2/u1/followedFolders"));
+  assert.ok(!log.includes("anonymize"));
+  assert.ok(!log.includes("auth"));
 });
 
 test("a failed update throws before the profile is anonymized or the auth user removed", async (t) => {
