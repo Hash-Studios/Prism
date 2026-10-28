@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -14,6 +18,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+import 'package:Prism/features/taste_quiz/taste_quiz.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -73,6 +78,8 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
     required this.initialFeedMix,
     required this.onSave,
     this.tasteSignals,
+    this.tasteQuiz,
+    this.openRetake = openTasteQuizRetake,
   });
 
   final List<PersonalizedInterest> catalog;
@@ -83,28 +90,58 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
   /// Defaults to the app-wide store.
   final TasteSignalStore? tasteSignals;
 
+  /// Defaults to the app-wide repository.
+  final TasteQuizRepository? tasteQuiz;
+
+  /// Shows the quiz over the sheet and waits for it to close.
+  final Future<bool?> Function(BuildContext context, {required TasteQuizPlan plan}) openRetake;
+
   @override
   State<PersonalizedFeedSettingsSheet> createState() => _PersonalizedFeedSettingsSheetState();
 }
 
 class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettingsSheet> {
   late final TasteSignalStore _tasteSignals = widget.tasteSignals ?? getIt<TasteSignalStore>();
+  late final TasteQuizRepository _tasteQuiz = widget.tasteQuiz ?? getIt<TasteQuizRepository>();
   late TasteProfile _learned;
   late Set<String> _selectedInterests;
   late FeedMix _feedMix;
   bool _saving = false;
+  bool _loadingQuiz = false;
 
   @override
   void initState() {
     super.initState();
     _selectedInterests = {...widget.initialInterests};
     _feedMix = widget.initialFeedMix;
-    _learned = TasteProfile.build(
-      interests: const <String>[],
-      following: const <String>[],
-      signals: _tasteSignals.read(),
-      now: DateTime.now(),
-    );
+    _learned = _readLearned();
+  }
+
+  TasteProfile _readLearned() => TasteProfile.build(
+    interests: const <String>[],
+    following: const <String>[],
+    signals: _tasteSignals.read(),
+    now: DateTime.now(),
+  );
+
+  /// Runs the quiz over the sheet. The picks add to what the feed already learned.
+  Future<void> _retakeQuiz() async {
+    if (_loadingQuiz) return;
+    unawaited(analytics.track(const TasteQuizRetakeOpenedEvent()));
+    setState(() => _loadingQuiz = true);
+    final List<String> interests = _selectedInterests.toList(growable: false);
+    final TasteQuizPlan? plan = await _tasteQuiz.loadPlan(interests);
+    if (!mounted) return;
+    setState(() => _loadingQuiz = false);
+    if (plan == null) {
+      toasts.error(context.l10n.tasteQuizRetakeFailed);
+      return;
+    }
+    // Back during "Tuning your feed" returns null, but the picks are already stored, so refresh either way.
+    await widget.openRetake(context, plan: plan);
+    if (!mounted) return;
+    personalizedFeedSettingsRevision.value += 1;
+    setState(() => _learned = _readLearned());
   }
 
   bool get _canSave => !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
@@ -177,6 +214,15 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
           AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),
             child: KeyedSubtree(key: ValueKey<bool>(_learned.topTerms(1).isEmpty), child: _buildLearned(context)),
+          ),
+          const SizedBox(height: PrismSpace.md),
+          PrismButton(
+            label: context.l10n.tasteQuizRetake,
+            variant: PrismButtonVariant.tonal,
+            icon: Icons.compare_rounded,
+            expand: true,
+            loading: _loadingQuiz,
+            onPressed: _saving ? null : _retakeQuiz,
           ),
           const SizedBox(height: PrismSpace.xl),
           ..._buildStartingPoints(context),

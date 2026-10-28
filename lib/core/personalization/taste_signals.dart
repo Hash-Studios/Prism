@@ -7,8 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 /// Things a user does with a wallpaper. The ranker turns these into weights,
-/// like X's heavy ranker weighs predicted actions.
-enum TasteAction { open, favourite, download, set, lessLikeThis }
+/// like X's heavy ranker weighs predicted actions. [passedOver] is the wall
+/// that lost a "This or that" round.
+enum TasteAction { open, favourite, download, set, lessLikeThis, passedOver }
 
 const Set<String> _noiseTerms = <String>{'community', 'general', 'wallpaper', 'wallpapers'};
 

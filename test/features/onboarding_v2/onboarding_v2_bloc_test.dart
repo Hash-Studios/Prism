@@ -29,6 +29,7 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -58,6 +59,8 @@ class _MockSettingsLocalDataSource extends Mock implements SettingsLocalDataSour
 class _MockFirebaseRemoteConfig extends Mock implements FirebaseRemoteConfig {}
 
 class _MockAiGenerationRepository extends Mock implements AiGenerationRepositoryImpl {}
+
+class _MockTasteQuizRepository extends Mock implements TasteQuizRepository {}
 
 PrismUsersV2 _user({required String id, required bool loggedIn, bool premium = false}) {
   final now = DateTime.now().toUtc().toIso8601String();
@@ -125,6 +128,7 @@ void main() {
   late _MockSettingsLocalDataSource settingsLocalDataSource;
   late _MockFirebaseRemoteConfig remoteConfig;
   late _MockAiGenerationRepository aiRepository;
+  late _MockTasteQuizRepository tasteQuizRepository;
   late FakeAppAnalytics analytics;
   late Completer<OnboardingWallpaperVm?> pendingWallpaperLoad;
   late Completer<AppLocalizationsEn> pendingLocalizations;
@@ -153,6 +157,8 @@ void main() {
     settingsLocalDataSource = _MockSettingsLocalDataSource();
     remoteConfig = _MockFirebaseRemoteConfig();
     aiRepository = _MockAiGenerationRepository();
+    tasteQuizRepository = _MockTasteQuizRepository();
+    when(() => tasteQuizRepository.loadPlan(any())).thenAnswer((_) async => null);
     pendingLocalizations = Completer<AppLocalizationsEn>();
     localizationsLoadStarted = Completer<void>();
 
@@ -189,6 +195,7 @@ void main() {
     categoryFeedRepository,
     onboardingRepository,
     settingsLocalDataSource,
+    tasteQuizRepository,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
     acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',

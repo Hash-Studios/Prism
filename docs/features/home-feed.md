@@ -149,6 +149,27 @@ The analytics context of the first load tells the cases apart: `personalized_fee
 
 When the user changes the anime or sketchy filter, `personalizedFeedSettingsRevision` goes up by 1. The feed drops its items, shows skeletons and loads page 1 again.
 
+### Taste signals
+
+The For you ranker learns from things the user does with a wall. The app keeps these signals on the device only (`TasteSignalStore`, at most 300). Each action has a weight (`TasteProfile.actionWeights`):
+
+| Action | Weight | Comes from |
+|---|---|---|
+| `open` | 1 | The wallpaper screen opens. |
+| `favourite` | 3 | A favourite, or a pick in "This or that". |
+| `download` | 4 | A download. |
+| `set` | 6 | A set wallpaper. |
+| `passedOver` | -0.5 | The wall that lost a round of "This or that". It is a hint, not a dislike. |
+| `lessLikeThis` | -8 | Show less like this. |
+
+A weight halves every 30 days. "Clear" in the Tune sheet removes all signals.
+
+### This or that
+
+The quiz runs in onboarding (see [onboarding.md](onboarding.md)) and again from the Tune sheet: tap the selected **For you** tab, then **Retake This or that**. The retake loads walls from the picks in the sheet. If they do not load, a toast says "Couldn't load walls. Check your connection and try again." The retake adds to the signals the user already has. It does not clear them. After "Tuning your feed" the sheet shows again with the new learned pills, and the feed loads page 1 again.
+
+The quiz does not set the "seeded" flag of `TasteSignalStore`. That flag means the app already read the user's favourites into the signals. The quiz signals and the favourites import add to each other.
+
 ### Show less like this
 
 - The row is in the quick actions sheet of the For you grid. The wallpaper leaves the grid at once. A bar shows "Got it. You'll see fewer like this." with **Undo**.
@@ -204,6 +225,7 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 16. On **For you**, make sure the mood chips show under the carousel. Tap **Dreamy**. Make sure the mood page opens with its title, one line of text and a grid. Tap a tile and swipe. Make sure the walls of the mood show.
 17. Scroll the For you grid. Make sure a mood row shows after 4 rows and a second one after 12 rows. Tap **See all**. Make sure the mood page opens.
 18. On an iOS 26 device, make sure the **Spatial ready** and **Depth ready** chips show. On Android, make sure they do not show.
+19. Tap the selected **For you** tab, then **Retake This or that**. Pick 6 times. Make sure "Tuning your feed" shows, then the sheet comes back with new learned pills. Close the sheet. Make sure the feed leads with walls like your picks.
 
 Automated tests:
 
@@ -219,6 +241,8 @@ Automated tests:
 - `test/features/navigation/prism_top_app_bar_test.dart`
 - `test/features/navigation/prism_bottom_nav_test.dart`
 - `test/features/navigation/prism_fab_test.dart`
+- `test/features/navigation/tune_sheet_retake_test.dart`
+- `test/features/taste_quiz/taste_quiz_ranking_test.dart`
 - `test/features/prism_feed/biz/bloc/paged_feed_bloc_test.dart`
 - `test/core/widgets/home/loading_cards_test.dart`
 - `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`

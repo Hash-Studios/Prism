@@ -8,6 +8,18 @@ enums:
       - both
       - lock
       - home
+  - name: taste_quiz_source
+    dart_type: TasteQuizSource
+    import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
+    values:
+      - onboarding
+      - retake
+  - name: quiz_side
+    dart_type: QuizSide
+    import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
+    values:
+      - left
+      - right
   - name: binary_result
     dart_type: BinaryResultValue
     values:
@@ -1588,6 +1600,44 @@ events:
       - name: total_elapsed_ms
         key: total_elapsed_ms
         type: int
+  - id: taste_quiz_started
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+  - id: taste_quiz_round_picked
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+      - name: round_index
+        key: round_index
+        type: int
+      - name: side
+        key: side
+        type: enum
+        enum: QuizSide
+      - name: wild_card
+        key: wild_card
+        type: bool
+  - id: taste_quiz_skipped
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+      - name: round_index
+        key: round_index
+        type: int
+  - id: taste_quiz_completed
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+  - id: taste_quiz_retake_opened
   - id: badge_earned
     fields:
       - name: badge_id

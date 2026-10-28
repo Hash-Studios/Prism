@@ -27,6 +27,8 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
@@ -51,7 +53,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     this._firstWallpaperService,
     this._categoryFeedRepository,
     this._onboardingRepository,
-    this._settingsLocal, {
+    this._settingsLocal,
+    this._tasteQuizRepository, {
     @ignoreParam FirebaseRemoteConfig? remoteConfig,
     @ignoreParam AiGenerationRepositoryImpl? aiRepository,
     @ignoreParam Future<String> Function(String)? acquireGeneratedImage,
@@ -73,6 +76,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_StarterPackConfirmed>(_onStarterPackConfirmed);
     on<_StarterPackReloadRequested>(_onStarterPackReloadRequested);
     on<_StarterPackSkipped>(_onStarterPackSkipped);
+    on<_TasteQuizFinished>(_onTasteQuizFinished);
     on<_FirstWallpaperActionRequested>(_onFirstWallpaperActionRequested);
     on<_FirstWallpaperActionCompleted>(_onFirstWallpaperActionCompleted);
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
@@ -92,6 +96,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final CategoryFeedRepository _categoryFeedRepository;
   final OnboardingV2Repository _onboardingRepository;
   final SettingsLocalDataSource _settingsLocal;
+  final TasteQuizRepository _tasteQuizRepository;
   final FirebaseRemoteConfig? _remoteConfigOverride;
   final Future<AppLocalizations> Function() _loadLocalizations;
   FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
@@ -107,6 +112,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   static const String _stepAuth = 'auth';
   static const String _stepInterests = 'interests';
+  static const String _stepTasteQuiz = 'taste_quiz';
   static const String _stepStarterPack = 'starter_pack';
   static const String _stepAiGenerate = 'ai_generate';
   static const String _stepFirstWallpaper = 'first_wallpaper';
@@ -118,6 +124,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   int _saveAttemptId = 0;
   int _completionAttemptId = 0;
   bool _paywallHandled = false;
+
+  /// The quiz runs at most once per onboarding, so going back and forward never records the picks twice.
+  bool _tasteQuizOffered = false;
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) {
     unawaited(analytics.track(const OnboardingStartedEvent()));
@@ -347,6 +356,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedInterests = state.interestsData.selected;
+    // Loads while the interests save, so the quiz rarely adds a wait. It gives up within its own budget.
+    final Future<TasteQuizPlan?> quizPlan = _tasteQuizOffered
+        ? Future<TasteQuizPlan?>.value()
+        : _tasteQuizRepository.loadPlan(selectedInterests);
     final result = await _saveInterestsUseCase(SaveInterestsParams(interests: selectedInterests));
     if (attemptId != _saveAttemptId) return;
 
@@ -358,12 +371,52 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
     _trackStepCompleted(_stepInterests);
 
-    final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
+    OnboardingWallpaperVm? refreshedWallpaper;
+    try {
+      refreshedWallpaper = await _firstWallpaperService
+          .recommendForOnboarding(selectedInterests)
+          .timeout(_onboardingEnrichmentBudget, onTimeout: () => null);
+    } catch (error, stackTrace) {
+      logger.w('Could not refresh the onboarding wallpaper.', error: error, stackTrace: stackTrace);
+    }
     if (attemptId != _saveAttemptId) return;
+    final plan = await quizPlan;
+    if (attemptId != _saveAttemptId || isClosed) return;
+    final wallpaperData = OnboardingWallpaperData(
+      wallpaper: refreshedWallpaper ?? state.wallpaperData.wallpaper,
+      status: FirstWallpaperStatus.idle,
+    );
 
+    if (plan != null) {
+      _tasteQuizOffered = true;
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.success,
+          step: OnboardingV2Step.tasteQuiz,
+          tasteQuizPlan: plan,
+          wallpaperData: wallpaperData,
+        ),
+      );
+      return;
+    }
+    await _continueAfterInterests(emit, attemptId, wallpaperData: wallpaperData);
+  }
+
+  Future<void> _onTasteQuizFinished(_TasteQuizFinished event, Emitter<OnboardingV2State> emit) async {
+    if (state.step != OnboardingV2Step.tasteQuiz) return;
+    if (event.completed) _trackStepCompleted(_stepTasteQuiz);
+    await _continueAfterInterests(emit, ++_saveAttemptId);
+  }
+
+  /// The starter pack comes after interests and the quiz, or the AI step when the user already follows creators.
+  Future<void> _continueAfterInterests(
+    Emitter<OnboardingV2State> emit,
+    int attemptId, {
+    OnboardingWallpaperData? wallpaperData,
+  }) async {
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
     final aiData = nextStep == OnboardingV2Step.aiGenerate
-        ? await _promptForInterests(selectedInterests)
+        ? await _promptForInterests(state.interestsData.selected)
         : state.aiData;
     if (attemptId != _saveAttemptId || isClosed) return;
     emit(
@@ -371,10 +424,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         actionStatus: ActionStatus.success,
         step: nextStep,
         aiData: aiData,
-        wallpaperData: OnboardingWallpaperData(
-          wallpaper: refreshedWallpaper ?? state.wallpaperData.wallpaper,
-          status: FirstWallpaperStatus.idle,
-        ),
+        tasteQuizPlan: null,
+        wallpaperData: wallpaperData ?? state.wallpaperData,
       ),
     );
   }
@@ -642,6 +693,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       // A signed-in user never goes back to the sign-in step.
       // A guest came from the sign-in step, so back returns there.
       OnboardingV2Step.interests => state.isGuest ? OnboardingV2Step.auth : null,
+      OnboardingV2Step.tasteQuiz => OnboardingV2Step.interests,
       OnboardingV2Step.starterPack => state.skipInterests ? null : OnboardingV2Step.interests,
       OnboardingV2Step.aiGenerate => state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
       OnboardingV2Step.firstWallpaper => OnboardingV2Step.aiGenerate,
@@ -659,6 +711,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       emit(
         state.copyWith(
           step: prevStep,
+          tasteQuizPlan: null,
           isGuest: state.isGuest && prevStep != OnboardingV2Step.auth,
           actionStatus: actionStatus,
           sessionInvalid: false,

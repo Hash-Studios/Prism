@@ -10481,4 +10481,130 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get moodEmptyBody => 'Wallpaper baru ditambahkan setiap hari.';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '${current}Pasang lagi. $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'Riwayat wallpaper';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'Riwayat wallpaper';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'Buka riwayat';
+
+  @override
+  String get wallpaperRecentlySet => 'Baru dipasang';
+
+  @override
+  String get wallpaperSetAgain => 'Pasang wallpaper ini lagi';
+
+  @override
+  String get wallpaperSort => 'Urutkan';
+
+  @override
+  String get tasteQuizTitle => 'Pilih yang lebih kamu suka';
+
+  @override
+  String get tasteQuizWildCard => 'Kejutan';
+
+  @override
+  String tasteQuizProgress(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$currentString dari $totalString';
+  }
+
+  @override
+  String tasteQuizProgressLabel(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Putaran $currentString dari $totalString';
+  }
+
+  @override
+  String get tasteQuizSkip => 'Lewati';
+
+  @override
+  String tasteQuizPickLabel(int position, int total) {
+    final intl.NumberFormat positionNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String positionString = positionNumberFormat.format(position);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Pilih wallpaper ini, $positionString dari $totalString';
+  }
+
+  @override
+  String get tasteQuizTuningTitle => 'Menyesuaikan feed kamu';
+
+  @override
+  String tasteQuizSummaryFull(String tone, String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalis', 'other': 'detail'});
+    return '$_temp0, $_temp1, sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryToneDensity(String tone, String density) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalis', 'other': 'detail'});
+    return '$_temp0 dan $_temp1';
+  }
+
+  @override
+  String tasteQuizSummaryToneTag(String tone, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    return '$_temp0, dengan sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryDensityTag(String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(density, {'minimal': 'Minimalis', 'other': 'Detail'});
+    return '$_temp0, dengan sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryTone(String tone) {
+    String _temp0 = intl.Intl.selectLogic(tone, {
+      'dark': 'Kebanyakan wallpaper gelap',
+      'other': 'Kebanyakan wallpaper terang',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryDensity(String density) {
+    String _temp0 = intl.Intl.selectLogic(density, {
+      'minimal': 'Kebanyakan wallpaper minimalis',
+      'other': 'Kebanyakan wallpaper detail',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryTag(String tag) {
+    return 'Lebih banyak wallpaper $tag';
+  }
+
+  @override
+  String get tasteQuizSummaryReady => 'Feed kamu sudah siap';
+
+  @override
+  String get tasteQuizRetake => 'Ulangi Ini atau itu';
+
+  @override
+  String get tasteQuizRetakeFailed => 'Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.';
 }

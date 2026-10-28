@@ -8389,27 +8389,49 @@
     }
   },
   "setScreenTargetHome": "Startbildschirm",
-  "@setScreenTargetHome": {"description":"Segment on the Set screen that targets the home screen."},
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
   "setScreenTargetLock": "Sperrbildschirm",
-  "@setScreenTargetLock": {"description":"Segment on the Set screen that targets the lock screen."},
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
   "setScreenTargetBoth": "Beide",
-  "@setScreenTargetBoth": {"description":"Segment on the Set screen that targets the home and lock screens."},
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
   "setScreenTargetGroup": "Wo festlegen",
-  "@setScreenTargetGroup": {"description":"Screen reader label for the group of target segments on the Set screen."},
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
   "setScreenRemember": "Auswahl merken",
-  "@setScreenRemember": {"description":"Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."},
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
   "setScreenRememberHint": "Festlegen überspringt diesen Bildschirm beim nächsten Mal. Halte Festlegen gedrückt, um zurückzukehren.",
-  "@setScreenRememberHint": {"description":"Caption under \"Remember this choice\" when it is checked."},
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
   "setScreenAdjust": "Anpassen",
-  "@setScreenAdjust": {"description":"Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."},
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
   "setScreenMore": "Mehr",
-  "@setScreenMore": {"description":"Button on the Set screen that shows more ways to set the wallpaper."},
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
   "setScreenPairLock": "Anderes Hintergrundbild für den Sperrbildschirm verwenden",
-  "@setScreenPairLock": {"description":"Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."},
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
   "setScreenOpenSystemEditor": "Systemeditor öffnen",
-  "@setScreenOpenSystemEditor": {"description":"Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."},
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
   "setScreenClose": "Schließen",
-  "@setScreenClose": {"description":"Tooltip for the close button on the Set screen."},
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
+  },
   "wallpaperShare": "Teilen",
   "@wallpaperShare": {
     "description": "Action to share selected wallpapers."
@@ -9114,9 +9136,13 @@
     "description": "Accessibility label for the profile button."
   },
   "coreSignInCreatorSearchFeature": "Suche nach Kreativen",
-  "@coreSignInCreatorSearchFeature": {"description":"Feature name inserted into the sign-in title for creator search."},
+  "@coreSignInCreatorSearchFeature": {
+    "description": "Feature name inserted into the sign-in title for creator search."
+  },
   "debugLogExportSubject": "Prism-Debugprotokolle",
-  "@debugLogExportSubject": {"description":"Subject of the shared diagnostic log export."},
+  "@debugLogExportSubject": {
+    "description": "Subject of the shared diagnostic log export."
+  },
   "economyAiPromptSceneAnime1": "Eine Katze döst auf dem sonnigen Bahnsteig",
   "economyAiPromptSceneAnime2": "Hohe Sommerwolken über Reisfeldern",
   "economyAiPromptSceneAnime3": "Ein Ramen-Stand leuchtet in regnerischer Gasse",
@@ -9239,9 +9265,35 @@
   "economyAiPromptPaletteCrimsonCharcoal": "Rot und Anthrazit",
   "economyAiPromptSuffix": "Smartphone-Hintergrund hochkant, ohne Text",
   "economyAiPromptComposition": "{scene}, {lighting}, {palette}. {suffix}",
-  "@economyAiPromptComposition": {"description":"A complete AI wallpaper prompt. Translate the whole message naturally.","placeholders":{"scene":{"type":"String"},"lighting":{"type":"String"},"palette":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptComposition": {
+    "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "lighting": {
+        "type": "String"
+      },
+      "palette": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiPromptSceneOnly": "{scene}, {suffix}",
-  "@economyAiPromptSceneOnly": {"description":"An AI wallpaper scene prompt with wallpaper instructions.","placeholders":{"scene":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptSceneOnly": {
+    "description": "An AI wallpaper scene prompt with wallpaper instructions.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiMadeWithPrism": "Mit Prism AI erstellt",
   "onboardingAiPromptFallback": "ein wunderschönes Hintergrundbild",
   "onboardingAiPromptNature1": "Ein Gletschersee bei Sonnenaufgang, spiegelglatt, rosa Berggipfel",
@@ -9556,5 +9608,196 @@
   "moodEmptyBody": "Jeden Tag kommen neue Hintergründe dazu.",
   "@moodEmptyBody": {
     "description": "Empty state body on a mood page."
+  },
+  "wallpaperHistoryTileSemantic": "{current}Erneut festlegen. {target}, {date}",
+  "@wallpaperHistoryTileSemantic": {
+    "description": "Accessibility description for a wallpaper history tile.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperHistoryTitle": "Verlauf der Hintergrundbilder",
+  "@wallpaperHistoryTitle": {
+    "description": "Title of the wallpaper history screen."
+  },
+  "wallpaperLibraryHistoryBody": "Hier findest du Hintergrundbilder, die du festgelegt hast, und kannst sie erneut verwenden.",
+  "@wallpaperLibraryHistoryBody": {
+    "description": "Description for the history introduction in the library."
+  },
+  "wallpaperLibraryHistoryTitle": "Verlauf der Hintergrundbilder",
+  "@wallpaperLibraryHistoryTitle": {
+    "description": "Title for the history introduction in the library."
+  },
+  "wallpaperLibraryOpenHistory": "Verlauf öffnen",
+  "@wallpaperLibraryOpenHistory": {
+    "description": "Action to open wallpaper history."
+  },
+  "wallpaperRecentlySet": "Kürzlich festgelegt",
+  "@wallpaperRecentlySet": {
+    "description": "Section heading for recently set wallpapers."
+  },
+  "wallpaperSetAgain": "Dieses Hintergrundbild erneut festlegen",
+  "@wallpaperSetAgain": {
+    "description": "Accessibility label to set a recently set wallpaper again."
+  },
+  "wallpaperSort": "Sortieren",
+  "@wallpaperSort": {
+    "description": "Accessibility label for the favourites sort menu."
+  },
+  "tasteQuizTitle": "Welches gefällt dir besser?",
+  "@tasteQuizTitle": {
+    "description": "Headline on each round of the This or that quiz, above two wallpapers side by side."
+  },
+  "tasteQuizWildCard": "Wildcard",
+  "@tasteQuizWildCard": {
+    "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
+  },
+  "tasteQuizProgress": "{current} von {total}",
+  "@tasteQuizProgress": {
+    "description": "Quiz progress, for example 1 of 6.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizProgressLabel": "Runde {current} von {total}",
+  "@tasteQuizProgressLabel": {
+    "description": "Screen reader label for the quiz progress.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizSkip": "Überspringen",
+  "@tasteQuizSkip": {
+    "description": "Button that ends the This or that quiz early and continues."
+  },
+  "tasteQuizPickLabel": "Dieses Hintergrundbild wählen, {position} von {total}",
+  "@tasteQuizPickLabel": {
+    "description": "Screen reader label for one of the two wallpapers in a quiz round.",
+    "placeholders": {
+      "position": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizTuningTitle": "Dein Feed wird angepasst",
+  "@tasteQuizTuningTitle": {
+    "description": "Title of the short screen after the quiz that shows the wallpapers the feed will lead with."
+  },
+  "tasteQuizSummaryFull": "{tone, select, dark{Dunkel} other{Hell}}, {density, select, minimal{minimal} other{detailliert}}, etwas {tag}",
+  "@tasteQuizSummaryFull": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{Dunkel} other{Hell}} und {density, select, minimal{minimal} other{detailliert}}",
+  "@tasteQuizSummaryToneDensity": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneTag": "{tone, select, dark{Dunkel} other{Hell}}, mit etwas {tag}",
+  "@tasteQuizSummaryToneTag": {
+    "description": "One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{Minimal} other{Detailliert}}, mit etwas {tag}",
+  "@tasteQuizSummaryDensityTag": {
+    "description": "One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTone": "{tone, select, dark{Meist dunkle Hintergrundbilder} other{Meist helle Hintergrundbilder}}",
+  "@tasteQuizSummaryTone": {
+    "description": "One line that describes the user's picks. tone is dark or light.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensity": "{density, select, minimal{Meist minimale Hintergrundbilder} other{Meist detailreiche Hintergrundbilder}}",
+  "@tasteQuizSummaryDensity": {
+    "description": "One line that describes the user's picks. density is minimal or busy.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTag": "Mehr Hintergrundbilder mit {tag}",
+  "@tasteQuizSummaryTag": {
+    "description": "One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryReady": "Dein Feed ist bereit",
+  "@tasteQuizSummaryReady": {
+    "description": "Shown after the quiz when the picks do not clearly agree on a style."
+  },
+  "tasteQuizRetake": "Das oder das erneut starten",
+  "@tasteQuizRetake": {
+    "description": "Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name."
+  },
+  "tasteQuizRetakeFailed": "Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@tasteQuizRetakeFailed": {
+    "description": "Toast when the walls for a quiz retake do not load."
   }
 }
