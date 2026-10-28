@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.14.0
+- Save wallpapers into your own private folders
+- A new Library with Favourites, Folders, Downloads and History in one place
+- Browse by mood right from Home
+- Set a wallpaper straight from the phone preview
+- A new 3D live wallpaper style
+- Spatial wallpapers with a 3D tilt preview, made for iOS 26 Spatial Scenes
+- Full-quality wallpapers on large screens
+- Security and stability fixes
+
 ### v3.13.0
 - Share a wallpaper as a story, post or clean card, or send it straight to Instagram Stories
 - Preview a wallpaper on a real phone Home and Lock Screen, and set it from there
