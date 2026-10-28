@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/features/folders/domain/repositories/public_folders_reposi
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -26,13 +29,21 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   PublicFolderEntity? folder;
   List<String> wallIds = const <String>[];
   bool following = false;
+  Future<Result<PublicFolderEntity?>>? nextFolderRead;
+  int folderReads = 0;
   PublicFolderFailure? followFailure;
 
   /// One entry per setFollowing call: the folder id and the requested state.
   final List<(String, bool)> followCalls = <(String, bool)>[];
+  final List<(String, String)> followQueries = <(String, String)>[];
 
   @override
-  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success(folder);
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async {
+    folderReads++;
+    final Future<Result<PublicFolderEntity?>>? pending = nextFolderRead;
+    nextFolderRead = null;
+    return pending ?? Result.success(folder);
+  }
 
   @override
   Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(wallIds);
@@ -46,7 +57,10 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
       Result.success(const <PublicFolderEntity>[]);
 
   @override
-  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(following);
+  Future<Result<bool>> isFollowing(String folderId, String userId) async {
+    followQueries.add((folderId, userId));
+    return Result.success(following);
+  }
 
   @override
   Future<Result<void>> setFollowing(String folderId, {required bool following}) async {
@@ -76,6 +90,8 @@ class _FakeMoodRepository implements MoodRepository {
   @override
   Stream<void> watchVisibilityChanges() => visibility;
 }
+
+class _MockSessionRepository extends Mock implements SessionRepository {}
 
 PublicFolderEntity _folder({String ownerId = 'owner', int followerCount = 1}) => PublicFolderEntity(
   id: 'f1',
@@ -164,6 +180,67 @@ void main() {
     expect(find.text('Follow'), findsOneWidget);
     expect(find.text('Following'), findsNothing);
     expect(repo.followCalls, <(String, bool)>[('f1', false)]);
+  });
+
+  testWidgets('a mounted public folder reloads follow state when the session account changes', (tester) async {
+    final repo = _FakePublicFoldersRepository()
+      ..folder = _folder()
+      ..following = true;
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser()..id = 'viewer';
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer')]);
+    expect(find.text('Following'), findsOneWidget);
+    currentUser = app_constants.createGuestPrismUser()..id = 'viewer-2';
+    repo.following = false;
+    sessions.add(currentUser);
+    await _settle(tester);
+
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer'), ('f1', 'viewer-2')]);
+    expect(find.text('Follow'), findsOneWidget);
+    expect(find.text('Following'), findsNothing);
+  });
+
+  testWidgets('an old account load cannot overwrite the folder after the session changes', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser()..id = 'viewer';
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    final Completer<Result<PublicFolderEntity?>> oldRead = Completer<Result<PublicFolderEntity?>>();
+    repo.nextFolderRead = oldRead.future;
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+
+    currentUser = app_constants.createGuestPrismUser()..id = 'viewer-2';
+    sessions.add(currentUser);
+    await _settle(tester);
+    oldRead.complete(Result.success(null));
+    await _settle(tester);
+
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer-2')]);
+    expect(find.text('Night Owl'), findsOneWidget);
   });
 
   testWidgets('a temporary refused follow puts the button back to Follow', (tester) async {
@@ -267,6 +344,24 @@ void main() {
     await _settle(tester);
 
     expect(find.text('No wallpapers here yet'), findsOneWidget);
+  });
+
+  testWidgets('resuming the app reloads the open public folder', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+    expect(repo.folderReads, 1);
+
+    repo.folder = null;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await _settle(tester);
+
+    expect(repo.folderReads, 2);
+    expect(find.text('Night Owl'), findsNothing);
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
   });
 
   testWidgets('the share button has a tooltip and the owner row is labelled', (tester) async {

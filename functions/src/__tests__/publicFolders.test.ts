@@ -26,9 +26,10 @@ const TODAY = new Date().toISOString().slice(0, 10);
 const at = (ms: number) => admin.firestore.Timestamp.fromMillis(ms);
 const keysUnder = (store: Map<string, Doc>, prefix: string) => [...store.keys()].filter((k) => k.startsWith(prefix));
 
-function setup(t: TestContext) {
-  t.mock.method(publicFolderDeps, "authDisabled", async () => false);
-  t.mock.method(publicFolderDeps, "premium", async () => ["abstract"]);
+function setup(t: TestContext, mockPremium = true, authDisabled: (uid: string) => Promise<boolean> = async () => false,
+  premium: () => Promise<string[]> = async () => ["abstract"]) {
+  t.mock.method(publicFolderDeps, "authDisabled", authDisabled);
+  if (mockPremium) t.mock.method(publicFolderDeps, "premium", premium);
   return installFakeDb(t, {
     "walls/W1": {id: "w1", review: true, wallpaper_thumb: THUMB, wallpaper_url: "https://secret/original.jpg",
       collections: ["nature"], originalProtected: true},
@@ -107,6 +108,63 @@ test("a full sync never publishes after a concurrent make-private commits", asyn
   await syncPublicFolder("f1");
   assert.equal(exposed, false, "even a transient header exposes a private folder");
   assert.deepEqual(keysUnder(store, "publicFolders/"), []);
+});
+
+test("a folder made public between the pre-read and transaction is not removed", async (t) => {
+  const store = setup(t);
+  store.set("folders/f1", {...store.get("folders/f1"), public: false});
+  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 1, followerCount: 1, covers: []});
+  store.set("publicFolders/f1/followers/b", {uid: "b"});
+  store.set("usersv2/b/followedFolders/f1", {folderId: "f1", ownerId: "a"});
+  afterDocumentRead(t, "folders/f1", () => {
+    store.set("folders/f1", {...store.get("folders/f1"), public: true});
+  });
+
+  await syncPublicFolder("f1");
+
+  assert.equal(store.has("publicFolders/f1"), true);
+  assert.equal(store.has("publicFolders/f1/followers/b"), true);
+  assert.equal(store.has("usersv2/b/followedFolders/f1"), true);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), true);
+});
+
+test("a disabled owner that withdraws during the Auth check cannot retain its projection", async (t) => {
+  let authCalls = 0;
+  const store = setup(t, true, async () => {
+    authCalls++;
+    return true;
+  });
+  afterDocumentRead(t, "folders/f1", () => {
+    store.set("folders/f1", {...store.get("folders/f1"), public: false});
+  });
+  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 1, followerCount: 1, covers: []});
+  store.set("publicFolders/f1/followers/b", {uid: "b"});
+  store.set("usersv2/b/followedFolders/f1", {folderId: "f1", ownerId: "a"});
+
+  await syncPublicFolder("f1");
+
+  assert.equal(authCalls, 1);
+  assert.equal(store.has("publicFolders/f1"), false);
+  assert.equal(store.has("publicFolders/f1/followers/b"), false);
+  assert.equal(store.has("usersv2/b/followedFolders/f1"), false);
+});
+
+test("a disabled owner made public between the pre-read and transaction stays unpublished", async (t) => {
+  let authCalls = 0;
+  const store = setup(t, true, async () => {
+    authCalls++;
+    return true;
+  });
+  store.set("folders/f1", {...store.get("folders/f1"), public: false});
+  afterDocumentRead(t, "folders/f1", () => {
+    store.set("folders/f1", {...store.get("folders/f1"), public: true});
+  });
+
+  await syncPublicFolder("f1");
+
+  assert.equal(authCalls, 1);
+  assert.equal(store.has("publicFolders/f1"), false);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
 });
 
 test("full and item sync never commit a deleted source item", async (t) => {
@@ -691,6 +749,159 @@ test("a wall write that keeps it public changes no public folder", async (t) => 
   const before = store.get("walls/W1");
   await refreshWallInPublicFolders("W1", before, {...before, views: 10});
   assert.deepEqual(store.get("publicFolders/f1"), header);
+});
+
+test("a failed header refresh after item removal is recovered from durable wall work", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  const before = store.get("walls/W1");
+  const after = {...before, originalProtected: false};
+  store.set("walls/W1", after);
+  let fail = true;
+  let sourceDeleted = false;
+  transactionSchedule(t, () => {
+    if (fail && !store.has("publicFolders/f1/items/prism_w1")) throw new Error("header refresh failed");
+  }, () => {
+    if (!sourceDeleted && store.has("publicFolderState/f1/items/W1")) {
+      store.delete("folders/f1/items/prism_w1");
+      sourceDeleted = true;
+    }
+  });
+
+  await assert.rejects(() => refreshWallInPublicFolders("W1", before, after), /header refresh failed/);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 1);
+
+  fail = false;
+  await refreshWallInPublicFolders("W1", before, after);
+
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
+  assert.deepEqual(store.get("publicFolders/f1")?.covers, []);
+});
+
+test("an older wall retry cannot clear a newer refresh marker", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  const before = store.get("walls/W1");
+  const after = {...before, originalProtected: false};
+  store.set("walls/W1", after);
+  let replaced = false;
+  transactionSchedule(t, () => undefined, () => {
+    const marker = store.get("publicFolderState/f1/items/W1");
+    if (!replaced && marker) {
+      store.set("publicFolderState/f1/items/W1", {...marker, refreshToken: "newer"});
+      replaced = true;
+    }
+  });
+
+  await refreshWallInPublicFolders("W1", before, after);
+
+  assert.equal(store.get("publicFolderState/f1/items/W1")?.refreshToken, "newer");
+  await refreshWallInPublicFolders("W1", before, after);
+  assert.equal(store.has("publicFolderState/f1/items/W1"), false);
+});
+
+test("a previously projected wall is removed when it loses the protected-original gate", async (t) => {
+  const store = setup(t);
+  const before = {...store.get("walls/W1"), collections: ["abstract"], originalProtected: true};
+  const after = {...before, originalProtected: false};
+  store.set("walls/W1", after);
+  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 1, followerCount: 0, covers: [THUMB]});
+  store.set("publicFolders/f1/items/prism_w1", {id: "w1", provider: "Prism", thumb: THUMB,
+    wallpaperDocumentId: "W1", projectedAt: at(1)});
+
+  await refreshWallInPublicFolders("W1", before, after);
+
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
+});
+
+test("a wall trigger removes a projection and follows when the owner is disabled", async (t) => {
+  let disabled = false;
+  const store = setup(t, true, async () => disabled);
+  await syncPublicFolder("f1");
+  store.set("publicFolders/f1/followers/b", {uid: "b"});
+  store.set("usersv2/b/followedFolders/f1", {folderId: "f1", ownerId: "a"});
+  const before = store.get("walls/W1");
+  const after = {...before, wallpaper_thumb: "https://img.prismwalls.com/previews/bbb.img"};
+  store.set("walls/W1", after);
+  disabled = true;
+
+  await refreshWallInPublicFolders("W1", before, after);
+
+  assert.equal(store.has("publicFolders/f1"), false);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.has("publicFolders/f1/followers/b"), false);
+  assert.equal(store.has("usersv2/b/followedFolders/f1"), false);
+});
+
+test("irrelevant wall updates do no projection query or premium read", async (t) => {
+  let premiumReads = 0;
+  let authCalls = 0;
+  const store = setup(t, true, async () => {
+    authCalls++;
+    return false;
+  }, async () => {
+    premiumReads++;
+    return ["abstract"];
+  });
+  let groupQueries = 0;
+  const collectionGroup = db.collectionGroup.bind(db);
+  t.mock.method(db, "collectionGroup", ((name: string) => {
+    groupQueries++;
+    return collectionGroup(name);
+  }) as typeof db.collectionGroup);
+  const before = store.get("walls/W1");
+
+  await refreshWallInPublicFolders("W1", before, {...before, views: 10});
+
+  assert.equal(groupQueries, 0);
+  assert.equal(premiumReads, 0);
+  assert.equal(authCalls, 0);
+});
+
+test("expired premium Remote Config failure fails closed and retries with the real template getter", async (t) => {
+  const store = setup(t, false);
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  type Template = admin.remoteConfig.RemoteConfigTemplate;
+  const template = (value: string) =>
+    ({parameters: {premiumCollections: {defaultValue: {value}}}} as unknown as Template);
+  const results: Array<() => Promise<Template>> = [
+    async () => {
+      throw new Error("Remote Config unavailable");
+    },
+    async () => template("nature"),
+    async () => {
+      throw new Error("Remote Config unavailable");
+    },
+    async () => template("night"),
+  ];
+  let reads = 0;
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    reads++;
+    const next = results.shift();
+    if (!next) throw new Error("Unexpected Remote Config read");
+    return next();
+  });
+
+  await assert.rejects(() => syncPublicFolder("f1"), /Remote Config unavailable/);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(reads, 1);
+
+  await syncPublicFolder("f1");
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(reads, 2);
+
+  now += 10 * 60_000 + 1;
+  await assert.rejects(() => syncPublicFolder("f1"), /Remote Config unavailable/);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(reads, 3);
+
+  await syncPublicFolder("f1");
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), true);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 1);
+  assert.equal(reads, 4);
 });
 
 test("an item write in a private folder makes no Auth call", async (t) => {

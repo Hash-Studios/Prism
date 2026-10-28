@@ -15,11 +15,16 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   Result<PublicFolderEntity?> folder = Result.success(_folder(0));
   Result<List<String>> wallIds = Result.success(<String>[]);
   Result<bool> following = Result.success(false);
+  Future<Result<PublicFolderEntity?>>? nextFolderRead;
   Future<Result<void>> Function()? onSetFollowing;
   final List<({String id, bool following})> followCalls = <({String id, bool following})>[];
 
   @override
-  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => folder;
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async {
+    final Future<Result<PublicFolderEntity?>>? pending = nextFolderRead;
+    nextFolderRead = null;
+    return pending ?? folder;
+  }
 
   @override
   Future<Result<List<String>>> fetchWallIds(String folderId) async => wallIds;
@@ -37,6 +42,8 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
 class _FakeMoodRepository extends Fake implements MoodRepository {
   final List<String> requestedIds = <String>[];
   final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
+  Future<List<PrismWallpaper>>? nextWallRead;
+  Completer<void>? wallReadStarted;
   bool? requestedKeepOrder;
 
   @override
@@ -46,7 +53,10 @@ class _FakeMoodRepository extends Fake implements MoodRepository {
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     requestedIds.addAll(ids);
     requestedKeepOrder = keepOrder;
-    return ids.map(_wall).toList();
+    final Future<List<PrismWallpaper>>? pending = nextWallRead;
+    nextWallRead = null;
+    if (pending != null) wallReadStarted?.complete();
+    return pending ?? ids.map(_wall).toList();
   }
 }
 
@@ -331,4 +341,102 @@ void main() {
 
     expect(cubit.state.status, PublicFolderStatus.unavailable);
   });
+
+  test('a quiet reload for another account clears the previous account state', () async {
+    final PublicFolderCubit cubit = cubitFor(following: true);
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    final Completer<Result<void>> followGate = Completer<Result<void>>();
+    repo.onSetFollowing = () => followGate.future;
+    final Future<PublicFolderFailure?> follow = cubit.toggleFollow();
+    final Completer<Result<PublicFolderEntity?>> gate = Completer<Result<PublicFolderEntity?>>();
+    repo.following = Result.success(false);
+    repo.nextFolderRead = gate.future;
+    final Future<void> reload = cubit.load('f1', viewerId: 'u2', quiet: true);
+
+    expect(cubit.state.status, PublicFolderStatus.loading);
+    expect(cubit.state.folder, isNull);
+    expect(cubit.state.following, isFalse);
+
+    gate.complete(Result.success(_folder(3)));
+    await reload;
+    expect(cubit.state.status, PublicFolderStatus.ready);
+    expect(cubit.state.following, isFalse);
+    expect(cubit.state.followBusy, isFalse);
+    followGate.complete(Result.success<void>(null));
+    await follow;
+    expect(cubit.state.following, isFalse);
+  });
+
+  test('a quiet reload started before following cannot overwrite the follow result', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    final Completer<Result<PublicFolderEntity?>> gate = Completer<Result<PublicFolderEntity?>>();
+    repo.nextFolderRead = gate.future;
+    final Future<void> reload = cubit.load('f1', viewerId: 'u1', quiet: true);
+
+    expect(await cubit.toggleFollow(), isNull);
+    expect(cubit.state.following, isTrue);
+    expect(cubit.state.followBusy, isFalse);
+
+    gate.complete(Result.success(_folder(3)));
+    await reload;
+    expect(cubit.state.following, isTrue);
+  });
+
+  for (final bool refused in <bool>[false, true]) {
+    test('a pending quiet wall read cannot overwrite a ${refused ? 'refused' : 'successful'} follow', () async {
+      final PublicFolderCubit cubit = cubitFor();
+      addTearDown(cubit.close);
+      await cubit.load('f1', viewerId: 'u1');
+      final Completer<List<PrismWallpaper>> wallGate = Completer<List<PrismWallpaper>>();
+      walls
+        ..wallReadStarted = Completer<void>()
+        ..nextWallRead = wallGate.future;
+      final Future<void> reload = cubit.load('f1', viewerId: 'u1', quiet: true);
+      await walls.wallReadStarted!.future;
+      repo.onSetFollowing = () async => refused
+          ? Result.error<void>(const PublicFolderFailure('refused', refusal: PublicFolderRefusal.limit))
+          : Result.success<void>(null);
+
+      final PublicFolderFailure? result = await cubit.toggleFollow();
+      wallGate.complete(<PrismWallpaper>[]);
+      await reload;
+
+      expect(result?.refusal, refused ? PublicFolderRefusal.limit : isNull);
+      expect(cubit.state.following, !refused);
+      expect(cubit.state.followBusy, isFalse);
+    });
+
+    test('a quiet wall read completing during a ${refused ? 'refused' : 'pending'} follow keeps follow busy', () async {
+      final PublicFolderCubit cubit = cubitFor();
+      addTearDown(cubit.close);
+      await cubit.load('f1', viewerId: 'u1');
+      final Completer<List<PrismWallpaper>> wallGate = Completer<List<PrismWallpaper>>();
+      final Completer<Result<void>> followGate = Completer<Result<void>>();
+      walls
+        ..wallReadStarted = Completer<void>()
+        ..nextWallRead = wallGate.future;
+      repo.onSetFollowing = () => followGate.future;
+      final Future<void> reload = cubit.load('f1', viewerId: 'u1', quiet: true);
+      await walls.wallReadStarted!.future;
+      final Future<PublicFolderFailure?> follow = cubit.toggleFollow();
+
+      wallGate.complete(<PrismWallpaper>[]);
+      await reload;
+      expect(cubit.state.followBusy, isTrue);
+      expect(await cubit.toggleFollow(), isNull);
+      expect(repo.followCalls, hasLength(1));
+
+      followGate.complete(
+        refused
+            ? Result.error<void>(const PublicFolderFailure('refused', refusal: PublicFolderRefusal.limit))
+            : Result.success<void>(null),
+      );
+      await follow;
+      expect(cubit.state.followBusy, isFalse);
+      expect(cubit.state.following, !refused);
+    });
+  }
 }
