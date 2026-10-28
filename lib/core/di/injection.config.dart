@@ -101,6 +101,7 @@ import '../../features/live_wallpaper/data/repositories/live_wallpaper_repositor
     as _i1067;
 import '../../features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart'
     as _i485;
+import '../../features/moods/biz/gallery_walls_cubit.dart' as _i722;
 import '../../features/moods/biz/mood_walls_cubit.dart' as _i727;
 import '../../features/moods/biz/moods_cubit.dart' as _i907;
 import '../../features/moods/data/mood_repository_impl.dart' as _i544;
@@ -792,6 +793,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i907.MoodsCubit>(
     () => _i907.MoodsCubit(gh<_i386.MoodRepository>()),
+  );
+  gh.factory<_i722.GalleryWallsCubit>(
+    () => _i722.GalleryWallsCubit(gh<_i386.MoodRepository>()),
   );
   gh.factory<_i727.MoodWallsCubit>(
     () => _i727.MoodWallsCubit(gh<_i386.MoodRepository>()),

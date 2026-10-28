@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 
 sealed class GalleryWallsState {
   const GalleryWallsState();
@@ -23,6 +24,7 @@ final class GalleryWallsFailed extends GalleryWallsState {
   const GalleryWallsFailed();
 }
 
+@injectable
 class GalleryWallsCubit extends Cubit<GalleryWallsState> {
   GalleryWallsCubit(this._repository) : super(const GalleryWallsLoading()) {
     _visibility = _repository.watchVisibilityChanges().listen((_) => _reload());

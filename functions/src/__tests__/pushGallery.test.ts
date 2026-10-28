@@ -352,3 +352,12 @@ test("similarWallIds returns the closest gated walls, newest first on a tie", ()
   ];
   assert.deepEqual(similarWallIds(pick, candidates, ["space"], 3), ["x1", "x2", "x3"]);
 });
+
+test("similarWallIds keeps candidates without an id field when the pick has none", () => {
+  const thumb = (id: string) => `https://img.example.com/previews/${id}.img`;
+  const wall = (labels: string[], id: string) => ({review: true, originalProtected: true, collections: [],
+    visionLabels: labels, wallpaper_thumb: thumb(id)});
+  const pick = {id: "p", data: wall(["Night"], "p")};
+  const candidates = [pick, {id: "x1", data: wall(["Night"], "x1")}, {id: "x2", data: wall(["Night"], "x2")}];
+  assert.deepEqual(similarWallIds(pick, candidates, []), ["x1", "x2"]);
+});

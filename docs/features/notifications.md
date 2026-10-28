@@ -160,13 +160,13 @@ The target is `PrismNotificationService`. Its bundle ID is `com.hash.prism.Notif
 
 Code: `ios/PrismNotificationService/NotificationService.swift`. Logic: `ios/PrismNotificationService/Core/PushImage.swift`.
 
-The extension downloads `gallery_url` with URLSession. It sets the clipping rect of wall `gallery_thumb_index` with `UNNotificationAttachmentOptionsThumbnailClippingRectKey`. If there is no gallery, it downloads `imageUrl`. It accepts https only. The download has at most 20 seconds.
+The extension downloads `gallery_url` with URLSession. It sets the clipping rect of wall `gallery_thumb_index` with `UNNotificationAttachmentOptionsThumbnailClippingRectKey`. If there is no gallery, it downloads `imageUrl`. It accepts only https URLs on `img.prismwalls.com`, with no port, user, query or fragment. A gallery path must be `/push-gallery/v1/<sha256>.jpg`. A single-image path must be `/previews/<sha256>.img`. It does not follow redirects. The download has at most 20 seconds.
 
-The extension checks the image header without decoding the image. The image must be a JPEG, PNG or HEIC. It must be at most 5 MB and 4096 px on each side.
+The extension checks the image header without decoding the image. The image must be a JPEG, PNG or HEIC. It must be at most 5 MB, at most 4096 px on each side, and at most 2,000,000 px in total.
 
 On any failure, the push is delivered as text. This also happens when the system time limit comes.
 
-Before this target, iOS pushes showed no image. Now every push with an image shows it.
+Before this target, iOS pushes showed no image. Now a push shows its image when the image URL passes these checks. Every Prism wall thumbnail and gallery image passes.
 
 Tests:
 

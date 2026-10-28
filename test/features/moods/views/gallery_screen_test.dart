@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/moods/views/pages/gallery_screen.dart';
@@ -50,6 +51,7 @@ void main() {
 
   testWidgets('shows an empty state when every push wall is unavailable', (tester) async {
     getIt.registerSingleton<MoodRepository>(FakeMoodRepository());
+    getIt.registerFactory<GalleryWallsCubit>(() => GalleryWallsCubit(getIt<MoodRepository>()));
 
     await tester.pumpWidget(moodTestApp(const GalleryScreen(ids: 'wall-a,wall-b', source: 'push')));
     await tester.pump();
@@ -64,6 +66,7 @@ void main() {
   testWidgets('reloads walls when the requested ids or visibility changes', (tester) async {
     final _LiveGalleryRepository repository = _LiveGalleryRepository();
     getIt.registerSingleton<MoodRepository>(repository);
+    getIt.registerFactory<GalleryWallsCubit>(() => GalleryWallsCubit(getIt<MoodRepository>()));
     addTearDown(repository.visibilityChanges.close);
 
     await tester.pumpWidget(moodTestApp(const GalleryScreen(ids: 'wall-a,wall-b', source: 'push')));

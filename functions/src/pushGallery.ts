@@ -269,7 +269,8 @@ export function similarWallIds(
   const wanted = new Set(wallTags(pick.data).map((tag) => tag.toLowerCase()));
   const created = (data: admin.firestore.DocumentData): number => data.createdAt?.toMillis?.() ?? 0;
   return candidates
-    .filter((c) => c.id !== pick.id && c.data.id !== pick.data.id && galleryWall(c, premium) !== null)
+    .filter((c) => c.id !== pick.id && !(typeof pick.data.id === "string" && c.data.id === pick.data.id) &&
+      galleryWall(c, premium) !== null)
     .map((c) => ({c, score: wallTags(c.data).filter((tag) => wanted.has(tag.toLowerCase())).length}))
     .filter(({score}) => score > 0)
     .sort((a, b) => b.score - a.score || created(b.c.data) - created(a.c.data) || (a.c.id < b.c.id ? -1 : 1))

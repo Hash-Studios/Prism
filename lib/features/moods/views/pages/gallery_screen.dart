@@ -7,7 +7,6 @@ import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
 import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
-import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -39,7 +38,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
   @override
   void initState() {
     super.initState();
-    _cubit = GalleryWallsCubit(getIt<MoodRepository>())..load(galleryWallIds(widget.ids));
+    _cubit = getIt<GalleryWallsCubit>()..load(galleryWallIds(widget.ids));
     _trackOpened();
   }
 
