@@ -131,6 +131,8 @@ final class PushImageTests: XCTestCase {
       XCTAssertEqual(error as? PushImageError, .timedOut)
     }
     XCTAssertLessThan(Date().timeIntervalSince(started), 2)
+    // URLSession calls stopLoading on its own thread after the cancel, so give it a moment to arrive.
+    for _ in 0..<50 where StubProtocol.stopCount == 0 { try? await Task.sleep(nanoseconds: 20_000_000) }
     XCTAssertGreaterThan(StubProtocol.stopCount, 0, "timing out cancels the active URLSession request")
   }
 
