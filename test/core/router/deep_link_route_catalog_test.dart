@@ -64,6 +64,19 @@ void main() {
     }
   });
 
+  test('mood links resolve to the mood page without a sign-in guard', () async {
+    final DeepLinkActionEntity action = parser.parse(Uri.parse('/mood/dreamy'));
+    final PageRouteInfo? route = await routeForPageLink(
+      action as PageLinkIntent,
+      wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => null,
+      profileLookup: (String _) async => null,
+      localFileResolver: ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+          File('/tmp/x'),
+    );
+    expect(route, isA<MoodRoute>());
+    expect(route!.rawPathParams['moodId'], 'dreamy');
+  });
+
   test('route examples cover every page target', () {
     expect(
       DeepLinkRouteCatalog.examples.map((DeepLinkRouteExample example) => example.target).toSet(),
@@ -116,8 +129,6 @@ void main() {
       'LiveWallpaperRoute',
       'ClockPreviewRoute',
       'ReviewPhotoPreviewRoute',
-      // Home mood chips and rows open it. It has no public link.
-      'MoodRoute',
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
@@ -438,6 +449,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.settings => 'SettingsRoute',
   DeepLinkPageTarget.blockedAccounts => 'BlockedAccountsRoute',
   DeepLinkPageTarget.folder => 'FolderRoute',
+  DeepLinkPageTarget.mood => 'MoodRoute',
   DeepLinkPageTarget.about => 'AboutRoute',
   DeepLinkPageTarget.favourites => 'FavouriteWallpaperRoute',
   DeepLinkPageTarget.downloads => 'DownloadRoute',

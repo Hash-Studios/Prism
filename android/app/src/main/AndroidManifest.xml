@@ -180,6 +180,7 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -299,6 +300,7 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -407,6 +409,7 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -515,6 +518,7 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -623,6 +627,7 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />

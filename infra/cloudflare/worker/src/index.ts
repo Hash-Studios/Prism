@@ -103,9 +103,9 @@ const APP_PAGE_PATHS = [
 ];
 const APP_LINK_PATHS = [
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
-  '/collection', '/category', '/wallpaper', '/l', '/folder', ...APP_PAGE_PATHS,
+  '/collection', '/category', '/wallpaper', '/l', '/folder', '/mood', ...APP_PAGE_PATHS,
 ];
-const PAGE_PARAMETER_ROOTS = new Set(['drops', 'folder']);
+const PAGE_PARAMETER_ROOTS = new Set(['drops', 'folder', 'mood']);
 const PAGE_IDENTIFIER_ROOTS = new Set(['user', 'fprofile', 'follower-profile', 'profile']);
 const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/wallpaper-detail', new Set(['wallId', 'id', 'source', 'provider'])],
