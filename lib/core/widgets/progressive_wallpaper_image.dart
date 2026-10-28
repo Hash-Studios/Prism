@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -50,6 +52,8 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
 
   /// The full picture has painted. From here the thumbnail is gone for this wall.
   bool _shown = false;
+  ui.Image? _lastPaintedImage;
+  ImageProvider? _lastPaintedProvider;
   bool _failed = false;
   int _attempt = 0;
   int _generation = 0;
@@ -68,15 +72,67 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     final WallpaperDisplaySource before = oldWidget.display;
     final WallpaperDisplaySource now = widget.display;
     final bool sameWall = now.id != null && before.id == now.id && before.source == now.source;
-    if (!sameWall) _shown = false;
+    if (!sameWall || now.withheld) {
+      _shown = false;
+      _clearPaintedImages();
+    }
     _failed = false;
     _attempt = 0;
     _resolve();
   }
 
+  @override
+  void dispose() {
+    ++_generation;
+    _full = null;
+    _fullFile = null;
+    _clearPaintedImages();
+    super.dispose();
+  }
+
+  void _clearPaintedImages() {
+    final ui.Image? image = _lastPaintedImage;
+    _lastPaintedImage = null;
+    _lastPaintedProvider = null;
+    image?.dispose();
+  }
+
+  RawImage? _rawImage(Widget child) {
+    if (child is RawImage) return child;
+    if (child is Semantics && child.child != null) return _rawImage(child.child!);
+    return null;
+  }
+
+  void _markShown(int generation, ImageProvider provider, Widget child) {
+    if (!mounted || generation != _generation) return;
+    final RawImage? rawImage = _rawImage(child);
+    if (rawImage?.image == null) return;
+    final bool changed = provider != _lastPaintedProvider;
+    if (changed) {
+      _lastPaintedImage?.dispose();
+      _lastPaintedImage = rawImage!.image!.clone();
+    }
+    _lastPaintedProvider = provider;
+    if (!_shown || changed) setState(() => _shown = true);
+  }
+
   void _resolve() {
     final int generation = ++_generation;
     final String full = widget.display.full;
+    if (full.isEmpty) {
+      _full = full;
+      _fullFile = null;
+      _instant = true;
+      if (widget.display.source == WallpaperSource.prism && !widget.display.withheld) {
+        unawaited(
+          _onDevice(full).then((File? file) {
+            if (!mounted || generation != _generation || file == null) return;
+            setState(() => _fullFile = file);
+          }),
+        );
+      }
+      return;
+    }
     if (!isValidNetworkUrl(full)) {
       _full = full;
       _fullFile = null;
@@ -100,6 +156,7 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
   Future<File?> _onDevice(String full) async {
     final File? offline = await (ProgressiveWallpaperImage.offlineCopyOverride ?? wallpaperOfflineCopy)(widget.display);
     if (offline != null) return offline;
+    if (!isValidNetworkUrl(full)) return null;
     try {
       return (await PrismFullImageCache.instance.getFileFromCache(full))?.file;
     } catch (_) {
@@ -107,21 +164,16 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     }
   }
 
-  /// No separate thumbnail layer when the full link is the thumbnail itself.
-  String get _thumbnail => widget.display.thumbnail == widget.display.full ? '' : widget.display.thumbnail;
+  /// The thumbnail remains visible until the full image has actually painted, even when both links are the same.
+  String get _thumbnail => isValidNetworkUrl(widget.display.thumbnail) ? widget.display.thumbnail : '';
 
-  void _markShown() {
-    if (mounted && !_shown) setState(() => _shown = true);
-  }
-
-  void _onFullError(Object error, int attempt) {
-    if (!mounted || attempt != _attempt || _failed) return;
+  void _onFullError(Object error, int attempt, int generation) {
+    if (!mounted || generation != _generation || attempt != _attempt || _failed) return;
     final String full = widget.display.full;
     if (_attempt == 0) {
       _evict(full, () => PrismFullImageCache.instance);
       setState(() {
         _attempt++;
-        _shown = false;
         _instant = false;
         _fullFile = null;
       });
@@ -129,7 +181,6 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     }
     setState(() {
       _failed = true;
-      _shown = false;
     });
     unawaited(
       MonitoringRuntime.reporter.addBreadcrumb(
@@ -153,8 +204,10 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
   }
 
   void _retry() {
+    if (!mounted) return;
     _evict(widget.display.thumbnail, () => PrismImageCache.instance);
     _evict(widget.display.full, () => PrismFullImageCache.instance);
+    _clearPaintedImages();
     setState(() {
       _failed = false;
       _shown = false;
@@ -188,15 +241,15 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     return sync || fade == Duration.zero ? child : _fadeIn(child, fade);
   }
 
-  Widget _fullFrame(BuildContext context, Widget child, int? frame, bool sync) {
-    if (_shown) return child;
+  Widget _fullFrame(BuildContext context, Widget child, int? frame, bool sync, int generation, ImageProvider image) {
+    if (_shown && image == _lastPaintedProvider) return child;
     if (frame == null) return const SizedBox.expand();
     final Duration fade = context.motion(_fullFade);
     if (sync || _instant || fade == Duration.zero) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _markShown());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _markShown(generation, image, child));
       return child;
     }
-    return _fadeIn(child, fade, onEnd: _markShown);
+    return _fadeIn(child, fade, onEnd: () => _markShown(generation, image, child));
   }
 
   @override
@@ -207,9 +260,11 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
         provider == null ? null : sizedWallpaperImage(provider, box, ratio, widget.display.pixelSize);
 
     final String? full = _full;
+    final int generation = _generation;
     final ImageProvider? fullImage = _failed || full == null
         ? null
         : sized(_provider(full, () => PrismFullImageCache.instance, _fullFile));
+    final ui.Image? fullFallback = _shown ? _lastPaintedImage : null;
     final ImageProvider? thumbnail = _shown ? null : sized(_provider(_thumbnail, () => PrismImageCache.instance, null));
     final bool fullMissing = _failed || widget.display.full.isEmpty;
     final Widget error = widget.errorBuilder?.call(context, _retry) ?? const SizedBox.expand();
@@ -217,6 +272,8 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        if (fullFallback != null)
+          RawImage(key: const ValueKey<String>('last-full'), image: fullFallback, fit: BoxFit.cover),
         if (thumbnail != null)
           Image(
             key: ValueKey<(String, int)>(('thumbnail', _retries)),
@@ -226,18 +283,19 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
             frameBuilder: _thumbnailFrame,
             errorBuilder: (_, _, _) => fullMissing ? error : const SizedBox.expand(),
           )
-        else if (fullImage == null && fullMissing)
+        else if (fullImage == null && fullFallback == null && fullMissing)
           error,
         if (fullImage != null)
           Image(
-            key: ValueKey<(String, int, int)>(('full', _retries, _attempt)),
+            key: ValueKey<(String, int, int, int)>(('full', _retries, _attempt, _generation)),
             image: fullImage,
             fit: BoxFit.cover,
             gaplessPlayback: true,
-            frameBuilder: _fullFrame,
+            frameBuilder: (context, child, frame, sync) =>
+                _fullFrame(context, child, frame, sync, generation, fullImage),
             errorBuilder: (_, Object error, _) {
               final int attempt = _attempt;
-              WidgetsBinding.instance.addPostFrameCallback((_) => _onFullError(error, attempt));
+              WidgetsBinding.instance.addPostFrameCallback((_) => _onFullError(error, attempt, generation));
               return const SizedBox.expand();
             },
           ),

@@ -1,7 +1,9 @@
 // ignore_for_file: depend_on_referenced_packages
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
@@ -22,6 +24,7 @@ import '../../support/fake_error_reporter.dart';
 const String _thumb = 'https://img.test/thumb.jpg';
 const String _thumb2 = 'https://img.test/thumb-2.jpg';
 const String _full = 'https://img.test/full.jpg';
+const String _full2 = 'https://img.test/full-2.jpg';
 
 final List<int> _png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
@@ -83,8 +86,43 @@ class _BreadcrumbReporter extends FakeErrorReporter {
   }
 }
 
-WallpaperDisplaySource _display({String thumbnail = _thumb}) =>
-    WallpaperDisplaySource(thumbnail: thumbnail, full: _full, id: 'w1', source: WallpaperSource.wallhaven);
+/// Tracks only clones retained by ProgressiveWallpaperImage, not ImageProvider or RenderImage handles.
+class _RetainedImageTracker {
+  _RetainedImageTracker() {
+    _previousOnCreate = ui.Image.onCreate;
+    _previousOnDispose = ui.Image.onDispose;
+    _onCreate = (ui.Image image) {
+      _previousOnCreate?.call(image);
+      if (StackTrace.current.toString().contains('_markShown')) {
+        _live.add(image);
+        if (_live.length > peak) peak = _live.length;
+      }
+    };
+    _onDispose = (ui.Image image) {
+      _live.remove(image);
+      _previousOnDispose?.call(image);
+    };
+    ui.Image.onCreate = _onCreate;
+    ui.Image.onDispose = _onDispose;
+  }
+
+  late final ui.ImageEventCallback? _previousOnCreate;
+  late final ui.ImageEventCallback? _previousOnDispose;
+  late final ui.ImageEventCallback _onCreate;
+  late final ui.ImageEventCallback _onDispose;
+  final Set<ui.Image> _live = HashSet<ui.Image>.identity();
+  int peak = 0;
+
+  int get live => _live.length;
+
+  void restore() {
+    if (ui.Image.onCreate == _onCreate) ui.Image.onCreate = _previousOnCreate;
+    if (ui.Image.onDispose == _onDispose) ui.Image.onDispose = _previousOnDispose;
+  }
+}
+
+WallpaperDisplaySource _display({String thumbnail = _thumb, String full = _full, String id = 'w1'}) =>
+    WallpaperDisplaySource(thumbnail: thumbnail, full: full, id: id, source: WallpaperSource.wallhaven);
 
 Widget _app(Widget child, {bool disableAnimations = false}) => MaterialApp(
   home: MediaQuery(
@@ -104,8 +142,18 @@ String _sourceOf(ImageProvider provider) {
 /// The sources of every picture that is painted right now, in tree order.
 List<String> _painted(WidgetTester tester) => tester
     .elementList(find.byType(RawImage))
-    .map((Element raw) => _sourceOf(raw.findAncestorWidgetOfExactType<Image>()!.image))
+    .map((Element raw) {
+      final Image? image = raw.findAncestorWidgetOfExactType<Image>();
+      return image == null ? null : _sourceOf(image.image);
+    })
+    .whereType<String>()
     .toList();
+
+int _visibleImageFrames(WidgetTester tester) => tester
+    .elementList(find.byType(RawImage))
+    .map((Element raw) => raw.widget as RawImage)
+    .where((RawImage raw) => raw.image != null)
+    .length;
 
 Finder _imageFrom(String source) =>
     find.byWidgetPredicate((Widget widget) => widget is Image && _sourceOf(widget.image) == source);
@@ -160,6 +208,45 @@ void main() {
     expect(_imageFrom(_thumb), findsNothing);
   });
 
+  testWidgets('uses the shared thumbnail while checking for an on-device full copy', (tester) async {
+    final Completer<File?> deviceLookup = Completer<File?>();
+    ProgressiveWallpaperImage.offlineCopyOverride = (_) => deviceLookup.future;
+
+    await tester.pumpWidget(
+      _app(
+        const ProgressiveWallpaperImage(
+          display: WallpaperDisplaySource(thumbnail: _full, full: _full, id: 'w1', source: WallpaperSource.wallhaven),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+
+    expect(_painted(tester), <String>[_full]);
+    deviceLookup.complete(null);
+    await tester.pump();
+  });
+
+  testWidgets('does not treat an invalid thumbnail link as a local file', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: const WallpaperDisplaySource(
+            thumbnail: '/etc/passwd',
+            full: '',
+            id: 'w1',
+            source: WallpaperSource.wallhaven,
+          ),
+          errorBuilder: (_, _) => const Text('no image'),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => find.text('no image').evaluate().isNotEmpty);
+
+    expect(find.text('no image'), findsOneWidget);
+    expect(_imageFrom('file:/etc/passwd'), findsNothing);
+    expect(wallCache.requests, isEmpty);
+  });
+
   testWidgets('retries a failed full picture once, then keeps the thumbnail', (tester) async {
     wallCache.failing.add(_full);
     await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
@@ -188,6 +275,72 @@ void main() {
     expect(wallCache.requests.containsKey(_thumb2), isFalse);
   });
 
+  testWidgets('keeps the painted full picture if a same-wall replacement fails', (tester) async {
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    PaintingBinding.instance.imageCache.clear();
+    await tester.pump();
+    wallCache.gates[_thumb] = Completer<void>();
+    wallCache.failing.add(_full2);
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(full: _full2))));
+    await _pumpUntil(tester, () => reporter.categories.isNotEmpty);
+
+    expect(
+      _visibleImageFrames(tester),
+      greaterThan(0),
+      reason: 'the failed replacement and loading thumbnail must not leave a blank frame',
+    );
+    expect(find.byKey(const ValueKey<String>('last-full')), findsOneWidget);
+    expect(tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full'))).image, isNotNull);
+    expect(_imageFrom(_thumb), findsNothing);
+    expect(wallCache.requests[_full], 1);
+  });
+
+  testWidgets('keeps the full frame when a preview is unavailable but drops it when the wall is withheld', (
+    tester,
+  ) async {
+    const WallpaperDisplaySource available = WallpaperDisplaySource(
+      thumbnail: _thumb,
+      full: _full,
+      id: 'prism-1',
+      source: WallpaperSource.prism,
+    );
+    await tester.pumpWidget(_app(const ProgressiveWallpaperImage(display: available)));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    await tester.pumpWidget(
+      _app(
+        const ProgressiveWallpaperImage(
+          display: WallpaperDisplaySource(thumbnail: _thumb, full: '', id: 'prism-1', source: WallpaperSource.prism),
+        ),
+      ),
+    );
+    expect(find.byKey(const ValueKey<String>('last-full')), findsOneWidget);
+    expect(_imageFrom(_thumb), findsNothing);
+
+    await tester.pumpWidget(
+      _app(
+        const ProgressiveWallpaperImage(
+          display: WallpaperDisplaySource(
+            thumbnail: _thumb,
+            full: '',
+            id: 'prism-1',
+            source: WallpaperSource.prism,
+            withheld: true,
+          ),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains(_thumb));
+
+    expect(find.byKey(const ValueKey<String>('last-full')), findsNothing);
+  });
+
   testWidgets('draws the on-device copy over the network full picture', (tester) async {
     final File offline = File('${directory.path}/offline.png')..writeAsBytesSync(_png);
     ProgressiveWallpaperImage.offlineCopyOverride = (_) async => offline;
@@ -199,6 +352,192 @@ void main() {
 
     expect(_painted(tester), <String>[offlineSource]);
     expect(wallCache.requests.containsKey(_full), isFalse);
+  });
+
+  testWidgets('checks for an offline Prism original when its display preview is unavailable', (tester) async {
+    final File offline = File('${directory.path}/offline-prism.png')..writeAsBytesSync(_png);
+    ProgressiveWallpaperImage.offlineCopyOverride = (_) async => offline;
+
+    await tester.pumpWidget(
+      _app(
+        const ProgressiveWallpaperImage(
+          display: WallpaperDisplaySource(thumbnail: '', full: '', id: 'offline-prism', source: WallpaperSource.prism),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains('file:${offline.path}'));
+
+    expect(wallCache.requests, isEmpty);
+  });
+
+  testWidgets('releases its retained decoded image when removed', (tester) async {
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('last-full')), findsOneWidget);
+    final retainedImage = tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full'))).image!;
+    expect(retainedImage.debugDisposed, isFalse);
+
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+
+    expect(retainedImage.debugDisposed, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('releases the prior held frame after a same-wall replacement paints', (tester) async {
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    final RawImage first = tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full')));
+
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(full: _full2))));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full2));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    expect(first.image!.debugDisposed, isTrue);
+    expect(find.byKey(const ValueKey<String>('last-full')), findsOneWidget);
+    expect(_imageFrom(_thumb), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('releases its held frame when the wall changes', (tester) async {
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    final RawImage held = tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full')));
+
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(full: _full2, id: 'w2'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(held.image!.debugDisposed, isTrue);
+    expect(find.byKey(const ValueKey<String>('last-full')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('releases its held frame when retry starts', (tester) async {
+    VoidCallback? retry;
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(),
+          errorBuilder: (_, VoidCallback callback) {
+            retry = callback;
+            return const Text('retry');
+          },
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    final RawImage held = tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full')));
+
+    retry!();
+    await tester.pump();
+
+    expect(held.image!.debugDisposed, isTrue);
+    expect(find.byKey(const ValueKey<String>('last-full')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('holds at most one widget-retained image clone across replacements, retry, wall change, and dispose', (
+    tester,
+  ) async {
+    final _RetainedImageTracker tracker = _RetainedImageTracker();
+    addTearDown(tracker.restore);
+    VoidCallback? retry;
+
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(),
+          errorBuilder: (_, VoidCallback callback) {
+            retry = callback;
+            return const Text('retry');
+          },
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(tracker.live, 1);
+
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(full: _full2))));
+    await _pumpUntil(tester, () => _painted(tester).contains(_full2));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(tracker.live, 1);
+
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(id: 'w2'))));
+    expect(tracker.live, 0);
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(tracker.live, 1);
+
+    retry!();
+    await tester.pump();
+    expect(tracker.live, 0);
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(tracker.live, 1);
+
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+    expect(tracker.live, 0);
+    expect(tracker.peak, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ignores a retry callback invoked after dispose', (tester) async {
+    VoidCallback? retry;
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(),
+          errorBuilder: (_, VoidCallback callback) {
+            retry = callback;
+            return const Text('retry');
+          },
+        ),
+      ),
+    );
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+
+    retry!();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ignores an older on-device lookup after the wall changes', (tester) async {
+    final File oldCopy = File('${directory.path}/old.png')..writeAsBytesSync(_png);
+    final File newCopy = File('${directory.path}/new.png')..writeAsBytesSync(_png);
+    final Completer<File?> oldLookup = Completer<File?>();
+    final Completer<File?> newLookup = Completer<File?>();
+    ProgressiveWallpaperImage.offlineCopyOverride = (display) =>
+        display.id == 'old' ? oldLookup.future : newLookup.future;
+
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(id: 'old'))));
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(id: 'new'))));
+    newLookup.complete(newCopy);
+    await _pumpUntil(tester, () => _painted(tester).contains('file:${newCopy.path}'));
+
+    oldLookup.complete(oldCopy);
+    await tester.pump();
+    await tester.pump();
+
+    expect(_painted(tester), <String>['file:${newCopy.path}']);
   });
 
   testWidgets('shows the full picture without a fade when reduce motion is on', (tester) async {
