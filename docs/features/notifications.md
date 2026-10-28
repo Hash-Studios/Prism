@@ -58,6 +58,8 @@ Tombstone limits (`lib/data/notifications/notification_tombstones.dart`):
 | Setup link | Home tab, and the toast "Home screen setups are no longer available." |
 | Anything else, or a lookup error | Fallback. |
 
+A push with `wall_ids` opens the gallery page first.
+
 Push taps also record the event `push_opened` with `kind`: `streak_reminder`, `follower`, `post` (route `wall`), `wotd` or `moderation` (route `content_report` with a `report_id`). Report moderation pushes contain only that route and report ID plus generic copy; admins load report details from the admin-only report screen. `fromPayload` records the tap. `fromRoute`, which the inbox uses, does not. The older event `wotd_opened_from_push` stays.
 
 The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is not empty, the app shows the toast "That item is no longer available". The mapper then never returns null.
@@ -90,11 +92,133 @@ A follow stores the creator email only. The app joins localized variants of two 
 - `<email prefix>_posts_loc_v1`. Creators with the same email prefix share it. Legacy clients use `<email prefix>_posts`.
 - `posts_<creator uid>_loc_v1`. It is unique per creator. Legacy clients use `posts_<creator uid>`.
 
-The uid comes from the caller when it knows it. Else the app reads the public profile once (`PublicProfileRepository.watchProfile`, 8 s limit) and keeps the email-to-uid pair in the settings key `creatorUidByEmail`. Unfollow, sign-out and the Posts switch leave both topics. One uid read never repeats.
+The uid comes from the caller when it knows it. Else the app reads the public profile once (`PublicProfileRepository.watchProfile`, 8 s limit) and keeps the email-to-uid pair in the settings key `creatorUidByEmail`. Unfollow, sign-out and the Posts switch leave both topics. One uid read never repeats. Builds with the follow digest leave these topics and do not join them on follow.
 
 ### Foreground pushes
 
 `LocalNotification.showPushNotification` shows a banner for a push that arrives while the app is open. The id is the hash of the Android `tag` of the push. When there is no tag, it is the hash of title, body and data. It is masked to 31 bits. The server sends a personal push to one bound session token. Retries share a collapse key, so an earlier banner is replaced. `onlyAlertOnce` stops a second sound.
+
+### Gallery pushes
+
+A gallery push shows 2 to 4 walls in one image. The collapsed notification shows one wall as the thumbnail. The expanded notification shows the walls side by side.
+
+`functions/src/pushGallery.ts` makes the image with `sharp`. The image is a 1200 x 545 px JPEG, under 200 KB. The function uses only the public preview thumbnails (`img.prismwalls.com/previews/...`). It never uses originals.
+
+The image is stored once in the R2 preview bucket at `push-gallery/v1/<sha256>.jpg`. The image is served from `https://img.prismwalls.com/push-gallery/v1/...`. The object key is the hash of the layout, the version and the sorted wall IDs. A second push for the same walls reuses the object.
+
+There are two layouts.
+
+| Layout | Used for | How it works |
+|---|---|---|
+| `strip` | iOS | Shows the walls in sorted ID order. The push data gives `gallery_thumb_index`, the slot of the lead wall. |
+| `hero` | Android, 3 or more walls | Shows the lead wall in the centre square and 2 other walls at the sides. Android 12 to 15 crop the centre square for the collapsed icon. Android 16 crops the centre to about 16:9. In both, the lead wall is whole and in the centre, with no seam. |
+
+On Android with 2 walls, the push shows the lead wall thumbnail.
+
+Only approved walls that a free user can open appear in a gallery. The gate removes premium collection walls, streak exclusive walls, drop reserved walls, and walls that are in a drop.
+
+The Drop live push is the exception. It shows the walls of that drop. The Drops page and the earlier Drop push do the same.
+
+If fewer than 2 walls remain after the gate, or if making the image fails, the push keeps its single image.
+
+Push data:
+
+| Key | Value |
+|---|---|
+| `gallery` | `"1"` |
+| `gallery_url` | URL of the gallery image |
+| `gallery_count` | Number of walls in the image |
+| `gallery_thumb_index` | Slot of the lead wall |
+| `wall_ids` | Wall IDs, lead wall first |
+
+A gallery push has no `data.imageUrl`, so the payload stays small. The Android notification `imageUrl` is the hero image. When a payload is too large, `fcmMessage` removes wall ids from the end of `wall_ids`, and keeps at least 2. The APNs payload sets `mutable-content: 1` on every push with an image.
+
+Senders:
+
+| Sender | Gallery |
+|---|---|
+| Wall of the Day | Today's pick plus up to 3 walls that share its moods or tags. Chosen once per pick and kept in `wall_of_the_day/current.gallery`. |
+| Drop live | Up to 4 walls of the drop. The tap still opens the Drops page. |
+| Follow digest | Single image. See "Follow digest". |
+
+Daily cap: a user gets at most 1 gallery push a day. On the UTC day that a drop goes live, the Drop push is the gallery. The Wall of the Day push then keeps its single image (`dropOwnsGallery`). The follow digest always uses a single image. On other days, the Wall of the Day push is the gallery.
+
+Copy: topic pushes reach builds that do not have new native keys. So they reuse shipped keys.
+
+- Wall of the Day uses `notif_push_wotd_for_audience_*`. The tags line is the body.
+- Drop uses `notif_push_drop_live_title`. The tags line goes through `notif_push_wotd_for_audience_body`.
+
+The tags line holds the 3 tags that the most walls share. The tags can be moods, vision labels or collections. They are joined with " · ".
+
+Tap: a push with 2 or more `wall_ids` opens `/gallery?ids=...&source=push` (`GalleryScreen`). The walls keep push order. Tiles, detail and swipe work as usual. `DeepLinkDispatcher.openPush` checks `wall_ids` before `url`. Builds without the gallery page open the lead wall from `route` and `url`. Inbox rows open the lead wall.
+
+Analytics: the scoreboard keeps its kinds. It adds the `gallery_sends`, `gallery_accepts`, `gallery_fails` and `gallery_taps` maps, keyed by kind. The app sends the tap signal with `gallery: true` for a gallery push. It records the event `gallery_opened` with `source` and `wall_count` when the page opens.
+
+### iOS Notification Service Extension
+
+The target is `PrismNotificationService`. Its bundle ID is `com.hash.prism.NotificationService`. It is embedded in Runner.
+
+Code: `ios/PrismNotificationService/NotificationService.swift`. Logic: `ios/PrismNotificationService/Core/PushImage.swift`.
+
+The extension downloads `gallery_url` with URLSession. It sets the clipping rect of wall `gallery_thumb_index` with `UNNotificationAttachmentOptionsThumbnailClippingRectKey`. If there is no gallery, it downloads `imageUrl`. It accepts https only. The download has at most 20 seconds.
+
+The extension checks the image header without decoding the image. The image must be a JPEG, PNG or HEIC. It must be at most 5 MB and 4096 px on each side.
+
+On any failure, the push is delivered as text. This also happens when the system time limit comes.
+
+Before this target, iOS pushes showed no image. Now every push with an image shows it.
+
+Tests:
+
+```sh
+swift test --package-path ios --filter PushImageTests
+```
+
+TestFlight needs the secret `IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64`. It holds an App Store profile for `com.hash.prism.NotificationService`. The TestFlight workflow, `.github/workflows/testflight.yml`, needs this secret.
+
+### Follow digest
+
+`sendFollowDigests` runs every 15 minutes. It sends at 19:00 local time, using `appOpenTimezoneOffsetMinutes`.
+
+The job collects walls approved in the last 24 hours (`approvedNotifiedAt`). The walls must pass the gallery gate and must not be Studio walls. It groups them by creator. It sends one push to each follower (`profiles/{creator}/followers`).
+
+Titles depend on the shape of the digest. The examples use the creator name "Asha".
+
+| Shape | Title |
+|---|---|
+| One creator, one wall | "Asha posted a new wall" |
+| One creator, several walls | "Asha posted 3 new walls" |
+| Two creators | "Asha and Ben posted 5 new walls" |
+| More creators | "Asha and 3 others posted 9 new walls" |
+
+The body is the tags line. If there are no tags, the body is "Tap to see them all."
+
+The title keys are `notif_push_follow_digest_title_one`, `_solo`, `_pair` and `_group`, in the row order of the table. The body keys are `notif_push_follow_digest_body` and `notif_push_follow_digest_body_untitled`. Every app language has these keys.
+
+The digest goes only to a session with `postAlerts == true` and `postAlertsToken` equal to `fcmToken`. Only builds with the digest write `postAlertsToken`. Those builds leave the per-upload posts topics and do not join them on follow. Older builds keep the per-upload topic pushes from `onWallApproved`. That function does not change.
+
+- The Posts switch writes `postAlerts`.
+- Turning Followers off writes `postAlerts: false`.
+- Token sync writes `postAlerts` (Posts and Followers both on) and `postAlertsToken`.
+
+The digest is sent once per local day. The job claims `usersv2/{uid}/private/followDigest.day` in a transaction before the send. It releases the claim if the send fails. Blocked creators are dropped in both directions. There are no quiet hours other than the fixed local time.
+
+| Key | Value |
+|---|---|
+| `route` | `wall` |
+| `wall_id` | Lead wall |
+| `wall_ids` | Wall IDs |
+| `push_kind` | `post` |
+| `notification_kind` | `follow_digest` |
+
+The collapse key is `follow_digest_<day>`. The inbox doc is `follow_digest_<uid>_<day>`.
+
+Scoreboard data at the time of the change (2026-10-17 to 2026-10-28):
+
+- `post` had 13,194 sends and 0 taps. All sends were on 2026-10-20 and 2026-10-21.
+- `wotd` had 1,916 sends and 13 taps.
+
+Topic sends count once per message, not once per device. The data does not show that per-upload pushes work better for users who follow one creator. So every build with the digest gets it.
 
 ### Notification copy and adding a language
 
@@ -156,6 +280,9 @@ Cloud Function event
 | Win-back | `sendWinBackPushes` runs every 15 minutes. It sends to the UTC offsets where it is 18:00 local. Steps are 7, 14, 30, and 60 days since `lastAppOpenAt`. Each step stays open for 2 days. Day 7 and 14 open the feed, day 30 opens AI, and day 60 opens Wall of the Day. The Android channel is `recommendations`. The Recommendations switch (`marketingPushes`) still gates it. A missed evening sends the next day, once. Deploy the `usersv2` index on `appOpenTimezoneOffsetMinutes` + `lastAppOpenAt` before this query, or the job fails. |
 | Last app open | A signed-in open writes `lastAppOpenAt` (server timestamp) and `appOpenTimezoneOffsetMinutes` (offset rounded to 15 minutes), at most every 15 minutes. A user with no last open is not eligible for win-back. |
 | Scoreboard | Daily counts are split across `metrics/notificationScoreboard/days/{utc date}_{00-31}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. Every FCM message counts as an attempt: a personal push with both topic generations and a token counts as three. Admins see the sum of those shards for the last 14 UTC dates on the Notifications tab. |
+| Gallery image | A gallery image is stored once for each layout and sorted wall set. A push for the same walls reuses it. A failure keeps the single image. |
+| Gallery cap | A user gets at most 1 gallery push a day. The Drop push owns the gallery on its UTC day. |
+| Follow digest | `sendFollowDigests` sends at 19:00 local time, once per follower and local day. The day is claimed before the send. |
 
 ### Wall of the Day topics
 
@@ -183,6 +310,10 @@ Cloud Function event
 | `functions/src/wallOfTheDay.ts` | Daily pick, bucket job. |
 | `functions/src/streak.ts` | Streak reminder job. |
 | `functions/src/winBack.ts` | Win-back job. |
+| `functions/src/pushGallery.ts` | Gallery image, layouts and gallery push data. |
+| `functions/src/followDigest.ts` | Follow digest job. |
+| `lib/features/moods/views/pages/gallery_screen.dart` | Gallery page for `/gallery`. |
+| `ios/PrismNotificationService/` | iOS notification service extension. |
 
 ## Deploy order
 
@@ -190,8 +321,9 @@ Deploy the backend before the client. The notification topic migration requires 
 
 1. Firestore indexes.
 2. Cloud Functions (`sendWallOfTheDayBuckets` is new).
-3. Cloudflare worker, then web.
-4. Client release.
+3. Cloud Functions for gallery pushes and the follow digest. `sendFollowDigests` is new. `wallOfTheDay`, `sendWallOfTheDayBuckets` and `sendDropPushes` now need the R2 secrets. Deploy them before the client release, because new clients leave the posts topics.
+4. Cloudflare worker, then web.
+5. Client release.
 
 If the client ships first, new builds leave `wall_of_the_day`. The bucket topic then gets no push until `sendWallOfTheDayBuckets` is live. Those users get no Wall of the Day push.
 
@@ -225,6 +357,9 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 13. Follow a creator. Make sure that the device joins `<prefix>_posts_loc_v1` and `posts_<uid>_loc_v1` and leaves their legacy variants. Unfollow and make sure that it leaves all four topics.
 14. Open About, then PRIVACY and TERMS. Make sure that the web pages open in the browser, not the Not found page.
 15. Send the same personal push while the app is open. Make sure that one banner shows.
+16. Send a gallery push to a test device token. Make sure that the collapsed push shows one wall as the thumbnail.
+17. Expand the push. Make sure that the expanded view shows the walls side by side.
+18. Tap the push. Make sure that the gallery page opens with those walls.
 
 Automated tests:
 
@@ -240,6 +375,8 @@ Automated tests:
 | Foreground push ids | `test/notifications/local_notification_test.dart` |
 | Topics and token | `test/notifications/topic_subscription_test.dart`, `test/notifications/push_topics_sync_test.dart`, `test/notifications/creator_posts_uid_topics_test.dart`, `test/notifications/fcm_token_service_test.dart` |
 | Functions | `functions/src/__tests__/wallOfTheDay.test.ts`, `notificationHelper.test.ts`, `personalPushes.test.ts`, `onWallApproved.test.ts`, `onFollowCreated.test.ts`, `streak.test.ts`, `winBack.test.ts` |
+| Gallery pushes and follow digest | `functions/src/__tests__/pushGallery.test.ts`, `functions/src/__tests__/followDigest.test.ts` |
+| iOS push image | `ios/RunnerTests/PushImageTests.swift` |
 
 Commands:
 
