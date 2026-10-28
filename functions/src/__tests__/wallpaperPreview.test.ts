@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
 import sharp from "sharp";
-import {loadWallpaperPreview, renderWallpaperPreview, wallpaperPreview} from "../wallpaperPreview";
+import {loadWallpaperPreview, previewCacheObject, renderWallpaperPreview, wallpaperPreview} from "../wallpaperPreview";
 import {R2Storage, r2ObjectId} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
 
@@ -53,14 +53,28 @@ async function setup(t: Parameters<typeof installFakeDb>[0]) {
       incarnationNanos: 1000000, original, thumb},
     [`r2ObjectRegistry/${original.objectId}`]: {...original, status: "active", uploadId: "imported"},
   });
-  t.mock.method(R2Storage.prototype, "head", async () => ({...original, gitSha: original.sha,
-    uploadId: "imported", size: bytes.length}));
+  const stored = new Map<string, {bytes: Buffer; sha256: string}>();
+  t.mock.method(R2Storage.prototype, "head", async (bucket: string, object: string) => {
+    assert.equal(bucket, "private");
+    if (object === original.object) return {...original, gitSha: original.sha, uploadId: "imported", size: bytes.length};
+    const cached = stored.get(object);
+    return cached ? {...original, sha256: cached.sha256, size: cached.bytes.length} : null;
+  });
   const get = t.mock.method(R2Storage.prototype, "get", async (bucket: string, object: string) => {
     assert.equal(bucket, "private");
-    assert.equal(object, original.object);
-    return bytes;
+    if (object === original.object) return bytes;
+    const cached = stored.get(object);
+    if (!cached) throw new Error("R2 GET failed (404)");
+    return cached.bytes;
   });
-  return {store, url, get, original};
+  const put = t.mock.method(R2Storage.prototype, "put",
+    async (bucket: string, object: string, body: Buffer, metadata: Record<string, string>) => {
+      assert.equal(bucket, "private");
+      stored.set(object, {bytes: body, sha256: metadata.sha256});
+      return true;
+    });
+  const originalReads = () => get.mock.calls.filter((call) => call.arguments[1] === original.object).length;
+  return {store, url, get, put, stored, original, originalReads};
 }
 
 test("an approved protected wall returns display pixels without charging or signing an original", async (t) => {
@@ -72,6 +86,51 @@ test("an approved protected wall returns display pixels without charging or sign
   assert.equal(metadata.height, 2000);
   assert.equal(metadata.format, "jpeg");
   assert.deepEqual([...store.entries()], before);
+});
+
+test("the first request stores the rendered preview and later requests serve it without the original",
+  async (t) => {
+    const {url, stored, original, originalReads, put} = await setup(t);
+    const first = await loadWallpaperPreview("asset", url);
+    const object = previewCacheObject("asset", original.sha256);
+    assert.equal(object, `display-previews/asset/${original.sha256}.jpg`);
+    assert.deepEqual(stored.get(object)?.bytes, first);
+    assert.equal(stored.get(object)?.sha256, digest(first));
+    assert.equal(put.mock.callCount(), 1);
+    const second = await loadWallpaperPreview("asset", url);
+    assert.deepEqual(second, first);
+    assert.equal(originalReads(), 1);
+    assert.equal(put.mock.callCount(), 1);
+  });
+
+test("a stored preview that does not match its digest is rendered again from the verified original", async (t) => {
+  const {url, stored, original, originalReads} = await setup(t);
+  stored.set(previewCacheObject("asset", original.sha256), {bytes: Buffer.from("tampered"), sha256: "e".repeat(64)});
+  const preview = await loadWallpaperPreview("asset", url);
+  assert.equal((await sharp(preview).metadata()).format, "jpeg");
+  assert.equal(originalReads(), 1);
+});
+
+test("a failed store still returns the rendered preview", async (t) => {
+  const {url, put} = await setup(t);
+  put.mock.mockImplementation(async () => {
+    throw new Error("R2 PUT failed (500)");
+  });
+  const preview = await loadWallpaperPreview("asset", url);
+  assert.equal((await sharp(preview).metadata()).format, "jpeg");
+});
+
+test("a withdrawn wall is refused even when its preview is stored", async (t) => {
+  const {store, url, get} = await setup(t);
+  await loadWallpaperPreview("asset", url);
+  const reads = get.mock.callCount();
+  const wall = store.get("walls/document");
+  assert.ok(wall);
+  for (const patch of [{review: false}, {is_streak_exclusive: true}, {dropReserved: true}, {dropWeek: "future"}]) {
+    store.set("walls/document", {...wall, ...patch});
+    await assert.rejects(loadWallpaperPreview("asset", url));
+  }
+  assert.equal(get.mock.callCount(), reads);
 });
 
 test("withheld, stale, ambiguous, or invalid wall identities never read original bytes", async (t) => {
@@ -101,7 +160,34 @@ test("tombstoned storage and corrupt original bytes fail closed", async (t) => {
 
 test("preview endpoint is available in both app regions with bounded concurrency", () => {
   assert.deepEqual(wallpaperPreview.__endpoint.region, ["asia-south1", "us-central1"]);
-  assert.equal(wallpaperPreview.__endpoint.concurrency, 1);
+  assert.equal(wallpaperPreview.__endpoint.concurrency, 8);
+  assert.equal(wallpaperPreview.__endpoint.availableMemoryMb, 1024);
+});
+
+test("a served preview may be kept by the device for a year but never by a shared cache", async (t) => {
+  const {url} = await setup(t);
+  const headers: Record<string, string> = {};
+  let body: Buffer | undefined;
+  const response = {
+    set(key: string, value: string) {
+      headers[key] = value;
+      return this;
+    },
+    status() {
+      return this;
+    },
+    type() {
+      return this;
+    },
+    send(value: Buffer) {
+      body = value;
+      return this;
+    },
+  };
+  await wallpaperPreview({method: "GET", query: {id: "asset", thumb: url}} as unknown as
+    Parameters<typeof wallpaperPreview>[0], response as unknown as Parameters<typeof wallpaperPreview>[1]);
+  assert.equal(headers["Cache-Control"], "private, max-age=31536000, immutable");
+  assert.ok(body && body.length > 0);
 });
 
 
