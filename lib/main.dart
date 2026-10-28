@@ -48,6 +48,7 @@ import 'package:Prism/core/startup/session_end_watcher.dart';
 import 'package:Prism/core/startup/session_ended_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/orientation_policy.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -166,16 +167,14 @@ Future<void> main() async {
             PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
       }
       await initializeDateFormatting();
-      unawaited(
-        app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
-          logger.w(
-            'Unable to read runtime app version; falling back to static constants.',
-            tag: 'AppVersion',
-            error: e,
-            stackTrace: s,
-          );
-        }),
-      );
+      final Future<void> appVersionReady = app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
+        logger.w(
+          'Unable to read runtime app version; falling back to static constants.',
+          tag: 'AppVersion',
+          error: e,
+          stackTrace: s,
+        );
+      });
       if (kDebugMode) Bloc.observer = const BlocDebugObserver();
       localNotification = LocalNotification();
 
@@ -290,6 +289,7 @@ Future<void> main() async {
       PerformanceProbe.mark('startup.before_di');
       configureDependencies();
       PerformanceProbe.mark('startup.di_ready');
+      unawaited(appVersionReady.then((_) => getIt<OtaUpdateController>().recordLaunch()));
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
       final notificationOwner = persistedUser.loggedIn && persistedUser.id.trim().isNotEmpty
@@ -333,8 +333,13 @@ Future<void> main() async {
                   BlocProvider<FoldersBloc>(create: (_) => getIt<FoldersBloc>()),
                   BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
                   BlocProvider<StartupBloc>(
-                    create: (_) =>
-                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                    create: (_) => getIt<StartupBloc>()
+                      ..add(
+                        StartupEvent.started(
+                          currentVersion: app_state.currentAppVersion,
+                          currentBuild: app_state.currentAppVersionCode,
+                        ),
+                      ),
                   ),
                   BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
                   BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),

@@ -246,6 +246,8 @@ import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
 import '../personalization/taste_signals.dart' as _i731;
 import '../platform/system_color_schemes.dart' as _i565;
+import '../updates/code_push_updater.dart' as _i676;
+import '../updates/ota_update_controller.dart' as _i481;
 import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
 
@@ -430,6 +432,9 @@ _i174.GetIt initGetIt(
       gh<_i321.ShowRewardedAdUseCase>(),
     ),
   );
+  gh.lazySingleton<_i676.CodePushUpdater>(
+    () => appModule.codePushUpdater(gh<_i1073.SettingsLocalDataSource>()),
+  );
   gh.lazySingleton<_i96.DropsRepository>(
     () => _i591.DropsRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
@@ -489,6 +494,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i761.FavouriteCountsRepository>(
     () => _i931.FavouriteCountsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i481.OtaUpdateController>(
+    () => appModule.otaUpdateController(
+      gh<_i676.CodePushUpdater>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
   );
   gh.lazySingleton<_i428.ThemeRepository>(
     () => _i593.ThemeRepositoryImpl(

@@ -126,7 +126,14 @@ void main() {
     await pumpSplash(tester, ThemeMode.dark, prismLightThemes.first.theme, theme);
     expect(find.text("Prism could not start"), findsOneWidget);
     await tester.tap(find.text('Try again'));
-    verify(() => bloc.add(StartupEvent.started(currentVersion: app_state.currentAppVersion))).called(1);
+    verify(
+      () => bloc.add(
+        StartupEvent.started(
+          currentVersion: app_state.currentAppVersion,
+          currentBuild: app_state.currentAppVersionCode,
+        ),
+      ),
+    ).called(1);
 
     states.add(StartupState.initial().copyWith(status: LoadStatus.loading));
     await tester.pump();

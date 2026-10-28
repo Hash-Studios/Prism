@@ -3265,6 +3265,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugClearSearch => 'Hapus pencarian';
 
   @override
+  String get debugCodePush => 'Pembaruan kode';
+
+  @override
   String get debugCoins => 'Koin';
 
   @override
@@ -3642,6 +3645,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get debugSequence => 'Urutan';
 
   @override
+  String get debugShorebirdPatch => 'Patch Shorebird';
+
+  @override
   String get debugShowLogToasts => 'Tampilkan toast log';
 
   @override
@@ -3661,6 +3667,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get debugStackTraceCopied => 'Jejak tumpukan disalin';
+
+  @override
+  String get debugStagingPatches => 'Ambil patch staging';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'Cek kanal staging Shorebird, bukan kanal stabil. Mulai ulang untuk menerapkan patch.';
 
   @override
   String get debugStillPoses => 'Pose diam';
@@ -7480,6 +7493,12 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get premiumPurchaseUnconfirmed =>
       'Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.';
+
+  @override
+  String get updatesRestartToFinish => 'Tutup lalu buka lagi Prism untuk menyelesaikan pembaruan.';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Versi baru Prism tersedia.';
 
   @override
   String get wallpaperAccentColor => 'Warna aksen';

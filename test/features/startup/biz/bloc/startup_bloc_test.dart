@@ -11,7 +11,11 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockBootstrapAppUseCase extends Mock implements BootstrapAppUseCase {}
 
-StartupConfigEntity _config({String obsoleteAppVersion = '2.6.9'}) => StartupConfigEntity(
+StartupConfigEntity _config({
+  String obsoleteAppVersion = '2.6.9',
+  int minStoreBuild = 0,
+  bool storeUpdateBlocking = false,
+}) => StartupConfigEntity(
   topImageLink: 'top',
   bannerText: 'banner',
   bannerTextOn: true,
@@ -25,6 +29,8 @@ StartupConfigEntity _config({String obsoleteAppVersion = '2.6.9'}) => StartupCon
   aiVariationsEnabled: true,
   useRcPaywalls: true,
   onboardingV2Enabled: true,
+  minStoreBuild: minStoreBuild,
+  storeUpdateBlocking: storeUpdateBlocking,
 );
 
 void main() {
@@ -79,5 +85,25 @@ void main() {
       bloc.add(const StartupEvent.started(currentVersion: '3.0.9'));
     },
     verify: (bloc) => expect(bloc.state.status, LoadStatus.success),
+  );
+
+  blocTest<StartupBloc, StartupState>(
+    'a blocking store update below the minimum build marks the app as obsolete',
+    setUp: () => when(
+      () => bootstrapUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(_config(minStoreBuild: 353, storeUpdateBlocking: true))),
+    build: () => StartupBloc(bootstrapUseCase),
+    act: (bloc) => bloc.add(const StartupEvent.started(currentVersion: '3.14.0', currentBuild: '352')),
+    verify: (bloc) => expect(bloc.state.isObsoleteVersion, isTrue),
+  );
+
+  blocTest<StartupBloc, StartupState>(
+    'a non-blocking store update below the minimum build does not mark the app as obsolete',
+    setUp: () => when(
+      () => bootstrapUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(_config(minStoreBuild: 353))),
+    build: () => StartupBloc(bootstrapUseCase),
+    act: (bloc) => bloc.add(const StartupEvent.started(currentVersion: '3.14.0', currentBuild: '352')),
+    verify: (bloc) => expect(bloc.state.isObsoleteVersion, isFalse),
   );
 }

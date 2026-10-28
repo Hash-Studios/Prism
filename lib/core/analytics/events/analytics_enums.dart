@@ -364,6 +364,17 @@ enum PushKindValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum OtaFailureReasonValue {
+  checkTimeout,
+  checkFailed,
+  downloadTimeout,
+  downloadFailed,
+  installFailed,
+  unknown;
+
+  String get wireValue => _snakeCase(name);
+}
+
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');
 
 PaywallResultValue paywallResultValueFromSdkName(String rawResult) {

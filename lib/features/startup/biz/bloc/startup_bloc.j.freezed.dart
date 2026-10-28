@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$StartupEvent {
 
- String? get currentVersion;
+ String? get currentVersion; String? get currentBuild;
 /// Create a copy of StartupEvent
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $StartupEventCopyWith<StartupEvent> get copyWith => _$StartupEventCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StartupEvent&&(identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StartupEvent&&(identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion)&&(identical(other.currentBuild, currentBuild) || other.currentBuild == currentBuild));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentVersion);
+int get hashCode => Object.hash(runtimeType,currentVersion,currentBuild);
 
 @override
 String toString() {
-  return 'StartupEvent(currentVersion: $currentVersion)';
+  return 'StartupEvent(currentVersion: $currentVersion, currentBuild: $currentBuild)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $StartupEventCopyWith<$Res>  {
   factory $StartupEventCopyWith(StartupEvent value, $Res Function(StartupEvent) _then) = _$StartupEventCopyWithImpl;
 @useResult
 $Res call({
- String? currentVersion
+ String? currentVersion, String? currentBuild
 });
 
 
@@ -62,9 +62,10 @@ class _$StartupEventCopyWithImpl<$Res>
 
 /// Create a copy of StartupEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentVersion = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentVersion = freezed,Object? currentBuild = freezed,}) {
   return _then(_self.copyWith(
 currentVersion: freezed == currentVersion ? _self.currentVersion : currentVersion // ignore: cast_nullable_to_non_nullable
+as String?,currentBuild: freezed == currentBuild ? _self.currentBuild : currentBuild // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -150,10 +151,10 @@ return started(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? currentVersion)?  started,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? currentVersion,  String? currentBuild)?  started,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.currentVersion);case _:
+return started(_that.currentVersion,_that.currentBuild);case _:
   return orElse();
 
 }
@@ -171,10 +172,10 @@ return started(_that.currentVersion);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? currentVersion)  started,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? currentVersion,  String? currentBuild)  started,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.currentVersion);case _:
+return started(_that.currentVersion,_that.currentBuild);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -191,10 +192,10 @@ return started(_that.currentVersion);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? currentVersion)?  started,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? currentVersion,  String? currentBuild)?  started,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.currentVersion);case _:
+return started(_that.currentVersion,_that.currentBuild);case _:
   return null;
 
 }
@@ -206,10 +207,11 @@ return started(_that.currentVersion);case _:
 
 
 class _Started implements StartupEvent {
-  const _Started({this.currentVersion});
+  const _Started({this.currentVersion, this.currentBuild});
   
 
 @override final  String? currentVersion;
+@override final  String? currentBuild;
 
 /// Create a copy of StartupEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -221,16 +223,16 @@ _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&(identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&(identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion)&&(identical(other.currentBuild, currentBuild) || other.currentBuild == currentBuild));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentVersion);
+int get hashCode => Object.hash(runtimeType,currentVersion,currentBuild);
 
 @override
 String toString() {
-  return 'StartupEvent.started(currentVersion: $currentVersion)';
+  return 'StartupEvent.started(currentVersion: $currentVersion, currentBuild: $currentBuild)';
 }
 
 
@@ -241,7 +243,7 @@ abstract mixin class _$StartedCopyWith<$Res> implements $StartupEventCopyWith<$R
   factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
 @override @useResult
 $Res call({
- String? currentVersion
+ String? currentVersion, String? currentBuild
 });
 
 
@@ -258,9 +260,10 @@ class __$StartedCopyWithImpl<$Res>
 
 /// Create a copy of StartupEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentVersion = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentVersion = freezed,Object? currentBuild = freezed,}) {
   return _then(_Started(
 currentVersion: freezed == currentVersion ? _self.currentVersion : currentVersion // ignore: cast_nullable_to_non_nullable
+as String?,currentBuild: freezed == currentBuild ? _self.currentBuild : currentBuild // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

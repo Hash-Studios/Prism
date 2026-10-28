@@ -2999,6 +2999,7 @@
   "debugClearLogsBody": "इससे मेमोरी में रखी गई सभी लॉग एंट्रियाँ हट जाएँगी।",
   "debugClearLogsTitle": "लॉग साफ़ करें?",
   "debugClearSearch": "खोज साफ़ करें",
+  "debugCodePush": "कोड पुश",
   "debugCoins": "कॉइन्स",
   "debugCopied": "कॉपी किया गया",
   "debugCopiedToClipboard": "क्लिपबोर्ड पर कॉपी किया गया",
@@ -3154,6 +3155,7 @@
   "debugSentryEnabled": "Sentry चालू है",
   "debugSentryEnv": "Sentry परिवेश",
   "debugSequence": "क्रम",
+  "debugShorebirdPatch": "Shorebird पैच",
   "debugShowLogToasts": "लॉग टोस्ट दिखाएँ",
   "debugShowLogToastsDescription": "लॉग एंट्रियाँ कुछ पल के लिए ओवरले टोस्ट के रूप में दिखाएँ",
   "debugSimulateNoInternet": "इंटरनेट न होने का सिमुलेशन करें",
@@ -3161,6 +3163,8 @@
   "debugSpeed": "गति",
   "debugStackTrace": "स्टैक ट्रेस",
   "debugStackTraceCopied": "स्टैक ट्रेस कॉपी किया गया",
+  "debugStagingPatches": "स्टेजिंग पैच प्राप्त करें",
+  "debugStagingPatchesDescription": "स्थिर चैनल की जगह Shorebird स्टेजिंग चैनल जाँचें। पैच लागू करने के लिए रीस्टार्ट करें।",
   "debugStillPoses": "स्थिर मुद्राएँ",
   "debugStorage": "स्टोरेज",
   "debugStorageCleared": "सारा स्टोरेज साफ़ कर दिया गया",
@@ -6301,6 +6305,8 @@
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
+  "updatesRestartToFinish": "अपडेट पूरा करने के लिए Prism बंद करके फिर से खोलें।",
+  "updatesStoreUpdateAvailable": "Prism का नया संस्करण उपलब्ध है।",
   "wallpaperAccentColor": "ऐक्सेंट रंग",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."

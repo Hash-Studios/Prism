@@ -2977,6 +2977,7 @@
   "debugClearLogsBody": "Dadurch werden alle im Arbeitsspeicher gespeicherten Log-Einträge entfernt.",
   "debugClearLogsTitle": "Logs leeren?",
   "debugClearSearch": "Suche leeren",
+  "debugCodePush": "Code-Push",
   "debugCoins": "Coins",
   "debugCopied": "Kopiert",
   "debugCopiedToClipboard": "In die Zwischenablage kopiert",
@@ -3132,6 +3133,7 @@
   "debugSentryEnabled": "Sentry aktiviert",
   "debugSentryEnv": "Sentry-Umgebung",
   "debugSequence": "Abfolge",
+  "debugShorebirdPatch": "Shorebird-Patch",
   "debugShowLogToasts": "Log-Toasts anzeigen",
   "debugShowLogToastsDescription": "Log-Einträge kurz als Overlays einblenden",
   "debugSimulateNoInternet": "Keine Internetverbindung simulieren",
@@ -3139,6 +3141,8 @@
   "debugSpeed": "Geschwindigkeit",
   "debugStackTrace": "Stacktrace",
   "debugStackTraceCopied": "Stacktrace kopiert",
+  "debugStagingPatches": "Staging-Patches abrufen",
+  "debugStagingPatchesDescription": "Den Shorebird-Staging-Kanal statt des stabilen Kanals prüfen. Zum Anwenden eines Patches neu starten.",
   "debugStillPoses": "Statische Posen",
   "debugStorage": "Speicher",
   "debugStorageCleared": "Gesamter Speicher geleert",
@@ -6305,6 +6309,8 @@
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
+  "updatesRestartToFinish": "Schließe Prism und öffne es erneut, um das Update abzuschließen.",
+  "updatesStoreUpdateAvailable": "Eine neue Version von Prism ist verfügbar.",
   "wallpaperAccentColor": "Akzentfarbe",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."

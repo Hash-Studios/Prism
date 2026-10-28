@@ -13,6 +13,8 @@ class StartupConfigEntity {
     required this.aiVariationsEnabled,
     required this.useRcPaywalls,
     required this.onboardingV2Enabled,
+    this.minStoreBuild = 0,
+    this.storeUpdateBlocking = false,
   });
 
   final String topImageLink;
@@ -30,4 +32,8 @@ class StartupConfigEntity {
   final bool aiVariationsEnabled;
   final bool useRcPaywalls;
   final bool onboardingV2Enabled;
+
+  /// Remote Config minimum build for this platform. 0 means no minimum.
+  final int minStoreBuild;
+  final bool storeUpdateBlocking;
 }

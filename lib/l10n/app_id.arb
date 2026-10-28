@@ -3203,6 +3203,7 @@
   "debugClearLogsBody": "Ini menghapus semua entri log yang tersimpan di memori.",
   "debugClearLogsTitle": "Hapus log?",
   "debugClearSearch": "Hapus pencarian",
+  "debugCodePush": "Pembaruan kode",
   "debugCoins": "Koin",
   "debugCopied": "Disalin",
   "debugCopiedToClipboard": "Disalin ke papan klip",
@@ -3358,6 +3359,7 @@
   "debugSentryEnabled": "Sentry aktif",
   "debugSentryEnv": "Lingkungan Sentry",
   "debugSequence": "Urutan",
+  "debugShorebirdPatch": "Patch Shorebird",
   "debugShowLogToasts": "Tampilkan toast log",
   "debugShowLogToastsDescription": "Tampilkan entri log sebagai toast singkat",
   "debugSimulateNoInternet": "Simulasikan tanpa internet",
@@ -3365,6 +3367,8 @@
   "debugSpeed": "Kecepatan",
   "debugStackTrace": "Jejak tumpukan",
   "debugStackTraceCopied": "Jejak tumpukan disalin",
+  "debugStagingPatches": "Ambil patch staging",
+  "debugStagingPatchesDescription": "Cek kanal staging Shorebird, bukan kanal stabil. Mulai ulang untuk menerapkan patch.",
   "debugStillPoses": "Pose diam",
   "debugStorage": "Penyimpanan",
   "debugStorageCleared": "Semua penyimpanan dihapus",
@@ -6528,6 +6532,8 @@
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
+  "updatesRestartToFinish": "Tutup lalu buka lagi Prism untuk menyelesaikan pembaruan.",
+  "updatesStoreUpdateAvailable": "Versi baru Prism tersedia.",
   "wallpaperAccentColor": "Warna aksen",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."

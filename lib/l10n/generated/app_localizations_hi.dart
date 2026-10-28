@@ -3282,6 +3282,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get debugClearSearch => 'खोज साफ़ करें';
 
   @override
+  String get debugCodePush => 'कोड पुश';
+
+  @override
   String get debugCoins => 'कॉइन्स';
 
   @override
@@ -3658,6 +3661,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get debugSequence => 'क्रम';
 
   @override
+  String get debugShorebirdPatch => 'Shorebird पैच';
+
+  @override
   String get debugShowLogToasts => 'लॉग टोस्ट दिखाएँ';
 
   @override
@@ -3677,6 +3683,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get debugStackTraceCopied => 'स्टैक ट्रेस कॉपी किया गया';
+
+  @override
+  String get debugStagingPatches => 'स्टेजिंग पैच प्राप्त करें';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'स्थिर चैनल की जगह Shorebird स्टेजिंग चैनल जाँचें। पैच लागू करने के लिए रीस्टार्ट करें।';
 
   @override
   String get debugStillPoses => 'स्थिर मुद्राएँ';
@@ -7586,6 +7599,12 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get premiumPurchaseUnconfirmed =>
       'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।';
+
+  @override
+  String get updatesRestartToFinish => 'अपडेट पूरा करने के लिए Prism बंद करके फिर से खोलें।';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Prism का नया संस्करण उपलब्ध है।';
 
   @override
   String get wallpaperAccentColor => 'ऐक्सेंट रंग';

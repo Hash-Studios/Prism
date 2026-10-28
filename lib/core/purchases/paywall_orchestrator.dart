@@ -40,7 +40,23 @@ class PaywallOrchestrator {
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
+  /// True while a paywall is loading or on screen. Prompts that Prism opens on its own wait until it is false.
+  final ValueNotifier<bool> presenting = ValueNotifier<bool>(false);
+
   Future<PaywallResultValue> present({
+    required String placement,
+    required String source,
+    AppLocalizations? messages,
+  }) async {
+    presenting.value = true;
+    try {
+      return await _present(placement: placement, source: source, messages: messages);
+    } finally {
+      presenting.value = false;
+    }
+  }
+
+  Future<PaywallResultValue> _present({
     required String placement,
     required String source,
     AppLocalizations? messages,

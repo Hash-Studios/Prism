@@ -4,6 +4,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/updates/store_update_policy.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -81,6 +82,12 @@ int get aiRolloutPercent => startupConfig?.aiRolloutPercent ?? app_constants.def
 bool get aiSubmitEnabled => startupConfig?.aiSubmitEnabled ?? app_constants.defaultAiSubmitEnabled;
 bool get aiVariationsEnabled => startupConfig?.aiVariationsEnabled ?? app_constants.defaultAiVariationsEnabled;
 bool get useRcPaywalls => startupConfig?.useRcPaywalls ?? app_constants.defaultUseRcPaywalls;
+
+StoreUpdate get storeUpdate => storeUpdateFor(
+  currentBuild: currentAppVersionCode,
+  minBuild: startupConfig?.minStoreBuild ?? app_constants.defaultMinStoreBuild,
+  blocking: startupConfig?.storeUpdateBlocking ?? app_constants.defaultStoreUpdateBlocking,
+);
 
 List<String> get premiumCollections =>
     List<String>.from(startupConfig?.premiumCollections ?? app_constants.defaultPremiumCollections);

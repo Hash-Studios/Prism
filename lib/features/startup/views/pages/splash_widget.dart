@@ -151,8 +151,12 @@ class _SplashWidgetState extends State<SplashWidget> {
         } else if (state.status == LoadStatus.failure) {
           content = _StartupFailure(
             key: const ValueKey<String>('failure'),
-            onRetry: () =>
-                context.read<StartupBloc>().add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+            onRetry: () => context.read<StartupBloc>().add(
+              StartupEvent.started(
+                currentVersion: app_state.currentAppVersion,
+                currentBuild: app_state.currentAppVersionCode,
+              ),
+            ),
           );
         } else {
           content = const _SecondarySplash(key: ValueKey<String>('splash'));
