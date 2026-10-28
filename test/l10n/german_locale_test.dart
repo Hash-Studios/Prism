@@ -198,19 +198,19 @@ void main() {
 
     expect(
       AiPromptPools.sceneIdea(de, AiStylePreset.nature, 0),
-      'Eine neblige Bergkette im Morgenlicht, Smartphone-Hintergrund hochkant, ohne Text',
+      'Ein Wasserfall stürzt in eine moosige Schlucht, Smartphone-Hintergrund hochkant, ohne Text',
     );
     for (final AiStylePreset style in AiStylePreset.values) {
       final List<String> scenes = AiPromptPools.scenesByStyle(de, style);
       final List<String> onboarding = OnboardingV2Config.aiOnboardingPrompts(de, style);
-      expect(scenes, hasLength(5));
+      expect(scenes, hasLength(8));
       expect(onboarding, hasLength(5));
       expect(scenes.toSet().intersection(AiPromptPools.scenesByStyle(en, style).toSet()), isEmpty);
       expect(onboarding.toSet().intersection(OnboardingV2Config.aiOnboardingPrompts(en, style).toSet()), isEmpty);
       final String prompt = AiPromptPools.randomPrompt(de, style, Random(0));
       expect(prompt, contains('Smartphone-Hintergrund hochkant, ohne Text'));
-      expect(prompt, isNot(contains('lighting')));
-      expect(prompt, isNot(contains('mood')));
+      expect(prompt, isNot(contains('light')));
+      expect(prompt, isNot(contains('hues')));
     }
     expect(formatFileSize('12.50MB', de.localeName), '12,50 MB');
     expect(de.coreSignInFeatureTitle(de.coreSignInCreatorSearchFeature), 'Melde dich für „Suche nach Kreativen“ an');

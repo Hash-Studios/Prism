@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/system_accent_channel.dart';
+import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -33,11 +34,11 @@ void main() {
 
   tearDown(() => getIt.reset());
 
-  Future<void> pumpPage(WidgetTester tester, ThemeMode mode) async {
+  Future<void> pumpPage(WidgetTester tester, ThemeMode mode, {ThemeState? state}) async {
     tester.view.physicalSize = const Size(1000, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    when(() => themeBloc.state).thenReturn(themeBloc.state.copyWith(mode: mode));
+    when(() => themeBloc.state).thenReturn((state ?? themeBloc.state).copyWith(mode: mode));
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
@@ -404,6 +405,84 @@ void main() {
       find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Custom color'),
     );
     expect(custom.properties.selected, isTrue);
+  });
+
+  group('Material You', () {
+    final SystemColorSchemes schemes = SystemColorSchemes(
+      light: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC)),
+      dark: ColorScheme.fromSeed(seedColor: const Color(0xFF3366CC), brightness: Brightness.dark),
+    );
+
+    testWidgets('Material You leads both lists on Android 12+', (tester) async {
+      await pumpPage(tester, ThemeMode.system, state: ThemeState.initial().copyWith(system: schemes));
+
+      expect(find.text('Material You'), findsNWidgets(2));
+      final Finder lightRow = find.byType(ListView).at(0);
+      final Finder lightMaterialYou = find.descendant(of: lightRow, matching: find.text('Material You'));
+      final Finder lightFrost = find.descendant(of: lightRow, matching: find.text('Frost White'));
+      expect(tester.getTopLeft(lightMaterialYou).dx, lessThan(tester.getTopLeft(lightFrost).dx));
+
+      final Finder darkRow = find.byType(ListView).at(1);
+      expect(find.descendant(of: darkRow, matching: find.text('Material You')), findsOneWidget);
+    });
+
+    testWidgets('no Material You below Android 12 and on iOS', (tester) async {
+      await pumpPage(tester, ThemeMode.system);
+
+      expect(find.text('Material You'), findsNothing);
+    });
+
+    testWidgets('Material You hides the accent controls for its slot', (tester) async {
+      await pumpPage(
+        tester,
+        ThemeMode.light,
+        state: ThemeState.initial().copyWith(
+          light: const ThemeSelection(themeId: prismMaterialYouLightThemeId, accentColorValue: prismDefaultAccentValue),
+          system: schemes,
+        ),
+      );
+
+      expect(find.text('Light Accent Color'), findsNothing);
+      expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
+      expect(find.byType(SwitchListTile), findsNothing);
+    });
+
+    testWidgets('an unusable Material You id shows the default theme and its accent controls', (tester) async {
+      await pumpPage(
+        tester,
+        ThemeMode.light,
+        state: ThemeState.initial().copyWith(
+          light: const ThemeSelection(themeId: prismMaterialYouLightThemeId, accentColorValue: prismDefaultAccentValue),
+        ),
+      );
+
+      expect(find.text('Light Accent Color'), findsOneWidget);
+      expect(find.text('Material You takes its colours from your wallpaper.'), findsNothing);
+    });
+
+    testWidgets('mixed slots hide only the Material You accent', (tester) async {
+      await pumpPage(
+        tester,
+        ThemeMode.system,
+        state: ThemeState.initial().copyWith(
+          light: const ThemeSelection(themeId: prismMaterialYouLightThemeId, accentColorValue: prismDefaultAccentValue),
+          dark: const ThemeSelection(themeId: prismAmoledDarkThemeId, accentColorValue: prismDefaultAccentValue),
+          system: schemes,
+        ),
+      );
+
+      expect(find.text('Light Accent Color'), findsNothing);
+      expect(find.text('Dark Accent Color'), findsOneWidget);
+      expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
+    });
+
+    testWidgets('tapping the Material You chip dispatches lightThemeChanged', (tester) async {
+      await pumpPage(tester, ThemeMode.light, state: ThemeState.initial().copyWith(system: schemes));
+
+      await tester.tap(find.text('Material You'));
+
+      verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: prismMaterialYouLightThemeId))).called(1);
+    });
   });
 
   group('match system colour', () {

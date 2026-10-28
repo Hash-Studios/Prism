@@ -19,28 +19,42 @@ class _FirstIndexRandom implements Random {
 void main() {
   final l10n = AppLocalizationsEn();
 
-  test('random prompt combines the selected scene with localized prompt details', () {
+  test('random prompt combines the selected scene with a lighting and a palette', () {
     final prompt = AiPromptPools.randomPrompt(l10n, AiStylePreset.anime, _FirstIndexRandom());
 
     expect(
       prompt,
-      'an anime skyline above floating islands, soft ambient lighting, calm mood, high detail, '
+      'a cat napping on a sunlit train platform, soft morning haze, teal and amber hues, '
       'vertical phone wallpaper, no text',
+    );
+  });
+
+  test('random prompts use the scenes of the new styles', () {
+    expect(
+      AiPromptPools.randomPrompt(l10n, AiStylePreset.ukiyoE, _FirstIndexRandom()),
+      startsWith('a great wave curling beneath a pale moon, '),
     );
   });
 
   test('scene ideas cycle through the first three scenes and add the wallpaper instructions', () {
     expect(
       AiPromptPools.sceneIdea(l10n, AiStylePreset.nature, 0),
-      'a misty mountain range at sunrise, vertical phone wallpaper, no text',
+      'a waterfall pouring into a mossy gorge, vertical phone wallpaper, no text',
     );
     expect(
       AiPromptPools.sceneIdea(l10n, AiStylePreset.nature, 2),
-      'a dramatic coastal cliff with crashing waves, vertical phone wallpaper, no text',
+      'a frozen lake with cracks of blue ice, vertical phone wallpaper, no text',
     );
     expect(
       AiPromptPools.sceneIdea(l10n, AiStylePreset.nature, 3),
-      'a misty mountain range at sunrise, vertical phone wallpaper, no text',
+      'a waterfall pouring into a mossy gorge, vertical phone wallpaper, no text',
     );
+  });
+
+  test('scenes do not repeat across styles', () {
+    final List<String> scenes = <String>[
+      for (final AiStylePreset style in AiStylePreset.values) ...AiPromptPools.scenesByStyle(l10n, style),
+    ];
+    expect(scenes.toSet(), hasLength(scenes.length));
   });
 }

@@ -2743,6 +2743,44 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get coreShareFormatStory => 'Story';
+
+  @override
+  String get coreShareFormatPost => 'Beitrag';
+
+  @override
+  String get coreShareFormatClean => 'Schlicht';
+
+  @override
+  String get coreShareTargetInstagram => 'Instagram';
+
+  @override
+  String get coreShareTargetCopyLink => 'Link kopieren';
+
+  @override
+  String get coreShareTargetSaveImage => 'Bild speichern';
+
+  @override
+  String get coreShareTargetMore => 'Mehr';
+
+  @override
+  String coreShareCardBy(String creator) {
+    return 'von $creator';
+  }
+
+  @override
+  String get coreShareImageSaved => 'Bild gespeichert';
+
+  @override
+  String get coreShareImageFailed => 'Das Bild konnte nicht gespeichert werden. Versuch es erneut.';
+
+  @override
+  String get coreShareInstagramFailed => 'Instagram konnte nicht geöffnet werden. Versuch es erneut.';
+
+  @override
+  String get coreSharePreviewFailed => 'Dieses Bild konnte nicht erstellt werden. Über „Mehr“ wird der Link geteilt.';
+
+  @override
   String get coreShareLinkCopied => 'Freigabelink kopiert!';
 
   @override
@@ -2866,6 +2904,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreThemeMaterialDark => 'Material Dunkel';
+
+  @override
+  String get coreThemeMaterialYou => 'Material You';
 
   @override
   String get coreThemeOlive => 'Olive';
@@ -4031,6 +4072,24 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get economyAiStyleWatercolor => 'Aquarell';
+
+  @override
+  String get economyAiStyleSpace => 'Weltraum';
+
+  @override
+  String get economyAiStyleSynthwave => 'Synthwave';
+
+  @override
+  String get economyAiStylePixelArt => 'Pixel Art';
+
+  @override
+  String get economyAiStyleRender3d => '3D-Rendering';
+
+  @override
+  String get economyAiStyleOilPainting => 'Ölgemälde';
+
+  @override
+  String get economyAiStyleUkiyoE => 'Ukiyo-e';
 
   @override
   String get economyAiSubmissionUnconfirmed =>
@@ -9573,6 +9632,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperUsePhoneAccent => 'Akzentfarbe deines Smartphones verwenden';
 
   @override
+  String get wallpaperThemeMaterialYouNote => 'Material You übernimmt die Farben von deinem Hintergrundbild.';
+
+  @override
   String wallpaperViewCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -9590,161 +9652,371 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get economyAiPromptSceneAnime1 => 'Anime-Stadtsilhouette über schwebenden Inseln';
+  String get economyAiPromptSceneAnime1 => 'Eine Katze döst auf dem sonnigen Bahnsteig';
 
   @override
-  String get economyAiPromptSceneAnime2 => 'Einsamer Samurai auf regennasser Neonstraße';
+  String get economyAiPromptSceneAnime2 => 'Hohe Sommerwolken über Reisfeldern';
 
   @override
-  String get economyAiPromptSceneAnime3 => 'Futuristischer Schrein, Kirschblüten, Hologramme';
+  String get economyAiPromptSceneAnime3 => 'Ein Ramen-Stand leuchtet in regnerischer Gasse';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'Verträumter Anime-Nachtmarkt im Laternenlicht';
+  String get economyAiPromptSceneAnime4 => 'Ein Schreintor auf dem Hügel über Wolken';
 
   @override
-  String get economyAiPromptSceneAnime5 => 'Eine Cyber-Anime-Stadtsilhouette zur blauen Stunde';
+  String get economyAiPromptSceneAnime5 => 'Feuerwerk über dem Fluss beim Sommerfest';
 
   @override
-  String get economyAiPromptSceneMinimal1 => 'Reduzierte Dünen mit einer einzelnen Sonnenscheibe';
+  String get economyAiPromptSceneAnime6 => 'Ein stilles Klassenzimmer, Blütenblätter wehen';
 
   @override
-  String get economyAiPromptSceneMinimal2 => 'Klare, geometrische Bergschichten';
+  String get economyAiPromptSceneAnime7 => 'Küstenstraße mit einsamer Bushaltestelle';
 
   @override
-  String get economyAiPromptSceneMinimal3 => 'Ein ruhiger, monochromer Horizont über dem Meer';
+  String get economyAiPromptSceneAnime8 => 'Ein Himmelswal über einer verschlafenen Stadt';
 
   @override
-  String get economyAiPromptSceneMinimal4 => 'Abstrakte Linien mit ausgewogenen Abständen';
+  String get economyAiPromptSceneMinimal1 => 'Ein Papierboot auf stillem, hellem Wasser';
 
   @override
-  String get economyAiPromptSceneMinimal5 => 'Sanfter Himmelsfarbverlauf über flachen Hügeln';
+  String get economyAiPromptSceneMinimal2 => 'Ein Lichtbogen über leerer Ebene';
 
   @override
-  String get economyAiPromptSceneCyberpunk1 => 'Neon-Megacity-Straße mit nassen Spiegelungen';
+  String get economyAiPromptSceneMinimal3 => 'Ein einsamer Baum am sanften Schneehang';
 
   @override
-  String get economyAiPromptSceneCyberpunk2 => 'Futuristische Gasse mit Hologramm-Werbetafeln';
+  String get economyAiPromptSceneMinimal4 => 'Zwei sich überlappende Kreise auf Körnung';
 
   @override
-  String get economyAiPromptSceneCyberpunk3 => 'Eine Hightech-Silhouette mit Flugverkehrsschneisen';
+  String get economyAiPromptSceneMinimal5 => 'Eine feine Horizontlinie trennt Meer und Himmel';
 
   @override
-  String get economyAiPromptSceneCyberpunk4 => 'Ein Cyberpunk-Dach mit Blick auf leuchtende Türme';
+  String get economyAiPromptSceneMinimal6 => 'Eine einzelne Feder fällt durch leeren Raum';
 
   @override
-  String get economyAiPromptSceneCyberpunk5 => 'Nächtliche Straßenkreuzung in Türkis und Magenta';
+  String get economyAiPromptSceneMinimal7 => 'Gestapelte glatte Kiesel vor hellem Grund';
 
   @override
-  String get economyAiPromptSceneWatercolor1 => 'Ein Waldtal im Aquarellstil bei Tagesanbruch';
+  String get economyAiPromptSceneMinimal8 => 'Ein Schattenbogen auf weicher Putzwand';
 
   @override
-  String get economyAiPromptSceneWatercolor2 => 'Eine handgemalte Bergseeszene';
+  String get economyAiPromptSceneCyberpunk1 => 'Eine Nudelbar im Neonlicht und Regen';
 
   @override
-  String get economyAiPromptSceneWatercolor3 => 'Sanfte Aquarellwolken über sanften Hügeln';
+  String get economyAiPromptSceneCyberpunk2 => 'Eine Schwebebahn zwischen Megatürmen';
 
   @override
-  String get economyAiPromptSceneWatercolor4 => 'Ein friedliches Flussufer in Pastelltönen';
+  String get economyAiPromptSceneCyberpunk3 => 'Ein einsamer Androide auf dem Dach im Regen';
 
   @override
-  String get economyAiPromptSceneWatercolor5 => 'Kunstvolle Aquarellküste bei Sonnenuntergang';
+  String get economyAiPromptSceneCyberpunk4 => 'Eine leuchtende Datenstraße in die Megacity';
 
   @override
-  String get economyAiPromptSceneMeshGradient1 => 'Fließender Mesh-Verlauf mit überlagerten Formen';
+  String get economyAiPromptSceneCyberpunk5 => 'Ein Nachtmarkt unter einem Kabelgewirr';
 
   @override
-  String get economyAiPromptSceneMeshGradient2 => 'Lebendige, fließende Farbverlauf-Wellen mit Tiefe';
+  String get economyAiPromptSceneCyberpunk6 => 'Ein Chrom-Motorrad in einer Neon-Gasse';
 
   @override
-  String get economyAiPromptSceneMeshGradient3 => 'Sanfte, mehrfarbige Mesh-Formen und weiche Kurven';
+  String get economyAiPromptSceneCyberpunk7 => 'Ein Hologramm-Mond über den Stadttürmen';
 
   @override
-  String get economyAiPromptSceneMeshGradient4 => 'Kontrastreiche Bänder in einem Mesh-Farbverlauf';
+  String get economyAiPromptSceneCyberpunk8 => 'Eine überflutete Straße spiegelt Bildschirme';
 
   @override
-  String get economyAiPromptSceneMeshGradient5 => 'Blühender Mesh-Verlauf, Pastell und feine Textur';
+  String get economyAiPromptSceneWatercolor1 => 'Ein Lavendelfeld im Morgennebel';
 
   @override
-  String get economyAiPromptSceneAbstract1 => 'Abstrakte Fraktalkunst mit dynamischen Kurven';
+  String get economyAiPromptSceneWatercolor2 => 'Ein kleines Fischerdorf am ruhigen Hafen';
 
   @override
-  String get economyAiPromptSceneAbstract2 => 'Geschichtete, fließende Formen mit moderner Tiefe';
+  String get economyAiPromptSceneWatercolor3 => 'Wilder Mohn am Rand eines Feldwegs';
 
   @override
-  String get economyAiPromptSceneAbstract3 => 'Markante abstrakte Formen mit weichen Kanten';
+  String get economyAiPromptSceneWatercolor4 => 'Ein Heißluftballon über grünen Hügeln';
 
   @override
-  String get economyAiPromptSceneAbstract4 => 'Surreale Landschaft aus schwebender Geometrie';
+  String get economyAiPromptSceneWatercolor5 => 'Ein Reiher im schilfreichen Teich';
 
   @override
-  String get economyAiPromptSceneAbstract5 => 'Organische abstrakte Wellen, filmischer Kontrast';
+  String get economyAiPromptSceneWatercolor6 => 'Eine Regenstraße mit verschwommenen Laternen';
 
   @override
-  String get economyAiPromptSceneNature1 => 'Eine neblige Bergkette im Morgenlicht';
+  String get economyAiPromptSceneWatercolor7 => 'Eine dampfende Teetasse am offenen Fenster';
 
   @override
-  String get economyAiPromptSceneNature2 => 'Ein dichter Nadelwald mit Sonnenstrahlen';
+  String get economyAiPromptSceneWatercolor8 => 'Verschneite Kiefern an einem Eisbach';
 
   @override
-  String get economyAiPromptSceneNature3 => 'Dramatische Küstenklippe mit Brandung';
+  String get economyAiPromptSceneMeshGradient1 => 'Weiche Farbflecken, die ineinander verfließen';
 
   @override
-  String get economyAiPromptSceneNature4 => 'Ein ruhiger Bergsee unter dem Abendhimmel';
+  String get economyAiPromptSceneMeshGradient2 => 'Eine seidige Farbverlaufswelle, die sich faltet';
 
   @override
-  String get economyAiPromptSceneNature5 => 'Eine Wüstenschlucht im warmen, goldenen Licht';
+  String get economyAiPromptSceneMeshGradient3 => 'Leuchtende Kugeln auf samtigem Grund';
 
   @override
-  String get economyAiPromptLightingSoftAmbient => 'sanftes Ambientlicht';
+  String get economyAiPromptSceneMeshGradient4 => 'Ein Verlauf wie Polarlicht, aufwärts strömend';
 
   @override
-  String get economyAiPromptLightingCinematicRim => 'filmisches Randlicht';
+  String get economyAiPromptSceneMeshGradient5 => 'Flüssige Farbpfützen mit feiner Körnung';
+
+  @override
+  String get economyAiPromptSceneMeshGradient6 => 'Ein warm-kalter Verlauf mit zartem Rauschen';
+
+  @override
+  String get economyAiPromptSceneMeshGradient7 => 'Überlappende, durchscheinende Verlaufsblätter';
+
+  @override
+  String get economyAiPromptSceneMeshGradient8 => 'Verschwommener Sonnenuntergang aus Farbbändern';
+
+  @override
+  String get economyAiPromptSceneAbstract1 => 'Ineinandergreifende Glasscherben im Licht';
+
+  @override
+  String get economyAiPromptSceneAbstract2 => 'Fließende Tintenwolken im Wasser';
+
+  @override
+  String get economyAiPromptSceneAbstract3 => 'Eine Spirale aus gefalteten Bändern';
+
+  @override
+  String get economyAiPromptSceneAbstract4 => 'Zersplitterter Marmor mit Goldadern';
+
+  @override
+  String get economyAiPromptSceneAbstract5 => 'Gewellte Höhenlinien in Schichten';
+
+  @override
+  String get economyAiPromptSceneAbstract6 => 'Schwebende Kugeln mit langen Schatten';
+
+  @override
+  String get economyAiPromptSceneAbstract7 => 'Rauchfäden, die sich zum Wirbel drehen';
+
+  @override
+  String get economyAiPromptSceneAbstract8 => 'Ein Feld weicher Würfel in Wellen';
+
+  @override
+  String get economyAiPromptSceneNature1 => 'Ein Wasserfall stürzt in eine moosige Schlucht';
+
+  @override
+  String get economyAiPromptSceneNature2 => 'Ein Sonnenblumenfeld unter weitem Himmel';
+
+  @override
+  String get economyAiPromptSceneNature3 => 'Ein zugefrorener See mit blauen Eisrissen';
+
+  @override
+  String get economyAiPromptSceneNature4 => 'Kirschbäume am stillen Flussweg';
+
+  @override
+  String get economyAiPromptSceneNature5 => 'Eine tropische Lagune von oben';
+
+  @override
+  String get economyAiPromptSceneNature6 => 'Herbstahorn spiegelt sich im stillen Teich';
+
+  @override
+  String get economyAiPromptSceneNature7 => 'Ein einsamer Fuchs im Neuschnee bei Dämmerung';
+
+  @override
+  String get economyAiPromptSceneNature8 => 'Gewitterwolken über grünem Hochland';
+
+  @override
+  String get economyAiPromptSceneSpace1 => 'Ein Ringplanet geht über dem Mondhorizont auf';
+
+  @override
+  String get economyAiPromptSceneSpace2 => 'Eine Spiralgalaxie leuchtet im tiefen All';
+
+  @override
+  String get economyAiPromptSceneSpace3 => 'Ein Astronaut schwebt über einem blauen Planeten';
+
+  @override
+  String get economyAiPromptSceneSpace4 => 'Ein Nebel in Form einer blühenden Blume';
+
+  @override
+  String get economyAiPromptSceneSpace5 => 'Zwei Sonnen sinken über einer fremden Wüste';
+
+  @override
+  String get economyAiPromptSceneSpace6 => 'Eine Raumstation umkreist einen Gasriesen';
+
+  @override
+  String get economyAiPromptSceneSpace7 => 'Ein Meteorschauer über der stillen Sternwarte';
+
+  @override
+  String get economyAiPromptSceneSpace8 => 'Eine Sonnenfinsternis mit hellem Diamantring';
+
+  @override
+  String get economyAiPromptSceneSynthwave1 => 'Neon-Gitterstraße zum Sonnenuntergang';
+
+  @override
+  String get economyAiPromptSceneSynthwave2 => 'Eine palmengesäumte Küste unter Streifensonne';
+
+  @override
+  String get economyAiPromptSceneSynthwave3 => 'Ein Retro-Sportwagen auf endloser Autobahn';
+
+  @override
+  String get economyAiPromptSceneSynthwave4 => 'Gittermodell-Berge unter magentafarbenem Himmel';
+
+  @override
+  String get economyAiPromptSceneSynthwave5 => 'Eine Chromsonne versinkt im leuchtenden Meer';
+
+  @override
+  String get economyAiPromptSceneSynthwave6 => 'Retro-Spielhalle in regnerischer Nacht';
+
+  @override
+  String get economyAiPromptSceneSynthwave7 => 'Eine Kassette schwebt im Neon-Weltraum';
+
+  @override
+  String get economyAiPromptSceneSynthwave8 => 'Eine einsame Palme vor Laser-Horizont';
+
+  @override
+  String get economyAiPromptScenePixelArt1 => 'Eine gemütliche Hütte im Winterwald bei Nacht';
+
+  @override
+  String get economyAiPromptScenePixelArt2 => 'Eine Burg auf der Klippe über dem Meer';
+
+  @override
+  String get economyAiPromptScenePixelArt3 => 'Eine winzige Stadt mit leuchtenden Fenstern';
+
+  @override
+  String get economyAiPromptScenePixelArt4 => 'Ein Raumschiff über violetter Fremdwelt';
+
+  @override
+  String get economyAiPromptScenePixelArt5 => 'Ein Wasserfall im üppigen Dschungeltal';
+
+  @override
+  String get economyAiPromptScenePixelArt6 => 'Ein Angelsteg unter dem Vollmond';
+
+  @override
+  String get economyAiPromptScenePixelArt7 => 'Ein Kirschblütentempel im Frühling';
+
+  @override
+  String get economyAiPromptScenePixelArt8 => 'Ein Zug quert bei Sonnenuntergang eine Brücke';
+
+  @override
+  String get economyAiPromptSceneRender3d1 => 'Glänzende Tonformen, ausbalanciert gestapelt';
+
+  @override
+  String get economyAiPromptSceneRender3d2 => 'Bänder aus Milchglas auf Pastellbühne';
+
+  @override
+  String get economyAiPromptSceneRender3d3 => 'Eine kleine Insel auf einer weichen Wolke';
+
+  @override
+  String get economyAiPromptSceneRender3d4 => 'Aufgeblasene Chromblasen im weichen Licht';
+
+  @override
+  String get economyAiPromptSceneRender3d5 => 'Eine Miniaturwüste mit einsamem Kaktus';
+
+  @override
+  String get economyAiPromptSceneRender3d6 => 'Ein gemütliches Zimmer-Diorama im Würfel';
+
+  @override
+  String get economyAiPromptSceneRender3d7 => 'Schwebende Marmorbögen über stillem Wasser';
+
+  @override
+  String get economyAiPromptSceneRender3d8 => 'Bonbonfarbene Wellen, in Bewegung erstarrt';
+
+  @override
+  String get economyAiPromptSceneOilPainting1 => 'Stürmische See, die an Felsen brandet';
+
+  @override
+  String get economyAiPromptSceneOilPainting2 => 'Sonnige Mohnwiese mit einem Bauernhaus';
+
+  @override
+  String get economyAiPromptSceneOilPainting3 => 'Stillleben mit Zitronen und blauer Vase';
+
+  @override
+  String get economyAiPromptSceneOilPainting4 => 'Neblige Hafenmorgen mit alten Schiffen';
+
+  @override
+  String get economyAiPromptSceneOilPainting5 => 'Ein Waldweg in glühenden Herbstfarben';
+
+  @override
+  String get economyAiPromptSceneOilPainting6 => 'Ein mondheller Kanal mit alten Häusern';
+
+  @override
+  String get economyAiPromptSceneOilPainting7 => 'Ein Weizenfeld wogt vor dem Sturm';
+
+  @override
+  String get economyAiPromptSceneOilPainting8 => 'Eine Rose im Glas auf dunklem Tisch';
+
+  @override
+  String get economyAiPromptSceneUkiyoE1 => 'Eine große Welle unter fahlem Mond';
+
+  @override
+  String get economyAiPromptSceneUkiyoE2 => 'Eine verschneite Pagode in der Dämmerung';
+
+  @override
+  String get economyAiPromptSceneUkiyoE3 => 'Kraniche fliegen über einen Nebelberg';
+
+  @override
+  String get economyAiPromptSceneUkiyoE4 => 'Eine Holzbrücke unter fallenden Kirschblüten';
+
+  @override
+  String get economyAiPromptSceneUkiyoE5 => 'Fischerboote auf rauer Indigo-See';
+
+  @override
+  String get economyAiPromptSceneUkiyoE6 => 'Eine rote Sonne über einem Vulkangipfel';
+
+  @override
+  String get economyAiPromptSceneUkiyoE7 => 'Ein Koi-Teich unter Trauerweiden';
+
+  @override
+  String get economyAiPromptSceneUkiyoE8 => 'Regen über einer stillen Flussstadt';
+
+  @override
+  String get economyAiPromptLightingMorningHaze => 'zarter Morgendunst';
 
   @override
   String get economyAiPromptLightingGoldenHour => 'goldene Stunde';
 
   @override
-  String get economyAiPromptLightingMoonlit => 'mondbeschienen';
+  String get economyAiPromptLightingMoonlight => 'kühles Mondlicht';
 
   @override
-  String get economyAiPromptLightingVolumetric => 'volumetrisches Licht';
+  String get economyAiPromptLightingNeonRim => 'Neon-Kantenlicht';
 
   @override
-  String get economyAiPromptMoodCalm => 'ruhig';
+  String get economyAiPromptLightingBacklight => 'warmes Gegenlicht';
 
   @override
-  String get economyAiPromptMoodDreamy => 'verträumt';
+  String get economyAiPromptLightingGodRays => 'Lichtstrahlen';
 
   @override
-  String get economyAiPromptMoodEpic => 'episch';
+  String get economyAiPromptLightingStudio => 'Studiolicht';
 
   @override
-  String get economyAiPromptMoodMoody => 'stimmungsvoll';
+  String get economyAiPromptLightingTwilight => 'blaue Dämmerung';
 
   @override
-  String get economyAiPromptMoodUplifting => 'aufmunternd';
+  String get economyAiPromptPaletteTealAmber => 'Petrol und Bernstein';
 
   @override
-  String get economyAiPromptQualityHighDetail => 'detailreich';
+  String get economyAiPromptPaletteIndigoRose => 'Indigo und Rosé';
 
   @override
-  String get economyAiPromptQualityCleanComposition => 'klare Komposition';
+  String get economyAiPromptPaletteSageCream => 'Salbeigrün und Creme';
 
   @override
-  String get economyAiPromptQualityCrispTextures => 'scharfe Texturen';
+  String get economyAiPromptPaletteBlackNeonPink => 'Schwarz, Neonpink';
 
   @override
-  String get economyAiPromptQualityBalancedContrast => 'ausgewogener Kontrast';
+  String get economyAiPromptPalettePastelPeach => 'Pastellpfirsich';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'kräftige, natürliche Farben';
+  String get economyAiPromptPaletteEmeraldGold => 'Smaragd und Gold';
+
+  @override
+  String get economyAiPromptPaletteOceanBlue => 'Ozeanblau-Töne';
+
+  @override
+  String get economyAiPromptPaletteCrimsonCharcoal => 'Rot und Anthrazit';
 
   @override
   String get economyAiPromptSuffix => 'Smartphone-Hintergrund hochkant, ohne Text';
 
   @override
-  String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
-    return '$scene, $lighting, $mood, $quality, $suffix';
+  String economyAiPromptComposition(String scene, String lighting, String palette, String suffix) {
+    return '$scene, $lighting, $palette. $suffix';
   }
 
   @override
@@ -9759,128 +10031,212 @@ class AppLocalizationsDe extends AppLocalizations {
   String get onboardingAiPromptFallback => 'ein wunderschönes Hintergrundbild';
 
   @override
-  String get onboardingAiPromptNature1 => 'Eine neblige Bergkette im Morgenlicht, in warmes Gold getaucht';
+  String get onboardingAiPromptNature1 => 'Ein Gletschersee bei Sonnenaufgang, spiegelglatt, rosa Berggipfel';
 
   @override
-  String get onboardingAiPromptNature2 => 'Ein dichter Nadelwald, durch dessen Blätterdach Sonnenstrahlen brechen';
+  String get onboardingAiPromptNature2 => 'Ein moosiger Waldbach, weiches Licht fällt durch hohe Farne';
 
   @override
-  String get onboardingAiPromptNature3 =>
-      'Eine dramatische Küstenklippe mit brechenden Wellen unter einem stimmungsvollen Himmel';
+  String get onboardingAiPromptNature3 => 'Eine Wildblumenwiese unter weitem Abendhimmel mit ziehenden Wolken';
 
   @override
-  String get onboardingAiPromptNature4 => 'Ein ruhiger Bergsee unter dem Abendhimmel, in dem sich Sterne spiegeln';
+  String get onboardingAiPromptNature4 => 'Ein schwarzer Sandstrand mit türkisen Wellen und Felsnadeln im Abendlicht';
 
   @override
-  String get onboardingAiPromptNature5 => 'Eine Wüstenschlucht im warmen, goldenen Licht mit markanten Felsformationen';
+  String get onboardingAiPromptNature5 => 'Nordlichter über verschneitem Kiefernwald an einem gefrorenen See';
 
   @override
   String get onboardingAiPromptAbstract1 =>
-      'Eine abstrakte Fraktalkomposition mit dynamischen Kurven und leuchtenden Farben';
+      'Durchscheinende Glasbänder winden sich durch weiches Licht, schillernde Kanten';
 
   @override
-  String get onboardingAiPromptAbstract2 =>
-      'Geschichtete, fließende Formen mit moderner Tiefenwirkung und metallischem Schimmer';
+  String get onboardingAiPromptAbstract2 => 'Tintenwolken blühen im Wasser, tiefes Blau und Gold, weiche Details';
 
   @override
-  String get onboardingAiPromptAbstract3 => 'Markante abstrakte Formen mit weichen Kanten und filmischem Kontrast';
+  String get onboardingAiPromptAbstract3 =>
+      'Geschichtete Papierwellen in warmen Sonnenuntergangsfarben, sanfte Schatten';
 
   @override
-  String get onboardingAiPromptAbstract4 =>
-      'Eine surreale abstrakte Landschaft aus schwebenden geometrischen Formen im Neonlicht';
+  String get onboardingAiPromptAbstract4 => 'Ein gemeißelter Marmorwirbel mit Goldadern auf tiefem Anthrazit';
 
   @override
-  String get onboardingAiPromptAbstract5 => 'Organische abstrakte Wellen mit üppiger Textur und räumlicher Tiefe';
+  String get onboardingAiPromptAbstract5 => 'Schwebende Chromkugeln spiegeln einen Pastellhimmel im ruhigen Raum';
 
   @override
-  String get onboardingAiPromptWatercolor1 =>
-      'Ein Waldtal im Aquarellstil bei Tagesanbruch, in sanften Pastellnebel gehüllt';
+  String get onboardingAiPromptWatercolor1 => 'Ein Aquarell-Küstendorf mit Pastellhäusern und Booten bei Sonnenaufgang';
 
   @override
-  String get onboardingAiPromptWatercolor2 => 'Eine handgemalte Bergseeszene in verträumten Aquarelltönen';
+  String get onboardingAiPromptWatercolor2 =>
+      'Lockere Aquarell-Wildblumen in Rosa und Salbei auf strukturiertem Papier';
 
   @override
-  String get onboardingAiPromptWatercolor3 => 'Sanfte Aquarellwolken über sanften Hügeln im Licht der goldenen Stunde';
+  String get onboardingAiPromptWatercolor3 => 'Ein nebliger Aquarellsee mit kleinem Holzsteg und fernen Hügeln';
 
   @override
-  String get onboardingAiPromptWatercolor4 =>
-      'Ein friedliches Flussufer mit pastellfarbenen Spiegelungen im Aquarellstil';
+  String get onboardingAiPromptWatercolor4 => 'Ein Aquarell-Nachthimmel mit violetten Wolken und leuchtendem Mond';
 
   @override
-  String get onboardingAiPromptWatercolor5 =>
-      'Eine kunstvolle Küste im Aquarellstil bei Sonnenuntergang in warmen Farbtönen';
+  String get onboardingAiPromptWatercolor5 => 'Ein Aquarell-Herbstwald in warmen Orange- und Goldtönen';
 
   @override
-  String get onboardingAiPromptMinimal1 => 'Reduzierte Sanddünen und eine einzelne Sonnenscheibe am Horizont';
+  String get onboardingAiPromptMinimal1 =>
+      'Eine einzelne Sonne sinkt über ruhigem Meer, flache Farben, weiter leerer Himmel';
 
   @override
-  String get onboardingAiPromptMinimal2 => 'Klare, geometrische Bergschichten in sanften, gedeckten Tönen';
+  String get onboardingAiPromptMinimal2 => 'Weiche Hügelschichten in gedämpften Sandtönen unter hellem Farbverlauf';
 
   @override
-  String get onboardingAiPromptMinimal3 => 'Ein ruhiger, monochromer Meereshorizont in der Abenddämmerung';
+  String get onboardingAiPromptMinimal3 => 'Ein kahler Baum auf verschneitem Hügel mit viel stiller Leere';
 
   @override
-  String get onboardingAiPromptMinimal4 => 'Einfache abstrakte Linien mit perfekt ausgewogenem Leerraum';
+  String get onboardingAiPromptMinimal4 => 'Ein einsames Segelboot auf stillem See im Morgengrauen, einfache Formen';
 
   @override
-  String get onboardingAiPromptMinimal5 => 'Ein Himmel mit sanftem Farbverlauf über flachen, minimalistischen Hügeln';
+  String get onboardingAiPromptMinimal5 => 'Sanfte konzentrische Bögen in Terrakotta und Creme mit feiner Körnung';
 
   @override
-  String get onboardingAiPromptAnime1 => 'Ein Stadtdach im Anime-Stil zur goldenen Stunde, umspielt von Kirschblüten';
+  String get onboardingAiPromptAnime1 => 'Ein Anime-Sommerhimmel mit hohen Wolken über einer stillen Küstenbahn';
 
   @override
-  String get onboardingAiPromptAnime2 =>
-      'Ein verträumter Zug im Anime-Stil auf dem Land unter einem weiten, wolkenreichen Himmel';
+  String get onboardingAiPromptAnime2 => 'Eine Anime-Nachtstadt vom Hügel mit warmen Lichtern und Sternenhimmel';
 
   @override
-  String get onboardingAiPromptAnime3 =>
-      'Ein Bergdorf im Anime-Stil in der Abenddämmerung, mit leuchtenden Laternen und sanftem Nebel';
+  String get onboardingAiPromptAnime3 => 'Ein Anime-Waldschrein, leuchtende Geister schweben im grünen Licht';
 
   @override
-  String get onboardingAiPromptAnime4 =>
-      'Ein ruhiger Küstenort im Anime-Stil unter einem pastellfarbenen Sonnenuntergang und hohen Wolken';
+  String get onboardingAiPromptAnime4 => 'Eine Anime-Regenstraße im Abendlicht mit leuchtenden Läden und Pfützen';
 
   @override
-  String get onboardingAiPromptAnime5 =>
-      'Eine sternenklare Anime-Nacht über einem ruhigen See mit schwebenden Lichtern';
+  String get onboardingAiPromptAnime5 => 'Eine Anime-Wiese zur goldenen Stunde, Wind im hohen Gras';
 
   @override
   String get onboardingAiPromptMeshGradient1 =>
-      'Ein sanfter Mesh-Farbverlauf in Koralle, Türkis und warmem Gelb mit feiner Körnung';
+      'Ein weicher Mesh-Verlauf aus Mandarine, Rosa und Violett mit feiner Körnung';
 
   @override
   String get onboardingAiPromptMeshGradient2 =>
-      'Ein fließender Mesh-Farbverlauf in tiefem Violett und leuchtendem Blau mit sanftem Schimmer';
+      'Ein tiefer Mesh-Verlauf aus Marine und Petrol mit leuchtendem Limettenakzent';
 
   @override
-  String get onboardingAiPromptMeshGradient3 =>
-      'Ein pastellfarbener Mesh-Farbverlauf, in dem Pfirsich, Flieder und Mint ineinanderfließen';
+  String get onboardingAiPromptMeshGradient3 => 'Ein sanfter Mesh-Verlauf aus Himmelblau, Lavendel und warmer Creme';
 
   @override
-  String get onboardingAiPromptMeshGradient4 =>
-      'Ein leuchtender Sonnenuntergang im Mesh-Farbverlauf mit geschichteten Magenta- und Orangetönen';
+  String get onboardingAiPromptMeshGradient4 => 'Ein kräftiger Mesh-Verlauf aus Karmesin und Gold, fließend wie Seide';
 
   @override
-  String get onboardingAiPromptMeshGradient5 =>
-      'Ein ruhiger Mesh-Farbverlauf in Meeresblau und Schaumgrün mit zartem Lichtschein';
+  String get onboardingAiPromptMeshGradient5 => 'Ein ruhiger Mesh-Verlauf aus Salbei, Minze und hellem Sand';
 
   @override
-  String get onboardingAiPromptCyberpunk1 =>
-      'Eine Straße in einer Neon-Megacity mit nassen Spiegelungen und fliegenden Fahrzeugen';
+  String get onboardingAiPromptCyberpunk1 => 'Eine Cyberpunk-Straße bei Nacht im Regen mit Neonspiegelungen und Dampf';
 
   @override
-  String get onboardingAiPromptCyberpunk2 =>
-      'Eine futuristische Gasse mit holografischen Werbetafeln und türkis-magenta Licht';
+  String get onboardingAiPromptCyberpunk2 => 'Eine Neon-Megacity vom Dach, fliegende Autos ziehen vorbei';
 
   @override
-  String get onboardingAiPromptCyberpunk3 => 'Eine nächtliche Hightech-Silhouette mit leuchtenden Verkehrsschneisen';
+  String get onboardingAiPromptCyberpunk3 =>
+      'Ein stiller Cyberpunk-Kanal mit leuchtenden Läden und schwebenden Laternen';
 
   @override
-  String get onboardingAiPromptCyberpunk4 => 'Ein Cyberpunk-Dach mit Blick auf eine Stadt voller leuchtender Türme';
+  String get onboardingAiPromptCyberpunk4 => 'Eine Cyberpunk-Skyline im Morgengrauen, Glastürme in rosa-türkisem Dunst';
 
   @override
-  String get onboardingAiPromptCyberpunk5 =>
-      'Eine nächtliche Straßenkreuzung, getaucht in türkisfarbenes und magentafarbenes Neonlicht';
+  String get onboardingAiPromptCyberpunk5 => 'Ein einsames Motorrad auf einer Neonbrücke über nebliger Zukunftsstadt';
+
+  @override
+  String get onboardingAiPromptSpace1 => 'Ein Ringplanet geht über einem Felsmond auf, Sterne am schwarzen Himmel';
+
+  @override
+  String get onboardingAiPromptSpace2 => 'Ein bunter Nebel in Violett und Türkis mit hellen jungen Sternen';
+
+  @override
+  String get onboardingAiPromptSpace3 => 'Eine Spiralgalaxie von oben mit leuchtendem Kern und staubigen blauen Armen';
+
+  @override
+  String get onboardingAiPromptSpace4 => 'Ein Astronaut treibt bei Sonnenaufgang über der Erde, dünne blaue Atmosphäre';
+
+  @override
+  String get onboardingAiPromptSpace5 => 'Eine totale Sonnenfinsternis über einer stillen Bergkette';
+
+  @override
+  String get onboardingAiPromptSynthwave1 =>
+      'Ein Synthwave-Sonnenuntergang mit Streifensonne über leuchtendem Neongitter';
+
+  @override
+  String get onboardingAiPromptSynthwave2 =>
+      'Ein Retro-Auto fährt auf leerer Küstenstraße auf eine magentafarbene Sonne zu';
+
+  @override
+  String get onboardingAiPromptSynthwave3 => 'Gittermodell-Berge unter violettem Sternenhimmel mit Chromsonne';
+
+  @override
+  String get onboardingAiPromptSynthwave4 => 'Ein Synthwave-Strand mit Palmensilhouetten und rosa leuchtendem Horizont';
+
+  @override
+  String get onboardingAiPromptSynthwave5 => 'Eine Retro-Skyline bei Nacht in rosa und cyanfarbenem Neondunst';
+
+  @override
+  String get onboardingAiPromptPixelArt1 => 'Eine Pixel-Art-Hütte im Winterwald, warme Fenster leuchten in der Nacht';
+
+  @override
+  String get onboardingAiPromptPixelArt2 => 'Eine Pixel-Art-Küstenstadt bei Sonnenuntergang, Boote im Hafen';
+
+  @override
+  String get onboardingAiPromptPixelArt3 => 'Eine Pixel-Art-Burg auf einer schwebenden Insel über den Wolken';
+
+  @override
+  String get onboardingAiPromptPixelArt4 => 'Ein Pixel-Art-Nachthimmel über stillem See mit Glühwürmchen';
+
+  @override
+  String get onboardingAiPromptPixelArt5 => 'Ein Pixel-Art-Kirschblütenweg zu einem kleinen Tempel';
+
+  @override
+  String get onboardingAiPromptRender3d1 => 'Ein 3D-Rendering weicher Tonformen in Pastellfarben mit sanften Schatten';
+
+  @override
+  String get onboardingAiPromptRender3d2 => 'Ein 3D-Rendering einer kleinen Schwebeinsel mit Wasserfall und Bäumen';
+
+  @override
+  String get onboardingAiPromptRender3d3 => 'Ein 3D-Rendering glänzender Glaswellen in Blau und Violett im Studiolicht';
+
+  @override
+  String get onboardingAiPromptRender3d4 =>
+      'Ein 3D-Rendering eines gemütlichen Miniaturzimmers in einem leuchtenden Würfel';
+
+  @override
+  String get onboardingAiPromptRender3d5 => 'Ein 3D-Rendering von Chromblasen über einem ruhigen rosa Meer';
+
+  @override
+  String get onboardingAiPromptOilPainting1 =>
+      'Ein Ölgemälde einer stürmischen See mit kleinem Schiff unter dramatischem Himmel';
+
+  @override
+  String get onboardingAiPromptOilPainting2 => 'Ein Ölgemälde eines sonnigen Mohnfelds mit fernem Bauernhaus';
+
+  @override
+  String get onboardingAiPromptOilPainting3 =>
+      'Ein Ölgemälde eines nebligen Hafens im Morgengrauen mit alten Holzbooten';
+
+  @override
+  String get onboardingAiPromptOilPainting4 => 'Ein Ölgemälde eines Herbstwaldwegs in dicken, satten Pinselstrichen';
+
+  @override
+  String get onboardingAiPromptOilPainting5 =>
+      'Ein Ölgemälde einer mondhellen Kanalstadt mit warm leuchtenden Fenstern';
+
+  @override
+  String get onboardingAiPromptUkiyoE1 => 'Eine Ukiyo-e-Welle unter fahlem Mond, ein verschneiter Berg in der Ferne';
+
+  @override
+  String get onboardingAiPromptUkiyoE2 => 'Ein verschneites Ukiyo-e-Dorf bei Nacht mit leuchtenden Papierlaternen';
+
+  @override
+  String get onboardingAiPromptUkiyoE3 => 'Eine Ukiyo-e-Szene: Kraniche fliegen im Morgengrauen über Nebelberge';
+
+  @override
+  String get onboardingAiPromptUkiyoE4 => 'Eine Ukiyo-e-Holzbrücke unter Kirschblüten an einem Frühlingstag';
+
+  @override
+  String get onboardingAiPromptUkiyoE5 => 'Eine Ukiyo-e-Szene: rote Sonne über ruhiger Indigo-See mit Fischerbooten';
 
   @override
   String wallpaperWotdByline(String name) {
@@ -9903,4 +10259,60 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Dein Profil';
+
+  @override
+  String get widgetsSettingsTitle => 'Widgets';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Prism zum Home-Bildschirm und Sperrbildschirm hinzufügen';
+
+  @override
+  String get widgetsGuideTitle => 'Prism-Widgets hinzufügen';
+
+  @override
+  String get widgetsGuideHomeTab => 'Home-Bildschirm';
+
+  @override
+  String get widgetsGuideLockTab => 'Sperrbildschirm';
+
+  @override
+  String get widgetsGuideHomeStep1 =>
+      'Lege den Finger auf eine freie Stelle des Home-Bildschirms, bis die Apps wackeln.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Tippe auf „Bearbeiten“ und dann auf „Widget hinzufügen“.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Suche nach Prism, wähle eine Größe und tippe auf „Widget hinzufügen“.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Lege den Finger auf den Sperrbildschirm und tippe auf „Anpassen“.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Tippe auf „Sperrbildschirm“ und dann auf den Widget-Bereich unter der Uhr.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Wähle Prism und tippe auf ein Widget, um es hinzuzufügen.';
+
+  @override
+  String get widgetsGuideHomeIllustration =>
+      'Ein Telefon mit dem Widget „Hintergrundbild des Tages“ auf dem Home-Bildschirm';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Ein Telefon mit Prism-Widgets auf dem Sperrbildschirm';
+
+  @override
+  String get widgetsGuideDone => 'Fertig';
+
+  @override
+  String get widgetsCardTitle => 'Hintergrundbild des Tages auf deinem Home-Bildschirm';
+
+  @override
+  String get widgetsCardBody => 'Füge das Widget hinzu und sieh jeden Tag ein neues Hintergrundbild.';
+
+  @override
+  String get widgetsCardAction => 'Zeig mir, wie';
+
+  @override
+  String get widgetsCardDismiss => 'Schließen';
 }

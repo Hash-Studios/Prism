@@ -202,8 +202,19 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
-  card,
+  story,
+  post,
+  clean,
   text;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ShareTargetValue {
+  instagramStories,
+  copyLink,
+  saveImage,
+  more;
 
   String get wireValue => _snakeCase(name);
 }
@@ -252,6 +263,24 @@ enum DeepLinkSourceValue {
   appLinks,
   push,
   inApp;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WidgetKindValue {
+  wotdSmall,
+  wotdMedium,
+  wotdLarge,
+  wotdLock,
+  streakCircular,
+  streakInline;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WidgetGuideSourceValue {
+  settings,
+  wallOfTheDay;
 
   String get wireValue => _snakeCase(name);
 }

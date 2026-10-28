@@ -46,9 +46,18 @@ class DeepLinkDispatcher {
   Future<void> _tail = Future<void>.value();
 
   Future<DeepLinkDispatchResult> openUri(Uri uri, {required DeepLinkSourceValue source}) {
-    final DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
+    DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
         ? navigation.parser.parse(uri)
         : UnknownIntent(rawUri: uri.toString());
+    if (source == DeepLinkSourceValue.appLinks) {
+      final WidgetKindValue? widget = _widgetKind(uri, action);
+      if (widget != null) {
+        _record(WidgetTappedEvent(kind: widget));
+        if (_isStreakWidgetUri(uri)) {
+          action = navigation.parser.parse(uri.replace(queryParameters: const <String, String>{}));
+        }
+      }
+    }
     return openAction(action, source: source);
   }
 
@@ -341,4 +350,46 @@ class DeepLinkDispatcher {
   ]);
 
   void _record(AnalyticsEvent event) => unawaited(_track(event).catchError((Object _) {}));
+
+  static WidgetKindValue? _widgetKind(Uri uri, DeepLinkActionEntity action) {
+    if (uri.scheme.toLowerCase() != 'prism' || uri.userInfo.isNotEmpty || uri.hasFragment) return null;
+
+    final Map<String, List<String>> query;
+    try {
+      query = uri.queryParametersAll;
+    } on FormatException {
+      return null;
+    }
+
+    final List<String>? values = query['widget'];
+    if (values == null || values.length != 1) return null;
+    final WidgetKindValue? kind = WidgetKindValue.values.where((value) => value.wireValue == values.single).firstOrNull;
+    if (kind == null) return null;
+
+    final String host = uri.host.toLowerCase();
+    final bool shareLink = (host == 'share' && uri.path.isEmpty) || (host.isEmpty && uri.path == '/share');
+    if (shareLink &&
+        action is ShareLinkIntent &&
+        const <WidgetKindValue>{
+          WidgetKindValue.wotdSmall,
+          WidgetKindValue.wotdMedium,
+          WidgetKindValue.wotdLarge,
+          WidgetKindValue.wotdLock,
+        }.contains(kind) &&
+        query['source']?.singleOrNull == 'prism' &&
+        query['id']?.singleOrNull == action.wallId) {
+      return kind;
+    }
+
+    if (_isStreakWidgetUri(uri) && query.keys.length == 1) {
+      return kind;
+    }
+
+    return null;
+  }
+
+  static bool _isStreakWidgetUri(Uri uri) {
+    final String host = uri.host.toLowerCase();
+    return (host == 'streak' && uri.path.isEmpty) || (host.isEmpty && uri.path == '/streak');
+  }
 }

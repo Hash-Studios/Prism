@@ -30,12 +30,15 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'launch_state': LaunchStateValue.values.map((value) => value.wireValue).toList(),
   'share_channel': ShareChannelValue.values.map((value) => value.wireValue).toList(),
   'share_format': ShareFormatValue.values.map((value) => value.wireValue).toList(),
+  'share_target': ShareTargetValue.values.map((value) => value.wireValue).toList(),
   'dismiss_mode': DismissModeValue.values.map((value) => value.wireValue).toList(),
   'notification_type': NotificationTypeValue.values.map((value) => value.wireValue).toList(),
   'auth_method': AuthMethodValue.values.map((value) => value.wireValue).toList(),
   'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
   'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
   'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
+  'widget_kind': WidgetKindValue.values.map((value) => value.wireValue).toList(),
+  'widget_guide_source': WidgetGuideSourceValue.values.map((value) => value.wireValue).toList(),
   'share_type': ShareTypeValue.values.map((value) => value.wireValue).toList(),
   'analytics_surface': AnalyticsSurfaceValue.values.map((value) => value.wireValue).toList(),
   'scroll_list_name': ScrollListNameValue.values.map((value) => value.wireValue).toList(),
@@ -255,6 +258,20 @@ class AccentChangedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'color': color};
+  }
+}
+
+class ThemeChangedEvent extends AnalyticsEvent {
+  const ThemeChangedEvent({required this.themeId});
+
+  final String themeId;
+
+  @override
+  String get eventName => 'theme_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'theme_id': themeId};
   }
 }
 
@@ -1564,6 +1581,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
     this.reason,
     this.sourceContext,
     this.format,
+    this.target,
   });
 
   final ShareChannelValue channel;
@@ -1571,6 +1589,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
   final AnalyticsReasonValue? reason;
   final String? sourceContext;
   final ShareFormatValue? format;
+  final ShareTargetValue? target;
 
   @override
   String get eventName => 'invite_share_result';
@@ -1583,6 +1602,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
       if (reason != null) 'reason': reason!.wireValue,
       if (sourceContext != null) 'source_context': sourceContext!,
       if (format != null) 'format': format!.wireValue,
+      if (target != null) 'target': target!.wireValue,
     };
   }
 }
@@ -1918,6 +1938,34 @@ class QuickTileAddRequestedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'tile': tile, 'result': result};
+  }
+}
+
+class WidgetTappedEvent extends AnalyticsEvent {
+  const WidgetTappedEvent({required this.kind});
+
+  final WidgetKindValue kind;
+
+  @override
+  String get eventName => 'widget_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind.wireValue};
+  }
+}
+
+class WidgetGuideOpenedEvent extends AnalyticsEvent {
+  const WidgetGuideOpenedEvent({required this.source});
+
+  final WidgetGuideSourceValue source;
+
+  @override
+  String get eventName => 'widget_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
   }
 }
 

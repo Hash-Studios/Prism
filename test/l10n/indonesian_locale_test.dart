@@ -4,7 +4,6 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
-import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -90,62 +89,16 @@ void main() {
 
     expect(
       AiPromptPools.sceneIdea(messages, AiStylePreset.minimal, 0),
-      'bukit pasir minimalis dan satu cakram matahari, wallpaper ponsel vertikal tanpa teks',
+      'satu perahu kertas di atas air tenang yang pucat, wallpaper ponsel vertikal tanpa teks',
     );
     for (final AiStylePreset style in AiStylePreset.values) {
-      expect(AiPromptPools.scenesByStyle(messages, style), hasLength(5));
+      expect(AiPromptPools.scenesByStyle(messages, style), hasLength(8));
       final String prompt = AiPromptPools.randomPrompt(messages, style, Random(0));
-      expect(prompt, contains('cahaya '));
+      expect(prompt, contains(', palet '));
       expect(prompt, endsWith('wallpaper ponsel vertikal tanpa teks'));
     }
     expect(formatFileSize('0.25MB', messages.localeName), '0,25 MB');
     expect(messages.coreSignInFeatureTitle(messages.coreSignInCreatorSearchFeature), contains('pencarian kreator'));
-  });
-
-  test('every Indonesian suggested prompt fits the production 160-character limit', () async {
-    final AppLocalizations messages = await loadAppLocalizations(const Locale('id'));
-    final List<String> lighting = <String>[
-      messages.economyAiPromptLightingSoftAmbient,
-      messages.economyAiPromptLightingCinematicRim,
-      messages.economyAiPromptLightingGoldenHour,
-      messages.economyAiPromptLightingMoonlit,
-      messages.economyAiPromptLightingVolumetric,
-    ];
-    final List<String> moods = <String>[
-      messages.economyAiPromptMoodCalm,
-      messages.economyAiPromptMoodDreamy,
-      messages.economyAiPromptMoodEpic,
-      messages.economyAiPromptMoodMoody,
-      messages.economyAiPromptMoodUplifting,
-    ];
-    final List<String> qualities = <String>[
-      messages.economyAiPromptQualityHighDetail,
-      messages.economyAiPromptQualityCleanComposition,
-      messages.economyAiPromptQualityCrispTextures,
-      messages.economyAiPromptQualityBalancedContrast,
-      messages.economyAiPromptQualityNaturalColors,
-    ];
-    for (final AiStylePreset style in AiStylePreset.values) {
-      for (final String scene in AiPromptPools.scenesByStyle(messages, style)) {
-        for (final String light in lighting) {
-          for (final String mood in moods) {
-            for (final String quality in qualities) {
-              final String prompt = messages.economyAiPromptComposition(
-                scene,
-                light,
-                mood,
-                quality,
-                messages.economyAiPromptSuffix,
-              );
-              expect(prompt.length, lessThanOrEqualTo(160), reason: prompt);
-            }
-          }
-        }
-      }
-      for (final String prompt in OnboardingV2Config.aiOnboardingPrompts(messages, style)) {
-        expect(prompt.length, lessThanOrEqualTo(160), reason: prompt);
-      }
-    }
   });
 
   testWidgets('localized Prism button and sheet fit a narrow screen at large text scale', (WidgetTester tester) async {

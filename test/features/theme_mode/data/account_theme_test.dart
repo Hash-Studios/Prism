@@ -51,6 +51,29 @@ void main() {
       expect(decoded.preferences.dark.accentColorValue, 0xff767b45);
     });
 
+    test('toMap then fromMap keeps the Material You ids unchanged', () {
+      final AccountTheme original = AccountTheme(
+        preferences: _prefs(
+          lightId: 'kLMaterial You',
+          lightAccent: 0xffe57697,
+          darkId: 'kDMaterial You',
+          darkAccent: 0xff767b45,
+          mode: ThemeMode.system,
+        ),
+        changedAt: 1767225600000,
+      );
+
+      final Map<String, Object> wire = original.toMap();
+      final AccountTheme? decoded = AccountTheme.fromMap(wire);
+
+      expect(wire['lightThemeId'], 'kLMaterial You');
+      expect(wire['darkThemeId'], 'kDMaterial You');
+      expect(decoded, isNotNull);
+      expect(decoded!.preferences.light.themeId, 'kLMaterial You');
+      expect(decoded.preferences.dark.themeId, 'kDMaterial You');
+      expect(decoded.preferences.mode, ThemeMode.system);
+    });
+
     test('fromMap accepts a whole-number double for an int field', () {
       final Map<String, Object> wire = _wire()..['changedAt'] = 1767225600000.0;
 
@@ -255,6 +278,52 @@ void main() {
       );
 
       expect(merged.mode, ThemeMode.system);
+    });
+
+    test('keeps Material You in both slots when the account has it and the local themes are free', () {
+      final ThemePreferences localCoffeeAmoled = _prefs(
+        lightId: 'kLCoffee',
+        lightAccent: 0xffc19439,
+        darkId: 'kDAMOLED',
+        darkAccent: 0xffffffff,
+      );
+      final ThemePreferences account = _prefs(
+        lightId: 'kLMaterial You',
+        lightAccent: 0xff111111,
+        darkId: 'kDMaterial You',
+        darkAccent: 0xff222222,
+      );
+
+      final ThemePreferences merged = mergeAccountTheme(
+        account: account,
+        local: localCoffeeAmoled,
+        owned: const <String>{},
+        legacyThemes: const <String>{},
+      );
+
+      expect(merged.light.themeId, 'kLMaterial You');
+      expect(merged.light.accentColorValue, 0xff111111);
+      expect(merged.dark.themeId, 'kDMaterial You');
+      expect(merged.dark.accentColorValue, 0xff222222);
+    });
+
+    test('keeps local light selection when the account puts the dark Material You id in the light slot', () {
+      final ThemePreferences account = _prefs(
+        lightId: 'kDMaterial You',
+        lightAccent: 0xff111111,
+        darkId: 'kDMaterial Dark',
+        darkAccent: 0xff123456,
+      );
+
+      final ThemePreferences merged = mergeAccountTheme(
+        account: account,
+        local: local,
+        owned: const <String>{},
+        legacyThemes: const <String>{},
+      );
+
+      expect(merged.light.themeId, 'kLFrost White');
+      expect(merged.light.accentColorValue, 0xffe57697);
     });
   });
 }
