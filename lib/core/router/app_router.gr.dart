@@ -1217,6 +1217,7 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
     Key? key,
     String? imageUrl,
     Color? accentSeed,
+    String? depthMapUrl,
     List<PageRouteInfo>? children,
   }) : super(
          LiveWallpaperRoute.name,
@@ -1224,6 +1225,7 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
            key: key,
            imageUrl: imageUrl,
            accentSeed: accentSeed,
+           depthMapUrl: depthMapUrl,
          ),
          initialChildren: children,
        );
@@ -1240,13 +1242,19 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
         key: args.key,
         imageUrl: args.imageUrl,
         accentSeed: args.accentSeed,
+        depthMapUrl: args.depthMapUrl,
       );
     },
   );
 }
 
 class LiveWallpaperRouteArgs {
-  const LiveWallpaperRouteArgs({this.key, this.imageUrl, this.accentSeed});
+  const LiveWallpaperRouteArgs({
+    this.key,
+    this.imageUrl,
+    this.accentSeed,
+    this.depthMapUrl,
+  });
 
   final Key? key;
 
@@ -1254,9 +1262,11 @@ class LiveWallpaperRouteArgs {
 
   final Color? accentSeed;
 
+  final String? depthMapUrl;
+
   @override
   String toString() {
-    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl, accentSeed: $accentSeed}';
+    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl, accentSeed: $accentSeed, depthMapUrl: $depthMapUrl}';
   }
 
   @override
@@ -1265,11 +1275,16 @@ class LiveWallpaperRouteArgs {
     if (other is! LiveWallpaperRouteArgs) return false;
     return key == other.key &&
         imageUrl == other.imageUrl &&
-        accentSeed == other.accentSeed;
+        accentSeed == other.accentSeed &&
+        depthMapUrl == other.depthMapUrl;
   }
 
   @override
-  int get hashCode => key.hashCode ^ imageUrl.hashCode ^ accentSeed.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      imageUrl.hashCode ^
+      accentSeed.hashCode ^
+      depthMapUrl.hashCode;
 }
 
 /// generated route for

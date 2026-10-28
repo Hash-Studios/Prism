@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/features/live_wallpaper/data/live_apply_outcome_mapper.dart';
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/shaders/live_shader_sources.dart';
+import 'package:Prism/features/live_wallpaper/data/wallpaper_capabilities_tilt.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
@@ -28,6 +29,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     return LiveCapabilities(
       supportsShaders: capabilities.supportsOpenGlLiveWallpaper,
       supportsVideo: capabilities.supportsLiveWallpaper,
+      supportsTilt: capabilities.supportsTilt,
     );
   }
 
@@ -38,15 +40,29 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     required LivePalette palette,
     required double screenAspectRatio,
     required bool batterySaver,
+    String? depthMapUrl,
+    bool tilt = false,
   }) async {
-    final String texturePath;
+    if (style.needsDepthMap && depthMapUrl == null) {
+      return const LiveApplyOutcome.failed(LiveApplyFailure.styleUnavailable);
+    }
+    final List<String> texturePaths;
     try {
-      texturePath = await _texturePreparer.prepare(imageUrl, screenAspectRatio);
+      if (style.needsDepthMap) {
+        final ({String photo, String depth}) textures = await _texturePreparer.prepareWithDepth(
+          imageUrl,
+          depthMapUrl!,
+          screenAspectRatio,
+        );
+        texturePaths = <String>[textures.photo, textures.depth];
+      } else {
+        texturePaths = <String>[await _texturePreparer.prepare(imageUrl, screenAspectRatio)];
+      }
     } on LiveTextureException catch (error) {
       return LiveApplyOutcome.failed(error.failure);
     }
-    return _applyShader(LiveShaderSources.motion(style, palette), <aw.WallpaperSource>[
-      aw.WallpaperSource.filePath(texturePath),
+    return _applyShader(LiveShaderSources.motion(style, palette, tilt: tilt), <aw.WallpaperSource>[
+      for (final String path in texturePaths) aw.WallpaperSource.filePath(path),
     ], batterySaver);
   }
 

@@ -13,6 +13,7 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
     # Product, platform, and service names.
     'appTitle': 'Prism',
     'accountAppName': 'Prism Wallpapers',
+    'wallpaperLiveStyleDepth': '3D',
     'accountPrismPro': 'Prism Pro',
     'accountProBadge': 'Pro',
     'premiumPageTitle': 'Prism Premium',

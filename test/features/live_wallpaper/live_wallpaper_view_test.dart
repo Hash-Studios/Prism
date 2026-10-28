@@ -17,11 +17,13 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     String? imageUrl,
+    String? depthMapUrl,
     bool isPro = false,
     VideoPicker? pickVideo,
     Color? accentSeed,
   }) async {
-    bloc = LiveWallpaperBloc(repository, imageUrl: imageUrl)..add(LiveWallpaperEvent.started(isPro: isPro));
+    bloc = LiveWallpaperBloc(repository, imageUrl: imageUrl, depthMapUrl: depthMapUrl)
+      ..add(LiveWallpaperEvent.started(isPro: isPro));
     addTearDown(bloc.close);
     await tester.pumpWidget(
       MaterialApp(
@@ -31,8 +33,13 @@ void main() {
         home: BlocProvider<LiveWallpaperBloc>.value(
           value: bloc,
           child: pickVideo == null
-              ? LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed)
-              : LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed, pickVideo: pickVideo),
+              ? LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed, depthMapUrl: depthMapUrl)
+              : LiveWallpaperView(
+                  imageUrl: imageUrl,
+                  accentSeed: accentSeed,
+                  depthMapUrl: depthMapUrl,
+                  pickVideo: pickVideo,
+                ),
         ),
       ),
     );
@@ -57,6 +64,16 @@ void main() {
     expect(find.text('Aurora'), findsOneWidget);
     expect(find.text('Battery saver'), findsOneWidget);
     expect(find.text('30 frames per second'), findsOneWidget);
+  });
+
+  testWidgets('the 3D style is hidden for a wall without a depth map', (tester) async {
+    await pump(tester, imageUrl: 'https://example.com/a.jpg');
+    expect(find.text('3D'), findsNothing);
+  });
+
+  testWidgets('the 3D style is offered for a wall with a depth map', (tester) async {
+    await pump(tester, imageUrl: 'https://example.com/a.jpg', depthMapUrl: 'https://example.com/map.png');
+    expect(find.text('3D'), findsOneWidget);
   });
 
   testWidgets('battery saver switches to 15 frames per second', (tester) async {

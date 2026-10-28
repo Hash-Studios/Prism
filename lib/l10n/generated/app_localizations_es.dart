@@ -8768,6 +8768,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'Un suave destello de luz.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'La foto se mueve en profundidad al deslizar entre pantallas de inicio e inclinar el teléfono.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Campo de estrellas';
 
   @override

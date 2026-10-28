@@ -81,6 +81,60 @@ void main() {
     expect(request.textures.single.filePath, '/prepared/texture.jpg');
   });
 
+  test('the 3D style without a depth map is unavailable and prepares nothing', () async {
+    final outcome = await repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+    );
+    expect(outcome.failure, LiveApplyFailure.styleUnavailable);
+    verifyNever(() => texture.prepare(any(), any()));
+    verifyNever(() => texture.prepareWithDepth(any(), any(), any()));
+    verifyNever(() => client.applyOpenGlWallpaper(any()));
+  });
+
+  test('the 3D style sends the photo then the depth map as textures at 30 frames per second', () async {
+    when(
+      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+    ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
+    final outcome = await repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      depthMapUrl: 'https://example.test/map.png',
+    );
+    expect(outcome.status, LiveApplyStatus.confirmInPreview);
+    final request =
+        verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.frameRate, 30);
+    expect(request.textures.map((source) => source.filePath), <String>['/p.jpg', '/d.jpg']);
+    expect(request.fragmentShader, isNot(contains('u_tilt')));
+  });
+
+  test('the 3D style with tilt declares u_tilt in the shader', () async {
+    when(
+      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+    ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
+    await repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      depthMapUrl: 'https://example.test/map.png',
+      tilt: true,
+    );
+    final request =
+        verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.fragmentShader, contains('uniform vec2 u_tilt;'));
+  });
+
   test('texture preparation failure returns its reason without contacting the host', () async {
     when(() => texture.prepare('bad', 1)).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
     final outcome = await repository.applyMotion(

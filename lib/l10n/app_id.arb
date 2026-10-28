@@ -8077,6 +8077,14 @@
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
   },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
+  },
   "wallpaperLiveStyleStarfield": "Hamparan bintang",
   "@wallpaperLiveStyleStarfield": {
     "description": "Name of the Starfield live wallpaper gradient style."

@@ -8690,6 +8690,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'Sapuan cahaya yang lembut.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Hamparan bintang';
 
   @override

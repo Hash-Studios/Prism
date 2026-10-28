@@ -8660,6 +8660,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'A soft sweep of light.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'The photo moves in depth as you swipe your home screens and tilt your phone.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Starfield';
 
   @override

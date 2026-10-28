@@ -59,8 +59,9 @@ void main() {
       test('${style.name} meets the contract with one texture', () {
         final String shader = LiveShaderSources.motion(style, darkPalette);
         expect(shader, isNot(contains('{{')));
-        expect(validateShaderContract(shader, textureCount: 1), isEmpty);
+        expect(validateShaderContract(shader, textureCount: style.needsDepthMap ? 2 : 1), isEmpty);
         expect(shader, contains('uniform sampler2D u_texture0;'));
+        if (style.needsDepthMap) expect(shader, contains('uniform sampler2D u_texture1;'));
       });
 
       test('${style.name} samples the photo without a v flip', () {
@@ -76,6 +77,50 @@ void main() {
         expect(validateShaderContract(shader, textureCount: 0), isNotEmpty);
       });
     }
+  });
+
+  group('3D shader', () {
+    test('has no u_tilt unless tilt is requested', () {
+      expect(LiveShaderSources.motionTemplate(MotionStyle.depth), isNot(contains('u_tilt')));
+    });
+
+    test('declares and reads u_tilt when tilt is requested', () {
+      final String template = LiveShaderSources.motionTemplate(MotionStyle.depth, tilt: true);
+      expect(template, contains('uniform vec2 u_tilt;'));
+      expect(template, contains('motion += u_tilt;'));
+    });
+
+    test('meets the contract with the photo and the depth map and no tilt', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(validateShaderContract(shader, textureCount: 2), isEmpty);
+    });
+
+    test('meets the contract with tilt when the renderer feeds u_tilt', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      expect(validateShaderContract(shader, textureCount: 2, tilt: true), isEmpty);
+    });
+
+    test('fails the strict contract with tilt as an unknown uniform', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      expect(validateShaderContract(shader, textureCount: 2), contains('unknown uniform u_tilt'));
+    });
+
+    test('fails the contract with only one texture because it reads the depth map', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(validateShaderContract(shader, textureCount: 1), contains('u_texture1 has no texture'));
+    });
+
+    test('tilt does not change a style that does not use it', () {
+      expect(
+        LiveShaderSources.motion(MotionStyle.drift, darkPalette, tilt: true),
+        LiveShaderSources.motion(MotionStyle.drift, darkPalette),
+      );
+    });
+
+    test('both depth sources carry the ponytail note', () {
+      expect(LiveShaderSources.motionTemplate(MotionStyle.depth), contains('ponytail:'));
+      expect(LiveShaderSources.motion(MotionStyle.depth, darkPalette), contains('ponytail:'));
+    });
   });
 
   group('colour templating', () {

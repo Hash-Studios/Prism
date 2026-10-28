@@ -8954,6 +8954,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'Uma suave varredura de luz.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'A foto move-se em profundidade ao deslizar entre ecrãs principais e inclinar o telemóvel.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Campo Estelar';
 
   @override
@@ -19502,6 +19509,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperLiveStyleShimmerDescription => 'Uma suave varredura de luz.';
+
+  @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'A foto se move em profundidade quando você desliza entre as telas iniciais e inclina o celular.';
 
   @override
   String get wallpaperLiveStyleStarfield => 'Campo Estelar';

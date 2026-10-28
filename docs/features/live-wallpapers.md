@@ -136,6 +136,47 @@ Prism resizes the photo to fit these limits. If the JPEG is still over 8 MiB, th
 | `foregroundRequired` | "Keep Prism open and try again." |
 | `failed` | A message chosen by error code. The mapper has a default: "Could not set the live wallpaper. Try again." |
 
+## 3D
+
+3D is a photo live style. The photo moves in depth. Near parts shift against far parts.
+
+- Mode: Make it live only.
+- Where it shows: only for walls whose Firestore doc has `walls/{id}.spatial.map`. This is the depth map from Spatial Scenes. It is a grey PNG on R2, 512 px on the long side. Bright is near. Without a map, the chip does not show.
+- Cost: a paid style, like Breathe, Ripple and Shimmer. It is free for Prism Pro users. Other users can unlock it with coins. The style id is `depth`.
+
+Textures:
+
+- `u_texture0` is the photo. `u_texture1` is the depth map.
+- `LiveTexturePreparer.prepareWithDepth` crops the depth map with the same crop as the photo. `TextureGeometry.scaledTo` maps the photo crop onto the map size. A different crop makes the subject ghost.
+
+Shader (`LiveShaderSources.motion(MotionStyle.depth, ...)`):
+
+- The uv shifts by `(depth - 0.5) * strength * motion`.
+- `motion` adds three inputs. Home page swipes (`u_offset.x`). A small touch nudge (`u_touch`). A slow idle drift. The result clamps to -1 to 1.
+- The photo zooms about 4%. The shift never shows an edge.
+- The source marks `strength` and `drift` with `ponytail:`. Tune these first on a device.
+
+Tilt:
+
+- async_wallpaper 3.6.0 adds the `u_tilt` uniform and `WallpaperCapabilities.supportsTilt`.
+- Prism declares `u_tilt` and adds it to motion only when `supportsTilt` is true.
+- Prism ships on `async_wallpaper ^3.5.0`. A Prism extension getter returns false for `supportsTilt` there. So the shader has no `u_tilt`.
+- Bumping to `^3.6.0` turns tilt on. No other change is needed, because the class member wins over the extension. After the bump, delete the extension in `lib/features/live_wallpaper/data/wallpaper_capabilities_tilt.dart`.
+
+Frame rate: 30 fps. With battery saver, 15 fps.
+
+Preview:
+
+- The in-app preview uses `SpatialTiltView` from Spatial Scenes. It shows the same photo and depth map.
+- On a phone, the preview follows tilt. With reduce motion or no sensor, a drag tilts it.
+
+Analytics: `live_wallpaper_applied` sends `style: 3d`.
+
+Release order for tilt:
+
+1. Merge and publish async_wallpaper 3.6.0.
+2. Bump Prism to `^3.6.0`.
+
 ## Limits
 
 - Android opens its own preview. The user must tap Set wallpaper there. The bottom of the screen says so.

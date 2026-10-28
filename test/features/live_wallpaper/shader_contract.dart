@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 /// Approximate shader source lint; this does not establish native validator parity or compilation success.
-List<String> validateShaderContract(String shader, {required int textureCount}) {
+List<String> validateShaderContract(String shader, {required int textureCount, bool tilt = false}) {
   final List<String> problems = <String>[];
   if (utf8.encode(shader).length > 64 * 1024) problems.add('shader is larger than 64 KiB');
 
@@ -73,11 +73,12 @@ List<String> validateShaderContract(String shader, {required int textureCount}) 
     'mat4': 16,
     'sampler2D': 1,
   };
-  const Map<String, String> rendererTypes = <String, String>{
+  final Map<String, String> rendererTypes = <String, String>{
     'u_time': 'float',
     'u_resolution': 'vec2',
     'u_touch': 'vec2',
     'u_offset': 'vec2',
+    if (tilt) 'u_tilt': 'vec2',
   };
   int declarations = 0;
   int components = 0;
