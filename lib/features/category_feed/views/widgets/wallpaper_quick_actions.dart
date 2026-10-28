@@ -11,6 +11,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_hold_region.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -42,6 +43,7 @@ class WallpaperQuickActionRegion extends StatelessWidget {
       shareLabel: context.l10n.wallpaperShareLink,
       showLessLabel: onShowLessLikeThis == null ? null : context.l10n.wallpaperShowLessLikeThis,
       resetOriginalLabel: onResetOriginal == null ? null : context.l10n.wallpaperResetOriginal,
+      saveToFolderLabel: context.l10n.foldersSaveToFolder,
       readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
       preview:
           preview ??
@@ -85,6 +87,8 @@ Future<void> _dispatch(
       onShowLessLikeThis?.call();
     case WallpaperQuickAction.resetOriginal:
       onResetOriginal?.call();
+    case WallpaperQuickAction.saveToFolder:
+      await showFolderSheet(context, FavouriteWallEntity.fromFeedItem(item));
   }
 }
 
@@ -98,8 +102,19 @@ Future<void> _toggleFavourite(BuildContext context, FeedItemEntity item, {requir
   } catch (error, stackTrace) {
     logger.w('Favourite toggle from the tile menu failed', error: error, stackTrace: stackTrace);
   }
-  if (success) {
-    toasts.success(favourite ? l10n.wallpaperFavouriteAddedToast : l10n.wallpaperFavouriteRemovedToast);
+  if (success && favourite) {
+    final FavouriteWallEntity wall = FavouriteWallEntity.fromFeedItem(item);
+    toasts.success(
+      l10n.wallpaperFavouriteAddedToast,
+      action: (
+        label: l10n.foldersAddToFolder,
+        onPressed: () {
+          if (context.mounted) unawaited(showFolderSheet(context, wall));
+        },
+      ),
+    );
+  } else if (success) {
+    toasts.success(l10n.wallpaperFavouriteRemovedToast);
   } else {
     toasts.error(l10n.coreCouldNotUpdateFavourites);
   }

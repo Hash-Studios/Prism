@@ -6,6 +6,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
+import 'package:Prism/features/folders/folders.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/library/views/widgets/recently_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
@@ -95,7 +96,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   }
 
   Widget _body(LibraryTab tab) => switch (tab) {
-    LibraryTab.favourites => FavouriteGrid(header: hideSetWallpaperUi ? null : const RecentlySetRow()),
+    LibraryTab.favourites => FavouriteGrid(
+      header: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[const FoldersRow(), if (!hideSetWallpaperUi) const RecentlySetRow()],
+      ),
+    ),
     LibraryTab.downloads => const DownloadsBody(),
     LibraryTab.history => const _HistoryTab(),
   };

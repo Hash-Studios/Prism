@@ -9357,5 +9357,162 @@
   "widgetsCardTitle": "Wallpaper Hari Ini di Layar Utama",
   "widgetsCardBody": "Tambahkan widget dan lihat wallpaper baru setiap hari.",
   "widgetsCardAction": "Tunjukkan caranya",
-  "widgetsCardDismiss": "Tutup"
+  "widgetsCardDismiss": "Tutup",
+  "foldersTitle": "Folder",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "Simpan ke folder",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "Tambahkan ke folder",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "Folder baru",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "Nama folder",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "Buat",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "Buat folder",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "Disarankan",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "Baru",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{Tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{Disimpan ke 1 folder.} other{Disimpan ke {count} folder.}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "Folder diperbarui.",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "Tidak dapat menyimpan ke folder. Coba lagi.",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "Tidak dapat memperbarui folder. Coba lagi.",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "Ganti nama",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "Ganti nama folder",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "Hapus",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "Hapus {name}?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "Wallpaper tetap ada di favorit Anda.",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "Hapus folder",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "Folder dihapus.",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "Hapus dari folder ini?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "Wallpaper ini tetap ada di favorit Anda.",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "Hapus",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "Dihapus dari folder.",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "Folder ini kosong",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "Tekan lama ikon hati pada wallpaper untuk menyimpannya di sini.",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersNoFolders": "Atur wallpaper tersimpan Anda ke dalam folder.",
+  "@foldersNoFolders": {
+    "description": "Hint next to the New folder card when the user has no folders."
+  },
+  "foldersLoadError": "Folder ini tidak dapat dimuat.",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "Folder ini tidak tersedia",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "Mungkin folder ini sudah dihapus.",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "folder",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "Opsi lainnya",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "Layar kunci",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "Layar utama",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
+  }
 }

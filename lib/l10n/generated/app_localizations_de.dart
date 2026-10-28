@@ -10374,4 +10374,134 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Schließen';
+
+  @override
+  String get foldersTitle => 'Ordner';
+
+  @override
+  String get foldersSaveToFolder => 'In Ordner speichern';
+
+  @override
+  String get foldersAddToFolder => 'Zu Ordner hinzufügen';
+
+  @override
+  String get foldersNewFolder => 'Neuer Ordner';
+
+  @override
+  String get foldersNameHint => 'Ordnername';
+
+  @override
+  String get foldersCreate => 'Erstellen';
+
+  @override
+  String get foldersCreateFolder => 'Ordner erstellen';
+
+  @override
+  String get foldersSuggested => 'Vorschlag';
+
+  @override
+  String get foldersNewTag => 'Neu';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'Keine Hintergrundbilder',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'In $countString Ordnern gespeichert.',
+      one: 'In 1 Ordner gespeichert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Ordner aktualisiert.';
+
+  @override
+  String get foldersSaveFailed => 'Speichern in Ordnern fehlgeschlagen. Bitte versuche es erneut.';
+
+  @override
+  String get foldersUpdateFailed => 'Ordner konnte nicht aktualisiert werden. Bitte versuche es erneut.';
+
+  @override
+  String get foldersRename => 'Umbenennen';
+
+  @override
+  String get foldersRenameTitle => 'Ordner umbenennen';
+
+  @override
+  String get foldersDelete => 'Löschen';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return '$name löschen?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Die Hintergrundbilder bleiben in deinen Favoriten.';
+
+  @override
+  String get foldersDeleteConfirm => 'Ordner löschen';
+
+  @override
+  String get foldersDeleted => 'Ordner gelöscht.';
+
+  @override
+  String get foldersRemoveTitle => 'Aus diesem Ordner entfernen?';
+
+  @override
+  String get foldersRemoveMessage => 'Es bleibt in deinen Favoriten.';
+
+  @override
+  String get foldersRemoveConfirm => 'Entfernen';
+
+  @override
+  String get foldersRemoved => 'Aus dem Ordner entfernt.';
+
+  @override
+  String get foldersEmptyTitle => 'Dieser Ordner ist leer';
+
+  @override
+  String get foldersEmptyBody => 'Halte das Herz bei einem Hintergrundbild gedrückt, um es hier zu speichern.';
+
+  @override
+  String get foldersNoFolders => 'Sortiere deine gespeicherten Hintergrundbilder in Ordnern.';
+
+  @override
+  String get foldersLoadError => 'Dieser Ordner konnte nicht geladen werden.';
+
+  @override
+  String get foldersNotFoundTitle => 'Dieser Ordner ist nicht verfügbar';
+
+  @override
+  String get foldersNotFoundBody => 'Er wurde möglicherweise gelöscht.';
+
+  @override
+  String get foldersSignInFeature => 'Ordner';
+
+  @override
+  String get foldersMoreOptions => 'Weitere Optionen';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Sperrbildschirm';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Startbildschirm';
 }

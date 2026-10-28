@@ -9420,5 +9420,162 @@
   "widgetsCardDismiss": "हटाएँ",
   "@widgetsCardDismiss": {
     "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  },
+  "foldersTitle": "फ़ोल्डर",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "फ़ोल्डर में सहेजें",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "फ़ोल्डर में जोड़ें",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "नया फ़ोल्डर",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "फ़ोल्डर का नाम",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "बनाएँ",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "फ़ोल्डर बनाएँ",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "सुझाया गया",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "नया",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{1 फ़ोल्डर में सहेजा गया।} other{{count} फ़ोल्डरों में सहेजा गया।}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "फ़ोल्डर अपडेट किए गए।",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "फ़ोल्डरों में सहेजा नहीं जा सका। फिर से कोशिश करें।",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "फ़ोल्डर अपडेट नहीं हो सका। फिर से कोशिश करें।",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "नाम बदलें",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "फ़ोल्डर का नाम बदलें",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "हटाएँ",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "{name} हटाएँ?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "वॉलपेपर आपके पसंदीदा में रहेंगे।",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "फ़ोल्डर हटाएँ",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "फ़ोल्डर हटा दिया गया।",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "इस फ़ोल्डर से हटाएँ?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "यह आपके पसंदीदा में रहेगा।",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "हटाएँ",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "फ़ोल्डर से हटा दिया गया।",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "यह फ़ोल्डर खाली है",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersNoFolders": "अपने सहेजे गए वॉलपेपर को फ़ोल्डरों में व्यवस्थित करें।",
+  "@foldersNoFolders": {
+    "description": "Hint next to the New folder card when the user has no folders."
+  },
+  "foldersLoadError": "यह फ़ोल्डर लोड नहीं हो सका।",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "यह फ़ोल्डर उपलब्ध नहीं है",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "हो सकता है इसे हटा दिया गया हो।",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "फ़ोल्डर",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "और विकल्प",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "लॉक स्क्रीन",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "होम स्क्रीन",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
   }
 }

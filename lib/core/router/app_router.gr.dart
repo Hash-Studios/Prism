@@ -973,6 +973,58 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [FolderScreen]
+class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
+  FolderRoute({
+    Key? key,
+    required String folderId,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FolderRoute.name,
+         args: FolderRouteArgs(key: key, folderId: folderId),
+         rawPathParams: {'folderId': folderId},
+         initialChildren: children,
+       );
+
+  static const String name = 'FolderRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<FolderRouteArgs>(
+        orElse: () =>
+            FolderRouteArgs(folderId: pathParams.getString('folderId')),
+      );
+      return FolderScreen(key: args.key, folderId: args.folderId);
+    },
+  );
+}
+
+class FolderRouteArgs {
+  const FolderRouteArgs({this.key, required this.folderId});
+
+  final Key? key;
+
+  final String folderId;
+
+  @override
+  String toString() {
+    return 'FolderRouteArgs{key: $key, folderId: $folderId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FolderRouteArgs) return false;
+    return key == other.key && folderId == other.folderId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ folderId.hashCode;
+}
+
+/// generated route for
 /// [FollowersScreen]
 class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
   FollowersRoute({

@@ -1785,6 +1785,33 @@ events:
       - name: step
         key: step
         type: string
+  - id: folder_created
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: with_wall
+        key: with_wall
+        type: bool
+  - id: wall_saved_to_folder
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: provider
+        key: provider
+        type: string
+      - name: folder_count
+        key: folder_count
+        type: int
+  - id: folder_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
   - id: library_tab_changed
     fields:
       - name: tab

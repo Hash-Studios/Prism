@@ -10227,4 +10227,134 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Dismiss';
+
+  @override
+  String get foldersTitle => 'Folders';
+
+  @override
+  String get foldersSaveToFolder => 'Save to folder';
+
+  @override
+  String get foldersAddToFolder => 'Add to folder';
+
+  @override
+  String get foldersNewFolder => 'New folder';
+
+  @override
+  String get foldersNameHint => 'Folder name';
+
+  @override
+  String get foldersCreate => 'Create';
+
+  @override
+  String get foldersCreateFolder => 'Create folder';
+
+  @override
+  String get foldersSuggested => 'Suggested';
+
+  @override
+  String get foldersNewTag => 'New';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers',
+      one: '1 wallpaper',
+      zero: 'No wallpapers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved to $countString folders.',
+      one: 'Saved to 1 folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Folders updated.';
+
+  @override
+  String get foldersSaveFailed => 'Could not save to folders. Try again.';
+
+  @override
+  String get foldersUpdateFailed => 'Could not update the folder. Try again.';
+
+  @override
+  String get foldersRename => 'Rename';
+
+  @override
+  String get foldersRenameTitle => 'Rename folder';
+
+  @override
+  String get foldersDelete => 'Delete';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'The wallpapers stay in your favourites.';
+
+  @override
+  String get foldersDeleteConfirm => 'Delete folder';
+
+  @override
+  String get foldersDeleted => 'Folder deleted.';
+
+  @override
+  String get foldersRemoveTitle => 'Remove from this folder?';
+
+  @override
+  String get foldersRemoveMessage => 'It stays in your favourites.';
+
+  @override
+  String get foldersRemoveConfirm => 'Remove';
+
+  @override
+  String get foldersRemoved => 'Removed from the folder.';
+
+  @override
+  String get foldersEmptyTitle => 'This folder is empty';
+
+  @override
+  String get foldersEmptyBody => 'Hold the heart on a wallpaper to save it here.';
+
+  @override
+  String get foldersNoFolders => 'Sort your saved wallpapers into folders.';
+
+  @override
+  String get foldersLoadError => 'Could not load this folder.';
+
+  @override
+  String get foldersNotFoundTitle => 'This folder is not available';
+
+  @override
+  String get foldersNotFoundBody => 'It may have been deleted.';
+
+  @override
+  String get foldersSignInFeature => 'folders';
+
+  @override
+  String get foldersMoreOptions => 'More options';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Lock screen';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Home screen';
 }

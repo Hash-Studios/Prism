@@ -5,7 +5,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-enum WallpaperQuickAction { favourite, share, showLess, resetOriginal }
+enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder }
 
 enum _HoldPhase { idle, entering, open, exiting }
 
@@ -23,6 +23,7 @@ class WallpaperHoldRegion extends StatefulWidget {
     this.resetOriginalLabel,
     this.readIsFavourite,
     this.unfavouriteLabel,
+    this.saveToFolderLabel,
   });
 
   final Object identity;
@@ -34,6 +35,7 @@ class WallpaperHoldRegion extends StatefulWidget {
   final String? resetOriginalLabel;
   final bool Function()? readIsFavourite;
   final String? unfavouriteLabel;
+  final String? saveToFolderLabel;
   final ValueChanged<WallpaperQuickAction> onAction;
 
   @override
@@ -65,7 +67,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     super.didUpdateWidget(oldWidget);
     if (oldWidget.identity != widget.identity ||
         (oldWidget.showLessLabel == null) != (widget.showLessLabel == null) ||
-        (oldWidget.resetOriginalLabel == null) != (widget.resetOriginalLabel == null)) {
+        (oldWidget.resetOriginalLabel == null) != (widget.resetOriginalLabel == null) ||
+        (oldWidget.saveToFolderLabel == null) != (widget.saveToFolderLabel == null)) {
       _close(rebuild: false, animate: false);
     }
   }
@@ -206,12 +209,14 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
       WallpaperQuickAction.share,
       if (widget.showLessLabel != null) WallpaperQuickAction.showLess,
       if (widget.resetOriginalLabel != null) WallpaperQuickAction.resetOriginal,
+      if (widget.saveToFolderLabel != null) WallpaperQuickAction.saveToFolder,
     ];
     final List<Offset> offsets = <Offset>[
       Offset(0, vertical * 64),
       Offset(direction * 50, vertical * 40),
       Offset(direction * 64, -vertical * 16),
       Offset(-direction * 50, vertical * 40),
+      Offset(-direction * 64, -vertical * 16),
     ];
     _centres = <WallpaperQuickAction, Offset>{for (int i = 0; i < actions.length; i++) actions[i]: anchor + offsets[i]};
     // Bound every frame of the tilt and scale, not just the unpainted layout rect.
@@ -255,6 +260,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     WallpaperQuickAction.share => widget.shareLabel,
     WallpaperQuickAction.showLess => widget.showLessLabel!,
     WallpaperQuickAction.resetOriginal => widget.resetOriginalLabel!,
+    WallpaperQuickAction.saveToFolder => widget.saveToFolderLabel!,
   };
 
   Widget _buildOverlay(Rect lifted, Rect safe, List<WallpaperQuickAction> actions) {
@@ -379,6 +385,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                     WallpaperQuickAction.share => Icons.ios_share_rounded,
                     WallpaperQuickAction.showLess => Icons.visibility_off_outlined,
                     WallpaperQuickAction.resetOriginal => Icons.restart_alt_rounded,
+                    WallpaperQuickAction.saveToFolder => Icons.create_new_folder_rounded,
                   }, color: action == _hovered ? cs.onPrimary : cs.onSurface),
                 ),
               ),

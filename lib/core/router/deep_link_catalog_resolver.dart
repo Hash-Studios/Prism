@@ -78,6 +78,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.favourites => const FavouriteWallpaperRoute(),
     DeepLinkPageTarget.downloads => const DownloadRoute(),
     DeepLinkPageTarget.library => LibraryRoute(initialTab: _libraryTab(query['tab'])),
+    DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => const ReviewRoute(),

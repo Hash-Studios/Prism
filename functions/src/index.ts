@@ -34,6 +34,7 @@ export {buyDrawTicket, settleDraw} from "./draw";
 export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
+export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 
