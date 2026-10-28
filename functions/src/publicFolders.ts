@@ -387,7 +387,7 @@ export async function refreshWallInPublicFolders(wallId: string, before: Doc | u
 }
 
 export const onWallPublicGateChanged = onDocumentWritten(
-  {document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets},
+  {document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets, memory: "512MiB"},
   async (event) => refreshWallInPublicFolders(event.params.wallId, event.data?.before?.data(), event.data?.after?.data()),
 );
 
@@ -424,7 +424,7 @@ async function countDaily(tx: admin.firestore.Transaction, ref: admin.firestore.
 }
 
 export const setFolderPublic = onCall(
-  {region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets},
+  {region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets, memory: "512MiB"},
   async (request: CallableRequest<{folderId?: unknown; public?: unknown}>): Promise<{public: boolean}> => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to share folders.");
@@ -512,7 +512,7 @@ export const setFolderFollow = onCall(
 
 /** Moderators hide or show one public folder. A hidden folder cannot be made public again by its owner. */
 export const setFolderHidden = onCall(
-  {region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets},
+  {region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets, memory: "512MiB"},
   async (request: CallableRequest<{folderId?: unknown; hidden?: unknown}>): Promise<{ok: true}> => {
     if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Admins only.");
     const folderId = folderIdFrom(request.data?.folderId);

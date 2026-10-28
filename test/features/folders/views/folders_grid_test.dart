@@ -277,7 +277,10 @@ void main() {
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
-          child: BlocProvider<FoldersBloc>.value(value: bloc, child: const Scaffold(body: FoldersGrid())),
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: const Scaffold(body: FoldersGrid()),
+          ),
         ),
       ),
     );

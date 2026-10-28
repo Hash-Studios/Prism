@@ -157,6 +157,8 @@ States of the public folder page:
 | Load failed | "Could not load this folder." with **Try again**. |
 | No visible walls | The header, then "No wallpapers here yet". |
 
+When the user comes back to the app, the page reloads the folder without a loading state. A folder that went private while the page was open then shows the private state. A read that fails keeps the shown folder.
+
 ### Analytics
 
 | Event | Fields |
@@ -173,7 +175,7 @@ States of the public folder page:
 Do these steps in this order. No backfill is necessary, because every folder starts private.
 
 1. Firestore rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. Wait until these indexes are built: `publicFolders` (`ownerId` ASC, `updatedAt` DESC), the `followedFolders.folderId` collection-group field, and the `items.wallpaperDocumentId` collection-group field.
-2. Cloud Functions. New: `setFolderPublic`, `setFolderFollow`, `setFolderHidden`, `sendFolderDigests`, `onWallPublicGateChanged`. Changed: `onFolderWritten`, `onFolderItemWritten`, `projectUserProfile`, `deleteAccount`, `blockUser`, `submitContentReport`, `onContentReportCreated`, `sendFollowDigests`. The folder triggers, the wall trigger, `setFolderPublic` and `setFolderHidden` need the R2 secrets.
+2. Cloud Functions. New: `setFolderPublic`, `setFolderFollow`, `setFolderHidden`, `sendFolderDigests`, `onWallPublicGateChanged`. Changed: `onFolderWritten`, `onFolderItemWritten`, `projectUserProfile`, `deleteAccount`, `blockUser`, `submitContentReport`, `onContentReportCreated`, `sendFollowDigests`. The folder triggers, the wall trigger, `setFolderPublic` and `setFolderHidden` need the R2 secrets. Run `make functions-env` first: a new function gets its plain env vars (`R2_PREVIEW_BASE_URL` and the R2 buckets) only from `functions/.env`. Without them, no wall passes the preview check. The functions that render the share image run with 512 MiB.
 3. Cloudflare Worker: `infra/cloudflare/worker`.
 4. The app release.
 

@@ -36,7 +36,7 @@ export async function repairFolder(folderId: string): Promise<void> {
 }
 
 export const onFolderItemWritten = onDocumentWritten(
-  {document: `${FOLDERS}/{folderId}/${FOLDER_ITEMS}/{itemKey}`, region: REGION, retry: true, secrets: r2Secrets},
+  {document: `${FOLDERS}/{folderId}/${FOLDER_ITEMS}/{itemKey}`, region: REGION, retry: true, secrets: r2Secrets, memory: "512MiB"},
   async (event) => {
     await repairFolder(event.params.folderId);
     await syncPublicFolderItem(event.params.folderId, event.params.itemKey);
@@ -51,7 +51,7 @@ export function changesPublicFolder(before: admin.firestore.DocumentData | undef
 }
 
 export const onFolderWritten = onDocumentWritten(
-  {document: `${FOLDERS}/{folderId}`, region: REGION, retry: true, secrets: r2Secrets},
+  {document: `${FOLDERS}/{folderId}`, region: REGION, retry: true, secrets: r2Secrets, memory: "512MiB"},
   async (event) => {
     const before = event.data?.before;
     const after = event.data?.after;

@@ -72,14 +72,18 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
     return super.close();
   }
 
-  Future<void> load(String folderId, {required String viewerId}) async {
+  /// Loads the folder. A [quiet] load keeps the shown folder until the new one arrives, and keeps it when the read
+  /// fails, so returning to the app refreshes the page without a flash. It still shows a folder that went private.
+  Future<void> load(String folderId, {required String viewerId, bool quiet = false}) async {
     if (isClosed) return;
+    final bool keep = quiet && state.status == PublicFolderStatus.ready;
+    if (keep && state.followBusy) return;
     _request = (folderId: folderId, viewerId: viewerId);
     final int version = ++_loadVersion;
     bool current() => !isClosed && version == _loadVersion;
-    emit(const PublicFolderState());
+    if (!keep) emit(const PublicFolderState());
     final Result<PublicFolderEntity?> folder = await _repository.fetchFolder(folderId);
-    if (!current()) return;
+    if (!current() || (keep && folder.isFailure)) return;
     if (folder.isFailure) return emit(const PublicFolderState(status: PublicFolderStatus.failure));
     final PublicFolderEntity? found = folder.data;
     if (found == null) return emit(const PublicFolderState(status: PublicFolderStatus.unavailable));
@@ -93,6 +97,7 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
     if (ids.isFailure) {
       final Object? failure = ids.failure;
       final bool unavailable = failure is PublicFolderFailure && failure.refusal == PublicFolderRefusal.unavailable;
+      if (keep && !unavailable) return;
       return emit(PublicFolderState(status: unavailable ? PublicFolderStatus.unavailable : PublicFolderStatus.failure));
     }
     try {
@@ -108,6 +113,7 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
       );
     } catch (error, stackTrace) {
       logger.w('[PublicFolderCubit] walls failed', error: error, stackTrace: stackTrace);
+      if (keep) return;
       if (current()) emit(PublicFolderState(status: PublicFolderStatus.failure, folder: found));
     }
   }

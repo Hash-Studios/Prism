@@ -292,4 +292,43 @@ void main() {
     expect(cubit.state.following, isFalse);
     expect(cubit.state.followBusy, isFalse);
   });
+
+  test('a quiet reload shows new walls without a loading state', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+    final List<PublicFolderStatus> seen = <PublicFolderStatus>[];
+    final StreamSubscription<PublicFolderState> sub = cubit.stream.listen((state) => seen.add(state.status));
+    addTearDown(sub.cancel);
+
+    repo.wallIds = Result.success(<String>['w3', 'w2', 'w1']);
+    await cubit.load('f1', viewerId: 'u1', quiet: true);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, <PublicFolderStatus>[PublicFolderStatus.ready]);
+    expect(cubit.state.walls.map((wall) => wall.core.id).toList(), <String>['w3', 'w2', 'w1']);
+  });
+
+  test('a quiet reload keeps the shown folder when the read fails', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+
+    repo.folder = Result.error(const NetworkFailure('offline'));
+    await cubit.load('f1', viewerId: 'u1', quiet: true);
+
+    expect(cubit.state.status, PublicFolderStatus.ready);
+    expect(cubit.state.walls.map((wall) => wall.core.id).toList(), <String>['w2', 'w1']);
+  });
+
+  test('a quiet reload of a folder that went private shows the private state', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+
+    repo.folder = Result.success(null);
+    await cubit.load('f1', viewerId: 'u1', quiet: true);
+
+    expect(cubit.state.status, PublicFolderStatus.unavailable);
+  });
 }

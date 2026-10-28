@@ -36,14 +36,23 @@ class PublicFolderView extends StatefulWidget {
   State<PublicFolderView> createState() => _PublicFolderViewState();
 }
 
-class _PublicFolderViewState extends State<PublicFolderView> {
+class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBindingObserver {
   late final PublicFolderCubit _cubit = widget.cubit ?? getIt<PublicFolderCubit>();
   bool _tracked = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_load());
+  }
+
+  /// Back in the app, for example from a "New in" push: show the folder as it is now.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_cubit.load(widget.folderId, viewerId: app_state.prismUser.id, quiet: true));
+    }
   }
 
   @override
@@ -56,6 +65,7 @@ class _PublicFolderViewState extends State<PublicFolderView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (widget.cubit == null) unawaited(_cubit.close());
     super.dispose();
   }
