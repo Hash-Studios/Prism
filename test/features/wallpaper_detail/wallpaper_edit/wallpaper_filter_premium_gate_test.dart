@@ -21,6 +21,7 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/features/ads/domain/usecases/ads_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/pigeon_impl_api.dart' as wallpaper_api;
 import 'package:firebase_core/firebase_core.dart';
@@ -451,10 +452,15 @@ void main() {
     await _waitForEditorReady(tester);
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
-    await _waitForText(tester, 'Set as wallpaper');
+    await waitForRealIo(
+      tester,
+      () => find.byKey(const ValueKey<String>('set-screen-set')).evaluate().isNotEmpty,
+      reason: 'Set screen open',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
 
     AnalyticsRuntime.instance = _ThrowOnSetWallpaperAnalytics();
-    await tester.tap(find.text('home screen'));
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-set')));
     await _waitForCount(tester, () => setCalls, 1, 'native wallpaper set');
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -578,9 +584,9 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
 
-    final Finder optionsTitle = find.text('Set as wallpaper');
-    await waitForRealIo(tester, () => optionsTitle.evaluate().isNotEmpty, reason: 'wallpaper set options open');
-    expect(optionsTitle, findsOneWidget);
+    final Finder setButton = find.byKey(const ValueKey<String>('set-screen-set'));
+    await waitForRealIo(tester, () => setButton.evaluate().isNotEmpty, reason: 'Set screen open');
+    expect(setButton, findsOneWidget);
 
     final List<File> editedFiles = directory
         .listSync(recursive: true)
@@ -593,9 +599,8 @@ void main() {
     expect(tester.widget<IconButton>(_iconButton('Reset')).onPressed, isNull);
     expect(tester.widget<IconButton>(_iconButton('Set as wallpaper')).onPressed, isNull);
 
-    // The sheet ignores a barrier tap until it is fully open.
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tapAt(const Offset(1, 1));
+    await tester.tap(find.byTooltip(AppLocalizationsEn().setScreenClose));
     await tester.pump(const Duration(milliseconds: 300));
     final Finder resetButton = _iconButton('Reset');
     await waitForRealIo(

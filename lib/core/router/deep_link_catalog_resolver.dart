@@ -309,8 +309,6 @@ Future<PageRouteInfo?> _wallpaperActionRoute({
       imageUrl: entity.fullUrl,
       thumbnailUrl: entity.thumbnailUrl,
       entryPoint: entryPoint ?? 'deep_link',
-      wallpaperId: entity.id,
-      wallpaperSource: entity.source,
     ),
     DeepLinkInputWorkflow.liveWallpaper => LiveWallpaperRoute(imageUrl: entity.fullUrl),
     _ => null,

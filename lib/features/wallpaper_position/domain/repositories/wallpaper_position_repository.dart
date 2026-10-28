@@ -19,7 +19,4 @@ abstract class WallpaperPositionRepository {
 
   /// Renders [placement] at [outputSize] and writes a PNG for the plugin to set.
   Future<File> render(PlacementSource source, WallpaperPlacement placement, ui.Size outputSize);
-
-  /// Deletes a file made by [render].
-  Future<void> discard(File file);
 }

@@ -17,6 +17,10 @@ void main() {
     }
     expect(AiStylePreset.meshGradient.apiValue, 'mesh gradient');
     expect(AiStylePreset.fromApiValue(' Mesh Gradient '), AiStylePreset.meshGradient);
+    expect(AiStylePreset.space.apiValue, 'space art');
+    expect(AiStylePreset.render3d.apiValue, '3d render');
+    expect(AiStylePreset.fromApiValue('Pixel_Art'), AiStylePreset.pixelArt);
+    expect(AiStylePreset.fromApiValue('ukiyo-e'), AiStylePreset.ukiyoE);
   });
 
   test('ai quality tier api values round trip', () {

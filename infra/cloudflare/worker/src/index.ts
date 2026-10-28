@@ -260,6 +260,9 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
   }
 
   const code = await generateUniqueCode(env);
+  if (code == null) {
+    return json({ error: 'code_generation_exhausted' }, 503);
+  }
   const preview = normalizePreview(body.type, parsedCanonical.canonical, body.preview, env);
 
   const record: LinkRecord = {
@@ -1132,19 +1135,22 @@ function sanitizeGalleryImageUrl(value: string, env: Env): string {
   }
 }
 
-async function generateUniqueCode(env: Env): Promise<string> {
-  for (let i = 0; i < 10; i += 1) {
-    const code = generateCode(8);
-    const existing = await env.LINKS_KV.get(code);
-    if (existing == null) {
-      return code;
+async function generateUniqueCode(env: Env): Promise<string | null> {
+  for (const length of [8, 10]) {
+    for (let i = 0; i < 10; i += 1) {
+      const code = generateCode(length);
+      const existing = await env.LINKS_KV.get(code);
+      if (existing == null) {
+        return code;
+      }
     }
   }
-  return `${Date.now().toString(36)}${generateCode(2)}`.slice(0, 10);
+  return null;
 }
 
 function generateCode(length: number): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // People retype codes from the share sheet and card text, so leave out 0/O/o and 1/I/l.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   const bytes = crypto.getRandomValues(new Uint8Array(length));
   let out = '';
   for (let i = 0; i < bytes.length; i += 1) {

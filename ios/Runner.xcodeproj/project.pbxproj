@@ -10,6 +10,7 @@
 		0B704B4F4DBF6A607C2962CE /* PrismMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EDBBD0CEBAAD971688C94D8 /* PrismMark.swift */; };
 		0E6B440C28BE8144826905CE /* PrismLiveActivityHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E99657F3D782CFA81804A0 /* PrismLiveActivityHostApiImpl.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		22D28F7ADFF30AE628F367E5 /* PrismWidgetCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5582AD0CC007DF7E42C5C4F3 /* PrismWidgetCore.swift */; };
 		247AA6605A492FE9D33F4563 /* ReviewQueueLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78682323619092F262F63F1F /* ReviewQueueLiveActivity.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -21,9 +22,11 @@
 		6AA412212685AF60DAEDFC11 /* AiGenerationLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EA2745B3B0919540277FF5 /* AiGenerationLiveActivity.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		8D0E75540C2C7F0C27CC937D /* PrismAiGenerationAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A531019312F124499790F0E /* PrismAiGenerationAttributes.swift */; };
+		905157478EC0231A913BB5D5 /* PrismShortcutWallpaperFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		9D3DD7B66D74A8585E9A417B /* PrismWidgetHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4BE3ACDAFB10356A5E2E91C /* PrismWidgetHostApiImpl.swift */; };
 		A11A00012F00000100A1A1A1 /* PrismMediaApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */; };
 		A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */; };
 		A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00122F00000100A1A1A1 /* PrismMediaFiles.swift */; };
@@ -40,20 +43,26 @@
 		A22B00132F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */; };
 		A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */; };
 		A33C00022F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */; };
+		A48BE21768F58C734FE49EBC /* PrismWidgetApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */; };
 		A44D00012F00000400D4D4D4 /* PrismShareApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44D00032F00000400D4D4D4 /* PrismShareApi.swift */; };
 		A44D00022F00000400D4D4D4 /* PrismShareHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */; };
 		AB12CD352F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */; };
+		B4368DB205ADE53330950D72 /* PrismWidgetCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D78DB29DC77CCF28588E2FCB /* PrismWidgetCoreTests.swift */; };
 		B6EF627DD1DDCBD71AFC22B0 /* PrismAiGenerationAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A531019312F124499790F0E /* PrismAiGenerationAttributes.swift */; };
 		BD5CCF96EF293FB979BE693B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 402416D25FFBC0715F0FF6D0 /* WidgetKit.framework */; };
 		BDEF4D482F75E279000D5834 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = BDEF4D472F75E279000D5834 /* AppIcon.icon */; };
 		C0C000012F00000500C0C0C0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C0C000032F00000500C0C0C0 /* Localizable.xcstrings */; };
 		C0C000022F00000500C0C0C0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0C000042F00000500C0C0C0 /* InfoPlist.strings */; };
 		C15845A222C3C334C3EA4BB9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B930EBC7C844BB5EBE88886 /* GoogleService-Info.plist */; };
+		C5BCD2CDF49F4EBF8C439A46 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A8250CDAF72330F9342754DB /* Localizable.xcstrings */; };
 		C979720DC55F8C99FA40444A /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 337217B02AF3CD4A996392A7 /* Pods_Runner.framework */; };
 		CECE4458739EED2CAFD464F2 /* PrismLiveActivitiesBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1498DCA8759FC2E88CED33 /* PrismLiveActivitiesBundle.swift */; };
+		D066A1779F936B19675AF526 /* PrismWidgetCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5582AD0CC007DF7E42C5C4F3 /* PrismWidgetCore.swift */; };
 		D12B50137992C50AB14B6E98 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3989A2E1A49DA0972F2F073F /* Foundation.framework */; };
+		D50319D70041800FD6DC735E /* PrismFirestoreREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */; };
 		D7264D905CF021C2B1B569EB /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B27066127D3E6E886F45F476 /* ActivityKit.framework */; };
 		DDB17E827C76FC1F4A04108E /* PrismLiveActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A3D90DBEFE231CF039ED51FA /* PrismLiveActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E42E34F8F7F044770F4382FD /* PrismWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5CCC836A13CF431D095EE /* PrismWidgets.swift */; };
 		EDFEF042AE5A29766DF6F16E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 902DE74569C91B07ADA011DE /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
 
@@ -106,6 +115,7 @@
 		22E99657F3D782CFA81804A0 /* PrismLiveActivityHostApiImpl.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismLiveActivityHostApiImpl.swift; sourceTree = "<group>"; };
 		29EA2745B3B0919540277FF5 /* AiGenerationLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AiGenerationLiveActivity.swift; sourceTree = "<group>"; };
 		2ADD13323370451410076B0B /* PrismLiveActivityApi.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismLiveActivityApi.swift; sourceTree = "<group>"; };
+		31B5CCC836A13CF431D095EE /* PrismWidgets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismWidgets.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		337217B02AF3CD4A996392A7 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -117,6 +127,7 @@
 		484900012F00000500C0C0C0 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4A531019312F124499790F0E /* PrismAiGenerationAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismAiGenerationAttributes.swift; sourceTree = "<group>"; };
 		4FA6A81A40904B6A1196A994 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		5582AD0CC007DF7E42C5C4F3 /* PrismWidgetCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismWidgetCore.swift; sourceTree = "<group>"; };
 		5B930EBC7C844BB5EBE88886 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		5F30113EB2BBA328C8ABAB1A /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		69F98FAB8A6E03272F13AD94 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -154,6 +165,7 @@
 		A44D00032F00000400D4D4D4 /* PrismShareApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShareApi.swift; sourceTree = "<group>"; };
 		A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShareHostApiImpl.swift; sourceTree = "<group>"; };
 		A3D90DBEFE231CF039ED51FA /* PrismLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = PrismLiveActivities.appex; path = PrismLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A8250CDAF72330F9342754DB /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AA15469276B281169B70FCEB /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B27066127D3E6E886F45F476 /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
@@ -165,9 +177,12 @@
 		C0C000062F00000500C0C0C0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CF67332C1B25AC39C6E79175 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D285CB7BFFB13C4D115A97AD /* PrismReviewAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismReviewAttributes.swift; sourceTree = "<group>"; };
+		D78DB29DC77CCF28588E2FCB /* PrismWidgetCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismWidgetCoreTests.swift; sourceTree = "<group>"; };
 		E25621154191D74D2412417D /* PrismLiveActivities.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = PrismLiveActivities.xcconfig; sourceTree = "<group>"; };
+		E4BE3ACDAFB10356A5E2E91C /* PrismWidgetHostApiImpl.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismWidgetHostApiImpl.swift; sourceTree = "<group>"; };
 		E5C000062F00000500C0C0C0 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E61BCD3C6B0EC8CCF0872892 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
+		EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismWidgetApi.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,6 +237,8 @@
 				3D1498DCA8759FC2E88CED33 /* PrismLiveActivitiesBundle.swift */,
 				7EDBBD0CEBAAD971688C94D8 /* PrismMark.swift */,
 				78682323619092F262F63F1F /* ReviewQueueLiveActivity.swift */,
+				31B5CCC836A13CF431D095EE /* PrismWidgets.swift */,
+				A8250CDAF72330F9342754DB /* Localizable.xcstrings */,
 			);
 			name = PrismLiveActivities;
 			path = PrismLiveActivities;
@@ -234,6 +251,7 @@
 				A11A00142F00000100A1A1A1 /* MediaFixture.swift */,
 				A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */,
 				A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */,
+				D78DB29DC77CCF28588E2FCB /* PrismWidgetCoreTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -310,6 +328,7 @@
 				A22B000F2F00000200B2B2B2 /* Shortcuts */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				22E99657F3D782CFA81804A0 /* PrismLiveActivityHostApiImpl.swift */,
+				E4BE3ACDAFB10356A5E2E91C /* PrismWidgetHostApiImpl.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -321,6 +340,7 @@
 				A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */,
 				A44D00032F00000400D4D4D4 /* PrismShareApi.swift */,
 				2ADD13323370451410076B0B /* PrismLiveActivityApi.swift */,
+				EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */,
 			);
 			path = Pigeon;
 			sourceTree = "<group>";
@@ -344,6 +364,7 @@
 				A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */,
 				A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */,
 				A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */,
+				5582AD0CC007DF7E42C5C4F3 /* PrismWidgetCore.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -508,6 +529,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				58A9A7D3A843CF5745C6B7AA /* Assets.xcassets in Resources */,
+				C5BCD2CDF49F4EBF8C439A46 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -651,6 +673,7 @@
 				A11A00132F00000100A1A1A1 /* MediaFixture.swift in Sources */,
 				A11A00152F00000100A1A1A1 /* MediaFilesTests.swift in Sources */,
 				A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */,
+				B4368DB205ADE53330950D72 /* PrismWidgetCoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -679,6 +702,9 @@
 				0E6B440C28BE8144826905CE /* PrismLiveActivityHostApiImpl.swift in Sources */,
 				61BE7685064569FC040D6D4F /* PrismLiveActivityApi.swift in Sources */,
 				678DAE84DEDA8AAE691AF970 /* PrismReviewAttributes.swift in Sources */,
+				D066A1779F936B19675AF526 /* PrismWidgetCore.swift in Sources */,
+				A48BE21768F58C734FE49EBC /* PrismWidgetApi.swift in Sources */,
+				9D3DD7B66D74A8585E9A417B /* PrismWidgetHostApiImpl.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,6 +718,10 @@
 				B6EF627DD1DDCBD71AFC22B0 /* PrismAiGenerationAttributes.swift in Sources */,
 				247AA6605A492FE9D33F4563 /* ReviewQueueLiveActivity.swift in Sources */,
 				69F750A8DD2FBCA0F7253C4A /* PrismReviewAttributes.swift in Sources */,
+				22D28F7ADFF30AE628F367E5 /* PrismWidgetCore.swift in Sources */,
+				D50319D70041800FD6DC735E /* PrismFirestoreREST.swift in Sources */,
+				905157478EC0231A913BB5D5 /* PrismShortcutWallpaperFallback.swift in Sources */,
+				E42E34F8F7F044770F4382FD /* PrismWidgets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -31,6 +31,7 @@ import 'package:Prism/core/persistence/data_sources/notifications_local_data_sou
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/platform/review_live_activity_sync.dart';
+import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -545,6 +546,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       clearInAppNotificationSyncGateAll();
     }
     app_state.prismUser.loggedIn = value;
+    StreakWidgetSync.start();
     if (value) unawaited(ReviewLiveActivitySync.start());
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
     // Coins require auth, so coin sync only runs for signed-in users.

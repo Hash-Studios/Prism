@@ -2,11 +2,11 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
-import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_field.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
@@ -16,12 +16,45 @@ import 'package:Prism/features/badges/domain/repositories/badge_repository.dart'
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:async_wallpaper/src/wallpaper_client.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'qa_harness.dart';
+
+/// A local wall for the Set screen renders, so no network image is needed.
+final String _setScreenWall = File('assets/images/prism.webp').absolute.path;
+
+/// Reports every target as supported, so the Set screen shows Home, Lock, Both, More and Adjust.
+class _AllTargetsClient implements WallpaperClient {
+  @override
+  Future<aw.WallpaperCapabilities> getCapabilities() async => const aw.WallpaperCapabilities(
+    supportsStaticWallpaper: true,
+    supportsHomeWallpaper: true,
+    supportsLockWallpaper: true,
+    supportsBothWallpapers: true,
+  );
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) => throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> prepareVideoWallpaper(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> openLiveWallpaperPreview(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
+      throw UnimplementedError();
+}
 
 /// The bottom corner radius of an iPhone 15 Pro screen.
 const double _iphoneCornerRadius = 55;
@@ -151,11 +184,45 @@ void main() {
     await shot.save('sheet_form');
   });
 
-  qaScreen('sheet set wallpaper', (QaShot shot) async {
+  qaScreen('set screen android', (QaShot shot) async {
+    aw.AsyncWallpaper.debugSetClient(_AllTargetsClient());
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
     final BuildContext context = await _home(shot);
-    unawaited(showSetWallpaperSheet(context, canAdjust: true));
+    unawaited(
+      showSetScreen(
+        context,
+        SetScreenRequest(
+          url: _setScreenWall,
+          notes: const <String>['Low resolution for this screen'],
+          onAdjust: (BuildContext _) async => null,
+        ),
+      ),
+    );
+    await shot.settle(frames: 10);
+    await shot.save('set_screen_android');
+
+    await shot.tester.tap(find.text('Remember this choice'));
     await shot.settle();
-    await shot.save('sheet_real_set_wallpaper');
+    await shot.save('set_screen_android_remember');
+  });
+
+  qaScreen('set screen ios', (QaShot shot) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final BuildContext context = await _home(shot);
+      unawaited(
+        pushClockPreview(
+          context,
+          link: _setScreenWall,
+          file: true,
+          saveAction: (String label) => PrismButton(label: label, onPressed: () {}),
+        ),
+      );
+      await shot.settle(frames: 10);
+      await shot.save('set_screen_ios');
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   qaScreen('sheet search filters', (QaShot shot) async {

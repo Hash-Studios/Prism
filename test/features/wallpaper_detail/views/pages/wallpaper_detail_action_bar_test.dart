@@ -14,6 +14,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -69,7 +70,13 @@ class _DetailTestAssetStore extends OfflineAssetStore {
 
   @override
   Future<File> resolve(String source, {bool allowNetwork = true}) async {
-    if (source == 'https://img.test/full.jpg' || source == 'https://signed.test/prism-1') return sourceFile;
+    if (source == 'https://img.test/full.jpg' ||
+        source == 'https://signed.test/prism-1' ||
+        source == 'https://signed.test/preview-wall') {
+      return sourceFile;
+    }
+    // A rendered colour variation is a local file that the set flow hands back to the store.
+    if (source.startsWith('/') && File(source).existsSync()) return File(source);
     throw OfflineAssetUnavailableException(source);
   }
 }
@@ -156,7 +163,10 @@ Future<Uint8List> _redAndBluePng() async {
 
 void main() {
   setUpFavouriteCounts();
-  setUpAll(() => registerFallbackValue(const SelectAccentColor(color: Colors.black)));
+  setUpAll(() {
+    registerFallbackValue(const SelectAccentColor(color: Colors.black));
+    registerFallbackValue(WallpaperAction.set);
+  });
 
   late DownloadedWallIndex downloaded;
   late SettingsLocalDataSource settings;
@@ -322,6 +332,10 @@ void main() {
     final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
     final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>.broadcast(sync: true);
     addTearDown(states.close);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     final WallpaperDetailLoaded first = WallpaperDetailLoaded(
       recommendations: const RecommendationState.exhausted(),
       entity: _prism(),
@@ -341,23 +355,29 @@ void main() {
       ),
     );
 
+    final Future<SetWallpaperChoice?> Function(BuildContext, SetScreenRequest) originalOpener =
+        SetWallpaperFlow.screenOpener;
+    final List<SetScreenRequest> requests = <SetScreenRequest>[];
+    final Completer<SetWallpaperChoice?> closed = Completer<SetWallpaperChoice?>();
+    SetWallpaperFlow.screenOpener = (context, request) {
+      requests.add(request);
+      return closed.future;
+    };
+    addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+    addTearDown(() {
+      if (!closed.isCompleted) closed.complete(null);
+    });
+
     await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
-    await tester.pumpAndSettle();
-    expect(find.byType(ClockOverlay), findsOneWidget);
+    await waitForRealIo(tester, () => requests.isNotEmpty, reason: 'the Set screen opens for the displayed wall');
 
     final FeedItemEntity replacement = _prism().copyWith(id: 'prism-2');
     states.add(first.copyWith(entity: replacement, accent: Colors.blue));
     await tester.pump();
 
-    final Finder preview = find.byType(ClockOverlay);
-    final SetWallpaperButton action = tester.widget<SetWallpaperButton>(
-      find.descendant(of: preview, matching: find.byType(SetWallpaperButton)),
-    );
-    expect(action.wallpaperId, 'prism-1');
-    expect(action.url, 'https://img.test/full.jpg');
-    expect(action.target, WallpaperTarget.home);
-    expect(action.prepareAuthorized, isNotNull);
-    expect(action.entryPoint, 'wallpaper_preview');
+    expect(requests, hasLength(1));
+    expect(requests.single.wallpaperId, 'prism-1');
+    expect(requests.single.url, 'https://img.test/full.jpg');
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('actions sit under the card: icons first, then the labelled primary at the end', (tester) async {
@@ -530,51 +550,6 @@ void main() {
         expect(hues, hasLength(2));
         expect(hues, everyElement(closeTo(120, 10)));
       }
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-    testWidgets('a preview opened with a picked colour prepares the tinted authorized source', (tester) async {
-      final File source = File('${directory.path}/preview-wall.png');
-      await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
-      final FeedItemEntity entity = FeedItemEntity.prism(
-        id: 'preview-wall',
-        wallpaper: PrismWallpaper(
-          core: WallpaperCore(
-            id: 'preview-wall',
-            source: WallpaperSource.prism,
-            fullUrl: source.path,
-            thumbnailUrl: '',
-          ),
-        ),
-      );
-      await pumpDetail(
-        tester,
-        WallpaperDetailLoaded(
-          recommendations: const RecommendationState.exhausted(),
-          entity: entity,
-          paletteLoading: false,
-          accent: const Color(0xFF00FF00),
-          colorChanged: true,
-        ),
-      );
-
-      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
-      await tester.pumpAndSettle();
-
-      final Finder preview = find.byType(ClockOverlay);
-      final SetWallpaperButton action = tester.widget<SetWallpaperButton>(
-        find.descendant(of: preview, matching: find.byType(SetWallpaperButton)),
-      );
-      expect(action.wallpaperId, 'preview-wall');
-      expect(action.url, source.path);
-      expect(action.target, WallpaperTarget.home);
-      expect(action.prepareAuthorized, isNotNull);
-
-      final List<double> hues = (await tester.runAsync(() async {
-        final String path = await action.prepareAuthorized!(source.path);
-        return _hues(await File(path).readAsBytes());
-      }))!;
-      expect(hues, hasLength(2));
-      expect(hues, everyElement(closeTo(120, 10)));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('iOS preview exposes Save to Photos with its current tinted variant', (tester) async {
@@ -977,5 +952,79 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('More like this'), findsNothing);
+  });
+
+  group('a preview opened with a picked colour sets the tinted source', () {
+    const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    late Directory directory;
+
+    setUp(() {
+      directory = Directory.systemTemp.createTempSync('detail_tint_preview');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        pathChannel,
+        (_) async => directory.path,
+      );
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        toastChannel,
+        (_) async => true,
+      );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(pathChannel, null);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      directory.deleteSync(recursive: true);
+    });
+
+    testWidgets('a preview opened with a picked colour opens the Set screen for this wall in that colour', (
+      tester,
+    ) async {
+      final File source = File('${directory.path}/preview-wall.png');
+      await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
+      final CoinsTestBackend backend = CoinsTestBackend();
+      await backend.install();
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+      final FeedItemEntity entity = FeedItemEntity.prism(
+        id: 'preview-wall',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'preview-wall',
+            source: WallpaperSource.prism,
+            fullUrl: source.path,
+            thumbnailUrl: '',
+          ),
+        ),
+      );
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+      final Future<SetWallpaperChoice?> Function(BuildContext, SetScreenRequest) originalOpener =
+          SetWallpaperFlow.screenOpener;
+      final List<SetScreenRequest> requests = <SetScreenRequest>[];
+      SetWallpaperFlow.screenOpener = (context, request) async {
+        requests.add(request);
+        return null;
+      };
+      addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(requests, hasLength(1));
+      expect(requests.single.wallpaperId, 'preview-wall');
+      expect(requests.single.wallpaperSource, WallpaperSource.prism);
+      expect(requests.single.url, source.path);
+      expect(requests.single.tint, const Color(0xFF00FF00));
+      expect(requests.single.onAdjust, isNotNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }
