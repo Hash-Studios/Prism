@@ -5,6 +5,7 @@ import {db, CALLABLE_REGIONS, str} from "./common";
 import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
+import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -14,7 +15,6 @@ const BLOCKED_USERS = "blockedUsers";
 const GITHUB_UPLOADS = "githubUploads";
 const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
-const FOLDERS = "folders";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
@@ -110,17 +110,16 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("setups"));
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
-  // Items go before their folder, so a retry still finds them through the folder query.
-  // A reused folder id can contain another owner's orphaned items. Never delete those.
-  const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
-  for (const folder of folders.docs) {
-    const items = await folder.ref.collection("items").where("ownerId", "==", callerUid).get();
-    for (let start = 0; start < items.docs.length; start += 400) {
-      const batch = db.batch();
-      for (const item of items.docs.slice(start, start + 400)) batch.delete(item.ref);
-      await batch.commit();
-    }
+  // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
+  // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
+  const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())
+    .docs.filter((item) => isFolderItemPath(item.ref.path));
+  for (let start = 0; start < items.length; start += 400) {
+    const batch = db.batch();
+    for (const item of items.slice(start, start + 400)) batch.delete(item.ref);
+    await batch.commit();
   }
+  const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();

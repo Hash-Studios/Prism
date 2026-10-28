@@ -377,13 +377,14 @@ test("SV-S12 failed reservation cleanup preserves the profile and can be retried
   assert.equal(store.get("usersv2/u1")?.deleted, true);
 });
 
-test("deleting an account removes the caller's folders, items first", async (t) => {
+test("deleting an account finds folder items by owner, deletes them first, then the caller's folders", async (t) => {
   const log = fake(t);
   await call();
+  assert.ok(log.includes("query:items.ownerId==u1"));
   assert.ok(log.includes("query:folders.ownerId==u1"));
-  assert.ok(log.includes("query:folders/d1/items.ownerId==u1"));
-  assert.ok(log.includes("delete:folders/d1"));
-  assert.ok(log.indexOf("delete:folders/d1/items/d1") < log.indexOf("delete:folders/d1"));
+  // items/d1 is not under folders/, so it is not a folder item.
+  assert.ok(!log.includes("delete:items/d1"));
+  assert.ok(log.indexOf("query:items.ownerId==u1") < log.indexOf("delete:folders/d1"));
   assert.ok(log.indexOf("delete:folders/d1") < log.indexOf("anonymize"));
 });
 
@@ -402,6 +403,9 @@ test("folder cleanup retries partial item deletion before deleting any caller fo
     "folders/two/items/prism_previous_owner": {ownerId: "u2"},
     "folders/foreign": {ownerId: "u2"},
     "folders/foreign/items/prism_x": {ownerId: "u2"},
+    // Left by a folder deleted offline: no folder doc, so only the owner query finds these.
+    "folders/gone/items/prism_orphan": {ownerId: "u1"},
+    "folders/gone/items/prism_orphan_u2": {ownerId: "u2"},
     "other/parent/items/prism_unrelated": {ownerId: "u1"},
   });
   let fail = true;
@@ -434,7 +438,10 @@ test("folder cleanup retries partial item deletion before deleting any caller fo
   t.mock.method(db, "batch", () => {
     const queued: Ref[] = [];
     const batch = {
-      delete: (ref: Ref) => { queued.push(ref); return batch; },
+      delete: (ref: Ref) => {
+        queued.push(ref);
+        return batch;
+      },
       commit: async () => {
         assert.ok(queued.length <= 400);
         if (fail && queued.some((ref) => ref.path === "folders/two/items/prism_d")) {
@@ -463,7 +470,6 @@ test("folder cleanup retries partial item deletion before deleting any caller fo
     data: {uid: "u2"}} as unknown as Parameters<typeof deleteAccount.run>[0]);
   await assert.rejects(run, /item deletion failed/);
   assert.equal(store.has("folders/one/items/prism_a"), false);
-  assert.ok(![...store.keys()].some((path) => path.startsWith("folders/one/items/")));
   assert.equal(store.has("folders/two/items/prism_d"), true);
   assert.equal(store.has("folders/one"), true);
   assert.equal(store.has("folders/two"), true);
@@ -473,7 +479,8 @@ test("folder cleanup retries partial item deletion before deleting any caller fo
   const retryStart = operations.length;
   assert.deepEqual(await run(), {ok: true});
   assert.deepEqual([...store.keys()].filter((path) => path.startsWith("folders/")),
-    ["folders/two/items/prism_previous_owner", "folders/foreign", "folders/foreign/items/prism_x"]);
+    ["folders/two/items/prism_previous_owner", "folders/foreign", "folders/foreign/items/prism_x",
+      "folders/gone/items/prism_orphan_u2"]);
   const retry = operations.slice(retryStart);
   for (const folder of ["one", "two"]) {
     const folderDelete = retry.indexOf(`delete:folders/${folder}`);

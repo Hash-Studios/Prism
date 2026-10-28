@@ -84,3 +84,13 @@ test("folders have the owner index: ownerId, newest update first", () => {
   assert.ok(index);
   assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]);
 });
+
+test("folder items: account deletion finds them by owner across folders, repair reads the newest by owner", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "items" && o.fieldPath === "ownerId") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  // An override replaces the default single-field indexes, so the client's per-folder query keeps its own scope.
+  assert.deepEqual(override.indexes.map((i) => [i.order, i.queryScope]),
+    [["ASCENDING", "COLLECTION"], ["ASCENDING", "COLLECTION_GROUP"]]);
+  assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
+});
