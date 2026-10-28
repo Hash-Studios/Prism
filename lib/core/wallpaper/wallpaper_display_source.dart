@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -24,7 +25,14 @@ const int maxWallpaperDecodeSide = 4096;
 /// signed-in user already holds it on this device (see [wallpaperOfflineCopy]).
 @immutable
 class WallpaperDisplaySource {
-  const WallpaperDisplaySource({required this.thumbnail, required this.full, this.id, this.source, this.pixelSize});
+  const WallpaperDisplaySource({
+    required this.thumbnail,
+    required this.full,
+    this.id,
+    this.source,
+    this.pixelSize,
+    this.withheld = false,
+  });
 
   /// The best picture the user may see of [entity].
   factory WallpaperDisplaySource.of(FeedItemEntity entity, {String? projectId}) => WallpaperDisplaySource.forWall(
@@ -53,20 +61,25 @@ class WallpaperDisplaySource {
   }) {
     final String thumb = thumbnail.trim();
     final String original = fullUrl.trim();
+    final String thumbnailCandidate = source == WallpaperSource.prism && thumb == original ? '' : thumb;
+    final String displayThumb = isValidNetworkUrl(thumbnailCandidate) ? thumbnailCandidate : '';
     final String full;
     if (BundledWallpapers.isStarterIdentity(id, source)) {
-      full = original;
+      full = '${Directory.systemTemp.path}/prism-bundled-wallpapers/$id.jpg';
     } else if (source == WallpaperSource.prism) {
-      full = withheld ? '' : prismWallpaperPreviewUrl(id: id, thumbnail: thumb, projectId: projectId ?? _projectId());
+      full = withheld
+          ? ''
+          : prismWallpaperPreviewUrl(id: id, thumbnail: displayThumb, projectId: projectId ?? _projectId());
     } else {
       full = isValidNetworkUrl(original) ? original : '';
     }
     return WallpaperDisplaySource(
-      thumbnail: isValidNetworkUrl(thumb) ? thumb : '',
+      thumbnail: isValidNetworkUrl(displayThumb) ? displayThumb : '',
       full: full,
       id: id,
       source: source,
       pixelSize: pixelSize,
+      withheld: withheld,
     );
   }
 
@@ -78,6 +91,9 @@ class WallpaperDisplaySource {
   /// The wall's own size in pixels, when known. It picks the side the decode follows.
   final Size? pixelSize;
 
+  /// Whether access rules withhold the Prism original even when this device has an older local copy.
+  final bool withheld;
+
   /// [full], or [thumbnail] when no full image may show. For a route that takes one link.
   String get bestLink => full.isNotEmpty ? full : thumbnail;
 
@@ -88,10 +104,11 @@ class WallpaperDisplaySource {
       other.full == full &&
       other.id == id &&
       other.source == source &&
-      other.pixelSize == pixelSize;
+      other.pixelSize == pixelSize &&
+      other.withheld == withheld;
 
   @override
-  int get hashCode => Object.hash(thumbnail, full, id, source, pixelSize);
+  int get hashCode => Object.hash(thumbnail, full, id, source, pixelSize, withheld);
 }
 
 String? _projectId() => Firebase.apps.isEmpty ? null : Firebase.app().options.projectId;
@@ -113,7 +130,12 @@ String prismWallpaperPreviewUrl({required String id, required String thumbnail, 
 ImageProvider sizedWallpaperImage(ImageProvider provider, Size box, double devicePixelRatio, Size? pixelSize) {
   final double boxWidth = math.max(1, box.width * devicePixelRatio);
   final double boxHeight = math.max(1, box.height * devicePixelRatio);
-  if (pixelSize == null || pixelSize.isEmpty || !boxWidth.isFinite || !boxHeight.isFinite) {
+  if (pixelSize == null ||
+      pixelSize.isEmpty ||
+      !pixelSize.width.isFinite ||
+      !pixelSize.height.isFinite ||
+      !boxWidth.isFinite ||
+      !boxHeight.isFinite) {
     return ResizeImage(
       provider,
       width: maxWallpaperDecodeSide,
@@ -123,10 +145,9 @@ ImageProvider sizedWallpaperImage(ImageProvider provider, Size box, double devic
   }
   final double cover = math.max(boxWidth / pixelSize.width, boxHeight / pixelSize.height);
   final double scale = math.min(1, math.min(cover, maxWallpaperDecodeSide / pixelSize.longestSide));
-  // One side only, so the decode keeps the wall's shape.
-  return pixelSize.width / pixelSize.height > boxWidth / boxHeight
-      ? ResizeImage(provider, height: math.max(1, (pixelSize.height * scale).round()))
-      : ResizeImage(provider, width: math.max(1, (pixelSize.width * scale).round()));
+  final int width = math.max(1, math.min(maxWallpaperDecodeSide, (pixelSize.width * scale).round()));
+  final int height = math.max(1, math.min(maxWallpaperDecodeSide, (pixelSize.height * scale).round()));
+  return ResizeImage(provider, width: width, height: height, policy: ResizeImagePolicy.fit);
 }
 
 /// The copy of [display] already on this device, or null: for a Prism wall the original the signed-in user downloaded,
@@ -134,13 +155,21 @@ ImageProvider sizedWallpaperImage(ImageProvider provider, Size box, double devic
 Future<File?> wallpaperOfflineCopy(WallpaperDisplaySource display) async {
   final String? id = display.id;
   final WallpaperSource? source = display.source;
-  if (id == null || id.isEmpty || source == null || !isValidNetworkUrl(display.full)) return null;
+  if (id == null || id.isEmpty || source == null) return null;
   try {
-    if (source == WallpaperSource.prism && getIt.isRegistered<DownloadedWallIndex>()) {
-      final File? original = await getIt<DownloadedWallIndex>().localFileForIdentity(id: id, source: source);
-      final File? verified = original == null ? null : await OfflineAssetStore.instance.lookup(original.path);
-      if (verified != null) return verified;
+    if (source == WallpaperSource.prism) {
+      if (display.withheld) return null;
+      final String ownerId = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+      if (ownerId.isNotEmpty && getIt.isRegistered<DownloadedWallIndex>()) {
+        final File? original = await getIt<DownloadedWallIndex>().localFileForIdentity(id: id, source: source);
+        if (!_isCurrentOwner(ownerId)) return null;
+        final File? verified = original == null ? null : await OfflineAssetStore.instance.lookup(original.path);
+        if (!_isCurrentOwner(ownerId)) return null;
+        if (verified != null) return verified;
+      }
+      return isValidNetworkUrl(display.full) ? await OfflineAssetStore.instance.lookup(display.full) : null;
     }
+    if (!isValidNetworkUrl(display.full)) return null;
     return await WallpaperService.resolveToLocalFile(
       display.full,
       allowNetwork: false,
@@ -151,3 +180,5 @@ Future<File?> wallpaperOfflineCopy(WallpaperDisplaySource display) async {
     return null;
   }
 }
+
+bool _isCurrentOwner(String ownerId) => app_state.prismUser.loggedIn && app_state.prismUser.id.trim() == ownerId;
