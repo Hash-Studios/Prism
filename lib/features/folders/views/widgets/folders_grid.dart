@@ -52,8 +52,9 @@ class _FoldersGridState extends State<FoldersGrid> {
 
   /// The height one line of [style] takes at the current text size, as a [Text] here would draw it.
   static double _lineHeight(BuildContext context, TextStyle style) {
+    final double? lineHeight = MediaQuery.maybeLineHeightScaleFactorOverrideOf(context);
     final TextPainter painter = TextPainter(
-      text: TextSpan(style: DefaultTextStyle.of(context).style.merge(style)),
+      text: TextSpan(style: DefaultTextStyle.of(context).style.merge(style).merge(TextStyle(height: lineHeight))),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     );

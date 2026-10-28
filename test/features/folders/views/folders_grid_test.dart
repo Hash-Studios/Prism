@@ -398,4 +398,20 @@ void main() {
     final Rect card = tester.getRect(find.bySemanticsLabel('Work'));
     expect(tester.getBottomLeft(find.text('3 wallpapers')).dy, lessThanOrEqualTo(card.bottom));
   });
+
+  testWidgets('folder cards fit their name and count with a large accessibility line height', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.lineHeightScaleFactorOverrideTestValue = 3;
+    addTearDown(tester.platformDispatcher.clearLineHeightScaleFactorOverrideTestValue);
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work', itemCount: 3, covers: _urls(3))]),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Rect card = tester.getRect(find.bySemanticsLabel('Work'));
+    expect(tester.getBottomLeft(find.text('3 wallpapers')).dy, lessThanOrEqualTo(card.bottom));
+  });
 }
