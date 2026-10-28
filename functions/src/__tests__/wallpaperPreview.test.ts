@@ -54,15 +54,17 @@ async function setup(t: Parameters<typeof installFakeDb>[0]) {
     [`r2ObjectRegistry/${original.objectId}`]: {...original, status: "active", uploadId: "imported"},
   });
   const stored = new Map<string, {bytes: Buffer; sha256: string}>();
+  let sourceBytes: Buffer = bytes;
+  let originalHead = {...original, gitSha: original.sha, uploadId: "imported", size: bytes.length};
   t.mock.method(R2Storage.prototype, "head", async (bucket: string, object: string) => {
     assert.equal(bucket, "private");
-    if (object === original.object) return {...original, gitSha: original.sha, uploadId: "imported", size: bytes.length};
+    if (object === original.object) return originalHead;
     const cached = stored.get(object);
     return cached ? {...original, sha256: cached.sha256, size: cached.bytes.length} : null;
   });
   const get = t.mock.method(R2Storage.prototype, "get", async (bucket: string, object: string) => {
     assert.equal(bucket, "private");
-    if (object === original.object) return bytes;
+    if (object === original.object) return sourceBytes;
     const cached = stored.get(object);
     if (!cached) throw new Error("R2 GET failed (404)");
     return cached.bytes;
@@ -74,7 +76,9 @@ async function setup(t: Parameters<typeof installFakeDb>[0]) {
       return true;
     });
   const originalReads = () => get.mock.calls.filter((call) => call.arguments[1] === original.object).length;
-  return {store, url, get, put, stored, original, originalReads};
+  return {store, url, get, put, stored, original, originalReads,
+    setSourceBytes: (next: Buffer) => { sourceBytes = next; },
+    setOriginalHead: (patch: Partial<typeof originalHead>) => { originalHead = {...originalHead, ...patch}; }};
 }
 
 test("an approved protected wall returns display pixels without charging or signing an original", async (t) => {
@@ -88,7 +92,7 @@ test("an approved protected wall returns display pixels without charging or sign
   assert.deepEqual([...store.entries()], before);
 });
 
-test("the first request stores the rendered preview and later requests serve it without the original",
+test("the first request stores the rendered preview and later requests serve it without re-rendering",
   async (t) => {
     const {url, stored, original, originalReads, put} = await setup(t);
     const first = await loadWallpaperPreview("asset", url);
@@ -99,7 +103,7 @@ test("the first request stores the rendered preview and later requests serve it 
     assert.equal(put.mock.callCount(), 1);
     const second = await loadWallpaperPreview("asset", url);
     assert.deepEqual(second, first);
-    assert.equal(originalReads(), 1);
+    assert.equal(originalReads(), 2);
     assert.equal(put.mock.callCount(), 1);
   });
 
@@ -109,6 +113,19 @@ test("a stored preview that does not match its digest is rendered again from the
   const preview = await loadWallpaperPreview("asset", url);
   assert.equal((await sharp(preview).metadata()).format, "jpeg");
   assert.equal(originalReads(), 1);
+});
+
+test("a cached preview is refused when original bytes no longer match the registered SHA", async (t) => {
+  const {url, stored, original, get, setSourceBytes} = await setup(t);
+  const cacheObject = previewCacheObject("asset", original.sha256);
+  await loadWallpaperPreview("asset", url);
+  const cachedBytes = stored.get(cacheObject)?.bytes;
+  assert.ok(cachedBytes);
+
+  setSourceBytes(Buffer.from("tampered original"));
+  await assert.rejects(loadWallpaperPreview("asset", url), /source mismatch/);
+  assert.deepEqual(stored.get(cacheObject)?.bytes, cachedBytes);
+  assert.equal(get.mock.calls.filter((call) => call.arguments[1] === cacheObject).length, 1);
 });
 
 test("a failed store still returns the rendered preview", async (t) => {
@@ -131,6 +148,35 @@ test("a withdrawn wall is refused even when its preview is stored", async (t) =>
     await assert.rejects(loadWallpaperPreview("asset", url));
   }
   assert.equal(get.mock.callCount(), reads);
+});
+
+test("registry and original SHA checks run before a cached preview is read", async (t) => {
+  const {store, url, get, original, setOriginalHead} = await setup(t);
+  await loadWallpaperPreview("asset", url);
+  const cacheReads = () => get.mock.calls.filter((call) => call.arguments[1] !== original.object).length;
+  const readsAfterWarmup = cacheReads();
+
+  const registryPath = `r2ObjectRegistry/${original.objectId}`;
+  const registry = store.get(registryPath);
+  assert.ok(registry);
+  store.set(registryPath, {...registry, status: "tombstoned"});
+  await assert.rejects(loadWallpaperPreview("asset", url));
+  assert.equal(cacheReads(), readsAfterWarmup);
+
+  store.set(registryPath, registry);
+  setOriginalHead({sha256: "e".repeat(64)});
+  await assert.rejects(loadWallpaperPreview("asset", url));
+  assert.equal(cacheReads(), readsAfterWarmup);
+});
+
+test("duplicate wall identities are rejected before a cached preview is read", async (t) => {
+  const {store, url, get, original} = await setup(t);
+  await loadWallpaperPreview("asset", url);
+  const cacheReads = () => get.mock.calls.filter((call) => call.arguments[1] !== original.object).length;
+  const readsAfterWarmup = cacheReads();
+  store.set("walls/duplicate", store.get("walls/document")!);
+  await assert.rejects(loadWallpaperPreview("asset", url));
+  assert.equal(cacheReads(), readsAfterWarmup);
 });
 
 test("withheld, stale, ambiguous, or invalid wall identities never read original bytes", async (t) => {

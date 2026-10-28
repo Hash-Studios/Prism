@@ -42,13 +42,13 @@ export async function loadWallpaperPreview(id: string, thumbnail: string): Promi
   }
   await verifyStoredUpload(original);
   const storage = new R2Storage();
-  const cacheObject = previewCacheObject(id, original.sha256);
-  const cached = await storedPreview(storage, cacheObject);
-  if (cached) return cached;
   const bytes = await storage.get("private", original.object);
   if (digest(bytes) !== original.sha256) {
     throw new Error("Preview source mismatch");
   }
+  const cacheObject = previewCacheObject(id, original.sha256);
+  const cached = await storedPreview(storage, cacheObject);
+  if (cached) return cached;
   const preview = await renderWallpaperPreview(bytes);
   try {
     await storage.put("private", cacheObject, preview, {sha256: digest(preview)}, "image/jpeg");
