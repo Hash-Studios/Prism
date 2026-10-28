@@ -1325,6 +1325,69 @@ class LiveWallpaperRouteArgs {
 }
 
 /// generated route for
+/// [MoodScreen]
+class MoodRoute extends PageRouteInfo<MoodRouteArgs> {
+  MoodRoute({
+    Key? key,
+    required String moodId,
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         MoodRoute.name,
+         args: MoodRouteArgs(key: key, moodId: moodId, source: source),
+         rawPathParams: {'moodId': moodId},
+         rawQueryParams: {'source': source},
+         initialChildren: children,
+       );
+
+  static const String name = 'MoodRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final queryParams = data.queryParams;
+      final args = data.argsAs<MoodRouteArgs>(
+        orElse: () => MoodRouteArgs(
+          moodId: pathParams.getString('moodId'),
+          source: queryParams.getString('source', 'link'),
+        ),
+      );
+      return MoodScreen(
+        key: args.key,
+        moodId: args.moodId,
+        source: args.source,
+      );
+    },
+  );
+}
+
+class MoodRouteArgs {
+  const MoodRouteArgs({this.key, required this.moodId, this.source = 'link'});
+
+  final Key? key;
+
+  final String moodId;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'MoodRouteArgs{key: $key, moodId: $moodId, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! MoodRouteArgs) return false;
+    return key == other.key && moodId == other.moodId && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ moodId.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [NotFoundPage]
 class NotFoundRoute extends PageRouteInfo<void> {
   const NotFoundRoute({List<PageRouteInfo>? children})

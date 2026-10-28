@@ -116,10 +116,12 @@ void main() {
       'LiveWallpaperRoute',
       'ClockPreviewRoute',
       'ReviewPhotoPreviewRoute',
+      // Home mood chips and rows open it. It has no public link.
+      'MoodRoute',
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(57));
+    expect(appPages, hasLength(58));
     expect(
       appPages.difference(reachablePages),
       isEmpty,

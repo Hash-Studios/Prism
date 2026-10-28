@@ -14,6 +14,10 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
+import 'package:Prism/features/moods/views/widgets/mood_row.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
@@ -37,6 +41,25 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+/// Grid rows after which a mood row sits in the For you grid. The first mood row follows the fourth row, the second the
+/// twelfth.
+const List<int> _moodRowGridRows = <int>[4, 12];
+
+/// Splits the For you grid into chunks. Each chunk is a range of tiles, and [rowAfter] is the mood row that follows it.
+@visibleForTesting
+List<(int start, int end, MoodList? rowAfter)> forYouChunks(int itemCount, int columns, List<MoodList> rowMoods) {
+  final List<(int start, int end, MoodList? rowAfter)> chunks = <(int start, int end, MoodList? rowAfter)>[];
+  int start = 0;
+  for (int i = 0; i < rowMoods.length && i < _moodRowGridRows.length; i++) {
+    final int split = _moodRowGridRows[i] * columns;
+    if (itemCount <= split) break;
+    chunks.add((start, split, rowMoods[i]));
+    start = split;
+  }
+  chunks.add((start, itemCount, null));
+  return chunks;
+}
 
 class PersonalizedFeedScreen extends StatefulWidget {
   const PersonalizedFeedScreen({super.key, this.onTuneTap});
@@ -62,6 +85,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
+  late final MoodsCubit _moods;
   final Set<String> _knownItemIds = <String>{};
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
@@ -74,6 +98,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     super.initState();
     _bloc = getIt<PersonalizedFeedBloc>();
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
+    _moods = getIt<MoodsCubit>();
+    unawaited(_moods.load());
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
@@ -179,6 +205,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
     // The trending list holds the boosted walls of the carousel.
     _trending.add(const TrendingEvent.started());
+    unawaited(_moods.load());
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,
@@ -369,11 +396,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     switch (state.chip) {
       case HomeFeedChip.forYou:
         return <Widget>[
-          BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
-            bloc: _trending,
-            selector: (trending) => trending.walls,
-            builder: (context, weekWalls) =>
-                _forYouSliver(context, state, weekWalls, crossAxisCount, tileMemCacheHeight),
+          BlocBuilder<MoodsCubit, List<MoodList>>(
+            bloc: _moods,
+            builder: (context, moods) => BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
+              bloc: _trending,
+              selector: (trending) => trending.walls,
+              builder: (context, weekWalls) =>
+                  _forYouSliver(context, state, weekWalls, moods, crossAxisCount, tileMemCacheHeight),
+            ),
           ),
         ];
       case HomeFeedChip.latest:
@@ -426,6 +456,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     BuildContext context,
     PersonalizedFeedState state,
     List<PrismWallpaper> weekWalls,
+    List<MoodList> moods,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
@@ -461,7 +492,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   ),
           ),
         ),
-        ..._forYouGridSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+        if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
+        ..._forYouGridSlivers(context, state, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );
   }
@@ -470,6 +502,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     BuildContext context,
     PersonalizedFeedState state,
     List<FeedItemEntity> visibleItems,
+    List<MoodList> moods,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
@@ -491,34 +524,48 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       }
     }
+    final List<MoodList> rowMoods = rowMoodsFor(moods, DateTime.now());
+    final List<(int start, int end, MoodList? rowAfter)> chunks = forYouChunks(
+      visibleItems.length,
+      crossAxisCount,
+      rowMoods,
+    );
     return <Widget>[
-      SliverPadding(
-        padding: PrismFeedLayout.gridPadding,
-        sliver: SliverGrid(
-          gridDelegate: PrismWallGrid.delegate(
-            context,
-            footerHeight: favouriteFooterHeight,
-            columns: crossAxisCount,
-            spacing: PrismFeedLayout.gridSpacing,
+      for (int i = 0; i < chunks.length; i++) ...<Widget>[
+        SliverPadding(
+          padding: PrismFeedLayout.gridPadding,
+          sliver: SliverGrid(
+            gridDelegate: PrismWallGrid.delegate(
+              context,
+              footerHeight: favouriteFooterHeight,
+              columns: crossAxisCount,
+              spacing: PrismFeedLayout.gridSpacing,
+            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final int offset = chunks[i].$1;
+              final FeedItemEntity item = visibleItems[offset + index];
+              return KeyedSubtree(
+                key: ValueKey<String>(item.id),
+                child: FeedWallTile(
+                  item: item,
+                  index: offset + index,
+                  crossAxisCount: crossAxisCount,
+                  memCacheHeight: tileMemCacheHeight,
+                  onShowLessLikeThis: () => _lessLikeThis(item),
+                  onVisible: () => _bloc.add(
+                    PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)]),
+                  ),
+                  feed: visibleItems,
+                ),
+              );
+            }, childCount: chunks[i].$2 - chunks[i].$1),
           ),
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final FeedItemEntity item = visibleItems[index];
-            return KeyedSubtree(
-              key: ValueKey<String>(item.id),
-              child: FeedWallTile(
-                item: item,
-                index: index,
-                crossAxisCount: crossAxisCount,
-                memCacheHeight: tileMemCacheHeight,
-                onShowLessLikeThis: () => _lessLikeThis(item),
-                onVisible: () =>
-                    _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
-                feed: visibleItems,
-              ),
-            );
-          }, childCount: visibleItems.length),
         ),
-      ),
+        if (chunks[i].$3 case final MoodList rowAfter)
+          SliverToBoxAdapter(
+            child: MoodRow(key: ValueKey<String>('mood-row-${rowAfter.mood.id}'), list: rowAfter, slot: i),
+          ),
+      ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];
   }

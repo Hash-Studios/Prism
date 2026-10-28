@@ -25,6 +25,10 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
@@ -71,6 +75,16 @@ class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 class _MockFeedRepository extends Mock implements PersonalizedFeedRepository {}
 
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
+
+class _FakeMoodRepository implements MoodRepository {
+  List<MoodList> moods = const <MoodList>[];
+
+  @override
+  Future<List<MoodList>> fetchMoods() async => moods;
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async => const <PrismWallpaper>[];
+}
 
 class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
@@ -144,6 +158,7 @@ void main() {
   late _MockPrismRepository prismRepository;
   late _MockFetchTrending fetchTrending;
   late _MockCacheManager cache;
+  late _FakeMoodRepository moodRepository;
 
   setUpAll(() {
     registerFallbackValue(
@@ -164,6 +179,7 @@ void main() {
     feedRepository = _MockFeedRepository();
     prismRepository = _MockPrismRepository();
     cache = _MockCacheManager();
+    moodRepository = _FakeMoodRepository();
     PrismImageCache.testOverride = cache;
     when(
       () => cache.getFileStream(
@@ -204,7 +220,9 @@ void main() {
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
-      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+      ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(moodRepository))
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository));
   });
 
   tearDown(() async {
@@ -292,6 +310,21 @@ void main() {
     expect(feedBloc(tester).state.chip, HomeFeedChip.forYou);
     expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
     expect(find.byType(WallpaperTile), findsWidgets);
+  });
+
+  testWidgets('the mood chips show on For you and not on Latest', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+      MoodList(mood: WallMood.minimal, wallIds: List<String>.generate(12, (i) => 'm$i')),
+    ];
+    await pumpScreen(tester);
+
+    expect(find.text('Dreamy'), findsWidgets);
+
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(find.text('Dreamy'), findsNothing);
   });
 
   testWidgets('tapping Latest selects it and the underline follows', (tester) async {
