@@ -8814,6 +8814,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'रोशनी की एक मुलायम चमक।';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription => 'होम स्क्रीन बदलने और फ़ोन झुकाने पर फ़ोटो गहराई में चलती है।';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'तारों भरा आसमान';
 
   @override

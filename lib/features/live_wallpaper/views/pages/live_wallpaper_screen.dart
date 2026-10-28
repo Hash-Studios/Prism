@@ -9,9 +9,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class LiveWallpaperScreen extends StatelessWidget {
-  const LiveWallpaperScreen({super.key, this.imageUrl, this.accentSeed});
+  const LiveWallpaperScreen({super.key, this.imageUrl, this.accentSeed, this.depthMapUrl});
 
   final String? imageUrl;
+
+  /// The wall's Spatial Scenes depth map (`walls.spatial.map`). It turns on the 3D style.
+  final String? depthMapUrl;
 
   /// The dominant colour of the wallpaper the user came from. The gradients start from it.
   final Color? accentSeed;
@@ -20,9 +23,9 @@ class LiveWallpaperScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<LiveWallpaperBloc>(
       create: (_) =>
-          LiveWallpaperBloc(getIt<LiveWallpaperRepository>(), imageUrl: imageUrl)
+          LiveWallpaperBloc(getIt<LiveWallpaperRepository>(), imageUrl: imageUrl, depthMapUrl: depthMapUrl)
             ..add(LiveWallpaperEvent.started(isPro: app_state.prismUser.premium, unlockedStyles: liveStyleUnlocks())),
-      child: LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed),
+      child: LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed, depthMapUrl: depthMapUrl),
     );
   }
 }

@@ -2434,6 +2434,8 @@
   "wallpaperLiveStyleRippleDescription": "Ondas de agua que se expanden desde donde tocas.",
   "wallpaperLiveStyleShimmer": "Destello",
   "wallpaperLiveStyleShimmerDescription": "Un suave destello de luz.",
+  "wallpaperLiveStyleDepth": "3D",
+  "wallpaperLiveStyleDepthDescription": "La foto se mueve en profundidad al deslizar entre pantallas de inicio e inclinar el teléfono.",
   "wallpaperLiveStyleStarfield": "Campo de estrellas",
   "wallpaperLiveStyleStarfieldDescription": "Estrellas brillantes sobre un fondo completamente negro.",
   "wallpaperLiveStyleUnlocked": "{style} está desbloqueado durante 7 días.",

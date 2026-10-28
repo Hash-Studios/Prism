@@ -13597,6 +13597,18 @@ abstract class AppLocalizations {
   /// **'A soft sweep of light.'**
   String get wallpaperLiveStyleShimmerDescription;
 
+  /// Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'3D'**
+  String get wallpaperLiveStyleDepth;
+
+  /// Description of the 3D live wallpaper style.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo moves in depth as you swipe your home screens and tilt your phone.'**
+  String get wallpaperLiveStyleDepthDescription;
+
   /// Name of the Starfield live wallpaper gradient style.
   ///
   /// In en, this message translates to:
