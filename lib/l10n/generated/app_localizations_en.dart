@@ -11,6 +11,46 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'No folders yet';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Hold the heart on a wallpaper to save it to a folder.';
+
+  @override
+  String get foldersLoadAllError => 'Could not load your folders';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Search $countString favourites',
+      one: 'Search 1 favourite',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Sort and filter';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Sort by';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Source';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Set again';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, set at $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8447,14 +8487,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Remove from history';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Set again. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Wallpaper history';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8500,15 +8532,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'History';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'The wallpapers you set, so you can set them again.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Wallpaper history';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Open history';
 
   @override
   String get wallpaperLibraryTitle => 'Library';
@@ -8974,9 +8997,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Wall of the Day tile';
 
   @override
-  String get wallpaperRecentlySet => 'Recently set';
-
-  @override
   String get wallpaperRefresh => 'Refresh';
 
   @override
@@ -9016,9 +9036,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Set';
-
-  @override
-  String get wallpaperSetAgain => 'Set this wallpaper again';
 
   @override
   String get wallpaperSetAsWallpaper => 'Set as wallpaper';
@@ -9134,9 +9151,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Sign in to use premium filters with coins.';
-
-  @override
-  String get wallpaperSort => 'Sort';
 
   @override
   String get wallpaperSortDownloads => 'Sort downloads';
@@ -10333,9 +10347,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'Hold the heart on a wallpaper to save it here.';
-
-  @override
-  String get foldersNoFolders => 'Sort your saved wallpapers into folders.';
 
   @override
   String get foldersLoadError => 'Could not load this folder.';

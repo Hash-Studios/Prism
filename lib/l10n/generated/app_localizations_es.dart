@@ -11,6 +11,47 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Aún no hay carpetas';
+
+  @override
+  String get foldersLibraryEmptyBody =>
+      'Mantén pulsado el corazón de un fondo de pantalla para guardarlo en una carpeta.';
+
+  @override
+  String get foldersLoadAllError => 'No se pudieron cargar tus carpetas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Buscar en $countString favoritos',
+      one: 'Buscar en 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Ordenar y filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Ordenar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Origen';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Aplicar de nuevo';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, aplicado a las $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8551,14 +8592,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Quitar del historial';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Aplicar de nuevo. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Historial de fondos de pantalla';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8604,15 +8637,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Historial';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'Los fondos que aplicaste, para que puedas volver a usarlos.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Historial de fondos de pantalla';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir historial';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -9084,9 +9108,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Acceso directo al fondo del día';
 
   @override
-  String get wallpaperRecentlySet => 'Usados recientemente';
-
-  @override
   String get wallpaperRefresh => 'Actualizar';
 
   @override
@@ -9126,9 +9147,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Aplicar';
-
-  @override
-  String get wallpaperSetAgain => 'Volver a aplicar este fondo de pantalla';
 
   @override
   String get wallpaperSetAsWallpaper => 'Establecer como fondo de pantalla';
@@ -9250,9 +9268,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Inicia sesión para usar filtros Premium con monedas.';
-
-  @override
-  String get wallpaperSort => 'Ordenar';
 
   @override
   String get wallpaperSortDownloads => 'Ordenar descargas';
@@ -10463,9 +10478,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'Mantén pulsado el corazón de un fondo de pantalla para guardarlo aquí.';
-
-  @override
-  String get foldersNoFolders => 'Organiza tus fondos de pantalla guardados en carpetas.';
 
   @override
   String get foldersLoadError => 'No se pudo cargar esta carpeta.';

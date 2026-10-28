@@ -76,6 +76,10 @@ Color _legibleLabel(Color foreground, Color page) {
 /// [PrismChipMetrics.minLabelContrast]. Chip labels, the library tabs and the count line use it.
 Color prismReadableInk(ThemeData theme) => _legibleLabel(theme.colorScheme.secondary, theme.primaryColor);
 
+/// The accent as text or a line on the page, darkened or lightened until it reaches
+/// [PrismChipMetrics.minLabelContrast]. The selected Library tab uses it.
+Color prismReadableAccent(ThemeData theme) => _legibleLabel(theme.colorScheme.primary, theme.colorScheme.surface);
+
 /// [prismReadableInk] at [PrismInk.softAlpha], for text one level below the main text. It stays at full ink when
 /// the softer one would fall under [PrismChipMetrics.minLabelContrast] on the page.
 Color prismSoftInk(ThemeData theme) {

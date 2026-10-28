@@ -67,7 +67,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
-import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
@@ -199,7 +198,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
     AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
-    AutoRoute(path: '/wallpaper-history', page: WallpaperHistoryRoute.page),
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),

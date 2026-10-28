@@ -11,6 +11,47 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Noch keine Ordner';
+
+  @override
+  String get foldersLibraryEmptyBody =>
+      'Halte das Herz bei einem Hintergrundbild gedrückt, um es in einem Ordner zu speichern.';
+
+  @override
+  String get foldersLoadAllError => 'Deine Ordner konnten nicht geladen werden';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Favoriten durchsuchen',
+      one: '1 Favorit durchsuchen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Sortieren und filtern';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Sortieren nach';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Quelle';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Erneut festlegen';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, festgelegt um $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8558,14 +8599,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Aus dem Verlauf entfernen';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Erneut festlegen. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Verlauf der Hintergrundbilder';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8611,16 +8644,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Verlauf';
-
-  @override
-  String get wallpaperLibraryHistoryBody =>
-      'Hier findest du Hintergrundbilder, die du festgelegt hast, und kannst sie erneut verwenden.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Verlauf der Hintergrundbilder';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Verlauf öffnen';
 
   @override
   String get wallpaperLibraryTitle => 'Mediathek';
@@ -9096,9 +9119,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Kachel „Hintergrundbild des Tages“';
 
   @override
-  String get wallpaperRecentlySet => 'Kürzlich festgelegt';
-
-  @override
   String get wallpaperRefresh => 'Aktualisieren';
 
   @override
@@ -9138,9 +9158,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Festlegen';
-
-  @override
-  String get wallpaperSetAgain => 'Dieses Hintergrundbild erneut festlegen';
 
   @override
   String get wallpaperSetAsWallpaper => 'Als Hintergrundbild festlegen';
@@ -9262,9 +9279,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Melde dich an, um Premium-Filter mit Coins zu verwenden.';
-
-  @override
-  String get wallpaperSort => 'Sortieren';
 
   @override
   String get wallpaperSortDownloads => 'Downloads sortieren';
@@ -10480,9 +10494,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'Halte das Herz bei einem Hintergrundbild gedrückt, um es hier zu speichern.';
-
-  @override
-  String get foldersNoFolders => 'Sortiere deine gespeicherten Hintergrundbilder in Ordnern.';
 
   @override
   String get foldersLoadError => 'Dieser Ordner konnte nicht geladen werden.';

@@ -11,6 +11,46 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Segure o coração em um papel de parede para salvá-lo em uma pasta.';
+
+  @override
+  String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pesquisar em $countString favoritos',
+      one: 'Pesquisar em 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Organizar e filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Organizar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Fonte';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Definir novamente';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, definido às $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8724,7 +8764,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>
@@ -8735,14 +8775,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperHistoryRemoveAction => 'Remover do histórico';
-
-  @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Defina novamente. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Histórico do papel de parede';
 
   @override
   String get wallpaperHomeAppName => 'Prism';
@@ -8790,16 +8822,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Histórico';
-
-  @override
-  String get wallpaperLibraryHistoryBody =>
-      'Os papéis de parede que você definir aparecerão aqui para que possa defini-los novamente.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Histórico do papel de parede';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir histórico';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -9272,9 +9294,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Bloco do papel de parede do dia';
 
   @override
-  String get wallpaperRecentlySet => 'Definido recentemente';
-
-  @override
   String get wallpaperRefresh => 'Atualizar';
 
   @override
@@ -9314,9 +9333,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Definir';
-
-  @override
-  String get wallpaperSetAgain => 'Defina este papel de parede novamente';
 
   @override
   String get wallpaperSetAsWallpaper => 'Definir como papel de parede';
@@ -9439,9 +9455,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Faça login para usar filtros premium com moedas.';
-
-  @override
-  String get wallpaperSort => 'Organizar';
 
   @override
   String get wallpaperSortDownloads => 'Classificar downloads';
@@ -10660,9 +10673,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'Segure o coração em um papel de parede para salvá-lo aqui.';
-
-  @override
-  String get foldersNoFolders => 'Organize seus papéis de parede salvos em pastas.';
 
   @override
   String get foldersLoadError => 'Não foi possível carregar esta pasta.';
@@ -10691,6 +10701,46 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Segure o coração em um papel de parede para salvá-lo em uma pasta.';
+
+  @override
+  String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pesquisar em $countString favoritos',
+      one: 'Pesquisar em 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Organizar e filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Organizar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Fonte';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Definir novamente';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, definido às $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -19404,7 +19454,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>
@@ -19415,14 +19465,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperHistoryRemoveAction => 'Remover do histórico';
-
-  @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Defina novamente. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Histórico do papel de parede';
 
   @override
   String get wallpaperHomeAppName => 'Prism';
@@ -19470,16 +19512,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperLibraryHistory => 'Histórico';
-
-  @override
-  String get wallpaperLibraryHistoryBody =>
-      'Os papéis de parede que você definir aparecerão aqui para que possa defini-los novamente.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Histórico do papel de parede';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir histórico';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -19952,9 +19984,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperQuickWotdTitle => 'Bloco do papel de parede do dia';
 
   @override
-  String get wallpaperRecentlySet => 'Definido recentemente';
-
-  @override
   String get wallpaperRefresh => 'Atualizar';
 
   @override
@@ -19994,9 +20023,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperSet => 'Definir';
-
-  @override
-  String get wallpaperSetAgain => 'Defina este papel de parede novamente';
 
   @override
   String get wallpaperSetAsWallpaper => 'Definir como papel de parede';
@@ -20119,9 +20145,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Faça login para usar filtros premium com moedas.';
-
-  @override
-  String get wallpaperSort => 'Organizar';
 
   @override
   String get wallpaperSortDownloads => 'Classificar downloads';
@@ -21340,9 +21363,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersEmptyBody => 'Segure o coração em um papel de parede para salvá-lo aqui.';
-
-  @override
-  String get foldersNoFolders => 'Organize seus papéis de parede salvos em pastas.';
 
   @override
   String get foldersLoadError => 'Não foi possível carregar esta pasta.';

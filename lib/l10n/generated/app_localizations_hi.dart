@@ -11,6 +11,46 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'अभी कोई फ़ोल्डर नहीं';
+
+  @override
+  String get foldersLibraryEmptyBody => 'किसी वॉलपेपर को फ़ोल्डर में सहेजने के लिए उस पर दिल के निशान को दबाए रखें।';
+
+  @override
+  String get foldersLoadAllError => 'आपके फ़ोल्डर लोड नहीं हो सके';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString पसंदीदा में खोजें',
+      one: '1 पसंदीदा में खोजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'क्रमबद्ध और फ़िल्टर करें';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'इस क्रम में लगाएँ';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'स्रोत';
+
+  @override
+  String get wallpaperHistorySetAgain => 'फिर से लगाएँ';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, $time बजे लगाया गया';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8578,14 +8618,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'इतिहास से हटाएँ';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '$currentफिर से लगाएँ। $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'वॉलपेपर इतिहास';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8631,15 +8663,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'इतिहास';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'वॉलपेपर इतिहास';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'इतिहास खोलें';
 
   @override
   String get wallpaperLibraryTitle => 'लाइब्रेरी';
@@ -9105,9 +9128,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'आज के वॉलपेपर की टाइल';
 
   @override
-  String get wallpaperRecentlySet => 'हाल ही में सेट किए गए';
-
-  @override
   String get wallpaperRefresh => 'रीफ़्रेश करें';
 
   @override
@@ -9147,9 +9167,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'सेट करें';
-
-  @override
-  String get wallpaperSetAgain => 'यह वॉलपेपर फिर से सेट करें';
 
   @override
   String get wallpaperSetAsWallpaper => 'वॉलपेपर के रूप में सेट करें';
@@ -9270,9 +9287,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'कॉइन से प्रीमियम फ़िल्टर इस्तेमाल करने के लिए साइन इन करें।';
-
-  @override
-  String get wallpaperSort => 'क्रमबद्ध करें';
 
   @override
   String get wallpaperSortDownloads => 'डाउनलोड क्रमबद्ध करें';
@@ -10473,9 +10487,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।';
-
-  @override
-  String get foldersNoFolders => 'अपने सहेजे गए वॉलपेपर को फ़ोल्डरों में व्यवस्थित करें।';
 
   @override
   String get foldersLoadError => 'यह फ़ोल्डर लोड नहीं हो सका।';

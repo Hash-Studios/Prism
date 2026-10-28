@@ -2198,22 +2198,6 @@ class WallpaperFilterRouteArgs {
 }
 
 /// generated route for
-/// [WallpaperHistoryScreen]
-class WallpaperHistoryRoute extends PageRouteInfo<void> {
-  const WallpaperHistoryRoute({List<PageRouteInfo>? children})
-    : super(WallpaperHistoryRoute.name, initialChildren: children);
-
-  static const String name = 'WallpaperHistoryRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const WallpaperHistoryScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [WallpaperPositionScreen]
 class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
   WallpaperPositionRoute({

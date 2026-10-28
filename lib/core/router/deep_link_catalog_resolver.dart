@@ -98,7 +98,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
     DeepLinkPageTarget.autoRotate => const AutoRotateRoute(),
     DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
-    DeepLinkPageTarget.wallpaperHistory => const WallpaperHistoryRoute(),
+    DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(
       wallId: query['wallpaperId']!,
       source: source,
@@ -193,11 +193,8 @@ final class DeepLinkWallpaperLookup {
 
 DeepLinkInputRoute _inputRoute(DeepLinkInputWorkflow workflow) => DeepLinkInputRoute(workflow: workflow);
 
-LibraryTab _libraryTab(String? tab) => switch (tab?.toLowerCase()) {
-  'downloads' => LibraryTab.downloads,
-  'history' => LibraryTab.history,
-  _ => LibraryTab.favourites,
-};
+LibraryTab _libraryTab(String? tab) =>
+    LibraryTab.values.where((value) => value.name == tab?.toLowerCase()).firstOrNull ?? LibraryTab.favourites;
 
 DeepLinkInputWorkflow _workflow(String value) => switch (value) {
   'uploadWall' => DeepLinkInputWorkflow.uploadWall,

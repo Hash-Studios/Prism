@@ -13,7 +13,6 @@ import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
-import 'package:Prism/features/folders/views/widgets/folders_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -121,77 +120,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
   }
-
-  Future<FoldersBloc> pumpSignedIn(WidgetTester tester, _FakeFoldersRepository repo) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
-    final FoldersBloc bloc = FoldersBloc(repo);
-    addTearDown(bloc.close);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: kLightTheme,
-        home: BlocProvider<FoldersBloc>.value(
-          value: bloc,
-          child: const Scaffold(body: FoldersRow()),
-        ),
-      ),
-    );
-    await settle(tester);
-    return bloc;
-  }
-
-  testWidgets('signed in with two folders shows the heading, New folder, and each folder with its count', (
-    tester,
-  ) async {
-    final _FakeFoldersRepository repo = _FakeFoldersRepository(
-      folders: <FolderEntity>[_folder('work', 'Work', itemCount: 3), _folder('trips', 'Trips', itemCount: 1)],
-    );
-    await pumpSignedIn(tester, repo);
-
-    expect(find.text('Folders'), findsOneWidget);
-    expect(find.text('New folder'), findsOneWidget);
-    expect(find.text('Work'), findsOneWidget);
-    expect(find.text('3 wallpapers'), findsOneWidget);
-    expect(find.text('Trips'), findsOneWidget);
-    expect(find.text('1 wallpaper'), findsOneWidget);
-  });
-
-  testWidgets('signed in with no folders shows New folder and the hint to sort walls into folders', (tester) async {
-    await pumpSignedIn(tester, _FakeFoldersRepository());
-
-    expect(find.text('New folder'), findsOneWidget);
-    expect(find.text('Sort your saved wallpapers into folders.'), findsOneWidget);
-  });
-
-  testWidgets('a failed load shows a retry action, not the empty-folder hint', (tester) async {
-    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')])..failLoad = true;
-    await pumpSignedIn(tester, repo);
-
-    expect(find.text('Sort your saved wallpapers into folders.'), findsNothing);
-    expect(find.text('Try again'), findsOneWidget);
-    repo.failLoad = false;
-    await tester.tap(find.text('Try again'));
-    await settle(tester);
-
-    expect(find.text('Work'), findsOneWidget);
-    expect(repo.calls.where((call) => call == 'fetchFolders:u1'), hasLength(2));
-  });
-
-  testWidgets('a name prompt opened by one account cannot create a folder for the next account', (tester) async {
-    final repo = _FakeFoldersRepository();
-    final bloc = await pumpSignedIn(tester, repo);
-    await tester.tap(find.text('New folder'));
-    await settle(tester);
-    await tester.enterText(find.byType(TextField), 'Private draft');
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
-    bloc.add(const FoldersEvent.started(userId: 'u2'));
-    await settle(tester);
-    await tester.tap(find.text('Create'));
-    await settle(tester);
-
-    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
-  });
 
   testWidgets('a folder page shows a load error with retry when the folder list fails', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
@@ -334,50 +262,5 @@ void main() {
     await tester.tap(find.text('Remove'));
     await settle(tester);
     expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
-  });
-
-  testWidgets('a guest sees no folders row and makes no repository call, with no FoldersBloc provided', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser();
-    final _FakeFoldersRepository repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: kLightTheme,
-        home: const Scaffold(body: FoldersRow()),
-      ),
-    );
-    await settle(tester);
-
-    expect(find.text('Folders'), findsNothing);
-    expect(repo.calls, isEmpty);
-  });
-
-  testWidgets('each folder card has a semantics label equal to the folder name', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
-    await pumpSignedIn(
-      tester,
-      _FakeFoldersRepository(
-        folders: <FolderEntity>[_folder('work', 'Work', itemCount: 3), _folder('trips', 'Trips', itemCount: 1)],
-      ),
-    );
-
-    expect(tester.getSemantics(find.bySemanticsLabel('Work')).label, 'Work');
-    expect(tester.getSemantics(find.bySemanticsLabel('Trips')).label, 'Trips');
-    handle.dispose();
-  });
-
-  testWidgets('a mounted row hides on sign-out and returns after signing in again', (tester) async {
-    final bloc = await pumpSignedIn(tester, _FakeFoldersRepository());
-    expect(find.text('Folders'), findsOneWidget);
-    app_state.prismUser = app_constants.createGuestPrismUser();
-    bloc.add(const FoldersEvent.cleared());
-    await settle(tester);
-    expect(find.text('Folders'), findsNothing);
-
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
-    bloc.add(const FoldersEvent.started(userId: 'u2'));
-    await settle(tester);
-    expect(find.text('Folders'), findsOneWidget);
   });
 }

@@ -119,7 +119,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(57));
+    expect(appPages, hasLength(56));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -401,6 +401,11 @@ void main() {
     final PageRouteInfo? debugRoute = await routeForPageLink(debugIntent);
     expect(debugRoute?.rawQueryParams['tab'], 'mascot');
   });
+
+  test('library accepts the folders tab and rejects unknown tabs', () {
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=folders'))?.target, DeepLinkPageTarget.library);
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=bogus')), isNull);
+  });
 }
 
 FeedItemEntity _wallpaper(String url) => PrismFeedItem(
@@ -491,7 +496,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.quickTileSettings => 'QuickTileSettingsRoute',
   DeepLinkPageTarget.autoRotate => 'AutoRotateRoute',
   DeepLinkPageTarget.iosShortcuts => 'IosShortcutsGuideRoute',
-  DeepLinkPageTarget.wallpaperHistory => 'WallpaperHistoryRoute',
+  DeepLinkPageTarget.wallpaperHistory => 'LibraryRoute',
   DeepLinkPageTarget.photoPreview => 'ReviewPhotoPreviewRoute',
   DeepLinkPageTarget.clockPreview => 'ClockPreviewRoute',
   DeepLinkPageTarget.adminImage => 'FullScreenImageRoute',
