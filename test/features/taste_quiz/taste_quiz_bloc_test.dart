@@ -284,11 +284,7 @@ void main() {
     expect((bloc.state as TasteQuizTuning).walls, isNull);
 
     page.complete(
-      PersonalizedFeedPage(
-        items: <FeedItemEntity>[for (int i = 0; i < 9; i++) quizItem('f$i')],
-        hasMore: true,
-        usedKeys: const <String>[],
-      ),
+      PersonalizedFeedPage(items: <FeedItemEntity>[for (int i = 0; i < 9; i++) quizItem('f$i')], hasMore: true),
     );
     await _settle();
 

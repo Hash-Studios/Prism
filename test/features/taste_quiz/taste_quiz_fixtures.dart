@@ -59,8 +59,6 @@ class QuizFeedMock extends Mock implements PersonalizedFeedRepository {}
 /// A feed whose primed first page holds [items] in order.
 QuizFeedMock quizFeed([List<FeedItemEntity> items = const <FeedItemEntity>[]]) {
   final QuizFeedMock feed = QuizFeedMock();
-  when(
-    feed.primeFirstPage,
-  ).thenAnswer((_) async => PersonalizedFeedPage(items: items, hasMore: true, usedKeys: const <String>[]));
+  when(feed.primeFirstPage).thenAnswer((_) async => PersonalizedFeedPage(items: items, hasMore: true));
   return feed;
 }

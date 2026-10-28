@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
+import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
