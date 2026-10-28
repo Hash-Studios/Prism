@@ -104,6 +104,18 @@ late LocalNotification localNotification;
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 
+@visibleForTesting
+Future<void> runAppWithRuntimeVersion(Future<void> versionReady, Widget app) async {
+  await versionReady;
+  PerformanceProbe.mark('startup.run_app');
+  if (!kReleaseMode) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PerformanceProbe.mark('startup.first_frame');
+    });
+  }
+  runApp(app);
+}
+
 /// Top-level FCM background message handler.
 /// Must be a top-level function annotated with @pragma('vm:entry-point').
 /// Avoid any UI work here — only lightweight processing.
@@ -314,13 +326,8 @@ Future<void> main() async {
           (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
 
-      PerformanceProbe.mark('startup.run_app');
-      if (!kReleaseMode) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          PerformanceProbe.mark('startup.first_frame');
-        });
-      }
-      runApp(
+      await runAppWithRuntimeVersion(
+        appVersionReady,
         LogToastOverlay(
           child: BlocProvider<AutoRotateBloc>(
             create: (_) => getIt<AutoRotateBloc>(),

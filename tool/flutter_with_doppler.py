@@ -41,12 +41,14 @@ def download():
     return payload
 
 
-def defines(payload):
+def defines(payload, sentry_overrides=None):
     try:
         args = []
         for key in APP_KEYS:
             value = payload.get(key, '')
-            if key in SENTRY_OVERRIDES and os.environ.get(key):
+            if sentry_overrides is not None and key in shorebird_ota.SENTRY_RECORDED:
+                value = sentry_overrides.get(key, '')
+            elif key in SENTRY_OVERRIDES and os.environ.get(key):
                 value = os.environ[key]
             if not isinstance(value, str) or '\0' in value:
                 raise ValueError()

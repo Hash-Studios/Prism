@@ -13,15 +13,27 @@ class FakeCodePushUpdater implements CodePushUpdater {
   Object? downloadError;
   Completer<void>? checkGate;
   Completer<void>? downloadGate;
+  Completer<void>? currentGate;
+  Completer<void>? nextGate;
+  int currentCalls = 0;
+  int nextCalls = 0;
   int checkCalls = 0;
   int downloadCalls = 0;
   bool nextIsNull = false;
 
   @override
-  Future<int?> currentPatchNumber() async => current;
+  Future<int?> currentPatchNumber() async {
+    currentCalls++;
+    await currentGate?.future;
+    return current;
+  }
 
   @override
-  Future<int?> nextPatchNumber() async => nextIsNull ? null : (next ?? current);
+  Future<int?> nextPatchNumber() async {
+    nextCalls++;
+    await nextGate?.future;
+    return nextIsNull ? null : (next ?? current);
+  }
 
   @override
   Future<CodePushStatus> checkForUpdate() async {

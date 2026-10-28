@@ -242,10 +242,13 @@ release-android: ensure-fvm ensure-shorebird doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	$(DOPPLER_FLUTTER) --release-platform android -- $(SHOREBIRD) release android --flutter-version=$(FLUTTER_PIN) --obfuscate --split-debug-info=build/app/outputs/symbols $(BUILD_ARGS)
-	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
-		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
-	fi
-	@git push origin "refs/tags/$$(cat build/shorebird/release-tag-android)"
+	@case " $(BUILD_ARGS) " in \
+		*" --dry-run "*|*" -n "*) echo "Dry run: skipping Sentry upload and Shorebird tag push." ;; \
+		*) if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+			DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh || exit $$?; \
+		fi; \
+		git push origin "refs/tags/$$(cat build/shorebird/release-tag-android)" ;; \
+	esac
 
 release-ios: ensure-fvm ensure-shorebird doppler-check
 	@if [ -z "$(BUILD_NUMBER)" ]; then \
@@ -253,14 +256,21 @@ release-ios: ensure-fvm ensure-shorebird doppler-check
 		exit 1; \
 	fi
 	@$(DOPPLER_FLUTTER) --release-platform ios -- $(SHOREBIRD) release ios --flutter-version=$(FLUTTER_PIN) --build-number=$(BUILD_NUMBER) --obfuscate --split-debug-info=build/ios/outputs/symbols $(IOS_BUILD_ARGS)
-	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
-		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
-	fi
-	@git push origin "refs/tags/$$(cat build/shorebird/release-tag-ios)"
+	@case " $(IOS_BUILD_ARGS) " in \
+		*" --dry-run "*|*" -n "*) echo "Dry run: skipping Sentry upload and Shorebird tag push." ;; \
+		*) if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+			DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh || exit $$?; \
+		fi; \
+		git push origin "refs/tags/$$(cat build/shorebird/release-tag-ios)" ;; \
+	esac
 
 patch: ensure-fvm ensure-shorebird doppler-check
 	@if [ "$(PLATFORM)" != "android" ] && [ "$(PLATFORM)" != "ios" ] || [ -z "$(RELEASE_VERSION)" ]; then \
 		echo "Usage: make patch PLATFORM=android|ios RELEASE_VERSION=3.14.0+353 [TRACK=staging]"; \
+		exit 1; \
+	fi
+	@if [ -n "$(ALLOW_STORAGE_CHANGES)" ] && [ "$(ALLOW_STORAGE_CHANGES)" != "1" ]; then \
+		echo "ALLOW_STORAGE_CHANGES must be empty or 1."; \
 		exit 1; \
 	fi
 	@git fetch --quiet origin 'refs/tags/shorebird/*:refs/tags/shorebird/*'
@@ -272,12 +282,25 @@ patch: ensure-fvm ensure-shorebird doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(DOPPLER_FLUTTER) --release-platform $(PLATFORM) $(if $(ALLOW_STORAGE_CHANGES),--allow-storage-changes,) -- \
-		$(SHOREBIRD) patch $(PLATFORM) --release-version=$(RELEASE_VERSION) --track=$(TRACK) \
-		--split-debug-info=$(if $(filter ios,$(PLATFORM)),build/ios/outputs/symbols,build/app/outputs/symbols) $(PATCH_ARGS)
-	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
-		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
-	fi
+	python3 -c 'import os, shlex, subprocess, sys; from tool.shorebird_ota import read_record; \
+	platform, version, track, shorebird, flutter_runner, allow_storage, extra, sentry_upload, sentry_config, dart_cmd = sys.argv[1:]; \
+	record = read_record(platform, version); config = record["config"]; \
+	symbols = "build/ios/outputs/symbols" if platform == "ios" else "build/app/outputs/symbols"; \
+	args = ["patch", platform, "--release-version=" + version, "--track=" + track]; \
+	args += ["--split-debug-info=" + symbols] if config["split_debug_info"] else []; \
+	args += ["--target=" + config["target"]] if config["target"] != "lib/main.dart" else []; \
+	args += ["--flavor=" + config["flavor"]] if config["flavor"] else []; \
+	args += shlex.split(extra); \
+	command = shlex.split(flutter_runner) + ["--release-platform", platform] + (["--allow-storage-changes"] if allow_storage == "1" else []) + ["--"] + shlex.split(shorebird) + args; \
+	result = subprocess.run(command); \
+	dry_run = any(arg in ("--dry-run", "-n") for arg in args); \
+	sys.exit(result.returncode) if result.returncode or sentry_upload != "true" or dry_run else None; \
+	env = os.environ.copy(); env.update({key: "" for key in ("SENTRY_ENV", "SENTRY_RELEASE", "SENTRY_DIST", "SENTRY_ENABLED")}); \
+	env.update(record["sentry"]); env["SENTRY_DOPPLER_CONFIG"] = sentry_config; env["DART_CMD"] = dart_cmd; \
+	sys.exit(subprocess.run(["./tool/sentry_upload.sh"], env=env).returncode)' \
+		"$(PLATFORM)" "$(RELEASE_VERSION)" "$(TRACK)" "$(SHOREBIRD)" "$(DOPPLER_FLUTTER)" \
+		"$(if $(filter 1,$(ALLOW_STORAGE_CHANGES)),1,0)" "$(PATCH_ARGS)" "$(SENTRY_UPLOAD)" \
+		"$(SENTRY_DOPPLER_CONFIG)" "$(DART)"
 
 patch-list: ensure-shorebird doppler-check
 	@if [ -z "$(RELEASE_VERSION)" ]; then echo "Usage: make patch-list RELEASE_VERSION=3.14.0+353"; exit 1; fi

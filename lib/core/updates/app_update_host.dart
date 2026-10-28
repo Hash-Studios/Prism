@@ -8,6 +8,7 @@ import 'package:Prism/core/updates/store_update_policy.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -37,6 +38,7 @@ class AppUpdateHost extends StatefulWidget {
 
 class _AppUpdateHostState extends State<AppUpdateHost> with WidgetsBindingObserver {
   late final ValueListenable<bool> _paywall = widget.paywallPresenting ?? PaywallOrchestrator.instance.presenting;
+  TabsRouter? _tabsRouter;
   bool _scheduled = false;
   bool _showing = false;
   bool _storeUpdateHandled = false;
@@ -54,6 +56,12 @@ class _AppUpdateHostState extends State<AppUpdateHost> with WidgetsBindingObserv
   void didChangeDependencies() {
     super.didChangeDependencies();
     ModalRoute.of(context);
+    final TabsRouter? tabsRouter = TabsRouterScope.of(context, watch: true)?.controller;
+    if (!identical(tabsRouter, _tabsRouter)) {
+      _tabsRouter?.removeListener(_schedule);
+      _tabsRouter = tabsRouter;
+      _tabsRouter?.addListener(_schedule);
+    }
     _schedule();
   }
 
@@ -69,6 +77,7 @@ class _AppUpdateHostState extends State<AppUpdateHost> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     widget.controller.announcement.removeListener(_schedule);
     _paywall.removeListener(_schedule);
+    _tabsRouter?.removeListener(_schedule);
     super.dispose();
   }
 
@@ -86,7 +95,8 @@ class _AppUpdateHostState extends State<AppUpdateHost> with WidgetsBindingObserv
     final bool current = ModalRoute.of(context)?.isCurrent ?? true;
     final bool resumed =
         (WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed) == AppLifecycleState.resumed;
-    return current && resumed && !_paywall.value;
+    final bool activeTabRouteCovered = _tabsRouter?.activeRouterCanPop() ?? false;
+    return current && resumed && !activeTabRouteCovered && !_paywall.value;
   }
 
   Future<void> _tryShow() async {
@@ -111,8 +121,15 @@ class _AppUpdateHostState extends State<AppUpdateHost> with WidgetsBindingObserv
     }
     final PendingRestart? restart = widget.controller.announcement.value;
     if (restart == null) return;
+    _showing = true;
     toasts.info(context.l10n.updatesRestartToFinish);
-    unawaited(widget.controller.markAnnounced(restart));
+    try {
+      await widget.controller.markAnnounced(restart);
+    } finally {
+      _showing = false;
+      final PendingRestart? latest = widget.controller.announcement.value;
+      if (mounted && latest != null && latest != restart) _schedule();
+    }
   }
 
   @override

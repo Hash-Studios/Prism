@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/updates/app_update_host.dart';
 import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:Prism/core/updates/store_update_policy.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,6 +22,51 @@ const String _toastMessage = 'Close and reopen Prism to finish updating.';
 const String _sheetMessage = 'A new version of Prism is available.';
 const String _updateLabel = 'Update Prism';
 const String _notNowLabel = 'Not now';
+
+class _NestedDashboard extends StatelessWidget {
+  const _NestedDashboard({required this.controller});
+
+  final OtaUpdateController controller;
+
+  @override
+  Widget build(BuildContext context) => AutoTabsRouter(
+    routes: const <PageRouteInfo<Object?>>[HomeTabRoute()],
+    builder: (context, child) =>
+        AppUpdateHost(controller: controller, storeUpdate: () => StoreUpdate.none, child: child),
+  );
+}
+
+class _NestedRouter extends AppRouter {
+  _NestedRouter(this.controller);
+
+  final OtaUpdateController controller;
+
+  @override
+  List<AutoRoute> get routes => <AutoRoute>[
+    AutoRoute(
+      path: '/',
+      page: PageInfo('Dashboard', builder: (_) => _NestedDashboard(controller: controller)),
+      children: <AutoRoute>[
+        AutoRoute(
+          path: 'home',
+          initial: true,
+          page: PageInfo(HomeTabRoute.name, builder: (_) => const AutoRouter()),
+          children: <AutoRoute>[
+            AutoRoute(
+              path: '',
+              initial: true,
+              page: PageInfo('HomeRoot', builder: (_) => const Scaffold(body: Text('Home content'))),
+            ),
+            AutoRoute(
+              path: 'detail',
+              page: PageInfo('NestedDetail', builder: (_) => const Scaffold(body: Text('Nested detail'))),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ];
+}
 
 class _FakeCodePushUpdater implements CodePushUpdater {
   int checkCalls = 0;
@@ -37,6 +88,20 @@ class _FakeCodePushUpdater implements CodePushUpdater {
 
   @override
   Future<void> downloadUpdate() async {}
+}
+
+class _GatedAnnouncementStore extends InMemoryLocalStore {
+  Completer<void>? announcementWrite;
+  int announcementWrites = 0;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(OtaUpdateController.announcedKey)) {
+      announcementWrites++;
+      await announcementWrite?.future;
+    }
+    await super.set(key, value);
+  }
 }
 
 void main() {
@@ -104,6 +169,37 @@ void main() {
     await settleToasts(tester);
   });
 
+  testWidgets('serializes the restart toast while its announcement write is pending', (tester) async {
+    final _GatedAnnouncementStore gatedStore = _GatedAnnouncementStore()..announcementWrite = Completer<void>();
+    settings = SettingsLocalDataSource(gatedStore);
+    controller = OtaUpdateController(
+      updater: updater,
+      settings: settings,
+      analytics: FakeAppAnalytics(),
+      release: () => (version: '3.14.0', build: '353'),
+    );
+    await pumpApp(tester);
+    setRestart();
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(_toastMessage), findsOneWidget);
+
+    controller.announcement.value = const PendingRestart(version: '3.14.0', build: '353', patchNumber: 2);
+    paywall.value = true;
+    await tester.pump();
+    paywall.value = false;
+    await tester.pump();
+    expect(find.text(_toastMessage), findsOneWidget);
+    expect(gatedStore.announcementWrites, 1);
+
+    gatedStore.announcementWrite!.complete();
+    await tester.pumpAndSettle();
+    expect(controller.announcement.value, isNull);
+    expect(gatedStore.announcementWrites, 2);
+    expect(settings.get<String?>(OtaUpdateController.announcedKey), '3.14.0+353#2');
+    await settleToasts(tester);
+  });
+
   testWidgets('waits while another route is on top', (tester) async {
     await pumpApp(tester);
     await tester.pumpAndSettle();
@@ -121,6 +217,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(_toastMessage), findsOneWidget);
     await settleToasts(tester);
+  });
+
+  testWidgets('waits while a sheet is on the root navigator', (tester) async {
+    await pumpApp(tester);
+    final BuildContext context = tester.element(find.byType(AppUpdateHost));
+    unawaited(showPrismSheet<void>(context, builder: (_) => const Text('Root sheet')));
+    await tester.pumpAndSettle();
+
+    setRestart();
+    await tester.pumpAndSettle();
+    expect(find.text(_toastMessage), findsNothing);
+
+    Navigator.of(context).pop();
+    await tester.pumpAndSettle();
+    expect(find.text(_toastMessage), findsOneWidget);
+    await settleToasts(tester);
+  });
+
+  testWidgets('waits while a route in the active tab router is on top', (tester) async {
+    final router = _NestedRouter(controller);
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router.config(),
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final StackRouter tabRouter = AutoRouter.of(tester.element(find.text('Home content')));
+    unawaited(tabRouter.push(const PageRouteInfo<void>('NestedDetail')));
+    await tester.pumpAndSettle();
+
+    setRestart();
+    await tester.pumpAndSettle();
+    expect(find.text(_toastMessage), findsNothing);
+
+    tabRouter.pop();
+    await tester.pumpAndSettle();
+    expect(find.text(_toastMessage), findsOneWidget);
+    await settleToasts(tester);
+    router.dispose();
+  });
+
+  testWidgets('does not show or mark a restart after the host is disposed', (tester) async {
+    await pumpApp(tester);
+    setRestart();
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    expect(find.text(_toastMessage), findsNothing);
+    expect(controller.announcement.value, isNotNull);
+    expect(settings.get<String?>(OtaUpdateController.announcedKey), isNull);
   });
 
   testWidgets('waits while a paywall is presenting', (tester) async {
@@ -164,8 +315,9 @@ void main() {
 
   testWidgets('restart message waits for the store sheet', (tester) async {
     storeUpdate = StoreUpdate.suggested;
-    setRestart();
     await pumpApp(tester);
+    await tester.pumpAndSettle();
+    setRestart();
     await tester.pumpAndSettle();
 
     expect(find.text(_sheetMessage), findsOneWidget);

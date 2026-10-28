@@ -4,12 +4,23 @@ import 'dart:io';
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_local_store.dart';
 import 'fake_code_push_updater.dart';
+
+class _FailingAnnouncedStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(OtaUpdateController.announcedKey)) {
+      throw StateError('announced write failed');
+    }
+    await super.set(key, value);
+  }
+}
 
 class _RecordingAnalytics implements AppAnalytics {
   final List<AnalyticsEvent> events = <AnalyticsEvent>[];
@@ -54,6 +65,7 @@ void main() {
 
   OtaUpdateController controller(
     FakeCodePushUpdater updater, {
+    StoreRelease release = (version: '3.14.0', build: '353'),
     void Function(int patchNumber)? tagPatch,
     Duration checkTimeout = const Duration(seconds: 30),
     Duration downloadTimeout = const Duration(minutes: 5),
@@ -62,7 +74,7 @@ void main() {
       updater: updater,
       settings: settings,
       analytics: analytics,
-      release: () => (version: '3.14.0', build: '353'),
+      release: () => release,
       tagPatch: tagPatch,
       now: () => now,
       checkTimeout: checkTimeout,
@@ -127,6 +139,60 @@ void main() {
     final List<AnalyticsEvent> failed = eventsNamed('ota_download_failed');
     expect(failed, hasLength(1));
     expect(failed.single.toWireParameters()['reason'], 'check_timeout');
+  });
+
+  test('a timed out check remains a barrier until the SDK call settles', () async {
+    final Completer<void> gate = Completer<void>();
+    final FakeCodePushUpdater updater = FakeCodePushUpdater()..checkGate = gate;
+    final OtaUpdateController c = controller(updater, checkTimeout: const Duration(milliseconds: 20));
+
+    await c.check(trigger: 'launch');
+    now = now.add(const Duration(minutes: 16));
+    await c.check(trigger: 'resume');
+
+    expect(updater.checkCalls, 1);
+
+    gate.complete();
+    await Future<void>.delayed(Duration.zero);
+    await c.check(trigger: 'resume');
+
+    expect(updater.checkCalls, 2);
+  });
+
+  test('current patch reads are bounded by the check timeout and held as an SDK barrier', () async {
+    final Completer<void> gate = Completer<void>();
+    final FakeCodePushUpdater updater = FakeCodePushUpdater()..currentGate = gate;
+    final OtaUpdateController c = controller(updater, checkTimeout: const Duration(milliseconds: 20));
+
+    await c.check(trigger: 'launch');
+    now = now.add(const Duration(minutes: 16));
+    await c.check(trigger: 'resume');
+
+    expect(updater.currentCalls, 1);
+    final List<AnalyticsEvent> failed = eventsNamed('ota_download_failed');
+    expect(failed.single.toWireParameters()['reason'], 'check_timeout');
+
+    gate.complete();
+    await Future<void>.delayed(Duration.zero);
+    await c.check(trigger: 'resume');
+    expect(updater.currentCalls, 2);
+  });
+
+  test('next patch reads are bounded and classified as a check timeout', () async {
+    final Completer<void> gate = Completer<void>();
+    final FakeCodePushUpdater updater = FakeCodePushUpdater()
+      ..status = CodePushStatus.outdated
+      ..nextAfterDownload = 1
+      ..nextGate = gate;
+    final OtaUpdateController c = controller(updater, checkTimeout: const Duration(milliseconds: 20));
+
+    await c.check(trigger: 'launch');
+
+    expect(updater.nextCalls, 1);
+    expect(eventsNamed('ota_download_failed').single.toWireParameters()['reason'], 'check_timeout');
+    expect(c.announcement.value, isNull);
+
+    gate.complete();
   });
 
   test('a failed download reports download_failed and announces nothing', () async {
@@ -216,6 +282,23 @@ void main() {
     expect(second.announcement.value, isNull);
   });
 
+  test('a failed announcement write keeps the prompt available and does not throw', () async {
+    final SettingsLocalDataSource failingSettings = SettingsLocalDataSource(_FailingAnnouncedStore());
+    final OtaUpdateController c = OtaUpdateController(
+      updater: FakeCodePushUpdater(),
+      settings: failingSettings,
+      analytics: analytics,
+      release: () => (version: '3.14.0', build: '353'),
+      now: () => now,
+    );
+    const PendingRestart restart = PendingRestart(version: '3.14.0', build: '353', patchNumber: 1);
+    c.announcement.value = restart;
+
+    await expectLater(c.markAnnounced(restart), completes);
+
+    expect(c.announcement.value, restart);
+  });
+
   test('a different patch of the same release is announced after an earlier one was shown', () async {
     await settings.set(OtaUpdateController.announcedKey, '3.14.0+353#1');
     final FakeCodePushUpdater updater = FakeCodePushUpdater()
@@ -240,6 +323,48 @@ void main() {
 
     expect(c.announcement.value, const PendingRestart(version: '3.14.0', build: '353', patchNumber: 0));
     expect(settings.get<String?>(OtaUpdateController.pendingKey), '3.14.0+353#0');
+  });
+
+  test('a roll forward re-announces a patch after an unannounced rollback transition', () async {
+    await settings.set(OtaUpdateController.announcedKey, '3.14.0+353#1');
+    await settings.set(OtaUpdateController.pendingKey, '3.14.0+353#1');
+    final FakeCodePushUpdater rollbackUpdater = FakeCodePushUpdater()
+      ..status = CodePushStatus.restartRequired
+      ..current = 1
+      ..nextIsNull = true;
+    await controller(rollbackUpdater).check(trigger: 'launch');
+
+    final FakeCodePushUpdater rollForwardUpdater = FakeCodePushUpdater()
+      ..status = CodePushStatus.restartRequired
+      ..current = null
+      ..next = 1;
+    final OtaUpdateController rollForward = controller(rollForwardUpdater);
+    await rollForward.check(trigger: 'launch');
+
+    expect(rollForward.announcement.value, const PendingRestart(version: '3.14.0', build: '353', patchNumber: 1));
+    expect(settings.get<String?>(OtaUpdateController.pendingKey), '3.14.0+353#1');
+  });
+
+  test('an up-to-date result clears a stale pending restart and announcement', () async {
+    await settings.set(OtaUpdateController.pendingKey, '3.14.0+353#1');
+    final OtaUpdateController c = controller(FakeCodePushUpdater());
+    c.announcement.value = const PendingRestart(version: '3.14.0', build: '353', patchNumber: 1);
+
+    await c.check(trigger: 'resume');
+
+    expect(settings.get<String?>(OtaUpdateController.pendingKey), isNull);
+    expect(c.announcement.value, isNull);
+  });
+
+  test('restartRequired with no current-next difference clears a stale restart', () async {
+    await settings.set(OtaUpdateController.pendingKey, '3.14.0+353#1');
+    final OtaUpdateController c = controller(FakeCodePushUpdater()..current = 1);
+    c.announcement.value = const PendingRestart(version: '3.14.0', build: '353', patchNumber: 1);
+
+    await c.check(trigger: 'resume');
+
+    expect(settings.get<String?>(OtaUpdateController.pendingKey), isNull);
+    expect(c.announcement.value, isNull);
   });
 
   test('a debug or non-Shorebird build skips checks and launch telemetry', () async {
@@ -317,6 +442,37 @@ void main() {
     expect(eventsNamed('ota_patch_running'), hasLength(1));
   });
 
+  test('concurrent recordLaunch calls read and persist launch state once', () async {
+    await settings.set(OtaUpdateController.bootedKey, '3.14.0+353#0');
+    final Completer<void> gate = Completer<void>();
+    final FakeCodePushUpdater updater = FakeCodePushUpdater()
+      ..current = 1
+      ..currentGate = gate;
+    final OtaUpdateController c = controller(updater);
+
+    final Future<void> first = c.recordLaunch();
+    final Future<void> second = c.recordLaunch();
+    gate.complete();
+    await Future.wait(<Future<void>>[first, second]);
+
+    expect(updater.currentCalls, 1);
+    expect(eventsNamed('ota_patch_running'), hasLength(1));
+  });
+
+  test('a check requested during launch recording runs after the launch read settles', () async {
+    final Completer<void> gate = Completer<void>();
+    final FakeCodePushUpdater updater = FakeCodePushUpdater()..currentGate = gate;
+    final OtaUpdateController c = controller(updater);
+
+    final Future<void> launchRecording = c.recordLaunch();
+    final Future<void> check = c.check(trigger: 'launch');
+    gate.complete();
+    await Future.wait(<Future<void>>[launchRecording, check]);
+
+    expect(updater.currentCalls, 2);
+    expect(updater.checkCalls, 1);
+  });
+
   test('recordLaunch reports nothing when the last boot was another release', () async {
     await settings.set(OtaUpdateController.bootedKey, '3.13.0+352#4');
     final FakeCodePushUpdater updater = FakeCodePushUpdater()..current = 1;
@@ -345,5 +501,47 @@ void main() {
     await c.recordLaunch();
 
     expect(settings.get<String?>(OtaUpdateController.pendingKey), isNull);
+  });
+
+  test('a new store release clears old pending state and treats its patch as a new transition', () async {
+    await settings.set(OtaUpdateController.pendingKey, '3.14.0+353#1');
+    await settings.set(OtaUpdateController.announcedKey, '3.14.0+353#1');
+    const StoreRelease newRelease = (version: '3.14.1', build: '354');
+    final OtaUpdateController c = controller(FakeCodePushUpdater()..current = 1, release: newRelease);
+
+    await c.recordLaunch();
+    expect(settings.get<String?>(OtaUpdateController.pendingKey), isNull);
+    expect(settings.get<String?>(OtaUpdateController.bootedKey), '3.14.1+354#1');
+
+    final OtaUpdateController newPatch = controller(
+      FakeCodePushUpdater()
+        ..status = CodePushStatus.restartRequired
+        ..current = null
+        ..next = 1,
+      release: newRelease,
+    );
+    await newPatch.check(trigger: 'launch');
+
+    expect(newPatch.announcement.value, const PendingRestart(version: '3.14.1', build: '354', patchNumber: 1));
+  });
+
+  test('fresh install state shows a restart for its first downloaded patch', () async {
+    final SettingsLocalDataSource freshSettings = SettingsLocalDataSource(InMemoryLocalStore());
+    final OtaUpdateController c = OtaUpdateController(
+      updater: FakeCodePushUpdater()
+        ..status = CodePushStatus.restartRequired
+        ..current = null
+        ..next = 1,
+      settings: freshSettings,
+      analytics: analytics,
+      release: () => (version: '3.14.0', build: '353'),
+      now: () => now,
+    );
+
+    await c.check(trigger: 'launch');
+
+    expect(freshSettings.get<String?>(OtaUpdateController.announcedKey), isNull);
+    expect(freshSettings.get<String?>(OtaUpdateController.pendingKey), '3.14.0+353#1');
+    expect(c.announcement.value, const PendingRestart(version: '3.14.0', build: '353', patchNumber: 1));
   });
 }

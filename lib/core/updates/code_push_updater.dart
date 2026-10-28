@@ -32,38 +32,62 @@ abstract interface class CodePushUpdater {
 }
 
 class ShorebirdCodePushUpdater implements CodePushUpdater {
-  ShorebirdCodePushUpdater({required String Function() track}) : _track = track;
+  ShorebirdCodePushUpdater({required String Function() track, ShorebirdUpdater? updater})
+    : _track = track,
+      _providedUpdater = updater;
 
   final String Function() _track;
+  final ShorebirdUpdater? _providedUpdater;
+  String? _downloadTrack;
 
   // Only `shorebird release` builds carry the updater. Debug and profile builds skip its FFI probe and console banner.
-  late final ShorebirdUpdater? _updater = kReleaseMode ? ShorebirdUpdater() : null;
+  late final ShorebirdUpdater? _updater = _providedUpdater ?? (kReleaseMode ? ShorebirdUpdater() : null);
 
   @override
   bool get isAvailable => _updater?.isAvailable ?? false;
 
   @override
-  Future<int?> currentPatchNumber() async => (await _updater?.readCurrentPatch())?.number;
+  Future<int?> currentPatchNumber() async {
+    final ShorebirdUpdater? updater = _updater;
+    if (updater == null || !updater.isAvailable) return null;
+    return (await updater.readCurrentPatch())?.number;
+  }
 
   @override
-  Future<int?> nextPatchNumber() async => (await _updater?.readNextPatch())?.number;
+  Future<int?> nextPatchNumber() async {
+    final ShorebirdUpdater? updater = _updater;
+    if (updater == null || !updater.isAvailable) return null;
+    return (await updater.readNextPatch())?.number;
+  }
 
   @override
   Future<CodePushStatus> checkForUpdate() async {
     final ShorebirdUpdater? updater = _updater;
-    if (updater == null) return CodePushStatus.unavailable;
-    return switch (await updater.checkForUpdate(track: UpdateTrack(_track()))) {
-      UpdateStatus.upToDate => CodePushStatus.upToDate,
-      UpdateStatus.outdated => CodePushStatus.outdated,
-      UpdateStatus.restartRequired => CodePushStatus.restartRequired,
-      UpdateStatus.unavailable => CodePushStatus.unavailable,
-    };
+    if (updater == null || !updater.isAvailable) return CodePushStatus.unavailable;
+    final String track = _track();
+    try {
+      final UpdateStatus status = await updater.checkForUpdate(track: UpdateTrack(track));
+      _downloadTrack = status == UpdateStatus.outdated ? track : null;
+      return switch (status) {
+        UpdateStatus.upToDate => CodePushStatus.upToDate,
+        UpdateStatus.outdated => CodePushStatus.outdated,
+        UpdateStatus.restartRequired => CodePushStatus.restartRequired,
+        UpdateStatus.unavailable => CodePushStatus.unavailable,
+      };
+    } catch (_) {
+      _downloadTrack = null;
+      rethrow;
+    }
   }
 
   @override
   Future<void> downloadUpdate() async {
+    final ShorebirdUpdater? updater = _updater;
+    if (updater == null || !updater.isAvailable) return;
+    final String track = _downloadTrack ?? _track();
+    _downloadTrack = null;
     try {
-      await _updater?.update(track: UpdateTrack(_track()));
+      await updater.update(track: UpdateTrack(track));
     } on UpdateException catch (error) {
       throw CodePushException(switch (error.reason) {
         UpdateFailureReason.downloadFailed => CodePushFailure.downloadFailed,

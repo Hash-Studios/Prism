@@ -65,13 +65,27 @@ class OtaUpdateController {
   final ValueNotifier<PendingRestart?> announcement = ValueNotifier<PendingRestart?>(null);
 
   Future<void>? _running;
+  Future<void>? _launchRecording;
+  Completer<void>? _updaterCallsDrained;
+  int _outstandingUpdaterCalls = 0;
+  bool _checkSettled = false;
+  bool _launchRecordingSettled = false;
   DateTime? _lastCheck;
 
   /// Once per launch: tags Sentry with the running patch and reports a patch that runs for the first time.
-  Future<void> recordLaunch() async {
+  Future<void> recordLaunch() {
+    final Future<void>? recording = _launchRecording;
+    if (recording != null) return recording;
+    final Future<void> newRecording = _recordLaunch().whenComplete(() => _launchRecordingSettled = true);
+    return _launchRecording = newRecording;
+  }
+
+  Future<void> _recordLaunch() async {
     if (!_updater.isAvailable) return;
     try {
-      final int current = await _updater.currentPatchNumber() ?? 0;
+      await _running;
+      await _waitForUpdaterCalls();
+      final int current = await _runUpdaterCall(_updater.currentPatchNumber(), checkTimeout) ?? 0;
       _safely(() => _tagPatch?.call(current));
       final StoreRelease release = _release();
       final String booted = _key(release, current);
@@ -95,40 +109,70 @@ class OtaUpdateController {
   /// [cooldown] of the last one does nothing.
   Future<void> check({required String trigger}) {
     if (!_updater.isAvailable) return Future<void>.value();
+    final Future<void>? launchRecording = _launchRecording;
+    if (launchRecording != null && !_launchRecordingSettled) {
+      return launchRecording.then((_) => check(trigger: trigger));
+    }
     final Future<void>? running = _running;
     if (running != null) return running;
+    if (_outstandingUpdaterCalls > 0) {
+      return _waitForUpdaterCalls().then((_) => check(trigger: trigger));
+    }
     final DateTime now = _now();
     final DateTime? last = _lastCheck;
     if (last != null && now.difference(last) < cooldown) return Future<void>.value();
     _lastCheck = now;
-    return _running = _check(trigger).whenComplete(() => _running = null);
+    _checkSettled = false;
+    final Future<void> runningCheck = _check(trigger).whenComplete(() {
+      _checkSettled = true;
+      _clearRunningWhenIdle();
+    });
+    return _running = runningCheck;
   }
 
   /// The host showed [restart]. It is not shown again for this release and patch.
   Future<void> markAnnounced(PendingRestart restart) async {
+    try {
+      await _settings.set(announcedKey, restart.key);
+    } catch (_) {
+      return;
+    }
     if (announcement.value == restart) announcement.value = null;
-    await _settings.set(announcedKey, restart.key);
   }
 
   Future<void> _check(String trigger) async {
     int current = 0;
     bool downloading = false;
+    String? pendingAtStart;
     try {
-      current = await _updater.currentPatchNumber() ?? 0;
+      try {
+        pendingAtStart = _settings.get<String?>(pendingKey);
+      } catch (_) {
+        // Persistence must not block an OTA check.
+      }
+      current = await _runUpdaterCall(_updater.currentPatchNumber(), checkTimeout) ?? 0;
       _track(OtaCheckStartedEvent(trigger: trigger, patchNumber: current));
-      final CodePushStatus status = await _updater.checkForUpdate().timeout(checkTimeout);
+      final CodePushStatus status = await _runUpdaterCall(_updater.checkForUpdate(), checkTimeout);
       switch (status) {
         case CodePushStatus.outdated:
           _track(OtaUpdateAvailableEvent(patchNumber: current));
           downloading = true;
-          await _updater.downloadUpdate().timeout(downloadTimeout);
-          final int next = await _updater.nextPatchNumber() ?? 0;
+          await _runUpdaterCall(_updater.downloadUpdate(), downloadTimeout);
+          downloading = false;
+          final int next = await _runUpdaterCall(_updater.nextPatchNumber(), checkTimeout) ?? 0;
           if (next == current) return;
           _track(OtaDownloadDoneEvent(patchNumber: current, pendingPatchNumber: next));
           await _restartRequired(next);
         case CodePushStatus.restartRequired:
-          await _restartRequired(await _updater.nextPatchNumber() ?? 0);
+          final int next = await _runUpdaterCall(_updater.nextPatchNumber(), checkTimeout) ?? 0;
+          if (next == current) {
+            await _clearPendingRestart(pendingAtStart);
+          } else {
+            await _restartRequired(next);
+          }
         case CodePushStatus.upToDate:
+          await _clearPendingRestart(pendingAtStart);
+          return;
         case CodePushStatus.unavailable:
           return;
       }
@@ -152,8 +196,43 @@ class OtaUpdateController {
       build: release.build,
       patchNumber: patchNumber,
     );
+    final String? previousPending = _settings.get<String?>(pendingKey);
     await _settings.set(pendingKey, restart.key);
-    if (_settings.get<String?>(announcedKey) != restart.key) announcement.value = restart;
+    if (previousPending != restart.key || _settings.get<String?>(announcedKey) != restart.key) {
+      announcement.value = restart;
+    }
+  }
+
+  Future<void> _clearPendingRestart(String? expectedPending) async {
+    if (expectedPending == null) return;
+    try {
+      if (_settings.get<String?>(pendingKey) == expectedPending) await _settings.delete(pendingKey);
+    } catch (_) {
+      // A failed cleanup must not block the update check.
+    }
+    if (announcement.value?.key == expectedPending) announcement.value = null;
+  }
+
+  Future<T> _runUpdaterCall<T>(Future<T> call, Duration timeout) => _trackUpdaterCall(call).timeout(timeout);
+
+  Future<T> _trackUpdaterCall<T>(Future<T> call) {
+    if (_outstandingUpdaterCalls == 0) _updaterCallsDrained = Completer<void>();
+    _outstandingUpdaterCalls++;
+    return call.whenComplete(() {
+      _outstandingUpdaterCalls--;
+      if (_outstandingUpdaterCalls == 0) {
+        _updaterCallsDrained?.complete();
+        _updaterCallsDrained = null;
+      }
+      _clearRunningWhenIdle();
+    });
+  }
+
+  Future<void> _waitForUpdaterCalls() =>
+      _outstandingUpdaterCalls == 0 ? Future<void>.value() : _updaterCallsDrained!.future;
+
+  void _clearRunningWhenIdle() {
+    if (_checkSettled && _outstandingUpdaterCalls == 0) _running = null;
   }
 
   void _fail(OtaFailureReasonValue reason, int patchNumber) =>

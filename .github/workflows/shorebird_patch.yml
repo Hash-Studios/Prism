@@ -95,23 +95,60 @@ jobs:
           "$HOME/.shorebird/bin/shorebird" --version
           echo "$HOME/.shorebird/bin" >> "$GITHUB_PATH"
 
-      # The Android release workflow picks the Sentry DSN and project by environment. Use the same pair.
-      - name: Resolve the release Sentry environment
+      # Read only the exact annotated release record. Never let dispatch input act as a git tag pattern.
+      - name: Validate release record and restore build configuration
+        id: release-record
         run: |
-          sentry_env="$(git tag -l --format='%(contents)' "shorebird/$PLATFORM/$RELEASE_VERSION" | jq -r '.sentry.SENTRY_ENV // empty')"
+          record="$(python3 -c 'import json, sys; from tool.shorebird_ota import read_record; print(json.dumps(read_record(sys.argv[1], sys.argv[2])))' \
+            "$PLATFORM" "$RELEASE_VERSION")"
+
+          echo "split_debug_info=$(printf '%s' "$record" | jq -r '.config.split_debug_info')" >> "$GITHUB_OUTPUT"
+          echo "target=$(printf '%s' "$record" | jq -r '.config.target // "lib/main.dart"')" >> "$GITHUB_OUTPUT"
+          echo "flavor=$(printf '%s' "$record" | jq -r '.config.flavor // empty')" >> "$GITHUB_OUTPUT"
+
+          for key in SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED; do
+            value="$(printf '%s' "$record" | jq -r --arg key "$key" '.sentry[$key] // empty')"
+            if [ -n "$value" ]; then
+              if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+                echo "::error::Invalid newline in release Sentry metadata ($key)."
+                exit 1
+              fi
+            fi
+            echo "$key=$value" >> "$GITHUB_ENV"
+          done
+
+          sentry_env="$(printf '%s' "$record" | jq -r '.sentry.SENTRY_ENV // empty')"
           if [ -n "$sentry_env" ]; then
+            case "$sentry_env" in
+              staging|production) ;;
+              *) echo "::error::Unsupported Sentry environment in release record."; exit 1 ;;
+            esac
             suffix="$(printf '%s' "$sentry_env" | tr '[:lower:]' '[:upper:]')"
             echo "SENTRY_DSN=$(doppler secrets get "SENTRY_DSN_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
             echo "SENTRY_PROJECT=$(doppler secrets get "SENTRY_PROJECT_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
           fi
 
       - name: Build and publish signed patch
+        env:
+          RELEASE_SPLIT_DEBUG_INFO: ${{ steps.release-record.outputs.split_debug_info }}
+          RELEASE_TARGET: ${{ steps.release-record.outputs.target }}
+          RELEASE_FLAVOR: ${{ steps.release-record.outputs.flavor }}
         run: |
           codesign=""
+          split_debug_info=()
+          target=()
+          flavor=()
           if [ "$PLATFORM" = ios ]; then codesign="--no-codesign"; fi
+          if [ "$RELEASE_SPLIT_DEBUG_INFO" = true ]; then
+            symbols_path=build/symbols
+            if [ "$PLATFORM" = ios ]; then symbols_path=build/ios/outputs/symbols; fi
+            split_debug_info+=(--split-debug-info="$symbols_path")
+          fi
+          if [ "$RELEASE_TARGET" != lib/main.dart ]; then target+=(--target="$RELEASE_TARGET"); fi
+          if [ -n "$RELEASE_FLAVOR" ]; then flavor+=(--flavor="$RELEASE_FLAVOR"); fi
           python3 tool/flutter_with_doppler.py --release-platform "$PLATFORM" -- \
             shorebird patch "$PLATFORM" --release-version="$RELEASE_VERSION" --track="$TRACK" \
-            --split-debug-info=build/symbols $codesign
+            "${split_debug_info[@]}" "${target[@]}" "${flavor[@]}" $codesign
 
       - name: Upload patch debug symbols to Sentry
         run: DOPPLER_PROJECT=prism SENTRY_DOPPLER_CONFIG=prd DART_CMD=dart ./tool/sentry_upload.sh
