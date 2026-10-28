@@ -155,11 +155,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: FavouriteWallpaperButton(
-            wall: LegacyFavouriteWall(
-              id: 'wall_1',
-              source: WallpaperSource.prism,
-              legacyPayload: <String, Object?>{},
-            ),
+            wall: LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
             trash: false,
           ),
         ),
@@ -177,11 +173,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: FavouriteWallpaperButton(
-            wall: LegacyFavouriteWall(
-              id: 'wall_1',
-              source: WallpaperSource.prism,
-              legacyPayload: <String, Object?>{},
-            ),
+            wall: LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
             trash: false,
           ),
         ),
