@@ -493,3 +493,97 @@ test("folder cleanup retries partial item deletion before deleting any caller fo
   assert.equal(store.has("other/parent/items/prism_unrelated"), true);
   assert.ok(log.includes("auth"));
 });
+
+test("folder item replacement by another owner is not deleted after the owner query", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {name: "Caller"},
+    "folders/one/items/prism_a": {ownerId: "u1"},
+  });
+  type Ref = {path: string; get: () => Promise<{updateTime?: {version: number}}>; delete: () => Promise<void>;
+    set: (data: Record<string, unknown>) => Promise<void>};
+  type Precondition = {lastUpdateTime: {version: number}};
+  const folderRef = db.collection("folders").doc("one") as unknown as Ref;
+  let raceItem = true;
+  t.mock.method(db, "batch", () => {
+    const queued: Array<{ref: Ref; precondition?: Precondition}> = [];
+    const batch = {
+      delete: (ref: Ref, precondition?: Precondition) => {
+        queued.push({ref, precondition});
+        return batch;
+      },
+      commit: async () => {
+        const item = queued.find(({ref}) => ref.path === "folders/one/items/prism_a");
+        if (raceItem && item) {
+          raceItem = false;
+          await item.ref.delete();
+          await folderRef.set({ownerId: "u2"});
+          await item.ref.set({ownerId: "u2"});
+          const replacement = await item.ref.get();
+          if (item.precondition && replacement.updateTime?.version !== item.precondition.lastUpdateTime.version) {
+            throw Object.assign(new Error("firestore 9"), {code: 9});
+          }
+        }
+        for (const {ref} of queued) await ref.delete();
+        return [];
+      },
+    };
+    return batch;
+  });
+  t.mock.method(db, "bulkWriter", () => ({
+    set: async () => undefined,
+    update: async () => undefined,
+    delete: (ref: Ref) => ref.delete(),
+    close: async () => undefined,
+  }));
+  const request = {
+    auth: {uid: "u1", token: {auth_time: Math.floor(Date.now() / 1000)}},
+    data: {},
+  } as unknown as Parameters<typeof deleteAccount.run>[0];
+  const run = () => deleteAccount.run(request);
+
+  await assert.rejects(run, /firestore 9/);
+  assert.deepEqual(await run(), {ok: true});
+  assert.equal(store.get("folders/one")?.ownerId, "u2");
+  assert.equal(store.get("folders/one/items/prism_a")?.ownerId, "u2");
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
+});
+
+test("folder replacement by another owner is not deleted after the owner query", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {name: "Caller"},
+    "folders/one": {ownerId: "u1"},
+  });
+  type Ref = {path: string; get: () => Promise<{updateTime?: {version: number}}>; delete: () => Promise<void>;
+    set: (data: Record<string, unknown>) => Promise<void>};
+  type Precondition = {lastUpdateTime: {version: number}};
+  let raceFolder = true;
+  t.mock.method(db, "bulkWriter", () => ({
+    set: async () => undefined,
+    update: async () => undefined,
+    delete: async (ref: Ref, precondition?: Precondition) => {
+      if (ref.path === "folders/one" && raceFolder) {
+        raceFolder = false;
+        await ref.delete();
+        await ref.set({ownerId: "u2"});
+        const replacement = await ref.get();
+        if (precondition && replacement.updateTime?.version !== precondition.lastUpdateTime.version) {
+          throw Object.assign(new Error("firestore 9"), {code: 9});
+        }
+      }
+      return ref.delete();
+    },
+    close: async () => undefined,
+  }));
+  const request = {
+    auth: {uid: "u1", token: {auth_time: Math.floor(Date.now() / 1000)}},
+    data: {},
+  } as unknown as Parameters<typeof deleteAccount.run>[0];
+  const run = () => deleteAccount.run(request);
+
+  await assert.rejects(run, {code: "internal"});
+  assert.deepEqual(await run(), {ok: true});
+  assert.equal(store.get("folders/one")?.ownerId, "u2");
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
+});

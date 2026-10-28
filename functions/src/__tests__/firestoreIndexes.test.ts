@@ -3,7 +3,7 @@ import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import test from "node:test";
 
-type Index = {collectionGroup: string; fields: Array<{fieldPath: string; order?: string; arrayConfig?: string}>};
+type Index = {collectionGroup: string; queryScope: string; fields: Array<{fieldPath: string; order?: string; arrayConfig?: string}>};
 type Override = {collectionGroup: string; fieldPath: string; ttl?: boolean};
 
 const fixtureRoot = process.env.PRISM_REPO_ROOT ?? join(__dirname, "../../..");
@@ -71,8 +71,9 @@ test("walls have the spatial feed index: review, spatial.tier in, newest first",
     [["review", "ASCENDING"], ["spatial.tier", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
 });
 
-const hasIndex = (collectionGroup: string, fields: Array<[string, string]>) =>
+const hasIndex = (collectionGroup: string, fields: Array<[string, string]>, queryScope = "COLLECTION") =>
   config.indexes.some((i) => i.collectionGroup === collectionGroup &&
+    i.queryScope === queryScope &&
     JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));
 
 test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active boosts", () => {

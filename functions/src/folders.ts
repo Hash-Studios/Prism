@@ -36,3 +36,16 @@ export const onFolderItemWritten = onDocumentWritten(
   {document: `${FOLDERS}/{folderId}/${FOLDER_ITEMS}/{itemKey}`, region: REGION, retry: true},
   async (event) => repairFolder(event.params.folderId),
 );
+
+export const onFolderWritten = onDocumentWritten(
+  {document: `${FOLDERS}/{folderId}`, region: REGION, retry: true},
+  async (event) => {
+    const before = event.data?.before;
+    const after = event.data?.after;
+    if (!before?.exists || !after?.exists) return;
+    const previousCount = before.data()?.itemCount;
+    const currentCount = after.data()?.itemCount;
+    if (typeof previousCount !== "number" || typeof currentCount !== "number" || currentCount >= previousCount) return;
+    await repairFolder(event.params.folderId);
+  },
+);
