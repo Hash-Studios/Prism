@@ -152,6 +152,25 @@ final class PushImageTests: XCTestCase {
     XCTAssertTrue(delivery.isFinished)
   }
 
+  func testAttachmentKeepsItsFileForTheSystemToStage() throws {
+    let file = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).jpg")
+    try jpeg(width: 40, height: 20).write(to: file)
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let attachment = pushAttachment(file: file, clip: GalleryLayout.clippingRect(index: 1, count: 4))
+
+    XCTAssertNotNil(attachment)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "SpringBoard copies the file after the handler runs")
+  }
+
+  func testFailedAttachmentRemovesItsFile() throws {
+    let file = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).unknown")
+    try Data("not an image".utf8).write(to: file)
+
+    XCTAssertNil(pushAttachment(file: file, clip: nil), "an unsupported file type cannot be attached")
+    XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+  }
+
   func testNotificationSessionRejectsRedirects() {
     let session = URLSession.shared
     let task = session.dataTask(with: url)

@@ -31,6 +31,17 @@ final class NotificationDelivery: @unchecked Sendable {
   }
 }
 
+/// The system moves the file into its store after the content handler runs, so the file must still exist then.
+/// It is removed here only when no attachment can be made.
+func pushAttachment(file: URL, clip: CGRect?) -> UNNotificationAttachment? {
+  let options = clip.map { [UNNotificationAttachmentOptionsThumbnailClippingRectKey: $0.dictionaryRepresentation] }
+  guard let attachment = try? UNNotificationAttachment(identifier: "image", url: file, options: options) else {
+    try? FileManager.default.removeItem(at: file)
+    return nil
+  }
+  return attachment
+}
+
 /// Attaches the push image. A gallery shows its lead wall as the collapsed thumbnail and the full row when expanded.
 /// Any failure delivers the push as text.
 final class NotificationService: UNNotificationServiceExtension, @unchecked Sendable {
@@ -62,9 +73,7 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
       defer { session.invalidateAndCancel() }
       var attachment: UNNotificationAttachment?
       if !Task.isCancelled, !delivery.isFinished, let file = try? await PushImage.download(image.url, session: session) {
-        defer { try? FileManager.default.removeItem(at: file) }
-        let options = image.clip.map { [UNNotificationAttachmentOptionsThumbnailClippingRectKey: $0.dictionaryRepresentation] }
-        attachment = try? UNNotificationAttachment(identifier: "image", url: file, options: options)
+        attachment = pushAttachment(file: file, clip: image.clip)
       }
       if !Task.isCancelled { delivery.finish(attachment: attachment) }
     }
