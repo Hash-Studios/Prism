@@ -33,7 +33,11 @@ QuizWall quizWall(
   bool wildCard = false,
   List<String> tags = const <String>[],
   List<String> colors = const <String>[],
-}) => quizWallOf(quizItem(id, tags: tags, colors: colors), category: category, wildCard: wildCard);
+}) => quizWallOf(
+  quizItem(id, tags: tags, colors: colors),
+  category: category,
+  wildCard: wildCard,
+);
 
 /// A plan of [rounds] rounds. Left walls are dark and minimal, right walls are light and busy.
 /// Round 3 (index 2) is a wild card. [pool] walls are left over for the tuning preview.

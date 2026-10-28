@@ -170,10 +170,13 @@ class _RoundsState extends State<_Rounds> {
     setState(() => _chosen = side);
     final int round = _round;
     final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
-    Future<void>.delayed(context.motion(_pickHold), () => bloc.add(TasteQuizEvent.picked(round: round, side: side)));
+    Future<void>.delayed(_pickHold, () {
+      // Back can close the quiz while the pick still shows.
+      if (!bloc.isClosed) bloc.add(TasteQuizEvent.picked(round: round, side: side));
+    });
   }
 
-  /// How long the pick shows before the next pair comes in.
+  /// How long the pick shows before the next pair comes in. Reduced motion keeps it: it is a pause, not a motion.
   static const Duration _pickHold = Duration(milliseconds: 220);
 
   @override

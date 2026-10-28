@@ -62,34 +62,48 @@ class _TuningFeedViewState extends State<TuningFeedView> {
       child: PrismMaxWidth(
         maxWidth: _maxWidth,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Semantics(
-                header: true,
-                child: Text(context.l10n.tasteQuizTuningTitle, style: PrismTextStyles.screenTitle(context)),
-              ),
-              const SizedBox(height: PrismSpace.xs),
-              Semantics(
-                liveRegion: true,
-                child: Text(tasteSummaryLine(widget.summary, context.l10n), style: PrismTextStyles.body(context)),
-              ),
-              const SizedBox(height: PrismSpace.xl),
-              GridView.count(
-                crossAxisCount: columns,
-                mainAxisSpacing: PrismSpace.xs,
-                crossAxisSpacing: PrismSpace.xs,
-                childAspectRatio: _tileAspectRatio,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  for (int i = 0; i < widget.walls.length; i++) _TuningTile(wall: widget.walls[i], index: i),
-                ],
-              ),
-            ],
+          padding: const EdgeInsets.all(PrismSpace.page),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Semantics(
+                  header: true,
+                  child: Text(context.l10n.tasteQuizTuningTitle, style: PrismTextStyles.screenTitle(context)),
+                ),
+                const SizedBox(height: PrismSpace.xs),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(tasteSummaryLine(widget.summary, context.l10n), style: PrismTextStyles.body(context)),
+                ),
+                const SizedBox(height: PrismSpace.xl),
+                // The walls take the space left, so a short screen or large text shrinks them instead of overflowing.
+                Flexible(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final int rows = (widget.walls.length / columns).ceil();
+                      const double gap = PrismSpace.xs;
+                      final double byWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
+                      final double byHeight = (constraints.maxHeight - gap * (rows - 1)) / rows * _tileAspectRatio;
+                      final double tileWidth = byWidth < byHeight ? byWidth : byHeight;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: <Widget>[
+                          for (int i = 0; i < widget.walls.length; i++)
+                            SizedBox(
+                              width: tileWidth,
+                              height: tileWidth / _tileAspectRatio,
+                              child: _TuningTile(wall: widget.walls[i], index: i),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -26,6 +26,7 @@ Steps, in order:
 |---|---|---|
 | Sign in | "Your screen, reimagined." | Ticks the Terms and Privacy policy box. Then taps a sign-in button. |
 | Pick your vibe | "Pick your vibe" | Picks at least 3 categories (or all, if fewer exist). Can skip. |
+| This or that | "Pick the one you like more" | Picks 1 of 2 walls, 6 times. Then sees "Tuning your feed" for 1.5 s. Can skip. See "This or that". |
 | Find your people | "Find your people" | Follows the 3 suggested creators, or changes the picks. Can skip. |
 | Create your first wallpaper | "Create your first wallpaper" | Taps generate. The AI wallpaper is free here. The step moves on by itself when the image is ready. Can skip. |
 | Make it yours | "Make it yours" | Taps the button to set (Android) or save (iOS) the wallpaper. Can skip. |
@@ -33,6 +34,24 @@ Steps, in order:
 After the last step, a free user sees the paywall. The server then marks onboarding complete. If the server write fails, the app lets the user in and retries in the background.
 
 All step copy is lowercase. This is part of the onboarding design.
+
+### This or that
+
+The quiz shows the user their taste before the first feed. It comes after "Pick your vibe" and only for a signed-in user who confirmed their picks. A skip on "Pick your vibe" and the guest path do not show it.
+
+1. While the interests save, the app loads walls for the quiz (`TasteQuizRepository.loadPlan`). It reads up to 3 of the picked categories and 2 other categories.
+2. The app chooses all 12 walls before round 1 (`planTasteQuiz`). If the walls do not load in 3 s, or there are fewer than 12, the step does not show. No error shows. The user goes to the next step.
+3. Each round shows 2 walls side by side, edge to edge. The thumbnail shows first. The full-quality preview (the same one the wallpaper screen shows) fades in over it. The app loads the next pair while the user looks at this one.
+4. The two walls of a round differ on purpose: light or dark, minimal or busy, warm or cool colour, and category. The app reads these from the tags and the palette colours of the wall.
+5. Rounds 3 and 5 are wild cards: both walls come from categories the user did not pick. The label "Wild card" shows above the headline. With few walls from other categories, there is 1 wild card round or none.
+6. A tap picks a wall. The phone gives a light haptic. The other wall dims, and a tick shows on the pick. Then the next pair fades in.
+7. "Skip" is always on screen. It stores the picks so far and goes straight to the next step. No "Tuning your feed" screen shows after a skip.
+8. After round 6, "Tuning your feed" shows for 1.5 s. It shows the 4 to 6 walls the feed ranker now puts first, and one line about the picks, for example "Dark, minimal, a bit of neon". When the picks do not agree, the line is "Your feed is ready". Then the next step opens.
+9. Back on the quiz returns to "Pick your vibe". The quiz shows only once in an onboarding run, so back and forward never store the picks twice.
+
+The picks go to the taste signals on the device. See "Taste signals" in [home-feed.md](home-feed.md).
+
+Accessibility: each wall is a button with the label "Pick this wallpaper, 1 of 2" (or "2 of 2"). The progress reads "Round 1 of 6". With reduced motion, the dim, the tick and the pair change are instant, and the "Tuning your feed" walls do not fade in.
 
 ### Sign in step
 
@@ -75,7 +94,12 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 | `onboarding_started` | The shell opens. |
 | `terms_accepted` | The user ticks the box. It does not fire when the box was already ticked in an earlier run. |
 | `browse_as_guest_tapped` | The user taps "Browse without an account". |
-| `onboarding_step_completed` (`step`) | A step finishes. `step` is `auth`, `interests`, `starter_pack`, `ai_generate` or `first_wallpaper`. A skip does not count. |
+| `onboarding_step_completed` (`step`) | A step finishes. `step` is `auth`, `interests`, `taste_quiz`, `starter_pack`, `ai_generate` or `first_wallpaper`. A skip does not count. |
+| `taste_quiz_started` (`source`) | The quiz shows. `source` is `onboarding` or `retake`. |
+| `taste_quiz_round_picked` (`source`, `round_index`, `side`, `wild_card`) | The user picks a wall. `round_index` starts at 0. `side` is `left` or `right`. |
+| `taste_quiz_skipped` (`source`, `round_index`) | The user taps "Skip". `round_index` is the round on screen. |
+| `taste_quiz_completed` (`source`) | The user picks in all 6 rounds. |
+| `taste_quiz_retake_opened` | The user taps "Retake This or that" in the Tune sheet. |
 | `onboarding_v2_interests_completed`, `onboarding_v2_starter_pack_completed`, `onboarding_v2_first_wallpaper_shown`, `onboarding_v2_first_wallpaper_action`, `onboarding_v2_completed` | These events existed before. They are unchanged. |
 
 ### Code map
@@ -87,6 +111,10 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 | `lib/features/onboarding_v2/src/services/first_wallpaper_service.dart` | Picks the wallpaper. Sets or saves it. |
 | `lib/features/onboarding_v2/src/data/repo/onboarding_v2_repo_impl.dart` | Firestore writes and `syncLocalInterests`. |
 | `lib/features/onboarding_v2/src/views/widgets/interest_category_tile.dart` | Category tile. Uses `PrismImageCache` at the tile size. |
+| `lib/features/taste_quiz/domain/taste_quiz_rules.dart` | Wall traits, pair choice (`planTasteQuiz`) and the summary line (`summarizeTaste`). |
+| `lib/features/taste_quiz/data/repositories/taste_quiz_repository_impl.dart` | Loads the quiz walls in 3 s or gives up. |
+| `lib/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart` | Rounds, skip, the one write of the signals, the "Tuning your feed" walls. |
+| `lib/features/taste_quiz/views/widgets/taste_quiz_view.dart` | The rounds. `tuning_feed_view.dart` is the screen after them. |
 
 ## Limits
 
@@ -95,6 +123,8 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 - The guest path has no AI step, no starter pack and no first wallpaper. These need an account.
 - iOS cannot set the wallpaper from the app. The user finishes in Photos.
 - The failure snackbar needs the shell `Scaffold`. Tests cover it. No device run was done.
+- The quiz reads light or dark only from tags and the palette colours that the wall data has. A Pexels wall has neither, so its pairs contrast on category only.
+- "Tuning your feed" ranks the walls the quiz loaded but did not show. It does not load the real first feed, so the feed can still differ in its exact walls.
 
 ## How to test
 
@@ -111,3 +141,6 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 11. iOS guest: sign in from the profile tab. Check that the picks are on the account (field `interestCategories`).
 12. Turn on "Remove animations" in the system settings. Run steps 1 to 6. Check that nothing fades or zooms.
 13. Check the three new events in the analytics debug view: `onboarding_started`, `terms_accepted`, `onboarding_step_completed`.
+14. With a new account, pick 3 categories. Check that "This or that" shows "1 of 6" and two walls side by side. Pick 6 times. Check "Tuning your feed" and that the starter pack opens after it.
+15. Run 14 again and tap "Skip" in round 2. Check that the starter pack opens at once.
+16. Turn on airplane mode before you confirm the categories. Check that the starter pack opens and no quiz or error shows.
