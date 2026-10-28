@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
@@ -307,7 +308,10 @@ class _SearchGridState extends State<SearchGrid> {
                         memCacheHeight: decodeHeight,
                         heroTag: prismHeroTag(this, index, wallpaper.id),
                         semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                        overlay: depthTagFor(depthTierOf(wallpaper)),
+                        overlay: stackTags(<Widget?>[
+                          depthTagFor(depthTierOf(wallpaper)),
+                          spatialTagFor(spatialOf(wallpaper)?.tier),
+                        ]),
                         onTap: () {
                           PrismHaptics.tap();
                           _openWallpaper(context, wallpaper, index);
@@ -372,7 +376,10 @@ class _FromPrismRow extends StatelessWidget {
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),
                     semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
-                    overlay: depthTagFor(depthTierOf(wallpaper)),
+                    overlay: stackTags(<Widget?>[
+                      depthTagFor(depthTierOf(wallpaper)),
+                      spatialTagFor(spatialOf(wallpaper)?.tier),
+                    ]),
                     onTap: () {
                       PrismHaptics.tap();
                       onOpen(context, wallpaper, index);

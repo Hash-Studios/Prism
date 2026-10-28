@@ -63,6 +63,14 @@ test("walls have the depth feed index: review, depth.tier in, newest first", () 
     [["review", "ASCENDING"], ["depth.tier", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
 });
 
+test("walls have the spatial feed index: review, spatial.tier in, newest first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "walls" &&
+    i.fields[1]?.fieldPath === "spatial.tier");
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]),
+    [["review", "ASCENDING"], ["spatial.tier", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
+});
+
 const hasIndex = (collectionGroup: string, fields: Array<[string, string]>) =>
   config.indexes.some((i) => i.collectionGroup === collectionGroup &&
     JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));
@@ -93,4 +101,11 @@ test("folder items: account deletion finds them by owner across folders, repair 
   assert.deepEqual(override.indexes.map((i) => [i.order, i.queryScope]),
     [["ASCENDING", "COLLECTION"], ["ASCENDING", "COLLECTION_GROUP"]]);
   assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
+});
+
+test("walls have the protected spatial index the app queries: protected asset fields, review, spatial.tier, newest first", () => {
+  const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
+    .map((field): [string, string] => [field, "ASCENDING"]);
+  assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["spatial.tier", "ASCENDING"],
+    ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
 });

@@ -8,6 +8,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
@@ -69,7 +70,11 @@ class WallpaperTile extends StatelessWidget {
       };
 
   Widget? _overlay() {
-    final List<Widget> layers = <Widget>[?overlay, ?depthTagFor(depthTierOf(item))];
+    final List<Widget> layers = <Widget>[
+      ?overlay,
+      ?depthTagFor(depthTierOf(item)),
+      ?spatialTagFor(spatialOf(item)?.tier),
+    ];
     if (layers.length < 2) return layers.firstOrNull;
     return Stack(fit: StackFit.expand, children: layers);
   }

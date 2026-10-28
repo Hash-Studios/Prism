@@ -228,6 +228,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     Color? tint,
     Widget Function(String)? saveAction,
     SetScreenRequest? request,
+    String? spatialMapUrl,
     List<PageRouteInfo>? children,
   }) : super(
          ClockPreviewRoute.name,
@@ -241,6 +242,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            tint: tint,
            saveAction: saveAction,
            request: request,
+           spatialMapUrl: spatialMapUrl,
          ),
          initialChildren: children,
        );
@@ -261,6 +263,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         tint: args.tint,
         saveAction: args.saveAction,
         request: args.request,
+        spatialMapUrl: args.spatialMapUrl,
       );
     },
   );
@@ -277,6 +280,7 @@ class ClockPreviewRouteArgs {
     this.tint,
     this.saveAction,
     this.request,
+    this.spatialMapUrl,
   });
 
   final Key? key;
@@ -297,9 +301,11 @@ class ClockPreviewRouteArgs {
 
   final SetScreenRequest? request;
 
+  final String? spatialMapUrl;
+
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl}';
   }
 
   @override
@@ -313,7 +319,8 @@ class ClockPreviewRouteArgs {
         wallpaperSource == other.wallpaperSource &&
         thumbnailUrl == other.thumbnailUrl &&
         tint == other.tint &&
-        request == other.request;
+        request == other.request &&
+        spatialMapUrl == other.spatialMapUrl;
   }
 
   @override
@@ -325,7 +332,8 @@ class ClockPreviewRouteArgs {
       wallpaperSource.hashCode ^
       thumbnailUrl.hashCode ^
       tint.hashCode ^
-      request.hashCode;
+      request.hashCode ^
+      spatialMapUrl.hashCode;
 }
 
 /// generated route for

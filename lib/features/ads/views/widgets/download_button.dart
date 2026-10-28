@@ -19,6 +19,7 @@ import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
@@ -51,6 +52,7 @@ class DownloadButton extends StatefulWidget {
     this.indexSource,
     this.savedIdentity,
     this.depthTier,
+    this.spatialTier,
     this.sourceContext,
     this.requestId,
     this.onDownloaded,
@@ -77,6 +79,9 @@ class DownloadButton extends StatefulWidget {
 
   /// Adds the Depth Effect step to what iOS users see after the save.
   final WallDepthTier? depthTier;
+
+  /// Adds the Spatial Scene step to what iOS users see after the save.
+  final WallSpatialTier? spatialTier;
   final String? sourceContext;
   final String? requestId;
   final VoidCallback? onDownloaded;
@@ -125,6 +130,7 @@ class _DownloadTap {
     required this.wallpaperSource,
     required this.indexSource,
     required this.depthTier,
+    required this.spatialTier,
     required this.sourceContext,
     required this.wallpaperTitle,
     required this.creatorName,
@@ -142,6 +148,7 @@ class _DownloadTap {
   final WallpaperSource? wallpaperSource;
   final WallpaperSource? indexSource;
   final WallDepthTier? depthTier;
+  final WallSpatialTier? spatialTier;
   final String? sourceContext;
   final String? wallpaperTitle;
   final String? creatorName;
@@ -323,6 +330,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         wallpaperSource: widget.wallpaperSource,
         indexSource: widget.indexSource ?? widget.wallpaperSource,
         depthTier: widget.depthTier,
+        spatialTier: widget.spatialTier,
         sourceContext: widget.sourceContext,
         wallpaperTitle: widget.wallpaperTitle,
         creatorName: widget.creatorName,
@@ -990,14 +998,14 @@ class _DownloadButtonState extends State<DownloadButton> {
     try {
       // This async save may finish after the owning page is disposed. Keep the
       // localized copy captured before the first await for the global toast.
-      toasts.success(savedWallpaperMessage(l10n: l10n, depthTier: tap.depthTier));
+      toasts.success(savedWallpaperMessage(l10n: l10n, depthTier: tap.depthTier, spatialTier: tap.spatialTier));
       onDownloaded?.call();
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
     }
     if (mounted) {
       try {
-        await showIosSetWallpaperGuide(context, depthTier: tap.depthTier);
+        await showIosSetWallpaperGuide(context, depthTier: tap.depthTier, spatialTier: tap.spatialTier);
       } catch (e, stackTrace) {
         logger.w('iOS wallpaper guide failed after media was saved', error: e, stackTrace: stackTrace);
       }

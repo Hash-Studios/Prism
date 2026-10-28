@@ -327,6 +327,28 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "spatial.tier",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "collections",
           "arrayConfig": "CONTAINS"
         },
@@ -718,6 +740,52 @@
         },
         {
           "fieldPath": "depth.tier",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "spatial.tier",
           "order": "ASCENDING"
         },
         {

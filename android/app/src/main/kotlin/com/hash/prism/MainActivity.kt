@@ -12,6 +12,7 @@ import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterShellArgs
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
@@ -31,6 +32,8 @@ class MainActivity : FlutterFragmentActivity() {
     private var quickSettingsChannel: MethodChannel? = null
     private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
+    private var tiltChannel: EventChannel? = null
+    private var tiltStream: PrismTiltStream? = null
     private var engine: FlutterEngine? = null
     private var retainedBackState: Boolean? = null
     private val flutterFragment get() = supportFragmentManager.fragments.firstNotNullOfOrNull { it as? FlutterFragment }
@@ -94,6 +97,9 @@ class MainActivity : FlutterFragmentActivity() {
         systemColorsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/system_colors").apply {
             setMethodCallHandler(systemColors::handle)
         }
+        tiltStream = PrismTiltStream(applicationContext).also { stream ->
+            tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }
+        }
         wallpaperCropChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/wallpaper_crop").apply {
             setMethodCallHandler { call, result ->
                 val path = call.arguments as? String
@@ -131,6 +137,10 @@ class MainActivity : FlutterFragmentActivity() {
         quickSettingsChannel = null
         systemColorsChannel?.setMethodCallHandler(null)
         systemColorsChannel = null
+        tiltStream?.onCancel(null)
+        tiltStream = null
+        tiltChannel?.setStreamHandler(null)
+        tiltChannel = null
         wallpaperCropChannel?.setMethodCallHandler(null)
         wallpaperCropChannel = null
         super.cleanUpFlutterEngine(flutterEngine)

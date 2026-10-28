@@ -70,4 +70,21 @@ void main() {
     expect(const SearchFilters(depthOnly: true).listsWithoutQuery, isTrue);
     expect(SearchFilters(color: paletteColorById('blue')).listsWithoutQuery, isTrue);
   });
+
+  test('the spatial filter is off by default, can be set and cleared, and takes part in equality', () {
+    final withSpatial = const SearchFilters().copyWith(spatialOnly: true);
+
+    expect(const SearchFilters().spatialOnly, isFalse);
+    expect(withSpatial.spatialOnly, isTrue);
+    expect(withSpatial, isNot(const SearchFilters()));
+    expect(withSpatial, const SearchFilters(spatialOnly: true));
+    expect(withSpatial.hashCode, const SearchFilters(spatialOnly: true).hashCode);
+    expect(withSpatial, isNot(const SearchFilters(depthOnly: true)));
+    expect(withSpatial.copyWith(sort: SearchSort.latest).spatialOnly, isTrue);
+    expect(withSpatial.copyWith(spatialOnly: false), const SearchFilters());
+  });
+
+  test('the spatial filter lists walls without a text query', () {
+    expect(const SearchFilters(spatialOnly: true).listsWithoutQuery, isTrue);
+  });
 }

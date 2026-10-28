@@ -87,6 +87,7 @@ UNCHANGED_ENGLISH = {
     'wallpaperHomeAppName': 'Prism',
     'wallpaperPremium': 'Premium',
     'wallpaperProviderWallhaven': 'Wallhaven',
+    'wallpaperSpatialPreviewLabel': '3D',
 }
 
 UNTRANSLATED_UI_TOKENS = (

@@ -14,16 +14,22 @@ void main() {
     search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
   });
 
-  Map<String, dynamic> doc(String id, {String? tier, List<String> colors = const <String>[], Object? searchTerms}) =>
-      <String, dynamic>{
-        'id': id,
-        'wallpaper_url': 'https://prism/$id.jpg',
-        'wallpaper_provider': 'prism',
-        'review': true,
-        'colors': colors,
-        'depth': ?(tier == null ? null : <String, dynamic>{'tier': tier}),
-        'searchTerms': ?searchTerms,
-      };
+  Map<String, dynamic> doc(
+    String id, {
+    String? tier,
+    String? spatial,
+    List<String> colors = const <String>[],
+    Object? searchTerms,
+  }) => <String, dynamic>{
+    'id': id,
+    'wallpaper_url': 'https://prism/$id.jpg',
+    'wallpaper_provider': 'prism',
+    'review': true,
+    'colors': colors,
+    'depth': ?(tier == null ? null : <String, dynamic>{'tier': tier}),
+    'spatial': ?(spatial == null ? null : <String, dynamic>{'tier': spatial}),
+    'searchTerms': ?searchTerms,
+  };
 
   group('text', () {
     test('sends the singular lowercase words of the query as one array-contains-any filter on searchTerms', () async {
@@ -222,6 +228,44 @@ void main() {
           : const <FakeDocRow>[];
 
       expect((await search.search('forest')).map((wall) => wall.id), <String>['a', 'c']);
+    });
+  });
+
+  group('spatial', () {
+    test('with an empty query lists the great walls before the ok walls, newest first within a tier', () async {
+      await search.search('', spatialOnly: true);
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.spatial');
+      expect(spec.collection, 'walls');
+      expect(spec.filters.map((f) => (f.field, f.op)), <(String, FirestoreFilterOp)>[
+        ('review', FirestoreFilterOp.isEqualTo),
+        ('spatial.tier', FirestoreFilterOp.whereIn),
+      ]);
+      expect(spec.filters.first.value, true);
+      expect(spec.filters.last.value, <String>['great', 'ok']);
+      expect(spec.orderBy.map((order) => (order.field, order.descending)), <(String, bool)>[
+        ('spatial.tier', false),
+        ('createdAt', true),
+      ]);
+      expect(spec.limit, 12);
+    });
+
+    test('with a query the spatial tier is checked on the matches, so only great and ok walls stay', () async {
+      firestore.onQuery = (spec) => spec.sourceTag == 'PrismWallSearch.terms'
+          ? <FakeDocRow>[
+              (id: 'a', data: doc('a', spatial: 'great')),
+              (id: 'b', data: doc('b', spatial: 'none')),
+              (id: 'c', data: doc('c')),
+              (id: 'd', data: doc('d', spatial: 'ok')),
+            ]
+          : const <FakeDocRow>[];
+
+      final walls = await search.search('forest', spatialOnly: true);
+
+      expect(walls.map((wall) => wall.id), <String>['a', 'd']);
+      expect(firestore.querySpecs.expand((spec) => spec.filters).map((f) => f.field), isNot(contains('spatial.tier')));
+      expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
     });
   });
 }
