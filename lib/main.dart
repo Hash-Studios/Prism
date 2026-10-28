@@ -723,17 +723,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     localNotification.listenForPushMessages(localizations: loadDeviceAppLocalizations);
 
     // Launched from terminated state by tapping a notification.
-    FirebaseMessaging.instance
-        .getInitialMessage()
-        .then((RemoteMessage? message) {
-          if (message == null) return;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            unawaited(_handlePushTap(message.data));
-          });
-        })
-        .catchError((Object error, StackTrace stackTrace) {
-          logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
-        });
+    localNotification.routeInitialMessage().catchError((Object error, StackTrace stackTrace) {
+      logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+    });
   }
 
   @override

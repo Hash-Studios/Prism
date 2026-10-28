@@ -2542,6 +2542,21 @@ class MoodPageOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class GalleryOpenedEvent extends AnalyticsEvent {
+  const GalleryOpenedEvent({required this.source, required this.wallCount});
+
+  final String source;
+  final int wallCount;
+
+  @override
+  String get eventName => 'gallery_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'wall_count': wallCount};
+  }
+}
+
 class LibraryTabViewedEvent extends AnalyticsEvent {
   const LibraryTabViewedEvent({required this.tab});
 

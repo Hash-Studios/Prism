@@ -26,7 +26,7 @@ class _MoodSpecificWallsRepository extends FakeMoodRepository {
   final List<List<String>> requestedWallIds = <List<String>>[];
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     requestedWallIds.add(List<String>.of(ids));
     return ids.map(mockMoodWall).toList();
   }

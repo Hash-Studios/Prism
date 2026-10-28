@@ -11,6 +11,9 @@
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
   },
+  "galleryEmptyBody": "They were removed or are no longer public.",
+  "galleryEmptyTitle": "These walls are gone",
+  "galleryScreenTitle": "Walls for you",
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{Search 1 favourite} other{Search {count} favourites}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6021,6 +6024,54 @@
     }
   },
   "notifPushDropLiveTitle": "A new Drop is live",
+  "notifPushFollowDigestTitleOne": "{artistName} posted a new wall",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} posted {wallCount} new walls",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} and {secondArtistName} posted {wallCount} new walls",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} and {otherCount} others posted {wallCount} new walls",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "Tap to see them all.",
   "notifPushGiftReceivedBody": "Premium collections and premium walls are open until tomorrow.",
   "notifPushGiftReceivedTitle": "{senderName} sent you a 24-hour Pro pass",
   "@notifPushGiftReceivedTitle": {

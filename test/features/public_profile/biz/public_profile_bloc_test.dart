@@ -55,6 +55,8 @@ class _Messaging {
         subscriptions.add(topic);
       case 'Messaging#unsubscribeFromTopic':
         calls.add((false, topic));
+        if (!(subscribeStarted?.isCompleted ?? true)) subscribeStarted!.complete();
+        await subscribeGate?.future;
         subscriptions.remove(topic);
       default:
         throw StateError('Unexpected messaging call: ${call.method}');
@@ -503,7 +505,8 @@ void main() {
         expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
         expect(bloc.state.followOutcome?.follow, isFalse);
         expect(bloc.state.followOutcome?.success, !failLast);
-        expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), expectedFollow);
+        // New posts arrive in the follow digest, so a follow never joins the creator's posts topic.
+        expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), isFalse);
       });
     }
   }
@@ -645,19 +648,18 @@ void main() {
       if (!gate.isCompleted) gate.complete();
       await bloc.close();
     });
-    bloc.add(followEvent);
-    await pumpEventQueue();
-    expect(messaging.calls.any((call) => call.$1), isTrue);
     bloc.add(unfollowEvent);
     await pumpEventQueue();
-    verifyNever(() => unfollow(any()));
+    expect(messaging.calls.any((call) => !call.$1), isTrue);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    verifyNever(() => follow(any()));
     gate.complete();
     await pumpEventQueue();
-    verify(() => unfollow(any())).called(1);
-    expect(messaging.subscriptions, isEmpty);
-    expect(app_state.prismUser.following, isEmpty);
-    expect(bloc.state.followOverrides['a-id'], isFalse);
-    expect(bloc.state.followOutcome?.follow, isFalse);
+    verify(() => follow(any())).called(1);
+    expect(messaging.calls.any((call) => call.$1), isFalse);
+    expect(bloc.state.followOverrides['a-id'], isTrue);
+    expect(bloc.state.followOutcome?.follow, isTrue);
   });
 
   for (final bool closeInstead in <bool>[false, true]) {
@@ -667,18 +669,18 @@ void main() {
         final gate = Completer<void>();
         messaging.subscribeGate = gate;
         messaging.subscribeStarted = Completer<void>();
-        when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+        when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
         final bloc = buildBloc();
         addTearDown(() async {
           if (!gate.isCompleted) gate.complete();
           await bloc.close();
         });
-        bloc.add(followEvent);
+        bloc.add(unfollowEvent);
         await messaging.subscribeStarted!.future;
         // Drain the platform-channel delivery while held.
         await pumpEventQueue();
         final dispatched = List<(bool, String)>.of(messaging.calls);
-        expect(dispatched, <(bool, String)>[(true, 'posts_a-id_loc_v1')]);
+        expect(dispatched.first, (false, 'posts_a-id'));
         Future<void>? closing;
         if (closeInstead) {
           closing = bloc.close();

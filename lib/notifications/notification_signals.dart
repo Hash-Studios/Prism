@@ -59,7 +59,8 @@ class NotificationSignals {
 
   final _NotificationSignalQueue _settingsQueue = _NotificationSignalQueue();
 
-  Future<void> onTap(String kind) async {
+  /// [gallery] marks a tap on a gallery push, so the scoreboard can compare it with the single-image push.
+  Future<void> onTap(String kind, {bool gallery = false}) async {
     try {
       await _withSettings((SettingsLocalDataSource settings) async {
         final String userId = _currentUserId().trim();
@@ -89,7 +90,7 @@ class NotificationSignals {
         final String latestUserId = _currentUserId().trim();
         if (latestUserId != userId) await _synchronizeLocalUser(settings, latestUserId);
         if (userId.isNotEmpty && _currentUserId().trim() == userId) {
-          await _call(type: 'tap', kind: kind);
+          await _call(type: 'tap', kind: kind, gallery: gallery);
         }
       });
     } catch (error, stackTrace) {
@@ -177,10 +178,17 @@ class NotificationSignals {
     return true;
   }
 
-  Future<void> _call({required String type, String? kind, String? result, String? installId}) async {
+  Future<void> _call({
+    required String type,
+    String? kind,
+    String? result,
+    String? installId,
+    bool gallery = false,
+  }) async {
     await _callSignal(<String, dynamic>{
       'type': type,
       if (kind != null) 'kind': kind,
+      if (gallery) 'gallery': true,
       if (result != null) 'result': result,
       if (installId != null) 'installId': installId,
     }).timeout(_networkTimeout);

@@ -6,6 +6,9 @@ import {sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, utcDateString} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {getOwnedWallDelivery} from "./ownedAssetDelivery";
+import {dropOwnsGallery} from "./drops";
+import {buildPushGallery, galleryWall, isPreviewUrl, similarWallIds, tagsLine, type PushGallery} from "./pushGallery";
+import {r2Secrets} from "./r2Storage";
 
 const DEFAULT_PREMIUM_COLLECTIONS = [
   "space",
@@ -140,6 +143,7 @@ export const wallOfTheDay = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 2,
+    secrets: r2Secrets,
   },
   async (event) => {
     const slotMs = scheduledAtMs(event.scheduleTime);
@@ -356,7 +360,38 @@ async function notifyCreator(
   }
 }
 
-async function wotdPushPayload(wallId: string): Promise<{
+const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial",
+  "depth", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "wallpaper_thumb"];
+
+/**
+ * Today's pick and up to three walls that share its moods or tags. The similar ids are chosen once per pick and kept on
+ * `wall_of_the_day/current`, so the 96 bucket runs of a day do not scan the walls again. On a drop-live day the drop
+ * push is the one gallery, so this returns null.
+ */
+async function wotdGallery(wallId: string, pick: admin.firestore.DocumentData,
+  premium: string[], deliveryDay: string, offsetMinutes: number): Promise<PushGallery | null> {
+  const currentRef = db.collection("wall_of_the_day").doc("current");
+  const current = (await currentRef.get()).data();
+  if (await dropOwnsGallery(deliveryDay, offsetMinutes)) return null;
+  const cached = current?.gallery;
+  let ids: string[];
+  if (cached?.wallId === wallId && Array.isArray(cached.wallIds)) {
+    ids = cached.wallIds.filter((id: unknown): id is string => typeof id === "string" && !id.includes("/"));
+  } else {
+    const snap = await protectedWalls().select(...SIMILAR_FIELDS).get();
+    ids = similarWallIds({id: wallId, data: pick}, snap.docs.map((d) => ({id: d.id, data: d.data()})), premium);
+    await currentRef.set({gallery: {wallId, wallIds: ids}}, {merge: true});
+  }
+  const lead = galleryWall({id: wallId, data: pick}, premium);
+  if (!lead) return null;
+  const others = await Promise.all(ids.map(async (id) => {
+    const snap = await db.collection("walls").doc(id).get();
+    return snap.exists ? galleryWall({id, data: snap.data() ?? {}}, premium) : null;
+  }));
+  return buildPushGallery([lead, ...others.filter((wall) => wall !== null)]);
+}
+
+async function wotdPushPayload(wallId: string, deliveryDay = utcDateString(), offsetMinutes = 0): Promise<{
   title: string;
   body: string;
   message: ReturnType<typeof notificationCopyPayload>["message"];
@@ -365,17 +400,25 @@ async function wotdPushPayload(wallId: string): Promise<{
     wall_id: string;
     url: string;
     notification_kind: "wall_of_the_day";
+    wall_ids?: string;
   };
   imageUrl?: string;
+  gallery?: PushGallery;
   channelId: string;
   creatorEmail: string;
 } | null> {
   const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
-  if (!await readyWall(wallId, await premiumCollections(), wall)) {
+  const premium = await premiumCollections();
+  if (!await readyWall(wallId, premium, wall)) {
     logger.warn("wall_of_the_day: current pick is unavailable; suppressing push.", {wallId});
     return null;
   }
-  const wallTitle = (wall.title as string | undefined)?.trim() || "";
+  const gallery = await wotdGallery(wallId, wall, premium, deliveryDay, offsetMinutes).catch((err) => {
+    logger.warn("wall_of_the_day: no gallery; the push keeps its single image.", {wallId, err: String(err)});
+    return null;
+  });
+  // A gallery keeps the shipped Wall of the Day template, with the tags line in place of the wall title.
+  const wallTitle = gallery ? tagsLine(gallery.tags) : (wall.title as string | undefined)?.trim() || "";
   const copy = notificationCopyPayload({kind: "wotdForAudience", wallTitle});
   const thumbnailUrl = String(wall.wallpaper_thumb ?? "");
   // Share links resolve walls by their `id` field, which is not the doc id.
@@ -388,8 +431,10 @@ async function wotdPushPayload(wallId: string): Promise<{
       notification_kind: "wall_of_the_day",
       wall_id: wallId,
       url: wallShareUrl({wallId: shareId, thumbnailUrl}),
+      ...(gallery ? {wall_ids: gallery.wallIds.join(",")} : {}),
     },
-    imageUrl: thumbnailUrl || undefined,
+    imageUrl: isPreviewUrl(thumbnailUrl) ? thumbnailUrl : undefined,
+    ...(gallery ? {gallery} : {}),
     channelId: "wall_of_the_day",
     creatorEmail: String(wall.email ?? "").trim(),
   };
@@ -510,6 +555,7 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
   >();
   for (const offset of offsetsAtNineLocal(slotMs)) {
     const topic = wotdBucketTopic(offset);
+    const deliveryDay = utcDateString(new Date(slotMs + offset * 60_000));
     const claim = await claimBucket(topic, Date.now());
     if (!claim.won) {
       logger.info("sendDueBuckets: nothing to send to this bucket.", {topic});
@@ -517,11 +563,12 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
     }
     let delivered = false;
     try {
-      let payload = payloads.get(claim.wallId);
+      const payloadKey = `${claim.wallId}|${deliveryDay}|${offset}`;
+      let payload = payloads.get(payloadKey);
       if (!payload) {
-        payload = await wotdPushPayload(claim.wallId);
+        payload = await wotdPushPayload(claim.wallId, deliveryDay, offset);
         if (!payload) continue;
-        payloads.set(claim.wallId, payload);
+        payloads.set(payloadKey, payload);
       }
       delivered = await sendNotification({
         ...payload,
@@ -552,6 +599,7 @@ export const sendWallOfTheDayBuckets = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 1,
+    secrets: r2Secrets,
   },
   async (event) => {
     await sendDueBuckets(scheduledAtMs(event.scheduleTime));

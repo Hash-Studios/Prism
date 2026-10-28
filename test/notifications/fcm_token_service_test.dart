@@ -59,6 +59,22 @@ class _BlockingClearClient extends FakeFirestoreClient {
   }
 }
 
+class _FailingWriteClient extends FakeFirestoreClient {
+  bool failWrites = false;
+
+  @override
+  Future<void> setDoc(
+    String collection,
+    String id,
+    Map<String, dynamic> data, {
+    bool merge = false,
+    required String sourceTag,
+  }) {
+    if (failWrites) return Future<void>.error(StateError('offline'));
+    return super.setDoc(collection, id, data, merge: merge, sourceTag: sourceTag);
+  }
+}
+
 void main() {
   test('the Followers switch is stored where onFollowCreated reads it', () async {
     final client = _MergeRecordingClient();
@@ -179,6 +195,80 @@ void main() {
     expect(client.writes.single.data?['fcmToken'], 'fresh-token');
   });
 
+  test('an old same-token sync marker is rewritten with localization version two', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenSynced', 'uid1|same-token');
+    await settings.set('fcmTokenRotationV2', 'uid1');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..getTokenHandler = () async => 'same-token';
+    final FakeFirestoreClient client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(userId: 'uid1', messaging: messaging, client: client);
+
+    expect(messaging.deleteTokenCalls, 0);
+    expect(client.writes, hasLength(1));
+    expect(client.writes.single.data?['notificationLocalizationVersion'], 2);
+    expect(client.writes.single.data?['notificationLocalizationToken'], 'same-token');
+    expect(settings.get<String>('fcmTokenSynced'), 'uid1|same-token|digest_v2|posts:true');
+  });
+
+  test('writes localization version two with the current token', () async {
+    final FakeFirestoreClient client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => 'current-token',
+      client: client,
+    );
+
+    expect(client.writes.single.data?['notificationLocalizationVersion'], 2);
+    expect(client.writes.single.data?['notificationLocalizationToken'], 'current-token');
+  });
+
+  test('same-token sync retries a Posts opt-out after the preference write failed', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenRotationV2', 'uid1');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..getTokenHandler = () async => 'same-token';
+    final _FailingWriteClient client = _FailingWriteClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await service.syncToken(userId: 'uid1', messaging: messaging, client: client);
+    await settings.set('postsSubscriber', false);
+    client.failWrites = true;
+    await service.savePostAlerts(userId: 'uid1', enabled: false, client: client);
+    client
+      ..failWrites = false
+      ..writes.clear();
+
+    await service.syncToken(userId: 'uid1', messaging: messaging, client: client);
+
+    expect(client.writes.single.data?['postAlerts'], isFalse);
+  });
+
+  test('same-token sync keeps Posts disabled when Followers is off', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenRotationV2', 'uid1');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final FakeFirebaseMessaging messaging = FakeFirebaseMessaging()..getTokenHandler = () async => 'same-token';
+    final FakeFirestoreClient client = FakeFirestoreClient();
+    final FcmTokenService service = FcmTokenService.instance;
+
+    await service.syncToken(userId: 'uid1', messaging: messaging, client: client);
+    await settings.set('followersSubscriber', false);
+    client.writes.clear();
+
+    await service.syncToken(userId: 'uid1', messaging: messaging, client: client);
+
+    expect(client.writes.firstWhere((write) => write.data?['fcmToken'] == 'same-token').data?['postAlerts'], isFalse);
+  });
+
   test('a new account waits for a delayed sign-out token invalidation', () async {
     final Completer<void> deleteGate = Completer<void>();
     final Completer<void> getStarted = Completer<void>();
@@ -288,11 +378,43 @@ void main() {
     expect(drained, isTrue);
     expect(client.writes.single.data, <String, dynamic>{
       'fcmToken': 'refreshed-token',
-      'notificationLocalizationVersion': 1,
+      'notificationLocalizationVersion': 2,
       'notificationLocalizationToken': 'refreshed-token',
       'fcmTokenBindingVersion': 1,
       'fcmTokenBindingToken': 'refreshed-token',
+      'postAlerts': true,
+      'postAlertsToken': 'refreshed-token',
     });
+  });
+
+  test('the Posts switch is stored where the follow digest reads it', () async {
+    final client = _MergeRecordingClient();
+
+    await FcmTokenService.instance.savePostAlerts(userId: 'uid1', enabled: false, client: client);
+
+    final write = client.writes.single;
+    expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
+    expect(client.merged, isTrue);
+    expect(write.data, <String, dynamic>{'postAlerts': false});
+  });
+
+  test('token sync opts this build into the digest, off when Followers is off, bound to the token', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('followersSubscriber', false);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => 'tok',
+      client: client,
+    );
+
+    final write = client.writes.firstWhere((w) => w.data?['fcmToken'] == 'tok');
+    expect(write.data?['postAlerts'], isFalse);
+    expect(write.data?['postAlertsToken'], 'tok');
   });
 
   test('waits for an already-started token sync write before returning', () async {

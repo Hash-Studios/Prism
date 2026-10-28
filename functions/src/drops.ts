@@ -13,6 +13,8 @@ import {isAdminCaller} from "./adminConfig";
 import {dropMood, isoWeekNumber, pickDropName} from "./dropNames";
 import {sendNotification} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {buildPushGallery, galleryWall, isPreviewUrl, tagsLine, type GalleryWall, type PushGallery} from "./pushGallery";
+import {r2Secrets} from "./r2Storage";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -459,6 +461,34 @@ export function duePushKinds(drop: DropDoc, nowMs: number): DropPushKind[] {
     .filter((kind) => drop.pushes?.[kind] === undefined);
 }
 
+/**
+ * True when a drop starts on this local day. That day the live push is the one gallery, and the Wall of the Day push
+ * keeps its single image.
+ */
+export async function dropOwnsGallery(day: string, offsetMinutes = 0): Promise<boolean> {
+  const dayMs = Date.parse(`${day}T00:00:00Z`);
+  if (!Number.isFinite(dayMs) || !Number.isInteger(offsetMinutes) || offsetMinutes < -720 || offsetMinutes > 840) return false;
+  const utcStartMs = dayMs - offsetMinutes * 60_000;
+  const drops = await db.collection("drops")
+    .where("startsAt", ">=", utcStartMs)
+    .where("startsAt", "<", utcStartMs + DAY_MS)
+    .limit(1)
+    .get();
+  if (drops.empty) return false;
+  return (await loadEconomy(utcStartMs)).flags.dropsEnabled;
+}
+
+/** The live push shows the drop's own walls, as the Drops page does. No other wall can enter the image. */
+async function dropGallery(drop: DropDoc, dropKey: string): Promise<PushGallery | null> {
+  const ids = (Array.isArray(drop.walls) ? drop.walls : []).map((w) => str(w.id)).filter((id) => WALL_ID.test(id));
+  const snaps = await Promise.all(ids.slice(0, MAX_DROP_WALLS).map((id) => db.collection("walls").doc(id).get()));
+  const walls = snaps.flatMap((snap) => {
+    const wall = snap.exists ? galleryWall({id: snap.id, data: snap.data() ?? {}}, [], dropKey) : null;
+    return wall ? [wall] : [] as GalleryWall[];
+  });
+  return buildPushGallery(walls);
+}
+
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 
 async function claimPush(
@@ -529,10 +559,18 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
     const spec = DROP_PUSHES.find((s) => s.kind === kind) as DropPushSpec;
     let delivered = false;
     try {
+      const gallery = kind === "live" ? await dropGallery(drop, weekKeyOfDrop).catch((err) => {
+        logger.warn("drops: no gallery; the push keeps its single image.", {weekKey: weekKeyOfDrop, err: String(err)});
+        return null;
+      }) : null;
+      const fallbackThumb = drop.walls?.[0]?.thumb ?? "";
       delivered = await sendNotification({
-        ...spec.copy(drop, nowMs),
+        ...(gallery ?
+          notificationCopyPayload({kind: "galleryDrop", wallCount: drop.count, tags: tagsLine(gallery.tags)}) :
+          spec.copy(drop, nowMs)),
         data: {route: "drops", week_key: weekKeyOfDrop},
-        imageUrl: drop.walls?.[0]?.thumb || undefined,
+        imageUrl: isPreviewUrl(fallbackThumb) ? fallbackThumb : undefined,
+        ...(gallery ? {gallery} : {}),
         modifier: "all",
         channelId: "drops",
         fcmTarget: {topic: "drops"},
@@ -554,7 +592,7 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
 }
 
 export const sendDropPushes = onSchedule(
-  {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
+  {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1, secrets: r2Secrets},
   async () => {
     await sendDuePushes(Date.now());
   },

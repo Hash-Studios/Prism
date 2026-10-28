@@ -123,6 +123,24 @@ abstract class AppLocalizations {
   /// **'Could not load your folders'**
   String get foldersLoadAllError;
 
+  /// No description provided for @galleryEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They were removed or are no longer public.'**
+  String get galleryEmptyBody;
+
+  /// No description provided for @galleryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'These walls are gone'**
+  String get galleryEmptyTitle;
+
+  /// No description provided for @galleryScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Walls for you'**
+  String get galleryScreenTitle;
+
   /// Hint in the favourites search field. It also tells how many favourites there are.
   ///
   /// In en, this message translates to:
@@ -10836,6 +10854,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A new Drop is live'**
   String get notifPushDropLiveTitle;
+
+  /// No description provided for @notifPushFollowDigestTitleOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{artistName} posted a new wall'**
+  String notifPushFollowDigestTitleOne(String artistName);
+
+  /// No description provided for @notifPushFollowDigestTitleSolo.
+  ///
+  /// In en, this message translates to:
+  /// **'{artistName} posted {wallCount} new walls'**
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount);
+
+  /// No description provided for @notifPushFollowDigestTitlePair.
+  ///
+  /// In en, this message translates to:
+  /// **'{artistName} and {secondArtistName} posted {wallCount} new walls'**
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount);
+
+  /// No description provided for @notifPushFollowDigestTitleGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'{artistName} and {otherCount} others posted {wallCount} new walls'**
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount);
+
+  /// No description provided for @notifPushFollowDigestBodyUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see them all.'**
+  String get notifPushFollowDigestBodyUntitled;
 
   /// No description provided for @notifPushGiftReceivedBody.
   ///

@@ -1,6 +1,7 @@
 export {wallOfTheDay, sendWallOfTheDayBuckets} from "./wallOfTheDay";
 export {claimDailyStreak, sendStreakReminders} from "./streak";
 export {sendWinBackPushes} from "./winBack";
+export {sendFollowDigests} from "./followDigest";
 export {recordNotificationSignal} from "./notificationScoreboard";
 export {onWallApproved} from "./onWallApproved";
 export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress";

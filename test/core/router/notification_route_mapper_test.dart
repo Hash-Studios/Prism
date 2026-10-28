@@ -7,8 +7,8 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -323,13 +323,14 @@ void main() {
     });
 
     test('measured tap hook receives the explicit push kind without Firebase access', () async {
-      final List<String> measuredKinds = <String>[];
-      NotificationRouteMapper.onMeasuredTap = (String kind) async => measuredKinds.add(kind);
+      final List<(String, bool)> measuredTaps = <(String, bool)>[];
+      NotificationRouteMapper.onMeasuredTap = (String kind, {bool gallery = false}) async =>
+          measuredTaps.add((kind, gallery));
       try {
-        mapper.trackPushOpened(<String, dynamic>{'route': 'home', 'push_kind': 'win_back'});
+        mapper.trackPushOpened(<String, dynamic>{'route': 'wall_of_the_day', 'push_kind': 'wotd', 'gallery': '1'});
         await Future<void>.delayed(Duration.zero);
 
-        expect(measuredKinds, <String>['win_back']);
+        expect(measuredTaps, <(String, bool)>[('wotd', true)]);
       } finally {
         NotificationRouteMapper.onMeasuredTap = null;
       }

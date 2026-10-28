@@ -46,6 +46,12 @@
     <string name="notif_push_win_back60_body">Seu próximo papel de parede favorito está a um toque de distância.</string>
     <string name="notif_push_drop_live_title">Um novo Drop está no ar</string>
     <string name="notif_push_drop_live_body">Papéis de parede no Drop desta semana: %1$s. Veja uma prévia antes que ele termine.</string>
+    <string name="notif_push_follow_digest_title_one">%1$s publicou um novo papel de parede</string>
+    <string name="notif_push_follow_digest_title_solo">%1$s publicou %2$s papéis de parede novos</string>
+    <string name="notif_push_follow_digest_title_pair">%1$s e %2$s publicaram %3$s papéis de parede novos</string>
+    <string name="notif_push_follow_digest_title_group">%1$s e mais %2$s publicaram %3$s papéis de parede novos</string>
+    <string name="notif_push_follow_digest_body">%1$s</string>
+    <string name="notif_push_follow_digest_body_untitled">Toque para ver todos.</string>
     <string name="notif_push_drop_last_call_title">Última chance de aproveitar o Drop desta semana</string>
     <string name="notif_push_drop_last_call_body">%1$s termina em %2$s h. Os papéis de parede ficarão indisponíveis por um mês depois disso.</string>
     <string name="notif_push_draw_winner_title">Você ganhou o Sorteio Prism</string>

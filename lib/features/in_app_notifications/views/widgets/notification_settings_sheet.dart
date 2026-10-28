@@ -273,14 +273,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       analytics.track(
         const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
       );
-      unawaited(
-        syncCreatorPostsTopicsForUser(
-          widget.permissions.messaging,
-          userId: app_state.prismUser.id,
-          subscribed: false,
-          sourceTag: 'notification.settings.posts.disable_from_followers',
-        ),
-      );
+      unawaited(FcmTokenService.instance.savePostAlerts(userId: app_state.prismUser.id, enabled: false));
     }
   }
 
@@ -288,14 +281,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     await _settingsLocal.set(NotificationPrefKeys.posts, value);
     setState(() => _posts = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value));
-    unawaited(
-      syncCreatorPostsTopicsForUser(
-        widget.permissions.messaging,
-        userId: app_state.prismUser.id,
-        subscribed: value,
-        sourceTag: value ? 'notification.settings.posts.enable' : 'notification.settings.posts.disable',
-      ),
-    );
+    unawaited(FcmTokenService.instance.savePostAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setWotd(bool value) async {

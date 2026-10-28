@@ -20,6 +20,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersLoadAllError => 'आपके फ़ोल्डर लोड नहीं हो सके';
 
   @override
+  String get galleryEmptyBody => 'इन्हें हटा दिया गया है या ये अब सार्वजनिक नहीं हैं।';
+
+  @override
+  String get galleryEmptyTitle => 'ये वॉलपेपर अब नहीं हैं';
+
+  @override
+  String get galleryScreenTitle => 'आपके लिए वॉलपेपर';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7156,6 +7165,29 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifPushDropLiveTitle => 'नया Drop उपलब्ध है';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName ने एक नया वॉलपेपर पोस्ट किया';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName और $secondArtistName ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName और $otherCount अन्य ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'सभी देखने के लिए टैप करें।';
 
   @override
   String get notifPushGiftReceivedBody => 'Premium कलेक्शन और वॉलपेपर कल तक आपके लिए उपलब्ध हैं।';

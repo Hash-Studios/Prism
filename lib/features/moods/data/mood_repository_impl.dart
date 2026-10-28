@@ -104,10 +104,11 @@ class MoodRepositoryImpl implements MoodRepository {
   }
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     if (ids.isEmpty) return const <PrismWallpaper>[];
     final List<PrismWallpaper> walls = await _loadWalls(ids);
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+    if (keepOrder) return _visible(walls, blocked);
     final List<RankingCandidate> candidates = <RankingCandidate>[
       for (final PrismWallpaper wall in _visible(walls, blocked))
         RankingCandidate(

@@ -11,6 +11,9 @@
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
   },
+  "galleryEmptyBody": "इन्हें हटा दिया गया है या ये अब सार्वजनिक नहीं हैं।",
+  "galleryEmptyTitle": "ये वॉलपेपर अब नहीं हैं",
+  "galleryScreenTitle": "आपके लिए वॉलपेपर",
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 पसंदीदा में खोजें} other{{count} पसंदीदा में खोजें}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6009,6 +6012,54 @@
     }
   },
   "notifPushDropLiveTitle": "नया Drop उपलब्ध है",
+  "notifPushFollowDigestTitleOne": "{artistName} ने एक नया वॉलपेपर पोस्ट किया",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} ने {wallCount} नए वॉलपेपर पोस्ट किए",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} और {secondArtistName} ने {wallCount} नए वॉलपेपर पोस्ट किए",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} और {otherCount} अन्य ने {wallCount} नए वॉलपेपर पोस्ट किए",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "सभी देखने के लिए टैप करें।",
   "notifPushGiftReceivedBody": "Premium कलेक्शन और वॉलपेपर कल तक आपके लिए उपलब्ध हैं।",
   "notifPushGiftReceivedTitle": "{senderName} ने आपको 24 घंटे का Pro पास भेजा",
   "@notifPushGiftReceivedTitle": {

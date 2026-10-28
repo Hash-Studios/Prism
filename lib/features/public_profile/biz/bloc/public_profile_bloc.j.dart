@@ -281,15 +281,16 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     }
   }
 
-  /// Posts pushes for the creator follow the follow state.
+  /// New posts arrive in the daily follow digest, so a follow joins no topic. An unfollow still leaves the topic an
+  /// older build joined.
   Future<void> _syncPostsTopic(String targetUserId, {required bool follow, required bool Function() isCurrent}) async {
     try {
-      if (follow && !creatorPostsAlertsEnabled) return;
+      if (follow) return;
       await setCreatorPostsTopicForUid(
         FirebaseMessaging.instance,
         targetUserId,
-        subscribed: follow,
-        sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
+        subscribed: false,
+        sourceTag: 'unfollow.unsubscribe_posts_topic',
         isCurrent: isCurrent,
       );
     } catch (error, stackTrace) {

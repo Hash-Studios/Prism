@@ -16,7 +16,14 @@ class NotificationRouteMapper {
   const NotificationRouteMapper();
 
   /// Set from app startup. Push taps record a scoreboard signal through this hook.
-  static Future<void> Function(String kindWire)? onMeasuredTap;
+  static Future<void> Function(String kindWire, {bool gallery})? onMeasuredTap;
+
+  /// The gallery link of a push that carries at least two wall ids, or null.
+  static Uri? galleryLinkFor(Map<String, dynamic> data) {
+    final String ids = data['wall_ids']?.toString().trim() ?? '';
+    if (ids.split(',').where((id) => id.trim().isNotEmpty).length < 2) return null;
+    return Uri(path: '/gallery', queryParameters: <String, String>{'ids': ids, 'source': 'push'});
+  }
 
   /// Classifies metadata before asynchronous lookups, without claiming that resolution succeeded.
   static TargetTypeValue targetTypeForRoute(String route) {
@@ -63,8 +70,8 @@ class NotificationRouteMapper {
     final PushKindValue? kind = pushKindFor(data);
     if (kind == null) return;
     unawaited(analytics.track(PushOpenedEvent(kind: kind)));
-    final Future<void> Function(String kindWire)? onTap = onMeasuredTap;
-    if (onTap != null) unawaited(onTap(kind.wireValue));
+    final Future<void> Function(String kindWire, {bool gallery})? onTap = onMeasuredTap;
+    if (onTap != null) unawaited(onTap(kind.wireValue, gallery: data['gallery']?.toString() == '1'));
   }
 
   /// Adapts legacy push metadata to the same typed destinations used by URLs.

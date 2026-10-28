@@ -44,7 +44,7 @@ class FakeMoodRepository implements MoodRepository {
   }
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     if (gate != null) await gate;
     if (fail) throw StateError('offline');
     return walls;

@@ -92,6 +92,7 @@ jobs:
         env:
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
           IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64 }}
+          IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64 }}
         run: |
           python3 tool/ios_ci_signing.py \
             --export-options "$RUNNER_TEMP/ExportOptions.plist" \

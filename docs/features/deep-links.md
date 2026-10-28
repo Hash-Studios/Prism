@@ -25,6 +25,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Lock and home screen preview | `/clock-preview?wallpaperId=wall1&source=prism` | Requires a wallpaper ID. For a local image, use `/choose-wallpaper?workflow=clockPreview`. |
 | Image picker | `/choose-wallpaper?workflow=uploadWall` | Requires one of the workflow values below. Opens a page with a **Choose image** button. |
 | Collection and category feeds | `/collection-view?collectionName=featured`, `/collection/featured`, `/category/Nature` | Requires a collection or category name. `name` aliases `collectionName`. |
+| Gallery | `/gallery?ids=wall1,wall2&source=push`, `/gallery?ids=wall1,wall2,wall3&source=link` | Requires 2 to 12 wall IDs in `ids`, separated by commas. IDs use letters, digits, `_` and `-`. Other query keys are refused. Opens `GalleryScreen`. |
 | Public profile | `/user/alice` | Requires a profile identifier. |
 | Followers and following | `/user/alice/followers`, `/user/alice/following` | Loads the named profile's current relation list. Query forms are `/followers?user=alice` and `/following?user=alice`. `identifier` aliases `user`. |
 | Edit profile | `/edit-profile` | Sign-in. |

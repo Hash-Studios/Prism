@@ -1166,6 +1166,63 @@ class FullScreenImageRouteArgs {
 }
 
 /// generated route for
+/// [GalleryScreen]
+class GalleryRoute extends PageRouteInfo<GalleryRouteArgs> {
+  GalleryRoute({
+    Key? key,
+    String ids = '',
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         GalleryRoute.name,
+         args: GalleryRouteArgs(key: key, ids: ids, source: source),
+         rawQueryParams: {'ids': ids, 'source': source},
+         initialChildren: children,
+       );
+
+  static const String name = 'GalleryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final queryParams = data.queryParams;
+      final args = data.argsAs<GalleryRouteArgs>(
+        orElse: () => GalleryRouteArgs(
+          ids: queryParams.getString('ids', ''),
+          source: queryParams.getString('source', 'link'),
+        ),
+      );
+      return GalleryScreen(key: args.key, ids: args.ids, source: args.source);
+    },
+  );
+}
+
+class GalleryRouteArgs {
+  const GalleryRouteArgs({this.key, this.ids = '', this.source = 'link'});
+
+  final Key? key;
+
+  final String ids;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'GalleryRouteArgs{key: $key, ids: $ids, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! GalleryRouteArgs) return false;
+    return key == other.key && ids == other.ids && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ ids.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [HomeTabPage]
 class HomeTabRoute extends PageRouteInfo<void> {
   const HomeTabRoute({List<PageRouteInfo>? children})

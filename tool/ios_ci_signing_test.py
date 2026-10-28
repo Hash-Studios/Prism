@@ -19,8 +19,10 @@ PROJECT = ROOT / 'ios/Runner.xcodeproj'
 TEAM = 'X2955Z4CKQ'
 APP = 'com.hash.prism'
 LIVE = 'com.hash.prism.LiveActivities'
+NSE = 'com.hash.prism.NotificationService'
 APP_PROFILE = 'Prism App Store'
 LIVE_PROFILE = 'Prism Live Activities App Store'
+NSE_PROFILE = 'Prism Notification Service App Store'
 APP_SECRET = 'IOS_PROVISIONING_PROFILE_BASE64'
 LIVE_SECRET = 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'
 MOBILE_DIR = 'Library/MobileDevice/Provisioning Profiles'
@@ -39,6 +41,7 @@ puts JSON.generate(result)
 MANUAL_PROFILES = [
     {'bundle_id': APP, 'name': APP_PROFILE, 'uuid': 'AAAA-1', 'team_id': TEAM},
     {'bundle_id': LIVE, 'name': LIVE_PROFILE, 'uuid': 'BBBB-2', 'team_id': TEAM},
+    {'bundle_id': NSE, 'name': NSE_PROFILE, 'uuid': 'CCCC-3', 'team_id': TEAM},
 ]
 
 
@@ -215,7 +218,8 @@ class IosCiManualSigningTest(unittest.TestCase):
         result = self.run_manual_signing()
         self.assertEqual(result.returncode, 0, result.stderr)
         settings = self.dump_settings(self.project)
-        for target, profile in (('Runner', APP_PROFILE), ('PrismLiveActivities', LIVE_PROFILE)):
+        for target, profile in (('Runner', APP_PROFILE), ('PrismLiveActivities', LIVE_PROFILE),
+                                ('PrismNotificationService', NSE_PROFILE)):
             release = settings[target]['Release']
             self.assertEqual(release['CODE_SIGN_STYLE'], 'Manual')
             self.assertEqual(release['PROVISIONING_PROFILE_SPECIFIER'], profile)

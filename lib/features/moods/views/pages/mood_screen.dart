@@ -3,20 +3,14 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
-import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
-import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -100,50 +94,7 @@ class _MoodScreenState extends State<MoodScreen> {
       case MoodWallsLoaded(:final walls) when walls.isEmpty:
         return GlintState(kind: GlintStateKind.empty, title: l10n.moodEmptyTitle, body: l10n.moodEmptyBody);
       case MoodWallsLoaded(:final walls):
-        return _grid(context, mood, walls);
+        return WallIdsGrid(walls: walls, header: mood.body(l10n));
     }
-  }
-
-  Widget _grid(BuildContext context, WallMood mood, List<PrismWallpaper> walls) {
-    final List<FeedItemEntity> items = <FeedItemEntity>[
-      for (final PrismWallpaper wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall),
-    ];
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
-    return CustomScrollView(
-      slivers: <Widget>[
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(PrismSpace.xs + 44 + PrismSpace.xxs, 0, PrismSpace.page, PrismSpace.md),
-            child: Text(mood.body(context.l10n), style: PrismTextStyles.body(context)),
-          ),
-        ),
-        SliverPadding(
-          padding: PrismFeedLayout.gridPadding,
-          sliver: SliverGrid(
-            gridDelegate: PrismWallGrid.delegate(
-              context,
-              footerHeight: favouriteFooterHeight,
-              columns: columns,
-              spacing: PrismFeedLayout.gridSpacing,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final FeedItemEntity item = items[index];
-              return KeyedSubtree(
-                key: ValueKey<String>(item.id),
-                child: FeedWallTile(
-                  item: item,
-                  index: index,
-                  crossAxisCount: columns,
-                  memCacheHeight: decodeHeight,
-                  feed: items,
-                ),
-              );
-            }, childCount: items.length),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-      ],
-    );
   }
 }

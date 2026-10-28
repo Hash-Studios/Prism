@@ -13,5 +13,6 @@ class EmptyMoodRepository implements MoodRepository {
   Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async => const <PrismWallpaper>[];
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
+      const <PrismWallpaper>[];
 }

@@ -242,10 +242,12 @@ void main() {
     await mount(tester);
     expect(client.writes.single.data, <String, dynamic>{
       'fcmToken': 'initial-token',
-      'notificationLocalizationVersion': 1,
+      'notificationLocalizationVersion': 2,
       'notificationLocalizationToken': 'initial-token',
       'fcmTokenBindingVersion': 1,
       'fcmTokenBindingToken': 'initial-token',
+      'postAlerts': true,
+      'postAlertsToken': 'initial-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));
@@ -257,10 +259,12 @@ void main() {
 
     expect(client.writes.last.data, <String, dynamic>{
       'fcmToken': 'refreshed-token',
-      'notificationLocalizationVersion': 1,
+      'notificationLocalizationVersion': 2,
       'notificationLocalizationToken': 'refreshed-token',
       'fcmTokenBindingVersion': 1,
       'fcmTokenBindingToken': 'refreshed-token',
+      'postAlerts': true,
+      'postAlertsToken': 'refreshed-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));

@@ -28,6 +28,7 @@ enum DeepLinkPageTarget {
   library,
   folder,
   mood,
+  gallery,
   uploadInput,
   editWallInput,
   review,
@@ -129,6 +130,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/library?tab=downloads', DeepLinkPageTarget.library),
     DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
+    DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -200,6 +202,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.wallpaperDetail: <String>{'wallId', 'id', 'source', 'provider'},
     DeepLinkPageTarget.library: <String>{'tab'},
     DeepLinkPageTarget.collectionView: <String>{'collectionName', 'name'},
+    DeepLinkPageTarget.gallery: <String>{'ids', 'source'},
     DeepLinkPageTarget.followers: <String>{'user', 'identifier'},
     DeepLinkPageTarget.following: <String>{'user', 'identifier'},
     DeepLinkPageTarget.wallpaperPositionInput: <String>{'wallpaperId', 'source', 'provider', 'entryPoint'},
@@ -306,6 +309,9 @@ final class DeepLinkRouteCatalog {
     }
     final String? wallId = pathParams['wallId'] ?? query['wallId'] ?? query['id'];
     if (target == DeepLinkPageTarget.wallpaperDetail && (wallId == null || wallId.trim().isEmpty)) {
+      return null;
+    }
+    if (target == DeepLinkPageTarget.gallery && !_validGalleryIds(query['ids'] ?? '')) {
       return null;
     }
     if (target == DeepLinkPageTarget.collectionView &&
@@ -434,7 +440,14 @@ final class DeepLinkRouteCatalog {
         (segments.length == 4 && segments[0].toLowerCase() == 'drops' && segments[2].toLowerCase() == 'preview');
   }
 
+  /// A gallery shows 2 to 12 walls. Ids use the same characters as the server wall ids.
+  static bool _validGalleryIds(String raw) {
+    final List<String> ids = raw.split(',').map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
+    return ids.length >= 2 && ids.length <= 12 && ids.every(RegExp(r'^[A-Za-z0-9_-]{1,200}$').hasMatch);
+  }
+
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
+    '/gallery': DeepLinkPageTarget.gallery,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,
     '/dashboard': DeepLinkPageTarget.dashboard,
     '/dashboard/home': DeepLinkPageTarget.home,

@@ -95,7 +95,7 @@ const APP_PAGE_PATHS = [
   '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/edit-profile', '/share-prism', '/settings',
   '/premium', '/paywall',
   '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
-  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/followers', '/following',
+  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/followers', '/following',
   '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
   '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
@@ -122,6 +122,7 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/share-setup', new Set(['name', 'setupName', 'setup_name'])],
   ['/referral', new Set(['inviterId', 'userID', 'userId', 'userid', 'id'])],
   ['/collection-view', new Set(['collectionName', 'name'])],
+  ['/gallery', new Set(['ids', 'source'])],
   ['/followers', new Set(['user', 'identifier'])],
   ['/following', new Set(['user', 'identifier'])],
   ['/wallpaper', new Set(['wallpaperId', 'source', 'provider', 'entryPoint'])],
@@ -819,6 +820,10 @@ function hasAllowedPageQuery(segments: string[], url: URL): boolean {
       && !['logs', 'tools', 'storage', 'app-info', 'mascot'].includes(url.searchParams.get('tab') ?? '')) return false;
   if (queryRoute === '/wallpaper-detail' && !queryValue('wallId', 'id')) return false;
   if (queryRoute === '/collection-view' && !queryValue('collectionName', 'name')) return false;
+  if (queryRoute === '/gallery') {
+    const ids = queryValue('ids').split(',').map((id) => id.trim()).filter(Boolean);
+    if (ids.length < 2 || ids.length > 12 || !ids.every((id) => /^[A-Za-z0-9_-]{1,200}$/.test(id))) return false;
+  }
   if ((queryRoute === '/followers' || queryRoute === '/following')
       && segments.length === 1 && !queryValue('user', 'identifier')) return false;
   if ([
