@@ -106,6 +106,7 @@ function baseSeed(): Record<string, Doc> {
 
 function mockDelivery(t: TestContext, delivered = true) {
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   t.mock.method(publicFolderDeps, "authDisabled", async () => false);
   return t.mock.method(notificationHelper, "sendToUser", async (payload: Parameters<typeof sendToUser>[0]) => {
     void payload;
@@ -178,6 +179,7 @@ test("sendDueFolderDigests drops a folder made private before its projection is 
 test("sendDueFolderDigests rechecks the live source after it has read the projection", async (t) => {
   const send = t.mock.method(notificationHelper, "sendToUser", async () => true);
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   const store = installFakeDb(t, baseSeed());
   let ownerChecks = 0;
   t.mock.method(publicFolderDeps, "authDisabled", async () => {
@@ -193,6 +195,7 @@ test("sendDueFolderDigests rechecks the live source after it has read the projec
 test("sendDueFolderDigests stops if the public header disappears after the candidate read", async (t) => {
   const send = t.mock.method(notificationHelper, "sendToUser", async () => true);
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   const store = installFakeDb(t, baseSeed());
   t.mock.method(publicFolderDeps, "authDisabled", async () => {
     store.delete("publicFolders/f1");
@@ -206,6 +209,7 @@ test("sendDueFolderDigests stops if the public header disappears after the candi
 test("sendDueFolderDigests stops for a disabled folder owner", async (t) => {
   const send = t.mock.method(notificationHelper, "sendToUser", async () => true);
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   installFakeDb(t, baseSeed());
   t.mock.method(publicFolderDeps, "authDisabled", async (uid: string) => uid === "a");
 
@@ -216,6 +220,7 @@ test("sendDueFolderDigests stops for a disabled folder owner", async (t) => {
 test("sendDueFolderDigests stops for a disabled recipient", async (t) => {
   const send = t.mock.method(notificationHelper, "sendToUser", async () => true);
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   const store = installFakeDb(t, baseSeed());
   t.mock.method(publicFolderDeps, "authDisabled", async (uid: string) => uid === "b");
 
@@ -366,6 +371,7 @@ for (const condition of ["loggedOut", "pushDisabled", "deleted", "barrier", "mis
 
 test("real folder delivery writes one inbox and sends a token-only single image FCM", async (t) => {
   t.mock.method(wallOfTheDay, "premiumCollections", async () => []);
+  t.mock.method(publicFolderDeps, "premium", async () => []);
   t.mock.method(publicFolderDeps, "authDisabled", async () => false);
   const store = installFakeDb(t, baseSeed());
   const send = t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
