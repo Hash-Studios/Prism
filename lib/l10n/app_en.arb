@@ -37,7 +37,7 @@
   "@wallpaperHistorySetAgain": {
     "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
   },
-  "wallpaperHistoryTileLabel": "{current}{target}, {time}",
+  "wallpaperHistoryTileLabel": "{current}{target}, set at {time}",
   "@wallpaperHistoryTileLabel": {
     "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
     "placeholders": {

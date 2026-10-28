@@ -345,7 +345,7 @@ void main() {
 
     final Finder tile = find.bySemanticsLabel(RegExp(r'^Current\. Home screen'));
     expect(tile, findsOneWidget);
-    expect(find.bySemanticsLabel('Current. Home screen, 2:00 PM'), findsOneWidget);
+    expect(find.bySemanticsLabel('Current. Home screen, set at 2:00 PM'), findsOneWidget);
 
     final SemanticsData data = tester.getSemantics(tile).getSemanticsData();
     expect(

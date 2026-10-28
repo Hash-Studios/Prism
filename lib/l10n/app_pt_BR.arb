@@ -7,7 +7,7 @@
   "wallpaperFavouriteSortBy": "Organizar por",
   "wallpaperFavouriteFilterSource": "Fonte",
   "wallpaperHistorySetAgain": "Definir novamente",
-  "wallpaperHistoryTileLabel": "{current}{target}, {time}",
+  "wallpaperHistoryTileLabel": "{current}{target}, definido às {time}",
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "pt_BR",
   "economyExportFailedLabel": "Falha ao exportar",

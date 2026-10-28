@@ -47,7 +47,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String wallpaperHistoryTileLabel(String current, String target, String time) {
-    return '$current$target, $time';
+    return '$current$target, $time बजे लगाया गया';
   }
 
   @override

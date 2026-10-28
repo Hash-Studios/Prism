@@ -1,13 +1,57 @@
 {
   "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
   "foldersLibraryEmptyBody": "किसी वॉलपेपर को फ़ोल्डर में सहेजने के लिए उस पर दिल के निशान को दबाए रखें।",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
   "foldersLoadAllError": "आपके फ़ोल्डर लोड नहीं हो सके",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 पसंदीदा में खोजें} other{{count} पसंदीदा में खोजें}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "wallpaperFavouriteSortAndFilter": "क्रमबद्ध और फ़िल्टर करें",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
   "wallpaperFavouriteSortBy": "इस क्रम में लगाएँ",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
   "wallpaperFavouriteFilterSource": "स्रोत",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
   "wallpaperHistorySetAgain": "फिर से लगाएँ",
-  "wallpaperHistoryTileLabel": "{current}{target}, {time}",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, {time} बजे लगाया गया",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",

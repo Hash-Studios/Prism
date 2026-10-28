@@ -1,13 +1,57 @@
 {
   "foldersLibraryEmptyTitle": "Belum ada folder",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
   "foldersLibraryEmptyBody": "Tekan lama ikon hati pada wallpaper untuk menyimpannya ke folder.",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
   "foldersLoadAllError": "Folder Anda tidak dapat dimuat",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, other{Cari di {count} favorit}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "wallpaperFavouriteSortAndFilter": "Urutkan dan filter",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
   "wallpaperFavouriteSortBy": "Urutkan menurut",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
   "wallpaperFavouriteFilterSource": "Sumber",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
   "wallpaperHistorySetAgain": "Pasang lagi",
-  "wallpaperHistoryTileLabel": "{current}{target}, {time}",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, dipasang pukul {time}",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
   "economyExportFailedLabel": "Ekspor gagal",

@@ -156,7 +156,7 @@ abstract class AppLocalizations {
   /// Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.
   ///
   /// In en, this message translates to:
-  /// **'{current}{target}, {time}'**
+  /// **'{current}{target}, set at {time}'**
   String wallpaperHistoryTileLabel(String current, String target, String time);
 
   /// No description provided for @wallpaperProviderWallhaven.

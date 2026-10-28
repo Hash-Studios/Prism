@@ -47,7 +47,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String wallpaperHistoryTileLabel(String current, String target, String time) {
-    return '$current$target, $time';
+    return '$current$target, definido às $time';
   }
 
   @override
@@ -10737,7 +10737,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String wallpaperHistoryTileLabel(String current, String target, String time) {
-    return '$current$target, $time';
+    return '$current$target, definido às $time';
   }
 
   @override
