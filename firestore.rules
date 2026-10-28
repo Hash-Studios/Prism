@@ -293,7 +293,8 @@ service cloud.firestore {
         let data = request.resource.data;
         return data.keys().hasOnly([
               'id', 'url', 'thumb', 'provider', 'category', 'views', 'resolution', 'fav', 'size',
-              'photographer', 'collections', 'depth', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt', 'wallpaperDocumentId'
+              'photographer', 'collections', 'depth', 'spatial', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt',
+              'wallpaperDocumentId'
             ])
             && data.id is string && data.id.size() > 0
             && data.provider is string
@@ -301,6 +302,8 @@ service cloud.firestore {
             && itemKey == data.provider.lower() + '_' + data.id
             && (!('wallpaperDocumentId' in data)
                 || (data.wallpaperDocumentId is string && data.wallpaperDocumentId.size() > 0))
+            // The favourite mapper copies a Spatial Scene wall's {tier, map}.
+            && (!('spatial' in data) || data.spatial is map)
             && data.ownerId == request.auth.uid
             && data.addedAt is timestamp;
       }

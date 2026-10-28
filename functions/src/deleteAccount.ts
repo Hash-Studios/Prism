@@ -141,7 +141,8 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);
     await queueBoosts(callerUid, queue, queueUpdate);
-    folders.docs.forEach((folder) => track(folder.ref, writer.delete(folder.ref, {lastUpdateTime: folder.updateTime})));
+    // No update-time precondition: the repair trigger updates a folder while its items are deleted above.
+    folders.docs.forEach((folder) => queue(folder.ref));
     // The email may be stored as typed or in lower case.
     for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
       await queueDeleteWhereEqual(DRAFT_SETUPS, "email", address, queue);

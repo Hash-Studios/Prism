@@ -549,26 +549,26 @@ test("folder item replacement by another owner is not deleted after the owner qu
   assert.equal(store.get("usersv2/u1")?.deleted, true);
 });
 
-test("folder replacement by another owner is not deleted after the owner query", async (t) => {
+test("a folder the repair trigger updates after the owner query is still deleted on the first call", async (t) => {
   fake(t, {email: ""});
   const store = installFakeDb(t, {
     "usersv2/u1": {name: "Caller"},
-    "folders/one": {ownerId: "u1"},
+    "folders/one": {ownerId: "u1", itemCount: 1, covers: ["A"]},
   });
   type Ref = {path: string; get: () => Promise<{updateTime?: {version: number}}>; delete: () => Promise<void>;
-    set: (data: Record<string, unknown>) => Promise<void>};
+    update: (data: Record<string, unknown>) => Promise<void>};
   type Precondition = {lastUpdateTime: {version: number}};
-  let raceFolder = true;
+  let repaired = false;
   t.mock.method(db, "bulkWriter", () => ({
     set: async () => undefined,
     update: async () => undefined,
     delete: async (ref: Ref, precondition?: Precondition) => {
-      if (ref.path === "folders/one" && raceFolder) {
-        raceFolder = false;
-        await ref.delete();
-        await ref.set({ownerId: "u2"});
-        const replacement = await ref.get();
-        if (precondition && replacement.updateTime?.version !== precondition.lastUpdateTime.version) {
+      if (ref.path === "folders/one" && !repaired) {
+        // The item delete above fired onFolderItemWritten, which repaired the folder's count.
+        repaired = true;
+        await ref.update({itemCount: 0, covers: []});
+        const current = await ref.get();
+        if (precondition && current.updateTime?.version !== precondition.lastUpdateTime.version) {
           throw Object.assign(new Error("firestore 9"), {code: 9});
         }
       }
@@ -580,10 +580,7 @@ test("folder replacement by another owner is not deleted after the owner query",
     auth: {uid: "u1", token: {auth_time: Math.floor(Date.now() / 1000)}},
     data: {},
   } as unknown as Parameters<typeof deleteAccount.run>[0];
-  const run = () => deleteAccount.run(request);
 
-  await assert.rejects(run, {code: "internal"});
-  assert.deepEqual(await run(), {ok: true});
-  assert.equal(store.get("folders/one")?.ownerId, "u2");
-  assert.equal(store.get("usersv2/u1")?.deleted, true);
+  assert.deepEqual(await deleteAccount.run(request), {ok: true});
+  assert.equal(store.has("folders/one"), false);
 });
