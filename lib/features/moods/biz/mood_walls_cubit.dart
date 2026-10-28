@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
@@ -31,16 +33,32 @@ final class MoodWallsFailed extends MoodWallsState {
 class MoodWallsCubit extends Cubit<MoodWallsState> {
   MoodWallsCubit(this._repository, {@ignoreParam Future<int?> Function()? iosMajor})
     : _iosMajor = iosMajor ?? deviceIosMajor,
-      super(const MoodWallsLoading());
+      super(const MoodWallsLoading()) {
+    _visibility = _repository.watchVisibilityChanges().listen((_) => _reload());
+  }
 
   final MoodRepository _repository;
   final Future<int?> Function() _iosMajor;
+  late final StreamSubscription<void> _visibility;
   int _loadVersion = 0;
+  ({WallMood mood, int? limit, List<String>? wallIds})? _request;
+
+  void _reload() {
+    final request = _request;
+    if (request != null) unawaited(load(request.mood, limit: request.limit, wallIds: request.wallIds));
+  }
+
+  @override
+  Future<void> close() async {
+    await _visibility.cancel();
+    return super.close();
+  }
 
   /// Loads the first [limit] wall ids of [mood], or all of them when [limit] is null. A mood that this device does not
   /// show, for example from a link, loads no walls.
   Future<void> load(WallMood mood, {int? limit, List<String>? wallIds}) async {
     if (isClosed) return;
+    _request = (mood: mood, limit: limit, wallIds: wallIds);
     final int loadVersion = ++_loadVersion;
     emit(const MoodWallsLoading());
     try {

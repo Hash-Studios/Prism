@@ -7,6 +7,9 @@ import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeMoodRepository implements MoodRepository {
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
   List<MoodList> moods = const <MoodList>[];
   bool fail = false;
   List<Future<List<MoodList>>>? pendingReads;

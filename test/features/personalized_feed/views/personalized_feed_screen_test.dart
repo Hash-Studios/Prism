@@ -78,6 +78,11 @@ class _MockFeedRepository extends Mock implements PersonalizedFeedRepository {}
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
 
 class _FakeMoodRepository implements MoodRepository {
+  final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
+
+  @override
+  Stream<void> watchVisibilityChanges() => visibility.stream;
+
   List<MoodList> moods = const <MoodList>[];
   final List<List<String>> fetchedWallIds = <List<String>>[];
   Completer<List<MoodList>>? pendingMoods;
@@ -358,9 +363,7 @@ void main() {
     await pumpScreen(tester);
     expect(moodRepository.fetchedWallIds, hasLength(1));
 
-    blockRepository.completeInitial(const <String>{});
-    await _settle(tester);
-    blockRepository.completeInitial(const <String>{'blocked-creator'});
+    moodRepository.visibility.add(null);
     await _settle(tester);
 
     expect(moodRepository.fetchedWallIds, hasLength(2));

@@ -17,6 +17,9 @@ PrismWallpaper mockMoodWall(String id) => PrismWallpaper(
 List<PrismWallpaper> mockMoodWalls(int count) => [for (var i = 0; i < count; i++) mockMoodWall('wall-$i')];
 
 class FakeMoodRepository implements MoodRepository {
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
   FakeMoodRepository({
     this.moods = const <MoodList>[],
     this.walls = const <PrismWallpaper>[],

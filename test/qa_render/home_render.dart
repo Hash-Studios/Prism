@@ -333,6 +333,9 @@ class _Home {
 
 class _FakeMoodRepository implements MoodRepository {
   @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
+  @override
   Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
 
   @override

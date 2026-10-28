@@ -8,4 +8,7 @@ abstract class MoodRepository {
 
   /// The walls with these [ids] that the user can see, ordered by the user's taste. Throws when the read fails.
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids);
+
+  /// Emits when the walls the user can see change, for example when they block or unblock a creator.
+  Stream<void> watchVisibilityChanges();
 }

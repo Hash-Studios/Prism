@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -214,5 +215,27 @@ void main() {
 
       expect(ids.first, 'B');
     });
+  });
+
+  test('watchVisibilityChanges fires only when the blocked creators change', () async {
+    int changes = 0;
+    final StreamSubscription<void> sub = repository.watchVisibilityChanges().listen((_) => changes++);
+    addTearDown(sub.cancel);
+
+    blocks.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 0);
+
+    blocks.completeInitial(<String>{'creator-a'});
+    await pumpEventQueue();
+    expect(changes, 1);
+
+    blocks.completeInitial(<String>{'creator-a'});
+    await pumpEventQueue();
+    expect(changes, 1);
+
+    blocks.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 2);
   });
 }

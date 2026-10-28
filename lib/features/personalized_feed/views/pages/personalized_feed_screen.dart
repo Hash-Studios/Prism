@@ -35,7 +35,6 @@ import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sli
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
-import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -87,7 +86,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
   late final MoodsCubit _moods;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
   final Set<String> _knownItemIds = <String>{};
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
@@ -105,15 +103,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _moods = getIt<MoodsCubit>();
     unawaited(_loadHomeMoods());
-    if (getIt.isRegistered<UserBlockRepository>()) {
-      final UserBlockRepository blocks = getIt<UserBlockRepository>();
-      Set<String> blocked = <String>{...blocks.cachedBlockedCreatorUids};
-      _blockedCreatorsSub = blocks.watchBlockedCreatorUids().listen((next) {
-        if (next.length == blocked.length && next.containsAll(blocked)) return;
-        blocked = <String>{...next};
-        _reloadMoodRows();
-      });
-    }
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
@@ -147,7 +136,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     _scrollController.dispose();
     _tabs.dispose();
-    unawaited(_blockedCreatorsSub?.cancel());
     unawaited(_bloc.close());
     unawaited(_trending.close());
     unawaited(_latest?.close());
@@ -572,10 +560,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       crossAxisCount,
       rowMoods,
     );
-    final List<List<FeedItemEntity>?> chunkItems = <List<FeedItemEntity>?>[
-      for (final (int start, int end, MoodList? _) in chunks)
-        chunks.length == 1 ? null : visibleItems.sublist(start, end),
-    ];
+    final List<List<FeedItemEntity>?> chunkItems = chunks.length == 1
+        ? const <List<FeedItemEntity>?>[null]
+        : <List<FeedItemEntity>?>[
+            for (final (int start, int end, MoodList? _) in chunks) visibleItems.sublist(start, end),
+          ];
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         SliverPadding(

@@ -25,17 +25,21 @@ class MoodChipRow extends StatelessWidget {
       explicitChildNodes: true,
       child: Padding(
         padding: const EdgeInsets.only(top: PrismSpace.xxs, bottom: PrismSpace.xs),
-        child: SizedBox(
-          height: 44,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),
-            itemCount: moods.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 6),
-            itemBuilder: (context, index) {
-              final WallMood mood = moods[index].mood;
-              return PrismChip(label: mood.title(l10n), compact: true, onTap: () => _open(context, mood, index));
-            },
+        // The row is 44 tall. Up to 2x text the compact label still fits its pill.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 2,
+          child: SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),
+              itemCount: moods.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final WallMood mood = moods[index].mood;
+                return PrismChip(label: mood.title(l10n), compact: true, onTap: () => _open(context, mood, index));
+              },
+            ),
           ),
         ),
       ),

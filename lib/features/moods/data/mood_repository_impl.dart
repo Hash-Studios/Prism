@@ -83,6 +83,16 @@ class MoodRepositoryImpl implements MoodRepository {
   }
 
   @override
+  Stream<void> watchVisibilityChanges() {
+    Set<String> blocked = <String>{..._userBlockRepository.cachedBlockedCreatorUids};
+    return _userBlockRepository.watchBlockedCreatorUids().where((next) {
+      if (next.length == blocked.length && next.containsAll(blocked)) return false;
+      blocked = <String>{...next};
+      return true;
+    });
+  }
+
+  @override
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
     if (ids.isEmpty) return const <PrismWallpaper>[];
     final List<PrismWallpaper> walls = await _loadWalls(ids);

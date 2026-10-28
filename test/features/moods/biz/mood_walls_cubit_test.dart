@@ -13,6 +13,11 @@ PrismWallpaper _wall(String id) => PrismWallpaper(
 );
 
 class _FakeMoodRepository implements MoodRepository {
+  final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
+
+  @override
+  Stream<void> watchVisibilityChanges() => visibility.stream;
+
   List<MoodList> moods = const <MoodList>[];
   bool fail = false;
   final List<List<String>> requested = <List<String>>[];
@@ -137,5 +142,24 @@ void main() {
     await olderLoad;
 
     expect(_idsOf(cubit.state), <String>['NEW']);
+  });
+
+  test('reloads the same walls when the user blocks or unblocks a creator, and stops after close', () async {
+    final MoodWallsCubit cubit = MoodWallsCubit(repository);
+
+    await cubit.load(WallMood.dreamy, limit: 2);
+    expect(repository.requested, <List<String>>[
+      <String>['A', 'B'],
+    ]);
+
+    repository.visibility.add(null);
+    await pumpEventQueue();
+    expect(repository.requested.last, <String>['A', 'B']);
+    expect(repository.requested, hasLength(2));
+
+    await cubit.close();
+    repository.visibility.add(null);
+    await pumpEventQueue();
+    expect(repository.requested, hasLength(2));
   });
 }

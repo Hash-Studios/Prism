@@ -95,7 +95,7 @@ void main() {
   });
 
   for (final ThemeMode mode in <ThemeMode>[ThemeMode.light, ThemeMode.dark]) {
-    for (final double scale in <double>[1.5, 2]) {
+    for (final double scale in <double>[1.5, 2, 3]) {
       testWidgets('compact mood labels fit the 44 pt row at ${scale}x in ${mode.name} mode', (tester) async {
         await tester.pumpWidget(
           MaterialApp(

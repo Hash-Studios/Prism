@@ -4,6 +4,9 @@ import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 
 /// No moods, for tests that pump Home without testing moods.
 class EmptyMoodRepository implements MoodRepository {
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
   const EmptyMoodRepository();
 
   @override
