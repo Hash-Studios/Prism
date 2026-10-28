@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -410,7 +413,14 @@ class _PhotoSection extends StatelessWidget {
             _motionStyleLabel(context.l10n, state.motionStyle),
           ),
           child: state.motionStyle.needsDepthMap && mapUrl != null
-              ? SpatialTiltView(image: CachedNetworkImageProvider(imageUrl), mapUrl: mapUrl)
+              ? SpatialTiltView(
+                  image: isValidNetworkUrl(imageUrl)
+                      ? CachedNetworkImageProvider(imageUrl)
+                      : FileImage(
+                          File(Uri.tryParse(imageUrl)?.scheme == 'file' ? Uri.parse(imageUrl).toFilePath() : imageUrl),
+                        ),
+                  mapUrl: mapUrl,
+                )
               : ProgressiveWallpaperImage(
                   display: WallpaperDisplaySource(thumbnail: '', full: imageUrl),
                   errorBuilder: (_, _) => const Center(child: Icon(Icons.broken_image_outlined)),

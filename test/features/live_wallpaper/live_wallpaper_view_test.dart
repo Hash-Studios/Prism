@@ -107,6 +107,19 @@ void main() {
     expect(find.byType(SpatialTiltView), findsNothing);
   });
 
+  testWidgets('the 3D preview reads a downloaded photo from its file', (tester) async {
+    const String imagePath = '/data/user/0/com.hash.prism/files/a.jpg';
+    await pump(tester, imageUrl: imagePath, depthMapUrl: 'https://example.com/map.png');
+
+    await tester.ensureVisible(find.text('3D'));
+    await tester.tap(find.text('3D'));
+    await tester.pump();
+    await tester.pump();
+
+    final SpatialTiltView spatialView = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
+    expect(spatialView.image, isA<FileImage>().having((provider) => provider.file.path, 'path', imagePath));
+  });
+
   testWidgets('battery saver switches to 15 frames per second', (tester) async {
     await pump(tester);
     await tester.ensureVisible(find.byType(Switch));
