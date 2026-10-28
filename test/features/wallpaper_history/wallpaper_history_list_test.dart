@@ -2,9 +2,14 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
@@ -348,5 +353,75 @@ void main() {
       contains(CustomSemanticsAction.getIdentifier(const CustomSemanticsAction(label: 'Remove from history'))),
     );
     handle.dispose();
+  });
+
+  // Replaces the Set screen opener and records each request it receives.
+  void stubSetScreen(List<SetScreenRequest> opened) {
+    final original = SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async {
+      opened.add(request);
+      return null;
+    };
+    addTearDown(() => SetWallpaperFlow.screenOpener = original);
+  }
+
+  // The set flow runs asynchronously; pump real time until the Set screen request arrives.
+  Future<void> waitForSetScreen(WidgetTester tester, List<SetScreenRequest> opened) async {
+    for (int i = 0; i < 80 && opened.isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+  }
+
+  testWidgets('Set again opens the Set screen as wallpaper_history even with a saved default', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(() => getIt.unregister<SettingsLocalDataSource>());
+    final List<SetScreenRequest> opened = <SetScreenRequest>[];
+    stubSetScreen(opened);
+    await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14))]);
+    await pumpList(tester);
+
+    await tester.tap(find.byTooltip('Set again'));
+    await tester.pump();
+    await waitForSetScreen(tester, opened);
+
+    expect(opened, hasLength(1));
+    expect(opened.single.url, '/missing-a.jpg');
+    expect(opened.single.thumbnailUrl, '/missing.jpg');
+    expect(opened.single.onAdjust, isNotNull);
+  });
+
+  testWidgets('a set again Prism wall keeps its identity for preview and original consent', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'recent-owner'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final List<SetScreenRequest> opened = <SetScreenRequest>[];
+    stubSetScreen(opened);
+    await recordAll(<AppliedWallpaper>[
+      AppliedWallpaper(
+        id: 'history-1',
+        wallpaperId: 'prism-1',
+        source: 'prism',
+        fullUrl: 'https://example.com/original.jpg',
+        thumbnailUrl: '/missing/preview.jpg',
+        target: 'home',
+        appliedAt: DateTime(2026, 10, 28, 14),
+      ),
+    ]);
+    await pumpList(tester);
+
+    await tester.tap(find.byTooltip('Set again'));
+    await tester.pump();
+    await waitForSetScreen(tester, opened);
+
+    expect(opened, hasLength(1));
+    expect(opened.single.wallpaperId, 'prism-1');
+    expect(opened.single.wallpaperSource, WallpaperSource.prism);
+    expect(opened.single.thumbnailUrl, '/missing/preview.jpg');
   });
 }

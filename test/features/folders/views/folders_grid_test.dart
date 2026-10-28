@@ -332,4 +332,41 @@ void main() {
 
     verify(() => router.push(any(that: isA<FolderRoute>().having((r) => r.args?.folderId, 'id', 'f1')))).called(1);
   });
+
+  testWidgets('a name prompt opened by one account cannot create a folder for the next account', (tester) async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository();
+    final FoldersBloc bloc = await pumpGrid(tester, repo);
+    await tester.tap(find.text('New folder'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Private draft');
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    await tester.tap(find.text('Create'));
+    await settle(tester);
+
+    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
+  });
+
+  testWidgets('a mounted grid hides on sign-out and returns after signing in again', (tester) async {
+    final FoldersBloc bloc = await pumpGrid(
+      tester,
+      _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]),
+    );
+    expect(find.text('Work'), findsOneWidget);
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    bloc.add(const FoldersEvent.cleared());
+    await settle(tester);
+    expect(
+      find.text(AppLocalizationsEn().coreSignInFeatureTitle(AppLocalizationsEn().foldersSignInFeature)),
+      findsOneWidget,
+    );
+    expect(find.text('Work'), findsNothing);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+    expect(find.text('Work'), findsOneWidget);
+  });
 }
