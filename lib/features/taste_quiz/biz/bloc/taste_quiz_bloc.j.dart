@@ -1,14 +1,12 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
-import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/logger/logger.dart';
@@ -25,15 +23,11 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
   TasteQuizBloc({
     required TasteQuizPlan plan,
     required this.source,
-    required List<String> interests,
     required TasteSignalStore tasteSignals,
-    PersonalizedRankingService ranker = const PersonalizedRankingService(),
-    Random? random,
+    required PersonalizedFeedRepository feed,
     DateTime Function()? clock,
-  }) : _interests = interests,
-       _tasteSignals = tasteSignals,
-       _ranker = ranker,
-       _random = random ?? Random(),
+  }) : _tasteSignals = tasteSignals,
+       _feed = feed,
        _clock = clock ?? DateTime.now,
        super(TasteQuizState.playing(plan: plan, picks: const <QuizPick>[])) {
     on<_Picked>(_onPicked);
@@ -43,15 +37,15 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
   }
 
   final TasteQuizSource source;
-  final List<String> _interests;
   final TasteSignalStore _tasteSignals;
-  final PersonalizedRankingService _ranker;
-  final Random _random;
+  final PersonalizedFeedRepository _feed;
   final DateTime Function() _clock;
   bool _committed = false;
 
-  static const int tuningMin = 4;
   static const int tuningMax = 6;
+
+  /// How long Tuning waits for the real first page before it shows the summary line alone.
+  static const Duration feedPreviewBudget = Duration(milliseconds: 2500);
 
   Future<void> _onPicked(_Picked event, Emitter<TasteQuizState> emit) async {
     final TasteQuizState current = state;
@@ -70,7 +64,21 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     await _commit(picks);
     if (emit.isDone || state is! TasteQuizPlaying) return;
     unawaited(analytics.track(TasteQuizCompletedEvent(source: source)));
-    emit(TasteQuizState.tuning(walls: _tuningWalls(current.plan, picks), summary: summarizeTaste(picks)));
+    final TasteSummary summary = summarizeTaste(picks);
+    emit(TasteQuizState.tuning(summary: summary));
+    // The timeout only stops the wait. The prime keeps running, so the feed still takes its page.
+    final Stopwatch watch = Stopwatch()..start();
+    List<FeedItemEntity> walls = const <FeedItemEntity>[];
+    try {
+      final PersonalizedFeedPage? page = await _feed.primeFirstPage().timeout(feedPreviewBudget);
+      walls = page?.items.take(tuningMax).toList(growable: false) ?? walls;
+    } catch (_) {}
+    if (emit.isDone || state is! TasteQuizTuning) return;
+    PerformanceProbe.mark(
+      'tuning.feed_ready',
+      extra: <String, Object?>{'ms': watch.elapsedMilliseconds, 'walls': walls.length},
+    );
+    emit(TasteQuizState.tuning(summary: summary, walls: walls));
   }
 
   Future<void> _onSkipped(_Skipped event, Emitter<TasteQuizState> emit) async {
@@ -96,38 +104,4 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
       logger.w('[TasteQuiz] could not store the picks: $error');
     }
   }
-
-  /// The leftover walls in the order the feed ranker now puts them, topped up with the picks when too few rank.
-  List<FeedItemEntity> _tuningWalls(TasteQuizPlan plan, List<QuizPick> picks) {
-    final DateTime now = _clock().toUtc();
-    final PersonalizedRankingResult ranking = _ranker.rank(
-      candidates: <RankingCandidate>[
-        for (final QuizWall wall in plan.pool)
-          RankingCandidate(item: wall.item, pool: _poolOf(wall.item.source), extraTerms: wall.terms),
-      ],
-      profile: TasteProfile.build(
-        interests: _interests,
-        following: const <String>[],
-        signals: _tasteSignals.read(),
-        now: now,
-      ),
-      recentShows: const <String, int>{},
-      excludedKeys: const <String>{},
-      mix: FeedMix.balanced,
-      random: _random,
-      now: now,
-      limit: tuningMax,
-    );
-    if (ranking.items.length >= tuningMin) return ranking.items;
-    return <FeedItemEntity>[
-      ...ranking.items,
-      ...picks.map((pick) => pick.picked.item),
-    ].take(tuningMax).toList(growable: false);
-  }
-
-  static CandidatePool _poolOf(WallpaperSource source) => switch (source) {
-    WallpaperSource.wallhaven => CandidatePool.wallhaven,
-    WallpaperSource.pexels => CandidatePool.pexels,
-    _ => CandidatePool.taste,
-  };
 }

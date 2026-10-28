@@ -1,13 +1,16 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
@@ -61,12 +64,11 @@ void main() {
     AnalyticsRuntime.reset();
   });
 
-  TasteQuizBloc buildBloc({TasteQuizPlan? plan}) => TasteQuizBloc(
+  TasteQuizBloc buildBloc({TasteQuizPlan? plan, PersonalizedFeedRepository? feed}) => TasteQuizBloc(
     plan: plan ?? quizPlan(),
     source: TasteQuizSource.onboarding,
-    interests: const <String>['Nature'],
     tasteSignals: store,
-    random: Random(1),
+    feed: feed ?? quizFeed(),
     clock: () => DateTime.utc(2026, 10, 28),
   );
 
@@ -177,9 +179,8 @@ void main() {
     final bloc = TasteQuizBloc(
       plan: quizPlan(),
       source: TasteQuizSource.onboarding,
-      interests: const <String>['Nature'],
       tasteSignals: delayedStore,
-      random: Random(1),
+      feed: quizFeed(),
       clock: () => DateTime.utc(2026, 10, 28),
     );
     addTearDown(() async {
@@ -207,9 +208,8 @@ void main() {
     final bloc = TasteQuizBloc(
       plan: quizPlan(),
       source: TasteQuizSource.onboarding,
-      interests: const <String>['Nature'],
       tasteSignals: delayedStore,
-      random: Random(1),
+      feed: quizFeed(),
       clock: () => DateTime.utc(2026, 10, 28),
     );
     addTearDown(() async {
@@ -255,33 +255,66 @@ void main() {
     expect(store.isSeeded, isFalse);
   });
 
-  test('tuning walls are picked from the leftover pool, not from the quiz walls', () async {
-    final bloc = buildBloc(
-      plan: quizPlan(
-        pool: <QuizWall>[
-          for (int i = 0; i < 8; i++)
-            quizWall('p$i', tags: i.isEven ? <String>['dark', 'minimal'] : <String>['bright', 'city']),
-        ],
-      ),
-    );
+  test('tuning shows no walls while the feed loads, then the first six of the real page in order', () async {
+    final Completer<PersonalizedFeedPage?> page = Completer<PersonalizedFeedPage?>();
+    final QuizFeedMock feed = QuizFeedMock();
+    when(feed.primeFirstPage).thenAnswer((_) => page.future);
+    final bloc = buildBloc(feed: feed);
     addTearDown(bloc.close);
 
     await _pickLeft(bloc, 6);
+    expect((bloc.state as TasteQuizTuning).walls, isNull);
 
-    final TasteQuizTuning tuning = bloc.state as TasteQuizTuning;
-    expect(tuning.walls.length, inInclusiveRange(4, 6));
-    for (final wall in tuning.walls) {
-      expect(wall.id.startsWith('l') || wall.id.startsWith('r'), isFalse);
-    }
+    page.complete(
+      PersonalizedFeedPage(
+        items: <FeedItemEntity>[for (int i = 0; i < 9; i++) quizItem('f$i')],
+        hasMore: true,
+        usedKeys: const <String>[],
+      ),
+    );
+    await _settle();
+
+    expect((bloc.state as TasteQuizTuning).walls!.map((wall) => wall.id), <String>['f0', 'f1', 'f2', 'f3', 'f4', 'f5']);
+    verify(feed.primeFirstPage).called(1);
   });
 
-  test('tuning walls fall back to the picked walls when the pool is empty', () async {
+  test('tuning shows no walls when the feed has none', () async {
     final bloc = buildBloc();
     addTearDown(bloc.close);
 
     await _pickLeft(bloc, 6);
 
-    final TasteQuizTuning tuning = bloc.state as TasteQuizTuning;
-    expect(tuning.walls.map((wall) => wall.id).toList(), <String>['l0', 'l1', 'l2', 'l3', 'l4', 'l5']);
+    expect((bloc.state as TasteQuizTuning).walls, isEmpty);
+  });
+
+  testWidgets('tuning gives up on a prime that never finishes after 2.5 s', (tester) async {
+    final QuizFeedMock feed = QuizFeedMock();
+    when(feed.primeFirstPage).thenAnswer((_) => Completer<PersonalizedFeedPage?>().future);
+    final bloc = buildBloc(feed: feed);
+    addTearDown(bloc.close);
+    for (int round = 0; round < 6; round++) {
+      _pick(bloc, round, QuizSide.left);
+    }
+    await tester.pump(const Duration(milliseconds: 2400));
+    expect((bloc.state as TasteQuizTuning).walls, isNull);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    expect((bloc.state as TasteQuizTuning).walls, isEmpty);
+  });
+
+  test('a prime that finishes after the user left tuning changes nothing', () async {
+    final Completer<PersonalizedFeedPage?> page = Completer<PersonalizedFeedPage?>();
+    final QuizFeedMock feed = QuizFeedMock();
+    when(feed.primeFirstPage).thenAnswer((_) => page.future);
+    final bloc = buildBloc(feed: feed);
+    addTearDown(bloc.close);
+
+    await _pickLeft(bloc, 6);
+    bloc.add(const TasteQuizEvent.tuningShown());
+    await _settle();
+    page.complete(null);
+    await _settle();
+
+    expect(bloc.state, isA<TasteQuizFinished>());
   });
 }

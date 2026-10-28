@@ -186,8 +186,8 @@ void main() {
         final TasteQuizBloc bloc = TasteQuizBloc(
           plan: plan,
           source: TasteQuizSource.retake,
-          interests: interests,
           tasteSignals: store,
+          feed: quizFeed(),
         );
         try {
           for (int round = 0; round < plan.rounds.length; round++) {

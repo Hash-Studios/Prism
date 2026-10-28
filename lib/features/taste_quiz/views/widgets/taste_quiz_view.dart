@@ -12,6 +12,7 @@ import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/views/widgets/tuning_feed_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -25,6 +26,7 @@ class TasteQuizView extends StatefulWidget {
     required this.interests,
     required this.onFinished,
     this.tasteSignals,
+    this.feed,
   });
 
   final TasteQuizPlan plan;
@@ -35,6 +37,9 @@ class TasteQuizView extends StatefulWidget {
   /// Defaults to the app-wide store.
   final TasteSignalStore? tasteSignals;
 
+  /// Defaults to the app-wide repository.
+  final PersonalizedFeedRepository? feed;
+
   @override
   State<TasteQuizView> createState() => _TasteQuizViewState();
 }
@@ -43,8 +48,8 @@ class _TasteQuizViewState extends State<TasteQuizView> {
   late final TasteQuizBloc _bloc = TasteQuizBloc(
     plan: widget.plan,
     source: widget.source,
-    interests: widget.interests,
     tasteSignals: widget.tasteSignals ?? getIt<TasteSignalStore>(),
+    feed: widget.feed ?? getIt<PersonalizedFeedRepository>(),
   );
 
   @override

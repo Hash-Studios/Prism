@@ -62,6 +62,7 @@ void main() {
             source: TasteQuizSource.onboarding,
             interests: const <String>['Nature'],
             tasteSignals: TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())),
+            feed: quizFeed(),
             onFinished: (_) {},
           ),
         );

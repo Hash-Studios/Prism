@@ -200,8 +200,51 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     );
   }
 
+  /// How long a [primeFirstPage] result stays usable.
+  static const Duration _primedTtl = Duration(minutes: 15);
+
+  ({String key, DateTime at, Future<Result<PersonalizedFeedPage>> page})? _primed;
+
+  String _primeKey() =>
+      '$_cacheScope|${_tasteSignals.revision}|${_impressions.revision}|${_contentFilters()}|'
+      '${_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: '')}|'
+      '${AnimeContentFilter.showsAnime(_settingsLocal)}';
+
+  @override
+  Future<PersonalizedFeedPage?> primeFirstPage() async {
+    const FetchPersonalizedFeedRequest request = FetchPersonalizedFeedRequest(
+      page: 1,
+      refresh: true,
+      seenKeys: <String>[],
+      existingItems: <FeedItemEntity>[],
+    );
+    final Future<Result<PersonalizedFeedPage>> page = _fetchFresh(request);
+    _primed = (key: _primeKey(), at: DateTime.now(), page: page);
+    try {
+      return (await page).data;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
+    if (request.page == 1 && request.refresh) {
+      final primed = _primed;
+      _primed = null;
+      if (primed != null && primed.key == _primeKey() && DateTime.now().difference(primed.at) < _primedTtl) {
+        final Result<PersonalizedFeedPage> result = await primed.page;
+        if (result.isSuccess) {
+          // Page 2 reloads the follows and interests, which the starter pack changes after the quiz.
+          _bootstrapScope = null;
+          return result;
+        }
+      }
+    }
+    return _fetchFresh(request);
+  }
+
+  Future<Result<PersonalizedFeedPage>> _fetchFresh(FetchPersonalizedFeedRequest request) async {
     final String userId = app_state.prismUser.id.trim();
     final int tasteRevision = _tasteSignals.revision;
     final int impressionRevision = _impressions.revision;

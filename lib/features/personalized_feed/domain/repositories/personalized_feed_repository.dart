@@ -25,6 +25,10 @@ List<String> trimSeenKeys(List<String> seen) =>
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 
+  /// Loads page one now and keeps it. The next page-one refresh [fetch] with the same user, taste, filters and mix
+  /// takes it, or joins it while it loads. Null when the load fails; it never throws.
+  Future<PersonalizedFeedPage?> primeFirstPage();
+
   /// The first page from the disk cache, or null when there is none. It waits for the initial blocked-creator list,
   /// so blocked creators never show, but it makes no network call for the feed.
   Future<PersonalizedFeedPage?> readCached();

@@ -20,6 +20,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -43,6 +44,7 @@ void main() {
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     getIt.registerFactory<OnboardingV2Bloc>(() => bloc);
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+    getIt.registerSingleton<PersonalizedFeedRepository>(quizFeed());
     toasts.overlayResolver = () => navigator.currentState?.overlay;
   });
 

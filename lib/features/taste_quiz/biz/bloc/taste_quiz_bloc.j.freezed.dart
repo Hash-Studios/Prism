@@ -426,11 +426,11 @@ return finished(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( TasteQuizPlan plan,  List<QuizPick> picks)?  playing,TResult Function( List<FeedItemEntity> walls,  TasteSummary summary)?  tuning,TResult Function( bool completed)?  finished,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( TasteQuizPlan plan,  List<QuizPick> picks)?  playing,TResult Function( TasteSummary summary,  List<FeedItemEntity>? walls)?  tuning,TResult Function( bool completed)?  finished,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case TasteQuizPlaying() when playing != null:
 return playing(_that.plan,_that.picks);case TasteQuizTuning() when tuning != null:
-return tuning(_that.walls,_that.summary);case TasteQuizFinished() when finished != null:
+return tuning(_that.summary,_that.walls);case TasteQuizFinished() when finished != null:
 return finished(_that.completed);case _:
   return orElse();
 
@@ -449,11 +449,11 @@ return finished(_that.completed);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( TasteQuizPlan plan,  List<QuizPick> picks)  playing,required TResult Function( List<FeedItemEntity> walls,  TasteSummary summary)  tuning,required TResult Function( bool completed)  finished,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( TasteQuizPlan plan,  List<QuizPick> picks)  playing,required TResult Function( TasteSummary summary,  List<FeedItemEntity>? walls)  tuning,required TResult Function( bool completed)  finished,}) {final _that = this;
 switch (_that) {
 case TasteQuizPlaying():
 return playing(_that.plan,_that.picks);case TasteQuizTuning():
-return tuning(_that.walls,_that.summary);case TasteQuizFinished():
+return tuning(_that.summary,_that.walls);case TasteQuizFinished():
 return finished(_that.completed);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -468,11 +468,11 @@ return finished(_that.completed);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( TasteQuizPlan plan,  List<QuizPick> picks)?  playing,TResult? Function( List<FeedItemEntity> walls,  TasteSummary summary)?  tuning,TResult? Function( bool completed)?  finished,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( TasteQuizPlan plan,  List<QuizPick> picks)?  playing,TResult? Function( TasteSummary summary,  List<FeedItemEntity>? walls)?  tuning,TResult? Function( bool completed)?  finished,}) {final _that = this;
 switch (_that) {
 case TasteQuizPlaying() when playing != null:
 return playing(_that.plan,_that.picks);case TasteQuizTuning() when tuning != null:
-return tuning(_that.walls,_that.summary);case TasteQuizFinished() when finished != null:
+return tuning(_that.summary,_that.walls);case TasteQuizFinished() when finished != null:
 return finished(_that.completed);case _:
   return null;
 
@@ -559,17 +559,19 @@ as List<QuizPick>,
 
 
 class TasteQuizTuning implements TasteQuizState {
-  const TasteQuizTuning({required final  List<FeedItemEntity> walls, required this.summary}): _walls = walls;
+  const TasteQuizTuning({required this.summary, final  List<FeedItemEntity>? walls}): _walls = walls;
   
 
- final  List<FeedItemEntity> _walls;
- List<FeedItemEntity> get walls {
+ final  TasteSummary summary;
+ final  List<FeedItemEntity>? _walls;
+ List<FeedItemEntity>? get walls {
+  final value = _walls;
+  if (value == null) return null;
   if (_walls is EqualUnmodifiableListView) return _walls;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_walls);
+  return EqualUnmodifiableListView(value);
 }
 
- final  TasteSummary summary;
 
 /// Create a copy of TasteQuizState
 /// with the given fields replaced by the non-null parameter values.
@@ -581,16 +583,16 @@ $TasteQuizTuningCopyWith<TasteQuizTuning> get copyWith => _$TasteQuizTuningCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TasteQuizTuning&&const DeepCollectionEquality().equals(other._walls, _walls)&&(identical(other.summary, summary) || other.summary == summary));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TasteQuizTuning&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._walls, _walls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_walls),summary);
+int get hashCode => Object.hash(runtimeType,summary,const DeepCollectionEquality().hash(_walls));
 
 @override
 String toString() {
-  return 'TasteQuizState.tuning(walls: $walls, summary: $summary)';
+  return 'TasteQuizState.tuning(summary: $summary, walls: $walls)';
 }
 
 
@@ -601,7 +603,7 @@ abstract mixin class $TasteQuizTuningCopyWith<$Res> implements $TasteQuizStateCo
   factory $TasteQuizTuningCopyWith(TasteQuizTuning value, $Res Function(TasteQuizTuning) _then) = _$TasteQuizTuningCopyWithImpl;
 @useResult
 $Res call({
- List<FeedItemEntity> walls, TasteSummary summary
+ TasteSummary summary, List<FeedItemEntity>? walls
 });
 
 
@@ -618,11 +620,11 @@ class _$TasteQuizTuningCopyWithImpl<$Res>
 
 /// Create a copy of TasteQuizState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? walls = null,Object? summary = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? summary = null,Object? walls = freezed,}) {
   return _then(TasteQuizTuning(
-walls: null == walls ? _self._walls : walls // ignore: cast_nullable_to_non_nullable
-as List<FeedItemEntity>,summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
-as TasteSummary,
+summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
+as TasteSummary,walls: freezed == walls ? _self._walls : walls // ignore: cast_nullable_to_non_nullable
+as List<FeedItemEntity>?,
   ));
 }
 

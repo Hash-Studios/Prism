@@ -128,6 +128,16 @@ class _AnimeWallFirestore extends _OneWallFirestore {
       ];
 }
 
+class _GatedWallsFirestore extends _CountingWallsFirestore {
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    await gate.future;
+    return super.query(spec, map);
+  }
+}
+
 class _CountingWallsFirestore extends _OneWallFirestore {
   final List<String> sourceTags = <String>[];
 
@@ -1389,6 +1399,88 @@ void main() {
 
     await repository.recordShown(<String>['https://example.com/wall.jpg']);
     expect(impressions.recentShows(DateTime.now().toUtc()), <String, int>{'https://example.com/wall.jpg': 1});
+  });
+
+  group('primeFirstPage', () {
+    Future<({PersonalizedFeedRepository repository, _GatedWallsFirestore firestore, SettingsLocalDataSource settings})>
+    build() async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        cache: _MemoryFeedCache(),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      return (repository: repository, firestore: firestore, settings: settings);
+    }
+
+    List<String> keys(PersonalizedFeedPage? page) => page!.items.map(PersonalizedRankingService.canonicalKey).toList();
+
+    int gems(_GatedWallsFirestore f) => f.sourceTags.where((tag) => tag == 'personalized.gems').length;
+
+    test('the next page-one refresh takes the primed page and hits the sources once', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      final PersonalizedFeedPage? primed = await env.repository.primeFirstPage();
+      final result = await env.repository.fetch(_firstPage);
+
+      expect(primed, isNotNull);
+      expect(keys(result.data), keys(primed));
+      expect(gems(env.firestore), 1);
+    });
+
+    test('a primed page is used once. The second fetch hits the sources again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      await env.repository.fetch(_firstPage);
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    test('a mix change after the prime fetches again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      await env.settings.set(app_constants.personalizedFeedMixLocalKey, 'adventurous');
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    test('a fetch that starts while the prime loads joins it', () async {
+      final env = await build();
+
+      final Future<PersonalizedFeedPage?> prime = env.repository.primeFirstPage();
+      final Future<Result<PersonalizedFeedPage>> fetch = env.repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final PersonalizedFeedPage? primed = await prime;
+      final Result<PersonalizedFeedPage> result = await fetch;
+
+      expect(keys(result.data), keys(primed));
+      expect(gems(env.firestore), 1);
+    });
+
+    test('a failed prime returns null and the fetch loads fresh', () async {
+      final env = await build();
+      env.firestore
+        ..fail = true
+        ..gate.complete();
+
+      expect(await env.repository.primeFirstPage(), anyOf(isNull, isA<PersonalizedFeedPage>()));
+      env.firestore.fail = false;
+      final result = await env.repository.fetch(_firstPage);
+
+      expect(result.isSuccess, isTrue);
+    });
   });
 
   test('the cached list is capped at 48 items', () async {
