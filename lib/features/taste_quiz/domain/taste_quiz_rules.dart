@@ -203,11 +203,13 @@ WallLook wallLookOf(Uint8List rgba, int width, int height) {
   return WallLook(luma: count == 0 ? 0.5 : sum / count, edges: edgeCount == 0 ? 0 : edgeSum / edgeCount);
 }
 
-// ponytail: these cut-offs are not calibrated on real walls; tune them with ~20 labelled walls.
+// Set from 120 real cached quiz thumbnails at 48 px (2026-10-28): luma median 0.34, edges median 0.032.
+// Zebra, kaleidoscope and flower photos sit at 0.06 to 0.08, so busy starts at 0.06.
+// ponytail: one device's cache; re-check the cut-offs if the line rarely names a tone or density.
 const double _darkBelow = 0.30;
 const double _lightAbove = 0.62;
 const double _minimalBelow = 0.035;
-const double _busyAbove = 0.09;
+const double _busyAbove = 0.06;
 
 QuizTone? toneOfLook(WallLook? look) {
   if (look == null) return null;

@@ -271,4 +271,8 @@ void main() {
       expect(summarizeTaste(p, looks: looks).density, QuizDensity.minimal);
     });
   });
+
+  test('a detailed photo at 0.07 edge contrast reads busy', () {
+    expect(densityOfLook(const WallLook(luma: 0.4, edges: 0.07)), QuizDensity.busy);
+  });
 }
