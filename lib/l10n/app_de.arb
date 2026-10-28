@@ -2978,6 +2978,9 @@
   "debugClearLogsTitle": "Logs leeren?",
   "debugClearSearch": "Suche leeren",
   "debugCodePush": "Code-Push",
+  "@debugCodePush": {
+    "description": "Admin debug panel section title for Shorebird over-the-air patches."
+  },
   "debugCoins": "Coins",
   "debugCopied": "Kopiert",
   "debugCopiedToClipboard": "In die Zwischenablage kopiert",
@@ -3134,6 +3137,9 @@
   "debugSentryEnv": "Sentry-Umgebung",
   "debugSequence": "Abfolge",
   "debugShorebirdPatch": "Shorebird-Patch",
+  "@debugShorebirdPatch": {
+    "description": "Admin debug panel row label: the Shorebird patch number the app runs."
+  },
   "debugShowLogToasts": "Log-Toasts anzeigen",
   "debugShowLogToastsDescription": "Log-Einträge kurz als Overlays einblenden",
   "debugSimulateNoInternet": "Keine Internetverbindung simulieren",
@@ -3142,7 +3148,13 @@
   "debugStackTrace": "Stacktrace",
   "debugStackTraceCopied": "Stacktrace kopiert",
   "debugStagingPatches": "Staging-Patches abrufen",
+  "@debugStagingPatches": {
+    "description": "Admin debug panel switch: check the Shorebird staging track."
+  },
   "debugStagingPatchesDescription": "Den Shorebird-Staging-Kanal statt des stabilen Kanals prüfen. Zum Anwenden eines Patches neu starten.",
+  "@debugStagingPatchesDescription": {
+    "description": "Subtitle for the staging patches switch."
+  },
   "debugStillPoses": "Statische Posen",
   "debugStorage": "Speicher",
   "debugStorageCleared": "Gesamter Speicher geleert",
@@ -6310,7 +6322,13 @@
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
   "updatesRestartToFinish": "Schließe Prism und öffne es erneut, um das Update abzuschließen.",
+  "@updatesRestartToFinish": {
+    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
+  },
   "updatesStoreUpdateAvailable": "Eine neue Version von Prism ist verfügbar.",
+  "@updatesStoreUpdateAvailable": {
+    "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."
+  },
   "wallpaperAccentColor": "Akzentfarbe",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."

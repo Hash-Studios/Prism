@@ -1,4 +1,6 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -55,7 +57,10 @@ void main() {
     });
   });
 
+  setUp(() => getIt.registerSingleton<CodePushUpdater>(ShorebirdCodePushUpdater(track: () => 'stable')));
+
   tearDown(() {
+    getIt.unregister<CodePushUpdater>();
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     messenger.setMockMethodCallHandler(androidChannel, null);
     PrismHaptics.enabled = true;

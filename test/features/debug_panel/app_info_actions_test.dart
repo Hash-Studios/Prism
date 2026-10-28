@@ -1,6 +1,7 @@
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -28,6 +29,7 @@ void main() {
     when(config.getAll).thenReturn({'safe_flag': RemoteConfigValue('enabled'.codeUnits, ValueSource.valueRemote)});
     when(() => config.getString('safe_flag')).thenReturn('enabled');
     getIt.registerSingleton<FirebaseRemoteConfig>(config);
+    getIt.registerSingleton<CodePushUpdater>(ShorebirdCodePushUpdater(track: () => 'stable'));
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
       (call) async {

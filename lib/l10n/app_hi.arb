@@ -3000,6 +3000,9 @@
   "debugClearLogsTitle": "लॉग साफ़ करें?",
   "debugClearSearch": "खोज साफ़ करें",
   "debugCodePush": "कोड पुश",
+  "@debugCodePush": {
+    "description": "Admin debug panel section title for Shorebird over-the-air patches."
+  },
   "debugCoins": "कॉइन्स",
   "debugCopied": "कॉपी किया गया",
   "debugCopiedToClipboard": "क्लिपबोर्ड पर कॉपी किया गया",
@@ -3156,6 +3159,9 @@
   "debugSentryEnv": "Sentry परिवेश",
   "debugSequence": "क्रम",
   "debugShorebirdPatch": "Shorebird पैच",
+  "@debugShorebirdPatch": {
+    "description": "Admin debug panel row label: the Shorebird patch number the app runs."
+  },
   "debugShowLogToasts": "लॉग टोस्ट दिखाएँ",
   "debugShowLogToastsDescription": "लॉग एंट्रियाँ कुछ पल के लिए ओवरले टोस्ट के रूप में दिखाएँ",
   "debugSimulateNoInternet": "इंटरनेट न होने का सिमुलेशन करें",
@@ -3164,7 +3170,13 @@
   "debugStackTrace": "स्टैक ट्रेस",
   "debugStackTraceCopied": "स्टैक ट्रेस कॉपी किया गया",
   "debugStagingPatches": "स्टेजिंग पैच प्राप्त करें",
+  "@debugStagingPatches": {
+    "description": "Admin debug panel switch: check the Shorebird staging track."
+  },
   "debugStagingPatchesDescription": "स्थिर चैनल की जगह Shorebird स्टेजिंग चैनल जाँचें। पैच लागू करने के लिए रीस्टार्ट करें।",
+  "@debugStagingPatchesDescription": {
+    "description": "Subtitle for the staging patches switch."
+  },
   "debugStillPoses": "स्थिर मुद्राएँ",
   "debugStorage": "स्टोरेज",
   "debugStorageCleared": "सारा स्टोरेज साफ़ कर दिया गया",
@@ -6306,7 +6318,13 @@
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
   "updatesRestartToFinish": "अपडेट पूरा करने के लिए Prism बंद करके फिर से खोलें।",
+  "@updatesRestartToFinish": {
+    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
+  },
   "updatesStoreUpdateAvailable": "Prism का नया संस्करण उपलब्ध है।",
+  "@updatesStoreUpdateAvailable": {
+    "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."
+  },
   "wallpaperAccentColor": "ऐक्सेंट रंग",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."
