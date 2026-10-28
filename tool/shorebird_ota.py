@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -34,58 +35,9 @@ NATIVE_PATHS = (
 # Data that patched code writes must stay readable by the release code after a rollback.
 STORAGE_PATHS = ('lib/core/persistence/', 'lib/core/offline/')
 STORAGE_SUFFIXES = ('_local_data_source.dart', '_store.dart')
-# SettingsLocalDataSource and SharedPreferences writers live outside the canonical persistence folders.
-STORAGE_FILES = (
-    'lib/core/account/local_account_data_cleaner.dart',
-    'lib/core/account/delete_account_service.dart',
-    'lib/core/coins/coins_service.dart',
-    'lib/core/coins/pending_download.dart',
-    'lib/core/debug/perf_autodrive.dart',
-    'lib/core/personalization/taste_signals.dart',
-    'lib/core/platform/quick_tile_config_service.dart',
-    'lib/core/platform/wallpaper_set_feedback.dart',
-    'lib/core/purchases/paywall_orchestrator.dart',
-    'lib/core/purchases/upload_quota.dart',
-    'lib/core/purchases/purchases_service.dart',
-    'lib/core/rating/rate_prompt_service.dart',
-    'lib/core/updates/ota_update_controller.dart',
-    'lib/core/wallpaper/original_access_service.dart',
-    'lib/core/wallpaper/anime_content_filter.dart',
-    'lib/core/widgets/popup/changelog_pop_up.dart',
-    'lib/core/widgets/menu_button/set_wallpaper_button.dart',
-    'lib/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart',
-    'lib/features/debug_panel/views/pages/debug_tools_page.dart',
-    'lib/features/in_app_notifications/views/widgets/notification_settings_sheet.dart',
-    'lib/features/onboarding_v2/src/common/onboarding_v2_keys.dart',
-    'lib/features/onboarding_v2/src/data/repo/onboarding_v2_repo_impl.dart',
-    'lib/features/onboarding_v2/src/views/onboarding_v2_shell.dart',
-    'lib/features/theme_mode/data/legacy_themes.dart',
-    'lib/features/theme_mode/views/pages/theme_view_page.dart',
-    'lib/features/startup/services/notification_permission_prompt_service.dart',
-    'lib/features/startup/data/repositories/startup_repository_impl.dart',
-    'lib/features/startup/views/pages/splash_widget.dart',
-    'lib/features/quick_tiles/',
-    'lib/features/session/views/pages/settings_screen.dart',
-    'lib/features/session/data/low_data_mode.dart',
-    'lib/features/session/data/app_session_tracker.dart',
-    'lib/features/session/data/report_problem_service.dart',
-    'lib/features/theme_mode/data/seasonal_announcement.dart',
-    'lib/features/theme_mode/data/repositories/theme_repository_impl.dart',
-    'lib/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart',
-    'lib/features/personalized_feed/data/personalized_feed_repository_impl.dart',
-    'lib/features/personalized_feed/data/feed_impression_store.dart',
-    'lib/features/profile_completeness/services/profile_completeness_nudge_service.dart',
-    'lib/features/wallpaper_detail/data/downloaded_wall_index.dart',
-    'lib/features/wallpaper_detail/views/widgets/clock_overlay.dart',
-    'lib/features/user_search/data/wallpaper_search_service.dart',
-    'lib/notifications/fcm_token_service.dart',
-    'lib/notifications/topic_subscription.dart',
-    'lib/notifications/notification_signals.dart',
-    'lib/main.dart',
-)
-IOS_MANUAL_SIGNING_PATH = 'ios/Runner.xcodeproj/project.pbxproj'
-IOS_MANUAL_SIGNING_KEYS = ('CODE_SIGN_STYLE', 'DEVELOPMENT_TEAM', 'CODE_SIGN_IDENTITY',
-                           'CODE_SIGN_IDENTITY[sdk=iphoneos*]', 'PROVISIONING_PROFILE_SPECIFIER')
+# Code outside the storage folders that reads or writes local data. Matched on changed lines only.
+STORAGE_API = re.compile(r'\b(SettingsLocalDataSource|SharedPreferences|PersistenceKeys|DurableJsonStore|LocalStore)\b'
+                         r'|\b_?settings\.(get|set|delete)\b')
 
 
 def validate_version(version):
@@ -210,10 +162,29 @@ def changed_paths(commit):
 
 def unsafe_paths(paths):
     native = [p for p in paths if any(p == n or (n.endswith('/') and p.startswith(n)) for n in NATIVE_PATHS)]
-    storage = [p for p in paths if p.startswith(STORAGE_PATHS) or p in STORAGE_FILES
-               or any(item.endswith('/') and p.startswith(item) for item in STORAGE_FILES)
+    storage = [p for p in paths if p.startswith(STORAGE_PATHS)
                or (p.startswith('lib/') and p.endswith(STORAGE_SUFFIXES))]
     return native, storage
+
+
+def storage_writers(commit, paths):
+    """Changed lib/ Dart files whose added or removed lines use a local storage API."""
+    native, storage = unsafe_paths(paths)
+    flagged = set(native) | set(storage)
+    tracked = set(git('ls-files', '-z').stdout.split('\0'))
+    writers = []
+    for path in paths:
+        if not (path.startswith('lib/') and path.endswith('.dart')) or path in flagged:
+            continue
+        if path in tracked:
+            diff = git('diff', '--no-renames', '--unified=0', commit, '--', path).stdout
+            lines = [line[1:] for line in diff.splitlines()
+                     if line[:1] in ('+', '-') and not line.startswith(('+++', '---'))]
+        else:
+            lines = Path(path).read_text().splitlines()
+        if any(STORAGE_API.search(line) for line in lines):
+            writers.append(path)
+    return sorted(writers)
 
 
 def firebase_options_fingerprint(platform):
@@ -228,37 +199,8 @@ def firebase_options_fingerprint(platform):
 
 
 def release_worktree_changes():
-    paths = changed_paths('HEAD')
-    if not paths:
-        return []
-    # TestFlight changes only signing settings; xcodeproj also reorders its unchanged object records on save.
-    if paths == [IOS_MANUAL_SIGNING_PATH] and ios_manual_signing_only():
-        return []
-    return paths
-
-
-def ios_manual_signing_only():
-    result = git('diff', 'HEAD', '--no-ext-diff', '--unified=0', '--', IOS_MANUAL_SIGNING_PATH)
-    if result.returncode:
-        return False
-    additions = []
-    removals = []
-    signing_changes = []
-    for line in result.stdout.splitlines():
-        if line[:1] not in ('+', '-') or line.startswith(('+++', '---')):
-            continue
-        content = line[1:].strip()
-        if any(content.startswith(prefix + key + prefix + ' =')
-               for key in IOS_MANUAL_SIGNING_KEYS for prefix in ('', '"')):
-            signing_changes.append(content)
-        elif line.startswith('+'):
-            additions.append(content)
-        else:
-            removals.append(content)
-    is_xcodeproj_reorder = all(
-        re.match(r'^[0-9A-F]{24} /\* [^*]+ \*/ = \{isa = PBX(?:BuildFile|FileReference);', line)
-        for line in additions + removals)
-    return bool(signing_changes) and sorted(additions) == sorted(removals) and is_xcodeproj_reorder
+    # CI signing and pod install rewrite native files. Shorebird's native-diff check covers them at patch time.
+    return [p for p in changed_paths('HEAD') if not p.startswith(('android/', 'ios/'))]
 
 
 def effective_sentry(define_args):
@@ -440,7 +382,9 @@ def patch(command, platform, payload, defines, keys, allow_storage):
         if expected[1] != actual[1]:
             changed.append('dart-define names or values')
         raise ValueError(f"Shorebird: build config differs from release {version}: {', '.join(changed)}.")
-    native, storage = unsafe_paths(changed_paths(record['commit']))
+    paths = changed_paths(record['commit'])
+    native, path_storage = unsafe_paths(paths)
+    storage = path_storage + storage_writers(record['commit'], paths)
     if native:
         raise ValueError('Shorebird: these changes since the release need a store build:\n  ' + '\n  '.join(native))
     if storage and not allow_storage:
@@ -483,17 +427,51 @@ def run(command, release_platform, payload, defines, allow_storage=False):
         signal.signal(signal.SIGTERM, old_sigterm_handler)
 
 
+def make_patch(platform, version, track, shorebird, runner, allow_storage, extra, sentry_upload, sentry_config,
+               dart_cmd):
+    """make patch: replays the release build config, runs the patch, then uploads Sentry symbols if asked."""
+    record = read_record(platform, version)
+    config = record['config']
+    symbols = 'build/ios/outputs/symbols' if platform == 'ios' else 'build/app/outputs/symbols'
+    args = ['patch', platform, '--release-version=' + version, '--track=' + track]
+    args += ['--split-debug-info=' + symbols] if config['split_debug_info'] else []
+    args += ['--target=' + config['target']] if config['target'] != 'lib/main.dart' else []
+    args += ['--flavor=' + config['flavor']] if config['flavor'] else []
+    args += shlex.split(extra)
+    command = (shlex.split(runner) + ['--release-platform', platform]
+               + (['--allow-storage-changes'] if allow_storage == '1' else []) + ['--'] + shlex.split(shorebird) + args)
+    result = subprocess.run(command)
+    dry_run = any(arg in ('--dry-run', '-n') for arg in args)
+    if result.returncode or sentry_upload != 'true' or dry_run:
+        return result.returncode
+    env = os.environ.copy()
+    env.update({key: '' for key in SENTRY_RECORDED})
+    env.update(record['sentry'])
+    env['SENTRY_DOPPLER_CONFIG'] = sentry_config
+    env['DART_CMD'] = dart_cmd
+    return subprocess.run(['./tool/sentry_upload.sh'], env=env).returncode
+
+
 def main():
     parser = argparse.ArgumentParser(description='Shorebird helpers for the Makefile and CI.')
     sub = parser.add_subparsers(dest='action', required=True)
     sub.add_parser('cli-version')
     check = sub.add_parser('check-paths', help='List changes since a release commit that a patch cannot ship.')
     check.add_argument('commit')
+    make = sub.add_parser('make-patch', help='Run make patch: replay the release config, patch, upload Sentry.')
+    # REMAINDER keeps PATCH_ARGS values such as --dry-run from being read as options.
+    make.add_argument('values', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.action == 'cli-version':
         print(CLI_VERSION)
         return 0
-    native, storage = unsafe_paths(changed_paths(args.commit))
+    if args.action == 'make-patch':
+        if len(args.values) != 10:
+            raise ValueError('Shorebird: make-patch takes 10 values from the make patch recipe.')
+        return make_patch(*args.values)
+    paths = changed_paths(args.commit)
+    native, path_storage = unsafe_paths(paths)
+    storage = path_storage + storage_writers(args.commit, paths)
     for path in native:
         print(f'store build: {path}')
     for path in storage:

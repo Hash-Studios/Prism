@@ -5,6 +5,7 @@ Uses Ruby's standard-library YAML parser, available on the hosted runners.
 
 import base64
 import fnmatch
+import inspect
 import json
 from pathlib import Path
 import re
@@ -15,6 +16,7 @@ import unittest
 
 from tool import release_tools_test as fixture
 from tool import shorebird_ota_test as shorebird
+import tool.shorebird_ota as ota
 
 
 def yaml_data(text):
@@ -299,12 +301,18 @@ pathlib.Path(os.environ['CAPTURE_SENTRY']).write_text(json.dumps({key: os.enviro
         makefile = (fixture.ROOT / 'Makefile').read_text()
         patch_recipe = makefile.split('\npatch: ensure-fvm ensure-shorebird doppler-check\n', 1)[1].split(
             '\npatch-list:', 1)[0]
-        self.assertIn('from tool.shorebird_ota import read_record', patch_recipe)
-        self.assertIn('config["split_debug_info"]', patch_recipe)
-        self.assertIn('config["target"]', patch_recipe)
-        self.assertIn('config["flavor"]', patch_recipe)
-        self.assertIn('env.update({key: "" for key in ("SENTRY_ENV", "SENTRY_RELEASE", "SENTRY_DIST", "SENTRY_ENABLED")})',
-                      patch_recipe)
+        self.assertIn('python3 tool/shorebird_ota.py make-patch "$(PLATFORM)" "$(RELEASE_VERSION)" "$(TRACK)" '
+                      '"$(SHOREBIRD)" "$(DOPPLER_FLUTTER)"', patch_recipe)
+        self.assertIn('"$(if $(filter 1,$(ALLOW_STORAGE_CHANGES)),1,0)" "$(PATCH_ARGS)" "$(SENTRY_UPLOAD)" '
+                      '"$(SENTRY_DOPPLER_CONFIG)" "$(DART)"', patch_recipe)
+        self.assertNotIn('python3 -c', patch_recipe)
+        source = inspect.getsource(ota.make_patch)
+        self.assertIn('read_record(platform, version)', source)
+        self.assertIn("config['split_debug_info']", source)
+        self.assertIn("config['target']", source)
+        self.assertIn("config['flavor']", source)
+        self.assertIn("'--allow-storage-changes'", source)
+        self.assertIn("env.update({key: '' for key in SENTRY_RECORDED})", source)
 
     def test_make_dry_run_skips_tag_push_and_sentry_upload(self):
         self.native('android')

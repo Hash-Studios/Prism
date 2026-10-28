@@ -4,9 +4,8 @@ A fake `shorebird` executable records its argv, token and key files. No network,
 """
 
 import json
+import os
 from pathlib import Path
-import re
-import shutil
 import signal
 import subprocess
 import time
@@ -110,9 +109,9 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
                   'shorebird.yaml', '.fvmrc', 'shaders/a.frag', 'lib/firebase_options.dart']
         storage = ['lib/core/persistence/persistence_keys.dart', 'lib/core/offline/durable_json_store.dart',
                    'lib/features/folders/data/folder_store.dart',
-                   'lib/core/persistence/data_sources/settings_local_data_source.dart', 'lib/main.dart']
+                   'lib/core/persistence/data_sources/settings_local_data_source.dart']
         safe = ['lib/features/home/views/home.dart', 'test/a_test.dart', 'docs/x.md', 'lib/l10n/app_en.arb',
-                'functions/src/a.ts']
+                'functions/src/a.ts', 'lib/main.dart']
         for path in native:
             with self.subTest(native=path):
                 self.assertEqual(ota.unsafe_paths([path]), ([path], []))
@@ -123,34 +122,19 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
             with self.subTest(safe=path):
                 self.assertEqual(ota.unsafe_paths([path]), ([], []))
 
-    def test_unsafe_paths_cover_persistent_writers_and_renames(self):
-        storage = [
-            'lib/core/account/local_account_data_cleaner.dart',
-            'lib/core/coins/coins_service.dart',
-            'lib/core/coins/pending_download.dart',
-            'lib/core/platform/quick_tile_config_service.dart',
-            'lib/core/purchases/paywall_orchestrator.dart',
-            'lib/core/purchases/upload_quota.dart',
-            'lib/core/updates/ota_update_controller.dart',
-            'lib/core/wallpaper/original_access_service.dart',
-            'lib/notifications/fcm_token_service.dart',
-            'lib/notifications/topic_subscription.dart',
-            'lib/notifications/notification_signals.dart',
-            'lib/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart',
-            'lib/features/onboarding_v2/src/common/onboarding_v2_keys.dart',
-            'lib/features/onboarding_v2/src/data/repo/onboarding_v2_repo_impl.dart',
-            'lib/features/theme_mode/data/legacy_themes.dart',
-            'lib/features/theme_mode/data/seasonal_announcement.dart',
-            'lib/features/startup/data/repositories/startup_repository_impl.dart',
-            'lib/features/startup/services/notification_permission_prompt_service.dart',
-            'lib/features/theme_mode/data/repositories/theme_repository_impl.dart',
-            'lib/features/quick_tiles/data/quick_tile_defaults.dart',
-            'lib/features/quick_tiles/views/quick_tile_settings_screen.dart',
-            'lib/features/session/views/pages/settings_screen.dart',
-        ]
-        for path in storage:
-            with self.subTest(storage=path):
-                self.assertEqual(ota.unsafe_paths([path]), ([], [path]))
+    def test_storage_writers_match_changed_storage_calls(self):
+        commit = git(self.work, 'rev-parse', 'HEAD').stdout.strip()
+        self.commit_file('lib/features/x/a.dart', b"Future<void> f() async {\n  await _settings.set('k', 1);\n}\n")
+        self.commit_file('lib/features/x/b.dart', b"void f() {\n  print('hi');\n}\n")
+        (self.work / 'lib/features/x/c.dart').parent.mkdir(parents=True, exist_ok=True)
+        (self.work / 'lib/features/x/c.dart').write_text('void f() => SharedPreferences.getInstance();\n')
+        cwd = Path.cwd()
+        os.chdir(self.work)
+        try:
+            writers = ota.storage_writers(commit, ota.changed_paths(commit))
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(writers, ['lib/features/x/a.dart', 'lib/features/x/c.dart'])
 
     def test_changed_paths_reports_both_sides_of_renames_and_staged_changes(self):
         source = self.work / 'android/native.txt'
@@ -243,47 +227,36 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         self.assertEqual(git(self.work, 'tag', '-l', 'shorebird/android/*').stdout.strip(), '')
         self.assertFalse((self.work / 'build/shorebird/release-tag-android').exists())
 
-    def test_release_refuses_dirty_build_inputs_except_ci_manual_signing_only_diff(self):
+    def test_release_refuses_dirty_dart_inputs_but_allows_native_project_noise(self):
         (self.work / 'lib/main.dart').write_text('void main() { print("dirty"); }\n')
         result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
                                   '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 1)
         self.assertIn('working tree', result.stderr)
+        self.assertIn('lib/main.dart', result.stderr)
         self.assertFalse(Path(self.env['CAPTURE']).exists())
+        git(self.work, 'checkout', '--', 'lib/main.dart')
 
-        (self.work / 'lib/main.dart').write_text('void main() { }\n')
-        git(self.work, 'add', 'lib/main.dart')
-        git(self.work, 'commit', '-q', '-m', 'change base Dart input')
-        probe = subprocess.run(['ruby', '-e', 'require "xcodeproj"'], capture_output=True)
-        if probe.returncode:
-            self.skipTest('Ruby xcodeproj gem is not installed.')
-        project = self.work / 'ios/Runner.xcodeproj'
-        shutil.copytree(fixture.ROOT / 'ios/Runner.xcodeproj', project)
-        pbxproj = project / 'project.pbxproj'
-        bundles = sorted(set(re.findall(r'PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);', pbxproj.read_text())))
-        manifest = self.work / 'profile_manifest.json'
-        manifest.write_text(json.dumps({'profiles': [{'bundle_id': bundle, 'team_id': 'TESTTEAM',
-                                                      'name': 'Fixture Profile'} for bundle in bundles]}))
-        git(self.work, 'add', 'ios/Runner.xcodeproj')
-        git(self.work, 'commit', '-q', '-m', 'add xcode project fixture')
-        signed = subprocess.run(['ruby', str(fixture.ROOT / 'tool/ios_ci_manual_signing.rb'), str(project), str(manifest)],
-                                cwd=self.work, capture_output=True, text=True)
-        manifest.unlink()
-        self.assertEqual(signed.returncode, 0, signed.stderr)
-        self.native('ios')
-        signed_project = pbxproj.read_bytes()
-        pbxproj.write_bytes(signed_project + b'\nPRODUCT_BUNDLE_IDENTIFIER = unrelated.change;\n')
-        result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'ios', '--', 'shorebird',
-                               'release', 'ios', '--flutter-version=3.47.5', '--obfuscate',
-                               '--split-debug-info=build/symbols')
+        (self.work / 'lib/new.dart').write_text('class New {}\n')
+        result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
+                                  '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 1)
-        self.assertIn('working tree', result.stderr)
+        self.assertIn('lib/new.dart', result.stderr)
         self.assertFalse(Path(self.env['CAPTURE']).exists())
-        pbxproj.write_bytes(signed_project)
-        result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'ios', '--', 'shorebird',
-                               'release', 'ios', '--flutter-version=3.47.5', '--obfuscate',
-                               '--split-debug-info=build/symbols')
-        self.assertEqual(result.returncode, 0, result.stderr)
+        (self.work / 'lib/new.dart').unlink()
+
+        for relative, data in (('ios/Podfile.lock', b'PODS:\n'),
+                               ('ios/Runner.xcodeproj/project.pbxproj', b'// signed\n'),
+                               ('android/app/build.gradle', b'// signed\n')):
+            with self.subTest(native=relative):
+                path = self.work / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+                # --dry-run stops before the tag is written, so the same version can be checked again.
+                result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
+                                          '--split-debug-info=build/symbols', '--dry-run')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                path.unlink()
 
     def test_build_number_changes_the_tag(self):
         self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
@@ -664,6 +637,21 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         result = self.run_wrapper(*patch, extra=('--allow-storage-changes',))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('WARNING', result.stderr)
+        self.assertEqual(self.captured()['argv'][:2], ['patch', 'android'])
+
+    def test_patch_settings_writer_in_main_needs_flag(self):
+        self.release()
+        self.commit_file('lib/main.dart', b"void main() { settings.set('k', 1); }\n")
+        patch = ('patch', 'android', '--release-version=3.14.0+353', '--track=staging',
+                 '--split-debug-info=build/symbols')
+        result = self.run_wrapper(*patch)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('storage', result.stderr)
+        self.assertIn('lib/main.dart', result.stderr)
+        self.assertFalse(Path(self.env['CAPTURE']).exists())
+
+        result = self.run_wrapper(*patch, extra=('--allow-storage-changes',))
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.captured()['argv'][:2], ['patch', 'android'])
 
     def test_patch_reuses_release_sentry_values(self):

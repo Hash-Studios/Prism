@@ -35,11 +35,11 @@ The native paths are the `NATIVE_PATHS` list in `tool/shorebird_ota.py`. A chang
 | `shorebird.yaml` | Shorebird app id and update setting. |
 | `.fvmrc` | Pinned Flutter version. |
 
-The storage guard checks `STORAGE_PATHS`, `STORAGE_SUFFIXES`, and the explicit `STORAGE_FILES` list in `tool/shorebird_ota.py`. A patch that changes any of these files is refused unless you pass `ALLOW_STORAGE_CHANGES=1`:
+The storage guard checks `STORAGE_PATHS`, `STORAGE_SUFFIXES`, and `STORAGE_API` in `tool/shorebird_ota.py`. A patch that changes storage code is refused unless you pass `ALLOW_STORAGE_CHANGES=1`. Storage code is:
 
-- `lib/core/persistence/`
-- `lib/core/offline/`
-- Files under `lib/` named `*_local_data_source.dart` or `*_store.dart`
+- Any change under `lib/core/persistence/` or `lib/core/offline/`.
+- Any `lib/` file named `*_local_data_source.dart` or `*_store.dart`.
+- Any changed `lib/` line that uses `SettingsLocalDataSource`, `SharedPreferences`, `PersistenceKeys`, `DurableJsonStore`, `LocalStore` or `settings.get/set/delete`.
 
 ## First release note
 
@@ -244,6 +244,9 @@ If a patch changes a local storage format, a key, a schema version, or a migrati
 - `lib/core/offline/`
 - `*_local_data_source.dart`
 - `*_store.dart`
+- Any changed line that uses `SettingsLocalDataSource`, `SharedPreferences`, `PersistenceKeys`, `DurableJsonStore`, `LocalStore`, or `settings.get`, `settings.set` or `settings.delete`
+
+The patch command finds these changes and refuses them unless you pass `ALLOW_STORAGE_CHANGES=1`.
 
 Ship storage format changes in a store build. Never write a new schema version from a patch.
 

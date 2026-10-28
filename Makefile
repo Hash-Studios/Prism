@@ -282,25 +282,8 @@ patch: ensure-fvm ensure-shorebird doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	python3 -c 'import os, shlex, subprocess, sys; from tool.shorebird_ota import read_record; \
-	platform, version, track, shorebird, flutter_runner, allow_storage, extra, sentry_upload, sentry_config, dart_cmd = sys.argv[1:]; \
-	record = read_record(platform, version); config = record["config"]; \
-	symbols = "build/ios/outputs/symbols" if platform == "ios" else "build/app/outputs/symbols"; \
-	args = ["patch", platform, "--release-version=" + version, "--track=" + track]; \
-	args += ["--split-debug-info=" + symbols] if config["split_debug_info"] else []; \
-	args += ["--target=" + config["target"]] if config["target"] != "lib/main.dart" else []; \
-	args += ["--flavor=" + config["flavor"]] if config["flavor"] else []; \
-	args += shlex.split(extra); \
-	command = shlex.split(flutter_runner) + ["--release-platform", platform] + (["--allow-storage-changes"] if allow_storage == "1" else []) + ["--"] + shlex.split(shorebird) + args; \
-	result = subprocess.run(command); \
-	dry_run = any(arg in ("--dry-run", "-n") for arg in args); \
-	sys.exit(result.returncode) if result.returncode or sentry_upload != "true" or dry_run else None; \
-	env = os.environ.copy(); env.update({key: "" for key in ("SENTRY_ENV", "SENTRY_RELEASE", "SENTRY_DIST", "SENTRY_ENABLED")}); \
-	env.update(record["sentry"]); env["SENTRY_DOPPLER_CONFIG"] = sentry_config; env["DART_CMD"] = dart_cmd; \
-	sys.exit(subprocess.run(["./tool/sentry_upload.sh"], env=env).returncode)' \
-		"$(PLATFORM)" "$(RELEASE_VERSION)" "$(TRACK)" "$(SHOREBIRD)" "$(DOPPLER_FLUTTER)" \
-		"$(if $(filter 1,$(ALLOW_STORAGE_CHANGES)),1,0)" "$(PATCH_ARGS)" "$(SENTRY_UPLOAD)" \
-		"$(SENTRY_DOPPLER_CONFIG)" "$(DART)"
+	python3 tool/shorebird_ota.py make-patch "$(PLATFORM)" "$(RELEASE_VERSION)" "$(TRACK)" "$(SHOREBIRD)" "$(DOPPLER_FLUTTER)" \
+		"$(if $(filter 1,$(ALLOW_STORAGE_CHANGES)),1,0)" "$(PATCH_ARGS)" "$(SENTRY_UPLOAD)" "$(SENTRY_DOPPLER_CONFIG)" "$(DART)"
 
 patch-list: ensure-shorebird doppler-check
 	@if [ -z "$(RELEASE_VERSION)" ]; then echo "Usage: make patch-list RELEASE_VERSION=3.14.0+353"; exit 1; fi
