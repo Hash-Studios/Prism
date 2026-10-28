@@ -217,12 +217,7 @@ void main() {
     app_state.prismUser = _user(loggedIn: true);
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
-        () => PersonalizedFeedBloc(
-          fetchUseCase,
-          feedRepository,
-          blockRepository,
-          _FakeDropsRepository(),
-        ),
+        () => PersonalizedFeedBloc(fetchUseCase, feedRepository, blockRepository, _FakeDropsRepository()),
       )
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
@@ -340,9 +335,9 @@ void main() {
     moodRepository.moods = <MoodList>[
       MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
     ];
-    when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
-    );
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
     await pumpScreen(tester);
 
     expect(moodRepository.fetchedWallIds, hasLength(1));
@@ -357,9 +352,9 @@ void main() {
     moodRepository.moods = <MoodList>[
       MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
     ];
-    when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
-    );
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
     await pumpScreen(tester);
     expect(moodRepository.fetchedWallIds, hasLength(1));
 
@@ -382,9 +377,9 @@ void main() {
     await getIt<MoodsCubit>().load();
     moodRepository.moods = newMoods;
     moodRepository.pendingMoods = Completer<List<MoodList>>();
-    when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
-    );
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
 
     await pumpScreen(tester);
 
@@ -395,7 +390,9 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Minimal'), findsWidgets);
-    expect(moodRepository.fetchedWallIds, <List<String>>[<String>['new-wall']]);
+    expect(moodRepository.fetchedWallIds, <List<String>>[
+      <String>['new-wall'],
+    ]);
   });
 
   testWidgets('tapping Latest selects it and the underline follows', (tester) async {
@@ -566,9 +563,9 @@ void main() {
     moodRepository.moods = <MoodList>[
       MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
     ];
-    when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
-    );
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
     await pumpScreen(tester);
     verify(() => fetchTrending(any())).called(1);
     expect(moodRepository.fetchedWallIds, hasLength(1));

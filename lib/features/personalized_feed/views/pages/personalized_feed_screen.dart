@@ -237,9 +237,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     // The trending list holds the boosted walls of the carousel.
     _trending.add(const TrendingEvent.started());
     final Future<bool> moodsRefreshed = _loadHomeMoods();
-    unawaited(moodsRefreshed.then((loaded) {
-      if (loaded) _reloadMoodRows();
-    }));
+    unawaited(
+      moodsRefreshed.then((loaded) {
+        if (loaded) _reloadMoodRows();
+      }),
+    );
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,

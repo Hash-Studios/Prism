@@ -101,7 +101,9 @@ void main() {
       await tester.pumpWidget(
         moodTestApp(
           Scaffold(
-            body: SingleChildScrollView(child: MoodRow(key: const ValueKey<String>('row'), list: list, slot: 0)),
+            body: SingleChildScrollView(
+              child: MoodRow(key: const ValueKey<String>('row'), list: list, slot: 0),
+            ),
           ),
         ),
       );
