@@ -8,6 +8,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
+import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
 import 'package:Prism/features/taste_quiz/data/wall_look_probe.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
@@ -132,7 +133,8 @@ class _QuizImages {
           if (look != null) onLook((wall.key, look));
         }),
       );
-      unawaited(precacheImage(full(wall), context, onError: (_, _) {}));
+      // Data saver keeps to thumbnails. The thumbnail still loads, so the wall can be measured.
+      if (!LowDataMode.enabled.value) unawaited(precacheImage(full(wall), context, onError: (_, _) {}));
     }
   }
 }
@@ -399,7 +401,7 @@ class _WallChoice extends StatelessWidget {
                   children: <Widget>[
                     ColoredBox(color: cs.surfaceContainerHighest),
                     _FadeInImage(image: images.thumbnail(wall), duration: fast),
-                    _FadeInImage(image: images.full(wall), duration: fast),
+                    if (!LowDataMode.enabled.value) _FadeInImage(image: images.full(wall), duration: fast),
                     PositionedDirectional(
                       top: PrismSpace.sm,
                       end: PrismSpace.sm,

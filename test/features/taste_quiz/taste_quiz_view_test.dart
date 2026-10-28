@@ -6,6 +6,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/features/taste_quiz/views/widgets/taste_quiz_view.dart';
@@ -79,6 +80,20 @@ void main() {
     expect(rightPick(), findsOneWidget);
     expect(finished, isEmpty);
     handle.dispose();
+  });
+
+  testWidgets('Data saver shows thumbnails only, with no full-size layer', (tester) async {
+    await pumpQuiz(tester);
+    await tester.pump();
+    final int withFull = tester.widgetList<Image>(find.byType(Image)).length;
+
+    await tester.pumpWidget(const SizedBox());
+    LowDataMode.enabled.value = true;
+    addTearDown(() => LowDataMode.enabled.value = false);
+    await pumpQuiz(tester);
+    await tester.pump();
+
+    expect(tester.widgetList<Image>(find.byType(Image)).length, withFull ~/ 2);
   });
 
   testWidgets('picking a wall advances to the next round', (tester) async {

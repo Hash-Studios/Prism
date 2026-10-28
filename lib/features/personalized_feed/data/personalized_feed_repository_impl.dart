@@ -186,9 +186,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return page;
   }
 
+  /// A finished matching prime. One still loading is skipped, so the cached paint never waits on the network;
+  /// [fetch] still joins it.
   Future<PersonalizedFeedPage?> _readPrimedPage() async {
     final primed = _primed;
-    if (primed == null || primed.key != _primeKey() || _now().difference(primed.at) >= _primedTtl) return null;
+    if (primed == null ||
+        !primed.completed ||
+        primed.key != _primeKey() ||
+        _now().difference(primed.at) >= _primedTtl) {
+      return null;
+    }
     return (await _resolvePageOne(primed)).data;
   }
 

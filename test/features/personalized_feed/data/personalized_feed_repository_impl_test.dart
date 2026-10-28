@@ -25,12 +25,12 @@ import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
-import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -1923,6 +1923,24 @@ void main() {
       expect(result.isSuccess, isTrue);
       expect(result.data!.items, isNotEmpty);
       expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(2));
+    });
+
+    test('readCached paints the disk page instead of waiting for a prime still in flight', () async {
+      final cache = _WriteGatedFeedCache()..snapshot = cacheSnapshot(<FeedItemEntity>[_prismItem('disk-old')]);
+      final repository = _repository(
+        firestore: _CountingWallsFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      final Future<PersonalizedFeedPage?> prime = repository.primeFirstPage();
+      await cache.started.future;
+
+      final PersonalizedFeedPage? page = await repository.readCached().timeout(const Duration(seconds: 1));
+
+      expect(page!.items.map((item) => item.id), <String>['disk-old']);
+      cache.release.complete();
+      await prime;
     });
 
     test('a late cache read cannot return a prime from a different session', () async {
