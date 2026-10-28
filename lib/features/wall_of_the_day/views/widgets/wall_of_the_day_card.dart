@@ -94,6 +94,13 @@ class _WotdCardContent extends StatelessWidget {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
     CoinsService.instance.reportQuestEvent(QuestEvent.viewWotd);
     final PrismWallpaper? wallpaper = entity.wallpaper;
+    final WallpaperSource source = entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source;
+    final WallpaperDisplaySource display = WallpaperDisplaySource.forWall(
+      id: entity.wallId,
+      source: source,
+      thumbnail: entity.thumbnailUrl,
+      fullUrl: entity.url,
+    );
     context.router.push(
       wallpaper != null
           ? WallpaperDetailRoute(
@@ -102,8 +109,12 @@ class _WotdCardContent extends StatelessWidget {
             )
           : WallpaperDetailRoute(
               wallId: entity.wallId,
-              source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
-              thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
+              source: source,
+              thumbnailUrl: display.thumbnail.isNotEmpty
+                  ? display.thumbnail
+                  : source == WallpaperSource.prism
+                  ? ''
+                  : display.full,
             ),
     );
   }
