@@ -110,6 +110,47 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('Skip exits from every round without loaded images', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+
+    for (int round = 0; round < 6; round++) {
+      await pumpQuiz(tester);
+      for (int answered = 0; answered < round; answered++) {
+        await tester.tap(leftPick());
+        await tester.pump(const Duration(milliseconds: 220));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(finished, <bool>[false]);
+      expect(store.read(), hasLength(round * 2));
+      expect(find.text('Tuning your feed'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      finished.clear();
+      store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    }
+    handle.dispose();
+  });
+
+  testWidgets('a delayed pick after the quiz view is removed does not update the store', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+
+    await pumpQuiz(tester);
+
+    await tester.tap(leftPick());
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(store.read(), isEmpty);
+    expect(finished, isEmpty);
+    expect(tester.takeException(), isNull);
+    handle.dispose();
+  });
+
   testWidgets('full run shows tuning, then completes once after the hold', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpQuiz(tester);

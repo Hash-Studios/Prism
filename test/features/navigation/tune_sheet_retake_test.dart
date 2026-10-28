@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
@@ -169,5 +170,51 @@ void main() {
     await tapRetake(tester);
 
     expect(find.text('Neon'), findsOneWidget);
+  });
+
+  testWidgets('two retakes add signals and preserve the existing seed flag', (tester) async {
+    repo.plan = quizPlan();
+    await store.record(
+      TasteSignal(action: TasteAction.favourite, at: DateTime.now(), terms: const <String>['existing']),
+    );
+    await store.markSeeded();
+    var run = 0;
+    await pumpSheet(
+      tester,
+      openRetake: (BuildContext context, {required TasteQuizPlan plan, required List<String> interests}) async {
+        run++;
+        final TasteQuizBloc bloc = TasteQuizBloc(
+          plan: plan,
+          source: TasteQuizSource.retake,
+          interests: interests,
+          tasteSignals: store,
+        );
+        try {
+          for (int round = 0; round < plan.rounds.length; round++) {
+            final Future<TasteQuizState> nextState = bloc.stream.firstWhere(
+              (state) => round == plan.rounds.length - 1
+                  ? state is TasteQuizTuning
+                  : state is TasteQuizPlaying && state.picks.length == round + 1,
+            );
+            bloc.add(TasteQuizEvent.picked(round: round, side: QuizSide.left));
+            await nextState;
+          }
+          final Future<TasteQuizState> finished = bloc.stream.firstWhere((state) => state is TasteQuizFinished);
+          bloc.add(const TasteQuizEvent.tuningShown());
+          await finished;
+        } finally {
+          await bloc.close();
+        }
+        return true;
+      },
+    );
+
+    await tapRetake(tester);
+    await tapRetake(tester);
+
+    expect(run, 2);
+    expect(store.read(), hasLength(25));
+    expect(store.read().first.terms, contains('existing'));
+    expect(store.isSeeded, isTrue);
   });
 }

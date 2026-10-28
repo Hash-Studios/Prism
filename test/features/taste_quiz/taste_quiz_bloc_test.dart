@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -20,6 +21,22 @@ class _RecordingAnalytics extends FakeAppAnalytics {
 }
 
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
+
+class _DelayedTasteSignalStore extends TasteSignalStore {
+  _DelayedTasteSignalStore(super.settingsLocal);
+
+  final Completer<void> writeStarted = Completer<void>();
+  final Completer<void> allowWrite = Completer<void>();
+  int writeCount = 0;
+
+  @override
+  Future<void> recordAll(List<TasteSignal> signals) async {
+    writeCount++;
+    if (!writeStarted.isCompleted) writeStarted.complete();
+    await allowWrite.future;
+    await super.recordAll(signals);
+  }
+}
 
 void _pick(TasteQuizBloc bloc, int round, QuizSide side) => bloc.add(TasteQuizEvent.picked(round: round, side: side));
 
@@ -153,6 +170,67 @@ void main() {
     await _settle();
 
     expect(store.read(), hasLength(12));
+  });
+
+  test('a duplicate final tap cannot finish before the pending signal write', () async {
+    final delayedStore = _DelayedTasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    final bloc = TasteQuizBloc(
+      plan: quizPlan(),
+      source: TasteQuizSource.onboarding,
+      interests: const <String>['Nature'],
+      tasteSignals: delayedStore,
+      random: Random(1),
+      clock: () => DateTime.utc(2026, 10, 28),
+    );
+    addTearDown(() async {
+      if (!delayedStore.allowWrite.isCompleted) delayedStore.allowWrite.complete();
+      await bloc.close();
+    });
+
+    await _pickLeft(bloc, 5);
+    _pick(bloc, 5, QuizSide.left);
+    await delayedStore.writeStarted.future;
+    _pick(bloc, 5, QuizSide.right);
+    await _settle();
+
+    expect(bloc.state, isA<TasteQuizPlaying>());
+    expect(delayedStore.writeCount, 1);
+
+    delayedStore.allowWrite.complete();
+    await _settle();
+    await _settle();
+    expect(bloc.state, isA<TasteQuizTuning>());
+  });
+
+  test('skip during the final write cannot be followed by tuning', () async {
+    final delayedStore = _DelayedTasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    final bloc = TasteQuizBloc(
+      plan: quizPlan(),
+      source: TasteQuizSource.onboarding,
+      interests: const <String>['Nature'],
+      tasteSignals: delayedStore,
+      random: Random(1),
+      clock: () => DateTime.utc(2026, 10, 28),
+    );
+    addTearDown(() async {
+      if (!delayedStore.allowWrite.isCompleted) delayedStore.allowWrite.complete();
+      await bloc.close();
+    });
+
+    await _pickLeft(bloc, 5);
+    _pick(bloc, 5, QuizSide.left);
+    await delayedStore.writeStarted.future;
+    bloc.add(const TasteQuizEvent.skipped());
+    await _settle();
+    expect(bloc.state, isA<TasteQuizFinished>());
+    expect((bloc.state as TasteQuizFinished).completed, isFalse);
+
+    delayedStore.allowWrite.complete();
+    await _settle();
+    await _settle();
+    expect(bloc.state, isA<TasteQuizFinished>());
+    expect((bloc.state as TasteQuizFinished).completed, isFalse);
+    expect(delayedStore.writeCount, 1);
   });
 
   test('existing signals are kept when the quiz completes', () async {

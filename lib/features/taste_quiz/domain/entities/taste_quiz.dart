@@ -83,8 +83,28 @@ class QuizPick {
   QuizWall get passed => round.wallAt(side == QuizSide.left ? QuizSide.right : QuizSide.left);
 
   /// A pick counts like a favourite. The wall that lost is a weak negative.
-  List<TasteSignal> signals(DateTime at) => <TasteSignal>[
-    TasteSignal.forWallpaper(TasteAction.favourite, picked.item.wallpaperCore, tags: picked.terms, at: at),
-    TasteSignal.forWallpaper(TasteAction.passedOver, passed.item.wallpaperCore, tags: passed.terms, at: at),
-  ];
+  List<TasteSignal> signals(DateTime at) {
+    final TasteSignal favourite = TasteSignal.forWallpaper(
+      TasteAction.favourite,
+      picked.item.wallpaperCore,
+      tags: picked.terms,
+      at: at,
+    );
+    final TasteSignal passedOver = TasteSignal.forWallpaper(
+      TasteAction.passedOver,
+      passed.item.wallpaperCore,
+      tags: passed.terms,
+      at: at,
+    );
+    final Set<String> pickedTerms = favourite.terms.toSet();
+    return <TasteSignal>[
+      favourite,
+      TasteSignal(
+        action: passedOver.action,
+        at: passedOver.at,
+        terms: passedOver.terms.where((term) => !pickedTerms.contains(term)).toList(growable: false),
+        creator: passedOver.creator,
+      ),
+    ];
+  }
 }

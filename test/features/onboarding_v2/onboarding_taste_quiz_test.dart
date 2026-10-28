@@ -19,6 +19,7 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/fetch_starter_p
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/follow_starter_pack_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
+import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
 import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -207,6 +208,46 @@ void main() {
 
     expect(starter.step, OnboardingV2Step.starterPack);
     expect(states.any((s) => s.step == OnboardingV2Step.tasteQuiz), isFalse);
+  });
+
+  test('a stalled recommendation after confirming interests does not block the next step', () async {
+    when(() => tasteQuizRepository.loadPlan(any())).thenAnswer((_) async => null);
+    final Completer<OnboardingWallpaperVm?> stalledRecommendation = Completer<OnboardingWallpaperVm?>();
+    when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((invocation) {
+      final interests = invocation.positionalArguments.single as List<String>;
+      return interests.isEmpty ? Future<OnboardingWallpaperVm?>.value() : stalledRecommendation.future;
+    });
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    await reachInterests(bloc);
+
+    try {
+      final OnboardingV2State starter = await confirmInterests(bloc).timeout(const Duration(seconds: 5));
+
+      expect(starter.step, OnboardingV2Step.starterPack);
+      expect(starter.actionStatus, ActionStatus.success);
+      expect(starter.wallpaperData.wallpaper, isNull);
+    } finally {
+      if (!stalledRecommendation.isCompleted) stalledRecommendation.complete(null);
+    }
+  });
+
+  test('a failed recommendation after confirming interests falls back and continues', () async {
+    when(() => tasteQuizRepository.loadPlan(any())).thenAnswer((_) async => null);
+    when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((invocation) {
+      final interests = invocation.positionalArguments.single as List<String>;
+      if (interests.isEmpty) return Future<OnboardingWallpaperVm?>.value();
+      return Future<OnboardingWallpaperVm?>.error(StateError('category feed unavailable'));
+    });
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    await reachInterests(bloc);
+
+    final OnboardingV2State starter = await confirmInterests(bloc);
+
+    expect(starter.step, OnboardingV2Step.starterPack);
+    expect(starter.actionStatus, ActionStatus.success);
+    expect(starter.wallpaperData.wallpaper, isNull);
   });
 
   test('the quiz plan is requested once, with the selected interests', () async {

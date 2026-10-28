@@ -137,6 +137,7 @@ class _RoundsState extends State<_Rounds> {
   QuizSide? _chosen;
   _QuizImages? _images;
   double? _tileWidth;
+  Timer? _pickTimer;
 
   int get _round => widget.state.picks.length;
   List<QuizRound> get _rounds => widget.state.plan.rounds;
@@ -170,10 +171,14 @@ class _RoundsState extends State<_Rounds> {
     setState(() => _chosen = side);
     final int round = _round;
     final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
-    Future<void>.delayed(_pickHold, () {
-      // Back can close the quiz while the pick still shows.
-      if (!bloc.isClosed) bloc.add(TasteQuizEvent.picked(round: round, side: side));
-    });
+    _pickTimer = Timer(_pickHold, () => bloc.add(TasteQuizEvent.picked(round: round, side: side)));
+  }
+
+  @override
+  void dispose() {
+    // Back can close the quiz while the pick still shows.
+    _pickTimer?.cancel();
+    super.dispose();
   }
 
   /// How long the pick shows before the next pair comes in. Reduced motion keeps it: it is a pause, not a motion.

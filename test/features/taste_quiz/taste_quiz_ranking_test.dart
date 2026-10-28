@@ -101,5 +101,23 @@ void main() {
 
       expect(profile.terms['neon'], greaterThan(0));
     });
+
+    test('a shared category stays positive when the picked wall has many terms', () {
+      final QuizPick pick = QuizPick(
+        round: QuizRound(
+          left: quizWall('picked', tags: <String>['nature', for (int i = 0; i < 48; i++) 'picked$i']),
+          right: quizWall('passed'),
+        ),
+        side: QuizSide.left,
+      );
+      final TasteProfile profile = TasteProfile.build(
+        interests: <String>[],
+        following: <String>[],
+        signals: pick.signals(now),
+        now: now,
+      );
+
+      expect(profile.terms['nature'], greaterThan(0));
+    });
   });
 }

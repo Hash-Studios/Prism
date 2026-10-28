@@ -55,7 +55,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
 
   Future<void> _onPicked(_Picked event, Emitter<TasteQuizState> emit) async {
     final TasteQuizState current = state;
-    if (current is! TasteQuizPlaying || event.round != current.picks.length) return;
+    if (current is! TasteQuizPlaying || _committed || event.round != current.picks.length) return;
     final QuizRound round = current.plan.rounds[event.round];
     unawaited(
       analytics.track(
@@ -68,6 +68,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
       return;
     }
     await _commit(picks);
+    if (emit.isDone || state is! TasteQuizPlaying) return;
     unawaited(analytics.track(TasteQuizCompletedEvent(source: source)));
     emit(TasteQuizState.tuning(walls: _tuningWalls(current.plan, picks), summary: summarizeTaste(picks)));
   }
@@ -76,8 +77,8 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     final TasteQuizState current = state;
     if (current is! TasteQuizPlaying) return;
     unawaited(analytics.track(TasteQuizSkippedEvent(source: source, roundIndex: current.picks.length)));
-    await _commit(current.picks);
     emit(const TasteQuizState.finished(completed: false));
+    await _commit(current.picks);
   }
 
   void _onTuningShown(_TuningShown event, Emitter<TasteQuizState> emit) {

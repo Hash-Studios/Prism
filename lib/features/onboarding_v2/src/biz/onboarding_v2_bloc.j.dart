@@ -371,7 +371,14 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
     _trackStepCompleted(_stepInterests);
 
-    final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
+    OnboardingWallpaperVm? refreshedWallpaper;
+    try {
+      refreshedWallpaper = await _firstWallpaperService
+          .recommendForOnboarding(selectedInterests)
+          .timeout(_onboardingEnrichmentBudget, onTimeout: () => null);
+    } catch (error, stackTrace) {
+      logger.w('Could not refresh the onboarding wallpaper.', error: error, stackTrace: stackTrace);
+    }
     if (attemptId != _saveAttemptId) return;
     final plan = await quizPlan;
     if (attemptId != _saveAttemptId || isClosed) return;
