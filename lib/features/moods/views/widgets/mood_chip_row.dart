@@ -23,17 +23,20 @@ class MoodChipRow extends StatelessWidget {
       container: true,
       label: l10n.moodChipRowLabel,
       explicitChildNodes: true,
-      child: SizedBox(
-        height: 44 + PrismFeedLayout.gridSpacing,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: PrismFeedLayout.gridPadding.copyWith(bottom: PrismFeedLayout.gridSpacing),
-          itemCount: moods.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 8),
-          itemBuilder: (context, index) {
-            final WallMood mood = moods[index].mood;
-            return PrismChip(label: mood.title(l10n), onTap: () => _open(context, mood, index));
-          },
+      child: Padding(
+        padding: const EdgeInsets.only(top: PrismSpace.xxs, bottom: PrismSpace.xs),
+        child: SizedBox(
+          height: 44,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),
+            itemCount: moods.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 6),
+            itemBuilder: (context, index) {
+              final WallMood mood = moods[index].mood;
+              return PrismChip(label: mood.title(l10n), compact: true, onTap: () => _open(context, mood, index));
+            },
+          ),
         ),
       ),
     );

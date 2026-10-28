@@ -65,4 +65,25 @@ void main() {
     expect(find.bySemanticsLabel('Moods'), findsOneWidget);
     handle.dispose();
   });
+
+  testWidgets('mood chips are compact pills with a 44 pt tap target and a 13 pt label', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MoodChipRow(
+            moods: <MoodList>[MoodList(mood: WallMood.dreamy, wallIds: <String>[])],
+          ),
+        ),
+      ),
+    );
+
+    final Finder chip = find.byType(PrismChip);
+    expect(tester.widget<PrismChip>(chip).compact, isTrue);
+    expect(tester.getSize(chip).height, 44);
+    final Finder pill = find.descendant(of: chip, matching: find.byType(AnimatedContainer));
+    expect(tester.getSize(pill).height, 34);
+    expect(tester.widget<Text>(find.text('Dreamy')).style?.fontSize, 13);
+  });
 }
