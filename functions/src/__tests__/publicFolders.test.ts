@@ -10,6 +10,7 @@ import {
   publicFolderName,
   removeFolderFollowsBetween,
   removeOwnerPublicFolders,
+  refreshWallInPublicFolders,
   removePublicFolder,
   setFolderFollow,
   setFolderHidden,
@@ -27,9 +28,10 @@ const keysUnder = (store: Map<string, Doc>, prefix: string) => [...store.keys()]
 
 function setup(t: TestContext) {
   t.mock.method(publicFolderDeps, "authDisabled", async () => false);
+  t.mock.method(publicFolderDeps, "premium", async () => ["abstract"]);
   return installFakeDb(t, {
     "walls/W1": {id: "w1", review: true, wallpaper_thumb: THUMB, wallpaper_url: "https://secret/original.jpg",
-      collections: ["abstract"], originalProtected: true},
+      collections: ["nature"], originalProtected: true},
     "usersv2/a": {email: "a@x.com"},
     "usersv2/b": {email: "b@x.com"},
     "folders/f1": {ownerId: "a", name: "Night", public: true, itemCount: 1, covers: []},
@@ -242,7 +244,7 @@ test("a retry after an item commit repairs lastAddedAt even if the header refres
   const store = setup(t);
   await syncPublicFolder("f1");
   store.set("publicFolders/f1", {...store.get("publicFolders/f1"), lastAddedAt: at(1)});
-  store.set("walls/W2", {id: "w2", review: true, wallpaper_thumb: THUMB});
+  store.set("walls/W2", {id: "w2", review: true, wallpaper_thumb: THUMB, collections: ["nature"], originalProtected: true});
   store.set("folders/f1/items/prism_w2", {ownerId: "a", id: "w2", provider: "Prism", wallpaperDocumentId: "W2"});
   let fail = true;
   transactionSchedule(t, () => {
@@ -361,14 +363,14 @@ test("projection keeps only the allowlisted item fields and the server thumb", a
 test("gated items are left out of the projection", async (t) => {
   const store = setup(t);
   store.delete("folders/f1/items/prism_w1");
-  store.set("walls/WR", {id: "wr", review: false, wallpaper_thumb: THUMB, collections: ["abstract"],
+  store.set("walls/WR", {id: "wr", review: false, wallpaper_thumb: THUMB, collections: ["nature"],
     originalProtected: true});
   store.set("walls/WD", {id: "wd", review: true, dropReserved: true, wallpaper_thumb: THUMB,
-    collections: ["abstract"], originalProtected: true});
+    collections: ["nature"], originalProtected: true});
   store.set("walls/WS", {id: "ws", review: true, is_streak_exclusive: true, wallpaper_thumb: THUMB,
-    collections: ["abstract"], originalProtected: true});
+    collections: ["nature"], originalProtected: true});
   store.set("walls/WW", {id: "ww", review: true, dropWeek: "2026-W40", wallpaper_thumb: THUMB,
-    collections: ["abstract"], originalProtected: true});
+    collections: ["nature"], originalProtected: true});
   const addedAt = at(Date.now() - 60_000);
   store.set("folders/f1/items/prism_r", {ownerId: "a", id: "wr", provider: "Prism", wallpaperDocumentId: "WR", addedAt});
   store.set("folders/f1/items/prism_d", {ownerId: "a", id: "wd", provider: "Prism", wallpaperDocumentId: "WD", addedAt});
@@ -472,7 +474,7 @@ test("publicFolderName trims and collapses spaces and rejects hidden or long nam
 test("syncPublicFolderItem adds and removes one projected item", async (t) => {
   const store = setup(t);
   store.set("walls/W2", {id: "w2", review: true, wallpaper_thumb: "https://img.prismwalls.com/previews/bbb.img",
-    collections: ["abstract"], originalProtected: true});
+    collections: ["nature"], originalProtected: true});
   await syncPublicFolder("f1");
 
   store.set("folders/f1/items/prism_w2", {ownerId: "a", id: "w2", provider: "Prism", wallpaperDocumentId: "W2",
@@ -492,7 +494,7 @@ test("syncPublicFolderItem adds and removes one projected item", async (t) => {
 
 test("an item sync restores the full source when the public header is missing", async (t) => {
   const store = setup(t);
-  store.set("walls/W2", {id: "w2", review: true, wallpaper_thumb: THUMB});
+  store.set("walls/W2", {id: "w2", review: true, wallpaper_thumb: THUMB, collections: ["nature"], originalProtected: true});
   store.set("folders/f1/items/prism_w2", {ownerId: "a", id: "w2", provider: "Prism", wallpaperDocumentId: "W2"});
   await syncPublicFolderItem("f1", "prism_w2");
   assert.equal(store.get("publicFolders/f1")?.itemCount, 2);
@@ -658,4 +660,48 @@ test("setFolderHidden refuses a non-admin caller", async (t) => {
   setup(t);
   await assert.rejects(() => setFolderHidden.run({auth: {uid: "b"}, data: {folderId: "f1", hidden: true}} as
     Parameters<typeof setFolderHidden.run>[0]), {code: "permission-denied"});
+});
+
+test("a wall in a premium collection stays out of the projection, like the free gallery gate", async (t) => {
+  const store = setup(t);
+  store.set("walls/W1", {...store.get("walls/W1"), collections: ["abstract"]});
+  await syncPublicFolder("f1");
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
+});
+
+test("a projected wall that is held for review leaves every public folder", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), true);
+  const before = store.get("walls/W1");
+  const after = {...before, review: false, heldForReview: true};
+  store.set("walls/W1", after);
+  await refreshWallInPublicFolders("W1", before, after);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
+  assert.deepEqual(store.get("publicFolders/f1")?.covers, []);
+  assert.equal(store.has("folders/f1/items/prism_w1"), true);
+});
+
+test("a wall write that keeps it public changes no public folder", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  const header = store.get("publicFolders/f1");
+  const before = store.get("walls/W1");
+  await refreshWallInPublicFolders("W1", before, {...before, views: 10});
+  assert.deepEqual(store.get("publicFolders/f1"), header);
+});
+
+test("an item write in a private folder makes no Auth call", async (t) => {
+  const store = setup(t);
+  store.set("folders/f1", {...store.get("folders/f1"), public: false});
+  let authCalls = 0;
+  t.mock.method(publicFolderDeps, "authDisabled", async () => {
+    authCalls++;
+    return false;
+  });
+  await syncPublicFolderItem("f1", "prism_w1");
+  assert.equal(authCalls, 0);
+  assert.equal(store.has("publicFolders/f1"), false);
 });

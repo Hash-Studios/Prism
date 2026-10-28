@@ -42,7 +42,7 @@ Public folders are free. A viewer opens each wallpaper through the normal detail
 | `publicFolders/{id}/followers/{uid}` | Server only | Nobody | `uid`, `createdAt`. |
 | `usersv2/{uid}/followedFolders/{id}` | Server only | The user | `folderId`, `ownerId`, `createdAt`. |
 | `folderVisibilityRateDaily`, `folderFollowRateDaily` | Server only | Nobody | Daily counts for the rate limits. |
-| `publicFolderState/{id}` | Server only | Nobody | `generation`, `deleting`, `ownerId`; private lifecycle fence and resumable cleanup owner. |
+| `publicFolderState/{id}` | Server only | Nobody | `generation`, `deleting`, `ownerId`. The removal fence. |
 
 The public data is a server projection. It is not a copy of the private docs. The projection never holds the raw `url`.
 
@@ -52,8 +52,9 @@ The public data is a server projection. It is not a copy of the private docs. Th
 
 - `onFolderWritten` calls `syncPublicFolder` when `public`, `name`, `ownerId` or `moderationHidden` changes, or when the folder is deleted.
 - `onFolderItemWritten` calls `syncPublicFolderItem` after it repairs the folder counts.
-- Projection writes and callable checks read the current folder, owner account, deletion barrier, projection header and generation fence in Firestore transactions. Item writes also re-read the private item and wall in the same transaction. The source document's `createTime` is copied to `sourceCreatedAt`, so deleting and recreating a folder at the same id is distinguished from the old source.
-- `publicFolderState/{id}` fences deletion: the header is removed first and kept absent while old follower edges, reverse follows and items are cleaned up. A new projection uses the current generation; delayed writes cannot restore data across a deletion/recreation boundary.
+- Each projection write reads the folder, the owner account, the deletion barrier, the header and the fence in one transaction. An item write also reads the private item and its wall in that transaction.
+- The header keeps the folder doc `createTime` as `sourceCreatedAt`. A new folder that reuses a deleted folder id is a new source, so it starts with no old followers.
+- `publicFolderState/{id}` fences a removal. The server deletes the header first. The header stays absent until the old followers, follows and items are gone. A delayed write from before the removal cannot restore data.
 
 A folder is projected only when all of these are true:
 
@@ -64,13 +65,15 @@ A folder is projected only when all of these are true:
 An item is projected only when all of these are true:
 
 1. The item `ownerId` is the folder owner.
-2. The wall is a Prism wall. The public item uses the canonical preview URL and wall document id from the server-owned wall document; client thumbnails and raw/source URLs are never projected.
+2. The item is a Prism wall. Wallhaven and Pexels items stay private, because the client writes their thumbnails.
 3. The wall doc exists. The server finds it by `wallpaperDocumentId`. Only an older item without that field is found by its `id`.
-4. The wall has `review == true`. It is not streak exclusive, not drop reserved and not in a drop (`dropWeek`).
+4. The wall passes the free gallery gate: `review == true`, a protected original, not streak exclusive, not drop reserved, not in a drop (`dropWeek`), and not in a premium collection.
 
-The server takes the canonical preview `thumb`, `id` and `wallpaperDocumentId` from the wall doc, not from the item. It clamps `addedAt` to the current time. Premium previews may be projected; opening a wall still uses the normal detail-page gates.
+`onWallPublicGateChanged` runs on each wall write. When a projected wall stops passing the gate, or its thumbnail changes, the server re-projects each public copy of that wall. A wall that is held after reports, deleted or moved into a drop leaves every public folder.
 
-The header `covers` are the 4 newest projected thumbnails. `lastAddedAt` tracks the newest persistent `projectedAt`, so a header refresh does not erase digest eligibility. When the covers change, the server makes a 4-wall image with the push gallery renderer (`buildPushGallery`) and stores its URL in `shareImage`. The image needs at least 2 Prism preview thumbnails.
+The server takes `thumb`, `id` and `wallpaperDocumentId` from the wall doc, not from the item. The `thumb` must be a Prism preview URL. The server clamps `addedAt` to the current time.
+
+The header `covers` are the 4 newest projected thumbnails. `lastAddedAt` is the newest `projectedAt`, so a header refresh does not lose it. When the covers change, the server makes a 4-wall image with the push gallery renderer (`buildPushGallery`) and stores its URL in `shareImage`. The image needs at least 2 Prism preview thumbnails.
 
 ### Removal
 
@@ -80,7 +83,7 @@ The server removes the projection in this order: the header, then each follower 
 |---|---|
 | The owner makes the folder private | The projection is removed. The followers are removed. |
 | The owner deletes the folder | The projection is removed. |
-| The owner deletes the account | `deleteAccount` removes the owner's projections and follows; the deletion barrier stops new syncs. |
+| The owner deletes the account | `deleteAccount` removes the owner's projections and follows. The deletion barrier stops new syncs. |
 | `usersv2/{uid}` gets `deleted: true`, or is removed | `projectUserProfile` removes the owner's projections and the user's followed-folder edges. |
 | A moderator hides the folder | `moderationHidden: true`. The projection is removed. The owner cannot make it public again. |
 | A user blocks another user | `blockUser` removes the folder follows in both directions. |
@@ -90,7 +93,7 @@ The server removes the projection in this order: the header, then each follower 
 | Callable | Input | Checks |
 |---|---|---|
 | `setFolderPublic` | `folderId`, `public` | Signed in. The folder id matches `[A-Za-z0-9_-]{1,128}`. The caller owns the folder. The name passes the check (error `failed-precondition`, message `name`). The folder is not hidden (message `hidden`). At most 30 changes a day. It runs the sync before it returns `{public}`. |
-| `setFolderFollow` | `folderId`, `following` | Signed in. Valid id. A follow transaction rechecks current source visibility, owner/deletion state, header generation, caller account and blocks in both directions. At most 200 follow actions a day and 500 followed folders. Unfollow is always allowed and bypasses the action limit so stale follows can be cleaned up. |
+| `setFolderFollow` | `folderId`, `following` | Signed in. Valid id. One transaction checks that the folder is still public, the owner is open, the caller account is open and no block exists in either direction. The caller is not the owner. At most 200 follows a day and 500 followed folders. An unfollow always works and does not count, so a user can remove a follow of a folder that went private. |
 | `setFolderHidden` | `folderId`, `hidden` | Admins only (`isAdminCaller`). |
 
 ### Reports and moderation
@@ -105,10 +108,10 @@ When 3 different reporters with accounts older than 7 days report one folder, `o
 
 1. The job finds the headers with `lastAddedAt` in the last 24 hours.
 2. It reads the items with `projectedAt` in the last 24 hours, at most 12 for each folder.
-3. Immediately before planning and again before sending, it rechecks the current public source, owner/deletion state, folder and item links, wall gallery eligibility, recipient and owner accounts, follow edge, blocks, and the recipient's current folder-alert token binding.
+3. Before it plans and again before it sends, it checks the folder, the owner, the items, the gallery gate of each wall, the follower, the follow, the blocks and the folder alert token.
 4. It makes one digest for each follower. The folder with the most new walls is first. The walls alternate between folders. A wall in two followed folders shows once.
 5. It drops a folder when a block exists in either direction, or when the follower no longer follows it.
-6. It claims `usersv2/{uid}/private/folderDigest.day` in a transaction that rechecks the recipient and included folder owners are open. After claiming, it re-runs the delivery checks and confirms the day, email and bound alert token still match immediately before sending. It releases the claim if the send fails or those checks no longer pass.
+6. It claims `usersv2/{uid}/private/folderDigest.day` in a transaction. That transaction also checks that the follower and the folder owners are open. After the claim, it does the delivery checks again just before the send. It releases the claim if the send fails or a check fails.
 
 The push goes only to a session with `folderAlerts == true` and `folderAlertsToken` equal to `fcmToken`. Only builds with this feature write those fields.
 
@@ -169,8 +172,8 @@ States of the public folder page:
 
 Do these steps in this order. No backfill is necessary, because every folder starts private.
 
-1. Firestore rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. Wait until the `publicFolders` index (`ownerId` ASC, `updatedAt` DESC) and `followedFolders.folderId` collection-group index are built.
-2. Cloud Functions: `setFolderPublic`, `setFolderFollow`, `setFolderHidden`, `sendFolderDigests`, `onFolderWritten`, `onFolderItemWritten` (both now need the R2 secrets), `projectUserProfile`, `deleteAccount`, `blockUser`, `submitContentReport`, `onContentReportCreated`.
+1. Firestore rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. Wait until these indexes are built: `publicFolders` (`ownerId` ASC, `updatedAt` DESC), the `followedFolders.folderId` collection-group field, and the `items.wallpaperDocumentId` collection-group field.
+2. Cloud Functions. New: `setFolderPublic`, `setFolderFollow`, `setFolderHidden`, `sendFolderDigests`, `onWallPublicGateChanged`. Changed: `onFolderWritten`, `onFolderItemWritten`, `projectUserProfile`, `deleteAccount`, `blockUser`, `submitContentReport`, `onContentReportCreated`, `sendFollowDigests`. The folder triggers, the wall trigger, `setFolderPublic` and `setFolderHidden` need the R2 secrets.
 3. Cloudflare Worker: `infra/cloudflare/worker`.
 4. The app release.
 
@@ -179,9 +182,9 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 - Prism has no word filter for public user text. Folder names get the length and hidden-character check. Reports and the moderation hide cover the rest.
 - Prism has no suspension state. A disabled Firebase Auth user counts as suspended at the next sync, follow or digest. No event starts a sync when Auth disables a user. A moderator can hide the folders at once with `setFolderHidden`.
 - Wallhaven and Pexels wallpapers do not show in public folders.
-- A wall that is removed or gated after it was projected can remain in the projection until the folder is synced; the detail page still applies its gates. Wall-gating changes do not currently trigger folder invalidation, so the stale projection can persist indefinitely until a folder resync. Fixing this needs a wall trigger in `functions/src/index.ts`, outside this change's scope.
-- A short link keeps the name and image it had when it was made. Making the folder private or deleting it does not erase that immutable preview. Whether to change this is a product decision.
-- The public client currently reads through `MoodRepository`, which filters premium walls even though the projection permits premium previews. Aligning that behavior requires mood repository changes outside this scope.
+- A wall that becomes eligible again (for example, approved after a hold) shows in a public folder at the next sync of that folder.
+- A short link keeps the name and image it had when it was made. When the folder goes private or is deleted, the link preview still shows them. The app shows the private state. This is an open product decision.
+- Premium walls do not show in public folders. The projection uses the free gallery gate, the same gate as the folder page and the push.
 - Making a folder private removes its followers. Making it public again starts at 0 followers.
 
 ## How to test

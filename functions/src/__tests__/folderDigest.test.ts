@@ -81,7 +81,7 @@ function baseSeed(): Record<string, Doc> {
     id,
     review: true,
     originalProtected: true,
-    collections: ["abstract"],
+    collections: ["nature"],
     visionLabels: ["Night"],
     wallpaper_thumb: `https://img.prismwalls.com/previews/${id}.img`,
   });

@@ -1,10 +1,12 @@
 import * as admin from "firebase-admin";
 import {randomUUID} from "node:crypto";
+import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, CALLABLE_REGIONS, readDailyCount, str, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, readDailyCount, REGION, str, utcDateString} from "./common";
 import {isAdminCaller} from "./adminConfig";
 import {buildPushGallery, isPreviewUrl, type GalleryDeps} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
+import {isWotdEligible, premiumCollections} from "./wallOfTheDay";
 
 export const PUBLIC_FOLDERS = "publicFolders";
 export const FOLLOWED_FOLDERS = "followedFolders";
@@ -27,7 +29,12 @@ const PROJECTION_STATE = "publicFolderState";
 type Doc = admin.firestore.DocumentData;
 
 /** Seams for tests: Auth and R2 are outside the fake database. */
-export const publicFolderDeps: {authDisabled: (uid: string) => Promise<boolean>; gallery: GalleryDeps} = {
+export const publicFolderDeps: {
+  authDisabled: (uid: string) => Promise<boolean>;
+  premium: () => Promise<string[]>;
+  gallery: GalleryDeps;
+} = {
+  premium: cachedPremiumCollections,
   authDisabled: async (uid) => {
     try {
       return (await admin.auth().getUser(uid)).disabled;
@@ -75,8 +82,11 @@ async function folderTransaction<T>(folderId: string, run: (
 ) => Promise<T>): Promise<T> {
   const source = db.collection(FOLDERS).doc(folderId);
   for (;;) {
-    const ownerId = str((await source.get()).data()?.ownerId);
-    const enabled = ownerId !== "" && !(await publicFolderDeps.authDisabled(ownerId));
+    const before = (await source.get()).data();
+    const ownerId = str(before?.ownerId);
+    // Auth is read only for a public folder, so item writes in private folders cost no Auth call. A folder that
+    // turns public after this read gets its own sync from the folder trigger.
+    const enabled = ownerId !== "" && before?.public === true && !(await publicFolderDeps.authDisabled(ownerId));
     try {
       return await db.runTransaction(async (tx) => {
         const snapshot = await tx.get(source);
@@ -100,10 +110,22 @@ async function folderTransaction<T>(folderId: string, run: (
   }
 }
 
-/** A wall that may show in a public folder: approved, not streak-exclusive, not in a drop. Previews may be premium. */
-export function isPublicWall(wall: Doc | undefined): wall is Doc {
-  return Boolean(wall) && wall?.review === true && wall.is_streak_exclusive !== true &&
-    wall.dropReserved !== true && !wall.dropWeek;
+/**
+ * A wall that may show in a public folder: the free gallery gate. Approved, protected original, not streak-exclusive,
+ * not in a drop, and not in a premium collection. The app shows the same walls on the folder page.
+ */
+export function isPublicWall(wall: Doc | undefined, premium: string[]): wall is Doc {
+  return Boolean(wall) && wall?.review === true && isWotdEligible(wall, premium);
+}
+
+let premiumCache: {at: number; value: Promise<string[]>} | undefined;
+
+/** Remote Config premium collections, kept for 10 minutes so a sync does not read the template per item. */
+function cachedPremiumCollections(): Promise<string[]> {
+  if (!premiumCache || Date.now() - premiumCache.at > 10 * 60_000) {
+    premiumCache = {at: Date.now(), value: premiumCollections()};
+  }
+  return premiumCache.value;
 }
 
 /**
@@ -124,7 +146,7 @@ export async function projectedItem(
   const wall = docId ? (wallRef ? await (tx ? tx.get(wallRef) : wallRef.get()) : undefined) :
     id ? (await (tx ? tx.get(query) : query.get())).docs[0] : undefined;
   const data = wall?.data();
-  if (!wall?.exists || !isPublicWall(data)) return null;
+  if (!wall?.exists || !isPublicWall(data, await publicFolderDeps.premium())) return null;
   const thumb = str(data.wallpaper_thumb);
   const wallId = str(data.id) || wall.id;
   if (!isPreviewUrl(thumb)) return null;
@@ -345,6 +367,29 @@ export async function syncPublicFolderItem(folderId: string, itemKey: string): P
   await refreshHeader(folderId);
   await ensureHeader(folderId);
 }
+
+/**
+ * Re-projects the public copies of a wall that stopped passing the gate or changed its thumbnail, for example a wall
+ * held after reports, deleted, or moved into a drop. A wall that becomes eligible again shows at the next folder sync.
+ */
+export async function refreshWallInPublicFolders(wallId: string, before: Doc | undefined, after: Doc | undefined) {
+  const premium = await publicFolderDeps.premium();
+  const was = isPublicWall(before, premium) ? str(before.wallpaper_thumb) : null;
+  const now = isPublicWall(after, premium) ? str(after.wallpaper_thumb) : null;
+  if (was === null || was === now) return;
+  const items = await db.collectionGroup(ITEMS).where("wallpaperDocumentId", "==", wallId).get();
+  const copies = items.docs.map((d) => d.ref.path.split("/"))
+    .filter((parts) => parts.length === 4 && parts[0] === PUBLIC_FOLDERS);
+  await inChunks(copies, async ([, folderId, , itemKey]) => {
+    await projectCurrentItem(folderId, itemKey);
+    await refreshHeader(folderId);
+  });
+}
+
+export const onWallPublicGateChanged = onDocumentWritten(
+  {document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets},
+  async (event) => refreshWallInPublicFolders(event.params.wallId, event.data?.before?.data(), event.data?.after?.data()),
+);
 
 /** Removes every public folder of a user. Used when the account closes or is deleted. */
 export async function removeOwnerPublicFolders(uid: string): Promise<void> {
