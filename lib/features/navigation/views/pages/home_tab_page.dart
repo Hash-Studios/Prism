@@ -13,6 +13,7 @@ import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -76,11 +77,19 @@ List<ShortcutItem> prismShortcutItems({required bool android, required AppLocali
 ];
 
 @visibleForTesting
-WallpaperDetailRoute wallOfTheDayRoute(WallOfTheDayEntity entity) => WallpaperDetailRoute(
-  wallId: entity.wallId,
-  source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
-  thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
-);
+WallpaperDetailRoute wallOfTheDayRoute(WallOfTheDayEntity entity) {
+  final WallpaperSource source = entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source;
+  return WallpaperDetailRoute(
+    wallId: entity.wallId,
+    source: source,
+    thumbnailUrl: WallpaperDisplaySource.forWall(
+      id: entity.wallId,
+      source: source,
+      thumbnail: entity.thumbnailUrl,
+      fullUrl: entity.url,
+    ).placeholder,
+  );
+}
 
 @RoutePage()
 class HomeTabPage extends StatefulWidget {

@@ -1,4 +1,57 @@
 {
+  "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
+  "foldersLibraryEmptyBody": "किसी वॉलपेपर को फ़ोल्डर में सहेजने के लिए उस पर दिल के निशान को दबाए रखें।",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
+  "foldersLoadAllError": "आपके फ़ोल्डर लोड नहीं हो सके",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 पसंदीदा में खोजें} other{{count} पसंदीदा में खोजें}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "wallpaperFavouriteSortAndFilter": "क्रमबद्ध और फ़िल्टर करें",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
+  "wallpaperFavouriteSortBy": "इस क्रम में लगाएँ",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
+  "wallpaperFavouriteFilterSource": "स्रोत",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
+  "wallpaperHistorySetAgain": "फिर से लगाएँ",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, {time} बजे लगाया गया",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
@@ -285,6 +338,10 @@
   "accountClearDepthEffect": "डेप्थ इफ़ेक्ट साफ़ करें",
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
+  },
+  "accountClearSpatialScene": "स्पेशियल साफ़ करें",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
   },
   "accountClearFavouriteWallpapers": "पसंदीदा वॉलपेपर हटाएँ",
   "@accountClearFavouriteWallpapers": {
@@ -577,6 +634,18 @@
   "accountDepthEffectClockSemanticLabel": "डेप्थ इफ़ेक्ट, विषय घड़ी के सामने",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "स्पेशियल",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "स्पष्ट 3D गहराई वाले वॉलपेपर",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "स्पेशियल, स्पष्ट 3D गहराई वाले वॉलपेपर",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{कोई डाउनलोड किया हुआ वॉलपेपर नहीं; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} =1{1 डाउनलोड किया हुआ वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} other{{count} डाउनलोड किए हुए वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी}}",
   "@accountDownloadedWallpaperCount": {
@@ -2353,6 +2422,18 @@
   "coreDepthEffectBadgeSemantic": "डेप्थ इफ़ेक्ट के साथ काम करता है",
   "coreDepthEffectMenuShortTip": "••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "coreDepthEffectMenuTip": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
+  "coreSpatialBadge": "स्पेशियल",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "स्पेशियल सीन के रूप में काम करता है",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "लॉक स्क्रीन एडिटर में स्पेशियल सीन बटन पर टैप करें।",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।",
   "coreDone": "हो गया",
   "coreDown": "{coins} कम",
@@ -6864,6 +6945,54 @@
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
   },
+  "wallpaperSpatialScene": "स्पेशियल सीन",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "साफ़ गहराई। एक मज़बूत 3D लॉक स्क्रीन बनाती है।",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "थोड़ी गहराई। 3D इफ़ेक्ट हल्का है।",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "इसे स्पेशियल सीन के रूप में सेट करें",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "iOS 26 वाले iPhone 12 या उसके बाद के मॉडल पर:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "इस वॉलपेपर को फ़ोटो में सेव करें।",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "लॉक स्क्रीन पर, स्क्रीन को स्पर्श करके रखें। जोड़ें बटन पर टैप करें, फ़ोटो पर टैप करें, फिर फ़ोटो चुनें।",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "3D इफ़ेक्ट चालू करने के लिए स्पेशियल सीन बटन पर टैप करें, फिर जोड़ें पर टैप करें।",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "3D में प्रीव्यू देखें",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "3D प्रीव्यू बंद करें",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "झुकाने के लिए खींचें",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
+  },
   "wallpaperDetailColorCodeCopied": "रंग कोड क्लिपबोर्ड पर कॉपी हुआ",
   "@wallpaperDetailColorCodeCopied": {
     "description": "Toast shown after copying a wallpaper color's hex code."
@@ -7472,25 +7601,6 @@
   "@wallpaperHistoryRemoveAction": {
     "description": "Action to remove a wallpaper from history."
   },
-  "wallpaperHistoryTileSemantic": "{current}फिर से लगाएँ। {target}, {date}",
-  "@wallpaperHistoryTileSemantic": {
-    "description": "Accessibility description for a wallpaper history tile.",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "wallpaperHistoryTitle": "वॉलपेपर इतिहास",
-  "@wallpaperHistoryTitle": {
-    "description": "Title of the wallpaper history screen."
-  },
   "wallpaperHomeAppName": "Prism",
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
@@ -7559,18 +7669,6 @@
   "wallpaperLibraryHistory": "इतिहास",
   "@wallpaperLibraryHistory": {
     "description": "History tab label in the library."
-  },
-  "wallpaperLibraryHistoryBody": "आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।",
-  "@wallpaperLibraryHistoryBody": {
-    "description": "Description for the history introduction in the library."
-  },
-  "wallpaperLibraryHistoryTitle": "वॉलपेपर इतिहास",
-  "@wallpaperLibraryHistoryTitle": {
-    "description": "Title for the history introduction in the library."
-  },
-  "wallpaperLibraryOpenHistory": "इतिहास खोलें",
-  "@wallpaperLibraryOpenHistory": {
-    "description": "Action to open wallpaper history."
   },
   "wallpaperLibraryTitle": "लाइब्रेरी",
   "@wallpaperLibraryTitle": {
@@ -8213,10 +8311,6 @@
   "@wallpaperQuickWotdTitle": {
     "description": "Title of the Wall of the Day quick tile."
   },
-  "wallpaperRecentlySet": "हाल ही में सेट किए गए",
-  "@wallpaperRecentlySet": {
-    "description": "Section heading for recently set wallpapers."
-  },
   "wallpaperRefresh": "रीफ़्रेश करें",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -8273,10 +8367,6 @@
   "wallpaperSet": "सेट करें",
   "@wallpaperSet": {
     "description": "Wallpaper interface text: wallpaperSet."
-  },
-  "wallpaperSetAgain": "यह वॉलपेपर फिर से सेट करें",
-  "@wallpaperSetAgain": {
-    "description": "Accessibility label to set a recently set wallpaper again."
   },
   "wallpaperSetAsWallpaper": "वॉलपेपर के रूप में सेट करें",
   "@wallpaperSetAsWallpaper": {
@@ -8419,10 +8509,6 @@
   "wallpaperSignInForPremiumFilters": "कॉइन से प्रीमियम फ़िल्टर इस्तेमाल करने के लिए साइन इन करें।",
   "@wallpaperSignInForPremiumFilters": {
     "description": "Message shown when a signed-out user selects a premium filter."
-  },
-  "wallpaperSort": "क्रमबद्ध करें",
-  "@wallpaperSort": {
-    "description": "Accessibility label for the favourites sort menu."
   },
   "wallpaperSortDownloads": "डाउनलोड क्रमबद्ध करें",
   "@wallpaperSortDownloads": {
@@ -9344,6 +9430,202 @@
   "widgetsCardDismiss": "हटाएँ",
   "@widgetsCardDismiss": {
     "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  },
+  "foldersTitle": "फ़ोल्डर",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "फ़ोल्डर में सहेजें",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "फ़ोल्डर में जोड़ें",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "नया फ़ोल्डर",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "फ़ोल्डर का नाम",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "बनाएँ",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "फ़ोल्डर बनाएँ",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "सुझाया गया",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "नया",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{1 फ़ोल्डर में सहेजा गया।} other{{count} फ़ोल्डरों में सहेजा गया।}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "फ़ोल्डर अपडेट किए गए।",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "फ़ोल्डरों में सहेजा नहीं जा सका। फिर से कोशिश करें।",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "फ़ोल्डर अपडेट नहीं हो सका। फिर से कोशिश करें।",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "नाम बदलें",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "फ़ोल्डर का नाम बदलें",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "हटाएँ",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "{name} हटाएँ?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "वॉलपेपर आपके पसंदीदा में रहेंगे।",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "फ़ोल्डर हटाएँ",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "फ़ोल्डर हटा दिया गया।",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "इस फ़ोल्डर से हटाएँ?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "यह आपके पसंदीदा में रहेगा।",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "हटाएँ",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "फ़ोल्डर से हटा दिया गया।",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "यह फ़ोल्डर खाली है",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersLoadError": "यह फ़ोल्डर लोड नहीं हो सका।",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "यह फ़ोल्डर उपलब्ध नहीं है",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "हो सकता है इसे हटा दिया गया हो।",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "फ़ोल्डर",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "और विकल्प",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "लॉक स्क्रीन",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "होम स्क्रीन",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
+  },
+  "wallpaperHistoryTileSemantic": "{current}फिर से लगाएँ। {target}, {date}",
+  "@wallpaperHistoryTileSemantic": {
+    "description": "Accessibility description for a wallpaper history tile.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperHistoryTitle": "वॉलपेपर इतिहास",
+  "@wallpaperHistoryTitle": {
+    "description": "Title of the wallpaper history screen."
+  },
+  "wallpaperLibraryHistoryBody": "आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।",
+  "@wallpaperLibraryHistoryBody": {
+    "description": "Description for the history introduction in the library."
+  },
+  "wallpaperLibraryHistoryTitle": "वॉलपेपर इतिहास",
+  "@wallpaperLibraryHistoryTitle": {
+    "description": "Title for the history introduction in the library."
+  },
+  "wallpaperLibraryOpenHistory": "इतिहास खोलें",
+  "@wallpaperLibraryOpenHistory": {
+    "description": "Action to open wallpaper history."
+  },
+  "wallpaperRecentlySet": "हाल ही में सेट किए गए",
+  "@wallpaperRecentlySet": {
+    "description": "Section heading for recently set wallpapers."
+  },
+  "wallpaperSetAgain": "यह वॉलपेपर फिर से सेट करें",
+  "@wallpaperSetAgain": {
+    "description": "Accessibility label to set a recently set wallpaper again."
+  },
+  "wallpaperSort": "क्रमबद्ध करें",
+  "@wallpaperSort": {
+    "description": "Accessibility label for the favourites sort menu."
   },
   "tasteQuizTitle": "जो आपको ज़्यादा पसंद हो, उसे चुनें",
   "@tasteQuizTitle": {

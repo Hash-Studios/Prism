@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -77,6 +78,35 @@ void main() {
       isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.depthTier, 'depthTier', isNull),
     );
     expect(encodeFeedItem(unchecked)['wallpaper'], isNot(contains('depthTier')));
+  });
+
+  test('the Spatial Scene tier and map survive a JSON round trip, and a wall without one stays unchecked', () {
+    final item = FeedItemEntity.prism(
+      id: 'p3',
+      wallpaper: PrismWallpaper(
+        core: _core('p3', WallpaperSource.prism),
+        spatial: const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
+      ),
+    );
+
+    expect(
+      decodeFeedItem(_viaJson(item)),
+      isA<PrismFeedItem>().having(
+        (decoded) => decoded.wallpaper.spatial,
+        'spatial',
+        const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
+      ),
+    );
+    final unchecked = FeedItemEntity.prism(
+      id: 'p4',
+      wallpaper: PrismWallpaper(core: _core('p4', WallpaperSource.prism)),
+    );
+
+    expect(
+      decodeFeedItem(_viaJson(unchecked)),
+      isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.spatial, 'spatial', isNull),
+    );
+    expect(encodeFeedItem(unchecked)['wallpaper'], isNot(contains('spatial')));
   });
 
   test('wallhaven item survives a JSON round trip', () {

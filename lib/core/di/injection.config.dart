@@ -77,6 +77,11 @@ import '../../features/favourite_walls/domain/repositories/favourite_walls_repos
     as _i643;
 import '../../features/favourite_walls/domain/usecases/favourite_walls_usecases.dart'
     as _i406;
+import '../../features/folders/biz/bloc/folders_bloc.j.dart' as _i129;
+import '../../features/folders/data/repositories/folders_repository_impl.dart'
+    as _i342;
+import '../../features/folders/domain/repositories/folders_repository.dart'
+    as _i847;
 import '../../features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart'
     as _i584;
 import '../../features/in_app_notifications/data/repositories/notifications_repository_impl.dart'
@@ -420,6 +425,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i738.SessionRepository>(
     () => _i1021.SessionRepositoryImpl(gh<_i704.SessionLocalDataSource>()),
   );
+  gh.lazySingleton<_i847.FoldersRepository>(
+    () => _i342.FoldersRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
   gh.factory<_i567.AdsBloc>(
     () => _i567.AdsBloc(
       gh<_i321.CreateRewardedAdUseCase>(),
@@ -500,6 +508,9 @@ _i174.GetIt initGetIt(
       gh<_i738.SessionRepository>(),
       gh<_i349.FirestoreClient>(),
     ),
+  );
+  gh.factory<_i129.FoldersBloc>(
+    () => _i129.FoldersBloc(gh<_i847.FoldersRepository>()),
   );
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(

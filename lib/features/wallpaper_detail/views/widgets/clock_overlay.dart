@@ -2,22 +2,25 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
-import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
-import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -47,7 +50,7 @@ class SetScreenRequest {
     this.onAdjust,
   });
 
-  /// The wall to set. A Prism wall previews its [thumbnailUrl], because its original may need the user's consent.
+  /// The wall to set. A Prism wall previews its display derivative, because its original may need the user's consent.
   final String url;
   final String? thumbnailUrl;
   final String? wallpaperId;
@@ -63,12 +66,42 @@ class SetScreenRequest {
   final Future<StudioResult?> Function(BuildContext context)? onAdjust;
 }
 
+/// What the Set screen shows for [request]: a file on the device as is, a Prism wall's display derivative (never its
+/// original), and otherwise the wall's own URL, or its thumbnail when there is none.
+WallpaperDisplaySource setScreenDisplaySource(SetScreenRequest request) {
+  final String thumbnail = request.thumbnailUrl?.trim() ?? '';
+  final String url = request.url.trim();
+  final bool local = url.startsWith('/') || url.startsWith('file:');
+  final bool localThumbnail = thumbnail.startsWith('/') || thumbnail.startsWith('file:');
+  final String id = request.wallpaperId ?? '';
+  final WallpaperSource? source = request.wallpaperSource;
+  if (local && (source == null || source == WallpaperSource.downloaded)) {
+    return WallpaperDisplaySource(thumbnail: '', full: url);
+  }
+  if (url.isEmpty && localThumbnail && source == WallpaperSource.downloaded) {
+    return WallpaperDisplaySource(thumbnail: '', full: thumbnail);
+  }
+  if (source == WallpaperSource.prism) {
+    return WallpaperDisplaySource.forWall(id: id, source: WallpaperSource.prism, thumbnail: thumbnail, fullUrl: url);
+  }
+  final String full = isValidNetworkUrl(url) ? url : '';
+  final String safeThumbnail = isValidNetworkUrl(thumbnail) ? thumbnail : '';
+  return WallpaperDisplaySource(thumbnail: safeThumbnail, full: full);
+}
+
 /// Opens the Set screen over the current page. Returns what the user picked, or null when they closed it.
 Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest request) {
-  final String thumbnail = request.thumbnailUrl?.trim() ?? '';
-  final bool previewThumbnail =
-      thumbnail.isNotEmpty && (request.wallpaperSource == WallpaperSource.prism || request.url.trim().isEmpty);
-  final String link = previewThumbnail ? thumbnail : request.url;
+  final WallpaperDisplaySource display = setScreenDisplaySource(request);
+  final String link = display.bestLink;
+  final SetScreenRequest safeRequest = SetScreenRequest(
+    url: link,
+    thumbnailUrl: display.thumbnail,
+    wallpaperId: request.wallpaperId,
+    wallpaperSource: request.wallpaperSource,
+    tint: request.tint,
+    notes: request.notes,
+    onAdjust: request.onAdjust,
+  );
   return Navigator.of(context, rootNavigator: true).push<SetWallpaperChoice>(
     _previewRoute<SetWallpaperChoice>(
       context,
@@ -77,9 +110,9 @@ Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest
         file: link.startsWith('/') || link.startsWith('file:'),
         wallpaperId: request.wallpaperId,
         wallpaperSource: request.wallpaperSource,
-        thumbnailUrl: request.thumbnailUrl,
+        thumbnailUrl: display.thumbnail,
         tint: request.tint,
-        request: request,
+        request: safeRequest,
       ),
     ),
   );
@@ -104,6 +137,7 @@ class ClockOverlay extends StatefulWidget {
     this.tint,
     this.saveAction,
     this.request,
+    this.spatialMapUrl,
   });
 
   final String link;
@@ -123,6 +157,9 @@ class ClockOverlay extends StatefulWidget {
   /// Makes this the flow's Set screen.
   final SetScreenRequest? request;
 
+  /// The wall's depth map. When set, a 3D toggle shows the wall with a tilt parallax.
+  final String? spatialMapUrl;
+
   @override
   State<ClockOverlay> createState() => _ClockOverlayState();
 }
@@ -140,6 +177,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   bool _schemeRead = false;
   PreviewIconStyle _iconStyle = _savedIconStyle();
   bool _controls = true;
+  bool _spatial = false;
 
   /// Unknown capabilities count as supported, so the targets do not jump in once they load.
   aw.WallpaperCapabilities? _capabilities;
@@ -158,16 +196,49 @@ class _ClockOverlayState extends State<ClockOverlay> {
   File? _localFile;
 
   String get _link => _placed?.path ?? widget.link;
-  bool get _file => _placed != null || widget.file;
+  bool get _file => _placed != null || (widget.file && _isLocalFileLink(_link));
+
+  bool _isLocalFileLink(String link) {
+    final Uri? uri = Uri.tryParse(link);
+    return uri?.scheme == 'file' || uri?.scheme.isEmpty == true;
+  }
+
+  WallpaperDisplaySource get _displaySource {
+    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
+    if (_file) {
+      return WallpaperDisplaySource(thumbnail: '', full: _link);
+    }
+    if (widget.wallpaperSource == WallpaperSource.prism) {
+      return WallpaperDisplaySource.forWall(
+        id: widget.wallpaperId ?? '',
+        source: WallpaperSource.prism,
+        thumbnail: thumbnail,
+      );
+    }
+    if (isValidNetworkUrl(_link)) {
+      return WallpaperDisplaySource(
+        thumbnail: thumbnail,
+        full: _link,
+        id: widget.wallpaperId,
+        source: widget.wallpaperSource,
+      );
+    }
+    if (_link.startsWith('assets/')) return WallpaperDisplaySource(thumbnail: '', full: _link);
+    return const WallpaperDisplaySource(thumbnail: '', full: '');
+  }
 
   /// A placed wall was rendered from the tinted source, so it already has the hue.
   Color? get _tint => _placed == null ? widget.tint : null;
 
-  ImageProvider get _provider => _localFile != null
-      ? FileImage(_localFile!)
-      : _link.startsWith('assets/')
-      ? AssetImage(_link)
-      : CachedNetworkImageProvider(_link, cacheManager: _cache);
+  ImageProvider? get _provider {
+    if (_localFile != null) return FileImage(_localFile!);
+    final String link = _displaySource.bestLink;
+    if (link.isEmpty) return null;
+    if (link.startsWith('assets/')) return AssetImage(link);
+    if (isValidNetworkUrl(link)) return CachedNetworkImageProvider(link, cacheManager: _cache);
+    final Uri? uri = Uri.tryParse(link);
+    return FileImage(File(uri?.scheme == 'file' ? uri!.toFilePath() : link));
+  }
 
   BaseCacheManager get _cache => PrismFullImageCache.instance;
 
@@ -220,6 +291,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
         oldWidget.file == widget.file &&
         oldWidget.wallpaperId == widget.wallpaperId &&
         oldWidget.wallpaperSource == widget.wallpaperSource &&
+        oldWidget.thumbnailUrl == widget.thumbnailUrl &&
         oldWidget.tint == widget.tint) {
       return;
     }
@@ -290,9 +362,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
     _localFile ??= local;
     if (!mounted) return;
     final Color? tint = _tint;
+    final ImageProvider? provider = _provider;
+    if (tint == null && provider == null) return;
     final ColorScheme? scheme = tint != null
         ? ColorScheme.fromSeed(seedColor: tint, brightness: Brightness.dark)
-        : await wallpaperScheme(_provider);
+        : await wallpaperScheme(provider!);
     if (generation != _inputGeneration) return;
     if (mounted) setState(() => _scheme = scheme);
   }
@@ -303,6 +377,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
       return File(uri?.scheme == 'file' ? uri!.toFilePath() : _link);
     }
     if (_link.startsWith('assets/')) return null;
+    if (widget.wallpaperSource == WallpaperSource.prism) {
+      return wallpaperOfflineCopy(_displaySource);
+    }
+    if (!isValidNetworkUrl(_link)) return null;
     try {
       return await WallpaperService.resolveToLocalFile(
         _link,
@@ -321,7 +399,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     if (generation != _inputGeneration) return;
     _localFile = localFile;
     if (!mounted) return;
-    final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
+    final ImageProvider? provider = _provider;
+    if (provider == null) return;
+    final ImageStream stream = ResizeImage(provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
     final ImageStreamListener listener = ImageStreamListener(
       (info, _) {
         unawaited(_applySample(info.image, generation));
@@ -338,8 +418,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 
   Future<void> _applySample(ui.Image image, int generation) async {
-    final Color color = await textColorForTopThird(image, tint: _tint);
-    if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
+    try {
+      final Color color = await textColorForTopThird(image, tint: _tint);
+      if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
+    } finally {
+      image.dispose();
+    }
   }
 
   void _stopSampling() {
@@ -363,73 +447,18 @@ class _ClockOverlayState extends State<ClockOverlay> {
     return ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.hue), child: image);
   }
 
-  Widget _tintedPhoto(BuildContext context, ImageProvider provider) => _tinted(
-    SizedBox.expand(
-      child: Image(image: provider, fit: BoxFit.cover),
-    ),
-  );
-
-  ImageWidgetBuilder? get _tintedBuilder => _tint == null ? null : _tintedPhoto;
-
   Widget _image(BuildContext context, Size size) {
     final Color placeholder = Theme.of(context).primaryColor;
-    final int cacheWidth = previewCacheWidth(size.width, MediaQuery.devicePixelRatioOf(context));
-    Widget error() => ColoredBox(
+    final WallpaperDisplaySource display = _displaySource;
+    return ColoredBox(
       color: placeholder,
-      child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
-    );
-    if (_file || (!isValidNetworkUrl(_link) && !_link.startsWith('assets/'))) {
-      final Uri? uri = Uri.tryParse(_link);
-      final String path = uri?.scheme == 'file' ? uri!.toFilePath() : _link;
-      return SizedBox.expand(
-        child: _tinted(
-          Image.file(
-            _localFile ?? File(path),
-            fit: BoxFit.cover,
-            cacheWidth: cacheWidth,
-            errorBuilder: (_, _, _) => error(),
-          ),
+      child: _tinted(
+        ProgressiveWallpaperImage(
+          display: display,
+          decodeBox: size,
+          errorBuilder: (_, _) =>
+              Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
         ),
-      );
-    }
-    if (_link.startsWith('assets/')) {
-      return SizedBox.expand(
-        child: _tinted(
-          Image.asset(_link, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
-        ),
-      );
-    }
-    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
-    return SizedBox.expand(
-      child: FutureBuilder<File?>(
-        future: _localFileFuture,
-        builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) return ColoredBox(color: placeholder);
-          final File? local = snapshot.data;
-          if (local != null) {
-            _localFile = local;
-            return _tinted(
-              Image.file(local, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
-            );
-          }
-          return CachedNetworkImage(
-            cacheManager: _cache,
-            imageUrl: _link,
-            fit: BoxFit.cover,
-            memCacheWidth: cacheWidth,
-            imageBuilder: _tintedBuilder,
-            placeholder: (_, _) => thumbnail.isEmpty
-                ? ColoredBox(color: placeholder)
-                : CachedNetworkImage(
-                    cacheManager: PrismImageCache.instance,
-                    imageUrl: thumbnail,
-                    fit: BoxFit.cover,
-                    imageBuilder: _tintedBuilder,
-                    errorWidget: (_, _, _) => ColoredBox(color: placeholder),
-                  ),
-            errorWidget: (_, _, _) => error(),
-          );
-        },
       ),
     );
   }
@@ -587,6 +616,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     );
   }
 
+  void _trackSpatial(SpatialTiltMode mode) =>
+      analytics.track(SpatialPreviewOpenedEvent(wallId: widget.wallpaperId ?? '', tilt: mode.name));
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
@@ -598,6 +630,34 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final List<PreviewIconStyle> styles = PreviewIconStyle.forPlatform(defaultTargetPlatform);
     final Widget? primary = _primary(context);
     final List<String> notes = widget.request?.notes ?? const <String>[];
+    final Widget layers = Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        AnimatedSwitcher(
+          duration: fade,
+          switchInCurve: PrismCurves.enter,
+          switchOutCurve: PrismCurves.enter.flipped,
+          layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+          child: lock
+              ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+              : HomePreviewLayer(
+                  key: ValueKey<ClockPreviewMode>(_mode),
+                  textColor: textColor,
+                  iconStyle: _iconStyle,
+                  scheme: _scheme,
+                ),
+        ),
+        Semantics(
+          button: true,
+          label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _controls = !_controls),
+            child: SizedBox(height: size.height, width: size.width),
+          ),
+        ),
+      ],
+    );
     // A Scaffold, so the set result and its Undo show over the preview and not under it.
     return PopScope<Object?>(
       onPopInvokedWithResult: (didPop, _) => _handlePop(didPop),
@@ -605,32 +665,20 @@ class _ClockOverlayState extends State<ClockOverlay> {
         backgroundColor: theme.colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
-            Positioned.fill(
-              child: AnimatedSwitcher(
-                duration: fade,
-                switchInCurve: PrismCurves.enter,
-                switchOutCurve: PrismCurves.enter.flipped,
-                layoutBuilder: (current, previous) =>
-                    Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
-                child: lock
-                    ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
-                    : HomePreviewLayer(
-                        key: ValueKey<ClockPreviewMode>(_mode),
-                        textColor: textColor,
-                        iconStyle: _iconStyle,
-                        scheme: _scheme,
-                      ),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _controls = !_controls),
-                child: SizedBox(height: size.height, width: size.width),
-              ),
+            Positioned(
+              left: 0,
+              top: 0,
+              width: size.width,
+              height: size.height,
+              child: _spatial && widget.spatialMapUrl != null && _provider != null
+                  ? SpatialTiltView(
+                      image: sizedWallpaperImage(_provider!, size, MediaQuery.devicePixelRatioOf(context), null),
+                      mapUrl: widget.spatialMapUrl!,
+                      tint: widget.tint,
+                      onMode: _trackSpatial,
+                      child: layers,
+                    )
+                  : Stack(fit: StackFit.expand, children: <Widget>[_image(context, size), layers]),
             ),
             Positioned.fill(
               child: IgnorePointer(
@@ -690,6 +738,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         size: 48,
                                         onPressed: _close,
                                       ),
+                                      if (widget.spatialMapUrl != null) ...<Widget>[
+                                        const SizedBox(width: PrismSpace.xs),
+                                        _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
+                                      ],
                                       if (primary != null) ...<Widget>[
                                         const SizedBox(width: PrismSpace.xs),
                                         Expanded(child: Center(child: primary)),
@@ -749,6 +801,47 @@ class _ControlCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Turns the tilt parallax on and off. As tall as the close button next to it.
+class _SpatialToggle extends StatelessWidget {
+  const _SpatialToggle({required this.on, required this.onChanged});
+
+  final bool on;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
+    final Color foreground = on ? scheme.onPrimary : scheme.onSurface;
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        toggled: on,
+        excludeSemantics: true,
+        label: tooltip,
+        onTap: () => onChanged(!on),
+        child: PressScale(
+          child: TextButton.icon(
+            onPressed: () => onChanged(!on),
+            style: TextButton.styleFrom(
+              foregroundColor: foreground,
+              backgroundColor: on ? scheme.primary : scheme.onSurface.withValues(alpha: 0.08),
+              minimumSize: const Size(48, 48),
+              fixedSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+              textStyle: PrismTextStyles.button,
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.view_in_ar_rounded, size: 20),
+            label: Text(context.l10n.wallpaperSpatialPreviewLabel),
           ),
         ),
       ),
@@ -1149,6 +1242,7 @@ Future<void> pushClockPreview(
   String? thumbnailUrl,
   Color? tint,
   Widget Function(String label)? saveAction,
+  String? spatialMapUrl,
 }) {
   return Navigator.push<void>(
     context,
@@ -1162,6 +1256,7 @@ Future<void> pushClockPreview(
         thumbnailUrl: thumbnailUrl,
         tint: tint,
         saveAction: saveAction,
+        spatialMapUrl: spatialMapUrl,
       ),
     ),
   );

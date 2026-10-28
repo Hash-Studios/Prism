@@ -1,13 +1,11 @@
 import 'dart:io';
 
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:intl/intl.dart';
 
 String appliedTargetLabel(AppLocalizations l10n, String target) => switch (target) {
   'home' => l10n.wallpaperAutoRotateHomeScreen,
@@ -16,110 +14,140 @@ String appliedTargetLabel(AppLocalizations l10n, String target) => switch (targe
   _ => target,
 };
 
+/// Room under a tile for the screen and the time, at the current text size.
+double appliedWallpaperFooterHeight(BuildContext context) =>
+    MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5).scale(36) + PrismSpace.xs;
+
+/// One wallpaper the user set: the image, which screen got it and when. A tap opens it; the button on the image sets
+/// it again.
 class AppliedWallpaperTile extends StatelessWidget {
   const AppliedWallpaperTile({
     super.key,
     required this.item,
     required this.onTap,
+    required this.onSetAgain,
     this.onRemove,
     this.isCurrent = false,
   });
 
   final AppliedWallpaper item;
   final VoidCallback onTap;
+  final VoidCallback onSetAgain;
 
-  /// Removes the row from the list. Offered on long press and as a screen reader action.
+  /// Removes the tile from the list. Offered on long press and as a screen reader action.
   final VoidCallback? onRemove;
 
-  /// True for the newest home or lock row, which is what Prism last set on that screen.
+  /// True for the newest home or lock tile, which is what Prism last set on that screen.
   final bool isCurrent;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final String target = appliedTargetLabel(context.l10n, item.target);
-    final DateTime localAppliedAt = item.appliedAt.toLocal();
-    final String date =
-        '${DateFormat.MMMd(context.l10n.localeName).format(localAppliedAt)} '
-        '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(localAppliedAt), alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat)}';
-    final Widget placeholder = ColoredBox(color: scheme.surfaceContainerHighest);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppLocalizations l10n = context.l10n;
+    final String target = appliedTargetLabel(l10n, item.target);
+    final String time = MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay.fromDateTime(item.appliedAt.toLocal()),
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+    final Widget placeholder = ColoredBox(color: scheme.surfaceContainerHigh);
     final String thumbnail = item.thumbnailUrl.isEmpty ? item.fullUrl : item.thumbnailUrl;
     final Widget image = thumbnail.startsWith('http')
-        ? CachedNetworkImage(
-            imageUrl: thumbnail,
-            fit: BoxFit.cover,
-            memCacheWidth: 400,
-            placeholder: (_, _) => placeholder,
-            errorWidget: (_, _, _) => placeholder,
-          )
+        ? PrismImageTile(url: thumbnail, memCacheWidth: 400)
         : Image.file(File(thumbnail), fit: BoxFit.cover, cacheWidth: 400, errorBuilder: (_, _, _) => placeholder);
-    return Semantics(
-      button: true,
-      label: context.l10n.wallpaperHistoryTileSemantic(
-        isCurrent ? context.l10n.wallpaperHistoryCurrentPrefix : '',
-        target,
-        date,
-      ),
-      customSemanticsActions: onRemove == null
-          ? null
-          : <CustomSemanticsAction, VoidCallback>{
-              CustomSemanticsAction(label: context.l10n.wallpaperHistoryRemoveAction): onRemove!,
-            },
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onRemove,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    image,
-                    if (isCurrent)
-                      Positioned(
-                        left: 8,
-                        top: 8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(
+          child: PressScale(
+            scale: 0.97,
+            child: Semantics(
+              button: true,
+              image: true,
+              label: l10n.wallpaperHistoryTileLabel(isCurrent ? l10n.wallpaperHistoryCurrentPrefix : '', target, time),
+              customSemanticsActions: onRemove == null
+                  ? null
+                  : <CustomSemanticsAction, VoidCallback>{
+                      CustomSemanticsAction(label: l10n.wallpaperHistoryRemoveAction): onRemove!,
+                    },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                onLongPress: onRemove,
+                child: ClipRRect(
+                  borderRadius: PrismWallGrid.tileRadius,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      placeholder,
+                      image,
+                      IgnorePointer(
                         child: DecoratedBox(
-                          decoration: ShapeDecoration(color: scheme.primary, shape: const StadiumBorder()),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            child: Text(
-                              context.l10n.wallpaperHistoryCurrent,
-                              style: TextStyle(
-                                fontFamily: PrismFonts.proximaNova,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: onColor(scheme.primary),
+                          decoration: BoxDecoration(
+                            borderRadius: PrismWallGrid.tileRadius,
+                            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+                          ),
+                        ),
+                      ),
+                      if (isCurrent)
+                        PositionedDirectional(
+                          start: PrismSpace.xs,
+                          top: PrismSpace.xs,
+                          child: DecoratedBox(
+                            decoration: ShapeDecoration(color: scheme.primary, shape: const StadiumBorder()),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+                              child: Text(
+                                l10n.wallpaperHistoryCurrent,
+                                style: PrismTextStyles.caption(
+                                  context,
+                                ).copyWith(color: onColor(scheme.primary), fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
                         ),
+                      PositionedDirectional(
+                        end: PrismSpace.xxs,
+                        bottom: PrismSpace.xxs,
+                        child: PrismIconButton(
+                          icon: Icons.replay_rounded,
+                          tooltip: l10n.wallpaperHistorySetAgain,
+                          onImage: true,
+                          iconSize: 20,
+                          onPressed: onSetAgain,
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          height: appliedWallpaperFooterHeight(context),
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.5,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: PrismSpace.xxs),
+              child: ExcludeSemantics(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      target,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 13),
+                    ),
+                    Text(time, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              target,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(color: scheme.secondary),
-            ),
-            Text(
-              date,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(color: scheme.secondary.withValues(alpha: 0.7), fontSize: 13),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

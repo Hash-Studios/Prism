@@ -11,6 +11,46 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'अभी कोई फ़ोल्डर नहीं';
+
+  @override
+  String get foldersLibraryEmptyBody => 'किसी वॉलपेपर को फ़ोल्डर में सहेजने के लिए उस पर दिल के निशान को दबाए रखें।';
+
+  @override
+  String get foldersLoadAllError => 'आपके फ़ोल्डर लोड नहीं हो सके';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString पसंदीदा में खोजें',
+      one: '1 पसंदीदा में खोजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'क्रमबद्ध और फ़िल्टर करें';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'इस क्रम में लगाएँ';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'स्रोत';
+
+  @override
+  String get wallpaperHistorySetAgain => 'फिर से लगाएँ';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, $time बजे लगाया गया';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -206,6 +246,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountClearDepthEffect => 'डेप्थ इफ़ेक्ट साफ़ करें';
+
+  @override
+  String get accountClearSpatialScene => 'स्पेशियल साफ़ करें';
 
   @override
   String get accountClearFavouriteWallpapers => 'पसंदीदा वॉलपेपर हटाएँ';
@@ -451,6 +494,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'डेप्थ इफ़ेक्ट, विषय घड़ी के सामने';
+
+  @override
+  String get accountSpatialScene => 'स्पेशियल';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'स्पष्ट 3D गहराई वाले वॉलपेपर';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'स्पेशियल, स्पष्ट 3D गहराई वाले वॉलपेपर';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2321,6 +2373,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।';
+
+  @override
+  String get coreSpatialBadge => 'स्पेशियल';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'स्पेशियल सीन के रूप में काम करता है';
+
+  @override
+  String get coreSpatialSceneTip => 'लॉक स्क्रीन एडिटर में स्पेशियल सीन बटन पर टैप करें।';
 
   @override
   String get coreDeviceCannotSetScreen => 'यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।';
@@ -8026,6 +8087,44 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperDepthSubjectSubtitle => 'आपका विषय घड़ी के सामने दिखाई देता है।';
 
   @override
+  String get wallpaperSpatialScene => 'स्पेशियल सीन';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'साफ़ गहराई। एक मज़बूत 3D लॉक स्क्रीन बनाती है।';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'थोड़ी गहराई। 3D इफ़ेक्ट हल्का है।';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'इसे स्पेशियल सीन के रूप में सेट करें';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'iOS 26 वाले iPhone 12 या उसके बाद के मॉडल पर:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'इस वॉलपेपर को फ़ोटो में सेव करें।';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'लॉक स्क्रीन पर, स्क्रीन को स्पर्श करके रखें। जोड़ें बटन पर टैप करें, फ़ोटो पर टैप करें, फिर फ़ोटो चुनें।';
+
+  @override
+  String get wallpaperSpatialStepButton =>
+      '3D इफ़ेक्ट चालू करने के लिए स्पेशियल सीन बटन पर टैप करें, फिर जोड़ें पर टैप करें।';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => '3D में प्रीव्यू देखें';
+
+  @override
+  String get wallpaperSpatialPreviewOff => '3D प्रीव्यू बंद करें';
+
+  @override
+  String get wallpaperSpatialDragHint => 'झुकाने के लिए खींचें';
+
+  @override
   String get wallpaperDetailColorCodeCopied => 'रंग कोड क्लिपबोर्ड पर कॉपी हुआ';
 
   @override
@@ -8519,14 +8618,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'इतिहास से हटाएँ';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '$currentफिर से लगाएँ। $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'वॉलपेपर इतिहास';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8572,15 +8663,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'इतिहास';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'वॉलपेपर इतिहास';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'इतिहास खोलें';
 
   @override
   String get wallpaperLibraryTitle => 'लाइब्रेरी';
@@ -9046,9 +9128,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'आज के वॉलपेपर की टाइल';
 
   @override
-  String get wallpaperRecentlySet => 'हाल ही में सेट किए गए';
-
-  @override
   String get wallpaperRefresh => 'रीफ़्रेश करें';
 
   @override
@@ -9088,9 +9167,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'सेट करें';
-
-  @override
-  String get wallpaperSetAgain => 'यह वॉलपेपर फिर से सेट करें';
 
   @override
   String get wallpaperSetAsWallpaper => 'वॉलपेपर के रूप में सेट करें';
@@ -9211,9 +9287,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'कॉइन से प्रीमियम फ़िल्टर इस्तेमाल करने के लिए साइन इन करें।';
-
-  @override
-  String get wallpaperSort => 'क्रमबद्ध करें';
 
   @override
   String get wallpaperSortDownloads => 'डाउनलोड क्रमबद्ध करें';
@@ -10308,6 +10381,159 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'हटाएँ';
+
+  @override
+  String get foldersTitle => 'फ़ोल्डर';
+
+  @override
+  String get foldersSaveToFolder => 'फ़ोल्डर में सहेजें';
+
+  @override
+  String get foldersAddToFolder => 'फ़ोल्डर में जोड़ें';
+
+  @override
+  String get foldersNewFolder => 'नया फ़ोल्डर';
+
+  @override
+  String get foldersNameHint => 'फ़ोल्डर का नाम';
+
+  @override
+  String get foldersCreate => 'बनाएँ';
+
+  @override
+  String get foldersCreateFolder => 'फ़ोल्डर बनाएँ';
+
+  @override
+  String get foldersSuggested => 'सुझाया गया';
+
+  @override
+  String get foldersNewTag => 'नया';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString फ़ोल्डरों में सहेजा गया।',
+      one: '1 फ़ोल्डर में सहेजा गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'फ़ोल्डर अपडेट किए गए।';
+
+  @override
+  String get foldersSaveFailed => 'फ़ोल्डरों में सहेजा नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersUpdateFailed => 'फ़ोल्डर अपडेट नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersRename => 'नाम बदलें';
+
+  @override
+  String get foldersRenameTitle => 'फ़ोल्डर का नाम बदलें';
+
+  @override
+  String get foldersDelete => 'हटाएँ';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return '$name हटाएँ?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'वॉलपेपर आपके पसंदीदा में रहेंगे।';
+
+  @override
+  String get foldersDeleteConfirm => 'फ़ोल्डर हटाएँ';
+
+  @override
+  String get foldersDeleted => 'फ़ोल्डर हटा दिया गया।';
+
+  @override
+  String get foldersRemoveTitle => 'इस फ़ोल्डर से हटाएँ?';
+
+  @override
+  String get foldersRemoveMessage => 'यह आपके पसंदीदा में रहेगा।';
+
+  @override
+  String get foldersRemoveConfirm => 'हटाएँ';
+
+  @override
+  String get foldersRemoved => 'फ़ोल्डर से हटा दिया गया।';
+
+  @override
+  String get foldersEmptyTitle => 'यह फ़ोल्डर खाली है';
+
+  @override
+  String get foldersEmptyBody => 'यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।';
+
+  @override
+  String get foldersLoadError => 'यह फ़ोल्डर लोड नहीं हो सका।';
+
+  @override
+  String get foldersNotFoundTitle => 'यह फ़ोल्डर उपलब्ध नहीं है';
+
+  @override
+  String get foldersNotFoundBody => 'हो सकता है इसे हटा दिया गया हो।';
+
+  @override
+  String get foldersSignInFeature => 'फ़ोल्डर';
+
+  @override
+  String get foldersMoreOptions => 'और विकल्प';
+
+  @override
+  String get foldersSuggestionLockScreen => 'लॉक स्क्रीन';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'होम स्क्रीन';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '$currentफिर से लगाएँ। $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'वॉलपेपर इतिहास';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'वॉलपेपर इतिहास';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'इतिहास खोलें';
+
+  @override
+  String get wallpaperRecentlySet => 'हाल ही में सेट किए गए';
+
+  @override
+  String get wallpaperSetAgain => 'यह वॉलपेपर फिर से सेट करें';
+
+  @override
+  String get wallpaperSort => 'क्रमबद्ध करें';
 
   @override
   String get tasteQuizTitle => 'जो आपको ज़्यादा पसंद हो, उसे चुनें';

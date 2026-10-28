@@ -32,6 +32,7 @@ import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/pages/drops_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
+import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
 import 'package:Prism/features/leaderboard/leaderboard.dart';
@@ -66,7 +67,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
-import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
@@ -179,6 +179,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
     AutoRoute(path: '/downloads', page: DownloadRoute.page),
     AutoRoute(path: '/library', page: LibraryRoute.page),
+    AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
@@ -197,7 +198,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
     AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
-    AutoRoute(path: '/wallpaper-history', page: WallpaperHistoryRoute.page),
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),

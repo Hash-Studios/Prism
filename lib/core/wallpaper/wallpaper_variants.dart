@@ -1,4 +1,5 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 
@@ -17,6 +18,7 @@ final class PrismWallpaper {
     this.firestoreDocumentId,
     this.boostedUntil,
     this.depthTier,
+    this.spatial,
   });
 
   final WallpaperCore core;
@@ -42,6 +44,9 @@ final class PrismWallpaper {
 
   /// iOS Depth Effect tier from `walls.depth.tier`. Null when the wall was not checked.
   final WallDepthTier? depthTier;
+
+  /// Spatial Scene tier and depth map from `walls.spatial`. Null when the wall was not checked.
+  final WallSpatial? spatial;
 
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 

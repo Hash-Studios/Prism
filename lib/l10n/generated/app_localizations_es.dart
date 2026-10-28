@@ -11,6 +11,47 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Aún no hay carpetas';
+
+  @override
+  String get foldersLibraryEmptyBody =>
+      'Mantén pulsado el corazón de un fondo de pantalla para guardarlo en una carpeta.';
+
+  @override
+  String get foldersLoadAllError => 'No se pudieron cargar tus carpetas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Buscar en $countString favoritos',
+      one: 'Buscar en 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Ordenar y filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Ordenar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Origen';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Aplicar de nuevo';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, aplicado a las $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -208,6 +249,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountClearDepthEffect => 'Borrar efecto de profundidad';
+
+  @override
+  String get accountClearSpatialScene => 'Borrar espacial';
 
   @override
   String get accountClearFavouriteWallpapers => 'Borrar fondos favoritos';
@@ -460,6 +504,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Efecto de profundidad, el sujeto delante del reloj';
+
+  @override
+  String get accountSpatialScene => 'Espacial';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Fondos con profundidad 3D clara';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Espacial, fondos con profundidad 3D clara';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2334,6 +2387,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get coreDepthEffectMenuTip =>
       'En el editor de la pantalla de bloqueo, toca ••• y luego Efecto de profundidad.';
+
+  @override
+  String get coreSpatialBadge => 'Espacial';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Funciona como escena espacial';
+
+  @override
+  String get coreSpatialSceneTip => 'En el editor de la pantalla de bloqueo, toca el botón Escena espacial.';
 
   @override
   String get coreDeviceCannotSetScreen => 'Este dispositivo no puede configurar esa pantalla.';
@@ -7998,6 +8060,44 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperDepthSubjectSubtitle => 'El sujeto queda delante del reloj.';
 
   @override
+  String get wallpaperSpatialScene => 'Escena espacial';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Profundidad nítida. Crea una pantalla de bloqueo 3D potente.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Algo de profundidad. El efecto 3D es suave.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Configúralo como escena espacial';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'En iPhone 12 o posterior con iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Guarda este fondo en Fotos.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'En la pantalla de bloqueo, mantén pulsada la pantalla. Toca el botón Añadir, toca Fotos y luego selecciona la foto.';
+
+  @override
+  String get wallpaperSpatialStepButton =>
+      'Toca el botón Escena espacial para activar el efecto 3D y, después, toca Añadir.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'Previsualizar en 3D';
+
+  @override
+  String get wallpaperSpatialPreviewOff => 'Desactivar la vista previa 3D';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Arrastra para inclinar';
+
+  @override
   String get wallpaperDetailColorCodeCopied => 'Se copió el código de color al portapapeles';
 
   @override
@@ -8492,14 +8592,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Quitar del historial';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Aplicar de nuevo. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Historial de fondos de pantalla';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8545,15 +8637,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Historial';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'Los fondos que aplicaste, para que puedas volver a usarlos.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Historial de fondos de pantalla';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir historial';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -9025,9 +9108,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Acceso directo al fondo del día';
 
   @override
-  String get wallpaperRecentlySet => 'Usados recientemente';
-
-  @override
   String get wallpaperRefresh => 'Actualizar';
 
   @override
@@ -9067,9 +9147,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Aplicar';
-
-  @override
-  String get wallpaperSetAgain => 'Volver a aplicar este fondo de pantalla';
 
   @override
   String get wallpaperSetAsWallpaper => 'Establecer como fondo de pantalla';
@@ -9191,9 +9268,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Inicia sesión para usar filtros Premium con monedas.';
-
-  @override
-  String get wallpaperSort => 'Ordenar';
 
   @override
   String get wallpaperSortDownloads => 'Ordenar descargas';
@@ -10298,6 +10372,159 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Descartar';
+
+  @override
+  String get foldersTitle => 'Carpetas';
+
+  @override
+  String get foldersSaveToFolder => 'Guardar en carpeta';
+
+  @override
+  String get foldersAddToFolder => 'Añadir a carpeta';
+
+  @override
+  String get foldersNewFolder => 'Nueva carpeta';
+
+  @override
+  String get foldersNameHint => 'Nombre de la carpeta';
+
+  @override
+  String get foldersCreate => 'Crear';
+
+  @override
+  String get foldersCreateFolder => 'Crear carpeta';
+
+  @override
+  String get foldersSuggested => 'Sugerida';
+
+  @override
+  String get foldersNewTag => 'Nueva';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fondos de pantalla',
+      one: '1 fondo de pantalla',
+      zero: 'Sin fondos de pantalla',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Guardado en $countString carpetas.',
+      one: 'Guardado en 1 carpeta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Carpetas actualizadas.';
+
+  @override
+  String get foldersSaveFailed => 'No se pudo guardar en las carpetas. Inténtalo de nuevo.';
+
+  @override
+  String get foldersUpdateFailed => 'No se pudo actualizar la carpeta. Inténtalo de nuevo.';
+
+  @override
+  String get foldersRename => 'Cambiar nombre';
+
+  @override
+  String get foldersRenameTitle => 'Cambiar nombre de la carpeta';
+
+  @override
+  String get foldersDelete => 'Eliminar';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return '¿Eliminar $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Los fondos de pantalla seguirán en tus favoritos.';
+
+  @override
+  String get foldersDeleteConfirm => 'Eliminar carpeta';
+
+  @override
+  String get foldersDeleted => 'Carpeta eliminada.';
+
+  @override
+  String get foldersRemoveTitle => '¿Quitar de esta carpeta?';
+
+  @override
+  String get foldersRemoveMessage => 'Seguirá en tus favoritos.';
+
+  @override
+  String get foldersRemoveConfirm => 'Quitar';
+
+  @override
+  String get foldersRemoved => 'Quitado de la carpeta.';
+
+  @override
+  String get foldersEmptyTitle => 'Esta carpeta está vacía';
+
+  @override
+  String get foldersEmptyBody => 'Mantén pulsado el corazón de un fondo de pantalla para guardarlo aquí.';
+
+  @override
+  String get foldersLoadError => 'No se pudo cargar esta carpeta.';
+
+  @override
+  String get foldersNotFoundTitle => 'Esta carpeta no está disponible';
+
+  @override
+  String get foldersNotFoundBody => 'Es posible que se haya eliminado.';
+
+  @override
+  String get foldersSignInFeature => 'carpetas';
+
+  @override
+  String get foldersMoreOptions => 'Más opciones';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Pantalla de bloqueo';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Pantalla de inicio';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '${current}Aplicar de nuevo. $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'Historial de fondos de pantalla';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'Los fondos que aplicaste, para que puedas volver a usarlos.';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'Historial de fondos de pantalla';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'Abrir historial';
+
+  @override
+  String get wallpaperRecentlySet => 'Usados recientemente';
+
+  @override
+  String get wallpaperSetAgain => 'Volver a aplicar este fondo de pantalla';
+
+  @override
+  String get wallpaperSort => 'Ordenar';
 
   @override
   String get tasteQuizTitle => 'Elige el que más te guste';

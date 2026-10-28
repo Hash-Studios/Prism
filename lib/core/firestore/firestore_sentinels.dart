@@ -7,4 +7,5 @@ class FirestoreSentinels {
   static Object arrayRemove(List<Object?> values) => FieldValue.arrayRemove(values);
   static Object delete() => FieldValue.delete();
   static Object serverTimestamp() => FieldValue.serverTimestamp();
+  static Object increment(int by) => FieldValue.increment(by);
 }

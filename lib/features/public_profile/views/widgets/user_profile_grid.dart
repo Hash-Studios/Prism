@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -87,7 +88,10 @@ class UserProfileGrid extends StatelessWidget {
                     app_state.premiumCollections,
                     wall.collections ?? const <String>[],
                   );
-                  final Widget? depthTag = depthTagFor(wall.depthTier);
+                  final Widget? depthTag = stackTags(<Widget?>[
+                    depthTagFor(wall.depthTier),
+                    spatialTagFor(wall.spatial?.tier),
+                  ]);
                   return FavouriteWallpaperCard(
                     item: wall.toFeedItem(),
                     child: PrismWallTile(

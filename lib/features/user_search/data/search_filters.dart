@@ -10,6 +10,7 @@ class SearchFilters {
     this.sort = SearchSort.relevance,
     this.color,
     this.depthOnly = false,
+    this.spatialOnly = false,
   });
 
   final bool portraitOnly;
@@ -22,7 +23,10 @@ class SearchFilters {
   /// Only Prism walls the iOS Lock Screen Depth Effect works on. Wallhaven and Pexels walls carry no depth data.
   final bool depthOnly;
 
-  bool get listsWithoutQuery => color != null || depthOnly;
+  /// Only Prism walls whose Spatial Scene tier is `great` or `ok`. Shown on iOS and Android.
+  final bool spatialOnly;
+
+  bool get listsWithoutQuery => color != null || depthOnly || spatialOnly;
 
   /// Wallhaven `sorting` value. `null` keeps the API default, which is relevance for a text query.
   String? get wallhavenSorting => switch (sort) {
@@ -52,6 +56,7 @@ class SearchFilters {
     PrismPaletteColor? color,
     bool clearColor = false,
     bool? depthOnly,
+    bool? spatialOnly,
   }) {
     return SearchFilters(
       portraitOnly: portraitOnly ?? this.portraitOnly,
@@ -59,6 +64,7 @@ class SearchFilters {
       sort: sort ?? this.sort,
       color: clearColor ? null : color ?? this.color,
       depthOnly: depthOnly ?? this.depthOnly,
+      spatialOnly: spatialOnly ?? this.spatialOnly,
     );
   }
 
@@ -69,10 +75,11 @@ class SearchFilters {
       other.minResolution == minResolution &&
       other.sort == sort &&
       other.color == color &&
-      other.depthOnly == depthOnly;
+      other.depthOnly == depthOnly &&
+      other.spatialOnly == spatialOnly;
 
   @override
-  int get hashCode => Object.hash(portraitOnly, minResolution, sort, color, depthOnly);
+  int get hashCode => Object.hash(portraitOnly, minResolution, sort, color, depthOnly, spatialOnly);
 
   static ({int width, int height})? _parse(String? value) {
     final Match? match = RegExp(r'^\s*(\d+)\s*[xX]\s*(\d+)\s*$').firstMatch(value ?? '');

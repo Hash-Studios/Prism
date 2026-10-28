@@ -228,6 +228,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     Color? tint,
     Widget Function(String)? saveAction,
     SetScreenRequest? request,
+    String? spatialMapUrl,
     List<PageRouteInfo>? children,
   }) : super(
          ClockPreviewRoute.name,
@@ -241,6 +242,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            tint: tint,
            saveAction: saveAction,
            request: request,
+           spatialMapUrl: spatialMapUrl,
          ),
          initialChildren: children,
        );
@@ -261,6 +263,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         tint: args.tint,
         saveAction: args.saveAction,
         request: args.request,
+        spatialMapUrl: args.spatialMapUrl,
       );
     },
   );
@@ -277,6 +280,7 @@ class ClockPreviewRouteArgs {
     this.tint,
     this.saveAction,
     this.request,
+    this.spatialMapUrl,
   });
 
   final Key? key;
@@ -297,9 +301,11 @@ class ClockPreviewRouteArgs {
 
   final SetScreenRequest? request;
 
+  final String? spatialMapUrl;
+
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl}';
   }
 
   @override
@@ -313,7 +319,8 @@ class ClockPreviewRouteArgs {
         wallpaperSource == other.wallpaperSource &&
         thumbnailUrl == other.thumbnailUrl &&
         tint == other.tint &&
-        request == other.request;
+        request == other.request &&
+        spatialMapUrl == other.spatialMapUrl;
   }
 
   @override
@@ -325,7 +332,8 @@ class ClockPreviewRouteArgs {
       wallpaperSource.hashCode ^
       thumbnailUrl.hashCode ^
       tint.hashCode ^
-      request.hashCode;
+      request.hashCode ^
+      spatialMapUrl.hashCode;
 }
 
 /// generated route for
@@ -962,6 +970,58 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
       return const FirestoreTelemetryScreen();
     },
   );
+}
+
+/// generated route for
+/// [FolderScreen]
+class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
+  FolderRoute({
+    Key? key,
+    required String folderId,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FolderRoute.name,
+         args: FolderRouteArgs(key: key, folderId: folderId),
+         rawPathParams: {'folderId': folderId},
+         initialChildren: children,
+       );
+
+  static const String name = 'FolderRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<FolderRouteArgs>(
+        orElse: () =>
+            FolderRouteArgs(folderId: pathParams.getString('folderId')),
+      );
+      return FolderScreen(key: args.key, folderId: args.folderId);
+    },
+  );
+}
+
+class FolderRouteArgs {
+  const FolderRouteArgs({this.key, required this.folderId});
+
+  final Key? key;
+
+  final String folderId;
+
+  @override
+  String toString() {
+    return 'FolderRouteArgs{key: $key, folderId: $folderId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FolderRouteArgs) return false;
+    return key == other.key && folderId == other.folderId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ folderId.hashCode;
 }
 
 /// generated route for
@@ -2135,22 +2195,6 @@ class WallpaperFilterRouteArgs {
 
   @override
   int get hashCode => filePath.hashCode ^ key.hashCode;
-}
-
-/// generated route for
-/// [WallpaperHistoryScreen]
-class WallpaperHistoryRoute extends PageRouteInfo<void> {
-  const WallpaperHistoryRoute({List<PageRouteInfo>? children})
-    : super(WallpaperHistoryRoute.name, initialChildren: children);
-
-  static const String name = 'WallpaperHistoryRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const WallpaperHistoryScreen();
-    },
-  );
 }
 
 /// generated route for

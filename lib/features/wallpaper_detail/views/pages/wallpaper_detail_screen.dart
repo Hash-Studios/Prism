@@ -5,7 +5,6 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -26,7 +25,9 @@ import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
@@ -39,6 +40,8 @@ import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
@@ -65,6 +68,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
@@ -73,7 +77,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -594,22 +597,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Size card = _cardSize(context, widget.entity?.wallpaperCore);
     final Widget image;
     if (localFile != null) {
-      image = Image.file(
-        localFile,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) =>
+      image = ProgressiveWallpaperImage(
+        display: WallpaperDisplaySource(thumbnail: '', full: localFile.path),
+        decodeBox: card,
+        errorBuilder: (_, _) =>
             GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
       );
     } else if (thumbnail.isNotEmpty) {
-      image = CachedNetworkImage(
-        cacheManager: PrismImageCache.instance,
-        imageUrl: thumbnail,
-        fit: BoxFit.cover,
-        fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-        fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-        placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
-        errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
-      );
+      image = ProgressiveWallpaperImage(display: _routeDisplay(thumbnail), decodeBox: card);
     } else {
       image = GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper);
     }
@@ -701,6 +696,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
+  /// The wall this route was opened for, before its entity loads.
+  WallpaperDisplaySource _routeDisplay(String thumbnail) {
+    final FeedItemEntity? entity = widget.entity;
+    if (entity != null) return WallpaperDisplaySource.of(entity);
+
+    final String? id = widget.wallId;
+    final WallpaperSource source = widget.source ?? WallpaperSource.prism;
+    if (id == null || id.isEmpty) return const WallpaperDisplaySource(thumbnail: '', full: '');
+    final String safeThumbnail = source == WallpaperSource.prism && !isSafePrismThumbnailUrl(thumbnail)
+        ? ''
+        : thumbnail;
+    return WallpaperDisplaySource.forWall(id: id, source: source, thumbnail: safeThumbnail);
+  }
+
   Widget _buildErrorState(WallpaperDetailError state) {
     final theme = Theme.of(context);
     final thumbnailUrl = normalizeWallpaperThumbnailUrl(state.thumbnailUrl ?? '');
@@ -708,14 +717,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (thumbnailUrl.isNotEmpty)
-            CachedNetworkImage(
-              cacheManager: PrismImageCache.instance,
-              imageUrl: thumbnailUrl,
-              fit: BoxFit.cover,
-              placeholder: (ctx, _) => Container(color: theme.primaryColor),
-              errorWidget: (ctx, _, _) => Container(color: theme.primaryColor),
-            ),
+          if (thumbnailUrl.isNotEmpty) ProgressiveWallpaperImage(display: _routeDisplay(thumbnailUrl)),
           Container(color: theme.primaryColor.withValues(alpha: thumbnailUrl.isEmpty ? 1 : 0.8)),
           SafeArea(
             child: Column(
@@ -900,17 +902,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
                         return;
                       }
+                      final display = WallpaperDisplaySource.of(entity);
                       pushClockPreview(
                         context,
-                        link:
-                            widget.localFile?.path ??
-                            (entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl),
+                        link: widget.localFile?.path ?? display.bestLink,
                         file: widget.localFile != null,
                         wallpaperId: entity.id,
                         wallpaperSource: entity.source,
-                        thumbnailUrl: entity.thumbnailUrl,
+                        thumbnailUrl: display.thumbnail,
                         tint: state.tint,
                         saveAction: _saveAction,
+                        spatialMapUrl: spatialOf(entity)?.mapUrl,
                       );
                     },
             ),
@@ -1125,7 +1127,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     bool withholdThumbnail = false,
   }) {
     final colors = state.colors;
-    final thumbnailUrl = withholdThumbnail ? '' : state.entity.thumbnailUrl.trim();
+    final thumbnailUrl = withholdThumbnail ? '' : WallpaperDisplaySource.of(state.entity).thumbnail;
 
     // Build the default (no-filter) swatch + one swatch per palette color.
     final swatches = <Widget>[
@@ -1637,6 +1639,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               )
             : null,
         depthTier: depthTierOf(entity),
+        spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
@@ -1823,6 +1826,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
     final bool canBlock = canBlockWallCreator(entity);
     final WallDepthTier? depthTier = depthTierOf(entity);
+    final WallSpatial? spatial = spatialOf(entity);
     final String? reportWallDocId = BundledWallpapers.isStarter(entity)
         ? null
         : switch (entity) {
@@ -1847,6 +1851,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
+      if (spatial != null && showsSpatialScene(spatial.tier))
+        padded(SpatialSceneRow(tier: spatial.tier, wallId: entity.id)),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(
@@ -1898,13 +1904,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }) {
     final _FeedStep? feed = _FeedStep.maybeOf(context);
     final entity = state.entity;
-    final Widget image = _buildProgressiveWallpaperImage(
-      context: context,
-      entity: entity,
-      state: state,
-      paletteLoading: paletteLoading,
-      thumbnailOnly: canonicalLoading,
-    );
+    final Widget image = _buildWallpaperImage(context, state, paletteLoading);
     final Widget card = Stack(
       fit: StackFit.expand,
       children: [
@@ -1952,140 +1952,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return ExcludeSemantics(excluding: canonicalLoading && feed != null, child: card);
   }
 
-  /// Thumbnail first, then the full image on top. The spinner lives outside this subtree.
-  Widget _buildProgressiveWallpaperImage({
-    required BuildContext context,
-    required FeedItemEntity entity,
-    required WallpaperDetailLoaded state,
-    required bool paletteLoading,
-    bool thumbnailOnly = false,
-  }) {
-    final String thumb = entity.thumbnailUrl.trim();
-    final String full = thumbnailOnly
-        ? thumb
-        : wallpaperDetailPreviewUrl(entity, projectId: Firebase.apps.isEmpty ? null : Firebase.app().options.projectId);
-    final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
-    final bool fullIsNetwork = isValidNetworkUrl(full);
-    final bool thumbIsNetwork = isValidNetworkUrl(thumb);
-    final bool useProgressive = thumbIsNetwork && fullIsNetwork && full != thumb;
-
-    Widget imageLayer;
+  /// The card's picture: thumbnail first, then the best image the user may see. The spinner lives outside this subtree.
+  Widget _buildWallpaperImage(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
+    final FeedItemEntity entity = state.entity;
     final File? localFile = widget.localFile;
-    if (localFile != null) {
-      imageLayer = Image.file(
-        localFile,
-        fit: BoxFit.cover,
-        cacheWidth: cacheWidth,
-        errorBuilder: (_, _, _) =>
-            GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
-      );
-    } else if (full.startsWith('assets/')) {
-      imageLayer = Image.asset(
-        full,
-        fit: BoxFit.cover,
-        cacheWidth: cacheWidth,
-        errorBuilder: (_, _, _) =>
-            Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
-      );
-    } else if (!fullIsNetwork && full.isNotEmpty) {
-      final Uri? uri = Uri.tryParse(full);
-      final String path = uri?.scheme == 'file' ? uri!.toFilePath() : full;
-      imageLayer = Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        cacheWidth: cacheWidth,
-        errorBuilder: (_, _, _) =>
-            Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
-      );
-    } else if (useProgressive) {
-      imageLayer = Stack(
-        fit: StackFit.expand,
-        children: [
-          CachedNetworkImage(
-            cacheManager: PrismImageCache.instance,
-            imageUrl: thumb,
-            memCacheWidth: cacheWidth,
-            fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-            fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            // No placeholder fill: a card from a tile shows the tile's picture under this until it decodes.
-            errorWidget: (context, url, error) {
-              return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
-            },
-          ),
-          CachedNetworkImage(
-            cacheManager: PrismFullImageCache.instance,
-            imageUrl: full,
-            memCacheWidth: cacheWidth,
-            fit: BoxFit.cover,
-            fadeInDuration: context.motion(const Duration(milliseconds: 280)),
-            fadeOutDuration: Duration.zero,
-            imageBuilder: (context, imageProvider) {
-              return SizedBox.expand(
-                child: Image(image: imageProvider, fit: BoxFit.cover),
-              );
-            },
-            progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
-            errorWidget: (context, url, error) {
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      );
-    } else {
-      final String url = fullIsNetwork ? full : thumb;
-      if (url.isEmpty) {
-        imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
-      } else {
-        imageLayer = CachedNetworkImage(
-          cacheManager: fullIsNetwork && !thumbnailOnly ? PrismFullImageCache.instance : PrismImageCache.instance,
-          imageUrl: url,
-          memCacheWidth: cacheWidth,
-          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-          imageBuilder: (context, imageProvider) {
-            return SizedBox.expand(
-              child: Image(image: imageProvider, fit: BoxFit.cover),
-            );
-          },
-          progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
-          errorWidget: (context, url, error) {
-            return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
-          },
-        );
-      }
-    }
-
-    final Widget offlineAwareImage = thumbnailOnly || localFile != null || full.isEmpty || !fullIsNetwork
-        ? imageLayer
-        : FutureBuilder<File?>(
-            future: _offlinePreviewFor(entity),
-            builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return imageLayer;
-              }
-              final File? retained = snapshot.data;
-              if (retained == null || !retained.existsSync()) return imageLayer;
-              // The network picture stays until the saved copy has a frame, so the card never blanks while it decodes.
-              return Image.file(
-                retained,
-                fit: BoxFit.cover,
-                cacheWidth: cacheWidth,
-                frameBuilder: (_, child, frame, wasSynchronouslyLoaded) =>
-                    frame == null && !wasSynchronouslyLoaded ? imageLayer : child,
-                errorBuilder: (_, _, _) => imageLayer,
-              );
-            },
+    final Widget image = localFile != null
+        ? ProgressiveWallpaperImage(
+            display: WallpaperDisplaySource(
+              thumbnail: '',
+              full: localFile.path,
+              pixelSize: wallpaperPixelSize(entity.wallpaperCore),
+            ),
+            decodeBox: _cardSize(context, entity.wallpaperCore),
+            errorBuilder: (_, _) =>
+                GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
+          )
+        : ProgressiveWallpaperImage(
+            display: WallpaperDisplaySource.of(entity),
+            decodeBox: _cardSize(context, entity.wallpaperCore),
+            errorBuilder: (_, _) =>
+                Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
           );
-
     return SizedBox.expand(
-      child: _HueTint(
-        tint: state.tint,
-        duration: context.motion(const Duration(milliseconds: 220)),
-        child: offlineAwareImage,
-      ),
+      child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
     );
   }
 

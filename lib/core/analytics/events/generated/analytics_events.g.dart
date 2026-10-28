@@ -2450,17 +2450,92 @@ class OnboardingStepCompletedEvent extends AnalyticsEvent {
   }
 }
 
-class LibraryTabChangedEvent extends AnalyticsEvent {
-  const LibraryTabChangedEvent({required this.tab});
+class FolderCreatedEvent extends AnalyticsEvent {
+  const FolderCreatedEvent({required this.source, required this.withWall});
+
+  final String source;
+  final bool withWall;
+
+  @override
+  String get eventName => 'folder_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'with_wall': withWall ? 1 : 0};
+  }
+}
+
+class WallSavedToFolderEvent extends AnalyticsEvent {
+  const WallSavedToFolderEvent({required this.wallId, required this.provider, required this.folderCount});
+
+  final String wallId;
+  final String provider;
+  final int folderCount;
+
+  @override
+  String get eventName => 'wall_saved_to_folder';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'provider': provider, 'folder_count': folderCount};
+  }
+}
+
+class FolderOpenedEvent extends AnalyticsEvent {
+  const FolderOpenedEvent({required this.source, required this.itemCount});
+
+  final String source;
+  final int itemCount;
+
+  @override
+  String get eventName => 'folder_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count': itemCount};
+  }
+}
+
+class LibraryTabViewedEvent extends AnalyticsEvent {
+  const LibraryTabViewedEvent({required this.tab});
 
   final String tab;
 
   @override
-  String get eventName => 'library_tab_changed';
+  String get eventName => 'library_tab_viewed';
 
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'tab': tab};
+  }
+}
+
+class LibraryHistorySetAgainEvent extends AnalyticsEvent {
+  const LibraryHistorySetAgainEvent({required this.provider, required this.target});
+
+  final String provider;
+  final String target;
+
+  @override
+  String get eventName => 'library_history_set_again';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider, 'target': target};
+  }
+}
+
+class LibraryHistoryClearedEvent extends AnalyticsEvent {
+  const LibraryHistoryClearedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'library_history_cleared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
   }
 }
 
@@ -2981,5 +3056,35 @@ class StreakLifecycleEvent extends AnalyticsEvent {
       if (freezesLeft != null) 'freezes_left': freezesLeft!,
       if (milestone != null) 'milestone': milestone!,
     };
+  }
+}
+
+class SpatialPreviewOpenedEvent extends AnalyticsEvent {
+  const SpatialPreviewOpenedEvent({required this.wallId, required this.tilt});
+
+  final String wallId;
+  final String tilt;
+
+  @override
+  String get eventName => 'spatial_preview_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'tilt': tilt};
+  }
+}
+
+class SpatialGuideOpenedEvent extends AnalyticsEvent {
+  const SpatialGuideOpenedEvent({required this.wallId, required this.tier});
+
+  final String wallId;
+  final String tier;
+
+  @override
+  String get eventName => 'spatial_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'tier': tier};
   }
 }

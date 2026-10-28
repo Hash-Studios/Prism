@@ -11,6 +11,46 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'No folders yet';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Hold the heart on a wallpaper to save it to a folder.';
+
+  @override
+  String get foldersLoadAllError => 'Could not load your folders';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Search $countString favourites',
+      one: 'Search 1 favourite',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Sort and filter';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Sort by';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Source';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Set again';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, set at $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -206,6 +246,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountClearDepthEffect => 'Clear Depth Effect';
+
+  @override
+  String get accountClearSpatialScene => 'Clear Spatial';
 
   @override
   String get accountClearFavouriteWallpapers => 'Clear favourite wallpapers';
@@ -456,6 +499,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Depth Effect, subject in front of the clock';
+
+  @override
+  String get accountSpatialScene => 'Spatial';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Walls with clear 3D depth';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Spatial, walls with clear 3D depth';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2320,6 +2372,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'In the Lock Screen editor, tap ••• then Depth Effect.';
+
+  @override
+  String get coreSpatialBadge => 'Spatial';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Works as a Spatial Scene';
+
+  @override
+  String get coreSpatialSceneTip => 'In the Lock Screen editor, tap the Spatial Scene button.';
 
   @override
   String get coreDeviceCannotSetScreen => 'This device can\'t set that screen.';
@@ -7897,6 +7958,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperDepthSubjectSubtitle => 'Your subject sits in front of the clock.';
 
   @override
+  String get wallpaperSpatialScene => 'Spatial Scene';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Clear depth. Makes a strong 3D Lock Screen.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Some depth. The 3D effect is gentle.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Set it as a Spatial Scene';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'On iPhone 12 or later with iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Save this wall to Photos.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.';
+
+  @override
+  String get wallpaperSpatialStepButton => 'Tap the Spatial Scene button to turn the 3D effect on, then tap Add.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'Preview in 3D';
+
+  @override
+  String get wallpaperSpatialPreviewOff => 'Turn off the 3D preview';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Drag to tilt';
+
+  @override
   String get wallpaperDetailColorCodeCopied => 'Color code copied to clipboard';
 
   @override
@@ -8389,14 +8487,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Remove from history';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Set again. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Wallpaper history';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8442,15 +8532,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'History';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'The wallpapers you set, so you can set them again.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Wallpaper history';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Open history';
 
   @override
   String get wallpaperLibraryTitle => 'Library';
@@ -8916,9 +8997,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Wall of the Day tile';
 
   @override
-  String get wallpaperRecentlySet => 'Recently set';
-
-  @override
   String get wallpaperRefresh => 'Refresh';
 
   @override
@@ -8958,9 +9036,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Set';
-
-  @override
-  String get wallpaperSetAgain => 'Set this wallpaper again';
 
   @override
   String get wallpaperSetAsWallpaper => 'Set as wallpaper';
@@ -9076,9 +9151,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Sign in to use premium filters with coins.';
-
-  @override
-  String get wallpaperSort => 'Sort';
 
   @override
   String get wallpaperSortDownloads => 'Sort downloads';
@@ -10169,6 +10241,159 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Dismiss';
+
+  @override
+  String get foldersTitle => 'Folders';
+
+  @override
+  String get foldersSaveToFolder => 'Save to folder';
+
+  @override
+  String get foldersAddToFolder => 'Add to folder';
+
+  @override
+  String get foldersNewFolder => 'New folder';
+
+  @override
+  String get foldersNameHint => 'Folder name';
+
+  @override
+  String get foldersCreate => 'Create';
+
+  @override
+  String get foldersCreateFolder => 'Create folder';
+
+  @override
+  String get foldersSuggested => 'Suggested';
+
+  @override
+  String get foldersNewTag => 'New';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers',
+      one: '1 wallpaper',
+      zero: 'No wallpapers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved to $countString folders.',
+      one: 'Saved to 1 folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Folders updated.';
+
+  @override
+  String get foldersSaveFailed => 'Could not save to folders. Try again.';
+
+  @override
+  String get foldersUpdateFailed => 'Could not update the folder. Try again.';
+
+  @override
+  String get foldersRename => 'Rename';
+
+  @override
+  String get foldersRenameTitle => 'Rename folder';
+
+  @override
+  String get foldersDelete => 'Delete';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'The wallpapers stay in your favourites.';
+
+  @override
+  String get foldersDeleteConfirm => 'Delete folder';
+
+  @override
+  String get foldersDeleted => 'Folder deleted.';
+
+  @override
+  String get foldersRemoveTitle => 'Remove from this folder?';
+
+  @override
+  String get foldersRemoveMessage => 'It stays in your favourites.';
+
+  @override
+  String get foldersRemoveConfirm => 'Remove';
+
+  @override
+  String get foldersRemoved => 'Removed from the folder.';
+
+  @override
+  String get foldersEmptyTitle => 'This folder is empty';
+
+  @override
+  String get foldersEmptyBody => 'Hold the heart on a wallpaper to save it here.';
+
+  @override
+  String get foldersLoadError => 'Could not load this folder.';
+
+  @override
+  String get foldersNotFoundTitle => 'This folder is not available';
+
+  @override
+  String get foldersNotFoundBody => 'It may have been deleted.';
+
+  @override
+  String get foldersSignInFeature => 'folders';
+
+  @override
+  String get foldersMoreOptions => 'More options';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Lock screen';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Home screen';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '${current}Set again. $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'Wallpaper history';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'The wallpapers you set, so you can set them again.';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'Wallpaper history';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'Open history';
+
+  @override
+  String get wallpaperRecentlySet => 'Recently set';
+
+  @override
+  String get wallpaperSetAgain => 'Set this wallpaper again';
+
+  @override
+  String get wallpaperSort => 'Sort';
 
   @override
   String get tasteQuizTitle => 'Pick the one you like more';

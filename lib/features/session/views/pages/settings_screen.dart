@@ -28,6 +28,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
+import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
     show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -370,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.history_rounded,
       title: context.l10n.accountWallpaperHistory,
       subtitle: context.l10n.accountWallpapersSetBefore,
-      onTap: () => context.router.push(const WallpaperHistoryRoute()),
+      onTap: () => context.router.push(LibraryRoute(initialTab: LibraryTab.history)),
     ),
     PrismRow(
       icon: Icons.wallpaper_rounded,

@@ -1,4 +1,57 @@
 {
+  "foldersLibraryEmptyTitle": "No folders yet",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
+  "foldersLibraryEmptyBody": "Hold the heart on a wallpaper to save it to a folder.",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
+  "foldersLoadAllError": "Could not load your folders",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "wallpaperFavouriteSearchCountHint": "{count, plural, =1{Search 1 favourite} other{Search {count} favourites}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "wallpaperFavouriteSortAndFilter": "Sort and filter",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
+  "wallpaperFavouriteSortBy": "Sort by",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
+  "wallpaperFavouriteFilterSource": "Source",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
+  "wallpaperHistorySetAgain": "Set again",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, set at {time}",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "en",
   "economyExportFailedLabel": "Export failed",
@@ -271,6 +324,10 @@
   "accountClearDepthEffect": "Clear Depth Effect",
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
+  },
+  "accountClearSpatialScene": "Clear Spatial",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
   },
   "accountClearFavouriteWallpapers": "Clear favourite wallpapers",
   "@accountClearFavouriteWallpapers": {
@@ -563,6 +620,18 @@
   "accountDepthEffectClockSemanticLabel": "Depth Effect, subject in front of the clock",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "Spatial",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "Walls with clear 3D depth",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "Spatial, walls with clear 3D depth",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{No downloaded wallpapers; saved offline copies stay} =1{1 downloaded wallpaper; saved offline copies stay} other{{count} downloaded wallpapers; saved offline copies stay}}",
   "@accountDownloadedWallpaperCount": {
@@ -2339,6 +2408,18 @@
   "coreDepthEffectBadgeSemantic": "Works with Depth Effect",
   "coreDepthEffectMenuShortTip": "Tap ••• then Depth Effect.",
   "coreDepthEffectMenuTip": "In the Lock Screen editor, tap ••• then Depth Effect.",
+  "coreSpatialBadge": "Spatial",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "Works as a Spatial Scene",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "In the Lock Screen editor, tap the Spatial Scene button.",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "This device can't set that screen.",
   "coreDone": "Done",
   "coreDown": "down {coins}",
@@ -6876,6 +6957,54 @@
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
   },
+  "wallpaperSpatialScene": "Spatial Scene",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "Clear depth. Makes a strong 3D Lock Screen.",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "Some depth. The 3D effect is gentle.",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "Set it as a Spatial Scene",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "On iPhone 12 or later with iOS 26:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "Save this wall to Photos.",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "Tap the Spatial Scene button to turn the 3D effect on, then tap Add.",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "Preview in 3D",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "Turn off the 3D preview",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "Drag to tilt",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
+  },
   "wallpaperDetailColorCodeCopied": "Color code copied to clipboard",
   "@wallpaperDetailColorCodeCopied": {
     "description": "Toast shown after copying a wallpaper color's hex code."
@@ -7484,25 +7613,6 @@
   "@wallpaperHistoryRemoveAction": {
     "description": "Action to remove a wallpaper from history."
   },
-  "wallpaperHistoryTileSemantic": "{current}Set again. {target}, {date}",
-  "@wallpaperHistoryTileSemantic": {
-    "description": "Accessibility description for a wallpaper history tile.",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "wallpaperHistoryTitle": "Wallpaper history",
-  "@wallpaperHistoryTitle": {
-    "description": "Title of the wallpaper history screen."
-  },
   "wallpaperHomeAppName": "Prism",
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
@@ -7571,18 +7681,6 @@
   "wallpaperLibraryHistory": "History",
   "@wallpaperLibraryHistory": {
     "description": "History tab label in the library."
-  },
-  "wallpaperLibraryHistoryBody": "The wallpapers you set, so you can set them again.",
-  "@wallpaperLibraryHistoryBody": {
-    "description": "Description for the history introduction in the library."
-  },
-  "wallpaperLibraryHistoryTitle": "Wallpaper history",
-  "@wallpaperLibraryHistoryTitle": {
-    "description": "Title for the history introduction in the library."
-  },
-  "wallpaperLibraryOpenHistory": "Open history",
-  "@wallpaperLibraryOpenHistory": {
-    "description": "Action to open wallpaper history."
   },
   "wallpaperLibraryTitle": "Library",
   "@wallpaperLibraryTitle": {
@@ -8225,10 +8323,6 @@
   "@wallpaperQuickWotdTitle": {
     "description": "Title of the Wall of the Day quick tile."
   },
-  "wallpaperRecentlySet": "Recently set",
-  "@wallpaperRecentlySet": {
-    "description": "Section heading for recently set wallpapers."
-  },
   "wallpaperRefresh": "Refresh",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -8285,10 +8379,6 @@
   "wallpaperSet": "Set",
   "@wallpaperSet": {
     "description": "Wallpaper interface text: wallpaperSet."
-  },
-  "wallpaperSetAgain": "Set this wallpaper again",
-  "@wallpaperSetAgain": {
-    "description": "Accessibility label to set a recently set wallpaper again."
   },
   "wallpaperSetAsWallpaper": "Set as wallpaper",
   "@wallpaperSetAsWallpaper": {
@@ -8431,10 +8521,6 @@
   "wallpaperSignInForPremiumFilters": "Sign in to use premium filters with coins.",
   "@wallpaperSignInForPremiumFilters": {
     "description": "Message shown when a signed-out user selects a premium filter."
-  },
-  "wallpaperSort": "Sort",
-  "@wallpaperSort": {
-    "description": "Accessibility label for the favourites sort menu."
   },
   "wallpaperSortDownloads": "Sort downloads",
   "@wallpaperSortDownloads": {
@@ -9344,6 +9430,202 @@
   "widgetsCardDismiss": "Dismiss",
   "@widgetsCardDismiss": {
     "description": "Tooltip and label for the button that dismisses the Wall of the Day widget card."
+  },
+  "foldersTitle": "Folders",
+  "@foldersTitle": {
+    "description": "Heading for the user's folders of saved wallpapers in the Library."
+  },
+  "foldersSaveToFolder": "Save to folder",
+  "@foldersSaveToFolder": {
+    "description": "Action and sheet title for saving a wallpaper into one or more of the user's folders."
+  },
+  "foldersAddToFolder": "Add to folder",
+  "@foldersAddToFolder": {
+    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+  },
+  "foldersNewFolder": "New folder",
+  "@foldersNewFolder": {
+    "description": "Label of the card, row and sheet that create a new folder."
+  },
+  "foldersNameHint": "Folder name",
+  "@foldersNameHint": {
+    "description": "Hint in the text field for a folder name."
+  },
+  "foldersCreate": "Create",
+  "@foldersCreate": {
+    "description": "Button that creates a folder with the typed name."
+  },
+  "foldersCreateFolder": "Create folder",
+  "@foldersCreateFolder": {
+    "description": "Tooltip of the icon button that adds the typed folder name."
+  },
+  "foldersSuggested": "Suggested",
+  "@foldersSuggested": {
+    "description": "Tag on a suggested folder name when the user has no folders yet."
+  },
+  "foldersNewTag": "New",
+  "@foldersNewTag": {
+    "description": "Tag on a folder row that is created when the user taps Done."
+  },
+  "foldersItemCount": "{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersItemCount": {
+    "description": "Number of wallpapers in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSavedToCount": "{count, plural, =1{Saved to 1 folder.} other{Saved to {count} folders.}}",
+  "@foldersSavedToCount": {
+    "description": "Confirmation after saving a wallpaper to folders.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersUpdated": "Folders updated.",
+  "@foldersUpdated": {
+    "description": "Confirmation after the user changes which folders hold a wallpaper without adding it to a new one."
+  },
+  "foldersSaveFailed": "Could not save to folders. Try again.",
+  "@foldersSaveFailed": {
+    "description": "Error after a folder save fails."
+  },
+  "foldersUpdateFailed": "Could not update the folder. Try again.",
+  "@foldersUpdateFailed": {
+    "description": "Error after a rename, delete or removal fails."
+  },
+  "foldersRename": "Rename",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "Rename folder",
+  "@foldersRenameTitle": {
+    "description": "Title of the sheet that renames a folder."
+  },
+  "foldersDelete": "Delete",
+  "@foldersDelete": {
+    "description": "Menu action that deletes a folder."
+  },
+  "foldersDeleteTitle": "Delete {name}?",
+  "@foldersDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder. name is the folder name the user typed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDeleteMessage": "The wallpapers stay in your favourites.",
+  "@foldersDeleteMessage": {
+    "description": "Message in the confirm before deleting a folder."
+  },
+  "foldersDeleteConfirm": "Delete folder",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button that deletes a folder."
+  },
+  "foldersDeleted": "Folder deleted.",
+  "@foldersDeleted": {
+    "description": "Confirmation after a folder is deleted."
+  },
+  "foldersRemoveTitle": "Remove from this folder?",
+  "@foldersRemoveTitle": {
+    "description": "Title of the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveMessage": "It stays in your favourites.",
+  "@foldersRemoveMessage": {
+    "description": "Message in the confirm before removing a wallpaper from a folder."
+  },
+  "foldersRemoveConfirm": "Remove",
+  "@foldersRemoveConfirm": {
+    "description": "Confirm button that removes a wallpaper from a folder."
+  },
+  "foldersRemoved": "Removed from the folder.",
+  "@foldersRemoved": {
+    "description": "Confirmation after a wallpaper is removed from a folder."
+  },
+  "foldersEmptyTitle": "This folder is empty",
+  "@foldersEmptyTitle": {
+    "description": "Title of the empty state of a folder."
+  },
+  "foldersEmptyBody": "Hold the heart on a wallpaper to save it here.",
+  "@foldersEmptyBody": {
+    "description": "Body of the empty state of a folder."
+  },
+  "foldersLoadError": "Could not load this folder.",
+  "@foldersLoadError": {
+    "description": "Title of the error state of a folder."
+  },
+  "foldersNotFoundTitle": "This folder is not available",
+  "@foldersNotFoundTitle": {
+    "description": "Title when a folder link points to a folder that is gone or belongs to someone else."
+  },
+  "foldersNotFoundBody": "It may have been deleted.",
+  "@foldersNotFoundBody": {
+    "description": "Body when a folder link points to a folder that is gone."
+  },
+  "foldersSignInFeature": "folders",
+  "@foldersSignInFeature": {
+    "description": "Feature name in the sign-in prompt, as in 'Sign in to use folders'."
+  },
+  "foldersMoreOptions": "More options",
+  "@foldersMoreOptions": {
+    "description": "Tooltip of the folder page overflow menu."
+  },
+  "foldersSuggestionLockScreen": "Lock screen",
+  "@foldersSuggestionLockScreen": {
+    "description": "Suggested folder name for wallpapers to use on the lock screen."
+  },
+  "foldersSuggestionHomeScreen": "Home screen",
+  "@foldersSuggestionHomeScreen": {
+    "description": "Suggested folder name for wallpapers to use on the home screen."
+  },
+  "wallpaperHistoryTileSemantic": "{current}Set again. {target}, {date}",
+  "@wallpaperHistoryTileSemantic": {
+    "description": "Accessibility description for a wallpaper history tile.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperHistoryTitle": "Wallpaper history",
+  "@wallpaperHistoryTitle": {
+    "description": "Title of the wallpaper history screen."
+  },
+  "wallpaperLibraryHistoryBody": "The wallpapers you set, so you can set them again.",
+  "@wallpaperLibraryHistoryBody": {
+    "description": "Description for the history introduction in the library."
+  },
+  "wallpaperLibraryHistoryTitle": "Wallpaper history",
+  "@wallpaperLibraryHistoryTitle": {
+    "description": "Title for the history introduction in the library."
+  },
+  "wallpaperLibraryOpenHistory": "Open history",
+  "@wallpaperLibraryOpenHistory": {
+    "description": "Action to open wallpaper history."
+  },
+  "wallpaperRecentlySet": "Recently set",
+  "@wallpaperRecentlySet": {
+    "description": "Section heading for recently set wallpapers."
+  },
+  "wallpaperSetAgain": "Set this wallpaper again",
+  "@wallpaperSetAgain": {
+    "description": "Accessibility label to set a recently set wallpaper again."
+  },
+  "wallpaperSort": "Sort",
+  "@wallpaperSort": {
+    "description": "Accessibility label for the favourites sort menu."
   },
   "tasteQuizTitle": "Pick the one you like more",
   "@tasteQuizTitle": {

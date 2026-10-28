@@ -6,6 +6,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/share/share_text.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -97,16 +98,10 @@ class _ShareButtonState extends State<ShareButton> {
     );
     // Link thumbnails have a stricter allowlist than the server-owned display derivative.
     // Never use widget.url here: acquiring an original requires a separate authorization.
-    final String imageUrl =
-        source == WallpaperSource.prism &&
-            rawThumbUrl.isNotEmpty &&
-            !originalThumbnailFallback &&
-            Firebase.apps.isNotEmpty
-        ? Uri.https('us-central1-${Firebase.app().options.projectId}.cloudfunctions.net', '/wallpaperPreview', {
-            'id': id ?? '',
-            'thumb': rawThumbUrl,
-          }).toString()
-        : thumbUrl.trim();
+    final String previewUrl = source == WallpaperSource.prism && !originalThumbnailFallback && Firebase.apps.isNotEmpty
+        ? prismWallpaperPreviewUrl(id: itemId, thumbnail: rawThumbUrl, projectId: Firebase.app().options.projectId)
+        : '';
+    final String imageUrl = previewUrl.isNotEmpty ? previewUrl : thumbUrl.trim();
     final String? contextLine = widget.contextLine;
     final String? creator = shareCreatorMark(widget.creator);
     final List<Color> palette = widget.palette;
