@@ -68,7 +68,7 @@ class _FolderScreenState extends State<FolderScreen> {
       await ensureFoldersLoaded(context);
       if (!current() || bloc.state.status != LoadStatus.success) return;
       await bloc.run((id) => FoldersEvent.folderOpened(folderId: folderId, operationId: id));
-      if (!current()) return;
+      if (!mounted || !current()) return;
       final FolderEntity? folder = bloc.state.folder(folderId);
       if (_tracked || folder == null) return;
       _tracked = true;
