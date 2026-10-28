@@ -8801,6 +8801,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'Ein sanfter Lichtschein, der über das Bild wandert.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'Das Foto bewegt sich in die Tiefe, wenn du zwischen Startbildschirmen wischst und das Handy neigst.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Sternenfeld';
 
   @override
@@ -10515,6 +10522,62 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Startbildschirm';
+
+  @override
+  String get moodDreamyTitle => 'Verträumt';
+
+  @override
+  String get moodDreamyBody => 'Weiche Himmel und pastellfarbenes Licht.';
+
+  @override
+  String get moodDarkQuietTitle => 'Dunkel und ruhig';
+
+  @override
+  String get moodDarkQuietBody => 'Wenig Licht, sanft für die Augen.';
+
+  @override
+  String get moodBrightBoldTitle => 'Hell und kräftig';
+
+  @override
+  String get moodBrightBoldBody => 'Viel Farbe, damit dein Display erwacht.';
+
+  @override
+  String get moodMinimalTitle => 'Minimal';
+
+  @override
+  String get moodMinimalBody => 'Einfache Formen und viel Freiraum.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Bereit für räumliche Szenen';
+
+  @override
+  String get moodSpatialReadyBody => 'Gemacht, damit sie als räumliche Szene wirkt.';
+
+  @override
+  String get moodDepthReadyTitle => 'Bereit für Tiefeneffekt';
+
+  @override
+  String get moodDepthReadyBody => 'Das Motiv schiebt sich vor deine Uhr.';
+
+  @override
+  String get moodChipRowLabel => 'Stimmungen';
+
+  @override
+  String get moodSeeAll => 'Alle anzeigen';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Öffnet alle Hintergründe der Stimmung $mood';
+  }
+
+  @override
+  String get moodLoadError => 'Diese Hintergründe konnten nicht geladen werden';
+
+  @override
+  String get moodEmptyTitle => 'Hier gibt es noch keine Hintergründe';
+
+  @override
+  String get moodEmptyBody => 'Jeden Tag kommen neue Hintergründe dazu.';
 
   @override
   String wallpaperHistoryTileSemantic(String current, String target, String date) {

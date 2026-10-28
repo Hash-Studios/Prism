@@ -8099,6 +8099,14 @@
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
   },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
+  },
   "wallpaperLiveStyleStarfield": "Hamparan bintang",
   "@wallpaperLiveStyleStarfield": {
     "description": "Name of the Starfield live wallpaper gradient style."
@@ -9520,6 +9528,83 @@
   "foldersSuggestionHomeScreen": "Layar utama",
   "@foldersSuggestionHomeScreen": {
     "description": "Suggested folder name for wallpapers to use on the home screen."
+  },
+  "moodDreamyTitle": "Impian",
+  "@moodDreamyTitle": {
+    "description": "Home mood name for soft, pastel wallpapers."
+  },
+  "moodDreamyBody": "Langit lembut dan cahaya pastel.",
+  "@moodDreamyBody": {
+    "description": "One line under the Dreamy mood title."
+  },
+  "moodDarkQuietTitle": "Gelap dan tenang",
+  "@moodDarkQuietTitle": {
+    "description": "Home mood name for dark, calm wallpapers."
+  },
+  "moodDarkQuietBody": "Cahaya redup, nyaman di mata.",
+  "@moodDarkQuietBody": {
+    "description": "One line under the Dark and quiet mood title."
+  },
+  "moodBrightBoldTitle": "Cerah dan mencolok",
+  "@moodBrightBoldTitle": {
+    "description": "Home mood name for saturated, colourful wallpapers."
+  },
+  "moodBrightBoldBody": "Warna cerah untuk menyegarkan layarmu.",
+  "@moodBrightBoldBody": {
+    "description": "One line under the Bright and bold mood title."
+  },
+  "moodMinimalTitle": "Minimal",
+  "@moodMinimalTitle": {
+    "description": "Home mood name for simple, uncluttered wallpapers."
+  },
+  "moodMinimalBody": "Bentuk sederhana dan ruang yang lega.",
+  "@moodMinimalBody": {
+    "description": "One line under the Minimal mood title."
+  },
+  "moodSpatialReadyTitle": "Siap jadi Adegan Spasial",
+  "@moodSpatialReadyTitle": {
+    "description": "Home mood name for wallpapers that work as iOS 26 Spatial Scenes. Keep \"Spatial\" as Apple's feature name."
+  },
+  "moodSpatialReadyBody": "Dibuat agar tampil menonjol sebagai Adegan Spasial.",
+  "@moodSpatialReadyBody": {
+    "description": "One line under the Spatial ready mood title. \"Spatial Scene\" is Apple's iOS 26 feature name."
+  },
+  "moodDepthReadyTitle": "Siap efek kedalaman",
+  "@moodDepthReadyTitle": {
+    "description": "Home mood name for wallpapers that work with the iOS Lock Screen Depth Effect."
+  },
+  "moodDepthReadyBody": "Subjek berada di depan jam layar kunci.",
+  "@moodDepthReadyBody": {
+    "description": "One line under the Depth ready mood title. Refers to the Lock Screen clock."
+  },
+  "moodChipRowLabel": "Suasana",
+  "@moodChipRowLabel": {
+    "description": "Accessibility label for the row of mood chips on Home."
+  },
+  "moodSeeAll": "Lihat semua",
+  "@moodSeeAll": {
+    "description": "Button on a Home mood row that opens the full mood page."
+  },
+  "moodSeeAllHint": "Membuka semua wallpaper {mood}",
+  "@moodSeeAllHint": {
+    "description": "Accessibility hint for the See all button. {mood} is a mood name such as Dreamy.",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "moodLoadError": "Wallpaper ini tidak bisa dimuat",
+  "@moodLoadError": {
+    "description": "Error title on a mood page when the walls fail to load."
+  },
+  "moodEmptyTitle": "Belum ada wallpaper di sini",
+  "@moodEmptyTitle": {
+    "description": "Empty state title on a mood page."
+  },
+  "moodEmptyBody": "Wallpaper baru ditambahkan setiap hari.",
+  "@moodEmptyBody": {
+    "description": "Empty state body on a mood page."
   },
   "wallpaperHistoryTileSemantic": "{current}Pasang lagi. {target}, {date}",
   "@wallpaperHistoryTileSemantic": {

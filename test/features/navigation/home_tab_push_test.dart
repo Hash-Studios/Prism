@@ -20,6 +20,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
@@ -38,8 +39,10 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'
     show AndroidFlutterLocalNotificationsPlugin;
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_mood_repository.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -175,7 +178,8 @@ void main() {
       ..registerSingleton<NotificationsLocalDataSource>(localInbox)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
-      ..registerSingleton<TrendingBloc>(trending);
+      ..registerSingleton<TrendingBloc>(trending)
+      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     messenger.setMockMethodCallHandler(_quickActions, (call) async {
       quickActionCalls.add(call);
       return null;

@@ -8683,6 +8683,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'A soft sweep of light.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'The photo moves in depth as you swipe your home screens and tilt your phone.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Starfield';
 
   @override
@@ -10368,6 +10375,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Home screen';
+
+  @override
+  String get moodDreamyTitle => 'Dreamy';
+
+  @override
+  String get moodDreamyBody => 'Soft skies and pastel light.';
+
+  @override
+  String get moodDarkQuietTitle => 'Dark and quiet';
+
+  @override
+  String get moodDarkQuietBody => 'Low light, easy on the eyes.';
+
+  @override
+  String get moodBrightBoldTitle => 'Bright and bold';
+
+  @override
+  String get moodBrightBoldBody => 'Big colour to wake up your screen.';
+
+  @override
+  String get moodMinimalTitle => 'Minimal';
+
+  @override
+  String get moodMinimalBody => 'Simple shapes and room to breathe.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Spatial ready';
+
+  @override
+  String get moodSpatialReadyBody => 'Made to pop as a Spatial Scene.';
+
+  @override
+  String get moodDepthReadyTitle => 'Depth ready';
+
+  @override
+  String get moodDepthReadyBody => 'The subject steps in front of your clock.';
+
+  @override
+  String get moodChipRowLabel => 'Moods';
+
+  @override
+  String get moodSeeAll => 'See all';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Opens all $mood wallpapers';
+  }
+
+  @override
+  String get moodLoadError => 'Couldn\'t load these wallpapers';
+
+  @override
+  String get moodEmptyTitle => 'No wallpapers here yet';
+
+  @override
+  String get moodEmptyBody => 'New wallpapers join every day.';
 
   @override
   String wallpaperHistoryTileSemantic(String current, String target, String date) {

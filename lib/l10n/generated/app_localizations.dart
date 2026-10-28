@@ -13597,6 +13597,18 @@ abstract class AppLocalizations {
   /// **'A soft sweep of light.'**
   String get wallpaperLiveStyleShimmerDescription;
 
+  /// Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'3D'**
+  String get wallpaperLiveStyleDepth;
+
+  /// Description of the 3D live wallpaper style.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo moves in depth as you swipe your home screens and tilt your phone.'**
+  String get wallpaperLiveStyleDepthDescription;
+
   /// Name of the Starfield live wallpaper gradient style.
   ///
   /// In en, this message translates to:
@@ -16638,6 +16650,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home screen'**
   String get foldersSuggestionHomeScreen;
+
+  /// Home mood name for soft, pastel wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Dreamy'**
+  String get moodDreamyTitle;
+
+  /// One line under the Dreamy mood title.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft skies and pastel light.'**
+  String get moodDreamyBody;
+
+  /// Home mood name for dark, calm wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark and quiet'**
+  String get moodDarkQuietTitle;
+
+  /// One line under the Dark and quiet mood title.
+  ///
+  /// In en, this message translates to:
+  /// **'Low light, easy on the eyes.'**
+  String get moodDarkQuietBody;
+
+  /// Home mood name for saturated, colourful wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright and bold'**
+  String get moodBrightBoldTitle;
+
+  /// One line under the Bright and bold mood title.
+  ///
+  /// In en, this message translates to:
+  /// **'Big colour to wake up your screen.'**
+  String get moodBrightBoldBody;
+
+  /// Home mood name for simple, uncluttered wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get moodMinimalTitle;
+
+  /// One line under the Minimal mood title.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple shapes and room to breathe.'**
+  String get moodMinimalBody;
+
+  /// Home mood name for wallpapers that work as iOS 26 Spatial Scenes. Keep "Spatial" as Apple's feature name.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial ready'**
+  String get moodSpatialReadyTitle;
+
+  /// One line under the Spatial ready mood title. "Spatial Scene" is Apple's iOS 26 feature name.
+  ///
+  /// In en, this message translates to:
+  /// **'Made to pop as a Spatial Scene.'**
+  String get moodSpatialReadyBody;
+
+  /// Home mood name for wallpapers that work with the iOS Lock Screen Depth Effect.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth ready'**
+  String get moodDepthReadyTitle;
+
+  /// One line under the Depth ready mood title. Refers to the Lock Screen clock.
+  ///
+  /// In en, this message translates to:
+  /// **'The subject steps in front of your clock.'**
+  String get moodDepthReadyBody;
+
+  /// Accessibility label for the row of mood chips on Home.
+  ///
+  /// In en, this message translates to:
+  /// **'Moods'**
+  String get moodChipRowLabel;
+
+  /// Button on a Home mood row that opens the full mood page.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get moodSeeAll;
+
+  /// Accessibility hint for the See all button. {mood} is a mood name such as Dreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens all {mood} wallpapers'**
+  String moodSeeAllHint(String mood);
+
+  /// Error title on a mood page when the walls fail to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load these wallpapers'**
+  String get moodLoadError;
+
+  /// Empty state title on a mood page.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpapers here yet'**
+  String get moodEmptyTitle;
+
+  /// Empty state body on a mood page.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers join every day.'**
+  String get moodEmptyBody;
 
   /// Accessibility description for a wallpaper history tile.
   ///

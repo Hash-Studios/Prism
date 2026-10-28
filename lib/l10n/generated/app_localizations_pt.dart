@@ -8976,6 +8976,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperLiveStyleShimmerDescription => 'Uma suave varredura de luz.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'A foto se move em profundidade quando você desliza entre as telas iniciais e inclina o celular.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Campo Estelar';
 
   @override
@@ -10694,6 +10701,62 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Tela inicial';
+
+  @override
+  String get moodDreamyTitle => 'Sonhador';
+
+  @override
+  String get moodDreamyBody => 'Céus suaves e luz pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Escuro e tranquilo';
+
+  @override
+  String get moodDarkQuietBody => 'Pouca luz, fácil para os olhos.';
+
+  @override
+  String get moodBrightBoldTitle => 'Vibrante e marcante';
+
+  @override
+  String get moodBrightBoldBody => 'Muita cor para acordar sua tela.';
+
+  @override
+  String get moodMinimalTitle => 'Minimalista';
+
+  @override
+  String get moodMinimalBody => 'Formas simples e espaço para respirar.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Pronto para cena espacial';
+
+  @override
+  String get moodSpatialReadyBody => 'Feito para se destacar como cena espacial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Pronto para efeito de profundidade';
+
+  @override
+  String get moodDepthReadyBody => 'O sujeito fica na frente do seu relógio.';
+
+  @override
+  String get moodChipRowLabel => 'Humores';
+
+  @override
+  String get moodSeeAll => 'Ver tudo';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Abre todos os papéis de parede de $mood';
+  }
+
+  @override
+  String get moodLoadError => 'Não foi possível carregar estes papéis de parede';
+
+  @override
+  String get moodEmptyTitle => 'Ainda não há papéis de parede aqui';
+
+  @override
+  String get moodEmptyBody => 'Novos papéis de parede chegam todos os dias.';
 
   @override
   String wallpaperHistoryTileSemantic(String current, String target, String date) {
@@ -19794,6 +19857,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperLiveStyleShimmerDescription => 'Uma suave varredura de luz.';
 
   @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'A foto se move em profundidade quando você desliza entre as telas iniciais e inclina o celular.';
+
+  @override
   String get wallpaperLiveStyleStarfield => 'Campo Estelar';
 
   @override
@@ -21512,6 +21582,62 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersSuggestionHomeScreen => 'Tela inicial';
+
+  @override
+  String get moodDreamyTitle => 'Sonhador';
+
+  @override
+  String get moodDreamyBody => 'Céus suaves e luz pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Escuro e tranquilo';
+
+  @override
+  String get moodDarkQuietBody => 'Pouca luz, fácil para os olhos.';
+
+  @override
+  String get moodBrightBoldTitle => 'Vibrante e marcante';
+
+  @override
+  String get moodBrightBoldBody => 'Muita cor para acordar sua tela.';
+
+  @override
+  String get moodMinimalTitle => 'Minimalista';
+
+  @override
+  String get moodMinimalBody => 'Formas simples e espaço para respirar.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Pronto para cena espacial';
+
+  @override
+  String get moodSpatialReadyBody => 'Feito para se destacar como cena espacial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Pronto para efeito de profundidade';
+
+  @override
+  String get moodDepthReadyBody => 'O sujeito fica na frente do seu relógio.';
+
+  @override
+  String get moodChipRowLabel => 'Humores';
+
+  @override
+  String get moodSeeAll => 'Ver tudo';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Abre todos os papéis de parede de $mood';
+  }
+
+  @override
+  String get moodLoadError => 'Não foi possível carregar estes papéis de parede';
+
+  @override
+  String get moodEmptyTitle => 'Ainda não há papéis de parede aqui';
+
+  @override
+  String get moodEmptyBody => 'Novos papéis de parede chegam todos os dias.';
 
   @override
   String wallpaperHistoryTileSemantic(String current, String target, String date) {

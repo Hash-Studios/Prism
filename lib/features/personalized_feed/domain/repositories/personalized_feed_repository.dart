@@ -1,3 +1,4 @@
+import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
@@ -50,4 +51,7 @@ abstract class PersonalizedFeedRepository {
 
   /// The most viewed wallpapers. One page, no paging.
   Future<Result<PersonalizedFeedPage>> fetchPopular();
+
+  /// The user's taste from their picks, follows and signals, for ranking walls outside the feed.
+  TasteProfile currentTasteProfile();
 }

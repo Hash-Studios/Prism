@@ -36,7 +36,7 @@ const aasaPaths = new Set(quotedValues(arrayBody(associations, 'APP_LINK_PATHS')
 
 const dynamicWorkerRoots = new Set([
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
-  '/l', '/drops', '/collection', '/category', '/wallpaper', '/folder',
+  '/l', '/drops', '/collection', '/category', '/wallpaper', '/folder', '/mood',
 ]);
 const pathFits = (path, roots, dynamicRoots) => {
   if (roots.has(path)) return true;

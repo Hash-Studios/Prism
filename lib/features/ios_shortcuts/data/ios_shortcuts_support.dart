@@ -27,5 +27,8 @@ Future<bool> iosSupportsShortcuts() async {
   return major != null && major >= iosShortcutsMinMajorVersion;
 }
 
+/// The iOS major version, read once. `null` when it cannot be read.
+Future<int?> iosMajor() => iosMajorVersion();
+
 /// True when this iOS major version is at least [major]. An unreadable version counts as not supported.
 Future<bool> iosAtLeast(int major) async => (await iosMajorVersion() ?? 0) >= major;

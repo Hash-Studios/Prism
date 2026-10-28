@@ -1269,6 +1269,7 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
     Key? key,
     String? imageUrl,
     Color? accentSeed,
+    String? depthMapUrl,
     List<PageRouteInfo>? children,
   }) : super(
          LiveWallpaperRoute.name,
@@ -1276,6 +1277,7 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
            key: key,
            imageUrl: imageUrl,
            accentSeed: accentSeed,
+           depthMapUrl: depthMapUrl,
          ),
          initialChildren: children,
        );
@@ -1292,13 +1294,19 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
         key: args.key,
         imageUrl: args.imageUrl,
         accentSeed: args.accentSeed,
+        depthMapUrl: args.depthMapUrl,
       );
     },
   );
 }
 
 class LiveWallpaperRouteArgs {
-  const LiveWallpaperRouteArgs({this.key, this.imageUrl, this.accentSeed});
+  const LiveWallpaperRouteArgs({
+    this.key,
+    this.imageUrl,
+    this.accentSeed,
+    this.depthMapUrl,
+  });
 
   final Key? key;
 
@@ -1306,9 +1314,11 @@ class LiveWallpaperRouteArgs {
 
   final Color? accentSeed;
 
+  final String? depthMapUrl;
+
   @override
   String toString() {
-    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl, accentSeed: $accentSeed}';
+    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl, accentSeed: $accentSeed, depthMapUrl: $depthMapUrl}';
   }
 
   @override
@@ -1317,11 +1327,79 @@ class LiveWallpaperRouteArgs {
     if (other is! LiveWallpaperRouteArgs) return false;
     return key == other.key &&
         imageUrl == other.imageUrl &&
-        accentSeed == other.accentSeed;
+        accentSeed == other.accentSeed &&
+        depthMapUrl == other.depthMapUrl;
   }
 
   @override
-  int get hashCode => key.hashCode ^ imageUrl.hashCode ^ accentSeed.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      imageUrl.hashCode ^
+      accentSeed.hashCode ^
+      depthMapUrl.hashCode;
+}
+
+/// generated route for
+/// [MoodScreen]
+class MoodRoute extends PageRouteInfo<MoodRouteArgs> {
+  MoodRoute({
+    Key? key,
+    required String moodId,
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         MoodRoute.name,
+         args: MoodRouteArgs(key: key, moodId: moodId, source: source),
+         rawPathParams: {'moodId': moodId},
+         rawQueryParams: {'source': source},
+         initialChildren: children,
+       );
+
+  static const String name = 'MoodRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final queryParams = data.queryParams;
+      final args = data.argsAs<MoodRouteArgs>(
+        orElse: () => MoodRouteArgs(
+          moodId: pathParams.getString('moodId'),
+          source: queryParams.getString('source', 'link'),
+        ),
+      );
+      return MoodScreen(
+        key: args.key,
+        moodId: args.moodId,
+        source: args.source,
+      );
+    },
+  );
+}
+
+class MoodRouteArgs {
+  const MoodRouteArgs({this.key, required this.moodId, this.source = 'link'});
+
+  final Key? key;
+
+  final String moodId;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'MoodRouteArgs{key: $key, moodId: $moodId, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! MoodRouteArgs) return false;
+    return key == other.key && moodId == other.moodId && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ moodId.hashCode ^ source.hashCode;
 }
 
 /// generated route for

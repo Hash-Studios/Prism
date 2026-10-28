@@ -1774,7 +1774,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       return;
     }
     if (context.mounted && imageUrl != null) {
-      await context.router.push(LiveWallpaperRoute(imageUrl: imageUrl, accentSeed: state.colors?.firstOrNull));
+      await context.router.push(
+        LiveWallpaperRoute(
+          imageUrl: imageUrl,
+          accentSeed: state.colors?.firstOrNull,
+          depthMapUrl: spatialOf(entity)?.mapUrl,
+        ),
+      );
     }
   }
 

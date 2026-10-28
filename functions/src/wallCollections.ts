@@ -3,6 +3,7 @@ import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {DEFAULT_COLLECTION} from "./wallCategory";
+import {refreshMoods} from "./wallMoods";
 import {premiumCollections} from "./wallOfTheDay";
 
 /**
@@ -93,5 +94,7 @@ export const refreshCollections = onSchedule(
   async () => {
     const changed = await refreshCollectionCovers();
     logger.info("refreshCollections: covers refreshed.", {changed});
+    const moods = await refreshMoods();
+    logger.info("refreshCollections: moods written.", {moods});
   },
 );

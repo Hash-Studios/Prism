@@ -26,7 +26,7 @@ Steps, in order:
 |---|---|---|
 | Sign in | "Your screen, reimagined." | Ticks the Terms and Privacy policy box. Then taps a sign-in button. |
 | Pick your vibe | "Pick your vibe" | Picks at least 3 categories (or all, if fewer exist). Can skip. |
-| This or that | "Pick the one you like more" | Picks 1 of 2 walls, 6 times. Then sees "Tuning your feed" for 1.5 s. Can skip. See "This or that". |
+| This or that | "Pick the one you like more" | Picks 1 of 2 walls, 6 times. Then sees "Tuning your feed" with the first walls of the real feed. Can skip. See "This or that". |
 | Find your people | "Find your people" | Follows the 3 suggested creators, or changes the picks. Can skip. |
 | Create your first wallpaper | "Create your first wallpaper" | Taps generate. The AI wallpaper is free here. The step moves on by itself when the image is ready. Can skip. |
 | Make it yours | "Make it yours" | Taps the button to set (Android) or save (iOS) the wallpaper. Can skip. |
@@ -46,7 +46,8 @@ The quiz shows the user their taste before the first feed. It comes after "Pick 
 5. Rounds 3 and 5 are wild cards: both walls come from categories the user did not pick. The label "Wild card" shows above the headline. With few walls from other categories, there is 1 wild card round or none.
 6. A tap picks a wall. The phone gives a light haptic. The other wall dims, and a tick shows on the pick. Then the next pair fades in.
 7. "Skip" is always on screen. It stores the picks so far and goes straight to the next step. No "Tuning your feed" screen shows after a skip.
-8. After round 6, "Tuning your feed" shows for 1.5 s. It shows the 4 to 6 walls the feed ranker now puts first, and one line about the picks, for example "Dark, minimal, a bit of neon". When the picks do not agree, the line is "Your feed is ready". Then the next step opens.
+8. After round 6, "Tuning your feed" shows. The app builds page 1 of the For you feed with the new picks, and the screen shows its first 6 walls. The feed then opens with that same page. The screen waits up to 4 s for the page and up to 0.8 s for the thumbnails, with placeholder tiles, then holds for 1.5 s. If the page or fewer than 4 thumbnails do not load, it shows the line alone. With Data saver on, the quiz loads thumbnails only.
+   The line under the title sums up the picks, for example "Dark, minimal, a bit of neon". Light or dark and minimal or busy come from the pixels of each shown thumbnail (brightness and edge contrast at 48 px), then from tags. When the picks do not agree, the line is "Your feed is ready". Then the next step opens.
 9. Back on the quiz returns to "Pick your vibe". The quiz shows only once in an onboarding run, so back and forward never store the picks twice.
 
 The picks go to the taste signals on the device. See "Taste signals" in [home-feed.md](home-feed.md).
@@ -123,8 +124,9 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 - The guest path has no AI step, no starter pack and no first wallpaper. These need an account.
 - iOS cannot set the wallpaper from the app. The user finishes in Photos.
 - The failure snackbar needs the shell `Scaffold`. Tests cover it. No device run was done.
-- The quiz reads light or dark only from tags and the palette colours that the wall data has. A Pexels wall has neither, so its pairs contrast on category only.
-- "Tuning your feed" ranks the walls the quiz loaded but did not show. It does not load the real first feed, so the feed can still differ in its exact walls.
+- The quiz pairs walls by tags and palette colours, before any image loads. A Pexels wall has neither, so its pairs contrast on category only. The summary line reads the pixels, so it covers Pexels walls too.
+- On For you, the carousel takes the first 4 Prism walls of the page and the grid shows the rest. So the "Tuning your feed" walls all show at the top, but not in the same order.
+- The brightness and edge cut-offs come from 120 cached thumbnails on one device (2026-10-28).
 
 ## How to test
 

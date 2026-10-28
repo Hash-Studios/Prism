@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 /// Approximate shader source lint; this does not establish native validator parity or compilation success.
-List<String> validateShaderContract(String shader, {required int textureCount}) {
+List<String> validateShaderContract(String shader, {required int textureCount, bool tilt = false}) {
   final List<String> problems = <String>[];
   if (utf8.encode(shader).length > 64 * 1024) problems.add('shader is larger than 64 KiB');
 
@@ -28,7 +28,7 @@ List<String> validateShaderContract(String shader, {required int textureCount}) 
   if (RegExp(r'\b(?:while|do)\b').hasMatch(source)) problems.add('while or do loop');
 
   final RegExp staticFor = RegExp(
-    r'(?:int|float)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*;\s*\1\s*(<=|<|>=|>)\s*(-?\d+)\s*;\s*((?:\1\s*(?:\+\+|--|\+=\s*\d+|-=\s*\d+))|(?:(?:\+\+|--)\s*\1))',
+    r'int\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*;\s*\1\s*(<=|<|>=|>)\s*(-?\d+)\s*;\s*((?:\1\s*(?:\+\+|--|\+=\s*\d+|-=\s*\d+))|(?:(?:\+\+|--)\s*\1))',
   );
   for (final RegExpMatch start in RegExp(r'\bfor\s*\(').allMatches(source)) {
     final int open = source.indexOf('(', start.start);
@@ -73,11 +73,12 @@ List<String> validateShaderContract(String shader, {required int textureCount}) 
     'mat4': 16,
     'sampler2D': 1,
   };
-  const Map<String, String> rendererTypes = <String, String>{
+  final Map<String, String> rendererTypes = <String, String>{
     'u_time': 'float',
     'u_resolution': 'vec2',
     'u_touch': 'vec2',
     'u_offset': 'vec2',
+    if (tilt) 'u_tilt': 'vec2',
   };
   int declarations = 0;
   int components = 0;
@@ -101,10 +102,14 @@ List<String> validateShaderContract(String shader, {required int textureCount}) 
       components += cost * length;
     }
     final String? expected = rendererTypes[name];
-    if (expected != null && (type != expected || length != 1)) problems.add('$name must be $expected');
+    if (expected != null && (type != expected || length != 1 || (name == 'u_tilt' && declaration.group(3) != null))) {
+      problems.add('$name must be $expected');
+    }
     if (type.startsWith('sampler')) {
       final RegExpMatch? texture = RegExp(r'^u_texture([0-3])$').firstMatch(name);
-      if (texture == null || type != 'sampler2D') {
+      if (length != 1) {
+        problems.add('sampler arrays must have length 1');
+      } else if (texture == null || type != 'sampler2D') {
         problems.add('unsupported sampler $name');
       } else if (int.parse(texture.group(1)!) >= textureCount) {
         problems.add('$name has no texture');

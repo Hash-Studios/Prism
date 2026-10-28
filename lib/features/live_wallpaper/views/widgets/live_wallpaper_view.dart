@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -14,8 +17,10 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -64,6 +69,7 @@ String _motionStyleLabel(AppLocalizations l10n, MotionStyle style) => switch (st
   MotionStyle.breathe => l10n.wallpaperLiveStyleBreathe,
   MotionStyle.ripple => l10n.wallpaperLiveStyleRipple,
   MotionStyle.shimmer => l10n.wallpaperLiveStyleShimmer,
+  MotionStyle.depth => l10n.wallpaperLiveStyleDepth,
 };
 
 String _motionStyleDescription(AppLocalizations l10n, MotionStyle style) => switch (style) {
@@ -71,6 +77,7 @@ String _motionStyleDescription(AppLocalizations l10n, MotionStyle style) => swit
   MotionStyle.breathe => l10n.wallpaperLiveStyleBreatheDescription,
   MotionStyle.ripple => l10n.wallpaperLiveStyleRippleDescription,
   MotionStyle.shimmer => l10n.wallpaperLiveStyleShimmerDescription,
+  MotionStyle.depth => l10n.wallpaperLiveStyleDepthDescription,
 };
 
 String _gradientStyleLabel(AppLocalizations l10n, GradientStyle style) => switch (style) {
@@ -100,9 +107,18 @@ Future<String?> _pickVideoFromGallery() async {
 }
 
 class LiveWallpaperView extends StatefulWidget {
-  const LiveWallpaperView({super.key, this.imageUrl, this.accentSeed, this.pickVideo = _pickVideoFromGallery});
+  const LiveWallpaperView({
+    super.key,
+    this.imageUrl,
+    this.accentSeed,
+    this.depthMapUrl,
+    this.pickVideo = _pickVideoFromGallery,
+  });
 
   final String? imageUrl;
+
+  /// The wall's depth map. The 3D style shows only with one.
+  final String? depthMapUrl;
 
   /// The dominant colour of the wallpaper the user came from. Null means the app accent.
   final Color? accentSeed;
@@ -335,7 +351,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: switch (_mode) {
-                    _LiveMode.photo => _PhotoSection(imageUrl: widget.imageUrl!, state: state),
+                    _LiveMode.photo => _PhotoSection(
+                      imageUrl: widget.imageUrl!,
+                      depthMapUrl: widget.depthMapUrl,
+                      state: state,
+                    ),
                     _LiveMode.gradients => _GradientSection(
                       state: state,
                       palette: _palette(context),
@@ -376,28 +396,42 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
 }
 
 class _PhotoSection extends StatelessWidget {
-  const _PhotoSection({required this.imageUrl, required this.state});
+  const _PhotoSection({required this.imageUrl, required this.depthMapUrl, required this.state});
 
   final String imageUrl;
+  final String? depthMapUrl;
   final LiveWallpaperState state;
 
   @override
   Widget build(BuildContext context) {
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
+    final String? mapUrl = depthMapUrl;
     return Column(
       children: [
         LiveStylePreview(
           semanticLabel: context.l10n.wallpaperLiveApplyPhotoDescription(
             _motionStyleLabel(context.l10n, state.motionStyle),
           ),
-          child: ProgressiveWallpaperImage(
-            display: WallpaperDisplaySource(thumbnail: '', full: imageUrl),
-            errorBuilder: (_, _) => const Center(child: Icon(Icons.broken_image_outlined)),
-          ),
+          child: state.motionStyle.needsDepthMap && mapUrl != null
+              ? SpatialTiltView(
+                  image: isValidNetworkUrl(imageUrl)
+                      ? CachedNetworkImageProvider(imageUrl)
+                      : FileImage(
+                          File(Uri.tryParse(imageUrl)?.scheme == 'file' ? Uri.parse(imageUrl).toFilePath() : imageUrl),
+                        ),
+                  mapUrl: mapUrl,
+                )
+              : ProgressiveWallpaperImage(
+                  display: WallpaperDisplaySource(thumbnail: '', full: imageUrl),
+                  errorBuilder: (_, _) => const Center(child: Icon(Icons.broken_image_outlined)),
+                ),
         ),
         const SizedBox(height: 16),
         LiveStylePicker<MotionStyle>(
-          values: MotionStyle.values,
+          values: <MotionStyle>[
+            for (final MotionStyle style in MotionStyle.values)
+              if (!style.needsDepthMap || mapUrl != null) style,
+          ],
           selected: state.motionStyle,
           label: (style) => _motionStyleLabel(context.l10n, style),
           isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),

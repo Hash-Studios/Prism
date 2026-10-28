@@ -38,6 +38,7 @@ import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_scr
 import 'package:Prism/features/leaderboard/leaderboard.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
+import 'package:Prism/features/moods/views/pages/mood_screen.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
@@ -187,6 +188,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
+    AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
     AutoRoute(path: '/following', page: FollowingListRoute.page),

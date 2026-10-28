@@ -21,6 +21,7 @@ class FirebaseCollections {
   static const String drawTickets = 'drawTickets';
   static const String leaderboards = 'leaderboards';
   static const String folders = 'folders';
+  static const String moods = 'moods';
 
   /// `folders/{folderId}/items`, one doc per saved wall.
   static String folderItems(String folderId) => '$folders/$folderId/items';

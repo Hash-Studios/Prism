@@ -1,6 +1,7 @@
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 /// One wall of a [WallpaperFeed]: its tile's position in the grid and its tile's Hero tag.
@@ -40,7 +41,9 @@ final class WallpaperFeed {
   /// the first frame of Back, before the Hero looks for the tile. Does nothing when the tile is already on screen, or
   /// when the feed is not a grid.
   void reveal(int position) {
-    if (!grid.mounted) return;
+    // A pop from a rebuild, for example a link that replaces the stack, runs during build. The grid cannot be read then,
+    // and it does not show again.
+    if (!grid.mounted || SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) return;
     final ScrollableState? scrollable = Scrollable.maybeOf(grid);
     RenderObject? node = grid.findRenderObject();
     while (node != null && node is! RenderSliver) {
