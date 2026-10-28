@@ -105,6 +105,60 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// Title of the empty Folders tab in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'No folders yet'**
+  String get foldersLibraryEmptyTitle;
+
+  /// Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the heart on a wallpaper to save it to a folder.'**
+  String get foldersLibraryEmptyBody;
+
+  /// Title shown when the Library cannot load the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your folders'**
+  String get foldersLoadAllError;
+
+  /// Hint in the favourites search field. It also tells how many favourites there are.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Search 1 favourite} other{Search {count} favourites}}'**
+  String wallpaperFavouriteSearchCountHint(int count);
+
+  /// Title of the favourites sort and filter sheet, and the tooltip of its button.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort and filter'**
+  String get wallpaperFavouriteSortAndFilter;
+
+  /// Heading above the sort choices in the favourites sort and filter sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get wallpaperFavouriteSortBy;
+
+  /// Heading above the source filter chips in the favourites sort and filter sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get wallpaperFavouriteFilterSource;
+
+  /// Tooltip and screen reader label of the button that sets a wallpaper from history again.
+  ///
+  /// In en, this message translates to:
+  /// **'Set again'**
+  String get wallpaperHistorySetAgain;
+
+  /// Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.
+  ///
+  /// In en, this message translates to:
+  /// **'{current}{target}, {time}'**
+  String wallpaperHistoryTileLabel(String current, String target, String time);
+
   /// No description provided for @wallpaperProviderWallhaven.
   ///
   /// In en, this message translates to:
@@ -13189,18 +13243,6 @@ abstract class AppLocalizations {
   /// **'Remove from history'**
   String get wallpaperHistoryRemoveAction;
 
-  /// Accessibility description for a wallpaper history tile.
-  ///
-  /// In en, this message translates to:
-  /// **'{current}Set again. {target}, {date}'**
-  String wallpaperHistoryTileSemantic(String current, String target, String date);
-
-  /// Title of the wallpaper history screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper history'**
-  String get wallpaperHistoryTitle;
-
   /// Accessible name for the Prism logo.
   ///
   /// In en, this message translates to:
@@ -13278,24 +13320,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'History'**
   String get wallpaperLibraryHistory;
-
-  /// Description for the history introduction in the library.
-  ///
-  /// In en, this message translates to:
-  /// **'The wallpapers you set, so you can set them again.'**
-  String get wallpaperLibraryHistoryBody;
-
-  /// Title for the history introduction in the library.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper history'**
-  String get wallpaperLibraryHistoryTitle;
-
-  /// Action to open wallpaper history.
-  ///
-  /// In en, this message translates to:
-  /// **'Open history'**
-  String get wallpaperLibraryOpenHistory;
 
   /// Library screen title.
   ///
@@ -14125,12 +14149,6 @@ abstract class AppLocalizations {
   /// **'Wall of the Day tile'**
   String get wallpaperQuickWotdTitle;
 
-  /// Section heading for recently set wallpapers.
-  ///
-  /// In en, this message translates to:
-  /// **'Recently set'**
-  String get wallpaperRecentlySet;
-
   /// Wallpaper and feed interface text: wallpaperRefresh.
   ///
   /// In en, this message translates to:
@@ -14208,12 +14226,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get wallpaperSet;
-
-  /// Accessibility label to set a recently set wallpaper again.
-  ///
-  /// In en, this message translates to:
-  /// **'Set this wallpaper again'**
-  String get wallpaperSetAgain;
 
   /// Wallpaper menu action to set this wallpaper.
   ///
@@ -14418,12 +14430,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to use premium filters with coins.'**
   String get wallpaperSignInForPremiumFilters;
-
-  /// Accessibility label for the favourites sort menu.
-  ///
-  /// In en, this message translates to:
-  /// **'Sort'**
-  String get wallpaperSort;
 
   /// Wallpaper interface text: wallpaperSortDownloads.
   ///
@@ -16590,12 +16596,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hold the heart on a wallpaper to save it here.'**
   String get foldersEmptyBody;
-
-  /// Hint next to the New folder card when the user has no folders.
-  ///
-  /// In en, this message translates to:
-  /// **'Sort your saved wallpapers into folders.'**
-  String get foldersNoFolders;
 
   /// Title of the error state of a folder.
   ///

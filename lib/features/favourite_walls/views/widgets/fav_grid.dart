@@ -23,12 +23,13 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
-import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/library/data/favourites_export.dart';
+import 'package:Prism/features/library/views/widgets/library_toolbar.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -64,11 +65,11 @@ enum _FavouritesMenuAction { select, export, clearAll }
 bool _isExternalSource(WallpaperSource source) =>
     source == WallpaperSource.wallhaven || source == WallpaperSource.pexels;
 
-class FavouriteGrid extends StatefulWidget {
-  const FavouriteGrid({super.key, this.header});
+/// The search field shows from this many favourites. A shorter list is quicker to scan than to search.
+const int favouriteSearchThreshold = 12;
 
-  /// Shown above the toolbar when nothing is selected. The Library hub puts its smart rows here.
-  final Widget? header;
+class FavouriteGrid extends StatefulWidget {
+  const FavouriteGrid({super.key});
 
   @override
   State<FavouriteGrid> createState() => _FavouriteGridState();
@@ -348,107 +349,131 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     ),
   );
 
-  Widget _toolbar(BuildContext context, FavouriteWallsState state) {
+  Future<void> _openViewSheet() {
     final FavouriteWallsBloc bloc = context.read<FavouriteWallsBloc>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(PrismWallGrid.margin, 0, PrismSpace.xxs, PrismSpace.xxs),
-      child: Column(
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: PrismTextField(
-                  controller: _searchController,
-                  hint: context.l10n.wallpaperFavouriteSearchHint,
-                  prefixIcon: Icons.search_rounded,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (value) => bloc.add(FavouriteWallsEvent.queryChanged(query: value)),
-                  suffix: state.query.isEmpty
-                      ? null
-                      : PrismIconButton(
-                          icon: Icons.close_rounded,
-                          tooltip: context.l10n.wallpaperClearSearch,
-                          onPressed: () {
-                            _searchController.clear();
-                            bloc.add(const FavouriteWallsEvent.queryChanged(query: ''));
-                          },
-                        ),
-                ),
-              ),
-              PopupMenuButton<FavouriteSort>(
-                tooltip: context.l10n.wallpaperSort,
-                icon: const Icon(Icons.sort_rounded),
-                initialValue: state.sort,
-                onSelected: (sort) => bloc.add(FavouriteWallsEvent.sortChanged(sort: sort)),
-                itemBuilder: (context) => <PopupMenuEntry<FavouriteSort>>[
-                  for (final FavouriteSort sort in FavouriteSort.values)
-                    PopupMenuItem<FavouriteSort>(value: sort, child: Text(_sortLabel(context.l10n, sort))),
-                ],
-              ),
-              PopupMenuButton<_FavouritesMenuAction>(
-                tooltip: context.l10n.wallpaperFavouriteMoreActions,
-                icon: const Icon(Icons.more_vert_rounded),
-                onSelected: (action) => switch (action) {
-                  _FavouritesMenuAction.select => setState(() => _selection = <String>{}),
-                  _FavouritesMenuAction.export => unawaited(_export(state.items)),
-                  _FavouritesMenuAction.clearAll => unawaited(_clearAll(state.items)),
-                },
-                itemBuilder: (context) => <PopupMenuEntry<_FavouritesMenuAction>>[
-                  PopupMenuItem<_FavouritesMenuAction>(
-                    value: _FavouritesMenuAction.select,
-                    child: Text(MaterialLocalizations.of(context).keyboardKeySelect),
-                  ),
-                  PopupMenuItem<_FavouritesMenuAction>(
-                    value: _FavouritesMenuAction.export,
-                    child: Text(context.l10n.wallpaperFavouriteExport),
-                  ),
-                  PopupMenuItem<_FavouritesMenuAction>(
-                    value: _FavouritesMenuAction.clearAll,
-                    child: Text(context.l10n.wallpaperFavouriteClearAll),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+    return showPrismSheet<void>(
+      context,
+      builder: (sheetContext) => BlocBuilder<FavouriteWallsBloc, FavouriteWallsState>(
+        bloc: bloc,
+        builder: (sheetContext, state) {
+          final AppLocalizations l10n = sheetContext.l10n;
+          final bool changed = state.sort != FavouriteSort.recentlyAdded || state.sourceFilter != null;
+          void source(WallpaperSource? value) => bloc.add(FavouriteWallsEvent.sourceFilterChanged(source: value));
+          return PrismSheetBody(
+            title: l10n.wallpaperFavouriteSortAndFilter,
+            trailingAction: PrismSheetAction(
+              label: l10n.wallpaperReset,
+              onTap: changed
+                  ? () => bloc
+                      ..add(const FavouriteWallsEvent.sortChanged(sort: FavouriteSort.recentlyAdded))
+                      ..add(const FavouriteWallsEvent.sourceFilterChanged())
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                _sourceChip(context, label: context.l10n.wallpaperAll, selected: state.sourceFilter == null),
-                for (final WallpaperSource source in _filterSources)
-                  _sourceChip(
-                    context,
-                    label: _sourceLabel(context.l10n, source),
-                    selected: state.sourceFilter == source,
-                    source: source,
-                  ),
+                PrismSectionHeader(
+                  title: l10n.wallpaperFavouriteSortBy,
+                  small: true,
+                  padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                ),
+                PrismSegmented<FavouriteSort>(
+                  values: FavouriteSort.values,
+                  selected: state.sort,
+                  labelOf: (sort) => _sortLabel(l10n, sort),
+                  onChanged: (sort) => bloc.add(FavouriteWallsEvent.sortChanged(sort: sort)),
+                ),
+                PrismSectionHeader(
+                  title: l10n.wallpaperFavouriteFilterSource,
+                  small: true,
+                  padding: const EdgeInsets.only(top: PrismSpace.lg, bottom: PrismSpace.xs),
+                ),
+                Wrap(
+                  spacing: PrismSpace.xs,
+                  runSpacing: PrismSpace.xs,
+                  children: <Widget>[
+                    PrismChip(
+                      label: l10n.wallpaperAll,
+                      selected: state.sourceFilter == null,
+                      onTap: () => source(null),
+                    ),
+                    for (final WallpaperSource value in _filterSources)
+                      PrismChip(
+                        label: _sourceLabel(l10n, value),
+                        selected: state.sourceFilter == value,
+                        onTap: () => source(value),
+                      ),
+                  ],
+                ),
               ],
             ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: PrismSpace.xxs),
-              child: Text(
-                context.l10n.wallpaperFavouriteCount(state.items.length),
-                style: PrismTextStyles.caption(context),
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _sourceChip(BuildContext context, {required String label, required bool selected, WallpaperSource? source}) {
-    return Padding(
-      padding: const EdgeInsets.only(right: PrismSpace.xs),
-      child: PrismChip(
-        label: label,
-        selected: selected,
-        onTap: () => context.read<FavouriteWallsBloc>().add(FavouriteWallsEvent.sourceFilterChanged(source: source)),
-      ),
+  Widget _toolbar(BuildContext context, FavouriteWallsState state) {
+    final FavouriteWallsBloc bloc = context.read<FavouriteWallsBloc>();
+    final AppLocalizations l10n = context.l10n;
+    final bool showSearch = state.items.length >= favouriteSearchThreshold || state.query.isNotEmpty;
+    final bool viewChanged = state.sort != FavouriteSort.recentlyAdded || state.sourceFilter != null;
+    return LibraryToolbar(
+      leading: showSearch
+          ? PrismTextField(
+              controller: _searchController,
+              hint: l10n.wallpaperFavouriteSearchCountHint(state.items.length),
+              prefixIcon: Icons.search_rounded,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) => bloc.add(FavouriteWallsEvent.queryChanged(query: value)),
+              suffix: state.query.isEmpty
+                  ? null
+                  : PrismIconButton(
+                      icon: Icons.close_rounded,
+                      tooltip: l10n.wallpaperClearSearch,
+                      onPressed: () {
+                        _searchController.clear();
+                        bloc.add(const FavouriteWallsEvent.queryChanged(query: ''));
+                      },
+                    ),
+            )
+          : Text(l10n.wallpaperFavouriteCount(state.items.length), style: PrismTextStyles.caption(context)),
+      actions: <Widget>[
+        Badge(
+          isLabelVisible: viewChanged,
+          smallSize: 8,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          offset: const Offset(-8, 8),
+          child: PrismIconButton(
+            icon: Icons.tune_rounded,
+            tooltip: l10n.wallpaperFavouriteSortAndFilter,
+            onPressed: () => unawaited(_openViewSheet()),
+          ),
+        ),
+        PopupMenuButton<_FavouritesMenuAction>(
+          tooltip: l10n.wallpaperFavouriteMoreActions,
+          icon: const Icon(Icons.more_vert_rounded),
+          onSelected: (action) => switch (action) {
+            _FavouritesMenuAction.select => setState(() => _selection = <String>{}),
+            _FavouritesMenuAction.export => unawaited(_export(state.items)),
+            _FavouritesMenuAction.clearAll => unawaited(_clearAll(state.items)),
+          },
+          itemBuilder: (context) => <PopupMenuEntry<_FavouritesMenuAction>>[
+            PopupMenuItem<_FavouritesMenuAction>(
+              value: _FavouritesMenuAction.select,
+              child: Text(MaterialLocalizations.of(context).keyboardKeySelect),
+            ),
+            PopupMenuItem<_FavouritesMenuAction>(
+              value: _FavouritesMenuAction.export,
+              child: Text(l10n.wallpaperFavouriteExport),
+            ),
+            PopupMenuItem<_FavouritesMenuAction>(
+              value: _FavouritesMenuAction.clearAll,
+              child: Text(l10n.wallpaperFavouriteClearAll),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -459,16 +484,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return KeyedSubtree(
       key: ValueKey<String>(wall.id),
-      child: wall is LegacyFavouriteWall
-          ? Column(
-              children: [
-                Expanded(child: _tileImage(context, walls, index, wall, cs, isSelected, dark)),
-                const SizedBox(height: favouriteFooterHeight),
-              ],
-            )
-          : FavouriteWallpaperCard(
+      child: wall is LegacyFavouriteWall || _selecting
+          ? _tileImage(context, walls, index, wall, cs, isSelected, dark)
+          : WallpaperQuickActionRegion(
               item: wall.toFeedItem(),
-              enabled: !_selecting,
               child: _tileImage(context, walls, index, wall, cs, isSelected, dark),
             ),
     );
@@ -524,7 +543,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     depthTagFor(wall.wallpaper.depthTier),
                     spatialTagFor(wall.wallpaper.spatial?.tier),
                   ]),
-                if (wall.syncStatus != FavouriteSyncStatus.synced)
+                // A guest's favourites never sync, and the guest banner already says so.
+                if (wall.syncStatus != FavouriteSyncStatus.synced && app_state.prismUser.id.isNotEmpty)
                   Positioned(
                     left: PrismSpace.xs,
                     top: PrismSpace.xs,
@@ -667,7 +687,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
           itemCount: walls.length,
-          gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
+          gridDelegate: PrismWallGrid.delegate(context),
           itemBuilder: (context, index) => _tile(context, walls, index),
         ),
       ),
@@ -718,7 +738,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   onCancel: _exitSelection,
                 )
               else ...<Widget>[
-                ?widget.header,
                 if (app_state.prismUser.id.isEmpty && state.items.isNotEmpty && !_guestBannerDismissed)
                   _guestBanner(context),
                 if (state.items.isNotEmpty) _toolbar(context, state),

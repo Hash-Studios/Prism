@@ -1,4 +1,13 @@
 {
+  "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
+  "foldersLibraryEmptyBody": "किसी वॉलपेपर को फ़ोल्डर में सहेजने के लिए उस पर दिल के निशान को दबाए रखें।",
+  "foldersLoadAllError": "आपके फ़ोल्डर लोड नहीं हो सके",
+  "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 पसंदीदा में खोजें} other{{count} पसंदीदा में खोजें}}",
+  "wallpaperFavouriteSortAndFilter": "क्रमबद्ध और फ़िल्टर करें",
+  "wallpaperFavouriteSortBy": "इस क्रम में लगाएँ",
+  "wallpaperFavouriteFilterSource": "स्रोत",
+  "wallpaperHistorySetAgain": "फिर से लगाएँ",
+  "wallpaperHistoryTileLabel": "{current}{target}, {time}",
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
@@ -7548,25 +7557,6 @@
   "@wallpaperHistoryRemoveAction": {
     "description": "Action to remove a wallpaper from history."
   },
-  "wallpaperHistoryTileSemantic": "{current}फिर से लगाएँ। {target}, {date}",
-  "@wallpaperHistoryTileSemantic": {
-    "description": "Accessibility description for a wallpaper history tile.",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "wallpaperHistoryTitle": "वॉलपेपर इतिहास",
-  "@wallpaperHistoryTitle": {
-    "description": "Title of the wallpaper history screen."
-  },
   "wallpaperHomeAppName": "Prism",
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
@@ -7635,18 +7625,6 @@
   "wallpaperLibraryHistory": "इतिहास",
   "@wallpaperLibraryHistory": {
     "description": "History tab label in the library."
-  },
-  "wallpaperLibraryHistoryBody": "आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।",
-  "@wallpaperLibraryHistoryBody": {
-    "description": "Description for the history introduction in the library."
-  },
-  "wallpaperLibraryHistoryTitle": "वॉलपेपर इतिहास",
-  "@wallpaperLibraryHistoryTitle": {
-    "description": "Title for the history introduction in the library."
-  },
-  "wallpaperLibraryOpenHistory": "इतिहास खोलें",
-  "@wallpaperLibraryOpenHistory": {
-    "description": "Action to open wallpaper history."
   },
   "wallpaperLibraryTitle": "लाइब्रेरी",
   "@wallpaperLibraryTitle": {
@@ -8289,10 +8267,6 @@
   "@wallpaperQuickWotdTitle": {
     "description": "Title of the Wall of the Day quick tile."
   },
-  "wallpaperRecentlySet": "हाल ही में सेट किए गए",
-  "@wallpaperRecentlySet": {
-    "description": "Section heading for recently set wallpapers."
-  },
   "wallpaperRefresh": "रीफ़्रेश करें",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -8349,10 +8323,6 @@
   "wallpaperSet": "सेट करें",
   "@wallpaperSet": {
     "description": "Wallpaper interface text: wallpaperSet."
-  },
-  "wallpaperSetAgain": "यह वॉलपेपर फिर से सेट करें",
-  "@wallpaperSetAgain": {
-    "description": "Accessibility label to set a recently set wallpaper again."
   },
   "wallpaperSetAsWallpaper": "वॉलपेपर के रूप में सेट करें",
   "@wallpaperSetAsWallpaper": {
@@ -8495,10 +8465,6 @@
   "wallpaperSignInForPremiumFilters": "कॉइन से प्रीमियम फ़िल्टर इस्तेमाल करने के लिए साइन इन करें।",
   "@wallpaperSignInForPremiumFilters": {
     "description": "Message shown when a signed-out user selects a premium filter."
-  },
-  "wallpaperSort": "क्रमबद्ध करें",
-  "@wallpaperSort": {
-    "description": "Accessibility label for the favourites sort menu."
   },
   "wallpaperSortDownloads": "डाउनलोड क्रमबद्ध करें",
   "@wallpaperSortDownloads": {
@@ -9545,10 +9511,6 @@
   "foldersEmptyBody": "यहाँ सहेजने के लिए किसी वॉलपेपर पर दिल के निशान को दबाए रखें।",
   "@foldersEmptyBody": {
     "description": "Body of the empty state of a folder."
-  },
-  "foldersNoFolders": "अपने सहेजे गए वॉलपेपर को फ़ोल्डरों में व्यवस्थित करें।",
-  "@foldersNoFolders": {
-    "description": "Hint next to the New folder card when the user has no folders."
   },
   "foldersLoadError": "यह फ़ोल्डर लोड नहीं हो सका।",
   "@foldersLoadError": {

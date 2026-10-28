@@ -15,6 +15,7 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
+import 'package:Prism/features/library/views/widgets/library_toolbar.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -277,23 +278,20 @@ class _DownloadsBodyState extends State<DownloadsBody> {
 
   Widget _toolbar(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.xxs, 0),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(_summary, style: PrismTextStyles.caption(context))),
-          PopupMenuButton<_DownloadSort>(
-            tooltip: context.l10n.wallpaperSortDownloads,
-            icon: Icon(Icons.sort_rounded, color: cs.onSurface),
-            initialValue: _sort,
-            onSelected: (sort) => setState(() => _sort = sort),
-            itemBuilder: (context) => <PopupMenuEntry<_DownloadSort>>[
-              for (final _DownloadSort sort in _DownloadSort.values)
-                PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(context.l10n, sort))),
-            ],
-          ),
-        ],
-      ),
+    return LibraryToolbar(
+      leading: Text(_summary, style: PrismTextStyles.caption(context)),
+      actions: <Widget>[
+        PopupMenuButton<_DownloadSort>(
+          tooltip: context.l10n.wallpaperSortDownloads,
+          icon: Icon(Icons.sort_rounded, color: cs.onSurface),
+          initialValue: _sort,
+          onSelected: (sort) => setState(() => _sort = sort),
+          itemBuilder: (context) => <PopupMenuEntry<_DownloadSort>>[
+            for (final _DownloadSort sort in _DownloadSort.values)
+              PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(context.l10n, sort))),
+          ],
+        ),
+      ],
     );
   }
 

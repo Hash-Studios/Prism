@@ -1812,11 +1812,24 @@ events:
       - name: item_count
         key: item_count
         type: int
-  - id: library_tab_changed
+  - id: library_tab_viewed
     fields:
       - name: tab
         key: tab
         type: string
+  - id: library_history_set_again
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: target
+        key: target
+        type: string
+  - id: library_history_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
   - id: favourites_exported
     fields:
       - name: count

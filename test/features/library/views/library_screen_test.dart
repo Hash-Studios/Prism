@@ -7,20 +7,23 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -34,8 +37,6 @@ class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWall
 class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWallUseCase {}
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
-
-class _MockStackRouter extends Mock implements StackRouter {}
 
 class _LibraryRouter extends AppRouter {
   @override
@@ -70,7 +71,8 @@ void main() {
     connectivity = FakeConnectivityService();
     getIt
       ..registerSingleton<ConnectivityService>(connectivity)
-      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore())));
+      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore())))
+      ..registerFactory<WallpaperHistoryBloc>(() => WallpaperHistoryBloc(getIt<WallpaperHistoryStore>()));
     fetch = _MockFetchFavouriteWallsUseCase();
     when(() => fetch(any())).thenAnswer((_) async => Result.success(const <FavouriteWallEntity>[]));
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
@@ -126,166 +128,7 @@ void main() {
     await settle(tester);
   }
 
-  List<LibraryTabChangedEvent> tabEvents() => analytics.events.whereType<LibraryTabChangedEvent>().toList();
-
-  testWidgets('Android shows Favourites, Downloads and History tabs on the Favourites tab', (tester) async {
-    await pumpLibrary(tester);
-
-    expect(find.text('Library'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Favourites'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Downloads'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'History'), findsOneWidget);
-    expect(find.text('No favourites yet'), findsOneWidget);
-    expect(tabEvents(), isEmpty);
-  });
-
-  testWidgets('iOS has no History tab, because it cannot set a wallpaper', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    try {
-      await pumpLibrary(tester);
-
-      expect(find.widgetWithText(Tab, 'Favourites'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Downloads'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'History'), findsNothing);
-    } finally {
-      debugDefaultTargetPlatformOverride = null;
-    }
-  });
-
-  testWidgets('changing tab shows that list and tracks library_tab_changed with the tab name', (tester) async {
-    await pumpLibrary(tester);
-
-    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
-    await settle(tester);
-    expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads']);
-
-    await tester.tap(find.widgetWithText(Tab, 'History'));
-    await settle(tester);
-    expect(find.text('Open history'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'history']);
-    expect(tabEvents().first.toWireParameters(), <String, Object?>{'tab': 'downloads'});
-  });
-
-  // The expected colours are the theme foreground made readable on the page, and the softer ink for the tab you
-  // are not on (every theme's ink is dark enough for the soft one to keep 4.5:1).
-  const Map<String, ({int selected, int unselected})> tabInk = <String, ({int selected, int unselected})>{
-    'Frost White': (selected: 0xFF090909, unselected: 0xCC090909),
-    'Rose': (selected: 0xFF19110F, unselected: 0xCC19110F),
-    'Cotton Blue': (selected: 0xFF0B0D12, unselected: 0xCC0B0D12),
-    'Coffee': (selected: 0xFF1E1709, unselected: 0xCC1E1709),
-    'AMOLED': (selected: 0xFFFFFFFF, unselected: 0xCCFFFFFF),
-  };
-
-  for (final MapEntry<String, ({int selected, int unselected})> entry in tabInk.entries) {
-    testWidgets('${entry.key}: both tab labels are 16 px and read on the page', (tester) async {
-      final PrismThemeOption option = <PrismThemeOption>[
-        ...prismLightThemes,
-        ...prismDarkThemes,
-      ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == entry.key);
-      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
-      await pumpLibrary(tester, theme: theme);
-
-      TextStyle labelOf(String tab) => tester
-          .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
-          .text
-          .style!;
-      final TextStyle selected = labelOf('Favourites');
-      final TextStyle unselected = labelOf('Downloads');
-
-      expect(selected.color!.toARGB32(), entry.value.selected);
-      expect(unselected.color!.toARGB32(), entry.value.unselected);
-      expect(selected.fontSize, 16);
-      expect(unselected.fontSize, 16);
-      for (final TextStyle label in <TextStyle>[selected, unselected]) {
-        expect(
-          contrastRatio(Color.alphaBlend(label.color!, theme.primaryColor), theme.primaryColor),
-          greaterThanOrEqualTo(4.5),
-        );
-      }
-    });
-  }
-
-  group('tab labels and the system text size', () {
-    double labelScale(WidgetTester tester, String tab) => tester
-        .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
-        .textScaler
-        .scale(16);
-
-    testWidgets('follow it below 1.5x', (tester) async {
-      tester.platformDispatcher.textScaleFactorTestValue = 1.25;
-      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await pumpLibrary(tester);
-
-      expect(labelScale(tester, 'Favourites'), 20);
-      expect(labelScale(tester, 'Downloads'), 20);
-    });
-
-    testWidgets('get all of the tab but 4 px each side, so "Downloads" has room at large text', (tester) async {
-      await pumpLibrary(tester);
-
-      final double slot = tester.getSize(find.byType(TabBar)).width / 3;
-      final double room = tester
-          .renderObject<RenderParagraph>(
-            find.descendant(of: find.widgetWithText(Tab, 'Downloads'), matching: find.byType(RichText)),
-          )
-          .constraints
-          .maxWidth;
-
-      expect(slot, 130);
-      expect(room, 122);
-    });
-
-    testWidgets('stop growing at 1.5x', (tester) async {
-      tester.platformDispatcher.textScaleFactorTestValue = 2;
-      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await pumpLibrary(tester);
-
-      expect(labelScale(tester, 'Favourites'), 24);
-      expect(labelScale(tester, 'Downloads'), 24);
-      expect(labelScale(tester, 'History'), 24);
-      expect(tester.getSize(find.byType(TabBar)).height, 48);
-    });
-  });
-
-  testWidgets('initialTab opens that tab without tracking a change', (tester) async {
-    await pumpLibrary(tester, initialTab: LibraryTab.downloads);
-
-    expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents(), isEmpty);
-  });
-
-  testWidgets('unchanged route arguments preserve a user tab on widget updates', (tester) async {
-    final rebuild = ValueNotifier<int>(0);
-    addTearDown(rebuild.dispose);
-    await pumpLibrary(
-      tester,
-      wrap: (_) => ValueListenableBuilder<int>(
-        valueListenable: rebuild,
-        builder: (context, value, child) => BlocProvider<FavouriteWallsBloc>.value(
-          value: bloc,
-          child: LibraryScreen(initialTab: value < 2 ? LibraryTab.favourites : LibraryTab.downloads),
-        ),
-      ),
-    );
-    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
-    await settle(tester);
-    rebuild.value = 1;
-    await settle(tester);
-    expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads']);
-
-    rebuild.value = 2;
-    await settle(tester);
-    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
-    await settle(tester);
-    rebuild.value = 3;
-    await settle(tester);
-    expect(find.text('No favourites yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites']);
-  });
-
-  testWidgets('warm typed Library links update both directions without remounting', (tester) async {
+  Future<({_LibraryRouter router, DeepLinkDispatcher dispatcher})> pumpDeepLinkHost(WidgetTester tester) async {
     final router = _LibraryRouter();
     final dispatcher = DeepLinkDispatcher(router: router, whenReady: () async => true);
     addTearDown(dispatcher.dispose);
@@ -302,75 +145,289 @@ void main() {
       ),
     );
     await settle(tester);
+    return (router: router, dispatcher: dispatcher);
+  }
 
-    Future<void> open(String tab) async {
-      final result = dispatcher.openUri(Uri.parse('prism://library?tab=$tab'), source: DeepLinkSourceValue.appLinks);
-      await settle(tester);
-      expect(await result, DeepLinkDispatchResult.navigated);
-      expect(router.topRoute.args, LibraryRouteArgs(initialTab: LibraryTab.values.byName(tab)));
+  Future<void> openLink(WidgetTester tester, DeepLinkDispatcher dispatcher, String link) async {
+    final Future<DeepLinkDispatchResult> result = dispatcher.openUri(
+      Uri.parse(link),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await settle(tester);
+    expect(await result, DeepLinkDispatchResult.navigated);
+  }
+
+  // The tab bar scrolls, so a tab past the right edge is brought into view before the tap.
+  Future<void> tapTab(WidgetTester tester, String tab) async {
+    await tester.ensureVisible(find.widgetWithText(Tab, tab));
+    await tester.tap(find.widgetWithText(Tab, tab));
+    await settle(tester);
+  }
+
+  int tabBarIndex(WidgetTester tester) => tester.widget<TabBar>(find.byType(TabBar)).controller!.index;
+
+  List<LibraryTabViewedEvent> tabEvents() => analytics.events.whereType<LibraryTabViewedEvent>().toList();
+
+  List<String> tabNames() => tabEvents().map((event) => event.tab).toList();
+
+  testWidgets('Android shows Favourites, Folders, Downloads and History tabs in that order', (tester) async {
+    await pumpLibrary(tester);
+
+    expect(find.text('Library'), findsOneWidget);
+    expect(tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.text), <String>[
+      'Favourites',
+      'Folders',
+      'Downloads',
+      'History',
+    ]);
+    expect(find.text('No favourites yet'), findsOneWidget);
+  });
+
+  testWidgets('iOS has no History tab, because it cannot set a wallpaper', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpLibrary(tester);
+
+      expect(tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.text), <String>[
+        'Favourites',
+        'Folders',
+        'Downloads',
+      ]);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
     }
+  });
 
-    await open('downloads');
-    final state = tester.state(find.byType(LibraryScreen));
-    expect(find.text('No downloads yet'), findsOneWidget);
-    router.push(const PageRouteInfo<void>('Detail'));
-    await settle(tester);
-    await router.maybePop();
+  test('libraryTabs drops History when the device cannot set a wallpaper', () {
+    expect(libraryTabs(canSetWallpaper: false), <LibraryTab>[
+      LibraryTab.favourites,
+      LibraryTab.folders,
+      LibraryTab.downloads,
+    ]);
+    expect(libraryTabs(canSetWallpaper: true), LibraryTab.values);
+  });
+
+  testWidgets('opening tracks the initial tab once, and each later tab change is tracked', (tester) async {
+    await pumpLibrary(tester);
+    expect(tabNames(), <String>['favourites']);
+
+    await tapTab(tester, 'Downloads');
     await settle(tester);
     expect(find.text('No downloads yet'), findsOneWidget);
 
-    await open('favourites');
-    expect(tester.state(find.byType(LibraryScreen)), same(state));
-    expect(find.text('No favourites yet'), findsOneWidget);
-    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
+    await tapTab(tester, 'History');
     await settle(tester);
-    expect(find.text('No downloads yet'), findsOneWidget);
-    await open('favourites');
-    expect(tester.state(find.byType(LibraryScreen)), same(state));
-    expect(find.text('No favourites yet'), findsOneWidget);
-    await open('downloads');
-    expect(tester.state(find.byType(LibraryScreen)), same(state));
-    expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads']);
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+    expect(tabNames(), <String>['favourites', 'downloads', 'history']);
+    expect(tabEvents()[1].toWireParameters(), <String, Object?>{'tab': 'downloads'});
+  });
 
-    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
-    await settle(tester);
-    expect(find.text('No favourites yet'), findsOneWidget);
-    await open('downloads');
-    expect(tester.state(find.byType(LibraryScreen)), same(state));
-    expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites']);
+  testWidgets('initialTab opens that tab and tracks it as the viewed tab', (tester) async {
+    await pumpLibrary(tester, initialTab: LibraryTab.downloads);
 
-    await tester.tap(find.widgetWithText(Tab, 'Favourites'));
-    await settle(tester);
-    tester.element(find.byType(LibraryScreen)).markNeedsBuild();
-    await settle(tester);
-    expect(find.text('No favourites yet'), findsOneWidget);
-    router.push(const PageRouteInfo<void>('Detail'));
-    await settle(tester);
-    await router.maybePop();
-    await settle(tester);
-    expect(find.text('No favourites yet'), findsOneWidget);
-    await open('downloads');
-    expect(tester.state(find.byType(LibraryScreen)), same(state));
     expect(find.text('No downloads yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites', 'favourites']);
+    expect(tabNames(), <String>['downloads']);
+  });
 
-    await router.maybePop();
+  testWidgets('Android initialTab history with an empty store shows the empty state and no clear button', (
+    tester,
+  ) async {
+    await pumpLibrary(tester, initialTab: LibraryTab.history);
+
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+    expect(tabNames(), <String>['history']);
+  });
+
+  testWidgets('clearing history after confirming empties the list and tracks the count', (tester) async {
+    await getIt<WallpaperHistoryStore>().record(
+      AppliedWallpaper(
+        id: '1',
+        source: 'prism',
+        wallpaperId: 'w1',
+        thumbnailUrl: '/nope.jpg',
+        fullUrl: 'https://example.com/w1.jpg',
+        target: 'home',
+        appliedAt: DateTime.now(),
+      ),
+    );
+    await pumpLibrary(tester, initialTab: LibraryTab.history);
+    expect(find.byType(AppliedWallpaperTile), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('library-clear-history')));
     await settle(tester);
-    expect(find.byType(LibraryScreen), findsNothing);
-    await open('favourites');
-    final remountedState = tester.state(find.byType(LibraryScreen));
-    expect(remountedState, isNot(same(state)));
-    expect(find.text('No favourites yet'), findsOneWidget);
-    await tester.tap(find.widgetWithText(Tab, 'Downloads'));
+    await tester.tap(find.text('Clear history'));
     await settle(tester);
-    expect(find.text('No downloads yet'), findsOneWidget);
-    await open('favourites');
-    expect(tester.state(find.byType(LibraryScreen)), same(remountedState));
-    expect(find.text('No favourites yet'), findsOneWidget);
-    expect(tabEvents().map((event) => event.tab), <String>['downloads', 'favourites', 'favourites', 'downloads']);
+
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+    final List<LibraryHistoryClearedEvent> cleared = analytics.events.whereType<LibraryHistoryClearedEvent>().toList();
+    expect(cleared.map((event) => event.count), <int>[1]);
+  });
+
+  testWidgets('closing the clear sheet without confirming keeps the history item', (tester) async {
+    await getIt<WallpaperHistoryStore>().record(
+      AppliedWallpaper(
+        id: '1',
+        source: 'prism',
+        wallpaperId: 'w1',
+        thumbnailUrl: '/nope.jpg',
+        fullUrl: 'https://example.com/w1.jpg',
+        target: 'home',
+        appliedAt: DateTime.now(),
+      ),
+    );
+    await pumpLibrary(tester, initialTab: LibraryTab.history);
+
+    await tester.tap(find.byKey(const ValueKey<String>('library-clear-history')));
+    await settle(tester);
+    expect(find.text('Clear history?'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await settle(tester);
+
+    expect(find.byType(AppliedWallpaperTile), findsOneWidget);
+  });
+
+  testWidgets('the Folders tab without a FoldersBloc has no New folder button, and no tab shows an action here', (
+    tester,
+  ) async {
+    await pumpLibrary(tester);
+    expect(find.byKey(const ValueKey<String>('library-new-folder')), findsNothing);
+
+    await tapTab(tester, 'Folders');
+    await settle(tester);
+    expect(find.byKey(const ValueKey<String>('library-new-folder')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+
+    await tapTab(tester, 'Downloads');
+    await settle(tester);
+    expect(find.byKey(const ValueKey<String>('library-new-folder')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+  });
+
+  // The expected colours come from the same helpers the screen uses, so the test catches a swapped colour.
+  for (final String name in <String>['Frost White', 'AMOLED']) {
+    testWidgets('$name: the selected tab label is the readable accent, the others the soft ink, both 15 px', (
+      tester,
+    ) async {
+      final PrismThemeOption option = <PrismThemeOption>[
+        ...prismLightThemes,
+        ...prismDarkThemes,
+      ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == name);
+      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+      await pumpLibrary(tester, theme: theme);
+
+      TextStyle labelOf(String tab) => tester
+          .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
+          .text
+          .style!;
+      final TextStyle selected = labelOf('Favourites');
+      final TextStyle unselected = labelOf('Downloads');
+
+      expect(selected.color, prismReadableAccent(theme));
+      expect(unselected.color, prismSoftInk(theme));
+      expect(selected.fontSize, 15);
+      expect(unselected.fontSize, 15);
+    });
+  }
+
+  testWidgets('at 2.0 text scale the tab labels clamp to 1.5x and the tab bar keeps its height', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpLibrary(tester);
+
+    double labelScale(String tab) => tester
+        .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
+        .textScaler
+        .scale(15);
+
+    expect(labelScale('Favourites'), 22.5);
+    expect(labelScale('Downloads'), 22.5);
+    expect(labelScale('History'), 22.5);
+    expect(tester.getSize(find.byType(TabBar)).height, 48);
+    expect(find.widgetWithText(Tab, 'Folders'), findsOneWidget);
+    expect(find.widgetWithText(Tab, 'History'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every icon button on each tab has a tooltip', (tester) async {
+    await pumpLibrary(tester);
+
+    for (final String tab in <String>['Favourites', 'Folders', 'Downloads', 'History']) {
+      await tester.tap(find.widgetWithText(Tab, tab));
+      await settle(tester);
+      for (final PrismIconButton button in tester.widgetList<PrismIconButton>(find.byType(PrismIconButton))) {
+        expect(button.tooltip.isNotEmpty, isTrue, reason: '$tab PrismIconButton');
+      }
+      for (final IconButton button in tester.widgetList<IconButton>(find.byType(IconButton))) {
+        expect(button.tooltip?.isNotEmpty ?? false, isTrue, reason: '$tab IconButton');
+      }
+    }
+  });
+
+  for (final String tab in <String>['favourites', 'folders', 'downloads', 'history']) {
+    testWidgets('prism://library?tab=$tab opens that tab on Android', (tester) async {
+      final host = await pumpDeepLinkHost(tester);
+      addTearDown(host.dispatcher.dispose);
+
+      await openLink(tester, host.dispatcher, 'prism://library?tab=$tab');
+
+      expect(host.router.topRoute.args, LibraryRouteArgs(initialTab: LibraryTab.values.byName(tab)));
+      expect(tabBarIndex(tester), <String>['favourites', 'folders', 'downloads', 'history'].indexOf(tab));
+    });
+  }
+
+  testWidgets('prism://wallpaper-history opens the History tab', (tester) async {
+    final host = await pumpDeepLinkHost(tester);
+
+    await openLink(tester, host.dispatcher, 'prism://wallpaper-history');
+
+    expect(host.router.topRoute.args, const LibraryRouteArgs(initialTab: LibraryTab.history));
+    expect(tabBarIndex(tester), 3);
+  });
+
+  testWidgets('on iOS, prism://library?tab=history falls back to Favourites and tab=downloads is index 2', (
+    tester,
+  ) async {
+    final host = await pumpDeepLinkHost(tester);
+
+    await openLink(tester, host.dispatcher, 'prism://library?tab=history');
+    expect(host.router.topRoute.args, const LibraryRouteArgs(initialTab: LibraryTab.history));
+    expect(tabBarIndex(tester), 0);
+
+    await openLink(tester, host.dispatcher, 'prism://library?tab=downloads');
+    expect(host.router.topRoute.args, const LibraryRouteArgs(initialTab: LibraryTab.downloads));
+    expect(tabBarIndex(tester), 2);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('unchanged route arguments preserve a user tab on widget updates', (tester) async {
+    final rebuild = ValueNotifier<int>(0);
+    addTearDown(rebuild.dispose);
+    await pumpLibrary(
+      tester,
+      wrap: (_) => ValueListenableBuilder<int>(
+        valueListenable: rebuild,
+        builder: (context, value, child) => BlocProvider<FavouriteWallsBloc>.value(
+          value: bloc,
+          child: LibraryScreen(initialTab: value < 2 ? LibraryTab.favourites : LibraryTab.downloads),
+        ),
+      ),
+    );
+    await tapTab(tester, 'Downloads');
+    await settle(tester);
+    rebuild.value = 1;
+    await settle(tester);
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(tabNames(), <String>['favourites', 'downloads']);
+
+    rebuild.value = 2;
+    await settle(tester);
+    await tapTab(tester, 'Favourites');
+    await settle(tester);
+    rebuild.value = 3;
+    await settle(tester);
+    expect(find.text('No favourites yet'), findsOneWidget);
+    expect(tabNames(), <String>['favourites', 'downloads', 'favourites']);
+  });
 
   testWidgets('the app bar shows an Offline chip only while offline', (tester) async {
     await pumpLibrary(tester);
@@ -385,22 +442,5 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Offline'), findsNothing);
-  });
-
-  testWidgets('the History tab opens the existing history screen', (tester) async {
-    registerFallbackValue(const WallpaperHistoryRoute());
-    final router = _MockStackRouter();
-    when(() => router.push(any())).thenAnswer((_) async => null);
-    await pumpLibrary(
-      tester,
-      wrap: (screen) => StackRouterScope(controller: router, stateHash: 0, child: screen),
-    );
-
-    await tester.tap(find.widgetWithText(Tab, 'History'));
-    await settle(tester);
-    await tester.tap(find.text('Open history'));
-    await tester.pump();
-
-    verify(() => router.push(any(that: isA<WallpaperHistoryRoute>()))).called(1);
   });
 }

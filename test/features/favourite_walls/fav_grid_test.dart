@@ -18,15 +18,19 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/core/widgets/prism/prism_field.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -48,6 +52,11 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
+
+/// [count] favourites, all older than the fixtures the tests name, so they sort after them.
+List<FavouriteWallEntity> _manyFavs(int count) => <FavouriteWallEntity>[
+  for (int i = 0; i < count; i++) prismFav('w$i', author: 'Author $i', createdAt: DateTime.utc(2024, 1, 1)),
+];
 
 void main() {
   setUpFavouriteCounts();
@@ -198,7 +207,7 @@ void main() {
       await tester.pump();
     }
 
-    // Every theme must keep the chips, the count line and the search field readable on the page.
+    // Every theme must keep the count line and the search field readable on the page.
     const List<String> themeLabels = <String>['Frost White', 'Rose', 'Cotton Blue', 'Coffee', 'AMOLED'];
 
     ThemeData themeNamed(String label) {
@@ -213,29 +222,25 @@ void main() {
         tester.widget<RichText>(find.descendant(of: text, matching: find.byType(RichText))).text.style!.color!;
 
     for (final String label in themeLabels) {
-      testWidgets('$label: the source chips and the count line read on the page', (tester) async {
+      testWidgets('$label: the count line reads on the page', (tester) async {
         final ThemeData theme = themeNamed(label);
         createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
         await pumpLoaded(tester, theme: theme);
 
         final Color page = theme.colorScheme.surface;
         final Color count = colorOf(tester, find.text('2 favourites'));
-        final Color chip = colorOf(tester, find.text('Prism'));
-        final Color chipFill = Color.alphaBlend(theme.colorScheme.onSurface.withValues(alpha: 0.06), page);
 
         expect(contrastRatio(Color.alphaBlend(count, page), page), greaterThanOrEqualTo(4.5));
-        expect(contrastRatio(chip, chipFill), greaterThanOrEqualTo(4.5));
-        expect(tester.getSize(find.widgetWithText(PrismChip, 'Prism')).height, greaterThanOrEqualTo(44));
       });
 
       testWidgets('$label: the search field types in text that reads on the page', (tester) async {
         final ThemeData theme = themeNamed(label);
-        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+        createBlocWith(_manyFavs(12));
         await pumpLoaded(tester, theme: theme);
 
         final Color page = theme.colorScheme.surface;
         final TextStyle typed = tester.widget<EditableText>(find.byType(EditableText)).style;
-        final TextStyle hint = tester.widget<Text>(find.text('Search by creator or category')).style!;
+        final TextStyle hint = tester.widget<Text>(find.text('Search 12 favourites')).style!;
 
         expect(typed.fontSize, 16);
         expect(typed.fontFamily, 'Proxima Nova');
@@ -245,32 +250,42 @@ void main() {
       });
     }
 
-    testWidgets('at 2x text the source chips still fit their 48 px row', (tester) async {
+    testWidgets('at 2x text the toolbar stays one row and does not throw', (tester) async {
       createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpLoaded(tester);
 
-      final RichText label = tester.widget<RichText>(
-        find.descendant(of: find.widgetWithText(PrismChip, 'Prism'), matching: find.byType(RichText)),
-      );
-
-      expect(label.textScaler.scale(14), 28);
-      expect(tester.getSize(find.widgetWithText(PrismChip, 'Prism')).height, lessThanOrEqualTo(48));
+      final double count = tester.getCenter(find.text('2 favourites')).dy;
+      final double sort = tester.getCenter(find.byTooltip('Sort and filter')).dy;
+      expect((count - sort).abs(), lessThanOrEqualTo(2));
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('filter chips and search narrow the grid and clear filters restores it', (tester) async {
+    Future<void> settleSheet(WidgetTester tester) async {
+      for (int i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+    }
+
+    testWidgets('the sort and filter sheet narrows the grid, search narrows it too, and clear filters restores it', (
+      tester,
+    ) async {
       createBlocWith(<FavouriteWallEntity>[
         prismFav('a', author: 'Ada', createdAt: DateTime.utc(2025, 1, 3)),
         pexelsFav('b', author: 'Grace', createdAt: DateTime.utc(2025, 1, 2)),
+        for (int i = 0; i < 10; i++) prismFav('f$i', author: 'Filler $i', createdAt: DateTime.utc(2024, 1, 1)),
       ]);
       await pumpLoaded(tester);
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
       expect(find.bySemanticsLabel('Wallpaper by Grace'), findsOneWidget);
 
+      await tester.tap(find.byTooltip('Sort and filter'));
+      await settleSheet(tester);
       await tester.tap(find.widgetWithText(PrismChip, 'Prism'));
-      await tester.pump();
+      await settleSheet(tester);
+      await tester.tap(find.byTooltip(AppLocalizationsEn().actionClose));
+      await settleSheet(tester);
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
       expect(find.bySemanticsLabel('Wallpaper by Grace'), findsNothing);
 
@@ -282,6 +297,95 @@ void main() {
       await tester.pump();
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
       expect(find.bySemanticsLabel('Wallpaper by Grace'), findsOneWidget);
+    });
+
+    testWidgets('fewer than 12 favourites show the count and no search field', (tester) async {
+      createBlocWith(_manyFavs(11));
+      await pumpLoaded(tester);
+
+      expect(find.byType(PrismTextField), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text('11 favourites'), findsOneWidget);
+    });
+
+    testWidgets('12 favourites show the search field with the count in its hint, not a count line', (tester) async {
+      createBlocWith(_manyFavs(12));
+      await pumpLoaded(tester);
+
+      expect(find.byType(PrismTextField), findsOneWidget);
+      expect(find.text('Search 12 favourites'), findsOneWidget);
+      expect(find.text('12 favourites'), findsNothing);
+    });
+
+    testWidgets('a search already in the bloc keeps the search field on a short list', (tester) async {
+      createBlocWith(_manyFavs(5));
+      bloc.add(const FavouriteWallsEvent.queryChanged(query: 'x'));
+      await pumpLoaded(tester);
+
+      expect(find.byType(PrismTextField), findsOneWidget);
+      expect(find.text('Search 5 favourites'), findsOneWidget);
+    });
+
+    testWidgets('Sort and filter sets the sort and source, shows the badge, and Reset clears both', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[
+        prismFav('a', author: 'Ada', createdAt: DateTime.utc(2025, 1, 3)),
+        pexelsFav('b', author: 'Grace', createdAt: DateTime.utc(2025, 1, 2)),
+      ]);
+      await pumpLoaded(tester);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+
+      await tester.tap(find.byTooltip('Sort and filter'));
+      await settleSheet(tester);
+      await tester.tap(find.text('Oldest'));
+      await settleSheet(tester);
+      expect(bloc.state.sort, FavouriteSort.oldest);
+      await tester.tap(find.widgetWithText(PrismChip, 'Wallhaven'));
+      await settleSheet(tester);
+      expect(bloc.state.sourceFilter, WallpaperSource.wallhaven);
+      await tester.tap(find.byTooltip(AppLocalizationsEn().actionClose));
+      await settleSheet(tester);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isTrue);
+
+      await tester.tap(find.byTooltip('Sort and filter'));
+      await settleSheet(tester);
+      await tester.tap(find.text('Reset'));
+      await settleSheet(tester);
+      expect(bloc.state.sort, FavouriteSort.recentlyAdded);
+      expect(bloc.state.sourceFilter, isNull);
+      await tester.tap(find.byTooltip(AppLocalizationsEn().actionClose));
+      await settleSheet(tester);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+    });
+
+    testWidgets('tiles have no footer and are as tall as the grid aspect ratio', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+      await pumpLoaded(tester);
+
+      expect(find.byType(WallpaperStatsRow), findsNothing);
+      expect(find.byType(FavouriteWallpaperFooter), findsNothing);
+      for (final String id in <String>['a', 'b']) {
+        final Size tile = tester.getSize(find.byKey(ValueKey<String>(id)));
+        expect(tile.height, closeTo(tile.width / PrismFeedLayout.gridTileAspectRatio, 0.5), reason: id);
+      }
+    });
+
+    testWidgets('every icon button in the toolbar has a tooltip', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+      await pumpLoaded(tester);
+
+      final List<PrismIconButton> buttons = tester.widgetList<PrismIconButton>(find.byType(PrismIconButton)).toList();
+      expect(buttons, isNotEmpty);
+      for (final PrismIconButton button in buttons) {
+        expect(button.tooltip, isNotEmpty);
+      }
+      expect(find.byTooltip('More favourites actions'), findsOneWidget);
+    });
+
+    testWidgets('a signed-in user sees the sync tag on a pending favourite', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada').withSyncStatus(FavouriteSyncStatus.pending)]);
+      await pumpLoaded(tester);
+
+      expect(find.text('Waiting to sync'), findsOneWidget);
     });
 
     testWidgets('long press selects, Remove sends one batched delete and Undo restores', (tester) async {
@@ -816,6 +920,21 @@ void main() {
       await tester.pump();
       expect(find.text('Sign in to keep them on every device'), findsNothing);
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
+    });
+
+    testWidgets('a guest sees no sync tag on a pending favourite', (tester) async {
+      when(() => fetchUseCase(any())).thenAnswer(
+        (_) async => Result.success(<FavouriteWallEntity>[
+          prismFav('a', author: 'Ada').withSyncStatus(FavouriteSyncStatus.pending),
+        ]),
+      );
+      createBloc();
+      await pumpGrid(tester);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
+      expect(find.text('Waiting to sync'), findsNothing);
     });
   });
 
