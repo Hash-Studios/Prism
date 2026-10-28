@@ -10,6 +10,7 @@ import {
   notificationCopyPayload,
   type NotificationCopy,
 } from "../notificationCatalog";
+import type {PushGallery} from "../pushGallery";
 
 import {
   emailToTopic,
@@ -173,6 +174,12 @@ test("native resources contain every typed notification key on Android and iOS",
       artistName: "Asha",
       artistEmail: "asha@example.com",
     },
+    {kind: "galleryDrop", wallCount: 7, tags: "Dreamy · Neon"},
+    {kind: "followDigest", artistName: "Asha", secondArtistName: "Ben", creatorCount: 1, wallCount: 1, tags: "Night"},
+    {kind: "followDigest", artistName: "Asha", secondArtistName: "Ben", creatorCount: 1, wallCount: 3, tags: "Night"},
+    {kind: "followDigest", artistName: "Asha", secondArtistName: "Ben", creatorCount: 2, wallCount: 5, tags: "Night"},
+    {kind: "followDigest", artistName: "Asha", secondArtistName: "Ben", creatorCount: 4, wallCount: 9, tags: "Night"},
+    {kind: "followDigest", artistName: "Asha", secondArtistName: "Ben", creatorCount: 4, wallCount: 9, tags: ""},
   ];
   const argumentsByKey = new Map<string, number>();
   const expectedByKey = new Map<string, { args: string[]; fallback: string; resourceText?: string }>();
@@ -1093,4 +1100,147 @@ test("only string session tokens are accepted", () => {
   assert.equal(pickFcmToken("", "l"), "");
   assert.equal(pickFcmToken({token: "bad"}, "l"), "");
   assert.equal(pickFcmToken(123, "l"), "");
+});
+
+const gallery: PushGallery = {
+  wallIds: ["W1", "W2", "W3", "W4"],
+  stripUrl: "https://img.example.com/push-gallery/v1/strip.jpg",
+  heroUrl: "https://img.example.com/push-gallery/v1/hero.jpg",
+  count: 4,
+  thumbIndex: 2,
+  tags: ["Night", "Neon"],
+};
+
+test("a gallery push sends the strip, count and thumb index, and Android shows the hero", () => {
+  const message = fcmMessage({
+    title: "t",
+    body: "b",
+    data: {route: "wall_of_the_day", wall_id: "w1", wall_ids: "W1,W2,W3,W4"},
+    imageUrl: "https://img.example.com/previews/w1.img",
+    gallery,
+    modifier: "all",
+    channelId: "wall_of_the_day",
+    fcmTarget: {token: "t"},
+  });
+  assert.equal(message.data?.gallery, "1");
+  assert.equal(message.data?.gallery_url, gallery.stripUrl);
+  assert.equal(message.data?.gallery_count, "4");
+  assert.equal(message.data?.gallery_thumb_index, "2");
+  assert.equal(message.data?.imageUrl, "https://img.example.com/previews/w1.img");
+  assert.equal(message.data?.wall_ids, "W1,W2,W3,W4");
+  assert.equal(message.android?.notification?.imageUrl, gallery.heroUrl);
+  assert.equal(message.apns?.payload?.aps.mutableContent, true);
+});
+
+test("a single-image push without a gallery still asks iOS to attach its image", () => {
+  const message = fcmMessage({
+    title: "t",
+    body: "b",
+    data: {route: "wall_of_the_day", wall_id: "w1"},
+    imageUrl: "https://img.example.com/previews/w1.img",
+    modifier: "all",
+    channelId: "wall_of_the_day",
+    fcmTarget: {token: "t"},
+  });
+  assert.equal(message.data?.gallery, undefined);
+  assert.equal(message.data?.gallery_url, undefined);
+  assert.equal(message.android?.notification?.imageUrl, "https://img.example.com/previews/w1.img");
+  assert.equal(message.apns?.payload?.aps.mutableContent, true);
+});
+
+test("a push with neither an image nor a gallery has no mutable content or Android image", () => {
+  const message = fcmMessage({
+    title: "t",
+    body: "b",
+    data: {route: "wall_of_the_day", wall_id: "w1"},
+    modifier: "all",
+    channelId: "wall_of_the_day",
+    fcmTarget: {token: "t"},
+  });
+  assert.equal(message.apns?.payload?.aps.mutableContent, undefined);
+  assert.equal(message.android?.notification?.imageUrl, undefined);
+});
+
+test("a localized gallery push stays under the APNs payload limit", () => {
+  const ids = ["A1", "A2", "A3", "A4"].map((prefix) => prefix.padEnd(20, "x"));
+  const longUrl = `https://img.example.com/${"u".repeat(150 - "https://img.example.com/".length)}`;
+  const message = fcmMessage({
+    ...notificationCopyPayload({
+      kind: "wotdForAudience",
+      wallTitle: "Dark and quiet · Night city · Neon",
+    }),
+    data: {route: "wall_of_the_day", wall_id: ids[0], wall_ids: ids.join(","), url: longUrl},
+    imageUrl: "https://img.example.com/previews/w1.img",
+    gallery: {...gallery, wallIds: ids},
+    modifier: "all",
+    channelId: "wall_of_the_day",
+    fcmTarget: {topic: "wall_of_the_day_utc_p0530_loc_v1"},
+  });
+  assert.ok(Buffer.byteLength(JSON.stringify({aps: message.apns?.payload?.aps, ...message.data})) < 4096);
+  assert.equal(message.notification, undefined);
+  assert.equal(message.android?.notification?.titleLocKey, "notif_push_wotd_for_audience_title");
+  assert.deepEqual(message.android?.notification?.bodyLocArgs, ["Dark and quiet · Night city · Neon"]);
+  const alert = message.apns?.payload?.aps.alert;
+  assert.ok(alert && typeof alert !== "string");
+  assert.equal(alert.locKey, "notif_push_wotd_for_audience_body");
+});
+
+test("gallery drop copy localizes to the Drop title and the tags line", () => {
+  assert.deepEqual(
+    nativeNotificationLocalization(notificationCopyPayload({kind: "galleryDrop", wallCount: 7, tags: "Dreamy · Neon"}).message),
+    {titleKey: "notif_push_drop_live_title", titleArgs: [], bodyKey: "notif_push_wotd_for_audience_body", bodyArgs: ["Dreamy · Neon"]},
+  );
+  assert.deepEqual(
+    nativeNotificationLocalization(notificationCopyPayload({kind: "galleryDrop", wallCount: 7, tags: ""}).message),
+    {titleKey: "notif_push_drop_live_title", titleArgs: [], bodyKey: "notif_push_drop_live_body", bodyArgs: ["7"]},
+  );
+  const english = notificationCopyPayload({kind: "galleryDrop", wallCount: 7, tags: "Dreamy · Neon"});
+  assert.equal(english.title, "A new Drop is live");
+  assert.equal(english.body, "Dreamy · Neon");
+  const untagged = notificationCopyPayload({kind: "galleryDrop", wallCount: 7, tags: ""});
+  assert.equal(untagged.body, "7 walls, this week only. Preview them before they are gone.");
+});
+
+test("follow digest copy picks its title shape and native keys", () => {
+  const digest = (creatorCount: number, wallCount: number, tags: string) => notificationCopyPayload({
+    kind: "followDigest",
+    artistName: "Asha",
+    secondArtistName: "Ben",
+    creatorCount,
+    wallCount,
+    tags,
+  });
+  const one = digest(1, 1, "Night");
+  assert.equal(one.title, "Asha posted a new wall");
+  assert.equal(one.body, "Night");
+  assert.deepEqual(nativeNotificationLocalization(one.message), {
+    titleKey: "notif_push_follow_digest_title_one",
+    titleArgs: ["Asha"],
+    bodyKey: "notif_push_follow_digest_body",
+    bodyArgs: ["Night"],
+  });
+
+  const solo = digest(1, 3, "Night");
+  assert.equal(solo.title, "Asha posted 3 new walls");
+  assert.equal(nativeNotificationLocalization(solo.message)?.titleKey, "notif_push_follow_digest_title_solo");
+  assert.deepEqual(nativeNotificationLocalization(solo.message)?.titleArgs, ["Asha", "3"]);
+
+  const pair = digest(2, 5, "Night");
+  assert.equal(pair.title, "Asha and Ben posted 5 new walls");
+  assert.equal(nativeNotificationLocalization(pair.message)?.titleKey, "notif_push_follow_digest_title_pair");
+  assert.deepEqual(nativeNotificationLocalization(pair.message)?.titleArgs, ["Asha", "Ben", "5"]);
+
+  const group = digest(4, 9, "Night");
+  assert.equal(group.title, "Asha and 3 others posted 9 new walls");
+  assert.equal(nativeNotificationLocalization(group.message)?.titleKey, "notif_push_follow_digest_title_group");
+  assert.deepEqual(nativeNotificationLocalization(group.message)?.titleArgs, ["Asha", "3", "9"]);
+
+  const untitled = digest(4, 9, "");
+  assert.equal(untitled.body, "Tap to see them all.");
+  assert.deepEqual(nativeNotificationLocalization(untitled.message), {
+    titleKey: "notif_push_follow_digest_title_group",
+    titleArgs: ["Asha", "3", "9"],
+    bodyKey: "notif_push_follow_digest_body_untitled",
+    bodyArgs: [],
+  });
 });
