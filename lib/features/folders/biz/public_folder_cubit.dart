@@ -72,11 +72,15 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
     return super.close();
   }
 
-  /// Loads the folder. A [quiet] load keeps the shown folder until the new one arrives, and keeps it when the read
-  /// fails, so returning to the app refreshes the page without a flash. It still shows a folder that went private.
+  /// A [quiet] load keeps the shown folder until the new one arrives and on read errors.
   Future<void> load(String folderId, {required String viewerId, bool quiet = false}) async {
     if (isClosed) return;
-    final bool keep = quiet && state.status == PublicFolderStatus.ready;
+    final ({String folderId, String viewerId})? loaded = _request;
+    final bool keep =
+        quiet &&
+        state.status == PublicFolderStatus.ready &&
+        loaded?.folderId == folderId &&
+        loaded?.viewerId == viewerId;
     if (keep && state.followBusy) return;
     _request = (folderId: folderId, viewerId: viewerId);
     final int version = ++_loadVersion;
@@ -122,7 +126,7 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
   Future<PublicFolderFailure?> toggleFollow() async {
     final PublicFolderEntity? folder = state.folder;
     if (folder == null || state.followBusy || state.status != PublicFolderStatus.ready) return null;
-    final int version = _loadVersion;
+    final int version = ++_loadVersion;
     bool current() => !isClosed && version == _loadVersion;
     final bool next = !state.following;
     final int count = folder.followerCount;

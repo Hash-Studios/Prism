@@ -6,7 +6,7 @@ import {db, CALLABLE_REGIONS, readDailyCount, REGION, str, utcDateString} from "
 import {isAdminCaller} from "./adminConfig";
 import {buildPushGallery, isPreviewUrl, type GalleryDeps} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
-import {isWotdEligible, premiumCollections} from "./wallOfTheDay";
+import {isWotdEligible, parseCollectionList} from "./wallOfTheDay";
 
 export const PUBLIC_FOLDERS = "publicFolders";
 export const FOLLOWED_FOLDERS = "followedFolders";
@@ -25,6 +25,7 @@ const MAX_FOLLOW_ACTIONS_PER_DAY = 200;
 export const MAX_FOLLOWED_FOLDERS = 500;
 const WRITE_CHUNK = 100;
 const PROJECTION_STATE = "publicFolderState";
+const PREMIUM_CACHE_MS = 10 * 60_000;
 
 type Doc = admin.firestore.DocumentData;
 
@@ -84,14 +85,14 @@ async function folderTransaction<T>(folderId: string, run: (
   for (;;) {
     const before = (await source.get()).data();
     const ownerId = str(before?.ownerId);
-    // Auth is read only for a public folder, so item writes in private folders cost no Auth call. A folder that
-    // turns public after this read gets its own sync from the folder trigger.
-    const enabled = ownerId !== "" && before?.public === true && !(await publicFolderDeps.authDisabled(ownerId));
+    const wasPublic = before?.public === true;
+    // Auth is read only for a public folder, so item writes in private folders cost no Auth call.
+    const enabled = ownerId !== "" && wasPublic && !(await publicFolderDeps.authDisabled(ownerId));
     try {
       return await db.runTransaction(async (tx) => {
         const snapshot = await tx.get(source);
         const folder = snapshot.data();
-        if (str(folder?.ownerId) !== ownerId) throw new OwnerChanged();
+        if (str(folder?.ownerId) !== ownerId || (folder?.public === true) !== wasPublic) throw new OwnerChanged();
         const [user, barrier] = ownerId ? await Promise.all([
           tx.get(db.collection(USERS).doc(ownerId)), tx.get(db.collection("creatorDeletionState").doc(ownerId)),
         ]) : [undefined, undefined];
@@ -122,10 +123,19 @@ let premiumCache: {at: number; value: Promise<string[]>} | undefined;
 
 /** Remote Config premium collections, kept for 10 minutes so a sync does not read the template per item. */
 function cachedPremiumCollections(): Promise<string[]> {
-  if (!premiumCache || Date.now() - premiumCache.at > 10 * 60_000) {
-    premiumCache = {at: Date.now(), value: premiumCollections()};
-  }
-  return premiumCache.value;
+  if (premiumCache && Date.now() - premiumCache.at <= PREMIUM_CACHE_MS) return premiumCache.value;
+  const entry: {at: number; value: Promise<string[]>} = {at: Date.now(), value: Promise.resolve([])};
+  entry.value = admin.remoteConfig().getTemplate().then((template) => {
+    const value = (template.parameters?.premiumCollections?.defaultValue as {value?: string} | undefined)?.value;
+    const parsed = typeof value === "string" ? parseCollectionList(value) : [];
+    if (parsed.length === 0) throw new Error("premiumCollections is empty or missing");
+    return parsed;
+  }).catch((error: unknown) => {
+    if (premiumCache === entry) premiumCache = undefined;
+    throw error;
+  });
+  premiumCache = entry;
+  return entry.value;
 }
 
 /**
@@ -158,6 +168,7 @@ export async function projectedItem(
 
 const publicRef = (folderId: string) => db.collection(PUBLIC_FOLDERS).doc(folderId);
 const stateRef = (folderId: string) => db.collection(PROJECTION_STATE).doc(folderId);
+const wallRefreshRef = (folderId: string, wallId: string) => stateRef(folderId).collection(ITEMS).doc(wallId);
 
 function currentHeader(head: admin.firestore.DocumentSnapshot, fence: admin.firestore.DocumentSnapshot, want: Wanted | null) {
   const data = head.data();
@@ -206,6 +217,13 @@ async function finishRemoval(folderId: string, generation: string): Promise<void
   await inChunks(items.docs, (item) => db.runTransaction(async (tx) => {
     const [fence, head] = await Promise.all([tx.get(state), tx.get(header)]);
     if (fence.data()?.generation === generation && fence.data()?.deleting === true && !head.exists) tx.delete(item.ref);
+  }));
+  const markers = await state.collection(ITEMS).get();
+  await inChunks(markers.docs, (marker) => db.runTransaction(async (tx) => {
+    const [fence, head, current] = await Promise.all([tx.get(state), tx.get(header), tx.get(marker.ref)]);
+    if (fence.data()?.generation === generation && fence.data()?.deleting === true && !head.exists && current.exists) {
+      tx.delete(marker.ref);
+    }
   }));
   const reverses = await db.collectionGroup(FOLLOWED_FOLDERS).where("folderId", "==", folderId).get();
   await inChunks(reverses.docs, (back) => db.runTransaction(async (tx) => {
@@ -332,18 +350,29 @@ async function ensureHeader(folderId: string): Promise<boolean> {
 }
 
 /** Reads the current item and wall in the same transaction as the public write, including stale-item removals. */
-async function projectCurrentItem(folderId: string, itemKey: string): Promise<void> {
+async function projectCurrentItem(folderId: string, itemKey: string, wallRefresh?: {wallId: string; token: string}): Promise<void> {
   return folderTransaction(folderId, async (tx, want) => {
     const header = publicRef(folderId);
     const target = header.collection(ITEMS).doc(itemKey);
+    const marker = wallRefresh ? wallRefreshRef(folderId, wallRefresh.wallId) : undefined;
     const [head, fence, source, previous] = await Promise.all([
       tx.get(header), tx.get(stateRef(folderId)),
       tx.get(db.collection(FOLDERS).doc(folderId).collection(ITEMS).doc(itemKey)), tx.get(target),
     ]);
     if (!want || !currentHeader(head, fence, want)) return;
+    if (marker) await tx.get(marker);
     const doc = await projectedItem(source.data(), want.ownerId, tx);
     if (doc) tx.set(target, {...doc, projectedAt: previous.data()?.projectedAt ?? admin.firestore.FieldValue.serverTimestamp()});
     else if (previous.exists) tx.delete(target);
+    if (marker && wallRefresh) tx.set(marker, {wallpaperDocumentId: wallRefresh.wallId, refreshToken: wallRefresh.token});
+  });
+}
+
+async function clearWallRefresh(folderId: string, wallId: string, token: string): Promise<void> {
+  const marker = wallRefreshRef(folderId, wallId);
+  await db.runTransaction(async (tx) => {
+    const current = await tx.get(marker);
+    if (current.data()?.refreshToken === token) tx.delete(marker);
   });
 }
 
@@ -373,17 +402,43 @@ export async function syncPublicFolderItem(folderId: string, itemKey: string): P
  * held after reports, deleted, or moved into a drop. A wall that becomes eligible again shows at the next folder sync.
  */
 export async function refreshWallInPublicFolders(wallId: string, before: Doc | undefined, after: Doc | undefined) {
-  const premium = await publicFolderDeps.premium();
-  const was = isPublicWall(before, premium) ? str(before.wallpaper_thumb) : null;
-  const now = isPublicWall(after, premium) ? str(after.wallpaper_thumb) : null;
-  if (was === null || was === now) return;
+  const changed = isRelevantWallChange(before, after);
+  if (!changed) return;
   const items = await db.collectionGroup(ITEMS).where("wallpaperDocumentId", "==", wallId).get();
-  const copies = items.docs.map((d) => d.ref.path.split("/"))
-    .filter((parts) => parts.length === 4 && parts[0] === PUBLIC_FOLDERS);
-  await inChunks(copies, async ([, folderId, , itemKey]) => {
-    await projectCurrentItem(folderId, itemKey);
+  const folders = new Map<string, Set<string>>();
+  const pendingTokens = new Map<string, string>();
+  for (const item of items.docs) {
+    const parts = item.ref.path.split("/");
+    if (parts.length !== 4) continue;
+    if (parts[0] === PROJECTION_STATE && parts[2] === ITEMS) {
+      folders.set(parts[1], folders.get(parts[1]) ?? new Set());
+      pendingTokens.set(parts[1], str(item.data()?.refreshToken));
+      continue;
+    }
+    if (parts[0] !== PUBLIC_FOLDERS || parts[2] !== ITEMS) continue;
+    const keys = folders.get(parts[1]) ?? new Set<string>();
+    keys.add(parts[3]);
+    folders.set(parts[1], keys);
+  }
+  await inChunks([...folders], async ([folderId, keys]) => {
+    const token = keys.size > 0 ? randomUUID() : pendingTokens.get(folderId);
+    if (!token) return;
+    if (!(await ensureHeader(folderId))) {
+      await clearWallRefresh(folderId, wallId, token);
+      return;
+    }
+    for (const itemKey of keys) await projectCurrentItem(folderId, itemKey, {wallId, token});
     await refreshHeader(folderId);
+    await ensureHeader(folderId);
+    await clearWallRefresh(folderId, wallId, token);
   });
+}
+
+function isRelevantWallChange(before: Doc | undefined, after: Doc | undefined): boolean {
+  if (!before || !after) return true;
+  const fields = ["review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
+    "wallpaper_thumb", "id"];
+  return fields.some((field) => JSON.stringify(before[field]) !== JSON.stringify(after[field]));
 }
 
 export const onWallPublicGateChanged = onDocumentWritten(

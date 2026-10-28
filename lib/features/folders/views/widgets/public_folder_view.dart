@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/features/folders/views/folder_share.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -38,16 +40,24 @@ class PublicFolderView extends StatefulWidget {
 
 class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBindingObserver {
   late final PublicFolderCubit _cubit = widget.cubit ?? getIt<PublicFolderCubit>();
+  String _viewerId = app_state.prismUser.id;
+  StreamSubscription<PrismUsersV2>? _sessionSubscription;
   bool _tracked = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (getIt.isRegistered<SessionRepository>()) {
+      _sessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        if (user.id == _viewerId) return;
+        _viewerId = user.id;
+        unawaited(_load());
+      });
+    }
     unawaited(_load());
   }
 
-  /// Back in the app, for example from a "New in" push: show the folder as it is now.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -66,6 +76,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_sessionSubscription?.cancel());
     if (widget.cubit == null) unawaited(_cubit.close());
     super.dispose();
   }
