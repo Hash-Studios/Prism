@@ -51,7 +51,7 @@ class PrismChip extends StatelessWidget {
               duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.enter,
               constraints: BoxConstraints(minWidth: 44, minHeight: compact ? 34 : 44),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14, vertical: compact ? 6 : PrismSpace.xs),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14, vertical: compact ? 0 : PrismSpace.xs),
               decoration: BoxDecoration(
                 color: selected ? cs.onSurface : cs.onSurface.withValues(alpha: compact ? 0.08 : 0.06),
                 borderRadius: BorderRadius.circular(PrismRadius.pill),
@@ -69,7 +69,9 @@ class PrismChip extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: compact ? 13 : 14, color: fg),
+                      style: PrismTextStyles.rowTitle(
+                        context,
+                      ).copyWith(fontSize: compact ? 13 : 14, height: compact ? kTextHeightNone : null, color: fg),
                     ),
                   ),
                 ],
