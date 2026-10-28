@@ -2181,7 +2181,7 @@
   "wallpaperHidePreviewControls": "Ocultar controles",
   "wallpaperHistoryBothScreens": "Ambas as telas",
   "wallpaperHistoryCurrent": "Atual",
-  "wallpaperHistoryCurrentPrefix": "Atual.",
+  "wallpaperHistoryCurrentPrefix": "Atual. ",
   "wallpaperHistoryEmptyBody": "Os papéis de parede que você definir aparecerão aqui, para que você possa configurá-los novamente.",
   "wallpaperHistoryEmptyTitle": "Ainda não há papéis de parede",
   "wallpaperHistoryRemoveAction": "Remover do histórico",

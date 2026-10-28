@@ -3,6 +3,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -368,5 +369,33 @@ void main() {
     bloc.add(const FoldersEvent.started(userId: 'u2'));
     await settle(tester);
     expect(find.text('Work'), findsOneWidget);
+  });
+
+  testWidgets('after an account switch the grid hides the last account folders until it reloads', (tester) async {
+    await pumpGrid(tester, _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]));
+    expect(find.text('Work'), findsOneWidget);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    tester.element(find.byType(FoldersGrid)).markNeedsBuild();
+    await tester.pump();
+
+    expect(find.text('Work'), findsNothing);
+    expect(find.byType(PrismBone), findsWidgets);
+  });
+
+  testWidgets('folder cards fit their name and count at a large nonlinear text size', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 2.2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work', itemCount: 3, covers: _urls(3))]),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Rect card = tester.getRect(find.bySemanticsLabel('Work'));
+    expect(tester.getBottomLeft(find.text('3 wallpapers')).dy, lessThanOrEqualTo(card.bottom));
   });
 }

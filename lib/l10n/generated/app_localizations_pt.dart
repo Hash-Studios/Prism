@@ -8764,7 +8764,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>
@@ -19454,7 +19454,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>

@@ -50,8 +50,23 @@ class _FoldersGridState extends State<FoldersGrid> {
     ),
   );
 
+  /// The height one line of [style] takes at the current text size, as a [Text] here would draw it.
+  static double _lineHeight(BuildContext context, TextStyle style) {
+    final TextPainter painter = TextPainter(
+      text: TextSpan(text: 'Ag', style: DefaultTextStyle.of(context).style.merge(style)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final double height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
   Widget _grid(BuildContext context, {required int itemCount, required Widget Function(int, double) card}) {
-    final double textHeight = MediaQuery.textScalerOf(context).scale(40);
+    final double textHeight =
+        _lineHeight(context, PrismTextStyles.rowTitle(context)) +
+        _lineHeight(context, PrismTextStyles.caption(context));
     return LayoutBuilder(
       builder: (context, constraints) {
         const double gap = PrismSpace.sm;
@@ -91,8 +106,10 @@ class _FoldersGridState extends State<FoldersGrid> {
       bloc: bloc,
       builder: (context, state) {
         if (app_state.prismUser.id.isEmpty) return _message(SignInPrompt(feature: l10n.foldersSignInFeature));
+        // Until the bloc reloads for a new account, it still holds the last account's folders.
+        final bool otherAccount = state.userId != app_state.prismUser.id;
         final bool loading = state.status == LoadStatus.initial || state.status == LoadStatus.loading;
-        if (state.folders.isEmpty && loading) {
+        if (otherAccount || (state.folders.isEmpty && loading)) {
           return IgnorePointer(
             child: _grid(
               context,
