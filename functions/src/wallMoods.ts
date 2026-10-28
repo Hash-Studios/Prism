@@ -32,7 +32,8 @@ export const MOODS: readonly MoodRule[] = [
     maxColours: 2,
     onlyColours: ["black", "grey", "blue", "teal", "purple", "brown", "white"],
     anyLabel: ["night", "darkness", "moon", "midnight", "moonlight", "silhouette", "star", "outer space", "astronomical object", "black", "monochrome", "black and white", "universe", "space"],
-    noLabel: ["metropolis", "city", "cityscape", "automotive lighting", "skyscraper", "street", "road", "nebula", "neon", "light", "fireworks", "sparkler", "event", "new year"],
+    noLabel: ["metropolis", "city", "cityscape", "automotive lighting", "skyscraper", "street", "road", "nebula", "neon", "light", "fireworks", "sparkler", "event", "new year",
+      "sunset", "afterglow", "red sky at morning"],
   },
   {
     id: "bright_bold",

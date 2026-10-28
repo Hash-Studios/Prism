@@ -101,7 +101,7 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 | Mood | id | Rule |
 |---|---|---|
 | Dreamy | `dreamy` | The main colour is pink, purple, teal, white or blue. All colours are soft (those, or grey). A sky, cloud, sunset, flower or fluid label. |
-| Dark and quiet | `dark_quiet` | The main colour is black. At most two colours, all calm. A night, moon, star or space label. No city, neon, light or firework label. |
+| Dark and quiet | `dark_quiet` | The main colour is black. At most two colours, all calm. A night, moon, star or space label. No city, neon, light, firework or sunset label. |
 | Bright and bold | `bright_bold` | The main colour is red, orange, yellow, pink or green. At least two of those colours. No black. |
 | Minimal | `minimal` | At most two colours. In the `minimal` collection or category. No pattern, illustration, cartoon or text label. |
 | Spatial ready | `spatial_ready` | `spatial.tier` is `great`. iOS 26 and later only. |

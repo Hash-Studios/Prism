@@ -35,6 +35,7 @@ test("dark_quiet matches a dark night wall and rejects a near miss and a wall wi
   assert.equal(matchesMood(rule, {colors: ["black", "grey", "blue"], visionLabels: ["Night"]}), false);
   assert.equal(matchesMood(rule, {colors: ["black", "grey"]}), false);
   assert.equal(matchesMood(rule, {visionLabels: ["Night"]}), false);
+  assert.equal(matchesMood(rule, {colors: ["black", "purple"], visionLabels: ["Silhouette", "Sunset"]}), false);
 });
 
 test("bright_bold matches a warm wall and rejects a near miss and a wall with missing fields", () => {
