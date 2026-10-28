@@ -377,11 +377,17 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   small: true,
                   padding: const EdgeInsets.only(bottom: PrismSpace.xs),
                 ),
-                PrismSegmented<FavouriteSort>(
-                  values: FavouriteSort.values,
-                  selected: state.sort,
-                  labelOf: (sort) => _sortLabel(l10n, sort),
-                  onChanged: (sort) => bloc.add(FavouriteWallsEvent.sortChanged(sort: sort)),
+                Wrap(
+                  spacing: PrismSpace.xs,
+                  runSpacing: PrismSpace.xs,
+                  children: <Widget>[
+                    for (final FavouriteSort sort in FavouriteSort.values)
+                      PrismChip(
+                        label: _sortLabel(l10n, sort),
+                        selected: state.sort == sort,
+                        onTap: () => bloc.add(FavouriteWallsEvent.sortChanged(sort: sort)),
+                      ),
+                  ],
                 ),
                 PrismSectionHeader(
                   title: l10n.wallpaperFavouriteFilterSource,
