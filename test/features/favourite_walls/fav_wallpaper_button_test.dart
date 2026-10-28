@@ -146,6 +146,60 @@ void main() {
     expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>(), hasLength(1));
   });
 
+  testWidgets('renders the local favourite without a FavouriteWallsBloc provider', (tester) async {
+    await favorites.setWallFavourite('user_1', 'wall_1', true);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: FavouriteWallpaperButton(
+            wall: LegacyFavouriteWall(
+              id: 'wall_1',
+              source: WallpaperSource.prism,
+              legacyPayload: <String, Object?>{},
+            ),
+            trash: false,
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(tester.widget<FavoriteIcon>(find.byType(FavoriteIcon)).isFavorite, isTrue);
+  });
+
+  testWidgets('a tap without a FavouriteWallsBloc reports failure and clears loading', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: FavouriteWallpaperButton(
+            wall: LegacyFavouriteWall(
+              id: 'wall_1',
+              source: WallpaperSource.prism,
+              legacyPayload: <String, Object?>{},
+            ),
+            trash: false,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(FavoriteIcon));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(tester.takeException(), isNull);
+    expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+    final shown = toasts.where((call) => call.method == 'showToast').map((call) => (call.arguments as Map)['msg']);
+    expect(shown, contains("Couldn't update favourites. Try again."));
+  });
+
   testWidgets('a tap on an empty heart saves even when the loaded list already holds the wall', (tester) async {
     const wall = LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{});
     when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(<FavouriteWallEntity>[wall]));
@@ -407,6 +461,7 @@ void main() {
     await pumpButton(tester, bloc);
     expect(tester.widget<FavoriteIcon>(find.byType(FavoriteIcon)).isFavorite, isFalse);
 
+    await favorites.setWallFavourite('user_1', 'wall_1', true);
     bloc.add(
       const FavouriteWallsEvent.toggleRequested(
         wall: LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),

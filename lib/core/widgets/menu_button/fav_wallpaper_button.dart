@@ -102,9 +102,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     setState(() {
       isLoading = true;
     });
-    final adapter = context.favouriteWallsAdapter(listen: false);
     bool success = false;
     try {
+      final adapter = context.favouriteWallsAdapter(listen: false);
       success = await adapter.favCheck(wall, desired: desired);
     } catch (error, stackTrace) {
       logger.w('Favourite toggle failed', error: error, stackTrace: stackTrace);
