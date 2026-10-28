@@ -10,14 +10,18 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/l10n/generated/app_localizations_de.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -330,6 +334,87 @@ Future<void> _pumpPreview(WidgetTester tester) async {
 }
 
 void main() {
+  test('a Prism Set screen never falls back to its original when no thumbnail is available', () {
+    const String original = 'https://storage.example/private-original.jpg?token=secret';
+
+    expect(
+      setScreenPreviewLink(
+        const SetScreenRequest(
+          url: original,
+          thumbnailUrl: '',
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+      ),
+      isEmpty,
+    );
+  });
+
+  test('a Prism thumbnail is not accepted as a local file path', () {
+    expect(
+      setScreenPreviewLink(
+        const SetScreenRequest(
+          url: 'https://storage.example/private-original.jpg',
+          thumbnailUrl: '/private/original.jpg',
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+      ),
+      isEmpty,
+    );
+  });
+
+  test('a catalog Prism URL that looks local cannot become a file preview', () {
+    expect(
+      setScreenPreviewLink(
+        const SetScreenRequest(
+          url: '/private/original.jpg',
+          thumbnailUrl: 'https://storage.example/display.jpg',
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+      ),
+      'https://storage.example/display.jpg',
+    );
+  });
+
+  test('a spoofed bundled Prism identity cannot choose a local Set screen path', () {
+    expect(
+      setScreenPreviewLink(
+        const SetScreenRequest(
+          url: '/etc/passwd',
+          thumbnailUrl: '',
+          wallpaperId: 'starter-sunset',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+      ),
+      '${Directory.systemTemp.path}/prism-bundled-wallpapers/starter-sunset.jpg',
+    );
+  });
+
+  test('a downloaded local file remains eligible for its Set screen preview', () {
+    expect(
+      setScreenPreviewLink(const SetScreenRequest(url: '/tmp/wall.png', wallpaperSource: WallpaperSource.downloaded)),
+      '/tmp/wall.png',
+    );
+  });
+
+  test('a Prism original repeated as its thumbnail is not shown as a derivative', () {
+    const String original = 'https://storage.example/private-original.jpg?token=secret';
+
+    expect(
+      setScreenPreviewLink(
+        const SetScreenRequest(
+          url: original,
+          thumbnailUrl: original,
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+      ),
+      isEmpty,
+    );
+  });
+
   testWidgets('iOS previews a lock screen without the Android dock', (WidgetTester tester) async {
     await _openPreview(tester);
 
@@ -390,7 +475,7 @@ void main() {
     expect(find.byType(ColorFiltered), findsNothing);
   });
 
-  testWidgets('lock preview uses a retained original after temporary cache cleanup', (tester) async {
+  testWidgets('lock preview uses a retained public image after temporary cache cleanup', (tester) async {
     const String url = 'https://images.example/clock-preview.jpg';
     final _MockCacheManager thumbnailCache = _MockCacheManager();
     when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
@@ -423,7 +508,7 @@ void main() {
                 url,
                 allowNetwork: false,
                 wallpaperId: 'clock-wall',
-                wallpaperSource: WallpaperSource.prism,
+                wallpaperSource: WallpaperSource.wallhaven,
               ),
             )
             as File;
@@ -434,7 +519,12 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: ClockOverlay(link: url, file: false, wallpaperId: 'clock-wall', wallpaperSource: WallpaperSource.prism),
+        home: ClockOverlay(
+          link: url,
+          file: false,
+          wallpaperId: 'clock-wall',
+          wallpaperSource: WallpaperSource.wallhaven,
+        ),
       ),
     );
     expect(find.byType(CachedNetworkImage), findsNothing);
@@ -592,6 +682,34 @@ void main() {
       await _settleImages(tester);
       await tester.pumpAndSettle();
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a Prism preview never gives the original URL to its image or spatial provider', (tester) async {
+      const String original = 'https://storage.example/private-original.jpg?token=secret';
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(
+            link: original,
+            file: true,
+            wallpaperId: 'wall-1',
+            wallpaperSource: WallpaperSource.prism,
+            spatialMapUrl: 'https://example.test/map.jpg',
+          ),
+        ),
+      );
+
+      final ProgressiveWallpaperImage image = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(image.display.full, isEmpty);
+      expect(image.display.thumbnail, isEmpty);
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperSpatialPreviewOn));
+      await tester.pumpAndSettle();
+      expect(find.byType(SpatialTiltView), findsNothing);
+      expect(_filePaths(tester), isNot(contains(original)));
+    });
 
     testWidgets('a stale local-file lookup cannot replace a newer preview after it completes', (tester) async {
       final Completer<void> lookupStarted = Completer<void>();
@@ -971,6 +1089,225 @@ void main() {
       expect(await sampledClockColor(tester, const Color(0xFFF2F2F2)), Colors.black);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+    testWidgets('disposes the resized image handle used to sample the clock colour', (tester) async {
+      final File file = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFF2F2F2))))!;
+      final ui.ImageEventCallback? previous = ui.Image.onDispose;
+      bool sampleDisposed = false;
+      ui.Image.onDispose = (ui.Image image) {
+        if (image.width == 32 && StackTrace.current.toString().contains('_applySample')) sampleDisposed = true;
+        previous?.call(image);
+      };
+      addTearDown(() => ui.Image.onDispose = previous);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(link: file.path, file: true),
+        ),
+      );
+      final Stopwatch waited = Stopwatch()..start();
+      while (!sampleDisposed && waited.elapsed < const Duration(seconds: 5)) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+
+      expect(sampleDisposed, isTrue);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a downloaded Prism original supplies black text and the spatial image while offline', (tester) async {
+      const String original = 'https://storage.example/original.jpg?token=private';
+      const String thumbnail = 'https://storage.example/thumbnail.jpg';
+      const String identity = 'downloaded-clock-wall';
+      final File saved = (await tester.runAsync(() async {
+        final File bright = await _solidPng(directory, const Color(0xFFF2F2F2));
+        return bright.copy('${directory.path}/original.png');
+      }))!;
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final DownloadedWallIndex index = DownloadedWallIndex(settings, ownerId: () => 'clock-owner');
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'clock-owner'
+        ..loggedIn = true;
+      await index.remember(link: original, id: identity, source: WallpaperSource.prism);
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      const BasicMessageChannel<Object?> downloadsChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      final TestDefaultBinaryMessenger messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockDecodedMessageHandler<Object?>(
+        downloadsChannel,
+        (_) async => <Object?>[
+          DownloadItemsResult(success: true, items: <String>[saved.path]),
+        ],
+      );
+      final _MockCacheManager fullCache = _MockCacheManager();
+      when(() => fullCache.getFileFromCache(any())).thenAnswer((_) async => null);
+      when(
+        () => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')),
+      ).thenAnswer((_) => const Stream<FileResponse>.empty());
+      final _MockCacheManager thumbnailCache = _MockCacheManager();
+      when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
+      when(
+        () => thumbnailCache.getFileStream(any(), withProgress: any(named: 'withProgress')),
+      ).thenAnswer((_) => const Stream<FileResponse>.empty());
+      final OfflineAssetStore offlineAssets = OfflineAssetStore(
+        directory: Directory('${directory.path}/retained'),
+        cacheManager: fullCache,
+      );
+      OfflineAssetStore.testOverride = offlineAssets;
+      PrismFullImageCache.testOverride = fullCache;
+      PrismImageCache.testOverride = thumbnailCache;
+      addTearDown(() async {
+        messenger.setMockDecodedMessageHandler<Object?>(downloadsChannel, null);
+        OfflineAssetStore.testOverride = null;
+        PrismFullImageCache.testOverride = null;
+        PrismImageCache.testOverride = null;
+        await getIt.reset();
+        app_state.prismUser = app_constants.createGuestPrismUser();
+      });
+
+      expect(
+        (await tester.runAsync(() => index.localFileForIdentity(id: identity, source: WallpaperSource.prism)))?.path,
+        saved.path,
+      );
+      expect((await tester.runAsync(() => OfflineAssetStore.instance.lookup(saved.path)))?.path, saved.path);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(
+            link: thumbnail,
+            file: false,
+            wallpaperId: identity,
+            wallpaperSource: WallpaperSource.prism,
+            thumbnailUrl: thumbnail,
+            spatialMapUrl: 'https://storage.example/depth.jpg',
+          ),
+        ),
+      );
+      final ProgressiveWallpaperImage progressive = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(progressive.display.full, isEmpty);
+      expect(progressive.display.bestLink, thumbnail);
+
+      await tester.tap(find.text(_lockSegment()));
+      await tester.pumpAndSettle();
+      final Finder clock = find.textContaining(RegExp(r'^\d{1,2}:\d{2}$'));
+      final Stopwatch waited = Stopwatch()..start();
+      while (tester.widget<Text>(clock).style!.color != Colors.black && waited.elapsed < const Duration(seconds: 10)) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(tester.widget<Text>(clock).style!.color, Colors.black);
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperSpatialPreviewOn));
+      await tester.pump();
+      final SpatialTiltView spatial = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
+      expect(spatial.image, isA<ResizeImage>());
+      final ResizeImage bounded = spatial.image as ResizeImage;
+      expect((bounded.width, bounded.height, bounded.policy), (4096, 4096, ResizeImagePolicy.fit));
+      expect(
+        _unwrapResizeImage(spatial.image),
+        isA<FileImage>().having((provider) => provider.file.path, 'path', saved.path),
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a thumbnail-only Prism update resamples the clock and refreshes the spatial provider', (tester) async {
+      const String link = 'https://storage.example/safe-route-link.jpg';
+      const String firstThumbnail = 'https://storage.example/dark-thumbnail.jpg';
+      const String nextThumbnail = 'https://storage.example/bright-thumbnail.jpg';
+      const String identity = 'updated-clock-wall';
+      final File dark = (await tester.runAsync(() => _solidPng(directory, const Color(0xFF0A0A12))))!;
+      final File bright = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFF2F2F2))))!;
+      final Map<String, Uint8List> bytesByUrl = <String, Uint8List>{
+        firstThumbnail: (await tester.runAsync(dark.readAsBytes))!,
+        nextThumbnail: (await tester.runAsync(bright.readAsBytes))!,
+      };
+
+      void serve(_MockCacheManager manager) {
+        when(() => manager.getFileFromCache(any())).thenAnswer((_) async => null);
+        when(() => manager.getFileStream(any(), withProgress: any(named: 'withProgress'))).thenAnswer((invocation) {
+          final String url = invocation.positionalArguments.first as String;
+          final Uint8List? bytes = bytesByUrl[url];
+          if (bytes == null) return const Stream<FileResponse>.empty();
+          final _MockFile file = _MockFile();
+          when(() => file.readAsBytes()).thenAnswer((_) async => bytes);
+          return Stream<FileResponse>.value(
+            FileInfo(file, FileSource.Cache, DateTime.now().add(const Duration(days: 1)), url),
+          );
+        });
+      }
+
+      final _MockCacheManager fullCache = _MockCacheManager();
+      final _MockCacheManager thumbnailCache = _MockCacheManager();
+      serve(fullCache);
+      serve(thumbnailCache);
+      PrismFullImageCache.testOverride = fullCache;
+      PrismImageCache.testOverride = thumbnailCache;
+      addTearDown(() {
+        PrismFullImageCache.testOverride = null;
+        PrismImageCache.testOverride = null;
+      });
+
+      Widget preview(String thumbnail) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ClockOverlay(
+          link: link,
+          file: false,
+          wallpaperId: identity,
+          wallpaperSource: WallpaperSource.prism,
+          thumbnailUrl: thumbnail,
+          spatialMapUrl: 'https://storage.example/depth.jpg',
+        ),
+      );
+
+      await tester.pumpWidget(preview(firstThumbnail));
+      final ProgressiveWallpaperImage initial = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(initial.display.full, isEmpty);
+      expect(initial.display.bestLink, firstThumbnail);
+      await tester.tap(find.text(_lockSegment()));
+      await tester.pumpAndSettle();
+      final Finder clock = find.textContaining(RegExp(r'^\d{1,2}:\d{2}$'));
+      final Stopwatch firstSample = Stopwatch()..start();
+      while (tester.widget<Text>(clock).style!.color != Colors.white &&
+          firstSample.elapsed < const Duration(seconds: 10)) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(tester.widget<Text>(clock).style!.color, Colors.white);
+
+      await tester.pumpWidget(preview(nextThumbnail));
+      final ProgressiveWallpaperImage updated = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(updated.display.full, isEmpty);
+      expect(updated.display.bestLink, nextThumbnail);
+      final Stopwatch nextSample = Stopwatch()..start();
+      while (tester.widget<Text>(clock).style!.color != Colors.black &&
+          nextSample.elapsed < const Duration(seconds: 10)) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(tester.widget<Text>(clock).style!.color, Colors.black);
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperSpatialPreviewOn));
+      await tester.pump();
+      final SpatialTiltView spatial = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
+      expect(spatial.image, isA<ResizeImage>());
+      final ResizeImage bounded = spatial.image as ResizeImage;
+      expect((bounded.width, bounded.height, bounded.policy), (4096, 4096, ResizeImagePolicy.fit));
+      expect(
+        _unwrapResizeImage(spatial.image),
+        isA<CachedNetworkImageProvider>().having((provider) => provider.url, 'url', nextThumbnail),
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('is black over a red wall', (tester) async {
       expect(await sampledClockColor(tester, const Color(0xFFFF0000)), Colors.black);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
@@ -1027,11 +1364,61 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('an empty original URL previews the available thumbnail', (tester) async {
-      await _openSetScreen(tester, SetScreenRequest(url: '', thumbnailUrl: _previewPath), <SetWallpaperChoice?>[]);
+      await _openSetScreen(
+        tester,
+        SetScreenRequest(url: '', thumbnailUrl: _previewPath, wallpaperSource: WallpaperSource.downloaded),
+        <SetWallpaperChoice?>[],
+      );
       await _settleImages(tester);
 
       expect(tester.widget<ClockOverlay>(find.byType(ClockOverlay)).link, _previewPath);
       expect(_filePaths(tester), contains(_previewPath));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Set screen keeps an original duplicated as thumbnail out of its preview', (tester) async {
+      const String original = 'https://storage.example/private-original.jpg?token=secret';
+      await _openSetScreen(
+        tester,
+        const SetScreenRequest(
+          url: original,
+          thumbnailUrl: original,
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+        <SetWallpaperChoice?>[],
+      );
+
+      final ClockOverlay overlay = tester.widget<ClockOverlay>(find.byType(ClockOverlay));
+      final ProgressiveWallpaperImage image = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(overlay.link, isEmpty);
+      expect(overlay.request?.url, isEmpty);
+      expect(image.display.thumbnail, isEmpty);
+      expect(image.display.full, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Set screen keeps its safe thumbnail when no Prism derivative can be addressed', (tester) async {
+      const String thumbnail = 'https://storage.example/display-thumbnail.jpg';
+      await _openSetScreen(
+        tester,
+        const SetScreenRequest(
+          url: 'https://storage.example/private-original.jpg?token=secret',
+          thumbnailUrl: thumbnail,
+          wallpaperId: 'wall-1',
+          wallpaperSource: WallpaperSource.prism,
+        ),
+        <SetWallpaperChoice?>[],
+      );
+
+      final ClockOverlay overlay = tester.widget<ClockOverlay>(find.byType(ClockOverlay));
+      final ProgressiveWallpaperImage image = tester.widget<ProgressiveWallpaperImage>(
+        find.byType(ProgressiveWallpaperImage),
+      );
+      expect(overlay.link, thumbnail);
+      expect(overlay.request?.url, thumbnail);
+      expect(image.display.full, isEmpty);
+      expect(image.display.bestLink, thumbnail);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('Remember this choice starts unchecked and shows its hint once checked', (tester) async {

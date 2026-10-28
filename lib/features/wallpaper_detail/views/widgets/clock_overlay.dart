@@ -68,23 +68,43 @@ class SetScreenRequest {
 
 /// What the Set screen shows for [request]: a file on the device as is, a Prism wall's display derivative (never its
 /// original), and otherwise the wall's own URL, or its thumbnail when there is none.
-@visibleForTesting
-String setScreenPreviewLink(SetScreenRequest request) {
+WallpaperDisplaySource _setScreenDisplaySource(SetScreenRequest request) {
   final String thumbnail = request.thumbnailUrl?.trim() ?? '';
   final String url = request.url.trim();
-  if (url.startsWith('/') || url.startsWith('file:')) return url;
+  final bool local = url.startsWith('/') || url.startsWith('file:');
+  final bool localThumbnail = thumbnail.startsWith('/') || thumbnail.startsWith('file:');
   final String id = request.wallpaperId ?? '';
-  if (request.wallpaperSource == WallpaperSource.prism && thumbnail.isNotEmpty) {
-    return id.isEmpty
-        ? thumbnail
-        : WallpaperDisplaySource.forWall(id: id, source: WallpaperSource.prism, thumbnail: thumbnail).bestLink;
+  final WallpaperSource? source = request.wallpaperSource;
+  if (local && (source == null || source == WallpaperSource.downloaded)) {
+    return WallpaperDisplaySource(thumbnail: '', full: url);
   }
-  return url.isEmpty ? thumbnail : url;
+  if (url.isEmpty && localThumbnail && source == WallpaperSource.downloaded) {
+    return WallpaperDisplaySource(thumbnail: '', full: thumbnail);
+  }
+  if (source == WallpaperSource.prism) {
+    return WallpaperDisplaySource.forWall(id: id, source: WallpaperSource.prism, thumbnail: thumbnail, fullUrl: url);
+  }
+  final String full = isValidNetworkUrl(url) ? url : '';
+  final String safeThumbnail = isValidNetworkUrl(thumbnail) ? thumbnail : '';
+  return WallpaperDisplaySource(thumbnail: safeThumbnail, full: full);
 }
+
+@visibleForTesting
+String setScreenPreviewLink(SetScreenRequest request) => _setScreenDisplaySource(request).bestLink;
 
 /// Opens the Set screen over the current page. Returns what the user picked, or null when they closed it.
 Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest request) {
-  final String link = setScreenPreviewLink(request);
+  final WallpaperDisplaySource display = _setScreenDisplaySource(request);
+  final String link = display.bestLink;
+  final SetScreenRequest safeRequest = SetScreenRequest(
+    url: link,
+    thumbnailUrl: display.thumbnail,
+    wallpaperId: request.wallpaperId,
+    wallpaperSource: request.wallpaperSource,
+    tint: request.tint,
+    notes: request.notes,
+    onAdjust: request.onAdjust,
+  );
   return Navigator.of(context, rootNavigator: true).push<SetWallpaperChoice>(
     _previewRoute<SetWallpaperChoice>(
       context,
@@ -93,9 +113,9 @@ Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest
         file: link.startsWith('/') || link.startsWith('file:'),
         wallpaperId: request.wallpaperId,
         wallpaperSource: request.wallpaperSource,
-        thumbnailUrl: request.thumbnailUrl,
+        thumbnailUrl: display.thumbnail,
         tint: request.tint,
-        request: request,
+        request: safeRequest,
       ),
     ),
   );
@@ -179,16 +199,49 @@ class _ClockOverlayState extends State<ClockOverlay> {
   File? _localFile;
 
   String get _link => _placed?.path ?? widget.link;
-  bool get _file => _placed != null || widget.file;
+  bool get _file => _placed != null || (widget.file && _isLocalFileLink(_link));
+
+  bool _isLocalFileLink(String link) {
+    final Uri? uri = Uri.tryParse(link);
+    return uri?.scheme == 'file' || uri?.scheme.isEmpty == true;
+  }
+
+  WallpaperDisplaySource get _displaySource {
+    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
+    if (_file) {
+      return WallpaperDisplaySource(thumbnail: '', full: _link);
+    }
+    if (widget.wallpaperSource == WallpaperSource.prism) {
+      return WallpaperDisplaySource.forWall(
+        id: widget.wallpaperId ?? '',
+        source: WallpaperSource.prism,
+        thumbnail: thumbnail,
+      );
+    }
+    if (isValidNetworkUrl(_link)) {
+      return WallpaperDisplaySource(
+        thumbnail: thumbnail,
+        full: _link,
+        id: widget.wallpaperId,
+        source: widget.wallpaperSource,
+      );
+    }
+    if (_link.startsWith('assets/')) return WallpaperDisplaySource(thumbnail: '', full: _link);
+    return const WallpaperDisplaySource(thumbnail: '', full: '');
+  }
 
   /// A placed wall was rendered from the tinted source, so it already has the hue.
   Color? get _tint => _placed == null ? widget.tint : null;
 
-  ImageProvider get _provider => _localFile != null
-      ? FileImage(_localFile!)
-      : _link.startsWith('assets/')
-      ? AssetImage(_link)
-      : CachedNetworkImageProvider(_link, cacheManager: _cache);
+  ImageProvider? get _provider {
+    if (_localFile != null) return FileImage(_localFile!);
+    final String link = _displaySource.bestLink;
+    if (link.isEmpty) return null;
+    if (link.startsWith('assets/')) return AssetImage(link);
+    if (isValidNetworkUrl(link)) return CachedNetworkImageProvider(link, cacheManager: _cache);
+    final Uri? uri = Uri.tryParse(link);
+    return FileImage(File(uri?.scheme == 'file' ? uri!.toFilePath() : link));
+  }
 
   BaseCacheManager get _cache => PrismFullImageCache.instance;
 
@@ -241,6 +294,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
         oldWidget.file == widget.file &&
         oldWidget.wallpaperId == widget.wallpaperId &&
         oldWidget.wallpaperSource == widget.wallpaperSource &&
+        oldWidget.thumbnailUrl == widget.thumbnailUrl &&
         oldWidget.tint == widget.tint) {
       return;
     }
@@ -311,9 +365,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
     _localFile ??= local;
     if (!mounted) return;
     final Color? tint = _tint;
+    final ImageProvider? provider = _provider;
+    if (tint == null && provider == null) return;
     final ColorScheme? scheme = tint != null
         ? ColorScheme.fromSeed(seedColor: tint, brightness: Brightness.dark)
-        : await wallpaperScheme(_provider);
+        : await wallpaperScheme(provider!);
     if (generation != _inputGeneration) return;
     if (mounted) setState(() => _scheme = scheme);
   }
@@ -324,6 +380,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
       return File(uri?.scheme == 'file' ? uri!.toFilePath() : _link);
     }
     if (_link.startsWith('assets/')) return null;
+    if (widget.wallpaperSource == WallpaperSource.prism) {
+      return wallpaperOfflineCopy(_displaySource);
+    }
+    if (!isValidNetworkUrl(_link)) return null;
     try {
       return await WallpaperService.resolveToLocalFile(
         _link,
@@ -342,7 +402,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     if (generation != _inputGeneration) return;
     _localFile = localFile;
     if (!mounted) return;
-    final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
+    final ImageProvider? provider = _provider;
+    if (provider == null) return;
+    final ImageStream stream = ResizeImage(provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
     final ImageStreamListener listener = ImageStreamListener(
       (info, _) {
         unawaited(_applySample(info.image, generation));
@@ -359,8 +421,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 
   Future<void> _applySample(ui.Image image, int generation) async {
-    final Color color = await textColorForTopThird(image, tint: _tint);
-    if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
+    try {
+      final Color color = await textColorForTopThird(image, tint: _tint);
+      if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
+    } finally {
+      image.dispose();
+    }
   }
 
   void _stopSampling() {
@@ -386,17 +452,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
 
   Widget _image(BuildContext context, Size size) {
     final Color placeholder = Theme.of(context).primaryColor;
-    final bool network = !_file && isValidNetworkUrl(_link);
+    final WallpaperDisplaySource display = _displaySource;
     return ColoredBox(
       color: placeholder,
       child: _tinted(
         ProgressiveWallpaperImage(
-          display: WallpaperDisplaySource(
-            thumbnail: network ? widget.thumbnailUrl?.trim() ?? '' : '',
-            full: _link,
-            id: network ? widget.wallpaperId : null,
-            source: network ? widget.wallpaperSource : null,
-          ),
+          display: display,
           decodeBox: size,
           errorBuilder: (_, _) =>
               Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
@@ -612,9 +673,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
               top: 0,
               width: size.width,
               height: size.height,
-              child: _spatial && widget.spatialMapUrl != null
+              child: _spatial && widget.spatialMapUrl != null && _provider != null
                   ? SpatialTiltView(
-                      image: _provider,
+                      image: sizedWallpaperImage(_provider!, size, MediaQuery.devicePixelRatioOf(context), null),
                       mapUrl: widget.spatialMapUrl!,
                       tint: widget.tint,
                       onMode: _trackSpatial,
