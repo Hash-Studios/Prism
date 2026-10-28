@@ -567,7 +567,9 @@ void main() {
       offlineDirectory.deleteSync(recursive: true);
     });
 
-    testWidgets('the full image uses the full-size cache and a screen-width decode', (tester) async {
+    testWidgets('the full image uses the full-size cache and decodes whole within 4096 when its size is unknown', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -577,13 +579,17 @@ void main() {
         ),
       );
       await _waitForCompleter(tester, cacheRequestStarted);
+      final ResizeImage full = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((Image image) => image.image)
+          .whereType<ResizeImage>()
+          .firstWhere(
+            (ResizeImage image) => (image.imageProvider as CachedNetworkImageProvider).url.endsWith('full.jpg'),
+          );
+      expect((full.imageProvider as CachedNetworkImageProvider).cacheManager, same(cache));
+      expect((full.width, full.height, full.policy), (4096, 4096, ResizeImagePolicy.fit));
       await _waitForCompleter(tester, cacheRequestFailed);
       await _settleImages(tester);
-
-      final CachedNetworkImage image = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).first;
-      expect(image.cacheManager, same(cache));
-      expect(image.memCacheWidth, isNotNull);
-      expect(image.memCacheWidth, lessThanOrEqualTo(2160));
       await tester.pumpAndSettle();
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 

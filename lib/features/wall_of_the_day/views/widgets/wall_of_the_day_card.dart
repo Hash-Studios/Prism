@@ -4,14 +4,18 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
@@ -115,16 +119,35 @@ class _WotdCardContent extends StatelessWidget {
     final String photographer = entity.photographer.trim();
     final PrismWallpaper? wallpaper = entity.wallpaper;
     final String? heroTag = wallpaper == null ? null : prismHeroTag(context, 0, 'wall-of-the-day-${entity.wallId}');
+    final FeedItemEntity? item = _quickActionItem;
+    final WallpaperDisplaySource display = item == null
+        ? WallpaperDisplaySource(thumbnail: entity.thumbnailUrl, full: '')
+        : WallpaperDisplaySource.of(item);
+    final Widget image = ProgressiveWallpaperImage(
+      display: display,
+      errorBuilder: (context, retry) => ColoredBox(
+        color: cs.surfaceContainerHighest,
+        child: Align(
+          alignment: AlignmentDirectional.bottomEnd,
+          child: IconButton(
+            tooltip: context.l10n.coreRetryImage,
+            onPressed: () {
+              PrismHaptics.tap();
+              retry();
+            },
+            icon: const Icon(Icons.refresh_rounded),
+            color: cs.onSurface,
+          ),
+        ),
+      ),
+    );
     final Widget card = Stack(
       fit: StackFit.expand,
       children: <Widget>[
         FeedHeroCard(
-          image: PrismImageTile(
-            url: entity.thumbnailUrl,
-            fallbackUrl: entity.url,
-            heroTag: heroTag,
-            memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
-          ),
+          image: heroTag == null || context.reduceMotion
+              ? image
+              : Hero(tag: heroTag, createRectTween: wallpaperHeroRectTween, child: image),
           semanticLabel: photographer.isEmpty
               ? context.l10n.wallpaperWotdTitle
               : context.l10n.wallpaperWotdByPhotographer(photographer),
@@ -152,7 +175,6 @@ class _WotdCardContent extends StatelessWidget {
         ),
       ],
     );
-    final FeedItemEntity? item = _quickActionItem;
     return item == null ? card : WallpaperQuickActionRegion(item: item, child: card);
   }
 }

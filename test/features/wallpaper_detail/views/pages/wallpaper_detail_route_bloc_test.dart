@@ -15,7 +15,6 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_s
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,12 +23,13 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
 Future<void> _pumpOfflinePreview(WidgetTester tester) async {
   final Stopwatch timeout = Stopwatch()..start();
-  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+  while (networkImageUrls(tester).isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
     );
@@ -96,7 +96,7 @@ void main() {
     );
     await _pumpOfflinePreview(tester);
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/tapped-thumb.jpg'));
     expect(urls.where((u) => u.contains('previous')), isEmpty);
     expect(find.byType(Hero), findsOneWidget);

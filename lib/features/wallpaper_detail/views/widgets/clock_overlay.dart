@@ -5,19 +5,19 @@ import 'dart:ui' as ui;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
-import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
-import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
@@ -50,7 +50,7 @@ class SetScreenRequest {
     this.onAdjust,
   });
 
-  /// The wall to set. A Prism wall previews its [thumbnailUrl], because its original may need the user's consent.
+  /// The wall to set. A Prism wall previews its display derivative, because its original may need the user's consent.
   final String url;
   final String? thumbnailUrl;
   final String? wallpaperId;
@@ -66,12 +66,25 @@ class SetScreenRequest {
   final Future<StudioResult?> Function(BuildContext context)? onAdjust;
 }
 
+/// What the Set screen shows for [request]: a file on the device as is, a Prism wall's display derivative (never its
+/// original), and otherwise the wall's own URL, or its thumbnail when there is none.
+@visibleForTesting
+String setScreenPreviewLink(SetScreenRequest request) {
+  final String thumbnail = request.thumbnailUrl?.trim() ?? '';
+  final String url = request.url.trim();
+  if (url.startsWith('/') || url.startsWith('file:')) return url;
+  final String id = request.wallpaperId ?? '';
+  if (request.wallpaperSource == WallpaperSource.prism && thumbnail.isNotEmpty) {
+    return id.isEmpty
+        ? thumbnail
+        : WallpaperDisplaySource.forWall(id: id, source: WallpaperSource.prism, thumbnail: thumbnail).bestLink;
+  }
+  return url.isEmpty ? thumbnail : url;
+}
+
 /// Opens the Set screen over the current page. Returns what the user picked, or null when they closed it.
 Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest request) {
-  final String thumbnail = request.thumbnailUrl?.trim() ?? '';
-  final bool previewThumbnail =
-      thumbnail.isNotEmpty && (request.wallpaperSource == WallpaperSource.prism || request.url.trim().isEmpty);
-  final String link = previewThumbnail ? thumbnail : request.url;
+  final String link = setScreenPreviewLink(request);
   return Navigator.of(context, rootNavigator: true).push<SetWallpaperChoice>(
     _previewRoute<SetWallpaperChoice>(
       context,
@@ -371,73 +384,23 @@ class _ClockOverlayState extends State<ClockOverlay> {
     return ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.hue), child: image);
   }
 
-  Widget _tintedPhoto(BuildContext context, ImageProvider provider) => _tinted(
-    SizedBox.expand(
-      child: Image(image: provider, fit: BoxFit.cover),
-    ),
-  );
-
-  ImageWidgetBuilder? get _tintedBuilder => _tint == null ? null : _tintedPhoto;
-
   Widget _image(BuildContext context, Size size) {
     final Color placeholder = Theme.of(context).primaryColor;
-    final int cacheWidth = previewCacheWidth(size.width, MediaQuery.devicePixelRatioOf(context));
-    Widget error() => ColoredBox(
+    final bool network = !_file && isValidNetworkUrl(_link);
+    return ColoredBox(
       color: placeholder,
-      child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
-    );
-    if (_file || (!isValidNetworkUrl(_link) && !_link.startsWith('assets/'))) {
-      final Uri? uri = Uri.tryParse(_link);
-      final String path = uri?.scheme == 'file' ? uri!.toFilePath() : _link;
-      return SizedBox.expand(
-        child: _tinted(
-          Image.file(
-            _localFile ?? File(path),
-            fit: BoxFit.cover,
-            cacheWidth: cacheWidth,
-            errorBuilder: (_, _, _) => error(),
+      child: _tinted(
+        ProgressiveWallpaperImage(
+          display: WallpaperDisplaySource(
+            thumbnail: network ? widget.thumbnailUrl?.trim() ?? '' : '',
+            full: _link,
+            id: network ? widget.wallpaperId : null,
+            source: network ? widget.wallpaperSource : null,
           ),
+          decodeBox: size,
+          errorBuilder: (_, _) =>
+              Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
         ),
-      );
-    }
-    if (_link.startsWith('assets/')) {
-      return SizedBox.expand(
-        child: _tinted(
-          Image.asset(_link, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
-        ),
-      );
-    }
-    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
-    return SizedBox.expand(
-      child: FutureBuilder<File?>(
-        future: _localFileFuture,
-        builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) return ColoredBox(color: placeholder);
-          final File? local = snapshot.data;
-          if (local != null) {
-            _localFile = local;
-            return _tinted(
-              Image.file(local, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
-            );
-          }
-          return CachedNetworkImage(
-            cacheManager: _cache,
-            imageUrl: _link,
-            fit: BoxFit.cover,
-            memCacheWidth: cacheWidth,
-            imageBuilder: _tintedBuilder,
-            placeholder: (_, _) => thumbnail.isEmpty
-                ? ColoredBox(color: placeholder)
-                : CachedNetworkImage(
-                    cacheManager: PrismImageCache.instance,
-                    imageUrl: thumbnail,
-                    fit: BoxFit.cover,
-                    imageBuilder: _tintedBuilder,
-                    errorWidget: (_, _, _) => ColoredBox(color: placeholder),
-                  ),
-            errorWidget: (_, _, _) => error(),
-          );
-        },
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../../../support/favourite_test_scope.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -47,10 +48,7 @@ void main() {
     const String crop = 'https://th.wallhaven.cc/lg/21/wall.jpg';
     await pumpDetail(tester, state: const WallpaperDetailInitial(), thumbnailUrl: crop);
 
-    expect(
-      tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl,
-      'https://th.wallhaven.cc/lg/21/wall.jpg',
-    );
+    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/lg/21/wall.jpg']);
   });
 
   testWidgets('normalizes the loading-state URL instead of the route fallback', (tester) async {
@@ -61,16 +59,13 @@ void main() {
       thumbnailUrl: 'https://th.wallhaven.cc/lg/21/route.jpg',
     );
 
-    expect(
-      tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl,
-      'https://th.wallhaven.cc/lg/21/state.jpg',
-    );
+    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/lg/21/state.jpg']);
   });
 
   testWidgets('keeps a non-Wallhaven URL unchanged', (tester) async {
     const String pexelsUrl = 'https://images.pexels.com/photos/1/tiny.jpg';
     await pumpDetail(tester, state: const WallpaperDetailLoading(thumbnailUrl: pexelsUrl));
-    expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, pexelsUrl);
+    expect(networkImageUrls(tester), [pexelsUrl]);
   });
 
   testWidgets('does not build a cached image when the route thumbnail is null', (tester) async {
