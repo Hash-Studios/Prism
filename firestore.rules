@@ -453,6 +453,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /moods/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /popular/{docId} {
       allow read: if true;
       allow write: if false;
