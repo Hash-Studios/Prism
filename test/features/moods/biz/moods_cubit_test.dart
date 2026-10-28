@@ -24,7 +24,8 @@ class _FakeMoodRepository implements MoodRepository {
   }
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async => const <PrismWallpaper>[];
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
+      const <PrismWallpaper>[];
 }
 
 List<MoodList> _allMoods() => <MoodList>[

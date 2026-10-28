@@ -1166,6 +1166,86 @@ class FullScreenImageRouteArgs {
 }
 
 /// generated route for
+/// [GalleryScreen]
+class GalleryRoute extends PageRouteInfo<GalleryRouteArgs> {
+  GalleryRoute({
+    Key? key,
+    String ids = '',
+    String title = '',
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         GalleryRoute.name,
+         args: GalleryRouteArgs(
+           key: key,
+           ids: ids,
+           title: title,
+           source: source,
+         ),
+         rawQueryParams: {'ids': ids, 'title': title, 'source': source},
+         initialChildren: children,
+       );
+
+  static const String name = 'GalleryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final queryParams = data.queryParams;
+      final args = data.argsAs<GalleryRouteArgs>(
+        orElse: () => GalleryRouteArgs(
+          ids: queryParams.getString('ids', ''),
+          title: queryParams.getString('title', ''),
+          source: queryParams.getString('source', 'link'),
+        ),
+      );
+      return GalleryScreen(
+        key: args.key,
+        ids: args.ids,
+        title: args.title,
+        source: args.source,
+      );
+    },
+  );
+}
+
+class GalleryRouteArgs {
+  const GalleryRouteArgs({
+    this.key,
+    this.ids = '',
+    this.title = '',
+    this.source = 'link',
+  });
+
+  final Key? key;
+
+  final String ids;
+
+  final String title;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'GalleryRouteArgs{key: $key, ids: $ids, title: $title, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! GalleryRouteArgs) return false;
+    return key == other.key &&
+        ids == other.ids &&
+        title == other.title &&
+        source == other.source;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ ids.hashCode ^ title.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [HomeTabPage]
 class HomeTabRoute extends PageRouteInfo<void> {
   const HomeTabRoute({List<PageRouteInfo>? children})

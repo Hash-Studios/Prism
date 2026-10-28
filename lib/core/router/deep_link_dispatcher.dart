@@ -89,6 +89,12 @@ class DeepLinkDispatcher {
     if (data['route']?.toString() == 'wall_of_the_day') {
       _record(WotdOpenedFromPushEvent(wallId: (data['wall_id']?.toString() ?? '').trim()));
     }
+    // A gallery push still carries the lead wall's link for builds without the gallery page.
+    final Uri? gallery = NotificationRouteMapper.galleryLinkFor(data);
+    if (gallery != null) {
+      final action = navigation.parser.parse(gallery);
+      if (action is! UnknownIntent) return openAction(action, source: DeepLinkSourceValue.push);
+    }
     final String rawUrl = (data['url']?.toString() ?? '').trim();
     final Uri? uri = Uri.tryParse(rawUrl);
     if (uri != null && navigation.isPrismDeepLink(uri)) {

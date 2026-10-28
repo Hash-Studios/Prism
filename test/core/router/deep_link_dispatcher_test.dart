@@ -46,6 +46,7 @@ class _LinkTestRouter extends RootStackRouter {
       ],
     ),
     AutoRoute(path: '/downloads', page: _page(DownloadRoute.name)),
+    AutoRoute(path: '/gallery', page: _page(GalleryRoute.name)),
     AutoRoute(path: '/about', page: _page(AboutRoute.name)),
     AutoRoute(path: '/rewards', page: _page(RewardsRoute.name)),
     AutoRoute(path: '/wallpaper-detail', page: _page(WallpaperDetailRoute.name)),
@@ -170,6 +171,38 @@ void main() {
     expect(resolved.map((event) => event.result), everyElement(EventResultValue.success));
     expect(results().map((event) => event.targetType), everyElement(TargetTypeValue.share));
     expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
+  });
+
+  testWidgets('a gallery push opens the gallery page before its fallback wall link', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> result = dispatcher.openPush(<String, dynamic>{
+      'route': 'wall_of_the_day',
+      'wall_id': 'lead-doc',
+      'url': 'https://prismwalls.com/share?id=lead&provider=Prism',
+      'wall_ids': 'W1,W2,W3',
+      'gallery': '1',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, GalleryRoute.name);
+    final GalleryRouteArgs args = router.topRoute.argsAs<GalleryRouteArgs>();
+    expect(args.ids, 'W1,W2,W3');
+    expect(args.source, 'push');
+  });
+
+  testWidgets('a push with one wall id keeps its wall link', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> result = dispatcher.openPush(<String, dynamic>{
+      'url': 'https://prismwalls.com/share?id=lead&provider=Prism',
+      'wall_ids': 'W1',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
   });
 
   testWidgets('a second queued link completes while the first page is still on the stack', (tester) async {

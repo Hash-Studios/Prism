@@ -32,7 +32,7 @@ class _FakeMoodRepository implements MoodRepository {
   }
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     requested.add(ids);
     if (requested.length == 1) firstWallRequest?.complete();
     if (requested.length == 2) twoWallRequests?.complete();

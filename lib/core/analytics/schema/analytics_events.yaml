@@ -1900,6 +1900,14 @@ events:
       - name: source
         key: source
         type: string
+  - id: gallery_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: wall_count
+        key: wall_count
+        type: int
   - id: library_tab_viewed
     fields:
       - name: tab

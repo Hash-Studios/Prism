@@ -81,6 +81,11 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.library => LibraryRoute(initialTab: _libraryTab(query['tab'])),
     DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
     DeepLinkPageTarget.mood => MoodRoute(moodId: path['moodId']!),
+    DeepLinkPageTarget.gallery => GalleryRoute(
+      ids: query['ids']!,
+      title: query['title'] ?? '',
+      source: query['source'] ?? 'link',
+    ),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => const ReviewRoute(),

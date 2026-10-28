@@ -324,7 +324,7 @@ void main() {
 
     test('measured tap hook receives the explicit push kind without Firebase access', () async {
       final List<String> measuredKinds = <String>[];
-      NotificationRouteMapper.onMeasuredTap = (String kind) async => measuredKinds.add(kind);
+      NotificationRouteMapper.onMeasuredTap = (String kind, {bool gallery = false}) async => measuredKinds.add(kind);
       try {
         mapper.trackPushOpened(<String, dynamic>{'route': 'home', 'push_kind': 'win_back'});
         await Future<void>.delayed(Duration.zero);

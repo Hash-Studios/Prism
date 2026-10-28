@@ -77,6 +77,39 @@ void main() {
     expect(route!.rawPathParams['moodId'], 'dreamy');
   });
 
+  test('gallery links resolve to the gallery page with the exact walls, in order', () async {
+    final DeepLinkActionEntity action = parser.parse(
+      Uri.parse('prism://gallery?ids=W1,W2,W3,W4&title=Night%20walls&source=push'),
+    );
+    expect(action, isA<PageLinkIntent>());
+    final PageRouteInfo? route = await routeForPageLink(
+      action as PageLinkIntent,
+      wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => null,
+      profileLookup: (String _) async => null,
+      localFileResolver: ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+          File('/tmp/x'),
+    );
+    expect(route, isA<GalleryRoute>());
+    final GalleryRouteArgs args = route!.args! as GalleryRouteArgs;
+    expect(args.ids, 'W1,W2,W3,W4');
+    expect(args.title, 'Night walls');
+    expect(args.source, 'push');
+  });
+
+  test('gallery links need 2 to 12 valid wall ids and no unknown query keys', () {
+    for (final String link in <String>[
+      '/gallery',
+      '/gallery?ids=W1',
+      '/gallery?ids=W1,',
+      '/gallery?ids=W1,bad/id',
+      '/gallery?ids=${List<String>.generate(13, (i) => 'W$i').join(',')}',
+      '/gallery?ids=W1,W2&wall=W3',
+    ]) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>(), reason: link);
+    }
+    expect(parser.parse(Uri.parse('https://prismwalls.com/gallery?ids=W1,W2')), isA<PageLinkIntent>());
+  });
+
   test('route examples cover every page target', () {
     expect(
       DeepLinkRouteCatalog.examples.map((DeepLinkRouteExample example) => example.target).toSet(),
@@ -132,7 +165,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(57));
+    expect(appPages, hasLength(58));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -492,6 +525,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.blockedAccounts => 'BlockedAccountsRoute',
   DeepLinkPageTarget.folder => 'FolderRoute',
   DeepLinkPageTarget.mood => 'MoodRoute',
+  DeepLinkPageTarget.gallery => 'GalleryRoute',
   DeepLinkPageTarget.about => 'AboutRoute',
   DeepLinkPageTarget.favourites => 'FavouriteWallpaperRoute',
   DeepLinkPageTarget.downloads => 'DownloadRoute',
