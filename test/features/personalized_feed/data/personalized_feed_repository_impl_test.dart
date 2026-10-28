@@ -30,10 +30,12 @@ import 'package:Prism/features/personalized_feed/data/personalized_feed_reposito
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/app_logger.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -176,6 +178,7 @@ class _SlowWallsFirestore extends _OneWallFirestore {
 class _PendingFreshFirestore extends Fake implements FirestoreClient {
   final Completer<void> ready = Completer<void>();
   final Completer<void> freshStarted = Completer<void>();
+  final List<String> sourceTags = <String>[];
   int _freshCalls = 0;
 
   static const Map<String, dynamic> _oldWall = <String, dynamic>{
@@ -199,6 +202,7 @@ class _PendingFreshFirestore extends Fake implements FirestoreClient {
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    sourceTags.add(spec.sourceTag);
     if (spec.sourceTag != 'personalized.fresh') {
       throw StateError('offline');
     }
@@ -301,6 +305,41 @@ class _FailingFeedCache extends _MemoryFeedCache {
   @override
   Future<FeedSnapshot?> read({required String source, required String scope}) =>
       Future<FeedSnapshot?>.error(StateError('unreadable cache'));
+}
+
+class _RecoveringFeedCache extends _MemoryFeedCache {
+  bool failRead = true;
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) =>
+      failRead ? Future<FeedSnapshot?>.error(StateError('unreadable cache')) : super.read(source: source, scope: scope);
+}
+
+class _WriteGatedFeedCache extends _MemoryFeedCache {
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+  int writes = 0;
+
+  @override
+  Future<void> write({
+    required String source,
+    required String scope,
+    required Object? payload,
+    required int ttlHours,
+  }) async {
+    if (writes++ == 0) {
+      started.complete();
+      await release.future;
+    }
+    await super.write(source: source, scope: scope, payload: payload, ttlHours: ttlHours);
+  }
+}
+
+class _RecordingOfflineCatalog extends OfflineWallpaperCatalog {
+  final List<FeedItemEntity> remembered = <FeedItemEntity>[];
+
+  @override
+  Future<void> remember(Iterable<FeedItemEntity> items) async => remembered.addAll(items);
 }
 
 class _EmptyWallhaven extends Fake implements WallhavenWallpaperRepository {
@@ -476,13 +515,20 @@ class _HangingPexels extends Fake implements PexelsWallpaperRepository {
 
 class _EmptyBlocks extends Fake implements UserBlockRepository {
   bool failNext = false;
+  bool failCachedRead = false;
   Set<String> cached = <String>{};
   bool hangOnWait = false;
   Duration loadDelay = Duration.zero;
   Set<String> loaded = <String>{};
 
   @override
-  Set<String> get cachedBlockedCreatorUids => cached;
+  Set<String> get cachedBlockedCreatorUids {
+    if (failCachedRead) {
+      failCachedRead = false;
+      throw StateError('blocked list unavailable');
+    }
+    return cached;
+  }
 
   @override
   Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
@@ -521,6 +567,14 @@ class _CountingFavourites extends Fake implements FavouriteWallsRepository {
   Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId}) async {
     calls++;
     return Result.success(<FavouriteWallEntity>[]);
+  }
+}
+
+class _SeededFavourites extends _CountingFavourites {
+  @override
+  Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId}) async {
+    calls++;
+    return Result.success(<FavouriteWallEntity>[_favourite('seeded')]);
   }
 }
 
@@ -1402,21 +1456,52 @@ void main() {
   });
 
   group('primeFirstPage', () {
-    Future<({PersonalizedFeedRepository repository, _GatedWallsFirestore firestore, SettingsLocalDataSource settings})>
+    Future<
+      ({
+        PersonalizedFeedRepository repository,
+        _GatedWallsFirestore firestore,
+        SettingsLocalDataSource settings,
+        _EmptyBlocks blocks,
+        _MemoryFeedCache cache,
+        TasteSignalStore signals,
+        FeedImpressionStore impressions,
+      })
+    >
     build() async {
       final _GatedWallsFirestore firestore = _GatedWallsFirestore();
       final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final _EmptyBlocks blocks = _EmptyBlocks();
+      final _MemoryFeedCache cache = _MemoryFeedCache();
+      final signals = TasteSignalStore(settings);
+      final impressions = FeedImpressionStore(settings);
       app_state.prismUser = _signedInUser();
       final PersonalizedFeedRepository repository = _repository(
         firestore: firestore,
-        cache: _MemoryFeedCache(),
+        cache: cache,
         settings: settings,
         favourites: _CountingFavourites(),
+        blocks: blocks,
+        tasteSignals: signals,
+        impressions: impressions,
       );
-      return (repository: repository, firestore: firestore, settings: settings);
+      return (
+        repository: repository,
+        firestore: firestore,
+        settings: settings,
+        blocks: blocks,
+        cache: cache,
+        signals: signals,
+        impressions: impressions,
+      );
     }
 
     List<String> keys(PersonalizedFeedPage? page) => page!.items.map(PersonalizedRankingService.canonicalKey).toList();
+
+    FeedSnapshot cacheSnapshot(List<FeedItemEntity> items) => FeedSnapshot(
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 2,
+      payload: <String, Object?>{'filters': '100.100', 'items': items.map(encodeFeedItem).toList()},
+    );
 
     int gems(_GatedWallsFirestore f) => f.sourceTags.where((tag) => tag == 'personalized.gems').length;
 
@@ -1454,6 +1539,342 @@ void main() {
       expect(gems(env.firestore), 2);
     });
 
+    for (final setting in <({String key, int value})>[
+      (key: 'WHcategories', value: 110),
+      (key: 'WHpurity', value: 110),
+    ]) {
+      test('a ${setting.key} content filter change after the prime fetches again', () async {
+        final env = await build();
+        env.firestore.gate.complete();
+        await env.repository.primeFirstPage();
+        await env.settings.set(setting.key, setting.value);
+
+        expect((await env.repository.fetch(_firstPage)).isSuccess, isTrue);
+        expect(gems(env.firestore), 2);
+      });
+    }
+
+    test('an interest change after the prime fetches again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      await env.settings.set(OnboardingV2Keys.selectedInterests, 'Nature,Space');
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    test('a retake refresh invalidates the older in-flight prime', () async {
+      final env = await build();
+
+      final Future<PersonalizedFeedPage?> oldPrime = env.repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      await env.settings.set(OnboardingV2Keys.selectedInterests, 'Nature,Space');
+      final Future<Result<PersonalizedFeedPage>> refreshed = env.repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final PersonalizedFeedPage? oldPage = await oldPrime;
+      final Result<PersonalizedFeedPage> newPage = await refreshed;
+
+      expect(oldPage, isNull);
+      expect(newPage.isSuccess, isTrue);
+      expect(gems(env.firestore), 2);
+    });
+
+    test('an old refresh retry cannot replace a newer retake prime', () async {
+      final env = await build();
+
+      final Future<Result<PersonalizedFeedPage>> oldFetch = env.repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      await env.settings.set(OnboardingV2Keys.selectedInterests, 'Nature,Space');
+      final Future<PersonalizedFeedPage?> newPrime = env.repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final List<Object?> results = await Future.wait<Object?>(<Future<Object?>>[oldFetch, newPrime]);
+
+      expect(results[0], isA<Result<PersonalizedFeedPage>>());
+      expect(results[1], isA<PersonalizedFeedPage>());
+      expect(gems(env.firestore), 2);
+    });
+
+    test('a taste signal recorded after the prime fetches again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      await env.settings.set(
+        'personalized_taste_signals_v1',
+        '[{"a":"favourite","t":"2026-10-28T00:00:00.000Z","k":["nature"]}]',
+      );
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    test('an impression recorded after the prime fetches again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+      final FeedImpressionStore impressions = FeedImpressionStore(env.settings);
+
+      await env.repository.primeFirstPage();
+      await impressions.hide('https://example.com/hidden.jpg', DateTime.now().toUtc());
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    for (final String change in <String>['taste signal', 'impression']) {
+      test('a $change recorded while a prime loads invalidates that prime', () async {
+        final env = await build();
+        final pending = env.repository.primeFirstPage();
+        await Future<void>.delayed(Duration.zero);
+        if (change == 'taste signal') {
+          await TasteSignalStore(
+            env.settings,
+          ).record(TasteSignal(action: TasteAction.open, at: DateTime.now().toUtc(), terms: const <String>['nature']));
+        } else {
+          await FeedImpressionStore(env.settings).recordShown(<String>['seen-wall'], DateTime.now().toUtc());
+        }
+        env.firestore.gate.complete();
+
+        expect(await pending, isNull);
+        expect((await env.repository.fetch(_firstPage)).isSuccess, isTrue);
+        expect(gems(env.firestore), 2);
+      });
+    }
+
+    test('a session cycle with cleared history cannot revive an older prime', () async {
+      final env = await build();
+      final pending = env.repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await env.signals.clear(allowReseed: true);
+      await env.impressions.clear();
+      app_state.prismUser = _signedInUser();
+      env.firestore.gate.complete();
+
+      expect(await pending, isNull);
+      expect((await env.repository.fetch(_firstPage)).isSuccess, isTrue);
+      expect(gems(env.firestore), 2);
+    });
+
+    test('the prime is usable before fifteen minutes and expires at the boundary', () {
+      fakeAsync((async) {
+        final clock = async.getClock(DateTime.utc(2026, 10, 28));
+        final firestore = _CountingWallsFirestore();
+        final repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          offlineCatalog: _RecordingOfflineCatalog(),
+          now: clock.now,
+        );
+        PersonalizedFeedPage? primed;
+        repository.primeFirstPage().then((page) => primed = page);
+        async.flushMicrotasks();
+        expect(primed, isNotNull);
+
+        async.elapse(const Duration(minutes: 14, seconds: 59));
+        PersonalizedFeedPage? cached;
+        repository.readCached().then((page) => cached = page);
+        async.flushMicrotasks();
+        expect(keys(cached), keys(primed));
+        expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(1));
+
+        async.elapse(const Duration(seconds: 1));
+        Result<PersonalizedFeedPage>? result;
+        repository.fetch(_firstPage).then((page) => result = page);
+        async.flushMicrotasks();
+        expect(result?.isSuccess, isTrue);
+        expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(2));
+      });
+    });
+
+    test('an expired in-flight prime cannot hold a new consumer behind its cache write', () {
+      fakeAsync((async) {
+        final clock = async.getClock(DateTime.utc(2026, 10, 28));
+        final firestore = _CountingWallsFirestore();
+        final cache = _WriteGatedFeedCache();
+        final repository = _repository(
+          firestore: firestore,
+          cache: cache,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          offlineCatalog: _RecordingOfflineCatalog(),
+          now: clock.now,
+        );
+        PersonalizedFeedPage? primed;
+        repository.primeFirstPage().then((page) => primed = page);
+        async.flushMicrotasks();
+        expect(cache.started.isCompleted, isTrue);
+        async.elapse(const Duration(minutes: 15));
+
+        Result<PersonalizedFeedPage>? result;
+        repository.fetch(_firstPage).then((page) => result = page);
+        async.flushMicrotasks();
+        expect(result?.isSuccess, isTrue);
+        expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(2));
+        cache.release.complete();
+        async.flushMicrotasks();
+        expect(primed, isNull);
+      });
+    });
+
+    test('an account change after the prime fetches again', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
+    test('concurrent primes share the same load', () async {
+      final env = await build();
+
+      final Future<PersonalizedFeedPage?> first = env.repository.primeFirstPage();
+      final Future<PersonalizedFeedPage?> second = env.repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final List<PersonalizedFeedPage?> pages = await Future.wait(<Future<PersonalizedFeedPage?>>[first, second]);
+
+      expect(pages, everyElement(isNotNull));
+      expect(gems(env.firestore), 1);
+    });
+
+    test('favourite seeding becomes part of the completed prime identity', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final _CountingFavourites favourites = _SeededFavourites();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        cache: _MemoryFeedCache(),
+        settings: settings,
+        favourites: favourites,
+      );
+      firestore.gate.complete();
+
+      final PersonalizedFeedPage? page = await repository.primeFirstPage();
+      final Result<PersonalizedFeedPage> fetched = await repository.fetch(_firstPage);
+
+      expect(page, isNotNull);
+      expect(fetched.isSuccess, isTrue);
+      expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(1));
+    });
+
+    test('concurrent refreshes share the same in-flight prime', () async {
+      final env = await build();
+
+      final Future<PersonalizedFeedPage?> prime = env.repository.primeFirstPage();
+      final Future<Result<PersonalizedFeedPage>> first = env.repository.fetch(_firstPage);
+      final Future<Result<PersonalizedFeedPage>> second = env.repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      await Future.wait<Object?>(<Future<Object?>>[prime, first, second]);
+
+      expect(gems(env.firestore), 1);
+    });
+
+    test('a newly blocked creator is removed from the primed page at delivery', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      env.blocks.cached = <String>{'creator-id'};
+      final Result<PersonalizedFeedPage> result = await env.repository.fetch(_firstPage);
+
+      expect(result.data!.items, isEmpty);
+      expect(gems(env.firestore), 1);
+    });
+
+    test('page two reloads follows after taking a primed first page', () async {
+      final env = await build();
+      env.firestore.gate.complete();
+
+      await env.repository.primeFirstPage();
+      await env.repository.fetch(_firstPage);
+      await env.repository.fetch(
+        const FetchPersonalizedFeedRequest(
+          page: 2,
+          refresh: false,
+          seenKeys: <String>[],
+          existingItems: <FeedItemEntity>[],
+        ),
+      );
+
+      expect(env.firestore.sourceTags.where((tag) => tag == 'personalized.following_uids'), hasLength(2));
+    });
+
+    test('page two reloads follows when an invalidated handoff takes the newer prime', () async {
+      final firestore = _PendingFreshFirestore();
+      final settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final repository = _repository(firestore: firestore, settings: settings, favourites: _CountingFavourites());
+      final oldPrime = repository.primeFirstPage();
+      await firestore.freshStarted.future;
+      await Future<void>.delayed(Duration.zero);
+      final oldFetch = repository.fetch(_firstPage);
+      await settings.set(app_constants.personalizedFeedMixLocalKey, 'adventurous');
+      expect(await repository.primeFirstPage(), isNotNull);
+      firestore.ready.complete();
+      expect(await oldPrime, isNull);
+      expect((await oldFetch).isSuccess, isTrue);
+      await repository.fetch(
+        const FetchPersonalizedFeedRequest(
+          page: 2,
+          refresh: false,
+          seenKeys: <String>[],
+          existingItems: <FeedItemEntity>[],
+        ),
+      );
+
+      expect(firestore.sourceTags.where((tag) => tag == 'personalized.following_uids'), hasLength(3));
+    });
+
+    test('readCached returns a matching primed page without consuming it', () async {
+      final env = await build();
+      env.cache.snapshot = cacheSnapshot(<FeedItemEntity>[_prismItem('disk-old')]);
+      env.repository.warmCache();
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final PersonalizedFeedPage? primed = await env.repository.primeFirstPage();
+      final PersonalizedFeedPage? cached = await env.repository.readCached();
+      final Result<PersonalizedFeedPage> fetched = await env.repository.fetch(_firstPage);
+
+      expect(keys(cached), keys(primed));
+      expect(keys(fetched.data), keys(primed));
+      expect(keys(cached), isNot(contains('https://example.com/disk-old.jpg')));
+      expect(gems(env.firestore), 1);
+    });
+
+    test('a prime joins a page-one refresh that started first', () async {
+      final env = await build();
+
+      final Future<Result<PersonalizedFeedPage>> fetch = env.repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      final Future<PersonalizedFeedPage?> prime = env.repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      env.firestore.gate.complete();
+
+      final Result<PersonalizedFeedPage> fetched = await fetch;
+      final PersonalizedFeedPage? primed = await prime;
+
+      expect(keys(fetched.data), keys(primed));
+      expect(gems(env.firestore), 1);
+      await env.repository.fetch(_firstPage);
+
+      expect(gems(env.firestore), 2);
+    });
+
     test('a fetch that starts while the prime loads joins it', () async {
       final env = await build();
 
@@ -1469,18 +1890,94 @@ void main() {
       expect(gems(env.firestore), 1);
     });
 
-    test('a failed prime returns null and the fetch loads fresh', () async {
+    test('a failed prime handoff falls back to a fresh fetch', () async {
       final env = await build();
-      env.firestore
-        ..fail = true
-        ..gate.complete();
+      env.firestore.gate.complete();
 
-      expect(await env.repository.primeFirstPage(), anyOf(isNull, isA<PersonalizedFeedPage>()));
-      env.firestore.fail = false;
-      final result = await env.repository.fetch(_firstPage);
+      expect(await env.repository.primeFirstPage(), isNotNull);
+      env.blocks.failCachedRead = true;
+      final Result<PersonalizedFeedPage> result = await env.repository.fetch(_firstPage);
 
       expect(result.isSuccess, isTrue);
+      expect(gems(env.firestore), 2);
     });
+
+    test('a rejected source and cache future does not poison the next prime handoff', () async {
+      final firestore = _CountingWallsFirestore()..fail = true;
+      final cache = _RecoveringFeedCache();
+      final settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final repository = _repository(
+        firestore: firestore,
+        cache: cache,
+        settings: settings,
+        favourites: _CountingFavourites(),
+        wallhaven: _OfflineWallhaven(),
+        pexels: _OfflinePexels(),
+      );
+
+      expect(await repository.primeFirstPage(), isNull);
+      firestore.fail = false;
+      cache.failRead = false;
+      final result = await repository.fetch(_firstPage);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items, isNotEmpty);
+      expect(firestore.sourceTags.where((tag) => tag == 'personalized.gems'), hasLength(2));
+    });
+
+    test('a late cache read cannot return a prime from a different session', () async {
+      final firestore = _CountingWallsFirestore();
+      final cache = _DelayedFeedCache()..snapshot = cacheSnapshot(<FeedItemEntity>[_prismItem('old-cache')]);
+      final repository = _repository(
+        firestore: firestore,
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      app_state.prismUser = _signedInUser();
+      final pending = repository.readCached();
+      await Future<void>.delayed(Duration.zero);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      expect(await repository.primeFirstPage(), isNotNull);
+      cache.release.complete();
+
+      expect(await pending, isNull);
+    });
+
+    for (final String change in <String>['account', 'clear', 'mix']) {
+      test('$change change during the cache write prevents stale catalog side effects', () async {
+        final settings = SettingsLocalDataSource(InMemoryLocalStore());
+        final signals = TasteSignalStore(settings);
+        final impressions = FeedImpressionStore(settings);
+        final cache = _WriteGatedFeedCache();
+        final catalog = _RecordingOfflineCatalog();
+        app_state.prismUser = _signedInUser();
+        final repository = _repository(
+          firestore: _CountingWallsFirestore(),
+          cache: cache,
+          settings: settings,
+          favourites: _CountingFavourites(),
+          tasteSignals: signals,
+          impressions: impressions,
+          offlineCatalog: catalog,
+        );
+        final pending = repository.primeFirstPage();
+        await cache.started.future;
+        switch (change) {
+          case 'account':
+            app_state.prismUser = app_constants.createGuestPrismUser();
+          case 'clear':
+            await signals.clear();
+            await impressions.clear();
+          case 'mix':
+            await settings.set(app_constants.personalizedFeedMixLocalKey, 'adventurous');
+        }
+        cache.release.complete();
+
+        expect(await pending, isNull);
+        expect(catalog.remembered, isEmpty);
+      });
+    }
   });
 
   test('the cached list is capped at 48 items', () async {
@@ -2227,6 +2724,7 @@ PersonalizedFeedRepository _repository({
   FeedImpressionStore? impressions,
   UserBlockRepository? blocks,
   OfflineWallpaperCatalog? offlineCatalog,
+  DateTime Function()? now,
 }) {
   return PersonalizedFeedRepositoryImpl(
     firestore,
@@ -2239,6 +2737,7 @@ PersonalizedFeedRepository _repository({
     tasteSignals ?? TasteSignalStore(settings),
     impressions ?? FeedImpressionStore(settings),
     offlineCatalog: offlineCatalog,
+    now: now,
   );
 }
 

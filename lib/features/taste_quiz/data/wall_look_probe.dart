@@ -18,7 +18,7 @@ Future<WallLook?> measureWallLook(String url, {Future<Uint8List?> Function(Strin
     try {
       final ui.FrameInfo frame = await codec.getNextFrame();
       try {
-        final ByteData? data = await frame.image.toByteData();
+        final ByteData? data = await frame.image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
         if (data == null) return null;
         return wallLookOf(
           data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),

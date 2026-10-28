@@ -1,16 +1,25 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/features/taste_quiz/views/widgets/taste_quiz_view.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import 'taste_quiz_fixtures.dart';
+
+class _QuizImageCache extends Mock implements BaseCacheManager {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -169,6 +178,74 @@ void main() {
     await tester.pump();
 
     expect(finished, <bool>[true]);
+    handle.dispose();
+  });
+
+  testWidgets('a measured final-round wall updates tuning after the rounds unmount', (tester) async {
+    final TasteQuizPlan plan = TasteQuizPlan(
+      rounds: <QuizRound>[
+        for (int index = 0; index < 6; index++)
+          QuizRound(
+            left: quizWall('late_l$index', wildCard: index == 2, tags: const <String>['dark', 'minimal', 'neon']),
+            right: quizWall('late_r$index', wildCard: index == 2, tags: const <String>['bright', 'city', 'beach']),
+          ),
+      ],
+    );
+    final _QuizImageCache cache = _QuizImageCache();
+    final BaseCacheManager? previousThumbnailCache = PrismImageCache.testOverride;
+    final BaseCacheManager? previousFullCache = PrismFullImageCache.testOverride;
+    PrismImageCache.testOverride = cache;
+    PrismFullImageCache.testOverride = cache;
+    addTearDown(() {
+      PrismImageCache.testOverride = previousThumbnailCache;
+      PrismFullImageCache.testOverride = previousFullCache;
+    });
+
+    final Map<String, Completer<WallLook?>> delayedLooks = <String, Completer<WallLook?>>{
+      for (final int index in <int>[0, 3, 4, 5]) 'https://example.com/thumb_late_l$index.jpg': Completer<WallLook?>(),
+    };
+    when(
+      () => cache.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: true,
+      ),
+    ).thenAnswer((invocation) {
+      return Stream<FileResponse>.error(StateError('preview unavailable'));
+    });
+    TasteQuizView.measureLookOverride = (url) =>
+        delayedLooks[url]?.future ?? Future<WallLook?>.value(const WallLook(luma: 0.9, edges: 0.02));
+    addTearDown(() => TasteQuizView.measureLookOverride = null);
+
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await pumpQuiz(tester, plan: plan);
+    await tester.idle();
+    for (int round = 0; round < 6; round++) {
+      expect(find.text('${round + 1} of 6'), findsOneWidget);
+      await tester.tapAt(tester.getCenter(leftPick()));
+      await tester.pump(const Duration(milliseconds: 220));
+      await tester.pumpAndSettle();
+      await tester.idle();
+      if (round < 5) expect(find.text('${round + 2} of 6'), findsOneWidget);
+    }
+
+    expect(find.text('Tuning your feed'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('6 of 6'), findsNothing);
+
+    for (final int index in <int>[3, 4, 5]) {
+      delayedLooks['https://example.com/thumb_late_l$index.jpg']!.complete(const WallLook(luma: 0.9, edges: 0.02));
+    }
+    await tester.idle();
+    await tester.pump();
+
+    expect(find.text('Light, minimal, a bit of neon'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    delayedLooks['https://example.com/thumb_late_l0.jpg']!.complete(const WallLook(luma: 0.9, edges: 0.02));
+    await tester.idle();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
     handle.dispose();
   });
 

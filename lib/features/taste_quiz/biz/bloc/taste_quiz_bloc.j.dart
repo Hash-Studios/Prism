@@ -33,7 +33,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     on<_Picked>(_onPicked);
     on<_Skipped>(_onSkipped);
     on<_TuningShown>(_onTuningShown);
-    on<_Looked>((event, _) => _looks[event.key] = event.look);
+    on<_Looked>(_onLooked);
     unawaited(analytics.track(TasteQuizStartedEvent(source: source)));
   }
 
@@ -42,6 +42,16 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
   final PersonalizedFeedRepository _feed;
   final DateTime Function() _clock;
   bool _committed = false;
+  bool _closing = false;
+  List<QuizPick>? _completedPicks;
+
+  bool get isClosing => _closing || isClosed;
+
+  @override
+  Future<void> close() {
+    _closing = true;
+    return super.close();
+  }
 
   /// How the shown walls look, measured from their thumbnails. Pixels say more about tone than tags do.
   final Map<String, WallLook> _looks = <String, WallLook>{};
@@ -50,6 +60,15 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
 
   /// How long Tuning waits for the real first page before it shows the summary line alone.
   static const Duration feedPreviewBudget = Duration(milliseconds: 2500);
+
+  void _onLooked(_Looked event, Emitter<TasteQuizState> emit) {
+    _looks[event.key] = event.look;
+    final List<QuizPick>? picks = _completedPicks;
+    final TasteQuizState current = state;
+    if (picks != null && current is TasteQuizTuning) {
+      emit(current.copyWith(summary: summarizeTaste(picks, looks: _looks)));
+    }
+  }
 
   Future<void> _onPicked(_Picked event, Emitter<TasteQuizState> emit) async {
     final TasteQuizState current = state;
@@ -68,6 +87,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     await _commit(picks);
     if (emit.isDone || state is! TasteQuizPlaying) return;
     unawaited(analytics.track(TasteQuizCompletedEvent(source: source)));
+    _completedPicks = picks;
     final TasteSummary summary = summarizeTaste(picks, looks: _looks);
     emit(TasteQuizState.tuning(summary: summary));
     // The timeout only stops the wait. The prime keeps running, so the feed still takes its page.
@@ -82,7 +102,12 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
       'tuning.feed_ready',
       extra: <String, Object?>{'ms': watch.elapsedMilliseconds, 'walls': walls.length},
     );
-    emit(TasteQuizState.tuning(summary: summary, walls: walls));
+    emit(
+      TasteQuizState.tuning(
+        summary: summarizeTaste(picks, looks: _looks),
+        walls: walls,
+      ),
+    );
   }
 
   Future<void> _onSkipped(_Skipped event, Emitter<TasteQuizState> emit) async {

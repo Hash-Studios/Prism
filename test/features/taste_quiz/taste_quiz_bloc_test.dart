@@ -125,6 +125,30 @@ void main() {
     expect(tuning.summary.tone, QuizTone.dark);
   });
 
+  test('measurements that arrive during tuning update the live summary', () async {
+    final TasteQuizPlan plan = quizPlan();
+    final Completer<PersonalizedFeedPage?> page = Completer<PersonalizedFeedPage?>();
+    final QuizFeedMock feed = QuizFeedMock();
+    when(feed.primeFirstPage).thenAnswer((_) => page.future);
+    final bloc = buildBloc(plan: plan, feed: feed);
+    addTearDown(bloc.close);
+
+    await _pickLeft(bloc, plan.rounds.length);
+    expect((bloc.state as TasteQuizTuning).summary.tone, QuizTone.dark);
+
+    for (final QuizRound round in plan.rounds.take(5)) {
+      bloc.add(TasteQuizEvent.looked(key: round.left.key, look: const WallLook(luma: 0.9, edges: 0.02)));
+    }
+    await _settle();
+    expect((bloc.state as TasteQuizTuning).summary.tone, QuizTone.light);
+    page.complete(
+      PersonalizedFeedPage(items: <FeedItemEntity>[for (int i = 0; i < 4; i++) quizItem('f$i')], hasMore: false),
+    );
+    await _settle();
+
+    expect((bloc.state as TasteQuizTuning).summary.tone, QuizTone.light);
+  });
+
   test('a stale or double tap is ignored', () async {
     final bloc = buildBloc();
     addTearDown(bloc.close);

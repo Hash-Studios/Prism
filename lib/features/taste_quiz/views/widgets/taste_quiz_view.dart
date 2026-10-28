@@ -40,6 +40,9 @@ class TasteQuizView extends StatefulWidget {
   /// Defaults to the app-wide repository.
   final PersonalizedFeedRepository? feed;
 
+  @visibleForTesting
+  static Future<WallLook?> Function(String url)? measureLookOverride;
+
   @override
   State<TasteQuizView> createState() => _TasteQuizViewState();
 }
@@ -118,13 +121,14 @@ class _QuizImages {
 
   /// Loads both walls of [round]. Once a thumbnail is cached, [onLook] gets how that wall looks.
   void prefetch(BuildContext context, QuizRound round, ValueChanged<(String, WallLook)> onLook) {
+    final Future<WallLook?> Function(String url) measure = TasteQuizView.measureLookOverride ?? measureWallLook;
     for (final QuizWall wall in <QuizWall>[round.left, round.right]) {
       unawaited(
         precacheImage(
           thumbnail(wall),
           context,
           onError: (_, _) {},
-        ).then((_) => measureWallLook(wall.item.thumbnailUrl.trim())).then((WallLook? look) {
+        ).then((_) => measure(wall.item.thumbnailUrl.trim())).then((WallLook? look) {
           if (look != null) onLook((wall.key, look));
         }),
       );
@@ -165,21 +169,23 @@ class _RoundsState extends State<_Rounds> {
     if (_tileWidth == tileWidth) return;
     _tileWidth = tileWidth;
     _images = _QuizImages(context, tileWidth: tileWidth);
-    _images!.prefetch(context, _rounds[_round], _onLook);
+    final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
+    _images!.prefetch(context, _rounds[_round], (measured) => _onLook(bloc, measured));
     _prefetchAhead();
   }
 
   /// The next pair loads while the user looks at this one, so a round never waits on the network.
   void _prefetchAhead() {
     final _QuizImages? images = _images;
-    if (images != null && _round + 1 < _rounds.length) images.prefetch(context, _rounds[_round + 1], _onLook);
+    if (images != null && _round + 1 < _rounds.length) {
+      final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
+      images.prefetch(context, _rounds[_round + 1], (measured) => _onLook(bloc, measured));
+    }
   }
 
-  void _onLook((String, WallLook) measured) {
-    // A measure can land after the rounds left the screen. The next round is measured ahead, so none is lost.
-    if (!mounted) return;
-    final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
-    if (!bloc.isClosed) bloc.add(TasteQuizEvent.looked(key: measured.$1, look: measured.$2));
+  void _onLook(TasteQuizBloc bloc, (String, WallLook) measured) {
+    // A measure can land after the rounds left the screen but before the quiz finishes tuning.
+    if (!bloc.isClosing) bloc.add(TasteQuizEvent.looked(key: measured.$1, look: measured.$2));
   }
 
   void _pick(QuizSide side) {
