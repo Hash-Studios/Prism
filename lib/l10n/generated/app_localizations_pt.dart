@@ -10698,7 +10698,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get moodDarkQuietBody => 'Pouca luz, fácil para os olhos.';
 
   @override
-  String get moodBrightBoldTitle => 'Vivo e marcante';
+  String get moodBrightBoldTitle => 'Vibrante e marcante';
 
   @override
   String get moodBrightBoldBody => 'Muita cor para acordar sua tela.';
