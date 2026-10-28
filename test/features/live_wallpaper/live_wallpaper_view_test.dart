@@ -84,9 +84,8 @@ void main() {
     const String mapUrl = 'https://example.com/map.png';
     await pump(tester, imageUrl: imageUrl, depthMapUrl: mapUrl);
 
-    ProgressiveWallpaperImage progressiveImage() => tester.widget<ProgressiveWallpaperImage>(
-      find.byType(ProgressiveWallpaperImage),
-    );
+    ProgressiveWallpaperImage progressiveImage() =>
+        tester.widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage));
 
     expect(progressiveImage().display.full, imageUrl);
 
@@ -96,10 +95,7 @@ void main() {
     await tester.pump();
 
     final SpatialTiltView spatialView = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
-    expect(
-      spatialView.image,
-      isA<CachedNetworkImageProvider>().having((provider) => provider.url, 'url', imageUrl),
-    );
+    expect(spatialView.image, isA<CachedNetworkImageProvider>().having((provider) => provider.url, 'url', imageUrl));
     expect(spatialView.mapUrl, mapUrl);
 
     await tester.ensureVisible(find.text('Drift'));

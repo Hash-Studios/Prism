@@ -130,10 +130,7 @@ void main() {
     test('rejects texture sampler arrays in a generated tilt shader', () {
       final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
       for (final String texture in <String>['u_texture0', 'u_texture1']) {
-        final String mutated = shader.replaceFirst(
-          'uniform sampler2D $texture;',
-          'uniform sampler2D $texture[2];',
-        );
+        final String mutated = shader.replaceFirst('uniform sampler2D $texture;', 'uniform sampler2D $texture[2];');
         expect(mutated, isNot(shader), reason: 'mutation for $texture');
         expect(
           validateShaderContract(mutated, textureCount: 2, tilt: true),
