@@ -8,7 +8,9 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
+import 'package:Prism/features/taste_quiz/data/wall_look_probe.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:Prism/features/taste_quiz/views/widgets/tuning_feed_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,7 +25,6 @@ class TasteQuizView extends StatefulWidget {
     super.key,
     required this.plan,
     required this.source,
-    required this.interests,
     required this.onFinished,
     this.tasteSignals,
     this.feed,
@@ -31,7 +32,6 @@ class TasteQuizView extends StatefulWidget {
 
   final TasteQuizPlan plan;
   final TasteQuizSource source;
-  final List<String> interests;
   final ValueChanged<bool> onFinished;
 
   /// Defaults to the app-wide store.
@@ -116,11 +116,19 @@ class _QuizImages {
   ImageProvider _sized(String url, BaseCacheManager cache) =>
       ResizeImage(CachedNetworkImageProvider(url.trim(), cacheManager: cache), width: _cacheWidth);
 
-  void prefetch(BuildContext context, QuizRound round) {
+  /// Loads both walls of [round]. Once a thumbnail is cached, [onLook] gets how that wall looks.
+  void prefetch(BuildContext context, QuizRound round, ValueChanged<(String, WallLook)> onLook) {
     for (final QuizWall wall in <QuizWall>[round.left, round.right]) {
-      for (final ImageProvider image in <ImageProvider>[thumbnail(wall), full(wall)]) {
-        unawaited(precacheImage(image, context, onError: (_, _) {}));
-      }
+      unawaited(
+        precacheImage(
+          thumbnail(wall),
+          context,
+          onError: (_, _) {},
+        ).then((_) => measureWallLook(wall.item.thumbnailUrl.trim())).then((WallLook? look) {
+          if (look != null) onLook((wall.key, look));
+        }),
+      );
+      unawaited(precacheImage(full(wall), context, onError: (_, _) {}));
     }
   }
 }
@@ -157,14 +165,21 @@ class _RoundsState extends State<_Rounds> {
     if (_tileWidth == tileWidth) return;
     _tileWidth = tileWidth;
     _images = _QuizImages(context, tileWidth: tileWidth);
-    _images!.prefetch(context, _rounds[_round]);
+    _images!.prefetch(context, _rounds[_round], _onLook);
     _prefetchAhead();
   }
 
   /// The next pair loads while the user looks at this one, so a round never waits on the network.
   void _prefetchAhead() {
     final _QuizImages? images = _images;
-    if (images != null && _round + 1 < _rounds.length) images.prefetch(context, _rounds[_round + 1]);
+    if (images != null && _round + 1 < _rounds.length) images.prefetch(context, _rounds[_round + 1], _onLook);
+  }
+
+  void _onLook((String, WallLook) measured) {
+    // A measure can land after the rounds left the screen. The next round is measured ahead, so none is lost.
+    if (!mounted) return;
+    final TasteQuizBloc bloc = context.read<TasteQuizBloc>();
+    if (!bloc.isClosed) bloc.add(TasteQuizEvent.looked(key: measured.$1, look: measured.$2));
   }
 
   void _pick(QuizSide side) {

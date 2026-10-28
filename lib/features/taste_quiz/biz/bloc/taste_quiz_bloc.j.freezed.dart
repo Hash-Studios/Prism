@@ -55,12 +55,13 @@ extension TasteQuizEventPatterns on TasteQuizEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Picked value)?  picked,TResult Function( _Skipped value)?  skipped,TResult Function( _TuningShown value)?  tuningShown,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Picked value)?  picked,TResult Function( _Skipped value)?  skipped,TResult Function( _Looked value)?  looked,TResult Function( _TuningShown value)?  tuningShown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Picked() when picked != null:
 return picked(_that);case _Skipped() when skipped != null:
-return skipped(_that);case _TuningShown() when tuningShown != null:
+return skipped(_that);case _Looked() when looked != null:
+return looked(_that);case _TuningShown() when tuningShown != null:
 return tuningShown(_that);case _:
   return orElse();
 
@@ -79,12 +80,13 @@ return tuningShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Picked value)  picked,required TResult Function( _Skipped value)  skipped,required TResult Function( _TuningShown value)  tuningShown,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Picked value)  picked,required TResult Function( _Skipped value)  skipped,required TResult Function( _Looked value)  looked,required TResult Function( _TuningShown value)  tuningShown,}){
 final _that = this;
 switch (_that) {
 case _Picked():
 return picked(_that);case _Skipped():
-return skipped(_that);case _TuningShown():
+return skipped(_that);case _Looked():
+return looked(_that);case _TuningShown():
 return tuningShown(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -102,12 +104,13 @@ return tuningShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Picked value)?  picked,TResult? Function( _Skipped value)?  skipped,TResult? Function( _TuningShown value)?  tuningShown,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Picked value)?  picked,TResult? Function( _Skipped value)?  skipped,TResult? Function( _Looked value)?  looked,TResult? Function( _TuningShown value)?  tuningShown,}){
 final _that = this;
 switch (_that) {
 case _Picked() when picked != null:
 return picked(_that);case _Skipped() when skipped != null:
-return skipped(_that);case _TuningShown() when tuningShown != null:
+return skipped(_that);case _Looked() when looked != null:
+return looked(_that);case _TuningShown() when tuningShown != null:
 return tuningShown(_that);case _:
   return null;
 
@@ -125,11 +128,12 @@ return tuningShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int round,  QuizSide side)?  picked,TResult Function()?  skipped,TResult Function()?  tuningShown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int round,  QuizSide side)?  picked,TResult Function()?  skipped,TResult Function( String key,  WallLook look)?  looked,TResult Function()?  tuningShown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Picked() when picked != null:
 return picked(_that.round,_that.side);case _Skipped() when skipped != null:
-return skipped();case _TuningShown() when tuningShown != null:
+return skipped();case _Looked() when looked != null:
+return looked(_that.key,_that.look);case _TuningShown() when tuningShown != null:
 return tuningShown();case _:
   return orElse();
 
@@ -148,11 +152,12 @@ return tuningShown();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int round,  QuizSide side)  picked,required TResult Function()  skipped,required TResult Function()  tuningShown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int round,  QuizSide side)  picked,required TResult Function()  skipped,required TResult Function( String key,  WallLook look)  looked,required TResult Function()  tuningShown,}) {final _that = this;
 switch (_that) {
 case _Picked():
 return picked(_that.round,_that.side);case _Skipped():
-return skipped();case _TuningShown():
+return skipped();case _Looked():
+return looked(_that.key,_that.look);case _TuningShown():
 return tuningShown();case _:
   throw StateError('Unexpected subclass');
 
@@ -170,11 +175,12 @@ return tuningShown();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int round,  QuizSide side)?  picked,TResult? Function()?  skipped,TResult? Function()?  tuningShown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int round,  QuizSide side)?  picked,TResult? Function()?  skipped,TResult? Function( String key,  WallLook look)?  looked,TResult? Function()?  tuningShown,}) {final _that = this;
 switch (_that) {
 case _Picked() when picked != null:
 return picked(_that.round,_that.side);case _Skipped() when skipped != null:
-return skipped();case _TuningShown() when tuningShown != null:
+return skipped();case _Looked() when looked != null:
+return looked(_that.key,_that.look);case _TuningShown() when tuningShown != null:
 return tuningShown();case _:
   return null;
 
@@ -282,6 +288,74 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _Looked implements TasteQuizEvent {
+  const _Looked({required this.key, required this.look});
+  
+
+ final  String key;
+ final  WallLook look;
+
+/// Create a copy of TasteQuizEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$LookedCopyWith<_Looked> get copyWith => __$LookedCopyWithImpl<_Looked>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Looked&&(identical(other.key, key) || other.key == key)&&(identical(other.look, look) || other.look == look));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,key,look);
+
+@override
+String toString() {
+  return 'TasteQuizEvent.looked(key: $key, look: $look)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$LookedCopyWith<$Res> implements $TasteQuizEventCopyWith<$Res> {
+  factory _$LookedCopyWith(_Looked value, $Res Function(_Looked) _then) = __$LookedCopyWithImpl;
+@useResult
+$Res call({
+ String key, WallLook look
+});
+
+
+
+
+}
+/// @nodoc
+class __$LookedCopyWithImpl<$Res>
+    implements _$LookedCopyWith<$Res> {
+  __$LookedCopyWithImpl(this._self, this._then);
+
+  final _Looked _self;
+  final $Res Function(_Looked) _then;
+
+/// Create a copy of TasteQuizEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? key = null,Object? look = null,}) {
+  return _then(_Looked(
+key: null == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
+as String,look: null == look ? _self.look : look // ignore: cast_nullable_to_non_nullable
+as WallLook,
+  ));
+}
+
+
+}
 
 /// @nodoc
 

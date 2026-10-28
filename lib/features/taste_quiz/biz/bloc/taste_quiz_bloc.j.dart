@@ -33,6 +33,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     on<_Picked>(_onPicked);
     on<_Skipped>(_onSkipped);
     on<_TuningShown>(_onTuningShown);
+    on<_Looked>((event, _) => _looks[event.key] = event.look);
     unawaited(analytics.track(TasteQuizStartedEvent(source: source)));
   }
 
@@ -41,6 +42,9 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
   final PersonalizedFeedRepository _feed;
   final DateTime Function() _clock;
   bool _committed = false;
+
+  /// How the shown walls look, measured from their thumbnails. Pixels say more about tone than tags do.
+  final Map<String, WallLook> _looks = <String, WallLook>{};
 
   static const int tuningMax = 6;
 
@@ -64,7 +68,7 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
     await _commit(picks);
     if (emit.isDone || state is! TasteQuizPlaying) return;
     unawaited(analytics.track(TasteQuizCompletedEvent(source: source)));
-    final TasteSummary summary = summarizeTaste(picks);
+    final TasteSummary summary = summarizeTaste(picks, looks: _looks);
     emit(TasteQuizState.tuning(summary: summary));
     // The timeout only stops the wait. The prime keeps running, so the feed still takes its page.
     final Stopwatch watch = Stopwatch()..start();

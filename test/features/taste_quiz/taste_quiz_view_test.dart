@@ -42,7 +42,6 @@ void main() {
           body: TasteQuizView(
             plan: plan ?? quizPlan(),
             source: TasteQuizSource.onboarding,
-            interests: const <String>['Nature'],
             tasteSignals: store,
             feed: quizFeed(),
             onFinished: (bool completed) => finished.add(completed),

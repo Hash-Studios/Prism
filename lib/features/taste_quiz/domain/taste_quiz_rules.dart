@@ -142,7 +142,7 @@ TasteQuizPlan? planTasteQuiz(List<QuizWall> walls, Random random) {
     source.remove(partner);
     rounds.add(random.nextBool() ? QuizRound(left: anchor, right: partner) : QuizRound(left: partner, right: anchor));
   }
-  return TasteQuizPlan(rounds: rounds, pool: <QuizWall>[...interest, ...wild]);
+  return TasteQuizPlan(rounds: rounds);
 }
 
 /// What the picks say, for the one line on "Tuning your feed". Every part is null unless the picks clearly agree.

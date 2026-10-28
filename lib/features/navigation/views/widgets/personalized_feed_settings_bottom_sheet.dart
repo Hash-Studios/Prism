@@ -94,8 +94,7 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
   final TasteQuizRepository? tasteQuiz;
 
   /// Shows the quiz over the sheet and waits for it to close.
-  final Future<bool?> Function(BuildContext context, {required TasteQuizPlan plan, required List<String> interests})
-  openRetake;
+  final Future<bool?> Function(BuildContext context, {required TasteQuizPlan plan}) openRetake;
 
   @override
   State<PersonalizedFeedSettingsSheet> createState() => _PersonalizedFeedSettingsSheetState();
@@ -138,7 +137,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       toasts.error(context.l10n.tasteQuizRetakeFailed);
       return;
     }
-    final bool? completed = await widget.openRetake(context, plan: plan, interests: interests);
+    final bool? completed = await widget.openRetake(context, plan: plan);
     if (!mounted || completed == null) return;
     personalizedFeedSettingsRevision.value += 1;
     setState(() => _learned = _readLearned());

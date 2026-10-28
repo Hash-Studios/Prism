@@ -43,8 +43,8 @@ QuizWall quizWall(
 );
 
 /// A plan of [rounds] rounds. Left walls are dark and minimal, right walls are light and busy.
-/// Round 3 (index 2) is a wild card. [pool] walls are left over for the tuning preview.
-TasteQuizPlan quizPlan({int rounds = 6, List<QuizWall> pool = const <QuizWall>[]}) => TasteQuizPlan(
+/// Round 3 (index 2) is a wild card.
+TasteQuizPlan quizPlan({int rounds = 6}) => TasteQuizPlan(
   rounds: <QuizRound>[
     for (int i = 0; i < rounds; i++)
       QuizRound(
@@ -52,7 +52,6 @@ TasteQuizPlan quizPlan({int rounds = 6, List<QuizWall> pool = const <QuizWall>[]
         right: quizWall('r$i', wildCard: i == 2, tags: <String>['bright', 'city', 'beach']),
       ),
   ],
-  pool: pool,
 );
 
 class QuizFeedMock extends Mock implements PersonalizedFeedRepository {}

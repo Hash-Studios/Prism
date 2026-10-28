@@ -113,19 +113,6 @@ void main() {
 
       expect(planTasteQuiz(walls, Random(1)), isNull);
     });
-
-    test('pool holds the walls left over and no pool wall appears in a round', () {
-      final List<QuizWall> walls = <QuizWall>[..._interestWalls(14), ..._wildWalls(4)];
-
-      final TasteQuizPlan? plan = planTasteQuiz(walls, Random(1));
-
-      expect(plan, isNotNull);
-      expect(plan!.pool.length, 6);
-      final Set<String> shown = <String>{
-        for (final QuizRound round in plan.rounds) ...<String>[round.left.key, round.right.key],
-      };
-      expect(plan.pool.where((wall) => shown.contains(wall.key)), isEmpty);
-    });
   });
 
   group('quizContrast', () {

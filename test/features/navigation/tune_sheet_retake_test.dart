@@ -76,7 +76,7 @@ void main() {
 
   Future<void> pumpSheet(
     WidgetTester tester, {
-    Future<bool?> Function(BuildContext, {required TasteQuizPlan plan, required List<String> interests})? openRetake,
+    Future<bool?> Function(BuildContext, {required TasteQuizPlan plan})? openRetake,
   }) async {
     tester.view.physicalSize = const Size(600, 844);
     tester.view.devicePixelRatio = 1;
@@ -100,7 +100,7 @@ void main() {
                   tasteQuiz: repo,
                   openRetake:
                       openRetake ??
-                      (BuildContext context, {required TasteQuizPlan plan, required List<String> interests}) async {
+                      (BuildContext context, {required TasteQuizPlan plan}) async {
                         opened.add(plan);
                         return true;
                       },
@@ -157,7 +157,7 @@ void main() {
     repo.plan = quizPlan();
     await pumpSheet(
       tester,
-      openRetake: (BuildContext context, {required TasteQuizPlan plan, required List<String> interests}) async {
+      openRetake: (BuildContext context, {required TasteQuizPlan plan}) async {
         await store.record(
           TasteSignal(action: TasteAction.favourite, at: DateTime.now(), terms: const <String>['neon']),
         );
@@ -181,7 +181,7 @@ void main() {
     var run = 0;
     await pumpSheet(
       tester,
-      openRetake: (BuildContext context, {required TasteQuizPlan plan, required List<String> interests}) async {
+      openRetake: (BuildContext context, {required TasteQuizPlan plan}) async {
         run++;
         final TasteQuizBloc bloc = TasteQuizBloc(
           plan: plan,

@@ -4,22 +4,15 @@ import 'package:flutter/material.dart';
 
 /// Runs the quiz again for a user who finished onboarding. It adds to the signals they already have.
 /// The route returns true when the user answered every round.
-Future<bool?> openTasteQuizRetake(
-  BuildContext context, {
-  required TasteQuizPlan plan,
-  required List<String> interests,
-}) => Navigator.of(context, rootNavigator: true).push<bool>(
-  MaterialPageRoute<bool>(
-    fullscreenDialog: true,
-    builder: (_) => TasteQuizPage(plan: plan, interests: interests),
-  ),
-);
+Future<bool?> openTasteQuizRetake(BuildContext context, {required TasteQuizPlan plan}) => Navigator.of(
+  context,
+  rootNavigator: true,
+).push<bool>(MaterialPageRoute<bool>(fullscreenDialog: true, builder: (_) => TasteQuizPage(plan: plan)));
 
 class TasteQuizPage extends StatelessWidget {
-  const TasteQuizPage({super.key, required this.plan, required this.interests});
+  const TasteQuizPage({super.key, required this.plan});
 
   final TasteQuizPlan plan;
-  final List<String> interests;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +21,6 @@ class TasteQuizPage extends StatelessWidget {
       body: TasteQuizView(
         plan: plan,
         source: TasteQuizSource.retake,
-        interests: interests,
         onFinished: (completed) => Navigator.of(context).pop(completed),
       ),
     );

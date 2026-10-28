@@ -368,7 +368,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     child: TasteQuizView(
       plan: state.tasteQuizPlan!,
       source: TasteQuizSource.onboarding,
-      interests: state.interestsData.selected,
       onFinished: (completed) => _bloc.add(OnboardingV2Event.tasteQuizFinished(completed: completed)),
     ),
   );

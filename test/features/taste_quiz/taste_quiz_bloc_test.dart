@@ -9,6 +9,7 @@ import 'package:Prism/features/personalized_feed/domain/entities/personalized_fe
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -105,6 +106,23 @@ void main() {
 
     expect(analytics.names.where((n) => n == 'taste_quiz_round_picked'), hasLength(6));
     expect(analytics.names.where((n) => n == 'taste_quiz_completed'), hasLength(1));
+  });
+
+  test('measured looks beat the tags in the summary', () async {
+    final TasteQuizPlan plan = quizPlan();
+    final bloc = buildBloc(plan: plan);
+    addTearDown(bloc.close);
+    // The right walls are tagged bright. Their pixels say dark.
+    for (final QuizRound round in plan.rounds) {
+      bloc.add(TasteQuizEvent.looked(key: round.right.key, look: const WallLook(luma: 0.1, edges: 0.02)));
+    }
+    for (int round = 0; round < plan.rounds.length; round++) {
+      _pick(bloc, round, QuizSide.right);
+    }
+    await _settle();
+
+    final TasteQuizTuning tuning = bloc.state as TasteQuizTuning;
+    expect(tuning.summary.tone, QuizTone.dark);
   });
 
   test('a stale or double tap is ignored', () async {

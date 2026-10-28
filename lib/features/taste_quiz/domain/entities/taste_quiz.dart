@@ -65,12 +65,11 @@ class QuizRound {
   QuizWall wallAt(QuizSide side) => side == QuizSide.left ? left : right;
 }
 
-/// Every round, chosen before round 1, plus the walls left over for the "Tuning your feed" preview.
+/// Every round, chosen before round 1.
 class TasteQuizPlan {
-  const TasteQuizPlan({required this.rounds, required this.pool});
+  const TasteQuizPlan({required this.rounds});
 
   final List<QuizRound> rounds;
-  final List<QuizWall> pool;
 }
 
 class QuizPick {
