@@ -7,7 +7,9 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folders_grid.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -100,6 +102,31 @@ FolderEntity _folder(String id, String name, {int itemCount = 0, List<String> co
 
 List<String> _urls(int count) => List<String>.generate(count, (i) => 'https://example.com/$i.jpg');
 
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
 void main() {
   setUpAll(() => registerFallbackValue(FolderRoute(folderId: 'x')));
 
@@ -123,7 +150,7 @@ void main() {
     app_state.prismUser = signedIn
         ? (app_constants.createGuestPrismUser()..id = 'u1')
         : app_constants.createGuestPrismUser();
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter stackRouter = router ?? _MockStackRouter();
     when(() => stackRouter.push(any())).thenAnswer((_) async => null);
@@ -154,7 +181,7 @@ void main() {
       find.text(AppLocalizationsEn().coreSignInFeatureTitle(AppLocalizationsEn().foldersSignInFeature)),
       findsOneWidget,
     );
-    expect(find.byType(GridView), findsNothing);
+    expect(find.byType(SliverGrid), findsNothing);
     expect(repo.calls.where((call) => call.startsWith('fetchFolders:')), isEmpty);
   });
 
@@ -170,7 +197,7 @@ void main() {
     );
     await settle(tester);
 
-    expect(find.byType(GridView), findsNothing);
+    expect(find.byType(SliverGrid), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -252,7 +279,7 @@ void main() {
     );
     await pumpGrid(tester, repo);
 
-    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.text('Work'), findsOneWidget);
     expect(find.text('Trips'), findsOneWidget);
     expect(find.text('Gym'), findsOneWidget);

@@ -121,6 +121,9 @@ class PublicFoldersRepositoryImpl implements PublicFoldersRepository {
           (data, docId) => docId,
         );
         final List<Result<PublicFolderEntity?>> folders = await Future.wait(ids.map(fetchFolder));
+        // A private, deleted or blocked folder reads as null and is left out. A failed read fails the whole list.
+        final Object? failure = folders.where((folder) => folder.isFailure).firstOrNull?.failure;
+        if (failure != null) throw failure;
         return <PublicFolderEntity>[
           for (final Result<PublicFolderEntity?> folder in folders)
             if (folder.data != null) folder.data!,

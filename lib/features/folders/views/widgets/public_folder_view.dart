@@ -222,6 +222,7 @@ class PublicFolderHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Semantics(
+                container: true,
                 button: true,
                 label: l10n.foldersByOwner(ownerName),
                 excludeSemantics: true,

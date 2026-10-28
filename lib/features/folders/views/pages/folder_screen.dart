@@ -73,7 +73,7 @@ class _FolderScreenState extends State<FolderScreen> {
         mounted && widget.folderId == folderId && app_state.prismUser.id == ownerId && bloc.state.userId == ownerId;
     try {
       await ensureFoldersLoaded(context);
-      if (!current() || bloc.state.status != LoadStatus.success || bloc.state.folder(folderId) == null) return;
+      if (!current() || bloc.state.status != LoadStatus.success) return;
       await bloc.run((id) => FoldersEvent.folderOpened(folderId: folderId, operationId: id));
       if (!mounted || !current()) return;
       final FolderEntity? folder = bloc.state.folder(folderId);
@@ -315,7 +315,7 @@ class _FolderScreenState extends State<FolderScreen> {
         if (folder == null &&
             app_state.prismUser.id.isNotEmpty &&
             state.userId == app_state.prismUser.id &&
-            state.status == LoadStatus.success) {
+            state.itemsStatus[widget.folderId] == LoadStatus.success) {
           return PublicFolderView(folderId: widget.folderId);
         }
         return PrismPage(

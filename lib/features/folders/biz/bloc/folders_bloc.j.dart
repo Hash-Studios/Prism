@@ -192,6 +192,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       if (folders.data case final List<FolderEntity> list) {
         emit(state.copyWith(status: LoadStatus.success, folders: _sorted(list)));
       }
+      // Still not in the list: the folder is someone else's or gone. The page shows its public projection, if any.
+      if (state.folder(id) == null) {
+        emit(state.copyWith(itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success}));
+        _finish(emit, event.operationId);
+        return;
+      }
     }
     final Result<List<FavouriteWallEntity>?> result = await session.wait(
       _repository.fetchItems(id, userId: state.userId),

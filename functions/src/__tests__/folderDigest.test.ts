@@ -60,6 +60,7 @@ test("folderDigestPayload titles, data and the single daily image", () => {
   assert.deepEqual(payload.data, {
     route: "folder",
     folder_id: "f1",
+    folder_count: "2",
     url: "https://prismwalls.com/folder/f1",
     notification_kind: "folder_digest",
     push_kind: "post",
