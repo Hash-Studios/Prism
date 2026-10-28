@@ -10497,4 +10497,60 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'होम स्क्रीन';
+
+  @override
+  String get moodDreamyTitle => 'स्वप्निल';
+
+  @override
+  String get moodDreamyBody => 'नरम आसमान और पेस्टल रोशनी।';
+
+  @override
+  String get moodDarkQuietTitle => 'गहरा और शांत';
+
+  @override
+  String get moodDarkQuietBody => 'कम रोशनी, आँखों के लिए आरामदेह।';
+
+  @override
+  String get moodBrightBoldTitle => 'चटक और बोल्ड';
+
+  @override
+  String get moodBrightBoldBody => 'स्क्रीन को जगाने वाला भरपूर रंग।';
+
+  @override
+  String get moodMinimalTitle => 'मिनिमल';
+
+  @override
+  String get moodMinimalBody => 'सरल आकार और खुली जगह।';
+
+  @override
+  String get moodSpatialReadyTitle => 'स्पेशियल सीन के लिए तैयार';
+
+  @override
+  String get moodSpatialReadyBody => 'स्पेशियल सीन के रूप में खास दिखने के लिए बना।';
+
+  @override
+  String get moodDepthReadyTitle => 'डेप्थ इफ़ेक्ट के लिए तैयार';
+
+  @override
+  String get moodDepthReadyBody => 'विषय आपकी लॉक स्क्रीन की घड़ी के आगे आ जाता है।';
+
+  @override
+  String get moodChipRowLabel => 'मूड';
+
+  @override
+  String get moodSeeAll => 'सब देखें';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return '$mood के सभी वॉलपेपर खोलता है';
+  }
+
+  @override
+  String get moodLoadError => 'ये वॉलपेपर लोड नहीं हो सके';
+
+  @override
+  String get moodEmptyTitle => 'यहाँ अभी कोई वॉलपेपर नहीं है';
+
+  @override
+  String get moodEmptyBody => 'हर दिन नए वॉलपेपर जुड़ते हैं।';
 }

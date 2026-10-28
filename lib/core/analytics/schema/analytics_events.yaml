@@ -1812,6 +1812,30 @@ events:
       - name: item_count
         key: item_count
         type: int
+  - id: mood_chip_tapped
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: position
+        key: position
+        type: int
+  - id: mood_row_seen
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: slot
+        key: slot
+        type: int
+  - id: mood_page_opened
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: source
+        key: source
+        type: string
   - id: library_tab_changed
     fields:
       - name: tab
