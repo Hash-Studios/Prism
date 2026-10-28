@@ -68,8 +68,8 @@ import 'package:mocktail/mocktail.dart';
 import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_user_block_repository.dart';
-import '../../../support/in_memory_local_store.dart';
 import '../../../support/favourite_test_scope.dart';
+import '../../../support/in_memory_local_store.dart';
 
 class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/moods/views/pages/gallery_screen.dart';
@@ -74,7 +74,7 @@ void main() {
       <String>['wall-a', 'wall-b'],
     ]);
 
-    await tester.pumpWidget(moodTestApp(const GalleryScreen(ids: 'wall-c,wall-d', source: 'link')));
+    await tester.pumpWidget(moodTestApp(const GalleryScreen(ids: 'wall-c,wall-d')));
     await tester.pump();
     await tester.pump();
     expect(repository.requests.last, <String>['wall-c', 'wall-d']);
