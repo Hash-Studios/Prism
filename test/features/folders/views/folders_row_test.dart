@@ -4,6 +4,10 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -32,6 +36,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   _FakeFoldersRepository({this.folders = const <FolderEntity>[]});
 
   final List<FolderEntity> folders;
+  Map<String, List<FavouriteWallEntity>> items = <String, List<FavouriteWallEntity>>{};
   bool failLoad = false;
 
   /// One entry per repository call.
@@ -53,7 +58,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
-    return Result.success(const <FavouriteWallEntity>[]);
+    return Result.success(items[folderId] ?? const <FavouriteWallEntity>[]);
   }
 
   @override
@@ -281,6 +286,54 @@ void main() {
     expect(repo.calls, contains('fetchItems:trips'));
     expect(find.text('Trips'), findsOneWidget);
     expect(find.text('Work'), findsNothing);
+  });
+
+  testWidgets('a remove confirmed after the page moved to another folder removes nothing', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    const FavouriteWallEntity wall = PrismFavouriteWall(
+      id: 'wall_1',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(id: 'wall_1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      ),
+    );
+    final repo = _FakeFoldersRepository(
+      folders: <FolderEntity>[_folder('work', 'Work', itemCount: 1), _folder('trips', 'Trips', itemCount: 1)],
+    );
+    // The wall is in both folders, so a remove sent to the wrong folder would reach the repository.
+    repo.items = <String, List<FavouriteWallEntity>>{
+      'work': <FavouriteWallEntity>[wall],
+      'trips': <FavouriteWallEntity>[wall],
+    };
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
+    Widget page(String folderId) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: kLightTheme,
+      home: StackRouterScope(
+        controller: router,
+        stateHash: 0,
+        child: BlocProvider<FoldersBloc>.value(
+          value: bloc,
+          child: FolderScreen(folderId: folderId),
+        ),
+      ),
+    );
+    await tester.pumpWidget(page('work'));
+    await settle(tester);
+    await tester.longPress(find.byType(PrismWallTile));
+    await settle(tester);
+    expect(find.text('Remove from this folder?'), findsOneWidget);
+
+    await tester.pumpWidget(page('trips'));
+    await settle(tester);
+    await tester.tap(find.text('Remove'));
+    await settle(tester);
+    expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
   });
 
   testWidgets('a guest sees no folders row and makes no repository call, with no FoldersBloc provided', (tester) async {

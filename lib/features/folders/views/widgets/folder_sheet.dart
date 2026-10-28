@@ -130,6 +130,15 @@ class _FolderSheetState extends State<FolderSheet> {
     Navigator.of(context).pop();
     if (!changed) return;
     final FavouriteWallEntity wall = widget.wall;
+    // Favourite first, so a saved folder item always has its favourite.
+    if (added > 0) {
+      final bool favourited = await _favourite(favourites, wall);
+      if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+      if (!favourited) {
+        toasts.error(l10n.foldersSaveFailed);
+        return;
+      }
+    }
     final bool ok = await bloc.run(
       (id) => FoldersEvent.saveRequested(wall: wall, folderIds: selected, newNames: newNames, operationId: id),
     );
@@ -147,20 +156,20 @@ class _FolderSheetState extends State<FolderSheet> {
       for (int i = 0; i < newNames.length; i++) {
         unawaited(analytics.track(const FolderCreatedEvent(source: 'sheet', withWall: true)));
       }
-      await _favourite(favourites, wall);
     }
     toasts.success(added > 0 ? l10n.foldersSavedToCount(added) : l10n.foldersUpdated);
   }
 
   /// Saving to a folder also favourites the wall. Removing it from a folder leaves the favourite alone.
-  Future<void> _favourite(FavouriteWallsAdapter favourites, FavouriteWallEntity wall) async {
-    if (app_state.prismUser.id != _ownerId || getIt<FavoritesLocalDataSource>().isWallFavourite(_ownerId, wall.id)) {
-      return;
-    }
+  /// A later folder write failure keeps the favourite.
+  Future<bool> _favourite(FavouriteWallsAdapter favourites, FavouriteWallEntity wall) async {
+    if (app_state.prismUser.id != _ownerId) return false;
+    if (getIt<FavoritesLocalDataSource>().isWallFavourite(_ownerId, wall.id)) return true;
     try {
-      await favourites.favCheck(wall, desired: true);
+      return await favourites.favCheck(wall, desired: true);
     } catch (error, stackTrace) {
-      logger.w('Favourite after a folder save failed', error: error, stackTrace: stackTrace);
+      logger.w('Favourite before a folder save failed', error: error, stackTrace: stackTrace);
+      return false;
     }
   }
 

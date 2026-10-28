@@ -414,7 +414,9 @@ void main() {
     expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
   });
 
-  testWidgets('a save completed after an account change cannot favourite for the new account', (tester) async {
+  testWidgets('the wall is favourited for the original account before the save, not after an account change', (
+    tester,
+  ) async {
     final gate = Completer<void>();
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..saveGate = gate;
     final bloc = FoldersBloc(repo);
@@ -424,6 +426,7 @@ void main() {
     await tester.tap(find.text('Done'));
     await settle(tester);
     expect(repo.calls, contains('addItem:blue'));
+    verify(() => toggleUseCase(any())).called(1);
 
     // App state changes before the debounced SessionBloc notification reaches the folder bloc.
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
@@ -431,6 +434,20 @@ void main() {
     await settle(tester);
 
     verifyNever(() => toggleUseCase(any()));
+  });
+
+  testWidgets('a failed favourite stops the folder save', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Blue'));
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+
+    verify(() => toggleUseCase(any())).called(1);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), isEmpty);
   });
 
   testWidgets('opening a picker during an existing folder load waits and then loads membership', (tester) async {

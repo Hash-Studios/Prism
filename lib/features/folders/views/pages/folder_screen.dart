@@ -112,6 +112,7 @@ class _FolderScreenState extends State<FolderScreen> {
   Future<void> _remove(FavouriteWallEntity wall) async {
     PrismHaptics.impact();
     final FoldersBloc bloc = context.read<FoldersBloc>();
+    final String folderId = widget.folderId;
     final String ownerId = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     final bool confirmed = await showPrismConfirm(
@@ -121,10 +122,14 @@ class _FolderScreenState extends State<FolderScreen> {
       confirmLabel: l10n.foldersRemoveConfirm,
       destructive: true,
     );
-    if (!confirmed || !mounted || app_state.prismUser.id != ownerId || bloc.state.userId != ownerId) return;
-    final bool ok = await bloc.run(
-      (id) => FoldersEvent.itemRemoved(folderId: widget.folderId, wall: wall, operationId: id),
-    );
+    if (!confirmed ||
+        !mounted ||
+        widget.folderId != folderId ||
+        app_state.prismUser.id != ownerId ||
+        bloc.state.userId != ownerId) {
+      return;
+    }
+    final bool ok = await bloc.run((id) => FoldersEvent.itemRemoved(folderId: folderId, wall: wall, operationId: id));
     ok ? toasts.success(l10n.foldersRemoved) : toasts.error(l10n.foldersUpdateFailed);
   }
 
