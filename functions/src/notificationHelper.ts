@@ -8,6 +8,7 @@ import {
   isNativeLocalizationTopic,
   nativeLocalizationTopic,
   nativeNotificationLocalization,
+  notificationCopyPayload,
   type RenderedNotificationCopy,
 } from "./notificationCatalog";
 
@@ -38,6 +39,8 @@ export interface NotificationPayload {
   scoreKind?: string;
   /** Sends localized resource keys without common English strings for capable native clients. */
   nativeLocalization?: boolean;
+  /** Native resource version negotiated by this token. Topic localization remains at version 1. */
+  nativeLocalizationVersion?: 1 | 2;
   /** Android shows `heroUrl`; the iOS service extension shows `stripUrl` with wall `thumbIndex` as the thumbnail. */
   gallery?: PushGallery;
 }
@@ -197,33 +200,60 @@ export function fcmMessage(
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
   },
 ): admin.messaging.Message {
-  const kind = scoreKindFor(payload);
-  const nativeCopy = payload.message ?
-    nativeNotificationLocalization(payload.message) :
+  const bounded = (value: unknown, bytes: number) => {
+    let result = "";
+    for (const character of String(value ?? "")) {
+      if (Buffer.byteLength(result + character, "utf8") > bytes) break;
+      result += character;
+    }
+    return result;
+  };
+  const outgoing = payload.message?.kind === "followDigest" ? {
+    ...payload,
+    ...notificationCopyPayload({
+      kind: "followDigest",
+      artistName: bounded(payload.message.args.artistName, 80),
+      secondArtistName: bounded(payload.message.args.secondArtistName, 80),
+      creatorCount: Number(payload.message.args.creatorCount ?? 0),
+      wallCount: Number(payload.message.args.wallCount ?? 0),
+      tags: bounded(payload.message.args.tags, 120),
+    }),
+  } : payload.message?.kind === "wotdForAudience" ? {
+    ...payload,
+    ...notificationCopyPayload({
+      kind: "wotdForAudience",
+      wallTitle: bounded(payload.message.args.wallTitle, 96),
+    }),
+  } : payload;
+  const kind = scoreKindFor(outgoing);
+  const nativeCopy = outgoing.message ?
+    nativeNotificationLocalization(outgoing.message) :
     null;
   const targetIsLocalized =
-    "topic" in payload.fcmTarget &&
-    isNativeLocalizationTopic(payload.fcmTarget.topic);
+    "topic" in outgoing.fcmTarget &&
+    isNativeLocalizationTopic(outgoing.fcmTarget.topic);
   const nativeLocalization =
-    Boolean(payload.nativeLocalization || targetIsLocalized) && Boolean(nativeCopy);
-  const gallery = payload.gallery;
-  const androidImage = gallery?.heroUrl ?? payload.imageUrl;
-  return {
+    Boolean(outgoing.nativeLocalization || targetIsLocalized) &&
+    Boolean(nativeCopy) &&
+    (outgoing.message?.kind !== "followDigest" || (outgoing.nativeLocalizationVersion ?? 1) >= 2);
+  const gallery = outgoing.gallery;
+  const androidImage = gallery?.heroUrl ?? outgoing.imageUrl;
+  const message: admin.messaging.Message = {
     ...(nativeLocalization ?
       {} :
-      {notification: {title: payload.title, body: payload.body}}),
+      {notification: {title: outgoing.title, body: outgoing.body}}),
     data: {
-      ...payload.data,
-      ...(payload.message ?
+      ...outgoing.data,
+      ...(outgoing.message ?
         {
-          notification_kind: payload.data.notification_kind ?? "generic",
-          notification_copy_kind: payload.message.kind,
-          notification_args: JSON.stringify(payload.message.args),
+          notification_kind: outgoing.data.notification_kind ?? "generic",
+          notification_copy_kind: outgoing.message.kind,
+          notification_args: JSON.stringify(outgoing.message.args),
         } :
         {}),
       ...(kind ? {push_kind: kind} : {}),
-      channel_id: payload.channelId,
-      ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
+      channel_id: outgoing.channelId,
+      ...(outgoing.imageUrl && !gallery ? {imageUrl: outgoing.imageUrl} : {}),
       ...(gallery ?
         {
           gallery: "1",
@@ -235,10 +265,10 @@ export function fcmMessage(
     },
     android: {
       notification: {
-        channelId: payload.channelId,
+        channelId: outgoing.channelId,
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
         ...(androidImage ? {imageUrl: androidImage} : {}),
-        ...(payload.collapseKey ? {tag: payload.collapseKey} : {}),
+        ...(outgoing.collapseKey ? {tag: outgoing.collapseKey} : {}),
         ...(nativeLocalization && nativeCopy ?
           {
             titleLocKey: nativeCopy.titleKey,
@@ -255,14 +285,14 @@ export function fcmMessage(
       priority: "high",
     },
     apns: {
-      ...(payload.collapseKey ?
-        {headers: {"apns-collapse-id": payload.collapseKey}} :
+      ...(outgoing.collapseKey ?
+        {headers: {"apns-collapse-id": outgoing.collapseKey}} :
         {}),
       payload: {
         aps: {
           sound: "default",
           // The service extension attaches the image. It runs only for an alert with mutable-content.
-          ...(payload.imageUrl || gallery ? {mutableContent: true} : {}),
+          ...(outgoing.imageUrl || gallery ? {mutableContent: true} : {}),
           ...(nativeLocalization && nativeCopy ?
             {
               alert: {
@@ -280,8 +310,49 @@ export function fcmMessage(
         },
       },
     },
-    ...payload.fcmTarget,
+    ...outgoing.fcmTarget,
   };
+
+  // Topic messages cap at 2 KiB; leave room for transport encoding below both topic and direct-token limits.
+  const payloadLimit = "topic" in outgoing.fcmTarget ? 1950 : 3900;
+  const wireSize = () => {
+    const aps = message.apns?.payload?.aps;
+    const rawAlert = aps?.alert ?? message.notification;
+    const alert = typeof rawAlert === "string" ? rawAlert : rawAlert ? {
+      ...(rawAlert.title !== undefined ? {title: rawAlert.title} : {}),
+      ...(rawAlert.body !== undefined ? {body: rawAlert.body} : {}),
+      ...("titleLocKey" in rawAlert && rawAlert.titleLocKey ? {"title-loc-key": rawAlert.titleLocKey} : {}),
+      ...("titleLocArgs" in rawAlert && rawAlert.titleLocArgs ? {"title-loc-args": rawAlert.titleLocArgs} : {}),
+      ...("locKey" in rawAlert && rawAlert.locKey ? {"loc-key": rawAlert.locKey} : {}),
+      ...("locArgs" in rawAlert && rawAlert.locArgs ? {"loc-args": rawAlert.locArgs} : {}),
+    } : undefined;
+    const apnsPayload = {
+      ...message.data,
+      aps: {
+        ...(aps?.sound ? {sound: aps.sound} : {}),
+        ...(aps?.mutableContent ? {"mutable-content": 1} : {}),
+        ...(alert !== undefined ? {alert} : {}),
+      },
+    };
+    return Math.max(
+      Buffer.byteLength(JSON.stringify({
+        data: message.data,
+        ...(message.notification ? {notification: message.notification} : {}),
+      }), "utf8"),
+      Buffer.byteLength(JSON.stringify({data: message.data, android: message.android?.notification}), "utf8"),
+      Buffer.byteLength(JSON.stringify(apnsPayload), "utf8"),
+    );
+  };
+  const wallIds = message.data?.wall_ids?.split(",");
+  if (wallIds && wallIds.length > 1 && wireSize() >= payloadLimit) {
+    while (wallIds.length > 2 && wireSize() >= payloadLimit) {
+      wallIds.pop();
+      if (message.data) message.data.wall_ids = wallIds.join(",");
+    }
+    if (wireSize() >= payloadLimit && message.data) delete message.data.wall_ids;
+  }
+
+  return message;
 }
 
 export type PersonalPayload = Omit<NotificationPayload, "fcmTarget">;
@@ -290,6 +361,8 @@ export interface PushRecipient {
   uid?: string;
   email: string;
   loggedOut?: boolean;
+  /** When set, deliver only if this exact post-alert token is still enabled in the private session. */
+  postAlertsToken?: string;
   /** Deprecated legacy token input. Kept for caller compatibility; never used for delivery. */
   legacyToken?: unknown;
 }
@@ -297,6 +370,7 @@ export interface PushRecipient {
 export interface UserPushToken {
   token: string;
   nativeLocalization: boolean;
+  nativeLocalizationVersion?: 1 | 2;
 }
 
 export const FCM_TOKEN_BINDING_VERSION = 1;
@@ -313,6 +387,7 @@ export function pickFcmToken(
 export async function userPushTokens(
   uid: string,
   legacyToken: unknown,
+  expectedPostAlertsToken?: string,
 ): Promise<UserPushToken[]> {
   let session: Record<string, unknown> | undefined;
   try {
@@ -321,31 +396,37 @@ export async function userPushTokens(
     ).data();
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
+    if (expectedPostAlertsToken) throw err;
   }
   const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
+  if (expectedPostAlertsToken && (session?.postAlerts !== true ||
+    session?.postAlertsToken !== expectedPostAlertsToken || sessionToken !== expectedPostAlertsToken ||
+    session?.notificationLocalizationVersion !== 2 ||
+    session?.notificationLocalizationToken !== expectedPostAlertsToken)) return [];
   if (sessionToken) {
     if (
       session?.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
       session?.fcmTokenBindingToken !== sessionToken
     ) return [];
-    return [
-      {
-        token: sessionToken,
-        nativeLocalization:
-          session?.notificationLocalizationVersion === 1 &&
-          session?.notificationLocalizationToken === sessionToken,
-      },
-    ];
+    const localizationVersion = session?.notificationLocalizationToken === sessionToken &&
+      (session?.notificationLocalizationVersion === 1 || session?.notificationLocalizationVersion === 2) ?
+      session.notificationLocalizationVersion : undefined;
+    return [{
+      token: sessionToken,
+      nativeLocalization: localizationVersion !== undefined,
+      ...(localizationVersion !== undefined ? {nativeLocalizationVersion: localizationVersion} : {}),
+    }];
   }
   return [];
 }
 
-async function userCanReceivePersonalPush(uid: string): Promise<boolean> {
+async function userCanReceivePersonalPush(uid: string, throwOnReadError = false): Promise<boolean> {
   try {
     const user = (await database.doc(`usersv2/${uid}`).get()).data();
     return Boolean(user) && user?.loggedIn !== false;
   } catch (err) {
     logger.warn("Could not confirm the personal push recipient account.", {uid, err});
+    if (throwOnReadError) throw err;
     return false;
   }
 }
@@ -393,31 +474,36 @@ export async function sendToUser(
     });
     return true;
   }
-  if (!(await userCanReceivePersonalPush(recipient.uid))) return true;
+  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken)))) return true;
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets: Array<{
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
     nativeLocalization?: boolean;
+    nativeLocalizationVersion?: 1 | 2;
   }> = [
-    ...(await userPushTokens(recipient.uid, recipient.legacyToken)).map(
-      ({token, nativeLocalization}) => ({
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken)).map(
+      ({token, nativeLocalization, nativeLocalizationVersion}) => ({
         fcmTarget: {token},
         nativeLocalization,
+        nativeLocalizationVersion,
       }),
     ),
   ];
   const results = await Promise.all(
-    targets.map(({fcmTarget, nativeLocalization}) =>
+    targets.map(({fcmTarget, nativeLocalization, nativeLocalizationVersion}) =>
       sendNotification({
         ...pushPayload,
         collapseKey,
         fcmTarget,
         nativeLocalization,
+        nativeLocalizationVersion,
         pushOnly: true,
       }),
     ),
   );
-  if (targets.length === 0) return sendInboxNudge(recipient.uid, payload.data.route);
+  if (targets.length === 0) {
+    return recipient.postAlertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
+  }
   return results.some(Boolean);
 }
 

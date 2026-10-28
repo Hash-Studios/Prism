@@ -303,7 +303,11 @@ class FcmTokenService {
     final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
         ? getIt<SettingsLocalDataSource>()
         : null;
-    final String marker = '$userId|$token|digest_v1';
+    final bool postAlerts =
+        settings?.isOpen != true ||
+        settings!.get<bool>(NotificationPrefKeys.posts, defaultValue: true) &&
+            settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true);
+    final String marker = '$userId|$token|digest_v2|posts:$postAlerts';
     final bool track = settings != null && settings.isOpen;
     if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
@@ -311,16 +315,13 @@ class FcmTokenService {
       'session',
       <String, dynamic>{
         'fcmToken': token,
-        'notificationLocalizationVersion': 1,
+        'notificationLocalizationVersion': 2,
         'notificationLocalizationToken': token,
         'fcmTokenBindingVersion': 1,
         'fcmTokenBindingToken': token,
         // This build gets the daily follow digest in place of the per-upload topic pushes. The token marks the device,
         // so an older build that rebinds the account keeps its topic pushes.
-        'postAlerts':
-            (settings?.isOpen != true ||
-            settings!.get<bool>(NotificationPrefKeys.posts, defaultValue: true) &&
-                settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true)),
+        'postAlerts': postAlerts,
         'postAlertsToken': token,
       },
       merge: true,

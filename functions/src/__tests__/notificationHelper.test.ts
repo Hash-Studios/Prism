@@ -428,7 +428,10 @@ type Sent = {
       imageUrl?: string;
     };
   };
-  apns?: { headers?: Record<string, string> };
+  apns?: {
+    headers?: Record<string, string>;
+    payload?: { aps?: { alert?: string | {titleLocKey?: string; locKey?: string} } };
+  };
 };
 
 function personalSetup(
@@ -438,6 +441,9 @@ function personalSetup(
   localizationToken = sessionToken,
   binding: {version?: number; token?: unknown} = {version: 1, token: sessionToken},
   profileLoggedIn = true,
+  postAlerts: {enabled: boolean; token?: unknown} = {enabled: false, token: sessionToken},
+  localizationVersion: 1 | 2 = 1,
+  readErrors: {session?: Error; profile?: Error} = {},
 ) {
   const inbox: Array<{ id?: string; data: Record<string, unknown> }> = [];
   const document = db.doc.bind(db);
@@ -448,22 +454,30 @@ function personalSetup(
     }),
   }));
   t.mock.method(db, "doc", (path: string) => path.endsWith("/private/session") ? ({
-    get: async () => ({
-      data: () => (sessionToken ?
-        {
-          fcmToken: sessionToken,
-          ...(binding.version !== undefined ? {fcmTokenBindingVersion: binding.version} : {}),
-          ...(binding.token !== undefined ? {fcmTokenBindingToken: binding.token} : {}),
-          ...(nativeLocalization ?
-            {
-              notificationLocalizationVersion: 1,
-              notificationLocalizationToken: localizationToken,
-            } :
-            {}),
-        } :
-        {}),
-    }),
-  }) : path.startsWith("usersv2/") ? ({get: async () => ({data: () => ({loggedIn: profileLoggedIn})})}) : document(path));
+    get: async () => {
+      if (readErrors.session) throw readErrors.session;
+      return {
+        data: () => (sessionToken ?
+          {
+            fcmToken: sessionToken,
+            ...(binding.version !== undefined ? {fcmTokenBindingVersion: binding.version} : {}),
+            ...(binding.token !== undefined ? {fcmTokenBindingToken: binding.token} : {}),
+            postAlerts: postAlerts.enabled,
+            ...(postAlerts.token !== undefined ? {postAlertsToken: postAlerts.token} : {}),
+            ...(nativeLocalization ?
+              {
+                notificationLocalizationVersion: localizationVersion,
+                notificationLocalizationToken: localizationToken,
+              } :
+              {}),
+          } :
+          {}),
+      };
+    },
+  }) : path.startsWith("usersv2/") ? ({get: async () => {
+    if (readErrors.profile) throw readErrors.profile;
+    return {data: () => ({loggedIn: profileLoggedIn})};
+  }}) : document(path));
   const sent: Sent[] = [];
   t.mock.method(admin.messaging(), "send", async (message: Sent) => {
     sent.push(message);
@@ -844,6 +858,122 @@ test("a bound token gets the token push and no nudge", async (t) => {
   assert.equal(sent[0].condition, undefined);
 });
 
+test("a digest does not switch to a rotated token or send a nudge", async (t) => {
+  const {inbox, sent} = personalSetup(t, "rotated-token", false, "rotated-token", undefined, true, {
+    enabled: true,
+    token: "rotated-token",
+  });
+  const ok = await sendToUser(personal, {
+    uid: "u1",
+    email: "sam@example.com",
+    postAlertsToken: "expected-token",
+  });
+
+  assert.equal(ok, true);
+  assert.equal(inbox.length, 1);
+  assert.equal(sent.length, 0);
+});
+
+test("a digest does not send after post alerts are turned off", async (t) => {
+  const {sent} = personalSetup(t, "session-token", false, "session-token", undefined, true, {
+    enabled: false,
+    token: "session-token",
+  });
+  await sendToUser(personal, {
+    uid: "u1",
+    email: "sam@example.com",
+    postAlertsToken: "session-token",
+  });
+
+  assert.equal(sent.length, 0);
+});
+
+test("a same-token v1 session does not receive a digest or an inbox nudge", async (t) => {
+  const {sent} = personalSetup(t, "session-token", true, "session-token", undefined, true, {
+    enabled: true,
+    token: "session-token",
+  }, 1);
+  await sendToUser(personal, {
+    uid: "u1",
+    email: "sam@example.com",
+    postAlertsToken: "session-token",
+  });
+
+  assert.equal(sent.length, 0);
+});
+
+test("a digest session read failure rejects so the claim can retry", async (t) => {
+  const readFailure = new Error("session read failed");
+  const {sent} = personalSetup(t, "session-token", true, "session-token", undefined, true, {
+    enabled: true,
+    token: "session-token",
+  }, 2, {session: readFailure});
+  await assert.rejects(
+    sendToUser(personal, {uid: "u1", email: "sam@example.com", postAlertsToken: "session-token"}),
+    readFailure,
+  );
+  assert.equal(sent.length, 0);
+});
+
+test("a digest account read failure rejects so the claim can retry", async (t) => {
+  const readFailure = new Error("account read failed");
+  const {sent} = personalSetup(t, "session-token", true, "session-token", undefined, true, {
+    enabled: true,
+    token: "session-token",
+  }, 2, {profile: readFailure});
+  await assert.rejects(
+    sendToUser(personal, {uid: "u1", email: "sam@example.com", postAlertsToken: "session-token"}),
+    readFailure,
+  );
+  assert.equal(sent.length, 0);
+});
+
+test("a v2 digest token receives native localization", async (t) => {
+  const {sent} = personalSetup(t, "session-token", true, "session-token", undefined, true, {
+    enabled: true,
+    token: "session-token",
+  }, 2);
+  const payload = {
+    ...notificationCopyPayload({
+      kind: "followDigest",
+      artistName: "Asha",
+      secondArtistName: "Ben",
+      creatorCount: 2,
+      wallCount: 5,
+      tags: "Night",
+    }),
+    data: {route: "wall", wall_ids: "A1,B1,A2", notification_kind: "follow_digest"},
+    modifier: "all",
+    channelId: "posts",
+  };
+  await sendToUser(payload, {
+    uid: "u1",
+    email: "sam@example.com",
+    postAlertsToken: "session-token",
+  });
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].notification, undefined);
+  assert.equal(sent[0].android?.notification?.titleLocKey, "notif_push_follow_digest_title_pair");
+  const apsAlert = sent[0]?.apns?.payload?.aps?.alert;
+  assert.ok(apsAlert && typeof apsAlert !== "string");
+  assert.equal(apsAlert.titleLocKey, "notif_push_follow_digest_title_pair");
+});
+
+test("a v2 token keeps native localization for existing notification kinds", async (t) => {
+  const {sent} = personalSetup(t, "session-token", true, "session-token", undefined, true, undefined, 2);
+  await sendToUser({
+    ...notificationCopyPayload({kind: "newFollower", followerName: "Asha"}),
+    data: {route: "followers"},
+    modifier: "all",
+    channelId: "followers",
+  }, {uid: "u1", email: "sam@example.com"});
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].notification, undefined);
+  assert.equal(sent[0].android?.notification?.titleLocKey, "notif_push_new_follower_title");
+});
+
 test("a moderation nudge for an unbound admin carries no report details", async (t) => {
   const {sent} = personalSetup(t, "old-token", false, "old-token", {});
   await sendToUser({
@@ -1126,7 +1256,7 @@ test("a gallery push sends the strip, count and thumb index, and Android shows t
   assert.equal(message.data?.gallery_url, gallery.stripUrl);
   assert.equal(message.data?.gallery_count, "4");
   assert.equal(message.data?.gallery_thumb_index, "2");
-  assert.equal(message.data?.imageUrl, "https://img.example.com/previews/w1.img");
+  assert.equal(message.data?.imageUrl, undefined);
   assert.equal(message.data?.wall_ids, "W1,W2,W3,W4");
   assert.equal(message.android?.notification?.imageUrl, gallery.heroUrl);
   assert.equal(message.apns?.payload?.aps.mutableContent, true);
@@ -1161,28 +1291,71 @@ test("a push with neither an image nor a gallery has no mutable content or Andro
   assert.equal(message.android?.notification?.imageUrl, undefined);
 });
 
-test("a localized gallery push stays under the APNs payload limit", () => {
-  const ids = ["A1", "A2", "A3", "A4"].map((prefix) => prefix.padEnd(20, "x"));
-  const longUrl = `https://img.example.com/${"u".repeat(150 - "https://img.example.com/".length)}`;
-  const message = fcmMessage({
-    ...notificationCopyPayload({
-      kind: "wotdForAudience",
-      wallTitle: "Dark and quiet · Night city · Neon",
-    }),
-    data: {route: "wall_of_the_day", wall_id: ids[0], wall_ids: ids.join(","), url: longUrl},
-    imageUrl: "https://img.example.com/previews/w1.img",
-    gallery: {...gallery, wallIds: ids},
+test("maximum WOTD galleries fit the topic limit for legacy and localized topic generations", () => {
+  const ids = Array.from({length: 4}, (_, index) => `${index}${"x".repeat(199)}`);
+  const imageUrl = `https://img.example.com/previews/${"a".repeat(64)}.img`;
+  const stripUrl = `https://img.example.com/push-gallery/v1/${"b".repeat(64)}.jpg`;
+  const tags = ["界".repeat(18), "闇".repeat(18), "光".repeat(18)].join(" · ");
+  const boundedTags = `${"界".repeat(18)} · ${"闇".repeat(12)}`;
+  const shareUrl = `https://prismwalls.com/share?${new URLSearchParams({
+    id: ids[0],
+    source: "prism",
+    provider: "Prism",
+    thumb: imageUrl,
+  })}`;
+  const payload = {
+    ...notificationCopyPayload({kind: "wotdForAudience", wallTitle: tags}),
+    data: {route: "wall_of_the_day", wall_id: ids[0], wall_ids: ids.join(","), url: shareUrl},
+    imageUrl,
+    gallery: {...gallery, wallIds: ids, stripUrl, heroUrl: stripUrl, tags: tags.split(" · ")},
     modifier: "all",
     channelId: "wall_of_the_day",
-    fcmTarget: {topic: "wall_of_the_day_utc_p0530_loc_v1"},
-  });
-  assert.ok(Buffer.byteLength(JSON.stringify({aps: message.apns?.payload?.aps, ...message.data})) < 4096);
-  assert.equal(message.notification, undefined);
-  assert.equal(message.android?.notification?.titleLocKey, "notif_push_wotd_for_audience_title");
-  assert.deepEqual(message.android?.notification?.bodyLocArgs, ["Dark and quiet · Night city · Neon"]);
-  const alert = message.apns?.payload?.aps.alert;
-  assert.ok(alert && typeof alert !== "string");
-  assert.equal(alert.locKey, "notif_push_wotd_for_audience_body");
+  };
+  const messages = [
+    fcmMessage({...payload, fcmTarget: {topic: "wall_of_the_day_utc_p0530"}}),
+    fcmMessage({...payload, fcmTarget: {topic: "wall_of_the_day_utc_p0530_loc_v1"}}),
+  ];
+
+  for (const message of messages) {
+    const alert = message.apns?.payload?.aps.alert ?? message.notification;
+    const mappedAlert = typeof alert === "string" ? alert : alert ? {
+      ...(alert.title !== undefined ? {title: alert.title} : {}),
+      ...(alert.body !== undefined ? {body: alert.body} : {}),
+      ...("titleLocKey" in alert && alert.titleLocKey ? {"title-loc-key": alert.titleLocKey} : {}),
+      ...("titleLocArgs" in alert && alert.titleLocArgs ? {"title-loc-args": alert.titleLocArgs} : {}),
+      ...("locKey" in alert && alert.locKey ? {"loc-key": alert.locKey} : {}),
+      ...("locArgs" in alert && alert.locArgs ? {"loc-args": alert.locArgs} : {}),
+    } : undefined;
+    const apnsPayload = {
+      ...message.data,
+      aps: {
+        ...(message.apns?.payload?.aps.sound ? {sound: message.apns.payload.aps.sound} : {}),
+        ...(message.apns?.payload?.aps.mutableContent ? {"mutable-content": 1} : {}),
+        ...(mappedAlert !== undefined ? {alert: mappedAlert} : {}),
+      },
+    };
+    const payloadSizes = [
+      Buffer.byteLength(JSON.stringify(message.data), "utf8"),
+      Buffer.byteLength(JSON.stringify({data: message.data, notification: message.notification}), "utf8"),
+      Buffer.byteLength(JSON.stringify({data: message.data, android: message.android?.notification}), "utf8"),
+      Buffer.byteLength(JSON.stringify(apnsPayload), "utf8"),
+    ];
+    const target = "topic" in message ? message.topic : "token";
+    assert.ok(Math.max(...payloadSizes) < 2048, `${target} payload is ${Math.max(...payloadSizes)} bytes`);
+    assert.equal(message.data?.route, "wall_of_the_day");
+    assert.equal(message.data?.wall_id, ids[0]);
+    assert.ok((message.data?.wall_ids?.split(",").length ?? 0) >= 2);
+    const copyArgs = JSON.parse(message.data?.notification_args ?? "{}") as {wallTitle?: string};
+    assert.equal(copyArgs.wallTitle, boundedTags);
+  }
+
+  const localized = messages[1];
+  assert.equal(localized.notification, undefined);
+  assert.equal(localized.android?.notification?.titleLocKey, "notif_push_wotd_for_audience_title");
+  assert.deepEqual(localized.android?.notification?.bodyLocArgs, [boundedTags]);
+  const localizedAlert = localized.apns?.payload?.aps.alert;
+  assert.ok(localizedAlert && typeof localizedAlert !== "string");
+  assert.equal(localizedAlert.locKey, "notif_push_wotd_for_audience_body");
 });
 
 test("gallery drop copy localizes to the Drop title and the tags line", () => {
@@ -1243,4 +1416,120 @@ test("follow digest copy picks its title shape and native keys", () => {
     bodyKey: "notif_push_follow_digest_body_untitled",
     bodyArgs: [],
   });
+});
+
+test("follow digest pushes keep literal copy for localization-v1 clients without its new resources", () => {
+  const payload = {
+    ...notificationCopyPayload({
+      kind: "followDigest",
+      artistName: "Asha",
+      secondArtistName: "Ben",
+      creatorCount: 2,
+      wallCount: 5,
+      tags: "Night",
+    }),
+    data: {route: "wall", wall_ids: "A1,B1,A2", notification_kind: "follow_digest"},
+    modifier: "all",
+    channelId: "posts",
+    nativeLocalization: true,
+    fcmTarget: {token: "token-v1"},
+  };
+  const message = fcmMessage(payload);
+
+  assert.deepEqual(message.notification, {
+    title: "Asha and Ben posted 5 new walls",
+    body: "Night",
+  });
+  assert.equal(message.android?.notification?.titleLocKey, undefined);
+  assert.equal(message.android?.notification?.bodyLocKey, undefined);
+  assert.equal(message.apns?.payload?.aps.alert, undefined);
+});
+
+test("native localization v2 enables the follow-digest resources", () => {
+  const payload = {
+    ...notificationCopyPayload({
+      kind: "followDigest",
+      artistName: "Asha",
+      secondArtistName: "Ben",
+      creatorCount: 2,
+      wallCount: 5,
+      tags: "Night",
+    }),
+    data: {route: "wall"},
+    modifier: "all",
+    channelId: "posts",
+    nativeLocalization: true,
+    nativeLocalizationVersion: 2 as const,
+    fcmTarget: {token: "token-v2"},
+  };
+  const message = fcmMessage(payload);
+
+  assert.equal(message.notification, undefined);
+  assert.equal(message.android?.notification?.titleLocKey, "notif_push_follow_digest_title_pair");
+  const alert = message.apns?.payload?.aps.alert;
+  assert.ok(alert && typeof alert !== "string");
+  assert.equal(alert.titleLocKey, "notif_push_follow_digest_title_pair");
+});
+
+test("oversized follow digest payloads keep the gallery route and fit below the FCM limit", () => {
+  const ids = Array.from({length: 12}, (_, index) => `${index}${"x".repeat(199)}`);
+  const hugeName = "名".repeat(1200);
+  const payload = {
+    ...notificationCopyPayload({
+      kind: "followDigest",
+      artistName: hugeName,
+      secondArtistName: hugeName,
+      creatorCount: 2,
+      wallCount: 12,
+      tags: "Dreamy · Neon · Night",
+    }),
+    data: {route: "wall", wall_id: ids[0], wall_ids: ids.join(","), notification_kind: "follow_digest"},
+    imageUrl: `https://img.example.com/previews/${"a".repeat(64)}.img`,
+    modifier: "all",
+    channelId: "posts",
+    nativeLocalization: true,
+    fcmTarget: {token: "token-v1"},
+  };
+  const messages = [
+    fcmMessage(payload),
+    fcmMessage({...payload, nativeLocalizationVersion: 2}),
+  ];
+  for (const message of messages) {
+    const alert = message.apns?.payload?.aps.alert ?? message.notification;
+    const mappedAlert = typeof alert === "string" ? alert : alert ? {
+      ...(alert.title !== undefined ? {title: alert.title} : {}),
+      ...(alert.body !== undefined ? {body: alert.body} : {}),
+      ...("titleLocKey" in alert && alert.titleLocKey ? {"title-loc-key": alert.titleLocKey} : {}),
+      ...("titleLocArgs" in alert && alert.titleLocArgs ? {"title-loc-args": alert.titleLocArgs} : {}),
+      ...("locKey" in alert && alert.locKey ? {"loc-key": alert.locKey} : {}),
+      ...("locArgs" in alert && alert.locArgs ? {"loc-args": alert.locArgs} : {}),
+    } : undefined;
+    const apnsPayload = {
+      ...message.data,
+      aps: {
+        ...(message.apns?.payload?.aps.sound ? {sound: message.apns.payload.aps.sound} : {}),
+        ...(message.apns?.payload?.aps.mutableContent ? {"mutable-content": 1} : {}),
+        ...(mappedAlert !== undefined ? {alert: mappedAlert} : {}),
+      },
+    };
+    const payloadSizes = [
+      Buffer.byteLength(JSON.stringify(message.data), "utf8"),
+      Buffer.byteLength(JSON.stringify({data: message.data, notification: message.notification}), "utf8"),
+      Buffer.byteLength(JSON.stringify({data: message.data, android: message.android?.notification}), "utf8"),
+      Buffer.byteLength(JSON.stringify(apnsPayload), "utf8"),
+    ];
+    assert.ok(Math.max(...payloadSizes) < 4096, `digest payload is ${Math.max(...payloadSizes)} bytes`);
+    assert.equal(message.data?.route, "wall");
+    assert.equal(message.data?.wall_id, ids[0]);
+    assert.ok(message.data?.wall_ids?.startsWith(ids[0]));
+    assert.ok((message.data?.wall_ids?.split(",").length ?? 0) >= 2);
+    const args = JSON.parse(message.data?.notification_args ?? "{}") as {artistName?: string};
+    assert.ok(Buffer.byteLength(args.artistName ?? "", "utf8") <= 80);
+    const localizedAlert = message.apns?.payload?.aps.alert;
+    if (localizedAlert && typeof localizedAlert !== "string" && localizedAlert.titleLocArgs) {
+      assert.ok(Buffer.byteLength(localizedAlert.titleLocArgs[0] ?? "", "utf8") <= 80);
+    }
+    const androidTitleArgs = message.android?.notification?.titleLocArgs;
+    if (androidTitleArgs) assert.ok(Buffer.byteLength(androidTitleArgs[0] ?? "", "utf8") <= 80);
+  }
 });

@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
+import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The comma-separated wall ids of a gallery link, trimmed and without repeats.
 List<String> galleryWallIds(String raw) =>
@@ -41,20 +42,30 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
-  Future<List<PrismWallpaper>>? _walls;
+  late final GalleryWallsCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _load();
-    final int count = galleryWallIds(widget.ids).length;
-    unawaited(analytics.track(GalleryOpenedEvent(source: widget.source, wallCount: count)));
+    _cubit = GalleryWallsCubit(getIt<MoodRepository>())..load(galleryWallIds(widget.ids));
+    _trackOpened();
   }
 
-  void _load() {
-    setState(() {
-      _walls = getIt<MoodRepository>().fetchMoodWalls(galleryWallIds(widget.ids), keepOrder: true);
-    });
+  @override
+  void didUpdateWidget(GalleryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ids != widget.ids) unawaited(_cubit.load(galleryWallIds(widget.ids)));
+    if (oldWidget.ids != widget.ids || oldWidget.source != widget.source) _trackOpened();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_cubit.close());
+    super.dispose();
+  }
+
+  void _trackOpened() {
+    unawaited(analytics.track(GalleryOpenedEvent(source: widget.source, wallCount: galleryWallIds(widget.ids).length)));
   }
 
   @override
@@ -63,24 +74,25 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final String title = widget.title.trim();
     return PrismPage(
       title: title.isEmpty ? l10n.galleryScreenTitle : title,
-      body: FutureBuilder<List<PrismWallpaper>>(
-        future: _walls,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return GlintState(
+      body: BlocBuilder<GalleryWallsCubit, GalleryWallsState>(
+        bloc: _cubit,
+        builder: (_, state) {
+          return switch (state) {
+            GalleryWallsLoading() => const LoadingCards(useFeedLayout: true),
+            GalleryWallsFailed() => GlintState(
               kind: GlintStateKind.error,
               title: l10n.moodLoadError,
               body: l10n.wallpaperCheckConnection,
               actionLabel: l10n.wallpaperTryAgain,
-              onAction: _load,
-            );
-          }
-          final List<PrismWallpaper>? walls = snapshot.data;
-          if (walls == null) return const LoadingCards(useFeedLayout: true);
-          if (walls.isEmpty) {
-            return GlintState(kind: GlintStateKind.empty, title: l10n.galleryEmptyTitle, body: l10n.galleryEmptyBody);
-          }
-          return WallIdsGrid(walls: walls);
+              onAction: () => unawaited(_cubit.load(galleryWallIds(widget.ids))),
+            ),
+            GalleryWallsLoaded(:final walls) when walls.isEmpty => GlintState(
+              kind: GlintStateKind.empty,
+              title: l10n.galleryEmptyTitle,
+              body: l10n.galleryEmptyBody,
+            ),
+            GalleryWallsLoaded(:final walls) => WallIdsGrid(walls: walls),
+          };
         },
       ),
     );

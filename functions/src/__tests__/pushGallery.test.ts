@@ -13,6 +13,7 @@ import {
   galleryTags,
   galleryWall,
   GALLERY_MAX_BYTES,
+  isPreviewUrl,
   isGalleryWall,
   pickGalleryWalls,
   renderGallery,
@@ -110,11 +111,25 @@ test("galleryWall keeps a wall on the preview host and drops every other thumb o
   assert.equal(wall("https://img.example.com/originals/abc.img"), null);
   assert.equal(wall("https://img.example.com/previews/abc.img?x=1"), null);
   assert.equal(wall("https://img.example.com/previews/../x.img"), null);
+  assert.equal(wall("https://img.example.com/previews/%2e%2e/private/original.img"), null);
+  assert.equal(wall("https://img.example.com.evil.test/previews/abc.img"), null);
   const premium = galleryWall(
     {id: "doc1", data: {...base, id: "W1", collections: ["space"], wallpaper_thumb: PREVIEW}},
     ["space"],
   );
   assert.equal(premium, null);
+});
+
+test("isPreviewUrl only accepts same-origin public preview paths", () => {
+  for (const url of [
+    PREVIEW,
+    "https://img.example.com/previews/%2Fprivate/object.img",
+    "https://img.example.com@evil.test/previews/object.img",
+    "https://img.example.com/previews/../push-gallery/object.jpg",
+    "https://img.example.com/previews/%2e%2e/push-gallery/object.jpg",
+  ]) {
+    assert.equal(isPreviewUrl(url), url === PREVIEW);
+  }
 });
 
 test("pickGalleryWalls keeps up to four walls in order and needs at least two", () => {
@@ -201,6 +216,30 @@ test("buildPushGallery reuses stored images without fetching thumbs", async () =
   assert.equal(requests, 0);
 });
 
+test("buildPushGallery does not return a URL when a conditional store loses but no object exists", async () => {
+  const result = await buildPushGallery([gw("a1"), gw("a2")], {
+    storage: {
+      head: async () => null,
+      put: async () => false,
+    } as unknown as GalleryDeps["storage"],
+    request: (async () => new Response(new Uint8Array(await noisePng(60, 130)), {status: 200})) as unknown as typeof fetch,
+  });
+  assert.equal(result, null);
+});
+
+test("buildPushGallery accepts a conditional store race when the winning object exists", async () => {
+  let heads = 0;
+  const result = await buildPushGallery([gw("a1"), gw("a2")], {
+    storage: {
+      head: async () => ++heads > 1 ? {size: 1} : null,
+      put: async () => false,
+    } as unknown as GalleryDeps["storage"],
+    request: (async () => new Response(new Uint8Array(await noisePng(60, 130)), {status: 200})) as unknown as typeof fetch,
+  });
+  assert.equal(result?.stripUrl, `https://img.example.com/${galleryObjectKey("strip", ["a1", "a2"])}`);
+  assert.equal(heads, 2);
+});
+
 test("buildPushGallery uses a hero image for three walls and the lead thumb for two", async () => {
   const thumb = await noisePng(60, 130);
   const storage = {head: async () => null, put: async () => true};
@@ -251,6 +290,23 @@ test("buildPushGallery returns null when a thumb fetch fails", async () => {
     }) as unknown as typeof fetch,
   });
   assert.equal(result, null);
+});
+
+test("buildPushGallery cancels a preview response as soon as it exceeds the image size cap", async () => {
+  let canceled = false;
+  const result = await buildPushGallery([gw("a1"), gw("a2")], {
+    storage: {head: async () => null, put: async () => true} as unknown as GalleryDeps["storage"],
+    request: (async () => new Response(new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(8 * 1024 * 1024 + 1));
+      },
+      cancel() {
+        canceled = true;
+      },
+    }))) as unknown as typeof fetch,
+  });
+  assert.equal(result, null);
+  assert.equal(canceled, true);
 });
 
 test("wallTags keeps short, unique, non-generic tags in sentence case", () => {

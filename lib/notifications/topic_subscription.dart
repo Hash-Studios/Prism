@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -261,7 +260,7 @@ Future<void> syncPushTopics(
     ],
     // This build gets the follow digest by token, so it leaves the per-upload posts topics that older builds joined
     // while the Posts switch was on.
-    if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))
+    if (userId.isNotEmpty)
       syncCreatorPostsTopicsForUser(messaging, userId: userId, subscribed: false, sourceTag: sourceTag),
   ]);
   if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);

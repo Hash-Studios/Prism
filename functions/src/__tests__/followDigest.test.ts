@@ -11,6 +11,7 @@ import {
   sendDueDigests,
   type RecentWall,
 } from "../followDigest";
+import {db} from "../common";
 import type {Doc} from "./fakeDb";
 import {installFakeDb} from "./fakeDb";
 
@@ -123,7 +124,7 @@ function seedDay(overrides: Record<string, Doc | null> = {}): void {
       fcmToken: "tok1",
       fcmTokenBindingVersion: 1,
       fcmTokenBindingToken: "tok1",
-      notificationLocalizationVersion: 1,
+      notificationLocalizationVersion: 2,
       notificationLocalizationToken: "tok1",
       postAlerts: true,
       postAlertsToken: "tok1",
@@ -160,6 +161,34 @@ test("sendDueDigests sends one digest at 19:00 local and once per local day", as
   assert.equal(messages.length, 1);
 });
 
+test("sendDueDigests does not replace a newer local-day claim with an older slot", async (t) => {
+  const messages = mockEnv(t);
+  seedDay({"usersv2/u1/private/followDigest": {day: "2026-10-29"}});
+
+  assert.equal(await sendDueDigests(NOW), 0);
+  assert.equal(messages.length, 0);
+  assert.equal(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-29");
+});
+
+test("sendDueDigests excludes approvals newer than its scheduled slot", async (t) => {
+  const messages = mockEnv(t);
+  seedDay({"walls/a1": {
+    id: "A1",
+    review: true,
+    originalProtected: true,
+    collections: ["abstract"],
+    visionLabels: ["Night"],
+    creatorUid: "A",
+    by: "Asha",
+    wallpaper_thumb: "https://img.example.com/previews/a1.img",
+    approvedNotifiedAt: admin.firestore.Timestamp.fromMillis(NOW + 1),
+  }});
+
+  assert.equal(await sendDueDigests(NOW), 0);
+  assert.equal(messages.length, 0);
+  assert.equal(store.has("usersv2/u1/private/followDigest"), false);
+});
+
 test("sendDueDigests skips a follower without a Posts opt-in or with a stale token", async (t) => {
   const messages = mockEnv(t);
   seedDay({"usersv2/u1/private/session": {
@@ -172,6 +201,19 @@ test("sendDueDigests skips a follower without a Posts opt-in or with a stale tok
   }});
   assert.equal(await sendDueDigests(NOW), 0);
   assert.equal(messages.length, 0);
+});
+
+test("sendDueDigests skips a same-token session rebound by an older build", async (t) => {
+  const messages = mockEnv(t);
+  seedDay({"usersv2/u1/private/session": {
+    fcmToken: "tok1", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "tok1",
+    notificationLocalizationVersion: 1, notificationLocalizationToken: "tok1",
+    postAlerts: true, postAlertsToken: "tok1",
+  }});
+
+  assert.equal(await sendDueDigests(NOW), 0);
+  assert.equal(messages.length, 0);
+  assert.equal(store.has("usersv2/u1/private/followDigest"), false);
 });
 
 test("sendDueDigests skips a follower whose local time is not 19:00", async (t) => {
@@ -190,10 +232,67 @@ test("sendDueDigests skips a creator the follower has blocked", async (t) => {
 
 test("sendDueDigests releases the day when the send fails so a later run can retry", async (t) => {
   mockEnv(t);
+  let fail = true;
   t.mock.method(admin.messaging(), "send", async () => {
-    throw new Error("fcm down");
+    if (fail) throw new Error("fcm down");
+    return "id";
   });
   seedDay();
-  assert.equal(await sendDueDigests(NOW), 0);
+  await assert.rejects(sendDueDigests(NOW), /1 digest delivery failure/);
   assert.notEqual(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
+  fail = false;
+  assert.equal(await sendDueDigests(NOW), 1);
+  assert.equal(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
+});
+
+test("sendDueDigests releases and retries when the session changes during token validation", async (t) => {
+  const messages = mockEnv(t);
+  seedDay();
+  const originalDoc = db.doc.bind(db);
+  let sessionReads = 0;
+  t.mock.method(db, "doc", (path: string) => {
+    const ref = originalDoc(path);
+    if (path !== "usersv2/u1/private/session") return ref;
+    return {
+      ...ref,
+      get: async () => {
+        sessionReads += 1;
+        if (sessionReads === 2) throw new Error("session lookup failed");
+        return ref.get();
+      },
+    } as typeof ref;
+  });
+
+  await assert.rejects(sendDueDigests(NOW), /1 digest delivery failure/);
+  assert.notEqual(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
+  assert.equal(await sendDueDigests(NOW), 1);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].token, "tok1");
+  assert.equal(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
+});
+
+test("sendDueDigests releases and retries when the account recheck fails", async (t) => {
+  const messages = mockEnv(t);
+  seedDay();
+  const originalDoc = db.doc.bind(db);
+  let accountReads = 0;
+  t.mock.method(db, "doc", (path: string) => {
+    const ref = originalDoc(path);
+    if (path !== "usersv2/u1") return ref;
+    return {
+      ...ref,
+      get: async () => {
+        accountReads += 1;
+        if (accountReads === 2) throw new Error("account lookup failed");
+        return ref.get();
+      },
+    } as typeof ref;
+  });
+
+  await assert.rejects(sendDueDigests(NOW), /1 digest delivery failure/);
+  assert.notEqual(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
+  assert.equal(await sendDueDigests(NOW), 1);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].token, "tok1");
+  assert.equal(store.get("usersv2/u1/private/followDigest")?.day, "2026-10-28");
 });

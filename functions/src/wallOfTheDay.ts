@@ -7,7 +7,7 @@ import {db, REGION, utcDateString} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {getOwnedWallDelivery} from "./ownedAssetDelivery";
 import {dropOwnsGallery} from "./drops";
-import {buildPushGallery, galleryWall, similarWallIds, tagsLine, type PushGallery} from "./pushGallery";
+import {buildPushGallery, galleryWall, isPreviewUrl, similarWallIds, tagsLine, type PushGallery} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
 
 const DEFAULT_PREMIUM_COLLECTIONS = [
@@ -369,11 +369,10 @@ const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "
  * push is the one gallery, so this returns null.
  */
 async function wotdGallery(wallId: string, pick: admin.firestore.DocumentData,
-  premium: string[]): Promise<PushGallery | null> {
+  premium: string[], deliveryDay: string, offsetMinutes: number): Promise<PushGallery | null> {
   const currentRef = db.collection("wall_of_the_day").doc("current");
   const current = (await currentRef.get()).data();
-  const pickDay = current?.date instanceof admin.firestore.Timestamp ? utcDateString(current.date.toDate()) : utcDateString();
-  if (await dropOwnsGallery(pickDay)) return null;
+  if (await dropOwnsGallery(deliveryDay, offsetMinutes)) return null;
   const cached = current?.gallery;
   let ids: string[];
   if (cached?.wallId === wallId && Array.isArray(cached.wallIds)) {
@@ -392,7 +391,7 @@ async function wotdGallery(wallId: string, pick: admin.firestore.DocumentData,
   return buildPushGallery([lead, ...others.filter((wall) => wall !== null)]);
 }
 
-async function wotdPushPayload(wallId: string): Promise<{
+async function wotdPushPayload(wallId: string, deliveryDay = utcDateString(), offsetMinutes = 0): Promise<{
   title: string;
   body: string;
   message: ReturnType<typeof notificationCopyPayload>["message"];
@@ -414,7 +413,7 @@ async function wotdPushPayload(wallId: string): Promise<{
     logger.warn("wall_of_the_day: current pick is unavailable; suppressing push.", {wallId});
     return null;
   }
-  const gallery = await wotdGallery(wallId, wall, premium).catch((err) => {
+  const gallery = await wotdGallery(wallId, wall, premium, deliveryDay, offsetMinutes).catch((err) => {
     logger.warn("wall_of_the_day: no gallery; the push keeps its single image.", {wallId, err: String(err)});
     return null;
   });
@@ -434,7 +433,7 @@ async function wotdPushPayload(wallId: string): Promise<{
       url: wallShareUrl({wallId: shareId, thumbnailUrl}),
       ...(gallery ? {wall_ids: gallery.wallIds.join(",")} : {}),
     },
-    imageUrl: thumbnailUrl || undefined,
+    imageUrl: isPreviewUrl(thumbnailUrl) ? thumbnailUrl : undefined,
     ...(gallery ? {gallery} : {}),
     channelId: "wall_of_the_day",
     creatorEmail: String(wall.email ?? "").trim(),
@@ -556,6 +555,7 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
   >();
   for (const offset of offsetsAtNineLocal(slotMs)) {
     const topic = wotdBucketTopic(offset);
+    const deliveryDay = utcDateString(new Date(slotMs + offset * 60_000));
     const claim = await claimBucket(topic, Date.now());
     if (!claim.won) {
       logger.info("sendDueBuckets: nothing to send to this bucket.", {topic});
@@ -563,11 +563,12 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
     }
     let delivered = false;
     try {
-      let payload = payloads.get(claim.wallId);
+      const payloadKey = `${claim.wallId}|${deliveryDay}|${offset}`;
+      let payload = payloads.get(payloadKey);
       if (!payload) {
-        payload = await wotdPushPayload(claim.wallId);
+        payload = await wotdPushPayload(claim.wallId, deliveryDay, offset);
         if (!payload) continue;
-        payloads.set(claim.wallId, payload);
+        payloads.set(payloadKey, payload);
       }
       delivered = await sendNotification({
         ...payload,

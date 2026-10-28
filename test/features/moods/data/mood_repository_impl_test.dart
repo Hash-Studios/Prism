@@ -194,6 +194,25 @@ void main() {
       );
     });
 
+    test('preserves gallery order while hiding blocked and restricted walls', () async {
+      walls = <String, Map<String, dynamic>>{
+        'Z': _wall('Z'),
+        'BLOCKED': _wall('BLOCKED', creatorUid: 'blocked-uid'),
+        'PREMIUM': _wall('PREMIUM', collections: <String>['space']),
+        'A': _wall('A'),
+      };
+      blocks.completeInitial(<String>{'blocked-uid'});
+
+      final List<String> ids = (await repository.fetchMoodWalls(<String>[
+        'Z',
+        'BLOCKED',
+        'PREMIUM',
+        'A',
+      ], keepOrder: true)).map((wall) => wall.id).toList();
+
+      expect(ids, <String>['Z', 'A']);
+    });
+
     test('ranks the walls that match the taste profile first', () async {
       feed = _FakeFeedRepository(
         const TasteProfile(terms: <String, double>{'nature': 10}, creators: <String, double>{}),

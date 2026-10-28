@@ -151,19 +151,38 @@ export function isPreviewUrl(url: string): boolean {
   let base: string;
   try {
     base = previewBase();
+    const expectedBase = new URL(base);
+    const candidate = new URL(url);
+    const previewPath = `${expectedBase.pathname.replace(/\/$/, "")}/previews/`;
+    return expectedBase.protocol === "https:" && !expectedBase.username && !expectedBase.password &&
+      candidate.origin === expectedBase.origin && !candidate.username && !candidate.password &&
+      !candidate.search && !candidate.hash && candidate.pathname.startsWith(previewPath) &&
+      !/%(?:2f|5c)/i.test(candidate.pathname);
   } catch {
     return false;
   }
-  return url.startsWith(`${base}/previews/`) && !url.includes("..") && !url.includes("?") && !url.includes("#");
 }
 
 async function fetchThumb(url: string, request: typeof fetch): Promise<Buffer> {
   if (!isPreviewUrl(url)) throw new Error("Thumbnail is not a preview derivative");
   const response = await request(url, {signal: AbortSignal.timeout(8000), redirect: "error"});
   if (!response.ok) throw new Error(`Thumbnail fetch failed (${response.status})`);
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length < 1 || bytes.length > MAX_THUMB_BYTES) throw new Error("Thumbnail size is invalid");
-  return bytes;
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Thumbnail body is missing");
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_THUMB_BYTES) {
+      await reader.cancel();
+      throw new Error("Thumbnail size is invalid");
+    }
+    chunks.push(value);
+  }
+  if (size < 1) throw new Error("Thumbnail size is invalid");
+  return Buffer.concat(chunks, size);
 }
 
 /** Draws the tiles on a dark canvas with rounded corners and keeps the JPEG under GALLERY_MAX_BYTES. */
@@ -202,7 +221,9 @@ async function ensureImage(layout: GalleryLayout, walls: GalleryWall[], storage:
   const ordered = galleryOrder(layout, ids).map((id) => byId.get(id) as GalleryWall);
   const thumbs = await Promise.all(ordered.map((wall) => fetchThumb(wall.thumb, request)));
   const bytes = await renderGallery(thumbs, galleryRects(layout, ordered.length));
-  await storage.put("preview", key, bytes, {sha256: createHash("sha256").update(bytes).digest("hex")}, "image/jpeg");
+  const stored = await storage.put("preview", key, bytes,
+    {sha256: createHash("sha256").update(bytes).digest("hex")}, "image/jpeg");
+  if (!stored && !(await storage.head("preview", key))) throw new Error("Gallery image store conflict without object");
   return url;
 }
 

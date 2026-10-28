@@ -6,14 +6,14 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str, utcDateString} from "./common";
+import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
 import {isAdminCaller} from "./adminConfig";
 import {dropMood, isoWeekNumber, pickDropName} from "./dropNames";
 import {sendNotification} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
-import {buildPushGallery, galleryWall, tagsLine, type GalleryWall, type PushGallery} from "./pushGallery";
+import {buildPushGallery, galleryWall, isPreviewUrl, tagsLine, type GalleryWall, type PushGallery} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
 
 const USERS = "usersv2";
@@ -462,15 +462,20 @@ export function duePushKinds(drop: DropDoc, nowMs: number): DropPushKind[] {
 }
 
 /**
- * True when a drop goes live on this UTC day. That day the live push is the one gallery, and the Wall of the Day push
+ * True when a drop starts on this local day. That day the live push is the one gallery, and the Wall of the Day push
  * keeps its single image.
  */
-export async function dropOwnsGallery(day: string): Promise<boolean> {
+export async function dropOwnsGallery(day: string, offsetMinutes = 0): Promise<boolean> {
   const dayMs = Date.parse(`${day}T00:00:00Z`);
-  if (!Number.isFinite(dayMs)) return false;
-  const drop = (await db.collection("drops").doc(weekKey(dayMs)).get()).data();
-  if (typeof drop?.startsAt !== "number" || utcDateString(new Date(drop.startsAt)) !== day) return false;
-  return (await loadEconomy(dayMs)).flags.dropsEnabled;
+  if (!Number.isFinite(dayMs) || !Number.isInteger(offsetMinutes) || offsetMinutes < -720 || offsetMinutes > 840) return false;
+  const utcStartMs = dayMs - offsetMinutes * 60_000;
+  const drops = await db.collection("drops")
+    .where("startsAt", ">=", utcStartMs)
+    .where("startsAt", "<", utcStartMs + DAY_MS)
+    .limit(1)
+    .get();
+  if (drops.empty) return false;
+  return (await loadEconomy(utcStartMs)).flags.dropsEnabled;
 }
 
 /** The live push shows the drop's own walls, as the Drops page does. No other wall can enter the image. */
@@ -558,12 +563,13 @@ export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
         logger.warn("drops: no gallery; the push keeps its single image.", {weekKey: weekKeyOfDrop, err: String(err)});
         return null;
       }) : null;
+      const fallbackThumb = drop.walls?.[0]?.thumb ?? "";
       delivered = await sendNotification({
         ...(gallery ?
           notificationCopyPayload({kind: "galleryDrop", wallCount: drop.count, tags: tagsLine(gallery.tags)}) :
           spec.copy(drop, nowMs)),
         data: {route: "drops", week_key: weekKeyOfDrop},
-        imageUrl: drop.walls?.[0]?.thumb || undefined,
+        imageUrl: isPreviewUrl(fallbackThumb) ? fallbackThumb : undefined,
         ...(gallery ? {gallery} : {}),
         modifier: "all",
         channelId: "drops",

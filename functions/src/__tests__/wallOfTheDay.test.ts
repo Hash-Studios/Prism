@@ -5,6 +5,9 @@ import {logger} from "firebase-functions/v2";
 import type {ScheduledEvent} from "firebase-functions/v2/scheduler";
 import {db} from "../common";
 import * as delivery from "../ownedAssetDelivery";
+import * as drops from "../drops";
+import * as pushGallery from "../pushGallery";
+import {resetEconomyCache} from "../economy";
 import {installFakeDb} from "./fakeDb";
 import {
   isWotdEligible,
@@ -18,6 +21,8 @@ import {
 
 const scheduled = (at = new Date()) => ({jobName: "t", scheduleTime: at.toISOString()}) satisfies ScheduledEvent;
 const PREMIUM = ["space", "abstract"];
+const PREVIEW = "https://img.example.com/previews/w1.img";
+process.env.R2_PREVIEW_BASE_URL = "https://img.example.com";
 
 test("wall shares contain identity and preview only", () => {
   const link = new URL(wallShareUrl({wallId: "w1", thumbnailUrl: "https://example.com/thumb.jpg"}));
@@ -123,6 +128,8 @@ type Harness = {
   tokens: string[];
   deliveries: Record<string, unknown>;
   inboxIds: string[];
+  messages: Array<Record<string, unknown>>;
+  merges: Array<Record<string, unknown>>;
   state: {current?: Record<string, unknown>};
   gateFirstTransaction: () => () => void;
 };
@@ -138,6 +145,7 @@ function harness(t: TestContext, options: {
   sendFails?: boolean;
   deliveries?: Record<string, unknown>;
   creator?: {id: string; data: Record<string, unknown>};
+  drops?: Array<{id: string; data: () => Record<string, unknown>}>;
   onSend?: (h: Harness) => void;
 }): Harness {
   const state: {current?: Record<string, unknown>} = {current: options.current};
@@ -148,6 +156,8 @@ function harness(t: TestContext, options: {
     tokens: [],
     deliveries: {...options.deliveries},
     inboxIds: [],
+    messages: [],
+    merges: [],
     state,
     gateFirstTransaction: () => () => undefined,
   };
@@ -155,7 +165,11 @@ function harness(t: TestContext, options: {
   const currentRef = {
     path: "wall_of_the_day/current",
     get: async () => ({data: () => state.current}),
-    set: async (data: Record<string, unknown>) => {
+    set: async (data: Record<string, unknown>, options?: {merge?: boolean}) => {
+      if (options?.merge) {
+        state.current = {...state.current, ...data};
+        return result.merges.push(data);
+      }
       state.current = data;
       return result.sets.push(data);
     },
@@ -200,6 +214,25 @@ function harness(t: TestContext, options: {
       return {doc: (id: string) => id === "bucket_deliveries" ? deliveriesRef : currentRef};
     }
     if (name === "past_picks") return {...query([]), doc: () => ({set: async () => undefined})};
+    if (name === "drops") {
+      const filters: Array<[string, string, unknown]> = [];
+      const rows = options.drops ?? [];
+      const q = {
+        where: (field: string, op: string, value: unknown) => {
+          filters.push([field, op, value]);
+          return q;
+        },
+        limit: () => q,
+        get: async () => {
+          const docs = rows.filter((doc) => filters.every(([field, op, value]) => {
+            const actual = doc.data()[field];
+            return op === ">=" ? Number(actual) >= Number(value) : op === "<" && Number(actual) < Number(value);
+          }));
+          return {docs, empty: docs.length === 0};
+        },
+      };
+      return q;
+    }
     if (name === "walls") {
       return {...query(options.walls ?? [], undefined, options.wallFilters), doc: (id: string) => ({get: async () => ({
         data: () => ({id, review: true, originalProtected: true, collections: ["nature"], ...options.wallDoc}),
@@ -229,6 +262,7 @@ function harness(t: TestContext, options: {
     return {};
   }})}));
   t.mock.method(admin.messaging(), "send", async (message: {topic?: string; token?: string}) => {
+    result.messages.push(message as unknown as Record<string, unknown>);
     options.onSend?.(result);
     if (options.sendFails) throw new Error("fcm down");
     if (message.topic) {
@@ -386,6 +420,125 @@ test("the bucket job sends both ends of the date line at 21:00 UTC", async (t) =
   });
   await sendWallOfTheDayBuckets.run(scheduled());
   assertLocalizedTopicFanout(h.topics, ["wall_of_the_day_utc_p1200", "wall_of_the_day_utc_m1200"]);
+});
+
+test("the WOTD gallery gate uses each bucket's local delivery day", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T19:00:00Z")});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+  });
+  const days: string[] = [];
+  t.mock.method(drops, "dropOwnsGallery", async (day: string, offsetMinutes: number) => {
+    days.push(`${day}|${offsetMinutes}`);
+    return false;
+  });
+
+  await sendWallOfTheDayBuckets.run(scheduled());
+
+  assert.deepEqual(days, ["2026-01-03|840", "2026-01-02|-600"]);
+  assert.equal(h.topics.length, 4);
+});
+
+test("the WOTD gallery is suppressed only for a bucket whose local drop day matches", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-10-18T21:00:00Z")});
+  const gallery = {
+    wallIds: ["w1", "w2"],
+    stripUrl: "https://img.example.com/push-gallery/strip.jpg",
+    heroUrl: "https://img.example.com/push-gallery/hero.jpg",
+    count: 2,
+    thumbIndex: 0,
+    tags: ["Night"],
+  };
+  const wallDoc = {
+    title: "Dunes",
+    review: true,
+    originalProtected: true,
+    collections: ["nature"],
+    visionLabels: ["Night"],
+    wallpaper_thumb: PREVIEW,
+  };
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc,
+    walls: [
+      {id: "w1", data: () => ({...wallDoc, id: "w1", createdAt: 2})},
+      {id: "w2", data: () => ({...wallDoc, id: "w2", createdAt: 1})},
+    ],
+    drops: [{id: "2026-W43", data: () => ({startsAt: Date.parse("2026-10-19T00:30:00Z")})}],
+  });
+  t.mock.method(pushGallery, "buildPushGallery", async () => gallery);
+  resetEconomyCache();
+
+  await sendWallOfTheDayBuckets.run(scheduled());
+
+  const messages = h.messages.map((message) => ({
+    topic: String(message.topic),
+    gallery: (message.data as Record<string, string>).gallery,
+  }));
+  const west = messages.filter((m) => m.topic.startsWith("wall_of_the_day_utc_m1200"));
+  const east = messages.filter((m) => m.topic.startsWith("wall_of_the_day_utc_p1200"));
+  assert.ok(west.length > 0);
+  assert.ok(east.length > 0);
+  assert.ok(west.every((m) => m.gallery === undefined));
+  assert.ok(east.every((m) => m.gallery === undefined));
+});
+
+test("WOTD gallery remains enabled for both date-line buckets when no drop owns the day", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-10-18T21:00:00Z")});
+  const gallery = {
+    wallIds: ["w1", "w2"],
+    stripUrl: "https://img.example.com/push-gallery/strip.jpg",
+    heroUrl: "https://img.example.com/push-gallery/hero.jpg",
+    count: 2,
+    thumbIndex: 0,
+    tags: ["Night"],
+  };
+  const wallDoc = {
+    title: "Dunes",
+    review: true,
+    originalProtected: true,
+    collections: ["nature"],
+    visionLabels: ["Night"],
+    wallpaper_thumb: PREVIEW,
+  };
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc,
+    walls: [
+      {id: "w1", data: () => ({...wallDoc, id: "w1", createdAt: 2})},
+      {id: "w2", data: () => ({...wallDoc, id: "w2", createdAt: 1})},
+    ],
+  });
+  t.mock.method(pushGallery, "buildPushGallery", async () => gallery);
+  resetEconomyCache();
+
+  await sendWallOfTheDayBuckets.run(scheduled());
+
+  const messages = h.messages.map((message) => ({
+    topic: String(message.topic),
+    gallery: (message.data as Record<string, string>).gallery,
+  }));
+  const west = messages.filter((m) => m.topic.startsWith("wall_of_the_day_utc_m1200"));
+  const east = messages.filter((m) => m.topic.startsWith("wall_of_the_day_utc_p1200"));
+  assert.ok(west.length > 0);
+  assert.ok(east.length > 0);
+  assert.ok(west.every((m) => m.gallery === "1"));
+  assert.ok(east.every((m) => m.gallery === "1"));
+});
+
+test("WOTD omits a non-preview thumb instead of using it as a single-image fallback", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T03:30:05Z")});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes", wallpaper_thumb: "https://evil.example.com/private.jpg"},
+  });
+  t.mock.method(drops, "dropOwnsGallery", async () => false);
+
+  await sendWallOfTheDayBuckets.run(scheduled());
+
+  assert.ok(h.messages.length > 0);
+  assert.ok(h.messages.every((message) => (message.data as Record<string, string>).imageUrl === undefined));
 });
 
 test("the bucket job does not push a stale or missing pick", async (t) => {

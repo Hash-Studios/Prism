@@ -13,6 +13,12 @@ const WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_GALLERY_WALLS = 12;
 const CHUNK_SIZE = 25;
 
+function isLocalDay(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 /** A gated wall approved in the window, with its creator. */
 export interface RecentWall {
   docId: string;
@@ -103,7 +109,9 @@ export function digestPayload(digest: Digest, day: string) {
 async function recentWalls(nowMs: number): Promise<RecentWall[]> {
   const premium = await premiumCollections();
   const snap = await db.collection("walls")
-    .where("approvedNotifiedAt", ">=", admin.firestore.Timestamp.fromMillis(nowMs - WINDOW_MS)).get();
+    .where("approvedNotifiedAt", ">=", admin.firestore.Timestamp.fromMillis(nowMs - WINDOW_MS))
+    .where("approvedNotifiedAt", "<=", admin.firestore.Timestamp.fromMillis(nowMs))
+    .get();
   return snap.docs.flatMap((doc) => {
     const data = doc.data();
     const creatorUid = str(data.creatorUid);
@@ -118,16 +126,16 @@ async function recentWalls(nowMs: number): Promise<RecentWall[]> {
  * digest: signed out, deleted, not at 19:00 local, or without a Posts opt-in from a build that has the digest.
  */
 async function deliverable(digest: Digest, offsets: number[]):
-  Promise<{digest: Digest; offset: number; email: string} | null> {
+  Promise<{digest: Digest; offset: number; email: string; token: string} | null> {
   const user = (await db.doc(`usersv2/${digest.uid}`).get()).data();
   const offset = user?.appOpenTimezoneOffsetMinutes;
   const email = str(user?.email);
   if (!user || !email || user.deleted === true || user.loggedIn === false || !offsets.includes(offset)) return null;
   const session = (await db.doc(`usersv2/${digest.uid}/private/session`).get()).data();
-  // Only a build with the digest writes postAlertsToken. An older build on the same account rebinds fcmToken, so the
-  // marker no longer matches and that device keeps the per-upload topic pushes instead.
-  if (session?.postAlerts !== true || typeof session.fcmToken !== "string" ||
-    session.postAlertsToken !== session.fcmToken) return null;
+  // Only a digest-capable build writes these token-bound markers. An older build keeps its per-upload topic pushes.
+  if (session?.postAlerts !== true || typeof session.fcmToken !== "string" || !session.fcmToken.trim() ||
+    session.postAlertsToken !== session.fcmToken || session.notificationLocalizationVersion !== 2 ||
+    session.notificationLocalizationToken !== session.fcmToken) return null;
   const blocked = await Promise.all(digest.creators.map(async (c) => {
     const [mine, theirs] = await Promise.all([
       db.doc(`usersv2/${digest.uid}/blockedUsers/${c.uid}`).get(),
@@ -142,6 +150,7 @@ async function deliverable(digest: Digest, offsets: number[]):
     digest: {...digest, creators: digest.creators.filter((c) => keep.has(c.uid)), walls, wallCount: walls.length},
     offset,
     email,
+    token: session.fcmToken,
   };
 }
 
@@ -150,7 +159,7 @@ async function claimDay(uid: string, day: string): Promise<{previous: unknown} |
   const ref = db.doc(`usersv2/${uid}/private/followDigest`);
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
-    if (data?.day === day) return null;
+    if (isLocalDay(data?.day) && data.day >= day) return null;
     tx.set(ref, {day, at: admin.firestore.FieldValue.serverTimestamp()});
     return {previous: data?.day ?? null};
   });
@@ -177,6 +186,7 @@ export async function sendDueDigests(nowMs: number): Promise<number> {
   // ponytail: every 15 minute run reads each follower's user doc; precompute per-offset lists if followers grow large.
   const digests = planDigests(walls, followersByCreator);
   let sent = 0;
+  const failures: unknown[] = [];
   for (let i = 0; i < digests.length; i += CHUNK_SIZE) {
     const results = await Promise.allSettled(digests.slice(i, i + CHUNK_SIZE).map(async (planned) => {
       const ready = await deliverable(planned, offsets);
@@ -187,17 +197,26 @@ export async function sendDueDigests(nowMs: number): Promise<number> {
       let delivered = false;
       try {
         const payload = digestPayload(ready.digest, day);
-        delivered = await sendToUser({...payload, modifier: ready.email}, {uid: planned.uid, email: ready.email});
+        delivered = await sendToUser({...payload, modifier: ready.email}, {
+          uid: planned.uid,
+          email: ready.email,
+          postAlertsToken: ready.token,
+        });
+        if (!delivered) throw new Error("followDigest: push delivery failed.");
       } finally {
         if (!delivered) await releaseDay(planned.uid, day, claim.previous);
       }
-      return delivered;
+      return true;
     }));
     sent += results.filter((r) => r.status === "fulfilled" && r.value).length;
-    results.filter((r) => r.status === "rejected")
-      .forEach((r) => logger.warn("followDigest: one digest failed.", {err: String((r as PromiseRejectedResult).reason)}));
+    results.filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .forEach((r) => {
+        failures.push(r.reason);
+        logger.warn("followDigest: one digest failed.", {err: String(r.reason)});
+      });
   }
   logger.info("followDigest: run done.", {offsets, walls: walls.length, digests: digests.length, sent});
+  if (failures.length > 0) throw new Error(`followDigest: ${failures.length} digest delivery failure(s).`);
   return sent;
 }
 
