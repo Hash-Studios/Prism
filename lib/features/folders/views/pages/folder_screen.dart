@@ -38,7 +38,7 @@ class FolderScreen extends StatefulWidget {
 
 class _FolderScreenState extends State<FolderScreen> {
   bool _tracked = false;
-  String? _loadingOwnerId;
+  String? _loadingKey;
 
   @override
   void initState() {
@@ -46,22 +46,30 @@ class _FolderScreenState extends State<FolderScreen> {
     unawaited(_load());
   }
 
+  @override
+  void didUpdateWidget(FolderScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The router can reuse this page for another folder, for example a link opened from a folder.
+    if (oldWidget.folderId == widget.folderId) return;
+    _tracked = false;
+    unawaited(_load());
+  }
+
   Future<void> _load() async {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     final String ownerId = app_state.prismUser.id;
-    if (ownerId.isEmpty || _loadingOwnerId == ownerId) return;
-    _loadingOwnerId = ownerId;
+    final String folderId = widget.folderId;
+    final String key = '$ownerId/$folderId';
+    if (ownerId.isEmpty || _loadingKey == key) return;
+    _loadingKey = key;
+    bool current() =>
+        mounted && widget.folderId == folderId && app_state.prismUser.id == ownerId && bloc.state.userId == ownerId;
     try {
       await ensureFoldersLoaded(context);
-      if (!mounted ||
-          app_state.prismUser.id != ownerId ||
-          bloc.state.userId != ownerId ||
-          bloc.state.status != LoadStatus.success) {
-        return;
-      }
-      await bloc.run((id) => FoldersEvent.folderOpened(folderId: widget.folderId, operationId: id));
-      if (!mounted || app_state.prismUser.id != ownerId || bloc.state.userId != ownerId) return;
-      final FolderEntity? folder = bloc.state.folder(widget.folderId);
+      if (!current() || bloc.state.status != LoadStatus.success) return;
+      await bloc.run((id) => FoldersEvent.folderOpened(folderId: folderId, operationId: id));
+      if (!current()) return;
+      final FolderEntity? folder = bloc.state.folder(folderId);
       if (_tracked || folder == null) return;
       _tracked = true;
       final bool fromLibrary = context.router.stack.any((route) => route.name == LibraryRoute.name);
@@ -69,7 +77,7 @@ class _FolderScreenState extends State<FolderScreen> {
         analytics.track(FolderOpenedEvent(source: fromLibrary ? 'library' : 'link', itemCount: folder.itemCount)),
       );
     } finally {
-      if (_loadingOwnerId == ownerId) _loadingOwnerId = null;
+      if (_loadingKey == key) _loadingKey = null;
     }
   }
 

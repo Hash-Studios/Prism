@@ -12,9 +12,13 @@ import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/folders/views/widgets/folders_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockStackRouter extends Mock implements StackRouter {}
 
 class _OnlineConnectivity implements ConnectivityService {
   @override
@@ -244,6 +248,39 @@ void main() {
     bloc.add(const FoldersEvent.cleared());
     await settle(tester);
     expect(find.text('Sign in to use folders'), findsOneWidget);
+  });
+
+  testWidgets('a folder page reused for another folder loads and shows that folder', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work'), _folder('trips', 'Trips')]);
+    final bloc = FoldersBloc(repo);
+    addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
+    Widget page(String folderId) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: kLightTheme,
+      home: StackRouterScope(
+        controller: router,
+        stateHash: 0,
+        child: BlocProvider<FoldersBloc>.value(
+          value: bloc,
+          child: FolderScreen(folderId: folderId),
+        ),
+      ),
+    );
+    await tester.pumpWidget(page('work'));
+    await settle(tester);
+    expect(find.text('Work'), findsOneWidget);
+
+    await tester.pumpWidget(page('trips'));
+    await settle(tester);
+    expect(repo.calls, contains('fetchItems:trips'));
+    expect(find.text('Trips'), findsOneWidget);
+    expect(find.text('Work'), findsNothing);
   });
 
   testWidgets('a guest sees no folders row and makes no repository call, with no FoldersBloc provided', (tester) async {
