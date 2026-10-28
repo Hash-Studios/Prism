@@ -5,6 +5,7 @@ import {db, CALLABLE_REGIONS, str} from "./common";
 import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
+import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -109,6 +110,18 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("setups"));
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
+  // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
+  // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
+  const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())
+    .docs.filter((item) => isFolderItemPath(item.ref.path));
+  for (let start = 0; start < items.length; start += 400) {
+    const batch = db.batch();
+    for (const item of items.slice(start, start + 400)) {
+      batch.delete(item.ref, {lastUpdateTime: item.updateTime});
+    }
+    await batch.commit();
+  }
+  const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();
@@ -128,6 +141,8 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);
     await queueBoosts(callerUid, queue, queueUpdate);
+    // No update-time precondition: the repair trigger updates a folder while its items are deleted above.
+    folders.docs.forEach((folder) => queue(folder.ref));
     // The email may be stored as typed or in lower case.
     for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
       await queueDeleteWhereEqual(DRAFT_SETUPS, "email", address, queue);

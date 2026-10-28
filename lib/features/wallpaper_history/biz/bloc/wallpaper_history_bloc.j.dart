@@ -19,6 +19,15 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
 
   final WallpaperHistoryStore _store;
 
+  /// Restores [item], even when the history page's bloc has already been disposed.
+  Future<void> restore(AppliedWallpaper item) async {
+    if (!isClosed) {
+      add(WallpaperHistoryEvent.restored(item));
+      return;
+    }
+    await _store.record(item);
+  }
+
   Future<void> _onCleared(_Cleared event, Emitter<WallpaperHistoryState> emit) async {
     await _store.clear();
     emit(state.copyWith(items: _store.items()));

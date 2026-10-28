@@ -32,8 +32,8 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Blocked accounts | `/blocked-accounts` | Sign-in. |
 | Settings, theme, and About | `/settings`, `/theme`, `/about` | Opens the selected page. |
 | Notifications | `/notifications` | Opens the notification inbox. |
-| Favourites, downloads, and history | `/fav-walls`, `/downloads`, `/wallpaper-history` | Opens the selected page. |
-| Library tabs | `/library?tab=favourites`, `/library?tab=downloads`, `/library?tab=history` | Defaults to Favourites when `tab` is absent. |
+| Favourites and downloads | `/fav-walls`, `/downloads` | Opens the selected page. |
+| Library tabs | `/library?tab=favourites`, `/library?tab=folders`, `/library?tab=downloads`, `/library?tab=history`, `/wallpaper-history` | Opens the Library on the selected tab. Defaults to Favourites when `tab` is absent. Other `tab` values are rejected. `/wallpaper-history` opens the History tab. On iOS, which has no History tab, the history targets open Favourites. |
 | Upload and edit wallpaper | `/upload-wall`, `/edit-wall` | Opens the image picker page, then requires sign-in for the upload or edit page. |
 | Submission review | `/review` | Sign-in. Shows the user's pending and rejected submissions. |
 | Rewards and coin history | `/rewards`, `/coin-history` | Opens the selected page. |

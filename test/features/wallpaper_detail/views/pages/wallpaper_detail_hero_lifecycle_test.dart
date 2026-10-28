@@ -12,6 +12,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
@@ -36,6 +37,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _PrismRepository extends Mock implements PrismWallpaperRepository {}
 
@@ -190,14 +192,16 @@ void main() {
     );
     verify(() => prism.fetchCanonicalById('hero-prism')).called(1);
     verifyNever(() => palette.generatePalette(any()));
-    final pendingUrls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((w) => w.imageUrl);
+    final pendingUrls = networkImageUrls(tester);
     expect(pendingUrls, isNotEmpty);
     expect(pendingUrls.every((url) => url == _thumbnail), isTrue);
 
     final flyingImage = find.byElementPredicate((element) {
       final widget = element.widget;
-      return widget is CachedNetworkImage &&
-          widget.imageUrl == _thumbnail &&
+      final ImageProvider? provider = widget is Image ? unwrapImageProvider(widget.image) : null;
+      return provider is CachedNetworkImageProvider &&
+          provider.url == _thumbnail &&
+          element.findAncestorWidgetOfExactType<ProgressiveWallpaperImage>() != null &&
           element.findAncestorWidgetOfExactType<WallpaperDetailScreen>() == null &&
           element.findAncestorWidgetOfExactType<Hero>() == null;
     });

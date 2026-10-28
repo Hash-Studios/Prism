@@ -33,6 +33,7 @@ import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/profile_user_fixture.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -96,7 +97,7 @@ FeedItemEntity _wallhaven({int? favorites = 24, int? coreFavourites = 24}) => Fe
 
 Future<void> _waitForCachedImage(WidgetTester tester) async {
   final Stopwatch timeout = Stopwatch()..start();
-  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+  while (networkImageUrls(tester).isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
     );
@@ -414,7 +415,7 @@ void main() {
       directory: Directory('${offlineAssets.directory.path}/pending'),
       lookupResult: lookup.future,
     );
-    final FeedItemEntity entity = _prism();
+    final FeedItemEntity entity = _wallhaven();
     await pump(
       tester,
       WallpaperDetailLoaded(
@@ -423,13 +424,18 @@ void main() {
         paletteLoading: false,
       ),
       entity: entity,
+      source: WallpaperSource.wallhaven,
     );
 
-    final Finder pendingPreview = find.byType(FutureBuilder<File?>);
-    expect(find.descendant(of: pendingPreview, matching: find.byType(CachedNetworkImage)), findsNWidgets(2));
+    // While the lookup runs, the card is not blank: the thumbnail is drawn and no local copy is.
+    expect(networkImageUrls(tester), contains('https://img.test/thumb.jpg'));
+    expect(fileImagePaths(tester), isEmpty);
 
-    lookup.complete(null);
+    // A retained copy found by the lookup is then drawn.
+    lookup.complete(File('assets/images/prism.webp'));
     await tester.pump();
+    await tester.pump();
+    expect(fileImagePaths(tester), contains('assets/images/prism.webp'));
   });
 
   group('block creator', () {
@@ -534,13 +540,13 @@ void main() {
         tester,
         const WallpaperDetailError(
           failure: WallpaperDetailLoadFailure.unavailable,
-          thumbnailUrl: 'https://img.test/thumb.jpg',
+          thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
         ),
       );
 
       expect(find.text("Couldn't load this wallpaper"), findsOneWidget);
       expect(find.text('Check your connection and try again.'), findsOneWidget);
-      expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, 'https://img.test/thumb.jpg');
+      expect(networkImageUrls(tester), ['https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg']);
 
       await tester.tap(find.text('Try again'));
       await tester.pump();

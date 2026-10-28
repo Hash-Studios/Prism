@@ -3,7 +3,7 @@ import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import test from "node:test";
 
-type Index = {collectionGroup: string; fields: Array<{fieldPath: string; order?: string; arrayConfig?: string}>};
+type Index = {collectionGroup: string; queryScope: string; fields: Array<{fieldPath: string; order?: string; arrayConfig?: string}>};
 type Override = {collectionGroup: string; fieldPath: string; ttl?: boolean};
 
 const fixtureRoot = process.env.PRISM_REPO_ROOT ?? join(__dirname, "../../..");
@@ -71,8 +71,9 @@ test("walls have the spatial feed index: review, spatial.tier in, newest first",
     [["review", "ASCENDING"], ["spatial.tier", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
 });
 
-const hasIndex = (collectionGroup: string, fields: Array<[string, string]>) =>
+const hasIndex = (collectionGroup: string, fields: Array<[string, string]>, queryScope = "COLLECTION") =>
   config.indexes.some((i) => i.collectionGroup === collectionGroup &&
+    i.queryScope === queryScope &&
     JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));
 
 test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active boosts", () => {
@@ -85,6 +86,22 @@ test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active 
 test("quest event rate docs expire through a TTL policy on expireAt", () => {
   assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === "questEventRate" && o.fieldPath === "expireAt" &&
     o.ttl === true));
+});
+
+test("folders have the owner index: ownerId, newest update first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "folders");
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]);
+});
+
+test("folder items: account deletion finds them by owner across folders, repair reads the newest by owner", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "items" && o.fieldPath === "ownerId") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  // An override replaces the default single-field indexes, so the client's per-folder query keeps its own scope.
+  assert.deepEqual(override.indexes.map((i) => [i.order, i.queryScope]),
+    [["ASCENDING", "COLLECTION"], ["ASCENDING", "COLLECTION_GROUP"]]);
+  assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
 });
 
 test("walls have the protected spatial index the app queries: protected asset fields, review, spatial.tier, newest first", () => {

@@ -105,6 +105,60 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// Title of the empty Folders tab in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'No folders yet'**
+  String get foldersLibraryEmptyTitle;
+
+  /// Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the heart on a wallpaper to save it to a folder.'**
+  String get foldersLibraryEmptyBody;
+
+  /// Title shown when the Library cannot load the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your folders'**
+  String get foldersLoadAllError;
+
+  /// Hint in the favourites search field. It also tells how many favourites there are.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Search 1 favourite} other{Search {count} favourites}}'**
+  String wallpaperFavouriteSearchCountHint(int count);
+
+  /// Title of the favourites sort and filter sheet, and the tooltip of its button.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort and filter'**
+  String get wallpaperFavouriteSortAndFilter;
+
+  /// Heading above the sort choices in the favourites sort and filter sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get wallpaperFavouriteSortBy;
+
+  /// Heading above the source filter chips in the favourites sort and filter sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get wallpaperFavouriteFilterSource;
+
+  /// Tooltip and screen reader label of the button that sets a wallpaper from history again.
+  ///
+  /// In en, this message translates to:
+  /// **'Set again'**
+  String get wallpaperHistorySetAgain;
+
+  /// Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.
+  ///
+  /// In en, this message translates to:
+  /// **'{current}{target}, set at {time}'**
+  String wallpaperHistoryTileLabel(String current, String target, String time);
+
   /// No description provided for @wallpaperProviderWallhaven.
   ///
   /// In en, this message translates to:
@@ -13189,18 +13243,6 @@ abstract class AppLocalizations {
   /// **'Remove from history'**
   String get wallpaperHistoryRemoveAction;
 
-  /// Accessibility description for a wallpaper history tile.
-  ///
-  /// In en, this message translates to:
-  /// **'{current}Set again. {target}, {date}'**
-  String wallpaperHistoryTileSemantic(String current, String target, String date);
-
-  /// Title of the wallpaper history screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper history'**
-  String get wallpaperHistoryTitle;
-
   /// Accessible name for the Prism logo.
   ///
   /// In en, this message translates to:
@@ -13278,24 +13320,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'History'**
   String get wallpaperLibraryHistory;
-
-  /// Description for the history introduction in the library.
-  ///
-  /// In en, this message translates to:
-  /// **'The wallpapers you set, so you can set them again.'**
-  String get wallpaperLibraryHistoryBody;
-
-  /// Title for the history introduction in the library.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper history'**
-  String get wallpaperLibraryHistoryTitle;
-
-  /// Action to open wallpaper history.
-  ///
-  /// In en, this message translates to:
-  /// **'Open history'**
-  String get wallpaperLibraryOpenHistory;
 
   /// Library screen title.
   ///
@@ -14137,12 +14161,6 @@ abstract class AppLocalizations {
   /// **'Wall of the Day tile'**
   String get wallpaperQuickWotdTitle;
 
-  /// Section heading for recently set wallpapers.
-  ///
-  /// In en, this message translates to:
-  /// **'Recently set'**
-  String get wallpaperRecentlySet;
-
   /// Wallpaper and feed interface text: wallpaperRefresh.
   ///
   /// In en, this message translates to:
@@ -14220,12 +14238,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get wallpaperSet;
-
-  /// Accessibility label to set a recently set wallpaper again.
-  ///
-  /// In en, this message translates to:
-  /// **'Set this wallpaper again'**
-  String get wallpaperSetAgain;
 
   /// Wallpaper menu action to set this wallpaper.
   ///
@@ -14430,12 +14442,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to use premium filters with coins.'**
   String get wallpaperSignInForPremiumFilters;
-
-  /// Accessibility label for the favourites sort menu.
-  ///
-  /// In en, this message translates to:
-  /// **'Sort'**
-  String get wallpaperSort;
 
   /// Wallpaper interface text: wallpaperSortDownloads.
   ///
@@ -16440,6 +16446,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get widgetsCardDismiss;
+
+  /// Heading for the user's folders of saved wallpapers in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get foldersTitle;
+
+  /// Action and sheet title for saving a wallpaper into one or more of the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to folder'**
+  String get foldersSaveToFolder;
+
+  /// Action on the toast shown after a wallpaper is favourited. Opens the folder picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to folder'**
+  String get foldersAddToFolder;
+
+  /// Label of the card, row and sheet that create a new folder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get foldersNewFolder;
+
+  /// Hint in the text field for a folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get foldersNameHint;
+
+  /// Button that creates a folder with the typed name.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get foldersCreate;
+
+  /// Tooltip of the icon button that adds the typed folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'Create folder'**
+  String get foldersCreateFolder;
+
+  /// Tag on a suggested folder name when the user has no folders yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get foldersSuggested;
+
+  /// Tag on a folder row that is created when the user taps Done.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get foldersNewTag;
+
+  /// Number of wallpapers in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersItemCount(int count);
+
+  /// Confirmation after saving a wallpaper to folders.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Saved to 1 folder.} other{Saved to {count} folders.}}'**
+  String foldersSavedToCount(int count);
+
+  /// Confirmation after the user changes which folders hold a wallpaper without adding it to a new one.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders updated.'**
+  String get foldersUpdated;
+
+  /// Error after a folder save fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save to folders. Try again.'**
+  String get foldersSaveFailed;
+
+  /// Error after a rename, delete or removal fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the folder. Try again.'**
+  String get foldersUpdateFailed;
+
+  /// Menu action that renames a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get foldersRename;
+
+  /// Title of the sheet that renames a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get foldersRenameTitle;
+
+  /// Menu action that deletes a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get foldersDelete;
+
+  /// Title of the confirm before deleting a folder. name is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String foldersDeleteTitle(String name);
+
+  /// Message in the confirm before deleting a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'The wallpapers stay in your favourites.'**
+  String get foldersDeleteMessage;
+
+  /// Confirm button that deletes a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get foldersDeleteConfirm;
+
+  /// Confirmation after a folder is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder deleted.'**
+  String get foldersDeleted;
+
+  /// Title of the confirm before removing a wallpaper from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from this folder?'**
+  String get foldersRemoveTitle;
+
+  /// Message in the confirm before removing a wallpaper from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'It stays in your favourites.'**
+  String get foldersRemoveMessage;
+
+  /// Confirm button that removes a wallpaper from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get foldersRemoveConfirm;
+
+  /// Confirmation after a wallpaper is removed from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from the folder.'**
+  String get foldersRemoved;
+
+  /// Title of the empty state of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is empty'**
+  String get foldersEmptyTitle;
+
+  /// Body of the empty state of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the heart on a wallpaper to save it here.'**
+  String get foldersEmptyBody;
+
+  /// Title of the error state of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this folder.'**
+  String get foldersLoadError;
+
+  /// Title when a folder link points to a folder that is gone or belongs to someone else.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is not available'**
+  String get foldersNotFoundTitle;
+
+  /// Body when a folder link points to a folder that is gone.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been deleted.'**
+  String get foldersNotFoundBody;
+
+  /// Feature name in the sign-in prompt, as in 'Sign in to use folders'.
+  ///
+  /// In en, this message translates to:
+  /// **'folders'**
+  String get foldersSignInFeature;
+
+  /// Tooltip of the folder page overflow menu.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get foldersMoreOptions;
+
+  /// Suggested folder name for wallpapers to use on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock screen'**
+  String get foldersSuggestionLockScreen;
+
+  /// Suggested folder name for wallpapers to use on the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen'**
+  String get foldersSuggestionHomeScreen;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

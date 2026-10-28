@@ -4,8 +4,10 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
@@ -409,11 +411,9 @@ class _PhotoSection extends StatelessWidget {
           ),
           child: state.motionStyle.needsDepthMap && mapUrl != null
               ? SpatialTiltView(image: CachedNetworkImageProvider(imageUrl), mapUrl: mapUrl)
-              : CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 720,
-                  errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image_outlined)),
+              : ProgressiveWallpaperImage(
+                  display: WallpaperDisplaySource(thumbnail: '', full: imageUrl),
+                  errorBuilder: (_, _) => const Center(child: Icon(Icons.broken_image_outlined)),
                 ),
         ),
         const SizedBox(height: 16),

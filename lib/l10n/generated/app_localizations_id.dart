@@ -11,6 +11,41 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Belum ada folder';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Tekan lama ikon hati pada wallpaper untuk menyimpannya ke folder.';
+
+  @override
+  String get foldersLoadAllError => 'Folder Anda tidak dapat dimuat';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Cari di $countString favorit');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Urutkan dan filter';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Urutkan menurut';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Sumber';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Pasang lagi';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, dipasang pukul $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8476,14 +8511,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Hapus dari riwayat';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Pasang lagi. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Riwayat wallpaper';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8529,15 +8556,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Riwayat';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Riwayat wallpaper';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Buka riwayat';
 
   @override
   String get wallpaperLibraryTitle => 'Koleksi saya';
@@ -9014,9 +9032,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Pintasan Wallpaper Hari Ini';
 
   @override
-  String get wallpaperRecentlySet => 'Baru dipasang';
-
-  @override
   String get wallpaperRefresh => 'Muat ulang';
 
   @override
@@ -9056,9 +9071,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Pasang';
-
-  @override
-  String get wallpaperSetAgain => 'Pasang wallpaper ini lagi';
 
   @override
   String get wallpaperSetAsWallpaper => 'Jadikan wallpaper';
@@ -9179,9 +9191,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Masuk untuk menggunakan filter premium dengan koin.';
-
-  @override
-  String get wallpaperSort => 'Urutkan';
 
   @override
   String get wallpaperSortDownloads => 'Urutkan unduhan';
@@ -10289,4 +10298,131 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Tutup';
+
+  @override
+  String get foldersTitle => 'Folder';
+
+  @override
+  String get foldersSaveToFolder => 'Simpan ke folder';
+
+  @override
+  String get foldersAddToFolder => 'Tambahkan ke folder';
+
+  @override
+  String get foldersNewFolder => 'Folder baru';
+
+  @override
+  String get foldersNameHint => 'Nama folder';
+
+  @override
+  String get foldersCreate => 'Buat';
+
+  @override
+  String get foldersCreateFolder => 'Buat folder';
+
+  @override
+  String get foldersSuggested => 'Disarankan';
+
+  @override
+  String get foldersNewTag => 'Baru';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper',
+      one: '1 wallpaper',
+      zero: 'Tidak ada wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disimpan ke $countString folder.',
+      one: 'Disimpan ke 1 folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Folder diperbarui.';
+
+  @override
+  String get foldersSaveFailed => 'Tidak dapat menyimpan ke folder. Coba lagi.';
+
+  @override
+  String get foldersUpdateFailed => 'Tidak dapat memperbarui folder. Coba lagi.';
+
+  @override
+  String get foldersRename => 'Ganti nama';
+
+  @override
+  String get foldersRenameTitle => 'Ganti nama folder';
+
+  @override
+  String get foldersDelete => 'Hapus';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return 'Hapus $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Wallpaper tetap ada di favorit Anda.';
+
+  @override
+  String get foldersDeleteConfirm => 'Hapus folder';
+
+  @override
+  String get foldersDeleted => 'Folder dihapus.';
+
+  @override
+  String get foldersRemoveTitle => 'Hapus dari folder ini?';
+
+  @override
+  String get foldersRemoveMessage => 'Wallpaper ini tetap ada di favorit Anda.';
+
+  @override
+  String get foldersRemoveConfirm => 'Hapus';
+
+  @override
+  String get foldersRemoved => 'Dihapus dari folder.';
+
+  @override
+  String get foldersEmptyTitle => 'Folder ini kosong';
+
+  @override
+  String get foldersEmptyBody => 'Tekan lama ikon hati pada wallpaper untuk menyimpannya di sini.';
+
+  @override
+  String get foldersLoadError => 'Folder ini tidak dapat dimuat.';
+
+  @override
+  String get foldersNotFoundTitle => 'Folder ini tidak tersedia';
+
+  @override
+  String get foldersNotFoundBody => 'Mungkin folder ini sudah dihapus.';
+
+  @override
+  String get foldersSignInFeature => 'folder';
+
+  @override
+  String get foldersMoreOptions => 'Opsi lainnya';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Layar kunci';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Layar utama';
 }

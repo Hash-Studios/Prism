@@ -11,6 +11,46 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Segure o coração em um papel de parede para salvá-lo em uma pasta.';
+
+  @override
+  String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pesquisar em $countString favoritos',
+      one: 'Pesquisar em 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Organizar e filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Organizar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Fonte';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Definir novamente';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, definido às $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8724,7 +8764,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>
@@ -8735,14 +8775,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperHistoryRemoveAction => 'Remover do histórico';
-
-  @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Defina novamente. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Histórico do papel de parede';
 
   @override
   String get wallpaperHomeAppName => 'Prism';
@@ -8790,16 +8822,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Histórico';
-
-  @override
-  String get wallpaperLibraryHistoryBody =>
-      'Os papéis de parede que você definir aparecerão aqui para que possa defini-los novamente.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Histórico do papel de parede';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir histórico';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -9279,9 +9301,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Bloco do papel de parede do dia';
 
   @override
-  String get wallpaperRecentlySet => 'Definido recentemente';
-
-  @override
   String get wallpaperRefresh => 'Atualizar';
 
   @override
@@ -9321,9 +9340,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Definir';
-
-  @override
-  String get wallpaperSetAgain => 'Defina este papel de parede novamente';
 
   @override
   String get wallpaperSetAsWallpaper => 'Definir como papel de parede';
@@ -9446,9 +9462,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Faça login para usar filtros premium com moedas.';
-
-  @override
-  String get wallpaperSort => 'Organizar';
 
   @override
   String get wallpaperSortDownloads => 'Classificar downloads';
@@ -10561,6 +10574,133 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get widgetsCardDismiss => 'Dispensar';
+
+  @override
+  String get foldersTitle => 'Pastas';
+
+  @override
+  String get foldersSaveToFolder => 'Salvar na pasta';
+
+  @override
+  String get foldersAddToFolder => 'Adicionar à pasta';
+
+  @override
+  String get foldersNewFolder => 'Nova pasta';
+
+  @override
+  String get foldersNameHint => 'Nome da pasta';
+
+  @override
+  String get foldersCreate => 'Criar';
+
+  @override
+  String get foldersCreateFolder => 'Criar pasta';
+
+  @override
+  String get foldersSuggested => 'Sugerida';
+
+  @override
+  String get foldersNewTag => 'Nova';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede',
+      one: '1 papel de parede',
+      zero: 'Nenhum papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvo em $countString pastas.',
+      one: 'Salvo em 1 pasta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Pastas atualizadas.';
+
+  @override
+  String get foldersSaveFailed => 'Não foi possível salvar nas pastas. Tente novamente.';
+
+  @override
+  String get foldersUpdateFailed => 'Não foi possível atualizar a pasta. Tente novamente.';
+
+  @override
+  String get foldersRename => 'Renomear';
+
+  @override
+  String get foldersRenameTitle => 'Renomear pasta';
+
+  @override
+  String get foldersDelete => 'Excluir';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return 'Excluir $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Os papéis de parede continuam nos seus favoritos.';
+
+  @override
+  String get foldersDeleteConfirm => 'Excluir pasta';
+
+  @override
+  String get foldersDeleted => 'Pasta excluída.';
+
+  @override
+  String get foldersRemoveTitle => 'Remover desta pasta?';
+
+  @override
+  String get foldersRemoveMessage => 'Continua nos seus favoritos.';
+
+  @override
+  String get foldersRemoveConfirm => 'Remover';
+
+  @override
+  String get foldersRemoved => 'Removido da pasta.';
+
+  @override
+  String get foldersEmptyTitle => 'Esta pasta está vazia';
+
+  @override
+  String get foldersEmptyBody => 'Segure o coração em um papel de parede para salvá-lo aqui.';
+
+  @override
+  String get foldersLoadError => 'Não foi possível carregar esta pasta.';
+
+  @override
+  String get foldersNotFoundTitle => 'Esta pasta não está disponível';
+
+  @override
+  String get foldersNotFoundBody => 'Talvez ela tenha sido excluída.';
+
+  @override
+  String get foldersSignInFeature => 'pastas';
+
+  @override
+  String get foldersMoreOptions => 'Mais opções';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Tela de bloqueio';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Tela inicial';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -10568,6 +10708,46 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Segure o coração em um papel de parede para salvá-lo em uma pasta.';
+
+  @override
+  String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pesquisar em $countString favoritos',
+      one: 'Pesquisar em 1 favorito',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Organizar e filtrar';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Organizar por';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Fonte';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Definir novamente';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, definido às $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -19281,7 +19461,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperHistoryCurrent => 'Atual';
 
   @override
-  String get wallpaperHistoryCurrentPrefix => 'Atual.';
+  String get wallpaperHistoryCurrentPrefix => 'Atual. ';
 
   @override
   String get wallpaperHistoryEmptyBody =>
@@ -19292,14 +19472,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperHistoryRemoveAction => 'Remover do histórico';
-
-  @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Defina novamente. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Histórico do papel de parede';
 
   @override
   String get wallpaperHomeAppName => 'Prism';
@@ -19347,16 +19519,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperLibraryHistory => 'Histórico';
-
-  @override
-  String get wallpaperLibraryHistoryBody =>
-      'Os papéis de parede que você definir aparecerão aqui para que possa defini-los novamente.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Histórico do papel de parede';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Abrir histórico';
 
   @override
   String get wallpaperLibraryTitle => 'Biblioteca';
@@ -19836,9 +19998,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperQuickWotdTitle => 'Bloco do papel de parede do dia';
 
   @override
-  String get wallpaperRecentlySet => 'Definido recentemente';
-
-  @override
   String get wallpaperRefresh => 'Atualizar';
 
   @override
@@ -19878,9 +20037,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperSet => 'Definir';
-
-  @override
-  String get wallpaperSetAgain => 'Defina este papel de parede novamente';
 
   @override
   String get wallpaperSetAsWallpaper => 'Definir como papel de parede';
@@ -20003,9 +20159,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Faça login para usar filtros premium com moedas.';
-
-  @override
-  String get wallpaperSort => 'Organizar';
 
   @override
   String get wallpaperSortDownloads => 'Classificar downloads';
@@ -21118,4 +21271,131 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get widgetsCardDismiss => 'Dispensar';
+
+  @override
+  String get foldersTitle => 'Pastas';
+
+  @override
+  String get foldersSaveToFolder => 'Salvar na pasta';
+
+  @override
+  String get foldersAddToFolder => 'Adicionar à pasta';
+
+  @override
+  String get foldersNewFolder => 'Nova pasta';
+
+  @override
+  String get foldersNameHint => 'Nome da pasta';
+
+  @override
+  String get foldersCreate => 'Criar';
+
+  @override
+  String get foldersCreateFolder => 'Criar pasta';
+
+  @override
+  String get foldersSuggested => 'Sugerida';
+
+  @override
+  String get foldersNewTag => 'Nova';
+
+  @override
+  String foldersItemCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede',
+      one: '1 papel de parede',
+      zero: 'Nenhum papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSavedToCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvo em $countString pastas.',
+      one: 'Salvo em 1 pasta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersUpdated => 'Pastas atualizadas.';
+
+  @override
+  String get foldersSaveFailed => 'Não foi possível salvar nas pastas. Tente novamente.';
+
+  @override
+  String get foldersUpdateFailed => 'Não foi possível atualizar a pasta. Tente novamente.';
+
+  @override
+  String get foldersRename => 'Renomear';
+
+  @override
+  String get foldersRenameTitle => 'Renomear pasta';
+
+  @override
+  String get foldersDelete => 'Excluir';
+
+  @override
+  String foldersDeleteTitle(String name) {
+    return 'Excluir $name?';
+  }
+
+  @override
+  String get foldersDeleteMessage => 'Os papéis de parede continuam nos seus favoritos.';
+
+  @override
+  String get foldersDeleteConfirm => 'Excluir pasta';
+
+  @override
+  String get foldersDeleted => 'Pasta excluída.';
+
+  @override
+  String get foldersRemoveTitle => 'Remover desta pasta?';
+
+  @override
+  String get foldersRemoveMessage => 'Continua nos seus favoritos.';
+
+  @override
+  String get foldersRemoveConfirm => 'Remover';
+
+  @override
+  String get foldersRemoved => 'Removido da pasta.';
+
+  @override
+  String get foldersEmptyTitle => 'Esta pasta está vazia';
+
+  @override
+  String get foldersEmptyBody => 'Segure o coração em um papel de parede para salvá-lo aqui.';
+
+  @override
+  String get foldersLoadError => 'Não foi possível carregar esta pasta.';
+
+  @override
+  String get foldersNotFoundTitle => 'Esta pasta não está disponível';
+
+  @override
+  String get foldersNotFoundBody => 'Talvez ela tenha sido excluída.';
+
+  @override
+  String get foldersSignInFeature => 'pastas';
+
+  @override
+  String get foldersMoreOptions => 'Mais opções';
+
+  @override
+  String get foldersSuggestionLockScreen => 'Tela de bloqueio';
+
+  @override
+  String get foldersSuggestionHomeScreen => 'Tela inicial';
 }

@@ -7,6 +7,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -78,6 +79,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.favourites => const FavouriteWallpaperRoute(),
     DeepLinkPageTarget.downloads => const DownloadRoute(),
     DeepLinkPageTarget.library => LibraryRoute(initialTab: _libraryTab(query['tab'])),
+    DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => const ReviewRoute(),
@@ -96,7 +98,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
     DeepLinkPageTarget.autoRotate => const AutoRotateRoute(),
     DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
-    DeepLinkPageTarget.wallpaperHistory => const WallpaperHistoryRoute(),
+    DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(
       wallId: query['wallpaperId']!,
       source: source,
@@ -191,11 +193,8 @@ final class DeepLinkWallpaperLookup {
 
 DeepLinkInputRoute _inputRoute(DeepLinkInputWorkflow workflow) => DeepLinkInputRoute(workflow: workflow);
 
-LibraryTab _libraryTab(String? tab) => switch (tab?.toLowerCase()) {
-  'downloads' => LibraryTab.downloads,
-  'history' => LibraryTab.history,
-  _ => LibraryTab.favourites,
-};
+LibraryTab _libraryTab(String? tab) =>
+    LibraryTab.values.where((value) => value.name == tab?.toLowerCase()).firstOrNull ?? LibraryTab.favourites;
 
 DeepLinkInputWorkflow _workflow(String value) => switch (value) {
   'uploadWall' => DeepLinkInputWorkflow.uploadWall,
@@ -223,18 +222,22 @@ Future<PageRouteInfo?> _previewRoute({
   if (entity == null || !_isTrustedImageUrl(entity.thumbnailUrl, entity.source)) {
     return null;
   }
-  final previewUrl = entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl;
-  if (!_isTrustedImageUrl(previewUrl, entity.source)) return null;
+  final WallpaperDisplaySource? display = entity.source == WallpaperSource.prism
+      ? WallpaperDisplaySource.of(entity)
+      : null;
+  final String previewUrl = display?.bestLink ?? entity.fullUrl;
+  if (previewUrl.isEmpty) return null;
+  if (entity.source != WallpaperSource.prism && !_isTrustedImageUrl(previewUrl, entity.source)) return null;
   if (clock) {
     return ClockPreviewRoute(
       link: previewUrl,
       file: false,
       wallpaperId: entity.id,
       wallpaperSource: entity.source,
-      thumbnailUrl: entity.thumbnailUrl,
+      thumbnailUrl: display?.thumbnail ?? entity.thumbnailUrl,
     );
   }
-  return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: entity.thumbnailUrl);
+  return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: display?.thumbnail ?? entity.thumbnailUrl);
 }
 
 Future<PageRouteInfo?> _adminImageRoute({
@@ -250,9 +253,12 @@ Future<PageRouteInfo?> _adminImageRoute({
   if (entity == null) {
     return null;
   }
-  final previewUrl = entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl;
-  if (!_isTrustedImageUrl(previewUrl, entity.source)) return null;
-  return FullScreenImageRoute(imageUrl: previewUrl);
+  final bool prism = entity.source == WallpaperSource.prism;
+  // A Prism wall shows its display derivative, built from the trusted thumbnail, never the original.
+  if (!_isTrustedImageUrl(prism ? entity.thumbnailUrl : entity.fullUrl, entity.source)) return null;
+  final String imageUrl = prism ? WallpaperDisplaySource.of(entity).bestLink : entity.fullUrl;
+  if (imageUrl.isEmpty) return null;
+  return FullScreenImageRoute(imageUrl: imageUrl);
 }
 
 Future<PageRouteInfo?> _relationRoute(

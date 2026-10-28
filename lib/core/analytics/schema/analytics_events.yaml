@@ -1799,11 +1799,51 @@ events:
       - name: step
         key: step
         type: string
-  - id: library_tab_changed
+  - id: folder_created
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: with_wall
+        key: with_wall
+        type: bool
+  - id: wall_saved_to_folder
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: provider
+        key: provider
+        type: string
+      - name: folder_count
+        key: folder_count
+        type: int
+  - id: folder_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+  - id: library_tab_viewed
     fields:
       - name: tab
         key: tab
         type: string
+  - id: library_history_set_again
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: target
+        key: target
+        type: string
+  - id: library_history_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
   - id: favourites_exported
     fields:
       - name: count
