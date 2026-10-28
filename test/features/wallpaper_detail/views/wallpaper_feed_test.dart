@@ -347,4 +347,55 @@ void main() {
 
     expect(() => feed.reveal(60), returnsNormally);
   });
+
+  testWidgets('reveal does nothing when a pop runs it during a build', (tester) async {
+    final controller = ScrollController();
+    late BuildContext gridContext;
+    late WallpaperFeed feed;
+    late StateSetter rebuild;
+    bool revealInBuild = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Stack(
+          children: [
+            CustomScrollView(
+              controller: controller,
+              slivers: [
+                SliverGrid.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+                  itemCount: 100,
+                  itemBuilder: (context, i) {
+                    if (i == 0) gridContext = context;
+                    return SizedBox(key: ValueKey('tile-$i'));
+                  },
+                ),
+              ],
+            ),
+            StatefulBuilder(
+              builder: (context, setState) {
+                rebuild = setState;
+                if (revealInBuild) feed.reveal(60);
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+    feed = WallpaperFeed(
+      grid: gridContext,
+      tiles: [for (var i = 0; i < 100; i++) (item: _item('$i'), index: i, heroTag: 't$i')],
+      indexInGrid: (item) {
+        feed.grid.visitChildElements((_) {});
+        return int.parse(item.id);
+      },
+    );
+
+    revealInBuild = true;
+    rebuild(() {});
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.offset, 0);
+  });
 }

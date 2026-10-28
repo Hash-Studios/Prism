@@ -19,7 +19,7 @@ const PUSH_LOCAL_MINUTE = 9 * 60;
 const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
 
 /** Approved walls with a private original: the only walls that 3.8.0 clients list and can set. */
-const protectedWalls = () =>
+export const protectedWalls = () =>
   db
     .collection("walls")
     .where("review", "==", true)

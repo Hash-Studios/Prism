@@ -9479,5 +9479,82 @@
   "foldersSuggestionHomeScreen": "Startbildschirm",
   "@foldersSuggestionHomeScreen": {
     "description": "Suggested folder name for wallpapers to use on the home screen."
+  },
+  "moodDreamyTitle": "Verträumt",
+  "@moodDreamyTitle": {
+    "description": "Home mood name for soft, pastel wallpapers."
+  },
+  "moodDreamyBody": "Weiche Himmel und pastellfarbenes Licht.",
+  "@moodDreamyBody": {
+    "description": "One line under the Dreamy mood title."
+  },
+  "moodDarkQuietTitle": "Dunkel und ruhig",
+  "@moodDarkQuietTitle": {
+    "description": "Home mood name for dark, calm wallpapers."
+  },
+  "moodDarkQuietBody": "Wenig Licht, sanft für die Augen.",
+  "@moodDarkQuietBody": {
+    "description": "One line under the Dark and quiet mood title."
+  },
+  "moodBrightBoldTitle": "Hell und kräftig",
+  "@moodBrightBoldTitle": {
+    "description": "Home mood name for saturated, colourful wallpapers."
+  },
+  "moodBrightBoldBody": "Viel Farbe, damit dein Display erwacht.",
+  "@moodBrightBoldBody": {
+    "description": "One line under the Bright and bold mood title."
+  },
+  "moodMinimalTitle": "Minimal",
+  "@moodMinimalTitle": {
+    "description": "Home mood name for simple, uncluttered wallpapers."
+  },
+  "moodMinimalBody": "Einfache Formen und viel Freiraum.",
+  "@moodMinimalBody": {
+    "description": "One line under the Minimal mood title."
+  },
+  "moodSpatialReadyTitle": "Bereit für räumliche Szenen",
+  "@moodSpatialReadyTitle": {
+    "description": "Home mood name for wallpapers that work as iOS 26 Spatial Scenes. Keep \"Spatial\" as Apple's feature name."
+  },
+  "moodSpatialReadyBody": "Gemacht, damit sie als räumliche Szene wirkt.",
+  "@moodSpatialReadyBody": {
+    "description": "One line under the Spatial ready mood title. \"Spatial Scene\" is Apple's iOS 26 feature name."
+  },
+  "moodDepthReadyTitle": "Bereit für Tiefeneffekt",
+  "@moodDepthReadyTitle": {
+    "description": "Home mood name for wallpapers that work with the iOS Lock Screen Depth Effect."
+  },
+  "moodDepthReadyBody": "Das Motiv schiebt sich vor deine Uhr.",
+  "@moodDepthReadyBody": {
+    "description": "One line under the Depth ready mood title. Refers to the Lock Screen clock."
+  },
+  "moodChipRowLabel": "Stimmungen",
+  "@moodChipRowLabel": {
+    "description": "Accessibility label for the row of mood chips on Home."
+  },
+  "moodSeeAll": "Alle anzeigen",
+  "@moodSeeAll": {
+    "description": "Button on a Home mood row that opens the full mood page."
+  },
+  "moodSeeAllHint": "Öffnet alle Hintergründe der Stimmung {mood}",
+  "@moodSeeAllHint": {
+    "description": "Accessibility hint for the See all button. {mood} is a mood name such as Dreamy.",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "moodLoadError": "Diese Hintergründe konnten nicht geladen werden",
+  "@moodLoadError": {
+    "description": "Error title on a mood page when the walls fail to load."
+  },
+  "moodEmptyTitle": "Hier gibt es noch keine Hintergründe",
+  "@moodEmptyTitle": {
+    "description": "Empty state title on a mood page."
+  },
+  "moodEmptyBody": "Jeden Tag kommen neue Hintergründe dazu.",
+  "@moodEmptyBody": {
+    "description": "Empty state body on a mood page."
   }
 }

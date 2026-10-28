@@ -2412,6 +2412,51 @@ class FolderOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class MoodChipTappedEvent extends AnalyticsEvent {
+  const MoodChipTappedEvent({required this.moodId, required this.position});
+
+  final String moodId;
+  final int position;
+
+  @override
+  String get eventName => 'mood_chip_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'position': position};
+  }
+}
+
+class MoodRowSeenEvent extends AnalyticsEvent {
+  const MoodRowSeenEvent({required this.moodId, required this.slot});
+
+  final String moodId;
+  final int slot;
+
+  @override
+  String get eventName => 'mood_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'slot': slot};
+  }
+}
+
+class MoodPageOpenedEvent extends AnalyticsEvent {
+  const MoodPageOpenedEvent({required this.moodId, required this.source});
+
+  final String moodId;
+  final String source;
+
+  @override
+  String get eventName => 'mood_page_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'source': source};
+  }
+}
+
 class LibraryTabViewedEvent extends AnalyticsEvent {
   const LibraryTabViewedEvent({required this.tab});
 

@@ -27,6 +27,7 @@ enum DeepLinkPageTarget {
   downloads,
   library,
   folder,
+  mood,
   uploadInput,
   editWallInput,
   review,
@@ -127,6 +128,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/downloads', DeepLinkPageTarget.downloads),
     DeepLinkRouteExample('/library?tab=downloads', DeepLinkPageTarget.library),
     DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
+    DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -257,6 +259,9 @@ final class DeepLinkRouteCatalog {
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'folder') {
       target = DeepLinkPageTarget.folder;
       pathParams['folderId'] = segments[1];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'mood') {
+      target = DeepLinkPageTarget.mood;
+      pathParams['moodId'] = segments[1];
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'collection') {
       target = DeepLinkPageTarget.collectionView;
       pathParams['collectionName'] = segments[1];
@@ -417,6 +422,7 @@ final class DeepLinkRouteCatalog {
           'category',
           'wallpaper',
           'folder',
+          'mood',
         }.contains(segments[0].toLowerCase())) {
       return true;
     }

@@ -10506,4 +10506,60 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Pantalla de inicio';
+
+  @override
+  String get moodDreamyTitle => 'Soñador';
+
+  @override
+  String get moodDreamyBody => 'Cielos suaves y luz pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Oscuro y tranquilo';
+
+  @override
+  String get moodDarkQuietBody => 'Poca luz, fácil para la vista.';
+
+  @override
+  String get moodBrightBoldTitle => 'Brillante y audaz';
+
+  @override
+  String get moodBrightBoldBody => 'Mucho color para despertar tu pantalla.';
+
+  @override
+  String get moodMinimalTitle => 'Minimalista';
+
+  @override
+  String get moodMinimalBody => 'Formas simples y espacio para respirar.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Listo para escena espacial';
+
+  @override
+  String get moodSpatialReadyBody => 'Hecho para destacar como escena espacial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Listo para profundidad';
+
+  @override
+  String get moodDepthReadyBody => 'El sujeto queda delante de tu reloj.';
+
+  @override
+  String get moodChipRowLabel => 'Estados de ánimo';
+
+  @override
+  String get moodSeeAll => 'Ver todo';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Abre todos los fondos de pantalla de $mood';
+  }
+
+  @override
+  String get moodLoadError => 'No se pudieron cargar estos fondos de pantalla';
+
+  @override
+  String get moodEmptyTitle => 'Aún no hay fondos de pantalla aquí';
+
+  @override
+  String get moodEmptyBody => 'Cada día se suman nuevos fondos de pantalla.';
 }

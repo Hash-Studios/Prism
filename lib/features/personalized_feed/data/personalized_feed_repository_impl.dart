@@ -679,6 +679,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   @override
+  TasteProfile currentTasteProfile() => TasteProfile.build(
+    interests: _interests,
+    following: _following,
+    signals: _tasteSignals.read(),
+    now: DateTime.now().toUtc(),
+  );
+
+  @override
   Future<Result<PersonalizedFeedPage>> fetchPopular() async {
     try {
       List<String> ids = const <String>[];

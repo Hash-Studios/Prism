@@ -101,6 +101,10 @@ import '../../features/live_wallpaper/data/repositories/live_wallpaper_repositor
     as _i1067;
 import '../../features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart'
     as _i485;
+import '../../features/moods/biz/mood_walls_cubit.dart' as _i727;
+import '../../features/moods/biz/moods_cubit.dart' as _i907;
+import '../../features/moods/data/mood_repository_impl.dart' as _i544;
+import '../../features/moods/domain/repositories/mood_repository.dart' as _i386;
 import '../../features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart'
     as _i224;
 import '../../features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart'
@@ -748,6 +752,14 @@ _i174.GetIt initGetIt(
       gh<_i489.WallOfTheDayRepository>(),
     ),
   );
+  gh.lazySingleton<_i386.MoodRepository>(
+    () => _i544.MoodRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
   gh.factory<_i408.AutoRotateBloc>(
     () => _i408.AutoRotateBloc(gh<_i563.AutoRotateRepository>()),
   );
@@ -767,6 +779,12 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i71.WotdArchiveBloc>(
     () => _i71.WotdArchiveBloc(gh<_i353.FetchWotdArchiveUseCase>()),
+  );
+  gh.lazySingleton<_i907.MoodsCubit>(
+    () => _i907.MoodsCubit(gh<_i386.MoodRepository>()),
+  );
+  gh.factory<_i727.MoodWallsCubit>(
+    () => _i727.MoodWallsCubit(gh<_i386.MoodRepository>()),
   );
   gh.factory<_i224.OnboardingV2Bloc>(
     () => _i224.OnboardingV2Bloc(

@@ -10425,4 +10425,60 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Layar utama';
+
+  @override
+  String get moodDreamyTitle => 'Impian';
+
+  @override
+  String get moodDreamyBody => 'Langit lembut dan cahaya pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Gelap dan tenang';
+
+  @override
+  String get moodDarkQuietBody => 'Cahaya redup, nyaman di mata.';
+
+  @override
+  String get moodBrightBoldTitle => 'Cerah dan mencolok';
+
+  @override
+  String get moodBrightBoldBody => 'Warna cerah untuk menyegarkan layarmu.';
+
+  @override
+  String get moodMinimalTitle => 'Minimal';
+
+  @override
+  String get moodMinimalBody => 'Bentuk sederhana dan ruang yang lega.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Siap jadi Adegan Spasial';
+
+  @override
+  String get moodSpatialReadyBody => 'Dibuat agar tampil menonjol sebagai Adegan Spasial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Siap efek kedalaman';
+
+  @override
+  String get moodDepthReadyBody => 'Subjek berada di depan jam layar kunci.';
+
+  @override
+  String get moodChipRowLabel => 'Suasana';
+
+  @override
+  String get moodSeeAll => 'Lihat semua';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Membuka semua wallpaper $mood';
+  }
+
+  @override
+  String get moodLoadError => 'Wallpaper ini tidak bisa dimuat';
+
+  @override
+  String get moodEmptyTitle => 'Belum ada wallpaper di sini';
+
+  @override
+  String get moodEmptyBody => 'Wallpaper baru ditambahkan setiap hari.';
 }

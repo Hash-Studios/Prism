@@ -26,6 +26,10 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
@@ -225,7 +229,9 @@ class _Home {
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
-      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+      ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(_FakeMoodRepository()))
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(_FakeMoodRepository()));
 
     final _MockWotdBloc wotd = _MockWotdBloc();
     whenListen(
@@ -323,6 +329,17 @@ class _Home {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   }
+}
+
+class _FakeMoodRepository implements MoodRepository {
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
+  @override
+  Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async => const <PrismWallpaper>[];
 }
 
 class _FakeDropsRepository implements DropsRepository {
