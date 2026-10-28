@@ -129,10 +129,8 @@ class LiveWallpaperView extends StatefulWidget {
 }
 
 class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindingObserver {
-  late _LiveMode _mode = _hasPhoto ? _LiveMode.photo : _LiveMode.gradients;
+  late _LiveMode _mode = widget.imageUrl == null ? _LiveMode.gradients : _LiveMode.photo;
   int _seedIndex = 0;
-
-  bool get _hasPhoto => widget.imageUrl?.trim().isNotEmpty == true;
 
   @override
   void initState() {
@@ -155,7 +153,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
   }
 
-  List<_LiveMode> get _modes => <_LiveMode>[if (_hasPhoto) _LiveMode.photo, _LiveMode.gradients, _LiveMode.video];
+  List<_LiveMode> get _modes => <_LiveMode>[
+    if (widget.imageUrl != null) _LiveMode.photo,
+    _LiveMode.gradients,
+    _LiveMode.video,
+  ];
 
   List<Color> _seeds(BuildContext context) =>
       LivePalette.seedVariants(widget.accentSeed ?? Theme.of(context).colorScheme.primary);
@@ -414,8 +416,6 @@ class _PhotoSection extends StatelessWidget {
               ? SpatialTiltView(
                   image: isValidNetworkUrl(imageUrl)
                       ? CachedNetworkImageProvider(imageUrl)
-                      : imageUrl.startsWith('assets/')
-                      ? AssetImage(imageUrl)
                       : FileImage(
                           File(Uri.tryParse(imageUrl)?.scheme == 'file' ? Uri.parse(imageUrl).toFilePath() : imageUrl),
                         ),

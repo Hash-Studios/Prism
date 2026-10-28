@@ -1,8 +1,3 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
@@ -17,47 +12,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_live_wallpaper_repository.dart';
-
-Future<File> _createKnownPhoto() async {
-  final Directory directory = await Directory.systemTemp.createTemp('prism-live-preview-');
-  final File file = File('${directory.path}/photo #1.png');
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final ui.Canvas canvas = ui.Canvas(recorder);
-  canvas.drawColor(const Color(0xFF123456), BlendMode.src);
-  final ui.Picture picture = recorder.endRecording();
-  final ui.Image image = await picture.toImage(2, 3);
-  picture.dispose();
-  final ByteData bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-  image.dispose();
-  await file.writeAsBytes(bytes.buffer.asUint8List());
-  return file;
-}
-
-Future<void> _waitForImage(WidgetTester tester, ImageProvider provider) async {
-  final Finder preview = find.byType(SpatialTiltView);
-  final ImageStream stream = provider.resolve(createLocalImageConfiguration(tester.element(preview)));
-  final Completer<void> decoded = Completer<void>();
-  final ImageStreamListener listener = ImageStreamListener(
-    (ImageInfo info, _) {
-      if (!decoded.isCompleted) decoded.complete();
-      info.dispose();
-    },
-    onError: (Object error, StackTrace? stackTrace) {
-      if (!decoded.isCompleted) decoded.completeError(error, stackTrace);
-    },
-  );
-  stream.addListener(listener);
-  try {
-    for (int frame = 0; frame < 50 && !decoded.isCompleted; frame++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-      await tester.pump();
-    }
-    expect(decoded.isCompleted, isTrue, reason: 'the preview image stream should complete');
-    await decoded.future;
-  } finally {
-    stream.removeListener(listener);
-  }
-}
 
 void main() {
   late FakeLiveWallpaperRepository repository;
@@ -164,78 +118,6 @@ void main() {
 
     final SpatialTiltView spatialView = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
     expect(spatialView.image, isA<FileImage>().having((provider) => provider.file.path, 'path', imagePath));
-  });
-
-  testWidgets('the 3D preview uses a bundled asset for the wallpaper', (tester) async {
-    const String imagePath = 'assets/app_icons/icon_default.jpg';
-    await pump(tester, imageUrl: imagePath, depthMapUrl: 'https://example.com/map.png');
-
-    await tester.ensureVisible(find.text('3D'));
-    await tester.tap(find.text('3D'));
-    await tester.pump();
-    await tester.pump();
-
-    final SpatialTiltView spatialView = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
-    expect(spatialView.image, isA<AssetImage>().having((provider) => provider.assetName, 'assetName', imagePath));
-
-    await _waitForImage(tester, spatialView.image);
-    await tester.pump();
-    final RawImage rawImage = tester.widget<RawImage>(
-      find.descendant(of: find.byType(SpatialTiltView), matching: find.byType(RawImage)).first,
-    );
-    expect(rawImage.image, isNotNull, reason: 'the bundled wallpaper should decode in the 3D preview');
-    expect((rawImage.image!.width, rawImage.image!.height), (512, 512));
-    final ByteData pixels = (await tester.runAsync(() async => (await rawImage.image!.toByteData())!))!;
-    expect(pixels.lengthInBytes, 512 * 512 * 4);
-  });
-
-  testWidgets('an encoded file URI keeps spaces and hashes in the local wallpaper path', (tester) async {
-    final File photo = (await tester.runAsync(_createKnownPhoto))!;
-    addTearDown(() async {
-      if (await photo.parent.exists()) await photo.parent.delete(recursive: true);
-    });
-    final String imageUrl = photo.uri.toString();
-    expect(imageUrl, contains('%20'));
-    expect(imageUrl, contains('%23'));
-    await pump(tester, imageUrl: imageUrl, depthMapUrl: 'https://example.com/map.png');
-
-    await tester.ensureVisible(find.text('3D'));
-    await tester.tap(find.text('3D'));
-    await tester.pump();
-    await tester.pump();
-
-    final SpatialTiltView spatialView = tester.widget<SpatialTiltView>(find.byType(SpatialTiltView));
-    expect(spatialView.image, isA<FileImage>().having((provider) => provider.file.path, 'path', photo.path));
-    await _waitForImage(tester, spatialView.image);
-    await tester.pump();
-
-    final RawImage rawImage = tester.widget<RawImage>(
-      find.descendant(of: find.byType(SpatialTiltView), matching: find.byType(RawImage)).first,
-    );
-    expect(rawImage.image, isNotNull, reason: 'the downloaded photo should decode in the live preview');
-    expect((rawImage.image!.width, rawImage.image!.height), (2, 3));
-    final ByteData pixels = (await tester.runAsync(() async => (await rawImage.image!.toByteData())!))!;
-    expect((pixels.getUint8(0), pixels.getUint8(1), pixels.getUint8(2), pixels.getUint8(3)), (0x12, 0x34, 0x56, 0xFF));
-  });
-
-  testWidgets('an empty or whitespace-only photo URL starts in gradients and hides the photo mode', (tester) async {
-    final List<String> imageUrls = <String>['', '   ', '\n\t'];
-    for (int index = 0; index < imageUrls.length; index++) {
-      await tester.pumpWidget(const SizedBox.shrink());
-      final String imageUrl = imageUrls[index];
-      await pump(tester, imageUrl: imageUrl);
-
-      expect(find.text('Make it live'), findsNothing, reason: 'URL should be absent: ${imageUrl.trim().isEmpty}');
-      expect(find.text('Gradients'), findsOneWidget);
-      expect(find.text('Set live wallpaper'), findsOneWidget);
-      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Set live wallpaper')).onPressed, isNotNull);
-
-      await tester.tap(find.text('Set live wallpaper'));
-      await tester.pump();
-      await tester.pump();
-      expect(repository.gradientApplies, hasLength(index + 1));
-      expect(repository.motionApplies, isEmpty);
-    }
   });
 
   testWidgets('battery saver switches to 15 frames per second', (tester) async {

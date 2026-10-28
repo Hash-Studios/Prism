@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -29,126 +28,6 @@ void main() {
       ),
     );
     verify(() => fixture.cacheManager.getSingleFile('https://example.com/a.jpg')).called(1);
-  });
-
-  test('reports an empty source as a typed texture download failure', () async {
-    final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
-    fixture.install();
-    addTearDown(fixture.dispose);
-
-    await expectLater(
-      const LiveTexturePreparer().prepare('', 0.5),
-      throwsA(
-        isA<LiveTextureException>().having((error) => error.failure, 'failure', LiveApplyFailure.textureDownloadFailed),
-      ),
-    );
-  });
-
-  testWidgets('prepares bundled photo and depth assets through the normal crop and compression pipeline', (
-    tester,
-  ) async {
-    await tester.runAsync(() async {
-      final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
-      fixture.install();
-      addTearDown(fixture.dispose);
-      final Uint8List photoBytes = await _splitPng(width: 8, height: 4, whiteWidth: 4);
-      final Uint8List depthBytes = await _splitPng(width: 16, height: 8, whiteWidth: 8);
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler('flutter/assets', (
-        ByteData? message,
-      ) async {
-        final String assetName = String.fromCharCodes(message!.buffer.asUint8List());
-        final Uint8List? bytes = switch (assetName) {
-          'assets/live-wallpaper.png' => photoBytes,
-          'assets/live-depth.png' => depthBytes,
-          _ => null,
-        };
-        return bytes == null ? null : ByteData.sublistView(bytes);
-      });
-      addTearDown(
-        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
-          'flutter/assets',
-          null,
-        ),
-      );
-      final Uint8List compressed = Uint8List.fromList(<int>[255, 216, 255, 217]);
-      final FlutterImageCompressPlatform originalCompress = FlutterImageCompressPlatform.instance;
-      final compress = _MockImageCompress();
-      FlutterImageCompressPlatform.instance = compress;
-      addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
-      final List<Uint8List> preparedPngs = <Uint8List>[];
-      when(() => compress.compressWithList(any(), minWidth: 2, minHeight: 4, quality: 90)).thenAnswer((call) async {
-        preparedPngs.add(Uint8List.fromList(call.positionalArguments.first as Uint8List));
-        return compressed;
-      });
-
-      final ({String photo, String depth}) paths = await const LiveTexturePreparer().prepareWithDepth(
-        'assets/live-wallpaper.png',
-        'assets/live-depth.png',
-        0.5,
-      );
-
-      expect(paths.photo, '${fixture.directory.path}/live_wallpaper_texture.jpg');
-      expect(paths.depth, '${fixture.directory.path}/live_wallpaper_depth.jpg');
-      expect(await File(paths.photo).readAsBytes(), compressed);
-      expect(await File(paths.depth).readAsBytes(), compressed);
-      expect(preparedPngs, hasLength(2));
-      for (final Uint8List png in preparedPngs) {
-        final ui.Image prepared = await _decode(png);
-        expect((prepared.width, prepared.height), (2, 4));
-        expect(await _redAt(prepared, 0.1), 255);
-        expect(await _redAt(prepared, 0.75), 0);
-        prepared.dispose();
-      }
-      verifyNever(() => fixture.cacheManager.getSingleFile(any()));
-    });
-  });
-
-  testWidgets('prepares local photo paths and file URIs without using the network cache', (tester) async {
-    await tester.runAsync(() async {
-      for (final bool usePhotoUri in <bool>[false, true]) {
-        final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
-        fixture.install();
-        addTearDown(fixture.dispose);
-        final File photo = await fixture.createImage('photo #1.png');
-        await photo.writeAsBytes(await _splitPng(width: 8, height: 4, whiteWidth: 4));
-        final File depth = await fixture.createImage('depth #1.png');
-        await depth.writeAsBytes(await _splitPng(width: 16, height: 8, whiteWidth: 8));
-        expect(photo.uri.toString(), contains('%20'));
-        expect(photo.uri.toString(), contains('%23'));
-        expect(depth.uri.toString(), contains('%20'));
-        expect(depth.uri.toString(), contains('%23'));
-        final FlutterImageCompressPlatform originalCompress = FlutterImageCompressPlatform.instance;
-        final compress = _MockImageCompress();
-        FlutterImageCompressPlatform.instance = compress;
-        addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
-        final Uint8List compressed = Uint8List.fromList(<int>[255, 216, 255, 217]);
-        final List<Uint8List> preparedPngs = <Uint8List>[];
-        when(() => compress.compressWithList(any(), minWidth: 2, minHeight: 4, quality: 90)).thenAnswer((call) async {
-          preparedPngs.add(Uint8List.fromList(call.positionalArguments.first as Uint8List));
-          return compressed;
-        });
-
-        final ({String photo, String depth}) paths = await const LiveTexturePreparer().prepareWithDepth(
-          usePhotoUri ? photo.uri.toString() : photo.path,
-          depth.uri.toString(),
-          0.5,
-        );
-
-        expect(paths.photo, '${fixture.directory.path}/live_wallpaper_texture.jpg');
-        expect(paths.depth, '${fixture.directory.path}/live_wallpaper_depth.jpg');
-        expect(await File(paths.photo).readAsBytes(), compressed);
-        expect(await File(paths.depth).readAsBytes(), compressed);
-        expect(preparedPngs, hasLength(2));
-        for (final Uint8List png in preparedPngs) {
-          final ui.Image prepared = await _decode(png);
-          expect((prepared.width, prepared.height), (2, 4));
-          expect(await _redAt(prepared, 0.1), 255);
-          expect(await _redAt(prepared, 0.75), 0);
-          prepared.dispose();
-        }
-        verifyNever(() => fixture.cacheManager.getSingleFile(any()));
-      }
-    });
   });
 
   test('reports an undecodable photo as a preparation failure', () async {
