@@ -1,0 +1,4 @@
+14:35:55 - 0x5f676172 pid=25426 uid=10214 samplingPeriod=   N/A  us batchingPeri
+14:35:58 + 0x5f676172 pid=25426 uid=10214 samplingPeriod=   66667us batchingPeri
+14:36:07 - 0x5f676172 pid=25426 uid=10214 samplingPeriod=   N/A  us batchingPeri
+14:36:10 + 0x5f676172 pid=25426 uid=10214 samplingPeriod=   66667us batchingPeri
