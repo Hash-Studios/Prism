@@ -145,4 +145,4 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 13. Check the three new events in the analytics debug view: `onboarding_started`, `terms_accepted`, `onboarding_step_completed`.
 14. With a new account, pick 3 categories. Check that "This or that" shows "1 of 6" and two walls side by side. Pick 6 times. Check "Tuning your feed" and that the starter pack opens after it.
 15. Run 14 again and tap "Skip" in round 2. Check that the starter pack opens at once.
-16. Turn on airplane mode before you confirm the categories. Check that the starter pack opens and no quiz or error shows.
+16. Turn on airplane mode, confirm the categories, wait 5 s, then turn airplane mode off. The interests save waits for the network, and the quiz walls give up after 3 s. Check that the starter pack opens and no quiz or error shows.

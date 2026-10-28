@@ -10610,7 +10610,7 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return '$currentString में से $totalString';
+    return '$totalString में से $currentString';
   }
 
   @override
@@ -10620,7 +10620,7 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'राउंड $currentString में से $totalString';
+    return 'कुल $totalString में से राउंड $currentString';
   }
 
   @override
@@ -10633,7 +10633,7 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String totalString = totalNumberFormat.format(total);
 
-    return 'यह वॉलपेपर चुनें, $positionString में से $totalString';
+    return 'यह वॉलपेपर चुनें, कुल $totalString में से $positionString';
   }
 
   @override

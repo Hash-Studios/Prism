@@ -172,6 +172,26 @@ void main() {
     expect(find.text('Neon'), findsOneWidget);
   });
 
+  testWidgets('learned terms refresh when Back leaves the quiz during tuning', (tester) async {
+    repo.plan = quizPlan();
+    await pumpSheet(
+      tester,
+      // The picks are stored, then Back pops the route with no result.
+      openRetake: (BuildContext context, {required TasteQuizPlan plan}) async {
+        await store.record(
+          TasteSignal(action: TasteAction.favourite, at: DateTime.now(), terms: const <String>['neon']),
+        );
+        return null;
+      },
+    );
+    final int revision = personalizedFeedSettingsRevision.value;
+
+    await tapRetake(tester);
+
+    expect(find.text('Neon'), findsOneWidget);
+    expect(personalizedFeedSettingsRevision.value, revision + 1);
+  });
+
   testWidgets('two retakes add signals and preserve the existing seed flag', (tester) async {
     repo.plan = quizPlan();
     await store.record(

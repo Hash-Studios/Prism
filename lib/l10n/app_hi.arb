@@ -9720,7 +9720,7 @@
   "@tasteQuizWildCard": {
     "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
   },
-  "tasteQuizProgress": "{current} में से {total}",
+  "tasteQuizProgress": "{total} में से {current}",
   "@tasteQuizProgress": {
     "description": "Quiz progress, for example 1 of 6.",
     "placeholders": {
@@ -9734,7 +9734,7 @@
       }
     }
   },
-  "tasteQuizProgressLabel": "राउंड {current} में से {total}",
+  "tasteQuizProgressLabel": "कुल {total} में से राउंड {current}",
   "@tasteQuizProgressLabel": {
     "description": "Screen reader label for the quiz progress.",
     "placeholders": {
@@ -9752,7 +9752,7 @@
   "@tasteQuizSkip": {
     "description": "Button that ends the This or that quiz early and continues."
   },
-  "tasteQuizPickLabel": "यह वॉलपेपर चुनें, {position} में से {total}",
+  "tasteQuizPickLabel": "यह वॉलपेपर चुनें, कुल {total} में से {position}",
   "@tasteQuizPickLabel": {
     "description": "Screen reader label for one of the two wallpapers in a quiz round.",
     "placeholders": {

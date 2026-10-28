@@ -137,8 +137,9 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       toasts.error(context.l10n.tasteQuizRetakeFailed);
       return;
     }
-    final bool? completed = await widget.openRetake(context, plan: plan);
-    if (!mounted || completed == null) return;
+    // Back during "Tuning your feed" returns null, but the picks are already stored, so refresh either way.
+    await widget.openRetake(context, plan: plan);
+    if (!mounted) return;
     personalizedFeedSettingsRevision.value += 1;
     setState(() => _learned = _readLearned());
   }
