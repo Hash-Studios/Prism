@@ -1788,52 +1788,9 @@
   "notifPushDropLiveBody": "{count, plural, =0{{count} papéis de parede, só esta semana. Confira antes que saiam do ar.} one{1 papel de parede, só esta semana. Confira antes que saia do ar.} other{{count} papéis de parede, só esta semana. Confira antes que saiam do ar.}}",
   "notifPushDropLiveTitle": "Um novo Drop está disponível",
   "notifPushFollowDigestTitleOne": "{artistName} publicou um novo papel de parede",
-  "@notifPushFollowDigestTitleOne": {
-    "placeholders": {
-      "artistName": {
-        "type": "String"
-      }
-    }
-  },
   "notifPushFollowDigestTitleSolo": "{artistName} publicou {wallCount} papéis de parede novos",
-  "@notifPushFollowDigestTitleSolo": {
-    "placeholders": {
-      "artistName": {
-        "type": "String"
-      },
-      "wallCount": {
-        "type": "int"
-      }
-    }
-  },
   "notifPushFollowDigestTitlePair": "{artistName} e {secondArtistName} publicaram {wallCount} papéis de parede novos",
-  "@notifPushFollowDigestTitlePair": {
-    "placeholders": {
-      "artistName": {
-        "type": "String"
-      },
-      "secondArtistName": {
-        "type": "String"
-      },
-      "wallCount": {
-        "type": "int"
-      }
-    }
-  },
   "notifPushFollowDigestTitleGroup": "{artistName} e mais {otherCount} publicaram {wallCount} papéis de parede novos",
-  "@notifPushFollowDigestTitleGroup": {
-    "placeholders": {
-      "artistName": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int"
-      },
-      "wallCount": {
-        "type": "int"
-      }
-    }
-  },
   "notifPushFollowDigestBodyUntitled": "Toque para ver todos.",
   "notifPushGiftReceivedBody": "As coleções e os papéis de parede premium ficarão disponíveis por 24 horas.",
   "notifPushGiftReceivedTitle": "{senderName} enviou a você um passe Pro de 24 horas",
