@@ -329,6 +329,8 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 
 ## Limits
 
+- The iOS 27.0 Simulator cannot make notification thumbnails (QuickLook error 102) for any attachment. The collapsed gallery thumbnail is not proven on a simulator. The expanded image and the clipping rect values in the system log are proven.
+- An inbox row of a gallery push opens the lead wall, not the gallery page.
 - The uid of a creator needs one profile read. If the read fails, the app keeps the email prefix topic only and tries again at the next topic sync. A creator whose profile does not exist keeps the email prefix topic only.
 - Followed creators that the app cannot resolve do not get `posts_<uid>` pushes. Old creators with a shared email prefix can still get another creator's pushes through the legacy topic.
 - Pushes that open as a deep link (a `url` in the payload) are counted by `push_opened` only when the app calls `trackPushOpened` for them.
