@@ -325,7 +325,26 @@ void main() {
     expect((bloc.state as TasteQuizTuning).walls, isEmpty);
   });
 
-  testWidgets('tuning gives up on a prime that never finishes after 2.5 s', (tester) async {
+  testWidgets('tuning still shows a page that takes 3.3 s, like the Android emulator', (tester) async {
+    final QuizFeedMock feed = QuizFeedMock();
+    final FeedItemEntity wall = quizItem('slow');
+    when(feed.primeFirstPage).thenAnswer(
+      (_) => Future<PersonalizedFeedPage?>.delayed(
+        const Duration(milliseconds: 3300),
+        () => PersonalizedFeedPage(items: <FeedItemEntity>[wall], hasMore: true),
+      ),
+    );
+    final bloc = buildBloc(feed: feed);
+    addTearDown(bloc.close);
+    for (int round = 0; round < 6; round++) {
+      _pick(bloc, round, QuizSide.left);
+    }
+    await tester.pump(const Duration(milliseconds: 3400));
+
+    expect((bloc.state as TasteQuizTuning).walls, <FeedItemEntity>[wall]);
+  });
+
+  testWidgets('tuning gives up on a prime that never finishes after 4 s', (tester) async {
     final QuizFeedMock feed = QuizFeedMock();
     when(feed.primeFirstPage).thenAnswer((_) => Completer<PersonalizedFeedPage?>().future);
     final bloc = buildBloc(feed: feed);
@@ -333,7 +352,7 @@ void main() {
     for (int round = 0; round < 6; round++) {
       _pick(bloc, round, QuizSide.left);
     }
-    await tester.pump(const Duration(milliseconds: 2400));
+    await tester.pump(const Duration(milliseconds: 3900));
     expect((bloc.state as TasteQuizTuning).walls, isNull);
 
     await tester.pump(const Duration(milliseconds: 200));

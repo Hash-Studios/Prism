@@ -58,8 +58,9 @@ class TasteQuizBloc extends Bloc<TasteQuizEvent, TasteQuizState> {
 
   static const int tuningMax = 6;
 
-  /// How long Tuning waits for the real first page before it shows the summary line alone.
-  static const Duration feedPreviewBudget = Duration(milliseconds: 2500);
+  /// How long Tuning waits for the real first page before it shows the summary line alone. The page took about 3.3 s
+  /// on the Android emulator (2026-10-28), so a shorter wait often missed it.
+  static const Duration feedPreviewBudget = Duration(seconds: 4);
 
   void _onLooked(_Looked event, Emitter<TasteQuizState> emit) {
     _looks[event.key] = event.look;
