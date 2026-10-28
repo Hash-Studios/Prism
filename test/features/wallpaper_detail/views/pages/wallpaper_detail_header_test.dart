@@ -540,13 +540,13 @@ void main() {
         tester,
         const WallpaperDetailError(
           failure: WallpaperDetailLoadFailure.unavailable,
-          thumbnailUrl: 'https://img.test/thumb.jpg',
+          thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
         ),
       );
 
       expect(find.text("Couldn't load this wallpaper"), findsOneWidget);
       expect(find.text('Check your connection and try again.'), findsOneWidget);
-      expect(networkImageUrls(tester), ['https://img.test/thumb.jpg']);
+      expect(networkImageUrls(tester), ['https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg']);
 
       await tester.tap(find.text('Try again'));
       await tester.pump();

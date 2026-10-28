@@ -98,7 +98,7 @@ void main() {
       final PageRouteInfo? route = await routeForPageLink(
         intent,
         wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
-            _wallpaper('https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg'),
+            _prismWithSeparateThumbnail(),
         profileLookup: (String _) async => profile,
         localFileResolver:
             ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
@@ -359,6 +359,31 @@ void main() {
     }
   });
 
+  test('Prism preview and admin routes reject an original reused as its thumbnail', () async {
+    const String original = 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg';
+    const FeedItemEntity entity = PrismFeedItem(
+      id: 'wall1',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(id: 'wall1', source: WallpaperSource.prism, fullUrl: original, thumbnailUrl: original),
+      ),
+    );
+
+    for (final String path in <String>[
+      '/photo-preview?wallpaperId=wall1',
+      '/clock-preview?wallpaperId=wall1',
+      '/admin-review/image?wallpaperId=wall1',
+    ]) {
+      expect(
+        await routeForPageLink(
+          parser.parse(Uri.parse(path)) as PageLinkIntent,
+          wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => entity,
+        ),
+        isNull,
+        reason: path,
+      );
+    }
+  });
+
   test('input workflows and debug tabs are allowlisted', () async {
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=photoPreview')), isNotNull);
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=clockPreview')), isNotNull);
@@ -382,6 +407,18 @@ FeedItemEntity _wallpaper(String url) => PrismFeedItem(
   id: 'wall1',
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: 'wall1', source: WallpaperSource.prism, fullUrl: url, thumbnailUrl: url),
+  ),
+);
+
+FeedItemEntity _prismWithSeparateThumbnail() => const PrismFeedItem(
+  id: 'wall1',
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
+      id: 'wall1',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://images.example.com/original/wall1.jpg',
+      thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+    ),
   ),
 );
 

@@ -224,9 +224,11 @@ Future<PageRouteInfo?> _previewRoute({
   if (entity == null || !_isTrustedImageUrl(entity.thumbnailUrl, entity.source)) {
     return null;
   }
-  final String previewUrl = entity.source == WallpaperSource.prism
-      ? WallpaperDisplaySource.of(entity).bestLink
-      : entity.fullUrl;
+  final WallpaperDisplaySource? display = entity.source == WallpaperSource.prism
+      ? WallpaperDisplaySource.of(entity)
+      : null;
+  final String previewUrl = display?.bestLink ?? entity.fullUrl;
+  if (previewUrl.isEmpty) return null;
   if (entity.source != WallpaperSource.prism && !_isTrustedImageUrl(previewUrl, entity.source)) return null;
   if (clock) {
     return ClockPreviewRoute(
@@ -234,10 +236,10 @@ Future<PageRouteInfo?> _previewRoute({
       file: false,
       wallpaperId: entity.id,
       wallpaperSource: entity.source,
-      thumbnailUrl: entity.thumbnailUrl,
+      thumbnailUrl: display?.thumbnail ?? entity.thumbnailUrl,
     );
   }
-  return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: entity.thumbnailUrl);
+  return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: display?.thumbnail ?? entity.thumbnailUrl);
 }
 
 Future<PageRouteInfo?> _adminImageRoute({
@@ -256,7 +258,9 @@ Future<PageRouteInfo?> _adminImageRoute({
   final bool prism = entity.source == WallpaperSource.prism;
   // A Prism wall shows its display derivative, built from the trusted thumbnail, never the original.
   if (!_isTrustedImageUrl(prism ? entity.thumbnailUrl : entity.fullUrl, entity.source)) return null;
-  return FullScreenImageRoute(imageUrl: prism ? WallpaperDisplaySource.of(entity).bestLink : entity.fullUrl);
+  final String imageUrl = prism ? WallpaperDisplaySource.of(entity).bestLink : entity.fullUrl;
+  if (imageUrl.isEmpty) return null;
+  return FullScreenImageRoute(imageUrl: imageUrl);
 }
 
 Future<PageRouteInfo?> _relationRoute(

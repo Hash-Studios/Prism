@@ -34,7 +34,9 @@ void main() {
       whenListen(
         bloc,
         const Stream<WallpaperDetailState>.empty(),
-        initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+        initialState: const WallpaperDetailLoading(
+          thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+        ),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -55,7 +57,7 @@ void main() {
       } else {
         expect(find.byType(Hero), findsNothing);
       }
-      expect(networkImageUrls(tester), ['https://example.com/thumb.jpg']);
+      expect(networkImageUrls(tester), ['https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg']);
       // No fade under reduced motion: no translucent Opacity wraps the thumbnail.
       final Finder thumbnail = find.byWidgetPredicate(
         (widget) => widget is Image && unwrapImageProvider(widget.image) is CachedNetworkImageProvider,
@@ -81,7 +83,9 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+      initialState: const WallpaperDetailLoading(
+        thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+      ),
     );
     await tester.pumpWidget(
       MaterialApp(

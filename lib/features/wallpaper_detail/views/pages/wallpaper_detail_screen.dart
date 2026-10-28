@@ -698,10 +698,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// The wall this route was opened for, before its entity loads.
   WallpaperDisplaySource _routeDisplay(String thumbnail) {
+    final FeedItemEntity? entity = widget.entity;
+    if (entity != null) return WallpaperDisplaySource.of(entity);
+
     final String? id = widget.wallId;
-    final WallpaperSource? source = widget.source;
-    if (id == null || source == null) return WallpaperDisplaySource(thumbnail: thumbnail, full: '');
-    return WallpaperDisplaySource.forWall(id: id, source: source, thumbnail: thumbnail);
+    final WallpaperSource source = widget.source ?? WallpaperSource.prism;
+    if (id == null || id.isEmpty) return const WallpaperDisplaySource(thumbnail: '', full: '');
+    final String safeThumbnail = source == WallpaperSource.prism && !isSafePrismThumbnailUrl(thumbnail)
+        ? ''
+        : thumbnail;
+    return WallpaperDisplaySource.forWall(id: id, source: source, thumbnail: safeThumbnail);
   }
 
   Widget _buildErrorState(WallpaperDetailError state) {
@@ -896,13 +902,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
                         return;
                       }
+                      final display = WallpaperDisplaySource.of(entity);
                       pushClockPreview(
                         context,
-                        link: widget.localFile?.path ?? WallpaperDisplaySource.of(entity).bestLink,
+                        link: widget.localFile?.path ?? display.bestLink,
                         file: widget.localFile != null,
                         wallpaperId: entity.id,
                         wallpaperSource: entity.source,
-                        thumbnailUrl: entity.thumbnailUrl,
+                        thumbnailUrl: display.thumbnail,
                         tint: state.tint,
                         saveAction: _saveAction,
                         spatialMapUrl: spatialOf(entity)?.mapUrl,
@@ -1120,7 +1127,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     bool withholdThumbnail = false,
   }) {
     final colors = state.colors;
-    final thumbnailUrl = withholdThumbnail ? '' : state.entity.thumbnailUrl.trim();
+    final thumbnailUrl = withholdThumbnail ? '' : WallpaperDisplaySource.of(state.entity).thumbnail;
 
     // Build the default (no-filter) swatch + one swatch per palette color.
     final swatches = <Widget>[

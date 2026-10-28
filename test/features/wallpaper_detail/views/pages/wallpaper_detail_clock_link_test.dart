@@ -44,6 +44,18 @@ FeedItemEntity _prism() => const FeedItemEntity.prism(
   ),
 );
 
+FeedItemEntity _prismWithoutSafeThumbnail() => const FeedItemEntity.prism(
+  id: 'clock-wall',
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
+      id: 'clock-wall',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://img.test/original.jpg',
+      thumbnailUrl: 'https://img.test/original.jpg',
+    ),
+  ),
+);
+
 FeedItemEntity _wallhaven() => const FeedItemEntity.wallhaven(
   id: 'wallhaven-ab',
   wallpaper: WallhavenWallpaper(
@@ -128,6 +140,13 @@ void main() {
 
       expect(overlay.link, 'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg');
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the iOS phone preview never reuses a Prism original as its thumbnail', (tester) async {
+      final ClockOverlay overlay = await openPreview(tester, _prismWithoutSafeThumbnail());
+
+      expect(overlay.link, isEmpty);
+      expect(overlay.thumbnailUrl, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
   group('setScreenPreviewLink for the Android Set screen', () {
@@ -163,14 +182,14 @@ void main() {
       );
     });
 
-    test('a local file is passed through as is', () {
+    test('a downloaded local file is passed through as is', () {
       expect(
         setScreenPreviewLink(
           const SetScreenRequest(
             url: '/tmp/wall.png',
             thumbnailUrl: thumb,
             wallpaperId: 'w1',
-            wallpaperSource: WallpaperSource.prism,
+            wallpaperSource: WallpaperSource.downloaded,
           ),
         ),
         '/tmp/wall.png',
