@@ -149,8 +149,9 @@ class _FolderScreenState extends State<FolderScreen> {
       message: isPublic ? l10n.foldersMakePublicMessage : l10n.foldersMakePrivateMessage,
       confirmLabel: isPublic ? l10n.foldersMakePublic : l10n.foldersMakePrivate,
     );
-    if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId)
+    if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) {
       return;
+    }
     final bool ok = await bloc.run(
       (id) => FoldersEvent.visibilityRequested(folderId: folder.id, isPublic: isPublic, operationId: id),
     );

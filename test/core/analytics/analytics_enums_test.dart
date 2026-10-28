@@ -154,7 +154,14 @@ void main() {
       'NotificationTypeValue': <String>['route', 'external_url', 'unknown'],
       'AuthMethodValue': <String>['google', 'apple'],
       'NavTabValue': <String>['home', 'search', 'streak', 'collection'],
-      'NotificationPreferenceValue': <String>['followers', 'posts', 'in_app', 'recommendations', 'streak_reminders'],
+      'NotificationPreferenceValue': <String>[
+        'followers',
+        'posts',
+        'in_app',
+        'recommendations',
+        'streak_reminders',
+        'folders',
+      ],
       'DeepLinkSourceValue': <String>['app_links', 'push', 'in_app'],
       'ShareTypeValue': <String>['wallpaper', 'user', 'refer'],
       'AnalyticsSurfaceValue': <String>[

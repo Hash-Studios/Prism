@@ -31,8 +31,9 @@ class ProfileFoldersRow extends StatefulWidget {
 class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
   late Future<Result<List<PublicFolderEntity>>> _folders = _load();
 
-  Future<Result<List<PublicFolderEntity>>> _load() =>
-      getIt<PublicFoldersRepository>().fetchOwnerFolders(widget.ownerId);
+  Future<Result<List<PublicFolderEntity>>> _load() async => getIt.isRegistered<PublicFoldersRepository>()
+      ? getIt<PublicFoldersRepository>().fetchOwnerFolders(widget.ownerId)
+      : Result.success(const <PublicFolderEntity>[]);
 
   @override
   void didUpdateWidget(ProfileFoldersRow oldWidget) {

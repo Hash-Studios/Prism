@@ -327,8 +327,9 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     }
     final Result<bool> result = await session.wait(_publicRepository.setPublic(folder.id, isPublic: event.isPublic));
     final FolderEntity? current = state.folder(event.folderId);
-    if (result.isSuccess && current != null)
+    if (result.isSuccess && current != null) {
       emit(state.copyWith(folders: _replace(current.copyWith(isPublic: result.data))));
+    }
     _finish(emit, event.operationId, failure: result.failure);
   }
 
