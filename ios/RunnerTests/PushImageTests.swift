@@ -16,7 +16,13 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
   nonisolated(unsafe) static var contentLength: String?
   nonisolated(unsafe) static var bytesSent = 0
   nonisolated(unsafe) static var sendsBody = true
-  nonisolated(unsafe) static var stopCount = 0
+  private static let stopLock = NSLock()
+  nonisolated(unsafe) private static var stops = 0
+  /// stopLoading runs on the URLSession thread while the test reads from its task, so access is locked.
+  static var stopCount: Int {
+    get { stopLock.lock(); defer { stopLock.unlock() }; return stops }
+    set { stopLock.lock(); stops = newValue; stopLock.unlock() }
+  }
   nonisolated(unsafe) static var requestCount = 0
 
   override class func canInit(with request: URLRequest) -> Bool {
@@ -38,7 +44,11 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
       client?.urlProtocolDidFinishLoading(self)
     }
   }
-  override func stopLoading() { Self.stopCount += 1 }
+  override func stopLoading() {
+    Self.stopLock.lock()
+    Self.stops += 1
+    Self.stopLock.unlock()
+  }
 }
 
 final class PushImageTests: XCTestCase {
