@@ -585,16 +585,15 @@ class _StepSwitcher extends StatelessWidget {
       switchOutCurve: PrismCurves.exit,
       transitionBuilder: (child, animation) {
         final bool arriving = child.key == current;
+        // One wrapper shape for both ways. A page that starts to leave keeps its state, so the quiz does not restart.
         return FadeTransition(
           opacity: animation,
-          child: arriving
-              ? AnimatedBuilder(
-                  animation: animation,
-                  child: child,
-                  builder: (context, child) =>
-                      Transform.translate(offset: Offset(0, 8 * (1 - animation.value)), child: child),
-                )
-              : child,
+          child: AnimatedBuilder(
+            animation: animation,
+            child: child,
+            builder: (context, child) =>
+                Transform.translate(offset: Offset(0, arriving ? 8 * (1 - animation.value) : 0), child: child),
+          ),
         );
       },
       layoutBuilder: (currentChild, previousChildren) =>
