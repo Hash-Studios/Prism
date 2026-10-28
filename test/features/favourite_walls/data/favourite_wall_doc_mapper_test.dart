@@ -1,5 +1,6 @@
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -43,6 +44,35 @@ void main() {
   test('a favourite without a tier writes no depth and maps back to null', () {
     expect(favouriteWallToDoc(_prismFav()), isNot(contains('depth')));
     expect(_depthTierAfterRoundTrip(_prismFav()), isNull);
+  });
+
+  test('a favourite keeps its Spatial Scene tier and map through the doc, and a missing field gives null', () {
+    const WallSpatial spatial = WallSpatial(
+      tier: WallSpatialTier.great,
+      mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png',
+    );
+    final PrismFavouriteWall wall = PrismFavouriteWall(
+      id: 'w1',
+      favouritedAt: DateTime.utc(2026, 1, 2),
+      wallpaper: const PrismWallpaper(
+        core: WallpaperCore(
+          id: 'w1',
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/w1.jpg',
+          thumbnailUrl: 'https://example.com/w1-thumb.jpg',
+        ),
+        spatial: spatial,
+      ),
+    );
+    final FavouriteWallEntity mapped = mapFavouriteWallDoc(
+      FavouriteWallDocDto.fromJson(favouriteWallToDoc(wall)),
+      wall.id,
+    );
+
+    expect((mapped as PrismFavouriteWall).wallpaper.spatial, spatial);
+    expect(_prismFav().wallpaper.spatial, isNull);
+    expect(_depthTierAfterRoundTrip(_prismFav()), isNull);
+    expect(favouriteWallToDoc(_prismFav()), isNot(contains('spatial')));
   });
 
   test('a stored favourite doc without depth maps to a null tier', () {

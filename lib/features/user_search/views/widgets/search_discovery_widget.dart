@@ -20,6 +20,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
     this.onClearRecents,
     this.onColorPressed,
     this.onDepthPressed,
+    this.onSpatialPressed,
   });
 
   final List<String> tags;
@@ -38,6 +39,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
   /// Opens the walls that work with the iOS Lock Screen Depth Effect. Without it the row is hidden.
   final VoidCallback? onDepthPressed;
 
+  /// Opens the walls that work as an iOS 26 Spatial Scene. Without it the row is hidden.
+  final VoidCallback? onSpatialPressed;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -55,6 +59,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
               children: <Widget>[
                 const _FindCreatorsRow(),
                 if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
+                if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
               ],
             ),
           ),
@@ -174,6 +179,33 @@ class _DepthEffectRow extends StatelessWidget {
         icon: Icons.layers_rounded,
         title: context.l10n.accountDepthEffect,
         subtitle: context.l10n.accountSubjectInFrontOfClock,
+        onTap: open,
+      ),
+    );
+  }
+}
+
+class _SpatialSceneRow extends StatelessWidget {
+  const _SpatialSceneRow({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    void open() {
+      PrismHaptics.tap();
+      onPressed();
+    }
+
+    return Semantics(
+      button: true,
+      label: context.l10n.accountSpatialSceneSemanticLabel,
+      excludeSemantics: true,
+      onTap: open,
+      child: PrismRow(
+        icon: Icons.view_in_ar_rounded,
+        title: context.l10n.accountSpatialScene,
+        subtitle: context.l10n.accountSpatialSceneSubtitle,
         onTap: open,
       ),
     );

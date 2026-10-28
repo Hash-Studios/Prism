@@ -1,4 +1,5 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
@@ -109,6 +110,19 @@ void main() {
       expect(wall.isBoostedAt(DateTime.utc(2031)), isFalse);
       expect(dto().toDomain(docId: 'a').isBoostedAt(DateTime.utc(2029)), isFalse);
     });
+  });
+
+  test('maps spatial, and a missing spatial field gives null', () {
+    final PrismWallDocDto withSpatial = PrismWallDocDto.fromJson(<String, dynamic>{
+      'wallpaper_url': 'https://x/y.jpg',
+      'spatial': <String, dynamic>{'tier': 'great', 'map': 'https://img.prismwalls.com/spatial/v1/w.png', 'v': 1},
+    });
+
+    expect(
+      withSpatial.toDomain(docId: 'a').spatial,
+      const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
+    );
+    expect(const PrismWallDocDto().toDomain(docId: 'a').spatial, isNull);
   });
 
   group('depth', () {

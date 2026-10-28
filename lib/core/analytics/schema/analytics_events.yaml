@@ -2105,3 +2105,19 @@ events:
         key: milestone
         type: int
         required: false
+  - id: spatial_preview_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: tilt
+        key: tilt
+        type: string
+  - id: spatial_guide_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: tier
+        key: tier
+        type: string

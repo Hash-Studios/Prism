@@ -20,6 +20,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -519,7 +520,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 if (wall is LegacyFavouriteWall)
                   IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4))),
                 if (wall is PrismFavouriteWall && !_unavailable.contains(wall.id))
-                  ?depthTagFor(wall.wallpaper.depthTier),
+                  ?stackTags(<Widget?>[
+                    depthTagFor(wall.wallpaper.depthTier),
+                    spatialTagFor(wall.wallpaper.spatial?.tier),
+                  ]),
                 if (wall.syncStatus != FavouriteSyncStatus.synced)
                   Positioned(
                     left: PrismSpace.xs,

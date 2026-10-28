@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/ios_widgets/views/wotd_widget_card.dart';
@@ -150,7 +151,10 @@ class _PickTile extends StatelessWidget {
                 wallpaperSemanticLabel(pick.wallpaper.core.authorName, context.l10n),
                 dateLabel,
               ),
-              overlay: depthTagFor(pick.wallpaper.depthTier),
+              overlay: stackTags(<Widget?>[
+                depthTagFor(pick.wallpaper.depthTier),
+                spatialTagFor(pick.wallpaper.spatial?.tier),
+              ]),
               onTap: () => _open(context, heroTag),
             ),
           ),

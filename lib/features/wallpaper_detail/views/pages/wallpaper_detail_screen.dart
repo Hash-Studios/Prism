@@ -26,6 +26,7 @@ import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -39,6 +40,7 @@ import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
@@ -65,6 +67,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
@@ -911,6 +914,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         thumbnailUrl: entity.thumbnailUrl,
                         tint: state.tint,
                         saveAction: _saveAction,
+                        spatialMapUrl: spatialOf(entity)?.mapUrl,
                       );
                     },
             ),
@@ -1637,6 +1641,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               )
             : null,
         depthTier: depthTierOf(entity),
+        spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
@@ -1823,6 +1828,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
     final bool canBlock = canBlockWallCreator(entity);
     final WallDepthTier? depthTier = depthTierOf(entity);
+    final WallSpatial? spatial = spatialOf(entity);
     final String? reportWallDocId = BundledWallpapers.isStarter(entity)
         ? null
         : switch (entity) {
@@ -1847,6 +1853,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
+      if (spatial != null && showsSpatialScene(spatial.tier))
+        padded(SpatialSceneRow(tier: spatial.tier, wallId: entity.id)),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(

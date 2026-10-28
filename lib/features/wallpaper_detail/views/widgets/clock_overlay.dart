@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -18,6 +20,7 @@ import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -104,6 +107,7 @@ class ClockOverlay extends StatefulWidget {
     this.tint,
     this.saveAction,
     this.request,
+    this.spatialMapUrl,
   });
 
   final String link;
@@ -123,6 +127,9 @@ class ClockOverlay extends StatefulWidget {
   /// Makes this the flow's Set screen.
   final SetScreenRequest? request;
 
+  /// The wall's depth map. When set, a 3D toggle shows the wall with a tilt parallax.
+  final String? spatialMapUrl;
+
   @override
   State<ClockOverlay> createState() => _ClockOverlayState();
 }
@@ -140,6 +147,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   bool _schemeRead = false;
   PreviewIconStyle _iconStyle = _savedIconStyle();
   bool _controls = true;
+  bool _spatial = false;
 
   /// Unknown capabilities count as supported, so the targets do not jump in once they load.
   aw.WallpaperCapabilities? _capabilities;
@@ -587,6 +595,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     );
   }
 
+  void _trackSpatial(SpatialTiltMode mode) =>
+      analytics.track(SpatialPreviewOpenedEvent(wallId: widget.wallpaperId ?? '', tilt: mode.name));
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
@@ -598,6 +609,34 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final List<PreviewIconStyle> styles = PreviewIconStyle.forPlatform(defaultTargetPlatform);
     final Widget? primary = _primary(context);
     final List<String> notes = widget.request?.notes ?? const <String>[];
+    final Widget layers = Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        AnimatedSwitcher(
+          duration: fade,
+          switchInCurve: PrismCurves.enter,
+          switchOutCurve: PrismCurves.enter.flipped,
+          layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+          child: lock
+              ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+              : HomePreviewLayer(
+                  key: ValueKey<ClockPreviewMode>(_mode),
+                  textColor: textColor,
+                  iconStyle: _iconStyle,
+                  scheme: _scheme,
+                ),
+        ),
+        Semantics(
+          button: true,
+          label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _controls = !_controls),
+            child: SizedBox(height: size.height, width: size.width),
+          ),
+        ),
+      ],
+    );
     // A Scaffold, so the set result and its Undo show over the preview and not under it.
     return PopScope<Object?>(
       onPopInvokedWithResult: (didPop, _) => _handlePop(didPop),
@@ -605,32 +644,20 @@ class _ClockOverlayState extends State<ClockOverlay> {
         backgroundColor: theme.colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
-            Positioned.fill(
-              child: AnimatedSwitcher(
-                duration: fade,
-                switchInCurve: PrismCurves.enter,
-                switchOutCurve: PrismCurves.enter.flipped,
-                layoutBuilder: (current, previous) =>
-                    Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
-                child: lock
-                    ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
-                    : HomePreviewLayer(
-                        key: ValueKey<ClockPreviewMode>(_mode),
-                        textColor: textColor,
-                        iconStyle: _iconStyle,
-                        scheme: _scheme,
-                      ),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: _controls ? l10n.wallpaperHidePreviewControls : l10n.wallpaperShowPreviewControls,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _controls = !_controls),
-                child: SizedBox(height: size.height, width: size.width),
-              ),
+            Positioned(
+              left: 0,
+              top: 0,
+              width: size.width,
+              height: size.height,
+              child: _spatial && widget.spatialMapUrl != null
+                  ? SpatialTiltView(
+                      image: _provider,
+                      mapUrl: widget.spatialMapUrl!,
+                      tint: widget.tint,
+                      onMode: _trackSpatial,
+                      child: layers,
+                    )
+                  : Stack(fit: StackFit.expand, children: <Widget>[_image(context, size), layers]),
             ),
             Positioned.fill(
               child: IgnorePointer(
@@ -690,6 +717,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         size: 48,
                                         onPressed: _close,
                                       ),
+                                      if (widget.spatialMapUrl != null) ...<Widget>[
+                                        const SizedBox(width: PrismSpace.xs),
+                                        _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
+                                      ],
                                       if (primary != null) ...<Widget>[
                                         const SizedBox(width: PrismSpace.xs),
                                         Expanded(child: Center(child: primary)),
@@ -749,6 +780,47 @@ class _ControlCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Turns the tilt parallax on and off. As tall as the close button next to it.
+class _SpatialToggle extends StatelessWidget {
+  const _SpatialToggle({required this.on, required this.onChanged});
+
+  final bool on;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
+    final Color foreground = on ? scheme.onPrimary : scheme.onSurface;
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        toggled: on,
+        excludeSemantics: true,
+        label: tooltip,
+        onTap: () => onChanged(!on),
+        child: PressScale(
+          child: TextButton.icon(
+            onPressed: () => onChanged(!on),
+            style: TextButton.styleFrom(
+              foregroundColor: foreground,
+              backgroundColor: on ? scheme.primary : scheme.onSurface.withValues(alpha: 0.08),
+              minimumSize: const Size(48, 48),
+              fixedSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+              textStyle: PrismTextStyles.button,
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.view_in_ar_rounded, size: 20),
+            label: Text(context.l10n.wallpaperSpatialPreviewLabel),
           ),
         ),
       ),
@@ -1149,6 +1221,7 @@ Future<void> pushClockPreview(
   String? thumbnailUrl,
   Color? tint,
   Widget Function(String label)? saveAction,
+  String? spatialMapUrl,
 }) {
   return Navigator.push<void>(
     context,
@@ -1162,6 +1235,7 @@ Future<void> pushClockPreview(
         thumbnailUrl: thumbnailUrl,
         tint: tint,
         saveAction: saveAction,
+        spatialMapUrl: spatialMapUrl,
       ),
     ),
   );

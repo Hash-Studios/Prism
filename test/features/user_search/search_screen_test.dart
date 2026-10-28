@@ -701,6 +701,32 @@ void main() {
     });
   });
 
+  group('Spatial Scene row', () {
+    for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.iOS, TargetPlatform.android]) {
+      testWidgets('on ${platform.name} it lists Spatial walls with an empty query', (tester) async {
+        debugDefaultTargetPlatformOverride = platform;
+        try {
+          when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+            (_) async => _page(const <FeedItemEntity>[], prismResults: <FeedItemEntity>[_wallpaper('prism-1')]),
+          );
+          await pumpScreen(tester);
+
+          await tester.tap(find.text('Spatial'));
+          await tester.pump();
+          await tester.pump();
+
+          verify(() => service.search('', filters: const SearchFilters(spatialOnly: true))).called(1);
+          expect(find.byType(SearchGrid), findsOneWidget);
+          expect(find.byTooltip('Clear Spatial'), findsOneWidget);
+          expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+          expect(analytics.events.whereType<SearchSubmittedEvent>().single.sourceContext, 'search_spatial');
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      });
+    }
+  });
+
   group('Depth Effect row', () {
     testWidgets('on iOS it lists Depth Effect walls with an empty query', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

@@ -210,6 +210,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountClearDepthEffect => 'Hapus Efek Kedalaman';
 
   @override
+  String get accountClearSpatialScene => 'Hapus Spasial';
+
+  @override
   String get accountClearFavouriteWallpapers => 'Hapus wallpaper favorit';
 
   @override
@@ -453,6 +456,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Efek Kedalaman, subjek berada di depan jam';
+
+  @override
+  String get accountSpatialScene => 'Spasial';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Wallpaper dengan kedalaman 3D yang jelas';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Spasial, wallpaper dengan kedalaman 3D yang jelas';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2323,6 +2335,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'Di editor Layar Kunci, ketuk ••• lalu Efek Kedalaman.';
+
+  @override
+  String get coreSpatialBadge => 'Spasial';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Berfungsi sebagai Adegan Spasial';
+
+  @override
+  String get coreSpatialSceneTip => 'Di editor Layar Kunci, ketuk tombol Adegan Spasial.';
 
   @override
   String get coreDeviceCannotSetScreen => 'Perangkat ini tidak dapat memasang wallpaper di layar itu.';
@@ -7927,6 +7948,43 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperDepthSubjectSubtitle => 'Subjek Anda akan tampil di depan jam.';
+
+  @override
+  String get wallpaperSpatialScene => 'Adegan Spasial';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Kedalaman jelas. Membuat Layar Kunci 3D yang kuat.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Ada sedikit kedalaman. Efek 3D-nya lembut.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Atur sebagai Adegan Spasial';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'Di iPhone 12 atau yang lebih baru dengan iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Simpan wallpaper ini ke Foto.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'Di Layar Kunci, sentuh dan tahan layar. Ketuk tombol Tambah, ketuk Foto, lalu pilih fotonya.';
+
+  @override
+  String get wallpaperSpatialStepButton => 'Ketuk tombol Adegan Spasial untuk mengaktifkan efek 3D, lalu ketuk Tambah.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'Pratinjau dalam 3D';
+
+  @override
+  String get wallpaperSpatialPreviewOff => 'Matikan pratinjau 3D';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Seret untuk memiringkan';
 
   @override
   String get wallpaperDetailColorCodeCopied => 'Kode warna disalin ke papan klip';

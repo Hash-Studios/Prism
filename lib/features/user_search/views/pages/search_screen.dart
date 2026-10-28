@@ -167,7 +167,9 @@ class _SearchScreenState extends State<SearchScreen> {
       isSubmitted = false;
       _searchId = null;
       _search = null;
-      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true, depthOnly: false);
+      if (_submittedQuery.isEmpty) {
+        _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
+      }
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
@@ -192,8 +194,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _searchByDepth() {
     searchController.clear();
-    setState(() => _filters = _filters.copyWith(depthOnly: true));
+    setState(() => _filters = _filters.copyWith(depthOnly: true, spatialOnly: false));
     _triggerSearch('', sourceContext: 'search_depth');
+  }
+
+  void _searchBySpatial() {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(spatialOnly: true, depthOnly: false));
+    _triggerSearch('', sourceContext: 'search_spatial');
   }
 
   void _clearColor() {
@@ -207,6 +215,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _clearDepth() {
     setState(() => _filters = _filters.copyWith(depthOnly: false));
+    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
+  }
+
+  void _clearSpatial() {
+    setState(() => _filters = _filters.copyWith(spatialOnly: false));
     if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
       _backToDiscover();
     } else {
@@ -329,6 +346,7 @@ class _SearchScreenState extends State<SearchScreen> {
           final List<String> activeFilters = <String>[
             if (_filters.color != null) _filters.color!.name.toLowerCase(),
             if (_filters.depthOnly) context.l10n.accountDepthEffect,
+            if (_filters.spatialOnly) context.l10n.accountSpatialScene,
           ];
           final String emptyTitle = _submittedQuery.isNotEmpty
               ? filtered
@@ -411,6 +429,16 @@ class _SearchScreenState extends State<SearchScreen> {
                                   onTap: _clearDepth,
                                 ),
                               ),
+                            if (_filters.color != null && _filters.spatialOnly) const SizedBox(width: PrismSpace.xs),
+                            if (_filters.spatialOnly)
+                              Tooltip(
+                                message: context.l10n.accountClearSpatialScene,
+                                child: PrismChip(
+                                  label: context.l10n.accountSpatialScene,
+                                  selected: true,
+                                  onTap: _clearSpatial,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -425,6 +453,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onClearRecents: () => unawaited(_clearRecents()),
                     onColorPressed: _searchByColor,
                     onDepthPressed: showDepthEffectUi ? _searchByDepth : null,
+                    onSpatialPressed: _searchBySpatial,
                     onRecentPressed: (query) {
                       searchController.text = query;
                       _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);

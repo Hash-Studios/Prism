@@ -7,6 +7,7 @@ import {onWallCategorize} from "../onWallCategorize";
 import * as wallCategory from "../wallCategory";
 import * as wallColors from "../wallColors";
 import * as wallDepth from "../wallDepth";
+import * as wallSpatial from "../wallSpatial";
 import {type Doc, installFakeDb} from "./fakeDb";
 import {resolveOriginalAccess} from "../originalAccess";
 import {DEFAULT_ECONOMY, resetEconomyCache} from "../economy";
@@ -15,6 +16,7 @@ import {r2ObjectId} from "../r2Storage";
 const WALL_URL = "https://raw.githubusercontent.com/o/r/main/a.jpg";
 const DETECTED = {tier: "menu", kind: "person", top: 0.15, v: 1, by: "detector"};
 const ADMIN = {tier: "auto", kind: null, top: null, v: 1, by: "admin"};
+const SPATIAL = {tier: "ok", map: "https://images.example.com/spatial/v1/w1.png", v: 1};
 
 beforeEach((t) => {
   assert.ok("mock" in t);
@@ -33,12 +35,14 @@ function setup(
   wall: Doc,
   depth: (store: Map<string, Doc>) => Promise<unknown>,
   labels: () => Promise<string[]> = async () => ["Mountain"],
+  spatial: (store: Map<string, Doc>) => Promise<unknown> = async () => undefined,
 ) {
   const store = installFakeDb(t, {"walls/w1": wall});
   t.mock.method(wallCategory, "detectLabels", labels);
   t.mock.method(wallColors, "wallColorsFor", async () => ["blue"]);
   const depthMock = t.mock.method(wallDepth, "wallDepthFor", () => depth(store));
-  return {store, depthMock};
+  const spatialMock = t.mock.method(wallSpatial, "wallSpatialFor", () => spatial(store));
+  return {store, depthMock, spatialMock};
 }
 
 test("a new wall with no depth gets the detector depth, colours and category", async (t) => {
@@ -228,4 +232,44 @@ test("a Vision failure on a wall with a category keeps the category and still wr
   t.mock.method(logger, "error", () => undefined);
   await onWallCategorize.run(created(wall));
   assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["blue"]});
+});
+
+test("a new wall with no spatial gets the Spatial Scene tier and map", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => DETECTED, undefined, async () => SPATIAL);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  assert.deepEqual(store.get("walls/w1")?.spatial, SPATIAL);
+  assert.equal(store.get("walls/w1")?.category, "Nature");
+});
+
+test("an admin spatial set while the check runs is kept", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => DETECTED, undefined, async (walls) => {
+    walls.set("walls/w1", {...walls.get("walls/w1"), spatial: {...SPATIAL, tier: "none"}});
+    return SPATIAL;
+  });
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  assert.deepEqual(store.get("walls/w1")?.spatial, {...SPATIAL, tier: "none"});
+});
+
+test("a wall created with a spatial never runs the Spatial Scene check", async (t) => {
+  const {store, spatialMock} = setup(t, {wallpaper_url: WALL_URL, spatial: SPATIAL}, async () => DETECTED,
+    undefined, async () => SPATIAL);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL, spatial: SPATIAL}));
+  assert.equal(spatialMock.mock.callCount(), 0);
+  assert.deepEqual(store.get("walls/w1")?.spatial, SPATIAL);
+});
+
+test("a failed Spatial Scene check writes no spatial field and keeps the colours and category", async (t) => {
+  const {store} = setup(t, {wallpaper_url: WALL_URL}, async () => DETECTED, undefined, async () => undefined);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
+  const wall = store.get("walls/w1");
+  assert.equal("spatial" in (wall ?? {}), false);
+  assert.deepEqual(wall?.colors, ["blue"]);
+  assert.equal(wall?.category, "Nature");
+});
+
+test("the Spatial Scene check reads the thumbnail when the wall has one", async (t) => {
+  const thumb = "https://raw.githubusercontent.com/o/r/main/thumb.jpg";
+  const {spatialMock} = setup(t, {wallpaper_url: WALL_URL, wallpaper_thumb: thumb}, async () => DETECTED);
+  await onWallCategorize.run(created({wallpaper_url: WALL_URL, wallpaper_thumb: thumb}));
+  assert.deepEqual(spatialMock.mock.calls[0].arguments.slice(0, 2), ["w1", {url: thumb}]);
 });

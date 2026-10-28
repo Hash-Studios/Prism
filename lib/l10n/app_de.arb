@@ -264,6 +264,10 @@
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
   },
+  "accountClearSpatialScene": "Räumlich zurücksetzen",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
+  },
   "accountClearFavouriteWallpapers": "Favorisierte Hintergrundbilder entfernen",
   "@accountClearFavouriteWallpapers": {
     "description": "Settings action for clearing all favourites."
@@ -555,6 +559,18 @@
   "accountDepthEffectClockSemanticLabel": "Tiefeneffekt, Motiv vor der Uhr",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "Räumlich",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "Walls mit klarer 3D-Tiefe",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "Räumlich, Walls mit klarer 3D-Tiefe",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{Keine heruntergeladenen Hintergrundbilder; offline gespeicherte Kopien bleiben erhalten} =1{1 heruntergeladenes Hintergrundbild; offline gespeicherte Kopien bleiben erhalten} other{{count} heruntergeladene Hintergrundbilder; offline gespeicherte Kopien bleiben erhalten}}",
   "@accountDownloadedWallpaperCount": {
@@ -2331,6 +2347,18 @@
   "coreDepthEffectBadgeSemantic": "Funktioniert mit Tiefeneffekt",
   "coreDepthEffectMenuShortTip": "Tippe auf ••• und dann auf Tiefeneffekt.",
   "coreDepthEffectMenuTip": "Tippe im Sperrbildschirm-Editor auf ••• und dann auf Tiefeneffekt.",
+  "coreSpatialBadge": "Räumlich",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "Funktioniert als räumliche Szene",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "Tippe im Sperrbildschirm-Editor auf die Schaltfläche Räumliche Szene.",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "Dieses Gerät kann dieses Bild nicht als Hintergrundbild festlegen.",
   "coreDone": "Fertig",
   "coreDown": "−{coins}",
@@ -6867,6 +6895,54 @@
   "wallpaperDepthSubjectSubtitle": "Dein Motiv liegt vor der Uhr.",
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
+  },
+  "wallpaperSpatialScene": "Räumliche Szene",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "Klare Tiefe. Ergibt einen starken 3D-Sperrbildschirm.",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "Etwas Tiefe. Der 3D-Effekt ist sanft.",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "Als räumliche Szene festlegen",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "Auf dem iPhone 12 oder neuer mit iOS 26:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "Speichere dieses Wallpaper in Fotos.",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "Berühre und halte auf dem Sperrbildschirm den Bildschirm. Tippe auf die Taste Hinzufügen, tippe auf Fotos und wähle dann das Foto aus.",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "Tippe auf die Schaltfläche Räumliche Szene, um den 3D-Effekt einzuschalten, und dann auf Hinzufügen.",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "In 3D ansehen",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "3D-Vorschau ausschalten",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "Ziehen zum Neigen",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
   },
   "wallpaperDetailColorCodeCopied": "Farbcode in die Zwischenablage kopiert",
   "@wallpaperDetailColorCodeCopied": {

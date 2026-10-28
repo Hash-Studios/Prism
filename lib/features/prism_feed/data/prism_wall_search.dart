@@ -34,28 +34,62 @@ class PrismWallSearch {
     value: <String>['auto', 'menu'],
   );
 
+  static const FirestoreFilter _spatialFilter = FirestoreFilter(
+    field: 'spatial.tier',
+    op: FirestoreFilterOp.whereIn,
+    value: <String>['great', 'ok'],
+  );
+
+  static const List<FirestoreOrderBy> _newestFirst = <FirestoreOrderBy>[
+    FirestoreOrderBy(field: 'createdAt', descending: true),
+  ];
+
+  /// `great` sorts before `ok`, and each tier lists its newest walls first.
+  static const List<FirestoreOrderBy> _spatialStrongestThenNewest = <FirestoreOrderBy>[
+    FirestoreOrderBy(field: 'spatial.tier'),
+    FirestoreOrderBy(field: 'createdAt', descending: true),
+  ];
+
   /// Never throws. A failed query, such as a missing index, counts as no match.
   ///
   /// [colorId] limits the walls to one palette colour. [depthOnly] keeps walls whose Depth Effect tier is `auto` or
   /// `menu`. An empty [query] with either one lists those walls. Firestore cannot combine the array filters, and the
   /// depth query has its own index, so the colour is always checked on the matches. With a text [query] the depth
   /// tier is checked on the matches too.
-  Future<List<PrismWallpaper>> search(String query, {int limit = 12, String? colorId, bool depthOnly = false}) async {
+  ///
+  /// [spatialOnly] keeps walls whose Spatial Scene tier is `great` or `ok`. An empty [query] lists those walls, the
+  /// strongest first. Otherwise the tier is checked on the matches, like the depth tier.
+  Future<List<PrismWallpaper>> search(
+    String query, {
+    int limit = 12,
+    String? colorId,
+    bool depthOnly = false,
+    bool spatialOnly = false,
+  }) async {
     final String trimmed = query.trim();
-    final bool browseOnly = trimmed.isEmpty && (colorId != null || depthOnly);
+    final bool browseOnly = trimmed.isEmpty && (colorId != null || depthOnly || spatialOnly);
     if (trimmed.length < _minQueryLength && !browseOnly) {
       return const <PrismWallpaper>[];
     }
-    // The query itself is exact for a lone colour or a lone depth tier. Anything left is checked on the matches.
-    final bool checksMatches = browseOnly ? depthOnly && colorId != null : colorId != null || depthOnly;
+    // The query itself is exact for a lone colour or a lone depth or spatial tier. The rest is checked on the matches.
+    final bool checksMatches = browseOnly
+        ? (depthOnly || spatialOnly) && colorId != null
+        : colorId != null || depthOnly || spatialOnly;
     final List<String> terms = searchTermsOf(trimmed).take(_maxTerms).toList(growable: false);
     // Ranking can only lift an older wall that matches more words when the query fetched it.
     final bool ranks = !browseOnly && terms.length > 1;
     final int fetchLimit = checksMatches || ranks ? limit * _localFilterOverfetch : limit;
     try {
-      final List<PrismWallpaper> matches = switch ((browseOnly, depthOnly)) {
-        (true, true) => await _run('depth', fetchLimit, _depthFilter, _toWall),
-        (true, false) => await _run(
+      final List<PrismWallpaper> matches = switch ((browseOnly, depthOnly, spatialOnly)) {
+        (true, true, _) => await _run('depth', fetchLimit, _depthFilter, _toWall),
+        (true, false, true) => await _run(
+          'spatial',
+          fetchLimit,
+          _spatialFilter,
+          _toWall,
+          orderBy: _spatialStrongestThenNewest,
+        ),
+        (true, false, false) => await _run(
           'color',
           fetchLimit,
           FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
@@ -68,7 +102,11 @@ class PrismWallSearch {
       for (final PrismWallpaper wall in matches) {
         final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);
         final bool hasDepth = !depthOnly || (wall.depthTier?.supportsDepth ?? false);
-        if (hasColor && hasDepth && !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
+        final bool hasSpatial = !spatialOnly || (wall.spatial?.tier.suitsSpatialScene ?? false);
+        if (hasColor &&
+            hasDepth &&
+            hasSpatial &&
+            !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
           unique.putIfAbsent(wall.id, () => wall);
         }
       }
@@ -105,8 +143,9 @@ class PrismWallSearch {
     String kind,
     int limit,
     FirestoreFilter match,
-    T Function(Map<String, dynamic> data, String docId) map,
-  ) async {
+    T Function(Map<String, dynamic> data, String docId) map, {
+    List<FirestoreOrderBy> orderBy = _newestFirst,
+  }) async {
     try {
       return await _firestoreClient.query<T>(
         FirestoreQuerySpec(
@@ -116,7 +155,7 @@ class PrismWallSearch {
             const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
             match,
           ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+          orderBy: orderBy,
           limit: limit,
           cachePolicy: FirestoreCachePolicy.memoryFirst,
         ),

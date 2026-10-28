@@ -7,6 +7,9 @@ const coinState = (fields) => ({ coinState: { mapValue: { fields } } });
 const depth = (tier) => ({ mapValue: { fields: {
   tier: { stringValue: tier }, kind: { stringValue: 'person' }, top: { doubleValue: 0.2 }, v: { integerValue: '1' }, by: { stringValue: 'detector' },
 } } });
+const spatial = (tier) => ({ mapValue: { fields: {
+  tier: { stringValue: tier }, map: { stringValue: 'https://img.prismwalls.com/spatial/v1/w.png' }, v: { integerValue: '1' },
+} } });
 async function req(method, path, fields, auth, mask) {
   const q = mask ? '?' + mask.map((m) => `updateMask.fieldPaths=${m}`).join('&') : '';
   const r = await fetch(`${B}/${path}${q}`, { method, headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' }, body: fields ? JSON.stringify({ fields }) : undefined });
@@ -98,7 +101,7 @@ const seed = () => Promise.all([
     watermarkedImageUrl: { stringValue: 'https://prismwalls.com/api/ai/assets/ai/public/gen-1.png' },
   }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
-  req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']) }, 'owner'),
+  req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']), spatial: spatial('great') }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -436,6 +439,12 @@ const cases = [
   ['owner removes an existing depth', () => req('PATCH', 'walls/w12', {}, Bu, ['depth']), 403],
   ['owner updates another field and leaves depth untouched', () => req('PATCH', 'walls/w12', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
   ['admin sets depth on a wall', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, ADM, ['depth']), 200],
+  ['owner creates a wall with spatial', () => req('PATCH', 'walls/w15', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, spatial: spatial('great') }, Bu), 403],
+  ['owner sets spatial on own unreviewed wall', () => req('PATCH', 'walls/w3', { spatial: spatial('great') }, Bu, ['spatial']), 403],
+  ['owner changes an existing spatial', () => req('PATCH', 'walls/w14', { spatial: spatial('ok') }, Bu, ['spatial']), 403],
+  ['owner removes an existing spatial', () => req('PATCH', 'walls/w14', {}, Bu, ['spatial']), 403],
+  ['owner updates another field and leaves spatial untouched', () => req('PATCH', 'walls/w14', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
+  ['admin sets spatial on a wall', () => req('PATCH', 'walls/w14', { spatial: spatial('ok') }, ADM, ['spatial']), 200],
   ...['searchTerms', 'visionLabels'].flatMap((key) => [
     [`owner creates a wall with ${key}`, () => req('PATCH', `walls/create-${key}`, { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, [key]: arr(['stuffed']) }, Bu), 403],
     [`owner sets ${key} on own unreviewed wall`, () => req('PATCH', 'walls/w3', { [key]: arr(['stuffed']) }, Bu, [key]), 403],

@@ -272,6 +272,10 @@
   "@accountClearDepthEffect": {
     "description": "Tooltip for clearing the Depth Effect filter."
   },
+  "accountClearSpatialScene": "Clear Spatial",
+  "@accountClearSpatialScene": {
+    "description": "Spatial Scene text: accountClearSpatialScene."
+  },
   "accountClearFavouriteWallpapers": "Clear favourite wallpapers",
   "@accountClearFavouriteWallpapers": {
     "description": "Settings action for clearing all favourites."
@@ -563,6 +567,18 @@
   "accountDepthEffectClockSemanticLabel": "Depth Effect, subject in front of the clock",
   "@accountDepthEffectClockSemanticLabel": {
     "description": "Accessible description of Depth Effect wallpapers."
+  },
+  "accountSpatialScene": "Spatial",
+  "@accountSpatialScene": {
+    "description": "Spatial Scene text: accountSpatialScene."
+  },
+  "accountSpatialSceneSubtitle": "Walls with clear 3D depth",
+  "@accountSpatialSceneSubtitle": {
+    "description": "Spatial Scene text: accountSpatialSceneSubtitle."
+  },
+  "accountSpatialSceneSemanticLabel": "Spatial, walls with clear 3D depth",
+  "@accountSpatialSceneSemanticLabel": {
+    "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
   "accountDownloadedWallpaperCount": "{count, plural, =0{No downloaded wallpapers; saved offline copies stay} =1{1 downloaded wallpaper; saved offline copies stay} other{{count} downloaded wallpapers; saved offline copies stay}}",
   "@accountDownloadedWallpaperCount": {
@@ -2339,6 +2355,18 @@
   "coreDepthEffectBadgeSemantic": "Works with Depth Effect",
   "coreDepthEffectMenuShortTip": "Tap ••• then Depth Effect.",
   "coreDepthEffectMenuTip": "In the Lock Screen editor, tap ••• then Depth Effect.",
+  "coreSpatialBadge": "Spatial",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
+  "coreSpatialBadgeSemantic": "Works as a Spatial Scene",
+  "@coreSpatialBadgeSemantic": {
+    "description": "Spatial Scene text: coreSpatialBadgeSemantic."
+  },
+  "coreSpatialSceneTip": "In the Lock Screen editor, tap the Spatial Scene button.",
+  "@coreSpatialSceneTip": {
+    "description": "Spatial Scene text: coreSpatialSceneTip."
+  },
   "coreDeviceCannotSetScreen": "This device can't set that screen.",
   "coreDone": "Done",
   "coreDown": "down {coins}",
@@ -6875,6 +6903,54 @@
   "wallpaperDepthSubjectSubtitle": "Your subject sits in front of the clock.",
   "@wallpaperDepthSubjectSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthSubjectSubtitle."
+  },
+  "wallpaperSpatialScene": "Spatial Scene",
+  "@wallpaperSpatialScene": {
+    "description": "Spatial Scene text: wallpaperSpatialScene."
+  },
+  "wallpaperSpatialGreatSubtitle": "Clear depth. Makes a strong 3D Lock Screen.",
+  "@wallpaperSpatialGreatSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGreatSubtitle."
+  },
+  "wallpaperSpatialOkSubtitle": "Some depth. The 3D effect is gentle.",
+  "@wallpaperSpatialOkSubtitle": {
+    "description": "Spatial Scene text: wallpaperSpatialOkSubtitle."
+  },
+  "wallpaperSpatialGuideTitle": "Set it as a Spatial Scene",
+  "@wallpaperSpatialGuideTitle": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideTitle."
+  },
+  "wallpaperSpatialGuideBody": "On iPhone 12 or later with iOS 26:",
+  "@wallpaperSpatialGuideBody": {
+    "description": "Spatial Scene text: wallpaperSpatialGuideBody."
+  },
+  "wallpaperSpatialStepSave": "Save this wall to Photos.",
+  "@wallpaperSpatialStepSave": {
+    "description": "Spatial Scene text: wallpaperSpatialStepSave."
+  },
+  "wallpaperSpatialStepPick": "On the Lock Screen, touch and hold your screen. Tap the Add button, tap Photos, then select the photo.",
+  "@wallpaperSpatialStepPick": {
+    "description": "Spatial Scene text: wallpaperSpatialStepPick."
+  },
+  "wallpaperSpatialStepButton": "Tap the Spatial Scene button to turn the 3D effect on, then tap Add.",
+  "@wallpaperSpatialStepButton": {
+    "description": "Spatial Scene text: wallpaperSpatialStepButton."
+  },
+  "wallpaperSpatialPreviewLabel": "3D",
+  "@wallpaperSpatialPreviewLabel": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewLabel."
+  },
+  "wallpaperSpatialPreviewOn": "Preview in 3D",
+  "@wallpaperSpatialPreviewOn": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOn."
+  },
+  "wallpaperSpatialPreviewOff": "Turn off the 3D preview",
+  "@wallpaperSpatialPreviewOff": {
+    "description": "Spatial Scene text: wallpaperSpatialPreviewOff."
+  },
+  "wallpaperSpatialDragHint": "Drag to tilt",
+  "@wallpaperSpatialDragHint": {
+    "description": "Spatial Scene text: wallpaperSpatialDragHint."
   },
   "wallpaperDetailColorCodeCopied": "Color code copied to clipboard",
   "@wallpaperDetailColorCodeCopied": {

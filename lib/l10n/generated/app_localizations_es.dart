@@ -210,6 +210,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountClearDepthEffect => 'Borrar efecto de profundidad';
 
   @override
+  String get accountClearSpatialScene => 'Borrar espacial';
+
+  @override
   String get accountClearFavouriteWallpapers => 'Borrar fondos favoritos';
 
   @override
@@ -460,6 +463,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountDepthEffectClockSemanticLabel => 'Efecto de profundidad, el sujeto delante del reloj';
+
+  @override
+  String get accountSpatialScene => 'Espacial';
+
+  @override
+  String get accountSpatialSceneSubtitle => 'Fondos con profundidad 3D clara';
+
+  @override
+  String get accountSpatialSceneSemanticLabel => 'Espacial, fondos con profundidad 3D clara';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -2334,6 +2346,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get coreDepthEffectMenuTip =>
       'En el editor de la pantalla de bloqueo, toca ••• y luego Efecto de profundidad.';
+
+  @override
+  String get coreSpatialBadge => 'Espacial';
+
+  @override
+  String get coreSpatialBadgeSemantic => 'Funciona como escena espacial';
+
+  @override
+  String get coreSpatialSceneTip => 'En el editor de la pantalla de bloqueo, toca el botón Escena espacial.';
 
   @override
   String get coreDeviceCannotSetScreen => 'Este dispositivo no puede configurar esa pantalla.';
@@ -7996,6 +8017,44 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperDepthSubjectSubtitle => 'El sujeto queda delante del reloj.';
+
+  @override
+  String get wallpaperSpatialScene => 'Escena espacial';
+
+  @override
+  String get wallpaperSpatialGreatSubtitle => 'Profundidad nítida. Crea una pantalla de bloqueo 3D potente.';
+
+  @override
+  String get wallpaperSpatialOkSubtitle => 'Algo de profundidad. El efecto 3D es suave.';
+
+  @override
+  String get wallpaperSpatialGuideTitle => 'Configúralo como escena espacial';
+
+  @override
+  String get wallpaperSpatialGuideBody => 'En iPhone 12 o posterior con iOS 26:';
+
+  @override
+  String get wallpaperSpatialStepSave => 'Guarda este fondo en Fotos.';
+
+  @override
+  String get wallpaperSpatialStepPick =>
+      'En la pantalla de bloqueo, mantén pulsada la pantalla. Toca el botón Añadir, toca Fotos y luego selecciona la foto.';
+
+  @override
+  String get wallpaperSpatialStepButton =>
+      'Toca el botón Escena espacial para activar el efecto 3D y, después, toca Añadir.';
+
+  @override
+  String get wallpaperSpatialPreviewLabel => '3D';
+
+  @override
+  String get wallpaperSpatialPreviewOn => 'Previsualizar en 3D';
+
+  @override
+  String get wallpaperSpatialPreviewOff => 'Desactivar la vista previa 3D';
+
+  @override
+  String get wallpaperSpatialDragHint => 'Arrastra para inclinar';
 
   @override
   String get wallpaperDetailColorCodeCopied => 'Se copió el código de color al portapapeles';
