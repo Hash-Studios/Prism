@@ -1,0 +1,8 @@
+10-28 17:57:56.493 16481 16481 I flutter : -------------------------------------------------------------------------------
+10-28 17:57:56.493 16481 16481 I flutter : The Shorebird Updater is unavailable in the current environment.
+10-28 17:57:56.493 16481 16481 I flutter : -------------------------------------------------------------------------------
+10-28 17:57:56.493 16481 16481 I flutter : This occurs when using pkg:shorebird_code_push in an app that does not
+10-28 17:57:56.493 16481 16481 I flutter : contain the Shorebird Engine. Most commonly this is due to building with
+10-28 17:57:56.493 16481 16481 I flutter : `flutter build` or `flutter run` instead of `shorebird release` or `shorebird preview`.
+10-28 17:57:56.493 16481 16481 I flutter : It can also occur when running on an unsupported platform (e.g. web).
+10-28 17:57:56.843 16481 16481 I flutter : 17:57:56.843 WRN #3 [StartupRepository] Firebase not ready; using hardcoded default config values.
