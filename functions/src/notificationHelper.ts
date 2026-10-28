@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db as database, findUserByEmail} from "./common";
 import {recordPushOutcome, scoreKindFor} from "./notificationScoreboard";
+import type {PushGallery} from "./pushGallery";
 import {
   isNativeLocalizationTopic,
   nativeLocalizationTopic,
@@ -37,6 +38,8 @@ export interface NotificationPayload {
   scoreKind?: string;
   /** Sends localized resource keys without common English strings for capable native clients. */
   nativeLocalization?: boolean;
+  /** Android shows `heroUrl`; the iOS service extension shows `stripUrl` with wall `thumbIndex` as the thumbnail. */
+  gallery?: PushGallery;
 }
 
 /**
@@ -169,10 +172,11 @@ async function sendPush(
 
   const message = fcmMessage({...payload, fcmTarget});
   const kind = scoreKindFor(payload);
+  const gallery = Boolean(payload.gallery);
   try {
-    if (kind) await recordPushOutcome(kind, "sends");
+    if (kind) await recordPushOutcome(kind, "sends", new Date(), gallery);
     const messageId = await messaging.send(message);
-    if (kind) await recordPushOutcome(kind, "accepts");
+    if (kind) await recordPushOutcome(kind, "accepts", new Date(), gallery);
     logger.info("FCM push sent.", {
       messageId,
       route: payload.data.route,
@@ -181,7 +185,7 @@ async function sendPush(
     });
     return true;
   } catch (err) {
-    if (kind) await recordPushOutcome(kind, "fails");
+    if (kind) await recordPushOutcome(kind, "fails", new Date(), gallery);
     logger.error("Failed to send FCM push.", {err, route: payload.data.route, kind});
     return false;
   }
@@ -202,6 +206,8 @@ export function fcmMessage(
     isNativeLocalizationTopic(payload.fcmTarget.topic);
   const nativeLocalization =
     Boolean(payload.nativeLocalization || targetIsLocalized) && Boolean(nativeCopy);
+  const gallery = payload.gallery;
+  const androidImage = gallery?.heroUrl ?? payload.imageUrl;
   return {
     ...(nativeLocalization ?
       {} :
@@ -218,12 +224,20 @@ export function fcmMessage(
       ...(kind ? {push_kind: kind} : {}),
       channel_id: payload.channelId,
       ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
+      ...(gallery ?
+        {
+          gallery: "1",
+          gallery_url: gallery.stripUrl,
+          gallery_count: String(gallery.count),
+          gallery_thumb_index: String(gallery.thumbIndex),
+        } :
+        {}),
     },
     android: {
       notification: {
         channelId: payload.channelId,
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
-        ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
+        ...(androidImage ? {imageUrl: androidImage} : {}),
         ...(payload.collapseKey ? {tag: payload.collapseKey} : {}),
         ...(nativeLocalization && nativeCopy ?
           {
@@ -247,6 +261,8 @@ export function fcmMessage(
       payload: {
         aps: {
           sound: "default",
+          // The service extension attaches the image. It runs only for an alert with mutable-content.
+          ...(payload.imageUrl || gallery ? {mutableContent: true} : {}),
           ...(nativeLocalization && nativeCopy ?
             {
               alert: {

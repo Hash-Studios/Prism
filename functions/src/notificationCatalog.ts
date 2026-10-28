@@ -13,6 +13,15 @@ export type NotificationCopy =
   | { kind: "winBack60" }
   | { kind: "dropLive"; wallCount: number }
   | { kind: "dropLastCall"; dropTitle: string; hoursLeft: number }
+  | { kind: "galleryDrop"; wallCount: number; tags: string }
+  | {
+      kind: "followDigest";
+      artistName: string;
+      secondArtistName: string;
+      creatorCount: number;
+      wallCount: number;
+      tags: string;
+    }
   | { kind: "drawWinner" }
   | { kind: "giftReceived"; senderName: string }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
@@ -152,6 +161,28 @@ export function renderNotificationCopy(
       title: "Last call on this week's Drop",
       body: `${copy.dropTitle} ends in ${copy.hoursLeft} ${copy.hoursLeft === 1 ? "hour" : "hours"}. Then these walls are gone for a month.`,
     };
+  case "galleryDrop": {
+    const live = renderNotificationCopy({kind: "dropLive", wallCount: copy.wallCount});
+    return {
+      kind: copy.kind,
+      args: {wallCount: copy.wallCount, tags: copy.tags},
+      title: live.title,
+      body: copy.tags || live.body,
+    };
+  }
+  case "followDigest":
+    return {
+      kind: copy.kind,
+      args: {
+        artistName: copy.artistName,
+        secondArtistName: copy.secondArtistName,
+        creatorCount: copy.creatorCount,
+        wallCount: copy.wallCount,
+        tags: copy.tags,
+      },
+      title: followDigestTitle(copy),
+      body: copy.tags || "Tap to see them all.",
+    };
   case "drawWinner":
     return {
       kind: copy.kind,
@@ -200,6 +231,27 @@ export function renderNotificationCopy(
   }
 }
 
+type FollowDigestShape = "one" | "solo" | "pair" | "group";
+
+/** One creator and one wall, one creator, two creators, or more. Native resources have no plurals, so each is a key. */
+export function followDigestShape(creatorCount: number, wallCount: number): FollowDigestShape {
+  if (creatorCount <= 1) return wallCount <= 1 ? "one" : "solo";
+  return creatorCount === 2 ? "pair" : "group";
+}
+
+function followDigestTitle(copy: Extract<NotificationCopy, {kind: "followDigest"}>): string {
+  switch (followDigestShape(copy.creatorCount, copy.wallCount)) {
+  case "one":
+    return `${copy.artistName} posted a new wall`;
+  case "solo":
+    return `${copy.artistName} posted ${copy.wallCount} new walls`;
+  case "pair":
+    return `${copy.artistName} and ${copy.secondArtistName} posted ${copy.wallCount} new walls`;
+  case "group":
+    return `${copy.artistName} and ${copy.creatorCount - 1} others posted ${copy.wallCount} new walls`;
+  }
+}
+
 export function notificationCopyPayload(copy: NotificationCopy): {
   title: string;
   body: string;
@@ -218,9 +270,14 @@ export function nativeNotificationLocalization(
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");
-  const titleArgs: string[] = [];
+  let titleArgs: string[] = [];
   let bodyArgs: string[] = [];
+  let titleSuffix = "";
   let bodySuffix = "";
+  const tagsBody = () => {
+    if (!stringArg("tags")) bodySuffix = "_untitled";
+    else bodyArgs = [stringArg("tags")];
+  };
 
   switch (kind) {
   case "wallLiveForFollowers":
@@ -255,6 +312,28 @@ export function nativeNotificationLocalization(
   case "giftReceived":
     titleArgs.push(stringArg("senderName"));
     break;
+  case "galleryDrop":
+    // Topic pushes reach builds that predate this kind, so it uses only shipped resources: the Drop title, and the
+    // pass-through body of the Wall of the Day push for the tags line.
+    return stringArg("tags") ?
+      {titleKey: "notif_push_drop_live_title", titleArgs: [], bodyKey: "notif_push_wotd_for_audience_body",
+        bodyArgs: [stringArg("tags")]} :
+      {titleKey: "notif_push_drop_live_title", titleArgs: [], bodyKey: "notif_push_drop_live_body",
+        bodyArgs: [String(Number(message.args.wallCount ?? 0))]};
+  case "followDigest": {
+    const creators = Number(message.args.creatorCount ?? 0);
+    const walls = String(Number(message.args.wallCount ?? 0));
+    const shape = followDigestShape(creators, Number(walls));
+    titleSuffix = `_${shape}`;
+    titleArgs = {
+      one: [stringArg("artistName")],
+      solo: [stringArg("artistName"), walls],
+      pair: [stringArg("artistName"), stringArg("secondArtistName"), walls],
+      group: [stringArg("artistName"), String(creators - 1), walls],
+    }[shape];
+    tagsBody();
+    break;
+  }
   case "reportNeedsReview":
     break;
   case "newContentReport":
@@ -277,7 +356,7 @@ export function nativeNotificationLocalization(
   }
 
   return {
-    titleKey: `${prefix}_title`,
+    titleKey: `${prefix}_title${titleSuffix}`,
     titleArgs,
     bodyKey: `${prefix}_body${bodySuffix}`,
     bodyArgs,
