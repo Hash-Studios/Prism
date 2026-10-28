@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' show Color;
 
 import 'package:Prism/core/color/prism_palette.dart';
@@ -159,7 +160,70 @@ class TasteSummary {
 
 const int _maxSummaryTagLength = 16;
 
-TasteSummary summarizeTaste(List<QuizPick> picks) {
+/// How bright and how detailed a wall looks, measured from a small copy of its pixels.
+class WallLook {
+  const WallLook({required this.luma, required this.edges});
+
+  /// Mean brightness, 0 (black) to 1 (white).
+  final double luma;
+
+  /// Mean brightness change between neighbouring pixels, 0 (flat) to 1.
+  final double edges;
+}
+
+/// Measures [rgba] (straight RGBA, 4 bytes a pixel). Fully transparent pixels are skipped.
+WallLook wallLookOf(Uint8List rgba, int width, int height) {
+  if (width <= 0 || height <= 0 || rgba.length < width * height * 4) return const WallLook(luma: 0.5, edges: 0.06);
+  double luma(int x, int y) {
+    final int i = (y * width + x) * 4;
+    return (0.2126 * rgba[i] + 0.7152 * rgba[i + 1] + 0.0722 * rgba[i + 2]) / 255;
+  }
+
+  bool opaque(int x, int y) => rgba[(y * width + x) * 4 + 3] != 0;
+  double sum = 0;
+  int count = 0;
+  double edgeSum = 0;
+  int edgeCount = 0;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      if (!opaque(x, y)) continue;
+      final double here = luma(x, y);
+      sum += here;
+      count++;
+      if (x + 1 < width && opaque(x + 1, y)) {
+        edgeSum += (here - luma(x + 1, y)).abs();
+        edgeCount++;
+      }
+      if (y + 1 < height && opaque(x, y + 1)) {
+        edgeSum += (here - luma(x, y + 1)).abs();
+        edgeCount++;
+      }
+    }
+  }
+  return WallLook(luma: count == 0 ? 0.5 : sum / count, edges: edgeCount == 0 ? 0 : edgeSum / edgeCount);
+}
+
+// ponytail: these cut-offs are not calibrated on real walls; tune them with ~20 labelled walls.
+const double _darkBelow = 0.30;
+const double _lightAbove = 0.62;
+const double _minimalBelow = 0.035;
+const double _busyAbove = 0.09;
+
+QuizTone? toneOfLook(WallLook? look) {
+  if (look == null) return null;
+  if (look.luma < _darkBelow) return QuizTone.dark;
+  return look.luma > _lightAbove ? QuizTone.light : null;
+}
+
+QuizDensity? densityOfLook(WallLook? look) {
+  if (look == null) return null;
+  if (look.edges < _minimalBelow) return QuizDensity.minimal;
+  return look.edges > _busyAbove ? QuizDensity.busy : null;
+}
+
+/// [looks] is keyed by [QuizWall.key]. Measured brightness beats a tag or colour guess.
+/// An explicit density tag beats the small-copy estimate.
+TasteSummary summarizeTaste(List<QuizPick> picks, {Map<String, WallLook> looks = const <String, WallLook>{}}) {
   final int majority = max(2, (picks.length * 2 / 3).ceil());
   T? agreed<T extends Object>(Iterable<T?> traits) {
     final Map<T, int> counts = <T, int>{};
@@ -173,8 +237,8 @@ TasteSummary summarizeTaste(List<QuizPick> picks) {
   }
 
   return TasteSummary(
-    tone: agreed(picks.map((pick) => pick.picked.tone)),
-    density: agreed(picks.map((pick) => pick.picked.density)),
+    tone: agreed(picks.map((pick) => toneOfLook(looks[pick.picked.key]) ?? pick.picked.tone)),
+    density: agreed(picks.map((pick) => pick.picked.density ?? densityOfLook(looks[pick.picked.key]))),
     tag: _summaryTag(picks),
   );
 }

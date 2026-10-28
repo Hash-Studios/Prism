@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/domain/taste_quiz_rules.dart';
@@ -215,6 +216,72 @@ void main() {
       ];
 
       expect(summarizeTaste(picks).tag, isNull);
+    });
+  });
+
+  group('wallLookOf', () {
+    Uint8List fill(int w, int h, int Function(int x, int y) v) {
+      final Uint8List b = Uint8List(w * h * 4);
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          final int i = (y * w + x) * 4;
+          b[i] = b[i + 1] = b[i + 2] = v(x, y);
+          b[i + 3] = 255;
+        }
+      }
+      return b;
+    }
+
+    test('black is dark and minimal, white is light, mid grey has no tone', () {
+      final black = wallLookOf(fill(8, 8, (_, _) => 0), 8, 8);
+      expect(toneOfLook(black), QuizTone.dark);
+      expect(densityOfLook(black), QuizDensity.minimal);
+      expect(toneOfLook(wallLookOf(fill(8, 8, (_, _) => 255), 8, 8)), QuizTone.light);
+      expect(toneOfLook(wallLookOf(fill(8, 8, (_, _) => 0x80), 8, 8)), isNull);
+    });
+
+    test('a checkerboard is busy and a smooth gradient is minimal', () {
+      expect(densityOfLook(wallLookOf(fill(8, 8, (x, y) => (x + y).isEven ? 0 : 255), 8, 8)), QuizDensity.busy);
+      expect(densityOfLook(wallLookOf(fill(64, 4, (x, _) => x * 4), 64, 4)), QuizDensity.minimal);
+    });
+
+    test('null look gives null tone and density', () {
+      expect(toneOfLook(null), isNull);
+      expect(densityOfLook(null), isNull);
+    });
+  });
+
+  group('summarizeTaste with looks', () {
+    const WallLook darkLook = WallLook(luma: 0.1, edges: 0.06);
+    const WallLook lightLook = WallLook(luma: 0.9, edges: 0.06);
+
+    List<QuizPick> picks() => <QuizPick>[
+      for (int i = 0; i < 6; i++)
+        _pickLeft(quizWall('p$i', colors: <String>['red', 'blue']), quizWall('q$i', colors: <String>['red', 'blue'])),
+    ];
+
+    test('dark looks give tone dark when tags and colours say nothing', () {
+      final List<QuizPick> p = picks();
+      expect(summarizeTaste(p).tone, isNull);
+      final looks = <String, WallLook>{for (int i = 0; i < 4; i++) p[i].picked.key: darkLook};
+      expect(summarizeTaste(p, looks: looks).tone, QuizTone.dark);
+    });
+
+    test('a light look beats a dark tag', () {
+      final List<QuizPick> p = <QuizPick>[
+        for (int i = 0; i < 6; i++) _pickLeft(quizWall('p$i', tags: <String>['dark']), quizWall('q$i')),
+      ];
+      expect(summarizeTaste(p).tone, QuizTone.dark);
+      final looks = <String, WallLook>{for (final pick in p) pick.picked.key: lightLook};
+      expect(summarizeTaste(p, looks: looks).tone, QuizTone.light);
+    });
+
+    test('an explicit density tag beats the look estimate', () {
+      final List<QuizPick> p = <QuizPick>[
+        for (int i = 0; i < 6; i++) _pickLeft(quizWall('p$i', tags: <String>['minimal']), quizWall('q$i')),
+      ];
+      final looks = <String, WallLook>{for (final pick in p) pick.picked.key: const WallLook(luma: 0.5, edges: 0.5)};
+      expect(summarizeTaste(p, looks: looks).density, QuizDensity.minimal);
     });
   });
 }
