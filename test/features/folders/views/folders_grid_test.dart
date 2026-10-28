@@ -13,7 +13,6 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -207,7 +206,7 @@ void main() {
   testWidgets('signed in with folders shows a card per folder with its count and no New folder tile', (tester) async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository(
       folders: <FolderEntity>[
-        _folder('work', 'Work', itemCount: 0, covers: _urls(0)),
+        _folder('work', 'Work'),
         _folder('trips', 'Trips', itemCount: 1, covers: _urls(1)),
         _folder('gym', 'Gym', itemCount: 7, covers: _urls(4)),
       ],
@@ -228,11 +227,10 @@ void main() {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpGrid(tester, _FakeFoldersRepository(folders: <FolderEntity>[_folder('trips', 'Trips', itemCount: 7)]));
 
-    // The card has no tap action in its semantics node; that gap is reported, not asserted here.
-    final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel('Trips'));
-    expect(node.label, 'Trips');
-    expect(node.value, '7 wallpapers');
-    expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Trips')),
+      isSemantics(label: 'Trips', value: '7 wallpapers', isButton: true, hasTapAction: true),
+    );
     handle.dispose();
   });
 

@@ -42,8 +42,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
-import 'support/fav_fixtures.dart';
 import '../../support/favourite_test_scope.dart';
+import 'support/fav_fixtures.dart';
 
 class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWallsUseCase {}
 
@@ -55,7 +55,7 @@ class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 /// [count] favourites, all older than the fixtures the tests name, so they sort after them.
 List<FavouriteWallEntity> _manyFavs(int count) => <FavouriteWallEntity>[
-  for (int i = 0; i < count; i++) prismFav('w$i', author: 'Author $i', createdAt: DateTime.utc(2024, 1, 1)),
+  for (int i = 0; i < count; i++) prismFav('w$i', author: 'Author $i', createdAt: DateTime.utc(2024)),
 ];
 
 void main() {
@@ -274,7 +274,7 @@ void main() {
       createBlocWith(<FavouriteWallEntity>[
         prismFav('a', author: 'Ada', createdAt: DateTime.utc(2025, 1, 3)),
         pexelsFav('b', author: 'Grace', createdAt: DateTime.utc(2025, 1, 2)),
-        for (int i = 0; i < 10; i++) prismFav('f$i', author: 'Filler $i', createdAt: DateTime.utc(2024, 1, 1)),
+        for (int i = 0; i < 10; i++) prismFav('f$i', author: 'Filler $i', createdAt: DateTime.utc(2024)),
       ]);
       await pumpLoaded(tester);
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
