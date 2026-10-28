@@ -11,6 +11,9 @@
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
   },
+  "galleryEmptyBody": "Wallpaper ini telah dihapus atau tidak lagi publik.",
+  "galleryEmptyTitle": "Wallpaper ini sudah tidak ada",
+  "galleryScreenTitle": "Wallpaper untuk Anda",
   "wallpaperFavouriteSearchCountHint": "{count, plural, other{Cari di {count} favorit}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6239,6 +6242,54 @@
     }
   },
   "notifPushDropLiveTitle": "Drop baru telah dimulai",
+  "notifPushFollowDigestTitleOne": "{artistName} memposting wallpaper baru",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} dan {secondArtistName} memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} dan {otherCount} lainnya memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "Ketuk untuk melihat semuanya.",
   "notifPushGiftReceivedBody": "Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.",
   "notifPushGiftReceivedTitle": "{senderName} mengirimi Anda akses Pro selama 24 jam",
   "@notifPushGiftReceivedTitle": {

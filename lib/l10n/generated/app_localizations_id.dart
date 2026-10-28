@@ -2,6 +2,7 @@
 
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -18,6 +19,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'Folder Anda tidak dapat dimuat';
+
+  @override
+  String get galleryEmptyBody => 'Wallpaper ini telah dihapus atau tidak lagi publik.';
+
+  @override
+  String get galleryEmptyTitle => 'Wallpaper ini sudah tidak ada';
+
+  @override
+  String get galleryScreenTitle => 'Wallpaper untuk Anda';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -7054,6 +7064,29 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get notifPushDropLiveTitle => 'Drop baru telah dimulai';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName memposting wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName dan $secondArtistName memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName dan $otherCount lainnya memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Ketuk untuk melihat semuanya.';
 
   @override
   String get notifPushGiftReceivedBody => 'Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.';

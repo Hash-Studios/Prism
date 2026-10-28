@@ -46,6 +46,12 @@
     <string name="notif_push_win_back60_body">Your next favourite wall is a tap away.</string>
     <string name="notif_push_drop_live_title">A new Drop is live</string>
     <string name="notif_push_drop_live_body">Wallpapers in this week\'s Drop: %1$s. Preview the Drop before it closes.</string>
+    <string name="notif_push_follow_digest_title_one">%1$s posted a new wall</string>
+    <string name="notif_push_follow_digest_title_solo">%1$s posted %2$s new walls</string>
+    <string name="notif_push_follow_digest_title_pair">%1$s and %2$s posted %3$s new walls</string>
+    <string name="notif_push_follow_digest_title_group">%1$s and %2$s others posted %3$s new walls</string>
+    <string name="notif_push_follow_digest_body">%1$s</string>
+    <string name="notif_push_follow_digest_body_untitled">Tap to see them all.</string>
     <string name="notif_push_drop_last_call_title">Last call on this week\'s Drop</string>
     <string name="notif_push_drop_last_call_body">%1$s ends in %2$s h. Wallpapers are unavailable for a month afterward.</string>
     <string name="notif_push_draw_winner_title">You won the Prism Draw</string>

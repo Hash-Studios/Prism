@@ -1521,6 +1521,246 @@
         }
       }
     },
+    "notif_push_follow_digest_title_one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ posted a new wall"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ memposting wallpaper baru"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ publicou um novo papel de parede"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat ein neues Hintergrundbild veröffentlicht"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ने एक नया वॉलपेपर पोस्ट किया"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ publicó un fondo nuevo"
+          }
+        }
+      }
+    },
+    "notif_push_follow_digest_title_solo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ posted %2$@ new walls"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ memposting %2$@ wallpaper baru"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ publicou %2$@ papéis de parede novos"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat %2$@ neue Hintergrundbilder veröffentlicht"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ने %2$@ नए वॉलपेपर पोस्ट किए"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ publicó %2$@ fondos nuevos"
+          }
+        }
+      }
+    },
+    "notif_push_follow_digest_title_pair": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ and %2$@ posted %3$@ new walls"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ dan %2$@ memposting %3$@ wallpaper baru"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ e %2$@ publicaram %3$@ papéis de parede novos"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ und %2$@ haben %3$@ neue Hintergrundbilder veröffentlicht"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ और %2$@ ने %3$@ नए वॉलपेपर पोस्ट किए"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ y %2$@ publicaron %3$@ fondos nuevos"
+          }
+        }
+      }
+    },
+    "notif_push_follow_digest_title_group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ and %2$@ others posted %3$@ new walls"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ dan %2$@ lainnya memposting %3$@ wallpaper baru"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ e mais %2$@ publicaram %3$@ papéis de parede novos"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ und %2$@ weitere haben %3$@ neue Hintergrundbilder veröffentlicht"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ और %2$@ अन्य ने %3$@ नए वॉलपेपर पोस्ट किए"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ y %2$@ más publicaron %3$@ fondos nuevos"
+          }
+        }
+      }
+    },
+    "notif_push_follow_digest_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@"
+          }
+        }
+      }
+    },
+    "notif_push_follow_digest_body_untitled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to see them all."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk untuk melihat semuanya."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque para ver todos."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe, um sie alle zu sehen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सभी देखने के लिए टैप करें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca para verlas todas."
+          }
+        }
+      }
+    },
     "notif_push_drop_last_call_title": {
       "localizations": {
         "en": {

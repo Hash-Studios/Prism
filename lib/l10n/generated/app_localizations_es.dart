@@ -2,6 +2,7 @@
 
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -19,6 +20,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'No se pudieron cargar tus carpetas';
+
+  @override
+  String get galleryEmptyBody => 'Se eliminaron o ya no son públicos.';
+
+  @override
+  String get galleryEmptyTitle => 'Estos fondos ya no están';
+
+  @override
+  String get galleryScreenTitle => 'Fondos para ti';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -7103,6 +7113,29 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushDropLiveTitle => 'Hay una novedad';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName publicó un fondo nuevo';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName publicó $wallCount fondos nuevos';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName y $secondArtistName publicaron $wallCount fondos nuevos';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName y $otherCount más publicaron $wallCount fondos nuevos';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Toca para verlas todas.';
 
   @override
   String get notifPushGiftReceivedBody =>

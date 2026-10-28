@@ -2,6 +2,7 @@
 
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -18,6 +19,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
+
+  @override
+  String get galleryEmptyBody => 'Foram removidos ou não são mais públicos.';
+
+  @override
+  String get galleryEmptyTitle => 'Esses papéis de parede sumiram';
+
+  @override
+  String get galleryScreenTitle => 'Papéis de parede para você';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -7279,6 +7289,29 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get notifPushDropLiveTitle => 'Um novo Drop está disponível';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName publicou um novo papel de parede';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName publicou $wallCount papéis de parede novos';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName e $secondArtistName publicaram $wallCount papéis de parede novos';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName e mais $otherCount publicaram $wallCount papéis de parede novos';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Toque para ver todos.';
 
   @override
   String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium ficarão disponíveis por 24 horas.';
@@ -10901,6 +10934,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get foldersLoadAllError => 'Não foi possível carregar suas pastas';
 
   @override
+  String get galleryEmptyBody => 'Foram removidos ou não são mais públicos.';
+
+  @override
+  String get galleryEmptyTitle => 'Esses papéis de parede sumiram';
+
+  @override
+  String get galleryScreenTitle => 'Papéis de parede para você';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -18160,6 +18202,29 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get notifPushDropLiveTitle => 'Um novo Drop está disponível';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName publicou um novo papel de parede';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName publicou $wallCount papéis de parede novos';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName e $secondArtistName publicaram $wallCount papéis de parede novos';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName e mais $otherCount publicaram $wallCount papéis de parede novos';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Toque para ver todos.';
 
   @override
   String get notifPushGiftReceivedBody => 'As coleções e os papéis de parede premium ficarão disponíveis por 24 horas.';

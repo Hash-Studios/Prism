@@ -2,6 +2,7 @@
 
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -18,6 +19,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'Could not load your folders';
+
+  @override
+  String get galleryEmptyBody => 'They were removed or are no longer public.';
+
+  @override
+  String get galleryEmptyTitle => 'These walls are gone';
+
+  @override
+  String get galleryScreenTitle => 'Walls for you';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -7028,6 +7038,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifPushDropLiveTitle => 'A new Drop is live';
+
+  @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName posted a new wall';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName posted $wallCount new walls';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName and $secondArtistName posted $wallCount new walls';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName and $otherCount others posted $wallCount new walls';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Tap to see them all.';
 
   @override
   String get notifPushGiftReceivedBody => 'Premium collections and premium walls are open until tomorrow.';

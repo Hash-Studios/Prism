@@ -11,6 +11,9 @@
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
   },
+  "galleryEmptyBody": "Sie wurden entfernt oder sind nicht mehr öffentlich.",
+  "galleryEmptyTitle": "Diese Hintergrundbilder sind weg",
+  "galleryScreenTitle": "Hintergrundbilder für dich",
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 Favorit durchsuchen} other{{count} Favoriten durchsuchen}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6013,6 +6016,54 @@
     }
   },
   "notifPushDropLiveTitle": "Ein neuer Drop ist da",
+  "notifPushFollowDigestTitleOne": "{artistName} hat ein neues Hintergrundbild veröffentlicht",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} hat {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} und {secondArtistName} haben {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} und {otherCount} weitere haben {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "Tippe, um sie alle zu sehen.",
   "notifPushGiftReceivedBody": "Premium-Sammlungen und Premium-Hintergrundbilder sind 24 Stunden lang freigeschaltet.",
   "notifPushGiftReceivedTitle": "{senderName} hat dir einen 24-Stunden-Pro-Pass geschenkt",
   "@notifPushGiftReceivedTitle": {

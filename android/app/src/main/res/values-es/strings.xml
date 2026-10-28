@@ -46,6 +46,12 @@
     <string name="notif_push_win_back60_body">Tu próximo fondo favorito está a un toque.</string>
     <string name="notif_push_drop_live_title">Ya está disponible un nuevo Drop</string>
     <string name="notif_push_drop_live_body">Fondos de pantalla del Drop de esta semana: %1$s. Descúbrelo antes de que termine.</string>
+    <string name="notif_push_follow_digest_title_one">%1$s publicó un fondo nuevo</string>
+    <string name="notif_push_follow_digest_title_solo">%1$s publicó %2$s fondos nuevos</string>
+    <string name="notif_push_follow_digest_title_pair">%1$s y %2$s publicaron %3$s fondos nuevos</string>
+    <string name="notif_push_follow_digest_title_group">%1$s y %2$s más publicaron %3$s fondos nuevos</string>
+    <string name="notif_push_follow_digest_body">%1$s</string>
+    <string name="notif_push_follow_digest_body_untitled">Toca para verlas todas.</string>
     <string name="notif_push_drop_last_call_title">Última oportunidad para el Drop de esta semana</string>
     <string name="notif_push_drop_last_call_body">%1$s termina en %2$s h. Después, los fondos no estarán disponibles durante un mes.</string>
     <string name="notif_push_draw_winner_title">Has ganado el sorteo de Prism</string>
