@@ -82,8 +82,11 @@ class _FoldersGridState extends State<FoldersGrid> {
   @override
   Widget build(BuildContext context) {
     final FoldersBloc? bloc = context.read<FoldersBloc?>();
-    if (bloc == null) return const SizedBox.shrink();
     final AppLocalizations l10n = context.l10n;
+    if (app_state.prismUser.id.isEmpty) {
+      return _message(SignInPrompt(feature: l10n.foldersSignInFeature));
+    }
+    if (bloc == null) return const SizedBox.shrink();
     return BlocBuilder<FoldersBloc, FoldersState>(
       bloc: bloc,
       builder: (context, state) {
@@ -101,7 +104,7 @@ class _FoldersGridState extends State<FoldersGrid> {
             ),
           );
         }
-        if (state.folders.isEmpty && state.status == LoadStatus.failure) {
+        if (state.status == LoadStatus.failure) {
           return _message(
             GlintState(
               kind: GlintStateKind.error,

@@ -39,7 +39,7 @@ Each item (`AppliedWallpaper`) has: `id`, `source` (`prism`, `wallhaven`, `pexel
 
 ### The History tab
 
-- The list is grouped by day, newest day first: **Today**, **Yesterday**, then a date. The date shows the weekday and the day and month this year. An earlier year also shows the year.
+- The list is grouped by local calendar day, newest day first: **Today**, **Yesterday**, then a date. The date shows the weekday and the day and month this year. An earlier year also shows the year.
 - Each tile shows the image, the screen that got the wallpaper (Home screen, Lock screen, or Both screens), and the time. The day is in the heading above the group.
 - The newest home item and the newest lock item show a **Current** badge. A `both` row counts for each screen. The badge shows what Prism set last. It cannot see changes made outside Prism.
 - Tap a tile to open the wallpaper:
@@ -47,6 +47,7 @@ Each item (`AppliedWallpaper`) has: `id`, `source` (`prism`, `wallhaven`, `pexel
   - A local file that still exists on the device opens the download preview.
   - Otherwise the set sheet opens.
 - The **Set again** icon button on a tile opens the set sheet. The sheet always opens, even when a default target is saved. Analytics: `library_history_set_again{provider, target}`. The list reloads after the sheet closes.
+- Opening a tile reloads history when its detail page or download preview returns. Pull to refresh reloads the local history store.
 - Long press a tile to remove it. A snackbar says "Removed from history" and has **Undo**. Screen readers get a "Remove from history" action.
 - **Clear** in the Library app bar shows when the history has items. It opens a dialog "Clear history?". The **Clear history** button confirms, and **Cancel** keeps the list. The text says the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
 - When the list is empty, the tab shows "No wallpapers yet" with **Browse wallpapers**. The button opens Home.
@@ -97,5 +98,6 @@ Automated tests:
 
 - `test/features/wallpaper_history/wallpaper_history_store_test.dart`
 - `test/features/wallpaper_history/wallpaper_history_bloc_test.dart`
+- `test/features/wallpaper_history/wallpaper_history_list_test.dart` (day grouping and labels, refresh, navigation return, and tile actions)
 
 Command: `fvm flutter test --no-pub test/features/wallpaper_history`

@@ -173,6 +173,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a guest sees the sign-in prompt even when no FoldersBloc is provided', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: const Scaffold(body: FoldersGrid()),
+      ),
+    );
+
+    expect(
+      find.text(AppLocalizationsEn().coreSignInFeatureTitle(AppLocalizationsEn().foldersSignInFeature)),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('signed in with no folders shows the empty state and opens the name sheet on New folder', (tester) async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository();
     await pumpGrid(tester, repo);
@@ -201,6 +219,26 @@ void main() {
     await settle(tester);
 
     expect(repo.calls.where((call) => call == 'fetchFolders:u1'), hasLength(2));
+  });
+
+  testWidgets('a failed refresh shows the error instead of presenting stale folders as current', (tester) async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final FoldersBloc bloc = await pumpGrid(tester, repo);
+
+    repo.failLoad = true;
+    await bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
+    await settle(tester);
+
+    expect(find.text('Could not load your folders'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text('Work'), findsNothing);
+
+    repo.failLoad = false;
+    await tester.tap(find.text('Try again'));
+    await settle(tester);
+
+    expect(find.text('Work'), findsOneWidget);
+    expect(find.text('Could not load your folders'), findsNothing);
   });
 
   testWidgets('signed in with folders shows a card per folder with its count and no New folder tile', (tester) async {

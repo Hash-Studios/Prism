@@ -150,6 +150,7 @@ The History tab shows the wallpapers the user set. The data and the rules are in
 - The newest home item and the newest lock item show a **Current** badge.
 - Tap a tile to open the wallpaper. A catalogue wall opens its detail page. A local file that still exists opens the download preview. Otherwise the set sheet opens.
 - The **Set again** icon button on a tile opens the set sheet. Analytics: `library_history_set_again{provider, target}`.
+- The list reloads when a tile's detail or download preview returns, and pull to refresh reloads history from local storage.
 - Long press a tile to remove it. A snackbar shows "Removed from history" with **Undo**. Screen readers get a "Remove from history" action.
 - **Clear** in the app bar asks "Clear history?". The **Clear history** button confirms. The text says the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
 - Empty state: "No wallpapers yet" with **Browse wallpapers**. The button opens Home.

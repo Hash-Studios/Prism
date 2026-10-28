@@ -37,9 +37,11 @@ List<HistoryDay> groupHistoryByDay(List<AppliedWallpaper> newestFirst) {
 /// "Today", "Yesterday", a weekday and date this year, or a full date before that.
 String historyDayLabel(AppLocalizations l10n, DateTime day, DateTime now) {
   final DateTime today = DateTime(now.year, now.month, now.day);
-  final int ago = today.difference(day).inDays;
-  if (ago == 0) return l10n.notifToday;
-  if (ago == 1) return l10n.notifYesterday;
+  if (day.year == today.year && day.month == today.month && day.day == today.day) return l10n.notifToday;
+  final DateTime yesterday = DateTime(today.year, today.month, today.day - 1);
+  if (day.year == yesterday.year && day.month == yesterday.month && day.day == yesterday.day) {
+    return l10n.notifYesterday;
+  }
   return day.year == now.year
       ? DateFormat.MMMEd(l10n.localeName).format(day)
       : DateFormat.yMMMEd(l10n.localeName).format(day);
@@ -100,21 +102,24 @@ class WallpaperHistoryList extends StatelessWidget {
 
   /// Opens the catalogue wall, or the local file for a wall that has no catalogue id. A wall that is neither
   /// (its file is gone) opens the set sheet, which still has its image.
-  void _open(BuildContext context, AppliedWallpaper item) {
+  Future<void> _open(BuildContext context, AppliedWallpaper item) async {
+    final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
+    final StackRouter router = context.router;
     final WallpaperSource source = WallpaperSourceX.fromWire(item.source);
     final String id = item.wallpaperId ?? '';
     if (id.isNotEmpty && _catalogSources.contains(source)) {
       PrismHaptics.tap();
-      unawaited(context.router.push(WallpaperDetailRoute(wallId: id, source: source, thumbnailUrl: item.thumbnailUrl)));
-      return;
-    }
-    final File? file = _localFile(item.fullUrl);
-    if (file != null) {
+      await router.push(WallpaperDetailRoute(wallId: id, source: source, thumbnailUrl: item.thumbnailUrl));
+    } else {
+      final File? file = _localFile(item.fullUrl);
+      if (file == null) {
+        await _setAgain(context, item);
+        return;
+      }
       PrismHaptics.tap();
-      unawaited(context.router.push(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: file)));
-      return;
+      await router.push(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: file));
     }
-    unawaited(_setAgain(context, item));
+    if (!bloc.isClosed) bloc.add(const WallpaperHistoryEvent.started());
   }
 
   void _remove(BuildContext context, AppliedWallpaper item) {
@@ -126,10 +131,7 @@ class WallpaperHistoryList extends StatelessWidget {
       ..showSnackBar(
         SnackBar(
           content: Text(context.l10n.wallpaperRemovedFromHistory),
-          action: SnackBarAction(
-            label: context.l10n.coreUndo,
-            onPressed: () => bloc.add(WallpaperHistoryEvent.restored(item)),
-          ),
+          action: SnackBarAction(label: context.l10n.coreUndo, onPressed: () => unawaited(bloc.restore(item))),
         ),
       );
   }
@@ -137,20 +139,28 @@ class WallpaperHistoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<AppliedWallpaper> items = context.select((WallpaperHistoryBloc bloc) => bloc.state.items);
+    final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
+    Future<void> refresh() async {
+      bloc.add(const WallpaperHistoryEvent.started());
+    }
+
     if (items.isEmpty) {
-      return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: GlintState(
-                kind: GlintStateKind.empty,
-                title: context.l10n.wallpaperHistoryEmptyTitle,
-                body: context.l10n.wallpaperHistoryEmptyBody,
-                actionLabel: context.l10n.wallpaperBrowseWallpapers,
-                onAction: () =>
-                    context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+      return RefreshIndicator(
+        onRefresh: refresh,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: GlintState(
+                  kind: GlintStateKind.empty,
+                  title: context.l10n.wallpaperHistoryEmptyTitle,
+                  body: context.l10n.wallpaperHistoryEmptyBody,
+                  actionLabel: context.l10n.wallpaperBrowseWallpapers,
+                  onAction: () =>
+                      context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+                ),
               ),
             ),
           ),
@@ -163,43 +173,46 @@ class WallpaperHistoryList extends StatelessWidget {
     };
     final DateTime today = (now ?? DateTime.now)();
     final double footer = appliedWallpaperFooterHeight(context);
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: <Widget>[
-        for (final HistoryDay group in groupHistoryByDay(items)) ...<Widget>[
-          SliverToBoxAdapter(
-            child: PrismSectionHeader(
-              title: historyDayLabel(context.l10n, group.day, today),
-              small: true,
-              padding: const EdgeInsets.fromLTRB(
-                PrismWallGrid.margin + PrismSpace.xxs,
-                PrismSpace.md,
-                PrismWallGrid.margin,
-                PrismSpace.xs,
+    return RefreshIndicator(
+      onRefresh: refresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: <Widget>[
+          for (final HistoryDay group in groupHistoryByDay(items)) ...<Widget>[
+            SliverToBoxAdapter(
+              child: PrismSectionHeader(
+                title: historyDayLabel(context.l10n, group.day, today),
+                small: true,
+                padding: const EdgeInsets.fromLTRB(
+                  PrismWallGrid.margin + PrismSpace.xxs,
+                  PrismSpace.md,
+                  PrismWallGrid.margin,
+                  PrismSpace.xs,
+                ),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: PrismWallGrid.padding,
-            sliver: SliverGrid.builder(
-              gridDelegate: PrismWallGrid.delegate(context, footerHeight: footer),
-              itemCount: group.items.length,
-              itemBuilder: (context, index) {
-                final AppliedWallpaper item = group.items[index];
-                return AppliedWallpaperTile(
-                  key: ValueKey<String>(item.id),
-                  item: item,
-                  isCurrent: currentIds.contains(item.id),
-                  onTap: () => _open(context, item),
-                  onSetAgain: () => unawaited(_setAgain(context, item)),
-                  onRemove: () => _remove(context, item),
-                );
-              },
+            SliverPadding(
+              padding: PrismWallGrid.padding,
+              sliver: SliverGrid.builder(
+                gridDelegate: PrismWallGrid.delegate(context, footerHeight: footer),
+                itemCount: group.items.length,
+                itemBuilder: (context, index) {
+                  final AppliedWallpaper item = group.items[index];
+                  return AppliedWallpaperTile(
+                    key: ValueKey<String>(item.id),
+                    item: item,
+                    isCurrent: currentIds.contains(item.id),
+                    onTap: () => unawaited(_open(context, item)),
+                    onSetAgain: () => unawaited(_setAgain(context, item)),
+                    onRemove: () => _remove(context, item),
+                  );
+                },
+              ),
             ),
-          ),
+          ],
+          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom + PrismSpace.xl)),
         ],
-        SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom + PrismSpace.xl)),
-      ],
+      ),
     );
   }
 }

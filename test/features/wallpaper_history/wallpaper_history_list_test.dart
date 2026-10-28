@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -126,6 +128,10 @@ void main() {
       expect(historyDayLabel(l10n, DateTime(2026, 10, 27), fixedNow), 'Yesterday');
     });
 
+    test('the day before remains Yesterday across a daylight saving transition', () {
+      expect(historyDayLabel(l10n, DateTime(2026, 3, 8), DateTime(2026, 3, 9)), 'Yesterday');
+    });
+
     test('a day this year shows the weekday and the month day', () {
       final DateTime day = DateTime(2026, 10, 20);
       expect(historyDayLabel(l10n, day, fixedNow), DateFormat.MMMEd('en').format(day));
@@ -145,6 +151,29 @@ void main() {
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Browse wallpapers'), findsOneWidget);
     expect(find.byType(AppliedWallpaperTile), findsNothing);
+  });
+
+  testWidgets('refresh picks up a wallpaper recorded elsewhere while the history tab stays mounted', (tester) async {
+    await pumpList(tester);
+    expect(find.byType(AppliedWallpaperTile), findsNothing);
+
+    await store.record(item('set-elsewhere', DateTime(2026, 10, 28, 14)));
+    final Future<void> refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    await refresh;
+
+    expect(find.byType(AppliedWallpaperTile), findsOneWidget);
+  });
+
+  testWidgets('refresh with unchanged history completes', (tester) async {
+    await pumpList(tester);
+
+    final Future<void> refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    await refresh;
+
+    expect(bloc!.state.items, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('items are grouped under Today and their day label, not Yesterday', (tester) async {
@@ -197,6 +226,21 @@ void main() {
     expect(route.args!.source, WallpaperSource.prism);
   });
 
+  testWidgets('opening a history tile reloads history when its detail route returns', (tester) async {
+    final _MockStackRouter router = _MockStackRouter();
+    final Completer<Object?> routeResult = Completer<Object?>();
+    await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14), wallpaperId: 'w1')]);
+    await pumpList(tester, router: router);
+    when(() => router.push(any())).thenAnswer((_) => routeResult.future);
+
+    await tester.tap(find.byType(AppliedWallpaperTile).first);
+    await store.record(item('b', DateTime(2026, 10, 28, 15), wallpaperId: 'w2'));
+    routeResult.complete(null);
+    await tester.pump();
+
+    expect(find.byType(AppliedWallpaperTile), findsNWidgets(2));
+  });
+
   testWidgets('only the newest home tile shows the Current badge', (tester) async {
     await recordAll(<AppliedWallpaper>[
       item('new', DateTime(2026, 10, 28, 14)),
@@ -224,6 +268,24 @@ void main() {
 
     expect(find.byType(AppliedWallpaperTile), findsNWidgets(2));
     expect(bloc!.state.items.map((i) => i.id), <String>['a', 'b']);
+  });
+
+  testWidgets('Undo restores the store after its history bloc closes', (tester) async {
+    await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14))]);
+    await pumpList(tester);
+    await tester.longPress(find.byType(AppliedWallpaperTile).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final SnackBarAction undo = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+    await tester.runAsync(() => bloc!.close());
+    expect(bloc!.isClosed, isTrue);
+    await tester.runAsync(() async => undo.onPressed());
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(store.items().map((i) => i.id), <String>['a']);
   });
 
   testWidgets('confirmClearHistory clears the list on confirm and tracks the count', (tester) async {
