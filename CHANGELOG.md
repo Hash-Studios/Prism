@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.13.0
+- Share a wallpaper as a story, post or clean card, or send it straight to Instagram Stories
+- Preview a wallpaper on a real phone Home and Lock Screen, and set it from there
+- Home Screen and Lock Screen widgets on iPhone for the Wall of the Day and your streak
+- A Material You theme that follows your wallpaper colours on Android 12 and newer
+- Six new AI styles and fresh prompt ideas
+- Drop wallpapers now open their creator's profile
+- Share links open more reliably
+- Security and stability fixes
+
 ### v3.12.0
 - Swipe between wallpapers right on the card, and it shrinks back into its tile when you close it
 - Pick your own accent colour, and your theme now follows your account to every device
