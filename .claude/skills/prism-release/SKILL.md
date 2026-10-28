@@ -115,6 +115,10 @@ reach that step.
 | Android aab output | `build/app/outputs/bundle/release/app-release.aab` |
 | iOS ipa output | `build/ios/ipa/Prism.ipa` |
 | Functions region | `asia-south1` (all callables) |
+| Shorebird app id | `shorebird.yaml` (`app_id`, not a secret; `auto_update: false`) |
+| Shorebird CLI pin | `CLI_VERSION` in `tool/shorebird_ota.py` (1.6.133) |
+| Shorebird secrets (Doppler `prd`, names only) | `SHOREBIRD_TOKEN`, `SHOREBIRD_PATCH_PRIVATE_KEY`, `SHOREBIRD_PATCH_PUBLIC_KEY` |
+| Shorebird release record | annotated tag `shorebird/<platform>/<version>+<build>` |
 | Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
 | Functions plain env vars | `FUNCTIONS_ENV_KEYS` in `Makefile`: `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`, `R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL` |
 
@@ -329,12 +333,18 @@ firebase deploy --only firestore:rules
 
 ### 7. Android: build the aab
 
+Store builds go through Shorebird so that they can receive over-the-air Dart patches
+(`docs/development/ota.md`). Check the pinned CLI first: `shorebird --version` must print
+`python3 tool/shorebird_ota.py cli-version`. `shorebird.yaml` must hold the real app id.
+
 ```sh
-make build-aab DOPPLER_CONFIG=prd
+make release-android DOPPLER_CONFIG=prd
 ```
 
-This runs `flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols`
-with dart-defines pulled from Doppler `prd`, then (because `SENTRY_UPLOAD` defaults to `true`)
+This runs `shorebird release android --flutter-version=<.fvmrc> --obfuscate --split-debug-info=build/app/outputs/symbols`
+through `tool/flutter_with_doppler.py`, with dart-defines pulled from Doppler `prd` and the patch-signing public key.
+It uploads the release to Shorebird Cloud, writes the release record tag, and pushes that tag. `make build-aab` is the
+same build without Shorebird; its users never get patches. It then (because `SENTRY_UPLOAD` defaults to `true`)
 uploads debug symbols via `tool/sentry_upload.sh` using Doppler `prd` Sentry credentials
 (`SENTRY_DOPPLER_CONFIG` defaults to `prd` already, no need to pass it).
 
@@ -399,11 +409,12 @@ The **track and rollout fraction are the human's decision.** Never pick them you
 ### 9. iOS: build the ipa
 
 ```sh
-make build-ipa BUILD_NUMBER=<N> DOPPLER_CONFIG=prd
+make release-ios BUILD_NUMBER=<N> DOPPLER_CONFIG=prd
 ```
 
-`build-ipa` obfuscates and uploads Sentry symbols the same way as `build-aab` (since the 3.0.9
-release branch). If you run an older checkout without that change, iOS crash reports are not
+`release-ios` runs `shorebird release ios` with the same flags as `build-ipa`, obfuscates and uploads Sentry symbols
+the same way as `release-android`, and pushes the release record tag. The TestFlight workflow also builds with
+`shorebird release ios`. If you run an older checkout without that change, iOS crash reports are not
 symbolicated.
 
 Output: `build/ios/ipa/Prism.ipa` (confirmed name from `.github/workflows/testflight.yml`, not
@@ -451,6 +462,20 @@ App Store submission (as opposed to TestFlight-only) is a separate, human-approv
 needs: in-app account deletion (present, `lib/core/account/delete_account_service.dart`) and Sign
 in with Apple (present, `lib/auth/apple_auth.dart`, entitlement in
 `ios/Runner/Runner.entitlements`).
+
+### 10b. Over-the-air patches (after a Shorebird store release is live)
+
+A Dart-only fix for a live Shorebird release ships as a patch, not a store build. Follow `docs/development/ota.md`.
+Short form:
+```sh
+make patch PLATFORM=android RELEASE_VERSION=3.14.0+353          # staging track by default; stable is refused
+make patch-list RELEASE_VERSION=3.14.0+353
+make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1    # stable: every user on that release
+make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1
+```
+CI: the "Shorebird Patch" workflow (platform, release version, track). The patch refuses a different build config or
+dart-defines than the release record, and any change since the release under native, plugin, asset or lock paths.
+Storage code needs `ALLOW_STORAGE_CHANGES=1` and a rollback check (see the data-migration warning in the doc).
 
 ### 11. Proof before either store upload
 
@@ -529,6 +554,8 @@ Prism release: version <VERSION>, build <N>.
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
 - Pushing the version-bump commit and merging its PR to `master`
 - Pushing the release tag and `gh release create`
+- `make release-android` / `make release-ios` (uploads a Shorebird release and pushes its record tag)
+- `make patch` or the "Shorebird Patch" workflow, `make patch-promote` (stable reaches every user), `make patch-rollback`
 - Posting a Telegram release announcement (approval must cover the exact copy, images, and channel)
 
 ## Known gaps
