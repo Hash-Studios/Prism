@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/data/texture_geometry.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as p;
@@ -21,7 +21,7 @@ class LiveTextureException implements Exception {
 
 typedef _PreparedTexture = ({String path, TextureGeometry geometry, int sourceWidth, int sourceHeight});
 
-/// Downloads a wallpaper and writes a screen-shaped JPEG that fits the renderer texture limits.
+/// Prepares a wallpaper source as a screen-shaped JPEG that fits the renderer texture limits.
 @lazySingleton
 class LiveTexturePreparer {
   const LiveTexturePreparer();
@@ -64,9 +64,15 @@ class LiveTexturePreparer {
     String fileName,
     TextureGeometry Function(int sourceWidth, int sourceHeight) geometryFor,
   ) async {
-    final File source;
+    final Uint8List sourceBytes;
     try {
-      source = await WallpaperService.resolveToLocalFile(url).timeout(const Duration(seconds: 30));
+      if (url.startsWith('assets/')) {
+        final ByteData asset = await rootBundle.load(url);
+        sourceBytes = asset.buffer.asUint8List(asset.offsetInBytes, asset.lengthInBytes);
+      } else {
+        final File source = await WallpaperService.resolveToLocalFile(url).timeout(const Duration(seconds: 30));
+        sourceBytes = await source.readAsBytes();
+      }
     } catch (_) {
       throw const LiveTextureException(LiveApplyFailure.textureDownloadFailed);
     }
@@ -78,8 +84,7 @@ class LiveTexturePreparer {
     ui.Picture? picture;
     ui.Image? cropped;
     try {
-      final Uint8List bytes = await source.readAsBytes();
-      buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      buffer = await ui.ImmutableBuffer.fromUint8List(sourceBytes);
       descriptor = await ui.ImageDescriptor.encoded(buffer);
       final int sourceWidth = descriptor.width;
       final int sourceHeight = descriptor.height;
