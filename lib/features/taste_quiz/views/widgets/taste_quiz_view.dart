@@ -5,14 +5,13 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/taste_quiz/biz/bloc/taste_quiz_bloc.j.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/taste_quiz/views/widgets/tuning_feed_view.dart';
-import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -99,17 +98,15 @@ class TasteQuizBody extends StatelessWidget {
 /// One image size per tile, shared by the prefetch and the tile, so a prefetched image is the one that shows.
 class _QuizImages {
   _QuizImages(BuildContext context, {required double tileWidth})
-    : _cacheWidth = previewCacheWidth(tileWidth, MediaQuery.devicePixelRatioOf(context)),
-      _projectId = Firebase.apps.isEmpty ? null : Firebase.app().options.projectId;
+    : _cacheWidth = (tileWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(1, maxWallpaperDecodeSide);
 
   final int _cacheWidth;
-  final String? _projectId;
 
   ImageProvider thumbnail(QuizWall wall) => _sized(wall.item.thumbnailUrl, PrismImageCache.instance);
 
   /// The same full-quality preview the wallpaper screen shows.
   ImageProvider full(QuizWall wall) =>
-      _sized(wallpaperDetailPreviewUrl(wall.item, projectId: _projectId), PrismFullImageCache.instance);
+      _sized(WallpaperDisplaySource.of(wall.item).bestLink, PrismFullImageCache.instance);
 
   ImageProvider _sized(String url, BaseCacheManager cache) =>
       ResizeImage(CachedNetworkImageProvider(url.trim(), cacheManager: cache), width: _cacheWidth);
