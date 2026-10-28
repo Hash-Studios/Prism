@@ -78,10 +78,15 @@ import '../../features/favourite_walls/domain/repositories/favourite_walls_repos
 import '../../features/favourite_walls/domain/usecases/favourite_walls_usecases.dart'
     as _i406;
 import '../../features/folders/biz/bloc/folders_bloc.j.dart' as _i129;
+import '../../features/folders/biz/public_folder_cubit.dart' as _i651;
 import '../../features/folders/data/repositories/folders_repository_impl.dart'
     as _i342;
+import '../../features/folders/data/repositories/public_folders_repository_impl.dart'
+    as _i994;
 import '../../features/folders/domain/repositories/folders_repository.dart'
     as _i847;
+import '../../features/folders/domain/repositories/public_folders_repository.dart'
+    as _i279;
 import '../../features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart'
     as _i584;
 import '../../features/in_app_notifications/data/repositories/notifications_repository_impl.dart'
@@ -471,6 +476,9 @@ _i174.GetIt initGetIt(
   gh.factory<_i896.QuestsBloc>(
     () => _i896.QuestsBloc(gh<_i651.QuestsRepository>()),
   );
+  gh.lazySingleton<_i279.PublicFoldersRepository>(
+    () => _i994.PublicFoldersRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
   gh.factory<_i39.SearchDiscoveryBloc>(
     () => _i39.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
   );
@@ -514,9 +522,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
     ),
   );
-  gh.factory<_i129.FoldersBloc>(
-    () => _i129.FoldersBloc(gh<_i847.FoldersRepository>()),
-  );
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -538,6 +543,12 @@ _i174.GetIt initGetIt(
       gh<_i954.FeedCacheLocalDataSource>(),
       gh<_i112.UserBlockRepository>(),
       gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
+  gh.factory<_i129.FoldersBloc>(
+    () => _i129.FoldersBloc(
+      gh<_i847.FoldersRepository>(),
+      gh<_i279.PublicFoldersRepository>(),
     ),
   );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
@@ -811,6 +822,12 @@ _i174.GetIt initGetIt(
       gh<_i897.OnboardingV2Repository>(),
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i887.TasteQuizRepository>(),
+    ),
+  );
+  gh.factory<_i651.PublicFolderCubit>(
+    () => _i651.PublicFolderCubit(
+      gh<_i279.PublicFoldersRepository>(),
+      gh<_i386.MoodRepository>(),
     ),
   );
   gh.factory<_i872.PersonalizedFeedBloc>(

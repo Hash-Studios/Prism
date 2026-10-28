@@ -1,5 +1,8 @@
+import type * as admin from "firebase-admin";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
+import {syncPublicFolder, syncPublicFolderItem} from "./publicFolders";
+import {r2Secrets} from "./r2Storage";
 
 export const FOLDERS = "folders";
 export const FOLDER_ITEMS = "items";
@@ -33,15 +36,26 @@ export async function repairFolder(folderId: string): Promise<void> {
 }
 
 export const onFolderItemWritten = onDocumentWritten(
-  {document: `${FOLDERS}/{folderId}/${FOLDER_ITEMS}/{itemKey}`, region: REGION, retry: true},
-  async (event) => repairFolder(event.params.folderId),
+  {document: `${FOLDERS}/{folderId}/${FOLDER_ITEMS}/{itemKey}`, region: REGION, retry: true, secrets: r2Secrets},
+  async (event) => {
+    await repairFolder(event.params.folderId);
+    await syncPublicFolderItem(event.params.folderId, event.params.itemKey);
+  },
 );
 
+/** True when a folder write can change its public projection. */
+export function changesPublicFolder(before: admin.firestore.DocumentData | undefined,
+  after: admin.firestore.DocumentData | undefined): boolean {
+  if (before?.public !== true && after?.public !== true) return false;
+  return !before || !after || ["public", "name", "ownerId", "moderationHidden"].some((key) => before[key] !== after[key]);
+}
+
 export const onFolderWritten = onDocumentWritten(
-  {document: `${FOLDERS}/{folderId}`, region: REGION, retry: true},
+  {document: `${FOLDERS}/{folderId}`, region: REGION, retry: true, secrets: r2Secrets},
   async (event) => {
     const before = event.data?.before;
     const after = event.data?.after;
+    if (changesPublicFolder(before?.data(), after?.data())) await syncPublicFolder(event.params.folderId);
     if (!before?.exists || !after?.exists) return;
     const previousCount = before.data()?.itemCount;
     const currentCount = after.data()?.itemCount;

@@ -10720,4 +10720,108 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tasteQuizRetakeFailed => 'No se pudieron cargar los fondos. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get foldersPublic => 'Pública';
+
+  @override
+  String get foldersMakePublic => 'Hacer pública';
+
+  @override
+  String get foldersMakePrivate => 'Hacer privada';
+
+  @override
+  String get foldersMakePublicTitle => '¿Hacer pública esta carpeta?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Cualquiera en Prism podrá ver su nombre y sus fondos de pantalla, seguirla y abrir su enlace.';
+
+  @override
+  String get foldersMakePrivateTitle => '¿Hacer privada esta carpeta?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Solo tu la verás. Su enlace dejará de funcionar y sus seguidores la perderán.';
+
+  @override
+  String get foldersMadePublic => 'Esta carpeta ahora es pública.';
+
+  @override
+  String get foldersMadePrivate => 'Esta carpeta ahora es privada.';
+
+  @override
+  String get foldersPublicNameRefused => 'Cambia el nombre de esta carpeta para hacerla pública.';
+
+  @override
+  String get foldersHiddenRefused => 'Esta carpeta se ocultó tras recibir denuncias, así que no puede ser pública.';
+
+  @override
+  String get foldersLimitRefused => 'Hoy has cambiado las carpetas demasiadas veces. Inténtalo de nuevo mañana.';
+
+  @override
+  String get foldersFollow => 'Seguir';
+
+  @override
+  String get foldersFollowing => 'Siguiendo';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString seguidores',
+      one: '1 seguidor',
+      zero: 'Sin seguidores',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'De $name';
+  }
+
+  @override
+  String get foldersShare => 'Compartir carpeta';
+
+  @override
+  String get foldersReport => 'Denunciar carpeta';
+
+  @override
+  String get foldersUnavailableTitle => 'Esta carpeta es privada o ya no existe';
+
+  @override
+  String get foldersUnavailableBody => 'Es posible que su propietario la haya hecho privada o la haya eliminado.';
+
+  @override
+  String get foldersFollowFailed => 'No se pudo actualizar el seguimiento. Inténtalo de nuevo.';
+
+  @override
+  String get foldersYouFollow => 'Carpetas que sigues';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Aún no hay fondos de pantalla aquí';
+
+  @override
+  String get foldersPublicEmptyBody => 'Los fondos nuevos aparecerán aquí cuando su propietario los añada.';
+
+  @override
+  String get notifSettingFolders => 'Carpetas que sigues';
+
+  @override
+  String get notifSettingFoldersDescription => 'Fondos de pantalla nuevos en las carpetas que sigues, una vez al día';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Nuevo en $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Nuevo en $folderName y $count más';
+  }
 }

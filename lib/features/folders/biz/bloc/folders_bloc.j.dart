@@ -8,6 +8,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -18,7 +19,7 @@ part 'folders_bloc.j.freezed.dart';
 
 @injectable
 class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
-  FoldersBloc(this._repository) : super(FoldersState.initial()) {
+  FoldersBloc(this._repository, this._publicRepository) : super(FoldersState.initial()) {
     on<FoldersEvent>(_serial);
     _writeFailures = _repository.writeFailures.listen((failure) {
       if (!isClosed && failure.ownerId == _session.userId && failure.revision > _session.writeBoundary) {
@@ -28,6 +29,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   }
 
   final FoldersRepository _repository;
+  final PublicFoldersRepository _publicRepository;
 
   static int _lastOperationId = 0;
   _FolderSession _session = _FolderSession('', 0);
@@ -99,6 +101,8 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
           await _onCreateRequested(event, emit, session);
         case _RenameRequested():
           await _onRenameRequested(event, emit, session);
+        case _VisibilityRequested():
+          await _onVisibilityRequested(event, emit, session);
         case _DeleteRequested():
           await _onDeleteRequested(event, emit, session);
         case _SaveRequested():
@@ -302,6 +306,23 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     final FolderEntity renamed = folder.copyWith(name: name, updatedAt: DateTime.now().toUtc());
     final Result<void> result = await session.wait(_repository.renameFolder(renamed));
     if (result.isSuccess) emit(state.copyWith(folders: _replace(renamed)));
+    _finish(emit, event.operationId, failure: result.failure);
+  }
+
+  Future<void> _onVisibilityRequested(
+    _VisibilityRequested event,
+    Emitter<FoldersState> emit,
+    _FolderSession session,
+  ) async {
+    final FolderEntity? folder = state.folder(event.folderId);
+    if (folder == null) {
+      _finish(emit, event.operationId, failure: const ValidationFailure('Cannot change this folder.'));
+      return;
+    }
+    final Result<bool> result = await session.wait(_publicRepository.setPublic(folder.id, isPublic: event.isPublic));
+    final FolderEntity? current = state.folder(event.folderId);
+    if (result.isSuccess && current != null)
+      emit(state.copyWith(folders: _replace(current.copyWith(isPublic: result.data))));
     _finish(emit, event.operationId, failure: result.failure);
   }
 

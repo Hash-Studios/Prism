@@ -218,6 +218,15 @@ export function fcmMessage(
       wallCount: Number(payload.message.args.wallCount ?? 0),
       tags: bounded(payload.message.args.tags, 120),
     }),
+  } : payload.message?.kind === "folderDigest" ? {
+    ...payload,
+    ...notificationCopyPayload({
+      kind: "folderDigest",
+      folderName: bounded(payload.message.args.folderName, 80),
+      folderCount: Number(payload.message.args.folderCount ?? 0),
+      wallCount: Number(payload.message.args.wallCount ?? 0),
+      tags: bounded(payload.message.args.tags, 120),
+    }),
   } : payload.message?.kind === "wotdForAudience" ? {
     ...payload,
     ...notificationCopyPayload({

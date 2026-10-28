@@ -280,23 +280,25 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
 
   await persistLinkRecord(code, record, env);
 
-  // Keep short-link creation fast; generate branded OG image asynchronously.
-  ctx.waitUntil((async () => {
-    try {
-      const ogPersisted = await generateAndPersistOgImage(code, record, env);
-      if (ogPersisted == null) {
-        return;
+  // Keep short-link creation fast; generate branded OG image asynchronously. Folder pages use their share image.
+  if (!(body.type === 'page' && isFolderPage(parsedCanonical.canonical))) {
+    ctx.waitUntil((async () => {
+      try {
+        const ogPersisted = await generateAndPersistOgImage(code, record, env);
+        if (ogPersisted == null) {
+          return;
+        }
+        const updatedRecord: LinkRecord = {
+          ...record,
+          og_image_path: `/og/${code}.jpg`,
+          og_storage: ogPersisted,
+        };
+        await persistLinkRecord(code, updatedRecord, env);
+      } catch (error) {
+        console.warn('Async OG generation failed', error);
       }
-      const updatedRecord: LinkRecord = {
-        ...record,
-        og_image_path: `/og/${code}.jpg`,
-        og_storage: ogPersisted,
-      };
-      await persistLinkRecord(code, updatedRecord, env);
-    } catch (error) {
-      console.warn('Async OG generation failed', error);
-    }
-  })());
+    })());
+  }
 
   return json(
     {
@@ -921,13 +923,16 @@ function normalizePreview(
   env: Env,
 ): PreviewSnapshot {
   const defaults = buildDefaultPreview(type, canonical, env);
+  const folderImage = type === 'page' && isFolderPage(canonical);
   const merged: PreviewSnapshot = {
     title: clipText(sanitizeText(input?.title ?? defaults.title), 90),
     description: clipText(sanitizeText(input?.description ?? defaults.description), 200),
-    image_source_url: sanitizeImageUrl(
-      type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
-      env,
-    ),
+    image_source_url: folderImage
+      ? sanitizeFolderShareImageUrl(input?.image_source_url, env)
+      : sanitizeImageUrl(
+        type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
+        env,
+      ),
     username: clipText(sanitizeText(input?.username ?? defaults.username), 60),
     provider: clipText(sanitizeText(input?.provider ?? defaults.provider), 60),
     wall_id: clipText(sanitizeText(input?.wall_id ?? defaults.wall_id), 60),
@@ -999,6 +1004,19 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
   }
 
   if (type === 'page') {
+    if (isFolderPage(canonical)) {
+      return {
+        title: 'A folder on Prism',
+        description: 'Open this folder in Prism.',
+        image_source_url: '',
+        username: '',
+        provider: '',
+        wall_id: '',
+        setup_name: '',
+        app_store_url: env.APP_STORE_URL,
+        play_store_url: env.PLAY_STORE_URL,
+      };
+    }
     const pageName = canonical.pathname.split('/').filter(Boolean).at(-1)?.replaceAll('-', ' ') ?? 'Prism';
     return {
       title: `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
@@ -1074,6 +1092,33 @@ function isR2PreviewUrl(value: URL, env: Env): boolean {
   const prefix = `${base.pathname.replace(/\/$/, '')}/previews/`;
   return value.origin === base.origin && value.pathname.startsWith(prefix)
     && /^[a-f0-9]{64}\.img$/.test(value.pathname.slice(prefix.length));
+}
+
+function isFolderShareImageUrl(value: URL, env: Env): boolean {
+  const base = configuredR2PreviewBase(env);
+  if (base == null || value.protocol !== 'https:' || value.username || value.password || value.port || value.search || value.hash) return false;
+  const prefix = `${base.pathname.replace(/\/$/, '')}/push-gallery/v1/`;
+  return value.origin === base.origin && value.pathname.startsWith(prefix)
+    && /^[a-f0-9]{64}\.jpg$/.test(value.pathname.slice(prefix.length));
+}
+
+function isFolderPage(canonical: URL): boolean {
+  return /^\/folder\/[A-Za-z0-9_-]{1,128}$/.test(canonical.pathname);
+}
+
+function hasFolderShareImage(record: LinkRecord): boolean {
+  return record.type === 'page' && isFolderPage(new URL(record.canonical_url))
+    && isNonEmptyString(record.preview.image_source_url);
+}
+
+function sanitizeFolderShareImageUrl(value: string | undefined, env: Env): string {
+  if (!isNonEmptyString(value)) return '';
+  try {
+    const parsed = new URL(value);
+    return isFolderShareImageUrl(parsed, env) ? parsed.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 function sanitizeShareImageUrl(value: string, env: Env, provider: string): string {
@@ -1396,7 +1441,7 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
   <meta property="og:url" content="${escapeAttribute(shortUrl)}" />
   <meta property="og:image" content="${ogImage}" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="${hasFolderShareImage(record) ? 545 : 630}" />
   <meta property="og:site_name" content="Prism" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeAttribute(title)}" />
@@ -1547,6 +1592,9 @@ function isCrawlerRequest(request: Request): boolean {
 }
 
 function getOgImageUrl(record: LinkRecord, env: Env): string {
+  if (hasFolderShareImage(record)) {
+    return record.preview.image_source_url;
+  }
   if (isNonEmptyString(record.code)) {
     return `https://${DOMAIN}/og/${record.code}.jpg?v=${OG_CARD_VERSION}`;
   }

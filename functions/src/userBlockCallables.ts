@@ -3,6 +3,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {logger} from "firebase-functions/v2";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {applyFollowEdge} from "./profiles";
+import {removeFolderFollowsBetween} from "./publicFolders";
 
 const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
@@ -214,6 +215,11 @@ export const blockUser = onCall(
       } catch (err) {
         logger.error("blockUser: could not remove a follow edge.", {callerUid, blockedUid, err});
       }
+    }
+    try {
+      await removeFolderFollowsBetween(callerUid, blockedUid);
+    } catch (err) {
+      logger.error("blockUser: could not remove folder follows.", {callerUid, blockedUid, err});
     }
 
     logger.info("blockUser: success", {callerUid, blockedUid, contentReportId: contentReportRef.id});

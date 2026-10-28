@@ -20,6 +20,11 @@ async function profileHasNoEmail(path, auth) {
   const body = await r.json();
   return r.status === 200 && body.fields && !('email' in body.fields) ? 200 : -1;
 }
+async function projectionHasNoUrl(path, auth) {
+  const r = await fetch(`${B}/${path}`, { headers: { Authorization: `Bearer ${auth}` } });
+  const body = await r.json();
+  return r.status === 200 && body.fields && !('url' in body.fields) ? 200 : 500;
+}
 async function transformFollowers(uid, operation, emails, auth) {
   const r = await fetch(`${B}:commit`, {
     method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
@@ -141,10 +146,20 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/reused', folderFields('b'), 'owner'),
   req('PATCH', 'folders/reused/items/wallhaven_private', itemFields('b', 'private'), 'owner'),
   req('PATCH', 'folders/absent/items/wallhaven_orphan', itemFields('b', 'orphan'), 'owner'),
+  req('PATCH', 'folders/pf1', folderFields('a', 'Night', { public: { booleanValue: true }, itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']) }), 'owner'),
+  req('PATCH', 'folders/pf1/items/prism_w1', itemFields('a', 'w1', 'Prism'), 'owner'),
+  req('PATCH', 'publicFolders/pf1', { ownerId: str('a'), name: str('Night'), itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']), followerCount: { integerValue: '0' }, updatedAt: ts() }, 'owner'),
+  req('PATCH', 'publicFolders/pf1/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
+  req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, 'owner'),
+  req('PATCH', 'usersv2/b/followedFolders/pf1', { folderId: str('pf1'), ownerId: str('a') }, 'owner'),
+  req('PATCH', 'usersv2/c/blockedUsers/a', { blockedAt: ts() }, 'owner'),
+  req('PATCH', 'usersv2/a/blockedUsers/dblock', { blockedAt: ts() }, 'owner'),
+  req('PATCH', 'publicFolders/orphan/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
+const D = tok('dblock', 'dblock@x.com');
 const themeFields = {
   mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
   darkThemeId: str('kDOlive'), darkAccent: { integerValue: '4278190080' }, changedAt: { integerValue: '1793000000000' },
@@ -570,6 +585,30 @@ const cases = [
   ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
+  ['stranger cannot get a private folder', () => req('GET', 'folders/pf1', null, Bu), 403],
+  ['stranger cannot list a private folder items', () => runCollectionQuery(Bu, 'items', 'folders/pf1'), 403],
+  ['signed-out user cannot get a public folder', () => req('GET', 'publicFolders/pf1'), 403],
+  ['stranger can get a public folder', () => req('GET', 'publicFolders/pf1', null, Bu), 200],
+  ['stranger can get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, Bu), 200],
+  ['user blocked by the owner cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, C), 403],
+  ['user blocked by the owner cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, C), 403],
+  ['owner-blocked user cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, D), 403],
+  ['owner-blocked user cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, D), 403],
+  ['stranger cannot read an item under a missing public folder header', () => req('GET', 'publicFolders/orphan/items/prism_w1', null, Bu), 403],
+  ['owner cannot write a public folder projection', () => req('PATCH', 'publicFolders/pf1', { name: str('x') }, A, ['name']), 403],
+  ['owner cannot write a public folder item projection', () => req('PATCH', 'publicFolders/pf1/items/prism_w1', { thumb: str('x') }, A, ['thumb']), 403],
+  ['stranger cannot write a public folder follower', () => req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, Bu), 403],
+  ['stranger cannot write a followed folder edge', () => req('PATCH', 'usersv2/b/followedFolders/pf1', { folderId: str('pf1') }, Bu), 403],
+  ['owner cannot delete a public folder projection', () => req('DELETE', 'publicFolders/pf1', null, A), 403],
+  ['owner cannot create a public folder projection', () => req('PATCH', 'publicFolders/new1', { ownerId: str('a'), name: str('New') }, A), 403],
+  ['public folder followers are not readable', () => req('GET', 'publicFolders/pf1/followers/b', null, Bu), 403],
+  ['follower can read own followed folder edge', () => req('GET', 'usersv2/b/followedFolders/pf1', null, Bu), 200],
+  ['other user cannot read a followed folder edge', () => req('GET', 'usersv2/b/followedFolders/pf1', null, A), 403],
+  ['public folder header carries no url field', () => projectionHasNoUrl('publicFolders/pf1', Bu), 200],
+  ['public folder item carries no url field', () => projectionHasNoUrl('publicFolders/pf1/items/prism_w1', Bu), 200],
+  ['owner cannot set public on a private folder', () => req('PATCH', 'folders/pf1', { public: { booleanValue: false } }, A, ['public']), 403],
+  ['stranger can list public folders by owner', () => runQuery(Bu, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 200],
+  ['blocked user cannot list public folders by owner', () => runQuery(C, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
 ];
 await seed();
 let bad = 0;

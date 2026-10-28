@@ -52,6 +52,10 @@
     <string name="notif_push_follow_digest_title_group">%1$s und %2$s weitere haben %3$s neue Hintergrundbilder veröffentlicht</string>
     <string name="notif_push_follow_digest_body">%1$s</string>
     <string name="notif_push_follow_digest_body_untitled">Tippe, um sie alle zu sehen.</string>
+    <string name="notif_push_folder_digest_title_one">Neu in %1$s</string>
+    <string name="notif_push_folder_digest_title_more">Neu in %1$s und %2$s weiteren</string>
+    <string name="notif_push_folder_digest_body">%1$s</string>
+    <string name="notif_push_folder_digest_body_untitled">Tippe, um alle zu sehen.</string>
     <string name="notif_push_drop_last_call_title">Letzte Chance für den aktuellen Drop</string>
     <string name="notif_push_drop_last_call_body">%1$s endet in %2$s Std. Danach sind die Hintergrundbilder einen Monat lang nicht verfügbar.</string>
     <string name="notif_push_draw_winner_title">Du hast die Prism-Verlosung gewonnen</string>

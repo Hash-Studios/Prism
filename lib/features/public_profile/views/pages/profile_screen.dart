@@ -22,6 +22,7 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
+import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -826,6 +827,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                   ),
                 ),
               ),
+            SliverToBoxAdapter(
+              child: ProfileFoldersRow(ownerId: _profile.id, ownProfile: ownProfile),
+            ),
             UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
             SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
           ],

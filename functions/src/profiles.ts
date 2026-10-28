@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, CALLABLE_REGIONS, REGION} from "./common";
+import {removeOwnerPublicFolders} from "./publicFolders";
 
 const USERS = "usersv2";
 const PROFILES = "profiles";
@@ -98,7 +99,11 @@ export async function syncPublicProfile(uid: string): Promise<void> {
 
 export const projectUserProfile = onDocumentWritten(
   {document: "usersv2/{uid}", region: REGION},
-  async (event) => syncPublicProfile(event.params.uid),
+  async (event) => {
+    await syncPublicProfile(event.params.uid);
+    const after = event.data?.after?.data();
+    if (!after || after.deleted === true) await removeOwnerPublicFolders(event.params.uid);
+  },
 );
 
 type EdgeResult = "created" | "removed" | "unchanged";

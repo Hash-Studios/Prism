@@ -2597,6 +2597,89 @@ test('when the new card fails to render, an old link keeps its old image with a 
   }
 });
 
+const FOLDER_IMAGE = `https://img.prismwalls.com/push-gallery/v1/${'d'.repeat(64)}.jpg`;
+const FOLDER_ENV = { ...RENDER_ENV, R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com' };
+
+test('folder page links keep their push-gallery share image as og:image and skip the browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Sunset Set', description: '12 wallpapers by Maya', image_source_url: FOLDER_IMAGE },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, FOLDER_IMAGE);
+  assert.equal(JSON.parse(await env.LINKS_KV.get(code)).preview.image_source_url, FOLDER_IMAGE);
+
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.match(crawler, /og:title" content="Sunset Set"/);
+  assert.ok(crawler.includes(`<meta property="og:image" content="${FOLDER_IMAGE}" />`));
+  assert.match(crawler, /og:image:width" content="1200"/);
+  assert.match(crawler, /og:image:height" content="545"/);
+});
+
+test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const hash = 'd'.repeat(64);
+  for (const image of [
+    `https://evil.example.com/push-gallery/v1/${hash}.jpg`,
+    'https://img.prismwalls.com/push-gallery/v1/../x.jpg',
+    `${FOLDER_IMAGE}?token=secret`,
+    `${FOLDER_IMAGE}#fragment`,
+    `https://user:pass@img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com:8443/push-gallery/v1/${hash}.jpg`,
+    `http://img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com/previews/${hash}.img`,
+    `https://img.prismwalls.com/push-gallery/v1/${hash}.png`,
+    `https://img.prismwalls.com/push-gallery/v1/${'D'.repeat(64)}.jpg`,
+  ]) {
+    const response = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: image },
+    });
+    assert.equal(response.status, 201, image);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.preview.image_source_url, '', image);
+  }
+});
+
+test('folder page links schedule no browser card while other page links still do', async () => {
+  const { calls, restore } = mockOgRender();
+  try {
+    const env = workerEnv(FOLDER_ENV);
+    const folderTasks = [];
+    const folder = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: FOLDER_IMAGE },
+    }, {}, { waitUntil: (task) => folderTasks.push(task) });
+    assert.equal(folder.status, 201);
+    assert.equal(folderTasks.length, 0);
+    assert.equal(calls.renders.length, 0);
+
+    const dropTasks = [];
+    const drops = await postLink(env, { type: 'page', payload: { path: '/drops/week-42' } },
+      {}, { waitUntil: (task) => dropTasks.push(task) });
+    assert.equal(drops.status, 201);
+    assert.equal(dropTasks.length, 1);
+    await Promise.all(dropTasks);
+    assert.equal(calls.renders.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('a folder landing without a short code shows a generic title and hides the folder id', async () => {
+  const body = await (await getShare(ANDROID_UA, '/folder/AbC123')).text();
+  assert.match(body, /<title>A folder on Prism<\/title>/);
+  assert.match(body, /og:title" content="A folder on Prism"/);
+  assert.match(body, /Open this folder in Prism\./);
+  assert.doesNotMatch(body, /<title>[^<]*AbC123/);
+  assert.doesNotMatch(body, /og:title" content="[^"]*AbC123/);
+});
+
 test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {
   const env = workerEnv({
     ...RENDER_ENV,

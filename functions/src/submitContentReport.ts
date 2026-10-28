@@ -31,15 +31,17 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-const COLLECTION_BY_CONTENT_TYPE: Record<"wall" | "setup" | "user", string> = {
+const COLLECTION_BY_CONTENT_TYPE: Record<"wall" | "setup" | "user" | "folder", string> = {
   wall: "walls",
   setup: "setups",
   user: "usersv2",
+  // Only a public folder can be reported, so the target is its projection.
+  folder: "publicFolders",
 };
 
-function normalizeContentType(raw: unknown): "wall" | "setup" | "user" {
-  if (raw !== "wall" && raw !== "setup" && raw !== "user") {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', or 'user'.");
+function normalizeContentType(raw: unknown): "wall" | "setup" | "user" | "folder" {
+  if (raw !== "wall" && raw !== "setup" && raw !== "user" && raw !== "folder") {
+    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', or 'folder'.");
   }
   return raw;
 }
