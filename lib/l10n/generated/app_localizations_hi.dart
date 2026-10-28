@@ -1926,19 +1926,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get appTitle => 'Prism';
 
   @override
-  String get coreAdjustPositionPreview => 'जगह समायोजित करें और पूर्वावलोकन देखें';
-
-  @override
-  String get coreAdjustPositionPreviewBody => 'सेट करने से पहले पैन करें, ज़ूम करें और धुँधला करें।';
-
-  @override
-  String get coreAlwaysUseThis => 'हमेशा यही इस्तेमाल करें';
-
-  @override
-  String get coreAlwaysUseThisBody =>
-      'अगली बार वॉलपेपर लगाने पर आपकी चुनी हुई स्क्रीन इस्तेमाल होगी और यह शीट नहीं दिखेगी।';
-
-  @override
   String get coreBack => 'वापस';
 
   @override
@@ -1948,13 +1935,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreBlockCreatorAfterReport => 'इस क्रिएटर को भी ब्लॉक करें';
 
   @override
-  String get coreBoth => 'दोनों';
-
-  @override
   String get coreBothScreens => 'दोनों स्क्रीन';
-
-  @override
-  String get coreBothSetsScreens => 'दोनों विकल्प इसे होम स्क्रीन और लॉक स्क्रीन पर सेट करते हैं।';
 
   @override
   String get coreCancel => 'रद्द करें';
@@ -2111,9 +2092,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreChooseReportReason => 'कारण चुनें';
-
-  @override
-  String get coreChooseSystemEditorArea => 'सिस्टम एडिटर में ठीक वही क्षेत्र चुनें।';
 
   @override
   String get coreChooseUsername => 'उपलब्ध उपयोगकर्ता नाम चुनें।';
@@ -2323,9 +2301,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreCreatorPreviewDescription => 'Prism पर इस क्रिएटर की प्रोफ़ाइल देखें।';
 
   @override
-  String get coreCropAndPosition => 'काटें और जगह तय करें...';
-
-  @override
   String get coreDefaultBanner => 'हमारे Telegram से जुड़ें';
 
   @override
@@ -2349,9 +2324,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreDeviceCannotSetScreen => 'यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।';
-
-  @override
-  String get coreDifferentLockWallpaper => 'लॉक स्क्रीन के लिए अलग वॉलपेपर';
 
   @override
   String get coreDone => 'हो गया';
@@ -2450,12 +2422,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
-
-  @override
-  String get coreFillScreen => 'स्क्रीन भरें';
-
-  @override
-  String get coreFitWholeImage => 'पूरी तस्वीर फ़िट करें';
 
   @override
   String get coreGenericSignInError => 'कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें!';
@@ -2980,9 +2946,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get diwaliAnnouncementBody => 'दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।';
-
-  @override
-  String get coreThisGoesOnHome => 'यह होम स्क्रीन पर लगेगा।';
 
   @override
   String get coreThisPageDoesNotExist => 'यह पेज मौजूद नहीं है';
@@ -8932,9 +8895,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperPositionApproximate => 'अनुमानित जगह। आपके लॉन्चर में अलग हो सकती है।';
 
   @override
-  String get wallpaperPositionTitle => 'जगह';
-
-  @override
   String get wallpaperPremium => 'Premium';
 
   @override
@@ -9148,6 +9108,39 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get setScreenTargetHome => 'होम स्क्रीन';
+
+  @override
+  String get setScreenTargetLock => 'लॉक स्क्रीन';
+
+  @override
+  String get setScreenTargetBoth => 'दोनों';
+
+  @override
+  String get setScreenTargetGroup => 'कहाँ लगाना है';
+
+  @override
+  String get setScreenRemember => 'यह चुनाव याद रखें';
+
+  @override
+  String get setScreenRememberHint => 'अगली बार लगाएँ यह स्क्रीन छोड़ देगा। वापस आने के लिए लगाएँ को दबाकर रखें।';
+
+  @override
+  String get setScreenAdjust => 'समायोजित करें';
+
+  @override
+  String get setScreenMore => 'और';
+
+  @override
+  String get setScreenPairLock => 'लॉक स्क्रीन के लिए कोई और वॉलपेपर लगाएँ';
+
+  @override
+  String get setScreenOpenSystemEditor => 'सिस्टम एडिटर खोलें';
+
+  @override
+  String get setScreenClose => 'बंद करें';
 
   @override
   String get wallpaperShare => 'शेयर करें';

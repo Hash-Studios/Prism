@@ -11,7 +11,6 @@ abstract class WallpaperPositionEvent with _$WallpaperPositionEvent {
   const factory WallpaperPositionEvent.previewModeChanged(PlacementPreviewMode mode) = _PreviewModeChanged;
   const factory WallpaperPositionEvent.resetRequested() = _ResetRequested;
 
-  /// Renders the wall at [outputSize] pixels and sets it on [target].
-  const factory WallpaperPositionEvent.applyRequested({required WallpaperTarget target, required Size outputSize}) =
-      _ApplyRequested;
+  /// Renders the wall at [outputSize] pixels for the Set screen.
+  const factory WallpaperPositionEvent.doneRequested({required Size outputSize}) = _DoneRequested;
 }

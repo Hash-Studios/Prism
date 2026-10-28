@@ -1938,19 +1938,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appTitle => 'Prism';
 
   @override
-  String get coreAdjustPositionPreview => 'Ajusta la posición y previsualiza';
-
-  @override
-  String get coreAdjustPositionPreviewBody => 'Desplaza, amplía y oscurece la imagen antes de aplicarla.';
-
-  @override
-  String get coreAlwaysUseThis => 'Usar siempre esta opción';
-
-  @override
-  String get coreAlwaysUseThisBody =>
-      'La próxima vez, al tocar Aplicar se usará la pantalla que elijas y se omitirá este panel.';
-
-  @override
   String get coreBack => 'Atrás';
 
   @override
@@ -1960,13 +1947,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreBlockCreatorAfterReport => 'Bloquear también a este creador';
 
   @override
-  String get coreBoth => 'Ambas';
-
-  @override
   String get coreBothScreens => 'ambas pantallas';
-
-  @override
-  String get coreBothSetsScreens => 'Se aplicará a la pantalla de inicio y a la pantalla de bloqueo.';
 
   @override
   String get coreCancel => 'Cancelar';
@@ -2123,9 +2104,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get coreChooseReportReason => 'Elige un motivo';
-
-  @override
-  String get coreChooseSystemEditorArea => 'Elige el área exacta en el editor del sistema.';
 
   @override
   String get coreChooseUsername => 'Elige un nombre de usuario disponible.';
@@ -2335,9 +2313,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreCreatorPreviewDescription => 'Descubre este perfil de creador en Prism.';
 
   @override
-  String get coreCropAndPosition => 'Recortar y ajustar…';
-
-  @override
   String get coreDefaultBanner => 'Únete a nuestro Telegram';
 
   @override
@@ -2362,9 +2337,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get coreDeviceCannotSetScreen => 'Este dispositivo no puede configurar esa pantalla.';
-
-  @override
-  String get coreDifferentLockWallpaper => 'Fondo distinto para la pantalla bloqueada';
 
   @override
   String get coreDone => 'Listo';
@@ -2463,12 +2435,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
-
-  @override
-  String get coreFillScreen => 'Rellenar pantalla';
-
-  @override
-  String get coreFitWholeImage => 'Ajustar imagen completa';
 
   @override
   String get coreGenericSignInError => 'Se produjo un error. ¡Inténtalo de nuevo!';
@@ -2983,9 +2949,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get diwaliAnnouncementBody => 'Diyas, fuegos artificiales y oro. Es gratis. Toca para probarlo.';
-
-  @override
-  String get coreThisGoesOnHome => 'Este se usará en la pantalla de inicio.';
 
   @override
   String get coreThisPageDoesNotExist => 'Esta página no existe';
@@ -8911,9 +8874,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperPositionApproximate => 'Es aproximado. El resultado puede variar según el launcher.';
 
   @override
-  String get wallpaperPositionTitle => 'Posición';
-
-  @override
   String get wallpaperPremium => 'Premium';
 
   @override
@@ -9127,6 +9087,40 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get setScreenTargetHome => 'Pantalla de inicio';
+
+  @override
+  String get setScreenTargetLock => 'Pantalla de bloqueo';
+
+  @override
+  String get setScreenTargetBoth => 'Ambas';
+
+  @override
+  String get setScreenTargetGroup => 'Dónde configurarlo';
+
+  @override
+  String get setScreenRemember => 'Recordar esta elección';
+
+  @override
+  String get setScreenRememberHint =>
+      'Configurar omite esta pantalla la próxima vez. Mantén pulsado Configurar para volver.';
+
+  @override
+  String get setScreenAdjust => 'Ajustar';
+
+  @override
+  String get setScreenMore => 'Más';
+
+  @override
+  String get setScreenPairLock => 'Usar otro fondo para la pantalla de bloqueo';
+
+  @override
+  String get setScreenOpenSystemEditor => 'Abrir editor del sistema';
+
+  @override
+  String get setScreenClose => 'Cerrar';
 
   @override
   String get wallpaperShare => 'Compartir';

@@ -465,6 +465,32 @@ void main() {
       await settle(tester);
     }
 
+    testWidgets('selecting one favourite and tapping Set opens the Set screen', (tester) async {
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      final original = SetWallpaperFlow.screenOpener;
+      SetWallpaperFlow.screenOpener = (context, request) async {
+        opened.add(request);
+        return null;
+      };
+      addTearDown(() => SetWallpaperFlow.screenOpener = original);
+      createToolsBloc(<FavouriteWallEntity>[prismFav('prism')]);
+      await pumpLoaded(tester);
+      await selectWithHold(tester, find.byType(FavouriteTileImage));
+      await tester.pump();
+
+      await tester.tap(find.byType(SetWallpaperButton));
+      await tester.pump();
+      for (int i = 0; i < 80 && opened.isEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+      }
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, 'https://example.com/prism.jpg');
+      expect(opened.single.thumbnailUrl, 'https://example.com/prism-thumb.jpg');
+      expect(opened.single.onAdjust, isNotNull);
+    });
+
     for (final wall in <FavouriteWallEntity>[
       prismFav('prism'),
       prismFav('starter-sunset'),

@@ -1925,18 +1925,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Prism';
 
   @override
-  String get coreAdjustPositionPreview => 'Adjust position and preview';
-
-  @override
-  String get coreAdjustPositionPreviewBody => 'Pan, zoom and dim before you set it.';
-
-  @override
-  String get coreAlwaysUseThis => 'Always use this';
-
-  @override
-  String get coreAlwaysUseThisBody => 'Next time, Set uses the screen you pick and skips this sheet.';
-
-  @override
   String get coreBack => 'Back';
 
   @override
@@ -1946,13 +1934,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreBlockCreatorAfterReport => 'Also block this creator';
 
   @override
-  String get coreBoth => 'Both';
-
-  @override
   String get coreBothScreens => 'both screens';
-
-  @override
-  String get coreBothSetsScreens => 'Both sets it on your home screen and lock screen.';
 
   @override
   String get coreCancel => 'Cancel';
@@ -2109,9 +2091,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreChooseReportReason => 'Choose a reason';
-
-  @override
-  String get coreChooseSystemEditorArea => 'Choose the exact area in the system editor.';
 
   @override
   String get coreChooseUsername => 'Pick an available username.';
@@ -2321,9 +2300,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreCreatorPreviewDescription => 'Check out this creator profile on Prism.';
 
   @override
-  String get coreCropAndPosition => 'Crop and position...';
-
-  @override
   String get coreDefaultBanner => 'Join our Telegram';
 
   @override
@@ -2347,9 +2323,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreDeviceCannotSetScreen => 'This device can\'t set that screen.';
-
-  @override
-  String get coreDifferentLockWallpaper => 'Different wallpaper for lock screen';
 
   @override
   String get coreDone => 'Done';
@@ -2448,12 +2421,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
-
-  @override
-  String get coreFillScreen => 'Fill screen';
-
-  @override
-  String get coreFitWholeImage => 'Fit whole image';
 
   @override
   String get coreGenericSignInError => 'Something went wrong, please try again!';
@@ -2959,9 +2926,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diwaliAnnouncementBody => 'Diyas, fireworks and gold. It is free. Tap to try it.';
-
-  @override
-  String get coreThisGoesOnHome => 'This one goes on the home screen.';
 
   @override
   String get coreThisPageDoesNotExist => 'This page does not exist';
@@ -8802,9 +8766,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperPositionApproximate => 'Approximate. Your launcher may differ.';
 
   @override
-  String get wallpaperPositionTitle => 'Position';
-
-  @override
   String get wallpaperPremium => 'Premium';
 
   @override
@@ -9012,6 +8973,39 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Set $countString times', one: 'Set once');
     return '$_temp0';
   }
+
+  @override
+  String get setScreenTargetHome => 'Home screen';
+
+  @override
+  String get setScreenTargetLock => 'Lock screen';
+
+  @override
+  String get setScreenTargetBoth => 'Both';
+
+  @override
+  String get setScreenTargetGroup => 'Where to set it';
+
+  @override
+  String get setScreenRemember => 'Remember this choice';
+
+  @override
+  String get setScreenRememberHint => 'Set skips this screen next time. Touch and hold Set to come back.';
+
+  @override
+  String get setScreenAdjust => 'Adjust';
+
+  @override
+  String get setScreenMore => 'More';
+
+  @override
+  String get setScreenPairLock => 'Use another wall for the lock screen';
+
+  @override
+  String get setScreenOpenSystemEditor => 'Open system editor';
+
+  @override
+  String get setScreenClose => 'Close';
 
   @override
   String get wallpaperShare => 'Share';

@@ -24,6 +24,7 @@ class WallpaperSetContext {
     this.fit,
     this.entryPoint,
     this.usedDefault = false,
+    this.targetChanged,
     this.operationId,
     this.itemId,
     this.provider,
@@ -40,6 +41,9 @@ class WallpaperSetContext {
   final String? fit;
   final String? entryPoint;
   final bool usedDefault;
+
+  /// True when the user changed the target on the Set screen. Null when no screen was shown.
+  final bool? targetChanged;
 }
 
 /// Tracks the outcome and shows one piece of feedback for it. Cancelled sets stay silent.
@@ -109,6 +113,7 @@ void _trackSetResult(WallpaperSetResult result, WallpaperTarget target, Wallpape
         fit: setContext.fit,
         entryPoint: setContext.entryPoint,
         usedDefault: setContext.usedDefault,
+        targetChanged: setContext.targetChanged,
         operationId: setContext.operationId,
         itemId: setContext.itemId,
         provider: setContext.provider,

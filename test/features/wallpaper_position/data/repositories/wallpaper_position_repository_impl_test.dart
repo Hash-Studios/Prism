@@ -80,7 +80,7 @@ void main() {
     });
   });
 
-  testWidgets('render writes a PNG of the output size under prism_edit and discard removes it', (tester) async {
+  testWidgets('render writes a PNG of the output size under prism_edit', (tester) async {
     await tester.runAsync(() async {
       final File file = await writePng(60, 120, const Color(0xFFFF0000));
       final PlacementSource source = await repository.load(file.path);
@@ -92,18 +92,7 @@ void main() {
       final ui.Codec codec = await ui.instantiateImageCodec(out.readAsBytesSync());
       final ui.Image rendered = (await codec.getNextFrame()).image;
       expect((rendered.width, rendered.height), (45, 90));
-
-      await repository.discard(out);
-
-      expect(out.existsSync(), isFalse);
-      expect(out.parent.existsSync(), isFalse);
       source.image.dispose();
-    });
-  });
-
-  testWidgets('discard ignores a file that is already gone', (tester) async {
-    await tester.runAsync(() async {
-      await repository.discard(File('${temp.path}/gone/placement.png'));
     });
   });
 }

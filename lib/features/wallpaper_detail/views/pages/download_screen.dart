@@ -391,7 +391,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
                   child: Icon(Icons.delete_outline_rounded, color: cs.onSurface, size: 20),
                 ),
                 if (_selected.length == 1 && !hideSetWallpaperUi)
-                  SetWallpaperButton(url: _selected.first, onSet: _exitSelection),
+                  SetWallpaperButton(url: _selected.first, onSet: _exitSelection, entryPoint: 'downloads'),
                 CircularMenuButton(
                   label: context.l10n.wallpaperShare,
                   isLoading: false,

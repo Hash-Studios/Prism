@@ -169,7 +169,7 @@ class PrismSegmented<T> extends StatelessWidget {
     final int index = values.indexOf(selected).clamp(0, values.length - 1);
     final double x = values.length == 1 ? 0 : -1 + 2 * index / (values.length - 1);
     return Container(
-      constraints: const BoxConstraints(minHeight: 50),
+      constraints: const BoxConstraints(minHeight: 54),
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: cs.onSurface.withValues(alpha: 0.06),
@@ -208,7 +208,7 @@ class PrismSegmented<T> extends StatelessWidget {
                               onChanged!(value);
                             },
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6),
                           child: Row(

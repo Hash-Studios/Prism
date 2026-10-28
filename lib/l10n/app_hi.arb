@@ -2132,16 +2132,10 @@
   },
   "appLinkRetryWhenOnline": "इंटरनेट कनेक्शन नहीं है। ऑनलाइन होने पर यह लिंक खोलेंगे।",
   "appTitle": "Prism",
-  "coreAdjustPositionPreview": "जगह समायोजित करें और पूर्वावलोकन देखें",
-  "coreAdjustPositionPreviewBody": "सेट करने से पहले पैन करें, ज़ूम करें और धुँधला करें।",
-  "coreAlwaysUseThis": "हमेशा यही इस्तेमाल करें",
-  "coreAlwaysUseThisBody": "अगली बार वॉलपेपर लगाने पर आपकी चुनी हुई स्क्रीन इस्तेमाल होगी और यह शीट नहीं दिखेगी।",
   "coreBack": "वापस",
   "coreBio": "बायो",
   "coreBlockCreatorAfterReport": "इस क्रिएटर को भी ब्लॉक करें",
-  "coreBoth": "दोनों",
   "coreBothScreens": "दोनों स्क्रीन",
-  "coreBothSetsScreens": "दोनों विकल्प इसे होम स्क्रीन और लॉक स्क्रीन पर सेट करते हैं।",
   "coreCancel": "रद्द करें",
   "coreCancelSelection": "चयन रद्द करें",
   "coreCancelSignIn": "अभी नहीं",
@@ -2194,7 +2188,6 @@
   "coreChangeWallpaperTarget": "वॉलपेपर कहाँ सेट होगा, बदलें",
   "coreChangelogLatest": "नवीनतम",
   "coreChooseReportReason": "कारण चुनें",
-  "coreChooseSystemEditorArea": "सिस्टम एडिटर में ठीक वही क्षेत्र चुनें।",
   "coreChooseUsername": "उपलब्ध उपयोगकर्ता नाम चुनें।",
   "coreCoinAiWallpaper": "AI वॉलपेपर",
   "coreCoinAutoRotatePass": "ऑटो-रोटेट पास, 7 दिन",
@@ -2350,7 +2343,6 @@
   "coreCouldNotLoadWallpaperForEditing": "वॉलपेपर संपादन के लिए लोड नहीं हो सका",
   "coreCouldNotUpdateFavourites": "पसंदीदा अपडेट नहीं हो सके। फिर से कोशिश करें।",
   "coreCreatorPreviewDescription": "Prism पर इस क्रिएटर की प्रोफ़ाइल देखें।",
-  "coreCropAndPosition": "काटें और जगह तय करें...",
   "coreDefaultBanner": "हमारे Telegram से जुड़ें",
   "@coreDefaultBanner": {
     "description": "Default title for the home feed banner when Remote Config has no campaign copy."
@@ -2362,7 +2354,6 @@
   "coreDepthEffectMenuShortTip": "••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "coreDepthEffectMenuTip": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "coreDeviceCannotSetScreen": "यह डिवाइस उस स्क्रीन पर वॉलपेपर नहीं लगा सकता।",
-  "coreDifferentLockWallpaper": "लॉक स्क्रीन के लिए अलग वॉलपेपर",
   "coreDone": "हो गया",
   "coreDown": "{coins} कम",
   "@coreDown": {
@@ -2447,8 +2438,6 @@
     },
     "description": "Megabyte file size shown in wallpaper details."
   },
-  "coreFillScreen": "स्क्रीन भरें",
-  "coreFitWholeImage": "पूरी तस्वीर फ़िट करें",
   "coreGenericSignInError": "कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें!",
   "coreGoHome": "होम पर जाएँ",
   "coreGooglePlayServicesSignInError": "इस डिवाइस पर Google Play services से साइन इन नहीं हो सकता।",
@@ -2798,7 +2787,6 @@
   "diwaliBannerSubtitle": "दीये, आतिशबाज़ी और सोना। मुफ़्त। आज़माने के लिए टैप करें।",
   "diwaliAnnouncementTitle": "नई: दिवाली थीम 🪔",
   "diwaliAnnouncementBody": "दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।",
-  "coreThisGoesOnHome": "यह होम स्क्रीन पर लगेगा।",
   "coreThisPageDoesNotExist": "यह पेज मौजूद नहीं है",
   "coreTryAgain": "फिर कोशिश करें",
   "coreUndo": "वापस लें",
@@ -8025,10 +8013,6 @@
   "@wallpaperPositionApproximate": {
     "description": "Notice that wallpaper placement preview may differ by launcher."
   },
-  "wallpaperPositionTitle": "जगह",
-  "@wallpaperPositionTitle": {
-    "description": "Title of the wallpaper placement screen."
-  },
   "wallpaperPremium": "Premium",
   "@wallpaperPremium": {
     "description": "Accessibility label for premium content."
@@ -8307,6 +8291,50 @@
         "format": "decimalPattern"
       }
     }
+  },
+  "setScreenTargetHome": "होम स्क्रीन",
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
+  "setScreenTargetLock": "लॉक स्क्रीन",
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
+  "setScreenTargetBoth": "दोनों",
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
+  "setScreenTargetGroup": "कहाँ लगाना है",
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
+  "setScreenRemember": "यह चुनाव याद रखें",
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
+  "setScreenRememberHint": "अगली बार लगाएँ यह स्क्रीन छोड़ देगा। वापस आने के लिए लगाएँ को दबाकर रखें।",
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
+  "setScreenAdjust": "समायोजित करें",
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
+  "setScreenMore": "और",
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
+  "setScreenPairLock": "लॉक स्क्रीन के लिए कोई और वॉलपेपर लगाएँ",
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
+  "setScreenOpenSystemEditor": "सिस्टम एडिटर खोलें",
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
+  "setScreenClose": "बंद करें",
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
   },
   "wallpaperShare": "शेयर करें",
   "@wallpaperShare": {

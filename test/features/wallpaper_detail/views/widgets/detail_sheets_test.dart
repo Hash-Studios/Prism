@@ -5,7 +5,6 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
-import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -73,23 +72,6 @@ void main() {
         'buildSignature': '',
       },
     );
-  });
-
-  group('SetOptionsPanel', () {
-    testWidgets('lists home, lock and both as rows and reports the tapped one', (tester) async {
-      final List<String> taps = <String>[];
-      await tester.pumpWidget(_host((_) => SetOptionsPanel(onSelected: (choice) => taps.add(choice.target.name))));
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Set as wallpaper'), findsOneWidget);
-      expect(find.byType(PrismRow), findsAtLeastNWidgets(3));
-      await tester.tap(find.text('home screen'));
-      await tester.tap(find.text('lock screen'));
-      await tester.tap(find.text('Both'));
-
-      expect(taps, <String>['home', 'lock', 'both']);
-    });
   });
 
   group('ContentReportSheetBody', () {

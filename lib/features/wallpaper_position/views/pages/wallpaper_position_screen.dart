@@ -1,10 +1,6 @@
-import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
@@ -12,27 +8,17 @@ import 'package:Prism/features/wallpaper_position/views/widgets/placement_panel.
 import 'package:Prism/features/wallpaper_position/views/widgets/placement_preview.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
-import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Pan, zoom, fit and dim a wallpaper before it is set. Pops with the [WallpaperSetResult] when the wall was set.
+/// Pan, zoom, fit and dim a wallpaper before it is set.
+/// Pops with a [StudioResult]: the wall rendered as placed, or a request for the system editor.
 @RoutePage()
 class WallpaperPositionScreen extends StatelessWidget {
-  const WallpaperPositionScreen({
-    super.key,
-    required this.imageUrl,
-    this.thumbnailUrl,
-    this.entryPoint,
-    this.requestId,
-    this.wallpaperId,
-    this.wallpaperSource,
-  });
-
-  final String? requestId;
-  final String? wallpaperId;
-  final WallpaperSource? wallpaperSource;
+  const WallpaperPositionScreen({super.key, required this.imageUrl, this.thumbnailUrl, this.entryPoint});
 
   final String imageUrl;
   final String? thumbnailUrl;
@@ -45,31 +31,13 @@ class WallpaperPositionScreen extends StatelessWidget {
     return BlocProvider<WallpaperPositionBloc>(
       create: (_) => getIt<WallpaperPositionBloc>()
         ..add(WallpaperPositionEvent.started(imageUrl: imageUrl, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint)),
-      child: _WallpaperPositionView(
-        imageUrl: imageUrl,
-        thumbnailUrl: thumbnailUrl,
-        entryPoint: entryPoint,
-        requestId: requestId,
-        wallpaperId: wallpaperId,
-        wallpaperSource: wallpaperSource,
-      ),
+      child: _WallpaperPositionView(imageUrl: imageUrl, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint),
     );
   }
 }
 
 class _WallpaperPositionView extends StatefulWidget {
-  const _WallpaperPositionView({
-    required this.imageUrl,
-    required this.thumbnailUrl,
-    required this.entryPoint,
-    this.requestId,
-    this.wallpaperId,
-    this.wallpaperSource,
-  });
-
-  final String? requestId;
-  final String? wallpaperId;
-  final WallpaperSource? wallpaperSource;
+  const _WallpaperPositionView({required this.imageUrl, required this.thumbnailUrl, required this.entryPoint});
 
   final String imageUrl;
   final String? thumbnailUrl;
@@ -81,44 +49,16 @@ class _WallpaperPositionView extends StatefulWidget {
 
 class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
   final TransformationController _controller = TransformationController();
-  late final Future<aw.WallpaperCapabilities> _capabilities = aw.AsyncWallpaper.getCapabilities();
-  WallpaperTarget _lastTarget = WallpaperTarget.both;
-  String? _operationId;
+
+  /// The last tokens the listener acted on. A render error keeps the earlier [PlacedWallpaper],
+  /// so the token tells the two cases apart.
+  int _handledPlacedToken = 0;
+  int _handledRenderErrorToken = 0;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onResult(BuildContext context, WallpaperPositionState state) {
-    final WallpaperSetResult? result = state.result;
-    if (result == null) return;
-    final WallpaperPositionBloc bloc = context.read<WallpaperPositionBloc>();
-    reportWallpaperSetResult(
-      context,
-      result,
-      l10n: context.l10n,
-      target: _lastTarget,
-      setContext: WallpaperSetContext(
-        operationId: _operationId,
-        requestId: widget.requestId,
-        itemId: widget.wallpaperId,
-        provider: widget.wallpaperSource?.wireValue,
-        source: widget.entryPoint ?? 'position_studio',
-        fit: 'studio_${state.placement.fit.name}',
-        entryPoint: widget.entryPoint ?? 'position_studio',
-      ),
-      onRetry: (target) => _apply(bloc, target),
-    );
-    if (result.isSuccess || result.isInfo) Navigator.of(context).pop(result);
-  }
-
-  void _apply(WallpaperPositionBloc bloc, WallpaperTarget target) {
-    _operationId = AnalyticsCorrelation.newId();
-    _lastTarget = target;
-    final Size screen = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
-    bloc.add(WallpaperPositionEvent.applyRequested(target: target, outputSize: screen));
   }
 
   @override
@@ -127,8 +67,19 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
     final Size screen = MediaQuery.sizeOf(context);
     final double statusBarInset = MediaQuery.viewPaddingOf(context).top;
     return BlocConsumer<WallpaperPositionBloc, WallpaperPositionState>(
-      listenWhen: (previous, current) => previous.resultToken != current.resultToken,
-      listener: _onResult,
+      listenWhen: (previous, current) =>
+          previous.placedToken != current.placedToken || previous.renderErrorToken != current.renderErrorToken,
+      listener: (context, state) {
+        if (state.placedToken != _handledPlacedToken) {
+          _handledPlacedToken = state.placedToken;
+          final PlacedWallpaper? placed = state.placed;
+          if (placed != null) Navigator.of(context).pop<StudioResult>(placed);
+        }
+        if (state.renderErrorToken != _handledRenderErrorToken) {
+          _handledRenderErrorToken = state.renderErrorToken;
+          toasts.error(context.l10n.wallpaperGenericError);
+        }
+      },
       builder: (context, state) {
         final WallpaperPositionBloc bloc = context.read<WallpaperPositionBloc>();
         final PlacementSource? source = state.source;
@@ -136,7 +87,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
           backgroundColor: theme.primaryColor,
           appBar: AppBar(
             backgroundColor: theme.primaryColor,
-            title: Text(context.l10n.wallpaperPositionTitle, style: theme.textTheme.displaySmall),
+            title: Text(context.l10n.setScreenAdjust, style: theme.textTheme.displaySmall),
           ),
           body: switch (state.status) {
             WallpaperPositionStatus.loading => GlintState(
@@ -156,7 +107,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                 ),
               ),
             ),
-            WallpaperPositionStatus.ready || WallpaperPositionStatus.applying => Column(
+            WallpaperPositionStatus.ready || WallpaperPositionStatus.rendering => Column(
               children: <Widget>[
                 _PreviewModeToggle(
                   mode: state.placement.previewMode,
@@ -184,23 +135,20 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(context.l10n.wallpaperPositionApproximate, style: PrismTextStyles.caption(context)),
                 ),
-                FutureBuilder<aw.WallpaperCapabilities>(
-                  future: _capabilities,
-                  builder: (context, snapshot) {
-                    final aw.WallpaperCapabilities? capabilities = snapshot.data;
-                    return PlacementPanel(
-                      placement: state.placement,
-                      busy: state.status == WallpaperPositionStatus.applying,
-                      targets: <WallpaperTarget>[
-                        for (final WallpaperTarget target in WallpaperTarget.values)
-                          if (capabilities == null || isWallpaperTargetSupported(capabilities, target)) target,
-                      ],
-                      onFit: (fit) => bloc.add(WallpaperPositionEvent.fitChanged(fit)),
-                      onDim: (dim) => bloc.add(WallpaperPositionEvent.dimChanged(dim)),
-                      onReset: () => bloc.add(const WallpaperPositionEvent.resetRequested()),
-                      onSet: (target) => _apply(bloc, target),
-                    );
-                  },
+                PlacementPanel(
+                  placement: state.placement,
+                  busy: state.status == WallpaperPositionStatus.rendering,
+                  onFit: (fit) => bloc.add(WallpaperPositionEvent.fitChanged(fit)),
+                  onDim: (dim) => bloc.add(WallpaperPositionEvent.dimChanged(dim)),
+                  onReset: () => bloc.add(const WallpaperPositionEvent.resetRequested()),
+                  onDone: () => bloc.add(
+                    WallpaperPositionEvent.doneRequested(
+                      outputSize: MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context),
+                    ),
+                  ),
+                  onSystemEditor: !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+                      ? () => Navigator.of(context).pop<StudioResult>(const SystemEditorRequested())
+                      : null,
                 ),
               ],
             ),

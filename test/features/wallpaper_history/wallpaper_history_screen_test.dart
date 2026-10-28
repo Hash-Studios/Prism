@@ -1,6 +1,10 @@
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
@@ -196,5 +200,41 @@ void main() {
 
     expect(store.items(), isEmpty);
     expect(find.text('No wallpapers yet'), findsOneWidget);
+  });
+
+  testWidgets('Set again opens the Set screen as wallpaper_history even with a saved default', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    final List<SetScreenRequest> opened = <SetScreenRequest>[];
+    final original = SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async {
+      opened.add(request);
+      return null;
+    };
+    addTearDown(() => SetWallpaperFlow.screenOpener = original);
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byType(AppliedWallpaperTile));
+    await tester.pump();
+    for (int i = 0; i < 80 && opened.isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+
+    expect(opened, hasLength(1));
+    expect(opened.single.url, '/nonexistent/a.png');
+    expect(opened.single.thumbnailUrl, '/nonexistent/a.png');
+    expect(opened.single.onAdjust, isNotNull);
   });
 }
