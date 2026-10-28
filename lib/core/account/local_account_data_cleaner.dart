@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef LocalClearStep = ({String name, Future<void> Function(String userId) run});
@@ -40,6 +42,13 @@ class LocalAccountDataCleaner {
     }
   }
 
+  /// Leaves the widget alone when another account signed in before the deleted account's cleanup ran.
+  @visibleForTesting
+  static Future<void> clearIosWidgetStreakForUser(String userId) async {
+    if (app_state.prismUser.loggedIn && app_state.prismUser.id != userId) return;
+    await IosWidgetChannel.clearStreak();
+  }
+
   static List<LocalClearStep> _defaultSteps() => <LocalClearStep>[
     (name: 'private economy', run: CoinsService.instance.clearForUser),
     (name: 'draw ticket snapshots', run: DrawRepositoryImpl.clearForUser),
@@ -51,6 +60,7 @@ class LocalAccountDataCleaner {
     ),
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
+    (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),

@@ -22,7 +22,6 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
-import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -210,11 +209,18 @@ void main() {
     expect(localImages.length, greaterThan(1));
     expect(localImages.every((image) => image.file.path == file.path), isTrue);
     expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).url, file.path);
+    final List<SetScreenRequest> requests = <SetScreenRequest>[];
+    final Future<SetWallpaperChoice?> Function(BuildContext, SetScreenRequest) originalOpener =
+        SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async {
+      requests.add(request);
+      return null;
+    };
+    addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
     await tester.tap(find.byTooltip('Preview on your screen'));
-    await tester.pumpAndSettle();
-    final clock = tester.widget<ClockOverlay>(find.byType(ClockOverlay));
-    expect(clock.link, file.path);
-    expect(clock.file, isTrue);
+    await waitForRealIo(tester, () => requests.isNotEmpty, reason: 'the Set screen opens for the local file');
+    expect(requests.single.url, file.path);
   });
 
   testWidgets('a deleted image in loaded detail shows an error without an image-stream exception', (tester) async {

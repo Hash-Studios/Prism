@@ -77,4 +77,55 @@ void main() {
     await pumpDetail(tester, state: const WallpaperDetailInitial());
     expect(find.byType(CachedNetworkImage), findsNothing);
   });
+
+  testWidgets('an empty route thumbnail shows localized loading without image or Hero widgets', (tester) async {
+    await pumpDetail(tester, state: const WallpaperDetailInitial(), thumbnailUrl: '');
+
+    final AppLocalizations l10n = AppLocalizations.of(tester.element(find.byType(WallpaperDetailScreen)));
+    expect(find.text(l10n.wallpaperLoadingWallpaper), findsOneWidget);
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(find.byType(Hero), findsNothing);
+    verify(
+      () => bloc.add(const LoadFromId(wallId: 'wall-id', source: WallpaperSource.wallhaven, thumbnailUrl: '')),
+    ).called(1);
+  });
+
+  testWidgets('an empty loading-state thumbnail does not fall back to the route image', (tester) async {
+    await pumpDetail(
+      tester,
+      state: const WallpaperDetailLoading(thumbnailUrl: ''),
+      thumbnailUrl: 'https://th.wallhaven.cc/lg/21/route.jpg',
+    );
+
+    final AppLocalizations l10n = AppLocalizations.of(tester.element(find.byType(WallpaperDetailScreen)));
+    expect(find.text(l10n.wallpaperLoadingWallpaper), findsOneWidget);
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(find.byType(Hero), findsNothing);
+  });
+
+  testWidgets('an empty error thumbnail shows the not-found message and retries with the same id and source', (
+    tester,
+  ) async {
+    await pumpDetail(
+      tester,
+      state: const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound, thumbnailUrl: ''),
+      thumbnailUrl: '',
+    );
+
+    final AppLocalizations l10n = AppLocalizations.of(tester.element(find.byType(WallpaperDetailScreen)));
+    expect(find.text(l10n.wallpaperOpenError), findsOneWidget);
+    expect(find.text(l10n.wallpaperDetailNotFound), findsOneWidget);
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(find.byType(Hero), findsNothing);
+
+    await tester.tap(find.text(l10n.wallpaperTryAgain));
+    await tester.pump();
+
+    verify(
+      () => bloc.add(const LoadFromId(wallId: 'wall-id', source: WallpaperSource.wallhaven, thumbnailUrl: '')),
+    ).called(2);
+  });
 }

@@ -1,6 +1,6 @@
 part of 'wallpaper_position_bloc.j.dart';
 
-enum WallpaperPositionStatus { loading, ready, failed, applying }
+enum WallpaperPositionStatus { loading, ready, failed, rendering }
 
 @freezed
 abstract class WallpaperPositionState with _$WallpaperPositionState {
@@ -12,9 +12,12 @@ abstract class WallpaperPositionState with _$WallpaperPositionState {
     /// Counts resets and fit changes, so the preview moves its gesture state to the placement again.
     @Default(0) int syncToken,
 
-    /// What the last apply returned. Read it when [resultToken] changes.
-    WallpaperSetResult? result,
-    @Default(0) int resultToken,
+    /// The render from the last Done. Read it when [placedToken] changes.
+    PlacedWallpaper? placed,
+    @Default(0) int placedToken,
+
+    /// Counts renders that failed.
+    @Default(0) int renderErrorToken,
   }) = _WallpaperPositionState;
 
   factory WallpaperPositionState.initial() =>

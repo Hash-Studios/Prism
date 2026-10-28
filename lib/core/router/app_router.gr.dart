@@ -226,7 +226,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     WallpaperSource? wallpaperSource,
     String? thumbnailUrl,
     Color? tint,
-    Widget Function(WallpaperTarget, String)? setAction,
+    Widget Function(String)? saveAction,
+    SetScreenRequest? request,
     String? spatialMapUrl,
     List<PageRouteInfo>? children,
   }) : super(
@@ -239,7 +240,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            wallpaperSource: wallpaperSource,
            thumbnailUrl: thumbnailUrl,
            tint: tint,
-           setAction: setAction,
+           saveAction: saveAction,
+           request: request,
            spatialMapUrl: spatialMapUrl,
          ),
          initialChildren: children,
@@ -259,7 +261,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         wallpaperSource: args.wallpaperSource,
         thumbnailUrl: args.thumbnailUrl,
         tint: args.tint,
-        setAction: args.setAction,
+        saveAction: args.saveAction,
+        request: args.request,
         spatialMapUrl: args.spatialMapUrl,
       );
     },
@@ -275,7 +278,8 @@ class ClockPreviewRouteArgs {
     this.wallpaperSource,
     this.thumbnailUrl,
     this.tint,
-    this.setAction,
+    this.saveAction,
+    this.request,
     this.spatialMapUrl,
   });
 
@@ -293,13 +297,15 @@ class ClockPreviewRouteArgs {
 
   final Color? tint;
 
-  final Widget Function(WallpaperTarget, String)? setAction;
+  final Widget Function(String)? saveAction;
+
+  final SetScreenRequest? request;
 
   final String? spatialMapUrl;
 
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, setAction: $setAction, spatialMapUrl: $spatialMapUrl}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl}';
   }
 
   @override
@@ -313,6 +319,7 @@ class ClockPreviewRouteArgs {
         wallpaperSource == other.wallpaperSource &&
         thumbnailUrl == other.thumbnailUrl &&
         tint == other.tint &&
+        request == other.request &&
         spatialMapUrl == other.spatialMapUrl;
   }
 
@@ -325,6 +332,7 @@ class ClockPreviewRouteArgs {
       wallpaperSource.hashCode ^
       thumbnailUrl.hashCode ^
       tint.hashCode ^
+      request.hashCode ^
       spatialMapUrl.hashCode;
 }
 
@@ -2161,9 +2169,6 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
     required String imageUrl,
     String? thumbnailUrl,
     String? entryPoint,
-    String? requestId,
-    String? wallpaperId,
-    WallpaperSource? wallpaperSource,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperPositionRoute.name,
@@ -2172,9 +2177,6 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
            imageUrl: imageUrl,
            thumbnailUrl: thumbnailUrl,
            entryPoint: entryPoint,
-           requestId: requestId,
-           wallpaperId: wallpaperId,
-           wallpaperSource: wallpaperSource,
          ),
          initialChildren: children,
        );
@@ -2190,9 +2192,6 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
         imageUrl: args.imageUrl,
         thumbnailUrl: args.thumbnailUrl,
         entryPoint: args.entryPoint,
-        requestId: args.requestId,
-        wallpaperId: args.wallpaperId,
-        wallpaperSource: args.wallpaperSource,
       );
     },
   );
@@ -2204,9 +2203,6 @@ class WallpaperPositionRouteArgs {
     required this.imageUrl,
     this.thumbnailUrl,
     this.entryPoint,
-    this.requestId,
-    this.wallpaperId,
-    this.wallpaperSource,
   });
 
   final Key? key;
@@ -2217,15 +2213,9 @@ class WallpaperPositionRouteArgs {
 
   final String? entryPoint;
 
-  final String? requestId;
-
-  final String? wallpaperId;
-
-  final WallpaperSource? wallpaperSource;
-
   @override
   String toString() {
-    return 'WallpaperPositionRouteArgs{key: $key, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, entryPoint: $entryPoint, requestId: $requestId, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource}';
+    return 'WallpaperPositionRouteArgs{key: $key, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, entryPoint: $entryPoint}';
   }
 
   @override
@@ -2235,10 +2225,7 @@ class WallpaperPositionRouteArgs {
     return key == other.key &&
         imageUrl == other.imageUrl &&
         thumbnailUrl == other.thumbnailUrl &&
-        entryPoint == other.entryPoint &&
-        requestId == other.requestId &&
-        wallpaperId == other.wallpaperId &&
-        wallpaperSource == other.wallpaperSource;
+        entryPoint == other.entryPoint;
   }
 
   @override
@@ -2246,10 +2233,7 @@ class WallpaperPositionRouteArgs {
       key.hashCode ^
       imageUrl.hashCode ^
       thumbnailUrl.hashCode ^
-      entryPoint.hashCode ^
-      requestId.hashCode ^
-      wallpaperId.hashCode ^
-      wallpaperSource.hashCode;
+      entryPoint.hashCode;
 }
 
 /// generated route for

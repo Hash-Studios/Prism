@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -54,13 +55,40 @@ void main() {
     expect(find.text('3D'), findsOneWidget);
   });
 
-  testWidgets('the 3D toggle sits in the button row, as tall as the Both toggle', (tester) async {
+  testWidgets('the 3D toggle sits next to the close button, as tall as it', (tester) async {
     await _pumpOverlay(tester, spatialMapUrl: 'https://x/m.png');
 
     final Finder toggle = find.ancestor(of: find.text('3D'), matching: find.byType(Tooltip)).first;
-    expect(tester.getSize(toggle).height, 44);
+    expect(tester.getSize(toggle).height, 48);
     expect(tester.getCenter(toggle).dy, tester.getCenter(find.byTooltip('Close preview')).dy);
   });
+
+  testWidgets('close, 3D and Save to Photos fit one row on a narrow screen at large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: ClockOverlay(
+          link: 'assets/images/prism.webp',
+          file: false,
+          spatialMapUrl: 'https://x/m.png',
+          saveAction: (label) => PrismButton(label: label, onPressed: () {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getRect(find.text('Save to Photos')).right, lessThanOrEqualTo(320));
+    expect(tester.getCenter(find.text('3D')).dy, tester.getCenter(find.byTooltip('Close preview')).dy);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('turning 3D off removes the tilt view, and closing while on returns to the caller', (tester) async {
     await tester.pumpWidget(

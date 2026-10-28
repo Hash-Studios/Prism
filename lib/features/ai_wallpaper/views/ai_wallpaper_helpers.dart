@@ -25,6 +25,12 @@ String aiStyleLabel(AppLocalizations l10n, AiStylePreset style) => switch (style
   AiStylePreset.meshGradient => l10n.economyAiStyleMeshGradient,
   AiStylePreset.abstract => l10n.economyAiStyleAbstract,
   AiStylePreset.nature => l10n.economyAiStyleNature,
+  AiStylePreset.space => l10n.economyAiStyleSpace,
+  AiStylePreset.synthwave => l10n.economyAiStyleSynthwave,
+  AiStylePreset.pixelArt => l10n.economyAiStylePixelArt,
+  AiStylePreset.render3d => l10n.economyAiStyleRender3d,
+  AiStylePreset.oilPainting => l10n.economyAiStyleOilPainting,
+  AiStylePreset.ukiyoE => l10n.economyAiStyleUkiyoE,
 };
 
 String aiQualityLabel(AppLocalizations l10n, AiQualityTier tier) => switch (tier) {

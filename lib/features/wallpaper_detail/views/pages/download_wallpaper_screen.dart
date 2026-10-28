@@ -122,7 +122,19 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
               onImage: true,
               onPressed: () {
                 _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                pushClockPreview(context, link: widget.file.path, file: true);
+                if (hideSetWallpaperUi) {
+                  pushClockPreview(context, link: widget.file.path, file: true);
+                  return;
+                }
+                unawaited(
+                  SetWallpaperFlow.run(
+                    context,
+                    url: widget.file.path,
+                    wallpaperSource: WallpaperSource.downloaded,
+                    forceScreen: true,
+                    entryPoint: 'wallpaper_preview',
+                  ),
+                );
               },
             ),
           ),
@@ -173,7 +185,12 @@ class _ActionPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: PrismSpace.sm),
-              SetWallpaperButton(url: file.path, wallpaperSource: WallpaperSource.downloaded, primary: true),
+              SetWallpaperButton(
+                url: file.path,
+                wallpaperSource: WallpaperSource.downloaded,
+                primary: true,
+                entryPoint: 'download_wallpaper',
+              ),
             ],
           ),
         ),

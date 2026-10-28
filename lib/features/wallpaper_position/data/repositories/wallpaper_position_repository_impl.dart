@@ -53,13 +53,6 @@ class WallpaperPositionRepositoryImpl implements WallpaperPositionRepository {
     }
     return file;
   }
-
-  @override
-  Future<void> discard(File file) async {
-    try {
-      await file.parent.delete(recursive: true);
-    } catch (_) {}
-  }
 }
 
 /// Decodes [bytes] so the long side is at most [maxExportLongSide], which keeps a 4K wall cheap to hold.

@@ -1940,18 +1940,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get appTitle => 'Prism';
 
   @override
-  String get coreAdjustPositionPreview => 'Atur posisi dan pratinjau';
-
-  @override
-  String get coreAdjustPositionPreviewBody => 'Geser, perbesar, dan redupkan sebelum memasangnya.';
-
-  @override
-  String get coreAlwaysUseThis => 'Selalu gunakan ini';
-
-  @override
-  String get coreAlwaysUseThisBody => 'Lain kali, pilih layar yang Anda inginkan dan lewati lembar ini.';
-
-  @override
   String get coreBack => 'Kembali';
 
   @override
@@ -1961,13 +1949,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreBlockCreatorAfterReport => 'Blokir kreator ini juga';
 
   @override
-  String get coreBoth => 'Keduanya';
-
-  @override
   String get coreBothScreens => 'kedua layar';
-
-  @override
-  String get coreBothSetsScreens => 'Keduanya akan memasang wallpaper di layar utama dan layar kunci.';
 
   @override
   String get coreCancel => 'Batal';
@@ -2124,9 +2106,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreChooseReportReason => 'Pilih alasan';
-
-  @override
-  String get coreChooseSystemEditorArea => 'Pilih area yang tepat di editor sistem.';
 
   @override
   String get coreChooseUsername => 'Pilih nama pengguna yang tersedia.';
@@ -2336,9 +2315,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreCreatorPreviewDescription => 'Lihat profil kreator ini di Prism.';
 
   @override
-  String get coreCropAndPosition => 'Potong dan atur posisi...';
-
-  @override
   String get coreDefaultBanner => 'Gabung ke Telegram kami';
 
   @override
@@ -2371,9 +2347,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreDeviceCannotSetScreen => 'Perangkat ini tidak dapat memasang wallpaper di layar itu.';
-
-  @override
-  String get coreDifferentLockWallpaper => 'Wallpaper layar kunci yang berbeda';
 
   @override
   String get coreDone => 'Selesai';
@@ -2472,12 +2445,6 @@ class AppLocalizationsId extends AppLocalizations {
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
-
-  @override
-  String get coreFillScreen => 'Penuhi layar';
-
-  @override
-  String get coreFitWholeImage => 'Tampilkan seluruh gambar';
 
   @override
   String get coreGenericSignInError => 'Terjadi kesalahan. Silakan coba lagi!';
@@ -2991,9 +2958,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get diwaliAnnouncementBody => 'Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.';
-
-  @override
-  String get coreThisGoesOnHome => 'Yang ini dipasang di layar utama.';
 
   @override
   String get coreThisPageDoesNotExist => 'Halaman ini tidak ada';
@@ -4100,6 +4064,24 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get economyAiStyleWatercolor => 'Cat air';
+
+  @override
+  String get economyAiStyleSpace => 'Luar Angkasa';
+
+  @override
+  String get economyAiStyleSynthwave => 'Synthwave';
+
+  @override
+  String get economyAiStylePixelArt => 'Pixel Art';
+
+  @override
+  String get economyAiStyleRender3d => 'Render 3D';
+
+  @override
+  String get economyAiStyleOilPainting => 'Lukisan Minyak';
+
+  @override
+  String get economyAiStyleUkiyoE => 'Ukiyo-e';
 
   @override
   String get economyAiSubmissionUnconfirmed => 'Status pengiriman belum dikonfirmasi. Periksa sebelum mencoba lagi.';
@@ -8874,9 +8856,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperPositionApproximate => 'Perkiraan. Tampilan mungkin berbeda di peluncur Anda.';
 
   @override
-  String get wallpaperPositionTitle => 'Posisi';
-
-  @override
   String get wallpaperPremium => 'Premium';
 
   @override
@@ -9090,6 +9069,39 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get setScreenTargetHome => 'Layar utama';
+
+  @override
+  String get setScreenTargetLock => 'Layar kunci';
+
+  @override
+  String get setScreenTargetBoth => 'Keduanya';
+
+  @override
+  String get setScreenTargetGroup => 'Pasang di mana';
+
+  @override
+  String get setScreenRemember => 'Ingat pilihan ini';
+
+  @override
+  String get setScreenRememberHint => 'Pasang melewati layar ini lain kali. Tahan Pasang untuk kembali.';
+
+  @override
+  String get setScreenAdjust => 'Sesuaikan';
+
+  @override
+  String get setScreenMore => 'Lainnya';
+
+  @override
+  String get setScreenPairLock => 'Pakai wallpaper lain untuk layar kunci';
+
+  @override
+  String get setScreenOpenSystemEditor => 'Buka editor sistem';
+
+  @override
+  String get setScreenClose => 'Tutup';
 
   @override
   String get wallpaperShare => 'Bagikan';
@@ -9610,161 +9622,371 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get economyAiPromptSceneAnime1 => 'cakrawala kota anime di atas pulau-pulau terapung';
+  String get economyAiPromptSceneAnime1 => 'kucing tidur di peron kereta yang diterpa matahari';
 
   @override
-  String get economyAiPromptSceneAnime2 => 'samurai sendiri di jalan berhujan berlampu neon';
+  String get economyAiPromptSceneAnime2 => 'awan musim panas menjulang di atas sawah';
 
   @override
-  String get economyAiPromptSceneAnime3 => 'kuil futuristik dengan bunga sakura dan hologram';
+  String get economyAiPromptSceneAnime3 => 'warung ramen bercahaya di gang belakang yang hujan';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'pasar malam anime bak mimpi bercahaya lentera';
+  String get economyAiPromptSceneAnime4 => 'gerbang kuil di puncak bukit di atas lautan awan';
 
   @override
-  String get economyAiPromptSceneAnime5 => 'cakrawala kota cyber-anime saat senja biru';
+  String get economyAiPromptSceneAnime5 => 'kembang api di atas sungai di festival musim panas';
 
   @override
-  String get economyAiPromptSceneMinimal1 => 'bukit pasir minimalis dan satu cakram matahari';
+  String get economyAiPromptSceneAnime6 => 'kelas sunyi dengan kelopak bunga berterbangan';
 
   @override
-  String get economyAiPromptSceneMinimal2 => 'lapisan pegunungan geometris yang bersih';
+  String get economyAiPromptSceneAnime7 => 'jalan tepi laut dengan halte sendirian saat senja';
 
   @override
-  String get economyAiPromptSceneMinimal3 => 'cakrawala laut monokrom yang tenang';
+  String get economyAiPromptSceneAnime8 => 'paus langit melayang di atas kota yang terlelap';
 
   @override
-  String get economyAiPromptSceneMinimal4 => 'garis abstrak sederhana dengan jarak yang seimbang';
+  String get economyAiPromptSceneMinimal1 => 'satu perahu kertas di atas air tenang yang pucat';
 
   @override
-  String get economyAiPromptSceneMinimal5 => 'langit bergradasi lembut di atas perbukitan datar';
+  String get economyAiPromptSceneMinimal2 => 'satu lengkung cahaya di atas dataran kosong';
 
   @override
-  String get economyAiPromptSceneCyberpunk1 => 'jalan kota metropolitan neon dengan pantulan di permukaan basah';
+  String get economyAiPromptSceneMinimal3 => 'pohon sendirian di lereng salju yang landai';
 
   @override
-  String get economyAiPromptSceneCyberpunk2 => 'gang futuristik dengan papan iklan holografis';
+  String get economyAiPromptSceneMinimal4 => 'dua lingkaran bertumpuk di atas butiran halus';
 
   @override
-  String get economyAiPromptSceneCyberpunk3 => 'cakrawala kota canggih dengan jalur kendaraan terbang';
+  String get economyAiPromptSceneMinimal5 => 'garis cakrawala tipis memisahkan laut dan langit';
 
   @override
-  String get economyAiPromptSceneCyberpunk4 => 'atap bergaya cyberpunk yang menghadap menara-menara bercahaya';
+  String get economyAiPromptSceneMinimal6 => 'sehelai bulu jatuh melintasi ruang kosong';
 
   @override
-  String get economyAiPromptSceneCyberpunk5 => 'persimpangan kota tengah malam dengan cahaya teal dan magenta';
+  String get economyAiPromptSceneMinimal7 => 'tumpukan kerikil licin di latar yang pucat';
 
   @override
-  String get economyAiPromptSceneWatercolor1 => 'lembah hutan cat air saat fajar';
+  String get economyAiPromptSceneMinimal8 => 'bayangan sabit di dinding plester yang lembut';
 
   @override
-  String get economyAiPromptSceneWatercolor2 => 'pemandangan danau pegunungan yang dilukis tangan';
+  String get economyAiPromptSceneCyberpunk1 => 'kedai mi basah hujan di bawah cahaya neon';
 
   @override
-  String get economyAiPromptSceneWatercolor3 => 'awan cat air lembut di atas perbukitan bergelombang';
+  String get economyAiPromptSceneCyberpunk2 => 'kereta melayang menyusuri menara-menara raksasa';
 
   @override
-  String get economyAiPromptSceneWatercolor4 => 'tepian sungai yang tenteram dengan nuansa pastel';
+  String get economyAiPromptSceneCyberpunk3 => 'android sendirian di atap gedung saat hujan';
 
   @override
-  String get economyAiPromptSceneWatercolor5 => 'pesisir bergaya cat air yang artistik saat matahari terbenam';
+  String get economyAiPromptSceneCyberpunk4 => 'jalan tol data bercahaya menuju kota raksasa';
 
   @override
-  String get economyAiPromptSceneMeshGradient1 => 'aliran gradasi mesh yang halus dengan bentuk-bentuk berlapis';
+  String get economyAiPromptSceneCyberpunk5 => 'pasar malam di bawah kusutnya kabel';
 
   @override
-  String get economyAiPromptSceneMeshGradient2 => 'gelombang gradasi cair yang semarak dengan kedalaman';
+  String get economyAiPromptSceneCyberpunk6 => 'motor krom terparkir di lorong neon';
 
   @override
-  String get economyAiPromptSceneMeshGradient3 => 'bentuk mesh beraneka warna yang lembut dengan lengkungan halus';
+  String get economyAiPromptSceneCyberpunk7 => 'bulan hologram terbit di atas menara kota';
 
   @override
-  String get economyAiPromptSceneMeshGradient4 => 'pita gradasi mesh dengan kontras tinggi';
+  String get economyAiPromptSceneCyberpunk8 => 'jalan tergenang yang memantulkan dinding layar';
 
   @override
-  String get economyAiPromptSceneMeshGradient5 => 'mekaran gradasi mesh pastel dengan tekstur halus';
+  String get economyAiPromptSceneWatercolor1 => 'ladang lavender memudar ke dalam kabut pagi';
 
   @override
-  String get economyAiPromptSceneAbstract1 => 'komposisi fraktal abstrak dengan lengkungan dinamis';
+  String get economyAiPromptSceneWatercolor2 => 'desa nelayan mungil di tepi pelabuhan yang tenang';
 
   @override
-  String get economyAiPromptSceneAbstract2 => 'bentuk-bentuk cair berlapis dengan kedalaman modern';
+  String get economyAiPromptSceneWatercolor3 => 'bunga poppy liar bergoyang di tepi jalan desa';
 
   @override
-  String get economyAiPromptSceneAbstract3 => 'bentuk abstrak tegas dengan tepi lembut';
+  String get economyAiPromptSceneWatercolor4 => 'balon udara di atas perbukitan hijau yang lembut';
 
   @override
-  String get economyAiPromptSceneAbstract4 => 'bidang abstrak surealis dengan bentuk-bentuk geometris melayang';
+  String get economyAiPromptSceneWatercolor5 => 'bangau berdiri di kolam penuh alang-alang';
 
   @override
-  String get economyAiPromptSceneAbstract5 => 'gelombang abstrak organik dengan kontras sinematik';
+  String get economyAiPromptSceneWatercolor6 => 'jalan kota berhujan dengan lampu yang buram';
 
   @override
-  String get economyAiPromptSceneNature1 => 'deretan pegunungan berkabut saat matahari terbit';
+  String get economyAiPromptSceneWatercolor7 => 'cangkir teh mengepul di samping jendela terbuka';
 
   @override
-  String get economyAiPromptSceneNature2 => 'hutan lebat yang selalu hijau dengan sinar matahari';
+  String get economyAiPromptSceneWatercolor8 => 'pinus bersalju di tepi anak sungai beku berkelok';
 
   @override
-  String get economyAiPromptSceneNature3 => 'tebing pesisir dramatis dengan ombak yang menghantam';
+  String get economyAiPromptSceneMeshGradient1 => 'bercak warna lembut yang saling melebur';
 
   @override
-  String get economyAiPromptSceneNature4 => 'danau alpen yang tenang di bawah langit senja';
+  String get economyAiPromptSceneMeshGradient2 => 'gelombang gradasi sutra yang melipat dirinya';
 
   @override
-  String get economyAiPromptSceneNature5 => 'ngarai gurun dengan cahaya keemasan yang hangat';
+  String get economyAiPromptSceneMeshGradient3 => 'bola cahaya berpendar menyatu di latar beledu';
 
   @override
-  String get economyAiPromptLightingSoftAmbient => 'ambien lembut';
+  String get economyAiPromptSceneMeshGradient4 => 'gradasi ala aurora menyapu ke atas';
 
   @override
-  String get economyAiPromptLightingCinematicRim => 'tepi sinematik';
+  String get economyAiPromptSceneMeshGradient5 => 'genangan warna cair dengan butiran halus';
 
   @override
-  String get economyAiPromptLightingGoldenHour => 'keemasan';
+  String get economyAiPromptSceneMeshGradient6 => 'gradasi hangat ke dingin dengan noise lembut';
 
   @override
-  String get economyAiPromptLightingMoonlit => 'sinar bulan';
+  String get economyAiPromptSceneMeshGradient7 => 'kelopak gradasi tembus pandang yang bertumpuk';
 
   @override
-  String get economyAiPromptLightingVolumetric => 'volumetrik';
+  String get economyAiPromptSceneMeshGradient8 => 'senja buram dari pita warna yang mengalir';
 
   @override
-  String get economyAiPromptMoodCalm => 'tenang';
+  String get economyAiPromptSceneAbstract1 => 'pecahan kaca saling mengait menangkap cahaya';
 
   @override
-  String get economyAiPromptMoodDreamy => 'bak mimpi';
+  String get economyAiPromptSceneAbstract2 => 'awan tinta mengalir melayang di dalam air';
 
   @override
-  String get economyAiPromptMoodEpic => 'epik';
+  String get economyAiPromptSceneAbstract3 => 'spiral pita terlipat yang bergerak';
 
   @override
-  String get economyAiPromptMoodMoody => 'suram';
+  String get economyAiPromptSceneAbstract4 => 'marmer pecah dengan urat emas';
 
   @override
-  String get economyAiPromptMoodUplifting => 'ceria';
+  String get economyAiPromptSceneAbstract5 => 'garis topografi beriak berlapis-lapis';
 
   @override
-  String get economyAiPromptQualityHighDetail => 'detail tinggi';
+  String get economyAiPromptSceneAbstract6 => 'bola-bola melayang menjatuhkan bayangan panjang';
 
   @override
-  String get economyAiPromptQualityCleanComposition => 'komposisi sangat rapi';
+  String get economyAiPromptSceneAbstract7 => 'jejak asap melengkung menjadi pusaran';
 
   @override
-  String get economyAiPromptQualityCrispTextures => 'tekstur tajam';
+  String get economyAiPromptSceneAbstract8 => 'hamparan kubus lembut naik bergelombang';
 
   @override
-  String get economyAiPromptQualityBalancedContrast => 'kontras seimbang';
+  String get economyAiPromptSceneNature1 => 'air terjun mengalir ke ngarai berlumut';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'warna cerah alami';
+  String get economyAiPromptSceneNature2 => 'ladang bunga matahari di bawah langit luas';
+
+  @override
+  String get economyAiPromptSceneNature3 => 'danau beku dengan retakan es biru';
+
+  @override
+  String get economyAiPromptSceneNature4 => 'pohon sakura berjajar di jalan tepi sungai tenang';
+
+  @override
+  String get economyAiPromptSceneNature5 => 'laguna tropis dilihat dari atas';
+
+  @override
+  String get economyAiPromptSceneNature6 => 'maple musim gugur terpantul di kolam tenang';
+
+  @override
+  String get economyAiPromptSceneNature7 => 'seekor rubah sendirian di salju segar saat fajar';
+
+  @override
+  String get economyAiPromptSceneNature8 => 'awan badai bergulung di atas dataran tinggi hijau';
+
+  @override
+  String get economyAiPromptSceneSpace1 => 'planet bercincin terbit di atas cakrawala bulan';
+
+  @override
+  String get economyAiPromptSceneSpace2 => 'galaksi spiral berpendar di luar angkasa';
+
+  @override
+  String get economyAiPromptSceneSpace3 => 'astronaut melayang di atas planet biru';
+
+  @override
+  String get economyAiPromptSceneSpace4 => 'nebula berbentuk bunga yang sedang mekar';
+
+  @override
+  String get economyAiPromptSceneSpace5 => 'dua matahari terbenam di atas gurun asing';
+
+  @override
+  String get economyAiPromptSceneSpace6 => 'stasiun luar angkasa mengorbit raksasa gas';
+
+  @override
+  String get economyAiPromptSceneSpace7 => 'hujan meteor di atas observatorium sunyi';
+
+  @override
+  String get economyAiPromptSceneSpace8 => 'gerhana dengan cincin berlian yang terang';
+
+  @override
+  String get economyAiPromptSceneSynthwave1 => 'jalan grid neon melaju menuju matahari terbenam';
+
+  @override
+  String get economyAiPromptSceneSynthwave2 => 'pantai berpalem di bawah matahari bergaris';
+
+  @override
+  String get economyAiPromptSceneSynthwave3 => 'mobil sport retro di jalan tol tanpa ujung';
+
+  @override
+  String get economyAiPromptSceneSynthwave4 => 'gunung wireframe di bawah langit magenta';
+
+  @override
+  String get economyAiPromptSceneSynthwave5 => 'matahari krom tenggelam ke laut berpendar';
+
+  @override
+  String get economyAiPromptSceneSynthwave6 => 'arkade retro bercahaya di malam hujan';
+
+  @override
+  String get economyAiPromptSceneSynthwave7 => 'kaset pita melayang di ruang neon';
+
+  @override
+  String get economyAiPromptSceneSynthwave8 => 'sebatang palem sendirian di depan cakrawala laser';
+
+  @override
+  String get economyAiPromptScenePixelArt1 => 'pondok nyaman di hutan bersalju saat malam';
+
+  @override
+  String get economyAiPromptScenePixelArt2 => 'kastil di tebing di atas laut';
+
+  @override
+  String get economyAiPromptScenePixelArt3 => 'kota mungil dengan jendela-jendela bercahaya';
+
+  @override
+  String get economyAiPromptScenePixelArt4 => 'pesawat bintang di atas dunia asing ungu';
+
+  @override
+  String get economyAiPromptScenePixelArt5 => 'air terjun di lembah rimba yang subur';
+
+  @override
+  String get economyAiPromptScenePixelArt6 => 'dermaga pemancingan di bawah bulan purnama';
+
+  @override
+  String get economyAiPromptScenePixelArt7 => 'kuil bunga sakura di musim semi';
+
+  @override
+  String get economyAiPromptScenePixelArt8 => 'kereta melintasi jembatan saat matahari terbenam';
+
+  @override
+  String get economyAiPromptSceneRender3d1 => 'bentuk tanah liat mengilap bertumpuk seimbang';
+
+  @override
+  String get economyAiPromptSceneRender3d2 => 'pita kaca buram di panggung pastel';
+
+  @override
+  String get economyAiPromptSceneRender3d3 => 'pulau mungil melayang di atas awan lembut';
+
+  @override
+  String get economyAiPromptSceneRender3d4 => 'gelembung krom menggembung dalam cahaya lembut';
+
+  @override
+  String get economyAiPromptSceneRender3d5 => 'gurun miniatur dengan satu kaktus';
+
+  @override
+  String get economyAiPromptSceneRender3d6 => 'diorama kamar nyaman di dalam kubus';
+
+  @override
+  String get economyAiPromptSceneRender3d7 => 'lengkungan marmer melayang di atas air tenang';
+
+  @override
+  String get economyAiPromptSceneRender3d8 => 'ombak warna permen yang membeku';
+
+  @override
+  String get economyAiPromptSceneOilPainting1 => 'laut badai menghantam pantai berbatu';
+
+  @override
+  String get economyAiPromptSceneOilPainting2 => 'padang poppy diterpa matahari dengan rumah tani';
+
+  @override
+  String get economyAiPromptSceneOilPainting3 => 'still life berisi lemon dan vas biru';
+
+  @override
+  String get economyAiPromptSceneOilPainting4 => 'pelabuhan berkabut saat fajar dengan kapal tua';
+
+  @override
+  String get economyAiPromptSceneOilPainting5 => 'jalan hutan menyala oleh warna musim gugur';
+
+  @override
+  String get economyAiPromptSceneOilPainting6 => 'kanal diterangi bulan diapit rumah-rumah tua';
+
+  @override
+  String get economyAiPromptSceneOilPainting7 => 'ladang gandum beriak sebelum badai';
+
+  @override
+  String get economyAiPromptSceneOilPainting8 => 'setangkai mawar dalam gelas di meja gelap';
+
+  @override
+  String get economyAiPromptSceneUkiyoE1 => 'ombak besar menggulung di bawah bulan pucat';
+
+  @override
+  String get economyAiPromptSceneUkiyoE2 => 'pagoda tertutup salju saat senja';
+
+  @override
+  String get economyAiPromptSceneUkiyoE3 => 'burung bangau terbang di atas gunung berkabut';
+
+  @override
+  String get economyAiPromptSceneUkiyoE4 => 'jembatan kayu di bawah kelopak sakura berguguran';
+
+  @override
+  String get economyAiPromptSceneUkiyoE5 => 'perahu nelayan di laut nila yang bergelora';
+
+  @override
+  String get economyAiPromptSceneUkiyoE6 => 'matahari merah di atas puncak gunung berapi';
+
+  @override
+  String get economyAiPromptSceneUkiyoE7 => 'kolam koi di bawah pohon willow menjuntai';
+
+  @override
+  String get economyAiPromptSceneUkiyoE8 => 'hujan turun di kota tepi sungai yang sunyi';
+
+  @override
+  String get economyAiPromptLightingMorningHaze => 'kabut pagi lembut';
+
+  @override
+  String get economyAiPromptLightingGoldenHour => 'cahaya jam emas';
+
+  @override
+  String get economyAiPromptLightingMoonlight => 'cahaya bulan sejuk';
+
+  @override
+  String get economyAiPromptLightingNeonRim => 'cahaya tepi neon';
+
+  @override
+  String get economyAiPromptLightingBacklight => 'cahaya latar hangat';
+
+  @override
+  String get economyAiPromptLightingGodRays => 'sinar surya lembut';
+
+  @override
+  String get economyAiPromptLightingStudio => 'cahaya studio merata';
+
+  @override
+  String get economyAiPromptLightingTwilight => 'senja biru pekat';
+
+  @override
+  String get economyAiPromptPaletteTealAmber => 'nuansa teal dan amber';
+
+  @override
+  String get economyAiPromptPaletteIndigoRose => 'nuansa nila dan mawar';
+
+  @override
+  String get economyAiPromptPaletteSageCream => 'hijau sage dan krem';
+
+  @override
+  String get economyAiPromptPaletteBlackNeonPink => 'hitam dengan pink neon';
+
+  @override
+  String get economyAiPromptPalettePastelPeach => 'persik pastel lembut';
+
+  @override
+  String get economyAiPromptPaletteEmeraldGold => 'zamrud dan emas';
+
+  @override
+  String get economyAiPromptPaletteOceanBlue => 'nuansa biru laut';
+
+  @override
+  String get economyAiPromptPaletteCrimsonCharcoal => 'merah tua dan arang';
 
   @override
   String get economyAiPromptSuffix => 'wallpaper ponsel vertikal tanpa teks';
 
   @override
-  String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
-    return '$scene, cahaya $lighting, $mood, $quality, $suffix';
+  String economyAiPromptComposition(String scene, String lighting, String palette, String suffix) {
+    return '$scene, $lighting, palet $palette, $suffix';
   }
 
   @override
@@ -9780,127 +10002,210 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get onboardingAiPromptNature1 =>
-      'deretan pegunungan berkabut saat matahari terbit dengan cahaya keemasan yang hangat';
+      'danau gletser saat matahari terbit, air setenang cermin, puncak gunung merah muda';
 
   @override
-  String get onboardingAiPromptNature2 =>
-      'hutan lebat yang selalu hijau dengan sinar matahari menembus tajuk pepohonan';
+  String get onboardingAiPromptNature2 => 'aliran hutan berlumut dengan cahaya lembut menembus pakis tinggi';
 
   @override
-  String get onboardingAiPromptNature3 => 'tebing pesisir dramatis dengan ombak yang menghantam dan langit suram';
+  String get onboardingAiPromptNature3 => 'ladang bunga liar di bawah langit sore yang luas dengan awan berarak';
 
   @override
-  String get onboardingAiPromptNature4 => 'danau alpen yang tenang di bawah langit senja dengan pantulan bintang';
+  String get onboardingAiPromptNature4 => 'pantai pasir hitam dengan ombak toska dan karang laut saat senja';
 
   @override
-  String get onboardingAiPromptNature5 => 'ngarai gurun dengan cahaya keemasan yang hangat dan formasi batuan dramatis';
+  String get onboardingAiPromptNature5 => 'aurora di atas hutan pinus bersalju di tepi danau beku';
 
   @override
-  String get onboardingAiPromptAbstract1 => 'komposisi fraktal abstrak dengan lengkungan dinamis dan warna cerah';
+  String get onboardingAiPromptAbstract1 =>
+      'pita kaca tembus pandang meliuk dalam cahaya lembut dengan tepi berkilau pelangi';
 
   @override
-  String get onboardingAiPromptAbstract2 => 'bentuk-bentuk cair berlapis dengan kedalaman modern dan kilau metalik';
+  String get onboardingAiPromptAbstract2 => 'awan tinta mekar di air, biru tua dan emas dengan detail halus';
 
   @override
-  String get onboardingAiPromptAbstract3 => 'bentuk abstrak tegas dengan tepi lembut dan kontras sinematik';
+  String get onboardingAiPromptAbstract3 =>
+      'gelombang berlapis seperti kertas dalam warna senja hangat, bayangan lembut';
 
   @override
-  String get onboardingAiPromptAbstract4 =>
-      'bidang abstrak surealis dengan bentuk-bentuk geometris melayang yang disinari cahaya neon';
+  String get onboardingAiPromptAbstract4 => 'pusaran marmer berukir dengan urat emas di latar arang pekat';
 
   @override
-  String get onboardingAiPromptAbstract5 => 'gelombang abstrak organik dengan tekstur kaya dan kedalaman bidang';
+  String get onboardingAiPromptAbstract5 => 'bola krom melayang memantulkan langit pastel di ruang terbuka yang tenang';
 
   @override
-  String get onboardingAiPromptWatercolor1 => 'lembah hutan cat air saat fajar dengan kabut pastel lembut';
+  String get onboardingAiPromptWatercolor1 => 'desa pantai cat air dengan rumah pastel dan perahu saat matahari terbit';
 
   @override
-  String get onboardingAiPromptWatercolor2 =>
-      'pemandangan danau pegunungan yang dilukis tangan dalam nuansa cat air yang terasa seperti mimpi';
+  String get onboardingAiPromptWatercolor2 => 'bunga liar cat air merah muda dan sage di atas kertas bertekstur';
 
   @override
-  String get onboardingAiPromptWatercolor3 =>
-      'awan cat air lembut di atas perbukitan bergelombang saat cahaya keemasan menyinari';
+  String get onboardingAiPromptWatercolor3 => 'danau berkabut cat air dengan dermaga kayu kecil dan perbukitan jauh';
 
   @override
-  String get onboardingAiPromptWatercolor4 => 'tepian sungai yang tenteram dengan pantulan cat air pastel';
+  String get onboardingAiPromptWatercolor4 => 'langit malam cat air dengan awan ungu lembut dan bulan berpendar';
 
   @override
-  String get onboardingAiPromptWatercolor5 =>
-      'pesisir bergaya cat air yang artistik saat matahari terbenam dengan rona hangat';
+  String get onboardingAiPromptWatercolor5 => 'hutan musim gugur cat air dalam sapuan hangat oranye dan emas';
 
   @override
-  String get onboardingAiPromptMinimal1 => 'bukit pasir minimalis dan satu cakram matahari di cakrawala';
+  String get onboardingAiPromptMinimal1 =>
+      'satu matahari terbenam di laut tenang, warna datar, langit luas yang kosong';
 
   @override
-  String get onboardingAiPromptMinimal2 => 'lapisan pegunungan geometris yang bersih dalam nuansa lembut dan redup';
+  String get onboardingAiPromptMinimal2 => 'perbukitan berlapis warna pasir kalem di bawah langit gradasi pucat';
 
   @override
-  String get onboardingAiPromptMinimal3 => 'cakrawala laut monokrom yang tenang saat senja';
+  String get onboardingAiPromptMinimal3 => 'satu pohon gundul di bukit bersalju dengan banyak ruang kosong yang sunyi';
 
   @override
-  String get onboardingAiPromptMinimal4 => 'garis abstrak sederhana dengan ruang negatif yang tertata seimbang';
+  String get onboardingAiPromptMinimal4 =>
+      'perahu layar sendirian di danau tenang saat fajar, bentuk sederhana, warna lembut';
 
   @override
-  String get onboardingAiPromptMinimal5 => 'langit bergradasi lembut di atas perbukitan minimalis yang datar';
+  String get onboardingAiPromptMinimal5 => 'lengkungan konsentris lembut warna terakota dan krem dengan butiran halus';
 
   @override
   String get onboardingAiPromptAnime1 =>
-      'atap kota bergaya anime dalam cahaya keemasan dengan bunga sakura yang berterbangan';
+      'langit musim panas gaya anime, awan menjulang di atas rel tepi laut yang sepi';
 
   @override
-  String get onboardingAiPromptAnime2 =>
-      'kereta melintasi pedesaan bergaya anime yang terasa seperti mimpi di bawah langit berawan luas';
+  String get onboardingAiPromptAnime2 => 'kota malam gaya anime dari puncak bukit, lampu hangat, langit penuh bintang';
 
   @override
   String get onboardingAiPromptAnime3 =>
-      'desa pegunungan bergaya anime saat senja dengan lentera bercahaya dan kabut lembut';
+      'kuil hutan gaya anime dengan roh bercahaya melayang dalam cahaya hijau lembut';
 
   @override
-  String get onboardingAiPromptAnime4 =>
-      'kota tepi laut bergaya anime yang sunyi di bawah matahari terbenam pastel dan awan menjulang';
+  String get onboardingAiPromptAnime4 => 'jalan hujan gaya anime saat senja, lampu toko berpendar, pantulan genangan';
 
   @override
-  String get onboardingAiPromptAnime5 =>
-      'malam berbintang bergaya anime di atas danau tenang dengan cahaya-cahaya terapung';
+  String get onboardingAiPromptAnime5 => 'padang rumput gaya anime saat jam emas dengan angin menyapu rumput tinggi';
 
   @override
-  String get onboardingAiPromptMeshGradient1 =>
-      'gradasi mesh halus berwarna koral, teal, dan kuning hangat dengan tekstur butiran lembut';
+  String get onboardingAiPromptMeshGradient1 => 'gradasi mesh halus jingga, merah muda, dan ungu dengan butiran lembut';
 
   @override
   String get onboardingAiPromptMeshGradient2 =>
-      'gradasi mesh mengalir dalam warna ungu tua dan biru elektrik dengan cahaya lembut';
+      'gradasi mesh pekat biru tua dan teal dengan sorot hijau limau berpendar';
 
   @override
-  String get onboardingAiPromptMeshGradient3 =>
-      'gradasi mesh pastel berwarna persik, lilac, dan mint yang saling berpadu';
+  String get onboardingAiPromptMeshGradient3 => 'gradasi mesh lembut biru langit, lavender, dan krem hangat';
 
   @override
-  String get onboardingAiPromptMeshGradient4 =>
-      'matahari terbenam dengan gradasi mesh semarak dalam lapisan rona magenta dan oranye';
+  String get onboardingAiPromptMeshGradient4 => 'gradasi mesh berani merah tua dan emas yang mengalir seperti sutra';
 
   @override
-  String get onboardingAiPromptMeshGradient5 =>
-      'gradasi mesh tenang dalam warna biru laut dan hijau buih laut dengan mekarnya cahaya halus';
+  String get onboardingAiPromptMeshGradient5 => 'gradasi mesh tenang sage, mint, dan pasir pucat dengan cahaya lembut';
 
   @override
-  String get onboardingAiPromptCyberpunk1 =>
-      'jalan kota metropolitan neon dengan pantulan di permukaan basah dan kendaraan terbang';
+  String get onboardingAiPromptCyberpunk1 => 'jalan cyberpunk malam hari saat hujan dengan pantulan neon dan uap';
 
   @override
-  String get onboardingAiPromptCyberpunk2 => 'gang futuristik dengan papan iklan holografis dan cahaya teal-magenta';
+  String get onboardingAiPromptCyberpunk2 => 'kota neon menjulang dari atap gedung, mobil terbang melesat lewat';
 
   @override
-  String get onboardingAiPromptCyberpunk3 =>
-      'cakrawala kota berteknologi tinggi pada malam hari dengan jalur lalu lintas bercahaya';
+  String get onboardingAiPromptCyberpunk3 => 'kanal cyberpunk tenang diapit toko berpendar dan lampion melayang';
 
   @override
-  String get onboardingAiPromptCyberpunk4 =>
-      'atap bergaya cyberpunk yang menghadap kota dengan menara-menara bercahaya';
+  String get onboardingAiPromptCyberpunk4 => 'cakrawala cyberpunk saat fajar, menara kaca dalam kabut pink dan teal';
 
   @override
-  String get onboardingAiPromptCyberpunk5 => 'persimpangan kota tengah malam yang bermandikan neon teal dan magenta';
+  String get onboardingAiPromptCyberpunk5 => 'motor sendirian di jembatan neon di atas kota futuristik berkabut';
+
+  @override
+  String get onboardingAiPromptSpace1 =>
+      'raksasa gas bercincin terbit di atas bulan berbatu, bintang memenuhi langit hitam';
+
+  @override
+  String get onboardingAiPromptSpace2 => 'nebula penuh warna ungu dan teal dengan bintang muda yang terang';
+
+  @override
+  String get onboardingAiPromptSpace3 => 'galaksi spiral dari depan dengan inti berpendar dan lengan biru berdebu';
+
+  @override
+  String get onboardingAiPromptSpace4 => 'astronaut melayang di atas Bumi saat matahari terbit, atmosfer biru tipis';
+
+  @override
+  String get onboardingAiPromptSpace5 => 'gerhana matahari total di atas barisan pegunungan yang sunyi';
+
+  @override
+  String get onboardingAiPromptSynthwave1 =>
+      'matahari terbenam synthwave, matahari bergaris di atas grid neon berpendar';
+
+  @override
+  String get onboardingAiPromptSynthwave2 => 'mobil retro melaju menuju matahari magenta di jalan pesisir yang sepi';
+
+  @override
+  String get onboardingAiPromptSynthwave3 => 'gunung wireframe di bawah langit ungu berbintang dengan matahari krom';
+
+  @override
+  String get onboardingAiPromptSynthwave4 => 'pantai synthwave dengan siluet palem dan cakrawala pink berpendar';
+
+  @override
+  String get onboardingAiPromptSynthwave5 => 'cakrawala kota retro malam hari dalam kabut neon pink dan cyan';
+
+  @override
+  String get onboardingAiPromptPixelArt1 =>
+      'pondok pixel art di hutan bersalju, jendela hangat berpendar di malam hari';
+
+  @override
+  String get onboardingAiPromptPixelArt2 => 'kota pesisir pixel art saat matahari terbenam dengan perahu di pelabuhan';
+
+  @override
+  String get onboardingAiPromptPixelArt3 => 'kastil pixel art di pulau melayang di atas awan';
+
+  @override
+  String get onboardingAiPromptPixelArt4 => 'langit malam pixel art di atas danau tenang dengan kunang-kunang';
+
+  @override
+  String get onboardingAiPromptPixelArt5 => 'jalan bunga sakura pixel art menuju kuil kecil';
+
+  @override
+  String get onboardingAiPromptRender3d1 => 'render 3D bentuk tanah liat lembut warna pastel dengan bayangan halus';
+
+  @override
+  String get onboardingAiPromptRender3d2 => 'render 3D pulau mungil melayang dengan air terjun dan pepohonan';
+
+  @override
+  String get onboardingAiPromptRender3d3 => 'render 3D ombak kaca mengilap biru dan ungu di bawah cahaya studio';
+
+  @override
+  String get onboardingAiPromptRender3d4 => 'render 3D kamar miniatur nyaman di dalam kubus berpendar';
+
+  @override
+  String get onboardingAiPromptRender3d5 => 'render 3D gelembung krom melayang di atas laut pink yang tenang';
+
+  @override
+  String get onboardingAiPromptOilPainting1 => 'lukisan minyak laut badai dengan kapal kecil di bawah langit dramatis';
+
+  @override
+  String get onboardingAiPromptOilPainting2 => 'lukisan minyak ladang poppy diterpa matahari dengan rumah tani jauh';
+
+  @override
+  String get onboardingAiPromptOilPainting3 => 'lukisan minyak pelabuhan berkabut saat fajar dengan perahu kayu tua';
+
+  @override
+  String get onboardingAiPromptOilPainting4 => 'lukisan minyak jalan hutan musim gugur dengan sapuan kuas tebal';
+
+  @override
+  String get onboardingAiPromptOilPainting5 =>
+      'lukisan minyak kota kanal diterangi bulan dengan jendela hangat berpendar';
+
+  @override
+  String get onboardingAiPromptUkiyoE1 => 'ombak besar ukiyo-e di bawah bulan pucat, gunung bersalju di kejauhan';
+
+  @override
+  String get onboardingAiPromptUkiyoE2 => 'desa bersalju ukiyo-e di malam hari dengan lampion kertas berpendar';
+
+  @override
+  String get onboardingAiPromptUkiyoE3 => 'pemandangan ukiyo-e burung bangau terbang di atas gunung berkabut';
+
+  @override
+  String get onboardingAiPromptUkiyoE4 => 'jembatan kayu ukiyo-e di bawah bunga sakura pada hari musim semi';
+
+  @override
+  String get onboardingAiPromptUkiyoE5 => 'matahari merah ukiyo-e di atas laut nila tenang dengan perahu nelayan';
 
   @override
   String wallpaperWotdByline(String name) {
@@ -9923,4 +10228,58 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperYourProfile => 'Profil Anda';
+
+  @override
+  String get widgetsSettingsTitle => 'Widget';
+
+  @override
+  String get widgetsSettingsSubtitle => 'Tambahkan Prism ke Layar Utama dan Layar Terkunci';
+
+  @override
+  String get widgetsGuideTitle => 'Tambahkan widget Prism';
+
+  @override
+  String get widgetsGuideHomeTab => 'Layar Utama';
+
+  @override
+  String get widgetsGuideLockTab => 'Layar Terkunci';
+
+  @override
+  String get widgetsGuideHomeStep1 => 'Sentuh dan tahan area kosong di Layar Utama sampai aplikasi bergoyang.';
+
+  @override
+  String get widgetsGuideHomeStep2 => 'Ketuk Edit, lalu ketuk Tambah Widget.';
+
+  @override
+  String get widgetsGuideHomeStep3 => 'Cari Prism, pilih ukuran, lalu ketuk Tambah Widget.';
+
+  @override
+  String get widgetsGuideLockStep1 => 'Sentuh dan tahan Layar Terkunci, lalu ketuk Sesuaikan.';
+
+  @override
+  String get widgetsGuideLockStep2 => 'Ketuk Layar Terkunci, lalu ketuk area widget di bawah jam.';
+
+  @override
+  String get widgetsGuideLockStep3 => 'Pilih Prism, lalu ketuk widget untuk menambahkannya.';
+
+  @override
+  String get widgetsGuideHomeIllustration => 'Ponsel dengan widget Wallpaper Hari Ini di Layar Utama';
+
+  @override
+  String get widgetsGuideLockIllustration => 'Ponsel dengan widget Prism di Layar Terkunci';
+
+  @override
+  String get widgetsGuideDone => 'Selesai';
+
+  @override
+  String get widgetsCardTitle => 'Wallpaper Hari Ini di Layar Utama';
+
+  @override
+  String get widgetsCardBody => 'Tambahkan widget dan lihat wallpaper baru setiap hari.';
+
+  @override
+  String get widgetsCardAction => 'Tunjukkan caranya';
+
+  @override
+  String get widgetsCardDismiss => 'Tutup';
 }

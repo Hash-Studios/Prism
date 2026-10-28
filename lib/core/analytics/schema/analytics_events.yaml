@@ -238,6 +238,20 @@ enums:
       - app_links
       - push
       - in_app
+  - name: widget_kind
+    dart_type: WidgetKindValue
+    values:
+      - wotd_small
+      - wotd_medium
+      - wotd_large
+      - wotd_lock
+      - streak_circular
+      - streak_inline
+  - name: widget_guide_source
+    dart_type: WidgetGuideSourceValue
+    values:
+      - settings
+      - wall_of_the_day
   - name: share_type
     dart_type: ShareTypeValue
     values:
@@ -362,6 +376,10 @@ events:
         required: false
       - name: used_default
         key: used_default
+        type: bool
+        required: false
+      - name: target_changed
+        key: target_changed
         type: bool
         required: false
       - name: operation_id
@@ -1578,6 +1596,18 @@ events:
       - name: result
         key: result
         type: string
+  - id: widget_tapped
+    fields:
+      - name: kind
+        key: kind
+        type: enum
+        enum: WidgetKindValue
+  - id: widget_guide_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WidgetGuideSourceValue
   - id: guest_favourites_merged
     fields:
       - name: count

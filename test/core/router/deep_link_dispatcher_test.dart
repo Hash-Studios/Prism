@@ -7,6 +7,7 @@ import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +47,8 @@ class _LinkTestRouter extends RootStackRouter {
     ),
     AutoRoute(path: '/downloads', page: _page(DownloadRoute.name)),
     AutoRoute(path: '/about', page: _page(AboutRoute.name)),
+    AutoRoute(path: '/rewards', page: _page(RewardsRoute.name)),
+    AutoRoute(path: '/wallpaper-detail', page: _page(WallpaperDetailRoute.name)),
     AutoRoute(path: '/notifications', page: _page(NotificationRoute.name)),
     AutoRoute(path: '/shop', page: _page(ShopRoute.name), guards: <AutoRouteGuard>[_DenyGuard()]),
     AutoRoute(path: '/not-found', page: _page(NotFoundRoute.name)),
@@ -119,6 +122,53 @@ void main() {
     }
     expect(events.whereType<DeepLinkReceivedEvent>().map((event) => event.source), DeepLinkSourceValue.values);
     expect(results().map((event) => event.source), DeepLinkSourceValue.values);
+    expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
+  });
+
+  testWidgets('id-only share URLs and pushes navigate with their own route args and success analytics', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> urlResult = dispatcher.openUri(
+      Uri.parse('https://prismwalls.com/share?id=url-wall&provider=Wallhaven'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(await urlResult, DeepLinkDispatchResult.navigated);
+    final WallpaperDetailRouteArgs urlArgs = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(urlArgs.wallId, 'url-wall');
+    expect(urlArgs.source, WallpaperSource.wallhaven);
+    expect(urlArgs.thumbnailUrl, isEmpty);
+    expect(urlArgs.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(urlArgs.entity, isNull);
+    expect(urlArgs.localFile, isNull);
+
+    final Future<DeepLinkDispatchResult> pushResult = dispatcher.openPush(<String, dynamic>{
+      'url': 'https://prismwalls.com/share?id=push-wall&provider=Pexels',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await pushResult, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'push-wall');
+    expect(args.source, WallpaperSource.pexels);
+    expect(args.thumbnailUrl, isEmpty);
+    expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
+
+    final List<DeepLinkReceivedEvent> received = events.whereType<DeepLinkReceivedEvent>().toList();
+    expect(received.map((event) => event.source), <DeepLinkSourceValue>[
+      DeepLinkSourceValue.appLinks,
+      DeepLinkSourceValue.push,
+    ]);
+    expect(received.map((event) => event.targetType), everyElement(TargetTypeValue.share));
+    final List<DeepLinkResolvedEvent> resolved = events.whereType<DeepLinkResolvedEvent>().toList();
+    expect(resolved.map((event) => event.targetType), everyElement(TargetTypeValue.share));
+    expect(resolved.map((event) => event.result), everyElement(EventResultValue.success));
+    expect(results().map((event) => event.targetType), everyElement(TargetTypeValue.share));
     expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
   });
 
@@ -467,5 +517,145 @@ void main() {
     expect(await result, DeepLinkDispatchResult.cancelled);
     expect(DeepLinkDispatcher.maybeOf(router), isNull);
     expect(results().single.result, EventResultValue.cancelled);
+  });
+
+  testWidgets('a widget link records widget_tapped and still records deep_link_received', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      Uri.parse('prism://share?id=abc&source=prism&thumb=https%3A%2F%2Fexample.com%2Ft.jpg&widget=wotd_medium'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.wotdMedium,
+    ]);
+    expect(events.whereType<DeepLinkReceivedEvent>(), hasLength(1));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a share link without a widget parameter records no widget_tapped', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      Uri.parse('prism://share?id=abc&source=prism&thumb=https%3A%2F%2Fexample.com%2Ft.jpg'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('an unknown widget value records no widget_tapped', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(Uri.parse('prism://streak?widget=nope'), source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    await result;
+    expect(events.whereType<WidgetTappedEvent>(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a streak widget link opens Rewards and records its widget kind', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      const DeepLinkParser().transform(Uri.parse('prism://streak?widget=streak_circular')),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, RewardsRoute.name);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.streakCircular,
+    ]);
+  });
+
+  testWidgets('an empty Wall of the Day widget fallback opens Rewards and records its Wall of the Day kind', (
+    tester,
+  ) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      const DeepLinkParser().transform(Uri.parse('prism://streak?widget=wotd_small')),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, RewardsRoute.name);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.wotdSmall,
+    ]);
+  });
+
+  testWidgets('a transformed Wall of the Day widget share opens its wall and thumbnail', (tester) async {
+    await mount(tester);
+    const String thumbnail = 'https://example.com/thumb.jpg?width=320&height=240';
+    final Uri link = Uri(
+      scheme: 'prism',
+      host: 'share',
+      queryParameters: <String, String>{
+        'id': 'wall-document-field-id',
+        'source': 'prism',
+        'thumb': thumbnail,
+        'widget': 'wotd_medium',
+      },
+    );
+    final Uri transformedLink = const DeepLinkParser().transform(link);
+    final result = dispatcher.openUri(transformedLink, source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'wall-document-field-id');
+    expect(args.thumbnailUrl, thumbnail);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.wotdMedium,
+    ]);
+  });
+
+  testWidgets('widget taps are tracked once while cold and once for each warm tap', (tester) async {
+    await mount(tester);
+    final Completer<bool> ready = Completer<bool>();
+    dispatcher.dispose();
+    dispatcher = create(whenReady: () => ready.future);
+    final Uri streakLink = const DeepLinkParser().transform(Uri.parse('prism://streak?widget=streak_inline'));
+
+    final Future<DeepLinkDispatchResult> coldTap = dispatcher.openUri(streakLink, source: DeepLinkSourceValue.appLinks);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.streakInline,
+    ]);
+    ready.complete(true);
+    await tester.pumpAndSettle();
+    expect(await coldTap, DeepLinkDispatchResult.navigated);
+    expect(events.whereType<WidgetTappedEvent>(), hasLength(1));
+
+    final Future<DeepLinkDispatchResult> warmTap = dispatcher.openUri(streakLink, source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    expect(await warmTap, DeepLinkDispatchResult.navigated);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.streakInline,
+      WidgetKindValue.streakInline,
+    ]);
+  });
+
+  testWidgets('widget analytics only records valid widget links received from app links', (tester) async {
+    await mount(tester);
+    for (final (Uri uri, DeepLinkSourceValue source) in <(Uri, DeepLinkSourceValue)>[
+      (const DeepLinkParser().transform(Uri.parse('prism://about?widget=wotd_small')), DeepLinkSourceValue.appLinks),
+      (
+        const DeepLinkParser().transform(
+          Uri.parse('prism://share?id=abc&source=prism&thumb=https%3A%2F%2Fexample.com%2Ft.jpg&widget=wotd_small'),
+        ),
+        DeepLinkSourceValue.inApp,
+      ),
+      (
+        const DeepLinkParser().transform(Uri.parse('prism://streak?widget=streak_inline&other=value')),
+        DeepLinkSourceValue.appLinks,
+      ),
+    ]) {
+      final result = dispatcher.openUri(uri, source: source);
+      await tester.pumpAndSettle();
+      await result;
+    }
+    expect(events.whereType<WidgetTappedEvent>(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
   });
 }

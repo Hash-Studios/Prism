@@ -76,7 +76,7 @@ The retained metadata must match the current UTC day and wallpaper identity. Dur
 - The list holds the 200 newest favourites.
 - The action fails for an image larger than 40 MiB. Prism saves the download to a temporary file first, so the whole image is not held in memory while it downloads.
 - With no favourites, "Random favourite" fails with a message: "No favourites yet. Open Prism and tap the heart on a wallpaper."
-- Prism does not have an iOS widget. That needs a WidgetKit extension with its own App ID and provisioning profile (`.github/workflows/testflight.yml`). It is not part of this feature.
+- iOS widgets are a separate feature. See [ios-widgets.md](ios-widgets.md).
 - The iOS 27 simulator flow was checked on 2026-10-25. The action was discoverable and returned the expected missing-original error. Successful original output, an enabled trigger, and wallpaper application were not verified. The sole test shortcut was deleted afterward.
 
 ## How to test

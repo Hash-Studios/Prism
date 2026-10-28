@@ -27,6 +27,7 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
+import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
     show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -139,6 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _restoring = false;
   bool _adPrivacyChoices = false;
   bool _iosShortcuts = false;
+  bool _iosWidgets = false;
   int? _imageCacheSize;
   int? _downloads;
   int? _savedOfflineSize;
@@ -153,6 +155,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadStorageStats();
     unawaited(_loadAdPrivacyChoices());
     if (defaultTargetPlatform == TargetPlatform.iOS) unawaited(_loadIosShortcutsSupport());
+    unawaited(_loadIosWidgetsSupport());
+  }
+
+  Future<void> _loadIosWidgetsSupport() async {
+    final bool supported = await iosSupportsWidgets();
+    if (!mounted || !supported) return;
+    setState(() => _iosWidgets = true);
   }
 
   Future<void> _loadIosShortcutsSupport() async {
@@ -321,6 +330,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   List<Widget> _personaliseRows() => <Widget>[
+    if (_iosWidgets)
+      PrismRow(
+        icon: Icons.widgets_rounded,
+        title: context.l10n.widgetsSettingsTitle,
+        subtitle: context.l10n.widgetsSettingsSubtitle,
+        onTap: () => showWidgetGuideSheet(context, source: WidgetGuideSourceValue.settings),
+      ),
     if (_iosShortcuts)
       PrismRow(
         icon: Icons.autorenew_rounded,
@@ -960,7 +976,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
               _group(context.l10n.accountAppearance, _appearanceRows()),
-              if (_isAndroid || _iosShortcuts) _group(context.l10n.accountPersonalise, _personaliseRows()),
+              if (_isAndroid || _iosShortcuts || _iosWidgets)
+                _group(context.l10n.accountPersonalise, _personaliseRows()),
               _group(context.l10n.accountContent, _contentRows()),
               _group(context.l10n.accountNotifications, _notificationRows()),
               _group(context.l10n.accountStorage, _storageRows()),

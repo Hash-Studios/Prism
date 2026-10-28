@@ -1,10 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
@@ -45,20 +44,14 @@ class _Repository implements WallpaperPositionRepository {
     final ByteData data = (await source.image.toByteData(format: ui.ImageByteFormat.png))!;
     return File('${directory.path}/placement.png')..writeAsBytesSync(data.buffer.asUint8List());
   }
-
-  @override
-  Future<void> discard(File file) async {}
 }
 
 class _Client implements WallpaperClient {
-  _Client({this.capabilities = const aw.WallpaperCapabilities()});
-
-  final aw.WallpaperCapabilities capabilities;
   aw.WallpaperOperationStatus status = aw.WallpaperOperationStatus.applied;
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 
   @override
-  Future<aw.WallpaperCapabilities> getCapabilities() async => capabilities;
+  Future<aw.WallpaperCapabilities> getCapabilities() async => const aw.WallpaperCapabilities();
 
   @override
   Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
@@ -160,7 +153,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('shows the wall in a frame with fit choices, dim, reset and the three set buttons', (tester) async {
+  testWidgets('shows the wall in a frame with fit choices, dim, reset and Done', (tester) async {
     await pumpScreen(tester);
 
     expect(find.byType(PlacementPreview), findsOneWidget);
@@ -171,9 +164,7 @@ void main() {
     expect(find.text('Dim'), findsOneWidget);
     expect(find.byType(Slider), findsOneWidget);
     expect(find.text('Reset'), findsOneWidget);
-    expect(find.text('Home screen'), findsOneWidget);
-    expect(find.text('Lock screen'), findsOneWidget);
-    expect(find.text('Both screens'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
     expect(find.text('Approximate. Your launcher may differ.'), findsOneWidget);
   });
 
@@ -296,48 +287,42 @@ void main() {
     expect(controller.value.storage[13], 0);
   });
 
-  testWidgets('Home screen renders the placement, sets it and closes the studio with the result', (tester) async {
+  testWidgets('Done renders the wall and pops with it as the placed wall', (tester) async {
     Object? result;
     await pumpScreen(tester, onResult: (value) => result = value);
 
-    await tester.tap(find.text('Home screen'));
-    await waitForRealIo(tester, () => result != null, reason: 'home wallpaper set result');
+    await tester.tap(find.text('Done'));
+    await waitForRealIo(tester, () => result != null, reason: 'placed wall result');
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(repository.renders, hasLength(1));
-    expect(client.requests.single.target, aw.WallpaperTarget.home);
+    expect(client.requests, isEmpty);
     expect(find.byType(WallpaperPositionScreen), findsNothing);
-    expect(result, isA<WallpaperSetResult>().having((r) => r.isSuccess, 'isSuccess', isTrue));
+    expect(result, isA<PlacedWallpaper>());
+    expect((result! as PlacedWallpaper).path, endsWith('placement.png'));
+    expect((result! as PlacedWallpaper).placement, const WallpaperPlacement());
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('a failed set keeps the studio open and offers Try again', (tester) async {
-    client.status = aw.WallpaperOperationStatus.failed;
-    await pumpScreen(tester);
+  testWidgets('on Android Open system editor pops with a request for the system editor', (tester) async {
+    Object? result;
+    await pumpScreen(tester, onResult: (value) => result = value);
 
-    await tester.tap(find.text('Lock screen'));
-    await waitForRealIo(
-      tester,
-      () => find.text('Try again').evaluate().isNotEmpty,
-      reason: 'failed wallpaper set feedback',
-    );
+    await tester.tap(find.text('Open system editor'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.byType(WallpaperPositionScreen), findsOneWidget);
-    expect(find.text('Try again'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 10));
-  });
+    expect(result, isA<SystemEditorRequested>());
+    expect(find.byType(WallpaperPositionScreen), findsNothing);
+    expect(repository.renders, isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('only the screens the device supports get a button', (tester) async {
-    aw.AsyncWallpaper.debugSetClient(
-      _Client(capabilities: const aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true)),
-    );
+  testWidgets('on iOS there is no Open system editor button', (tester) async {
     await pumpScreen(tester);
 
-    expect(find.text('Home screen'), findsOneWidget);
-    expect(find.text('Lock screen'), findsNothing);
-    expect(find.text('Both'), findsNothing);
-  });
+    expect(find.text('Open system editor'), findsNothing);
+    expect(find.text('Done'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('a wall that cannot load shows a plain message and Try again loads it again', (tester) async {
     repository.failLoad = true;

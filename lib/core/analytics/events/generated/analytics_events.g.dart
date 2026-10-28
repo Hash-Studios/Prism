@@ -37,6 +37,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
   'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
   'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
+  'widget_kind': WidgetKindValue.values.map((value) => value.wireValue).toList(),
+  'widget_guide_source': WidgetGuideSourceValue.values.map((value) => value.wireValue).toList(),
   'share_type': ShareTypeValue.values.map((value) => value.wireValue).toList(),
   'analytics_surface': AnalyticsSurfaceValue.values.map((value) => value.wireValue).toList(),
   'scroll_list_name': ScrollListNameValue.values.map((value) => value.wireValue).toList(),
@@ -103,6 +105,7 @@ class SetWallEvent extends AnalyticsEvent {
     this.fit,
     this.entryPoint,
     this.usedDefault,
+    this.targetChanged,
     this.operationId,
     this.itemId,
     this.provider,
@@ -116,6 +119,7 @@ class SetWallEvent extends AnalyticsEvent {
   final String? fit;
   final String? entryPoint;
   final bool? usedDefault;
+  final bool? targetChanged;
   final String? operationId;
   final String? itemId;
   final String? provider;
@@ -134,6 +138,7 @@ class SetWallEvent extends AnalyticsEvent {
       if (fit != null) 'fit': fit!,
       if (entryPoint != null) 'entry_point': entryPoint!,
       if (usedDefault != null) 'used_default': usedDefault! ? 1 : 0,
+      if (targetChanged != null) 'target_changed': targetChanged! ? 1 : 0,
       if (operationId != null) 'operation_id': operationId!,
       if (itemId != null) 'item_id': itemId!,
       if (provider != null) 'provider': provider!,
@@ -1933,6 +1938,34 @@ class QuickTileAddRequestedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'tile': tile, 'result': result};
+  }
+}
+
+class WidgetTappedEvent extends AnalyticsEvent {
+  const WidgetTappedEvent({required this.kind});
+
+  final WidgetKindValue kind;
+
+  @override
+  String get eventName => 'widget_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind.wireValue};
+  }
+}
+
+class WidgetGuideOpenedEvent extends AnalyticsEvent {
+  const WidgetGuideOpenedEvent({required this.source});
+
+  final WidgetGuideSourceValue source;
+
+  @override
+  String get eventName => 'widget_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
   }
 }
 

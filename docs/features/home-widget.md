@@ -22,7 +22,7 @@ The Wall of the Day widget shows today's Wall of the Day on the Android home scr
 | Platform | Status |
 |---|---|
 | Android | Supported. |
-| iOS | Not available. |
+| iOS | Supported. See [ios-widgets.md](ios-widgets.md). |
 
 The widget is free. It has no Pro gate.
 
@@ -61,7 +61,7 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
 - The widget needs the Firebase resources `project_id` and `google_api_key`. A local build without `google-services.json` does not have them. Then the widget uses the cached URL.
 - "Set" changes the home screen wallpaper only. It does not change the lock screen.
 - The widget shows a wall that the Firestore rules let anyone read. A wall that is not reviewed does not show.
-- iOS has no widget. An iOS widget needs a WidgetKit extension target with its own App ID and provisioning profile in `.github/workflows/testflight.yml`. This is not in this change.
+- If the `walls` read rule is changed to signed-in only, this widget and the iOS widget ([ios-widgets.md](ios-widgets.md)) both stop showing new walls.
 
 ## How to test
 

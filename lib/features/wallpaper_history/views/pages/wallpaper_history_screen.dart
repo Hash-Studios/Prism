@@ -35,7 +35,8 @@ class _WallpaperHistoryView extends StatelessWidget {
       context,
       url: item.fullUrl,
       thumbnailUrl: item.thumbnailUrl,
-      forceSheet: true,
+      forceScreen: true,
+      entryPoint: 'wallpaper_history',
       wallpaperId: item.wallpaperId,
       wallpaperSource: WallpaperSourceX.fromWire(item.source),
     );

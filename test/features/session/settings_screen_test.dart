@@ -471,6 +471,7 @@ void main() {
     );
 
     expect(find.text('Personalise'), findsOneWidget);
+    expect(find.text('Widgets'), findsNothing);
     expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
     expect(find.text('Change automatically'), findsNothing);
     expect(find.text('Live wallpapers'), findsOneWidget);
@@ -498,6 +499,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Personalise'), findsOneWidget);
+    expect(find.text('Widgets'), findsNothing);
     expect(find.text('Change automatically'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsNothing);
     expect(find.text('Wallpaper history'), findsNothing);
@@ -521,7 +523,28 @@ void main() {
     await tester.pump();
 
     expect(find.text('Personalise'), findsNothing);
+    expect(find.text('Widgets'), findsNothing);
     expect(find.text('Change automatically'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS 17 shows the Widgets row that opens the widget guide', (tester) async {
+    useTallSurface(tester);
+    final Future<int?> Function() originalVersion = iosMajorVersion;
+    iosMajorVersion = () async => 17;
+    addTearDown(() => iosMajorVersion = originalVersion);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Widgets'), findsOneWidget);
+    await tester.tap(find.text('Widgets'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add Prism widgets'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('iOS hides Change automatically until the version resolves', (tester) async {

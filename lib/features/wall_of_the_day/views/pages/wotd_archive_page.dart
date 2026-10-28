@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/ios_widgets/views/wotd_widget_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -83,17 +84,31 @@ class _PicksGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     // About 220 points per tile: two columns on a phone, more on a tablet.
     final int columns = (MediaQuery.sizeOf(context).width / 220).ceil().clamp(2, 6);
-    return GridView.builder(
+    return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
-      itemCount: picks.length,
-      gridDelegate: PrismWallGrid.delegate(
-        context,
-        footerHeight: favouriteFooterHeight,
-        columns: columns,
-        aspectRatio: 0.45,
-      ),
-      itemBuilder: (context, index) => _PickTile(pick: picks[index], index: index),
+      slivers: <Widget>[
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, 0),
+            child: WotdWidgetCard(),
+          ),
+        ),
+        SliverPadding(
+          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
+          sliver: SliverGrid(
+            gridDelegate: PrismWallGrid.delegate(
+              context,
+              footerHeight: favouriteFooterHeight,
+              columns: columns,
+              aspectRatio: 0.45,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _PickTile(pick: picks[index], index: index),
+              childCount: picks.length,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
