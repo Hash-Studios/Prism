@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
@@ -16,8 +17,8 @@ import 'mood_test_support.dart';
 
 const MoodList _dreamy = MoodList(mood: WallMood.dreamy, wallIds: <String>['wall-0', 'wall-1', 'wall-2']);
 
-void _registerRepository(FakeMoodRepository repository) {
-  getIt.registerFactory<MoodWallsCubit>(() => MoodWallsCubit(repository));
+void _registerRepository(FakeMoodRepository repository, {Future<int?> Function()? iosMajor}) {
+  getIt.registerFactory<MoodWallsCubit>(() => MoodWallsCubit(repository, iosMajor: iosMajor));
 }
 
 Future<void> _pumpScreen(WidgetTester tester, {String moodId = 'dreamy'}) async {
@@ -29,8 +30,11 @@ Future<void> _pumpScreen(WidgetTester tester, {String moodId = 'dreamy'}) async 
 void main() {
   setUpFavouriteCounts();
 
+  late FakeAppAnalytics recordingAnalytics;
+
   setUp(() {
-    AnalyticsRuntime.instance = FakeAppAnalytics();
+    recordingAnalytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = recordingAnalytics;
   });
 
   tearDown(() async {
@@ -71,6 +75,7 @@ void main() {
     await tester.pump();
 
     expect(repository.moodReads, 2);
+    expect(recordingAnalytics.events.whereType<MoodPageOpenedEvent>(), hasLength(1));
   });
 
   testWidgets('shows the empty state when the mood has no walls', (tester) async {
@@ -108,5 +113,57 @@ void main() {
     expect(find.text('Bright and bold'), findsOneWidget);
     expect(find.text('Big colour to wake up your screen.'), findsOneWidget);
     expect(repository.moodReads, 2);
+    expect(
+      recordingAnalytics.events.whereType<MoodPageOpenedEvent>().map((event) => event.moodId),
+      unorderedEquals(<String>['dreamy', 'bright_bold']),
+    );
+  });
+
+  testWidgets('does not duplicate page-open analytics on rebuild', (tester) async {
+    _registerRepository(FakeMoodRepository(moods: const <MoodList>[_dreamy], walls: mockMoodWalls(3)));
+
+    await _pumpScreen(tester);
+    await tester.pumpWidget(moodTestApp(const MoodScreen(moodId: 'dreamy', source: 'chip')));
+    await tester.pump();
+
+    expect(recordingAnalytics.events.whereType<MoodPageOpenedEvent>(), hasLength(1));
+  });
+
+  testWidgets('unsupported platform deep links load no mood documents', (tester) async {
+    const MoodList spatial = MoodList(mood: WallMood.spatialReady, wallIds: <String>['spatial-0']);
+    const MoodList depth = MoodList(mood: WallMood.depthReady, wallIds: <String>['depth-0']);
+    final repository = FakeMoodRepository(moods: const <MoodList>[spatial, depth], walls: mockMoodWalls(3));
+    _registerRepository(repository, iosMajor: () async => null);
+
+    await _pumpScreen(tester, moodId: 'spatial_ready');
+    expect(find.text('Spatial ready'), findsOneWidget);
+    expect(repository.moodReads, 0);
+    expect(find.byType(FeedWallTile), findsNothing);
+
+    await tester.pumpWidget(moodTestApp(const MoodScreen(moodId: 'depth_ready')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Depth ready'), findsOneWidget);
+    expect(repository.moodReads, 0);
+    expect(find.byType(FeedWallTile), findsNothing);
+  });
+
+  testWidgets('iOS 18 deep links load Depth but keep Spatial unavailable', (tester) async {
+    const MoodList spatial = MoodList(mood: WallMood.spatialReady, wallIds: <String>['spatial-0']);
+    const MoodList depth = MoodList(mood: WallMood.depthReady, wallIds: <String>['depth-0']);
+    final repository = FakeMoodRepository(moods: const <MoodList>[spatial, depth], walls: mockMoodWalls(3));
+    _registerRepository(repository, iosMajor: () async => 18);
+
+    await _pumpScreen(tester, moodId: 'spatial_ready');
+    expect(repository.moodReads, 0);
+    expect(find.byType(FeedWallTile), findsNothing);
+
+    await tester.pumpWidget(moodTestApp(const MoodScreen(moodId: 'depth_ready')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(repository.moodReads, 1);
+    expect(find.byType(FeedWallTile), findsNWidgets(3));
   });
 }

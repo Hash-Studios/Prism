@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
@@ -19,6 +20,8 @@ import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dar
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:collection/collection.dart';
 import 'package:injectable/injectable.dart';
+
+const int _maxMoodWallIds = 60;
 
 @LazySingleton(as: MoodRepository)
 class MoodRepositoryImpl implements MoodRepository {
@@ -41,6 +44,22 @@ class MoodRepositoryImpl implements MoodRepository {
 
   static const int _whereInLimit = 30;
 
+  bool _isEligible(Map<String, dynamic> data) {
+    if (data['review'] != true ||
+        data['originalProtected'] != true ||
+        data['is_streak_exclusive'] == true ||
+        data['dropReserved'] == true ||
+        _isTruthy(data['dropWeek'])) {
+      return false;
+    }
+    final Object? rawCollections = data['collections'];
+    if (rawCollections is! List || rawCollections.any((value) => value is! String)) return false;
+    final Set<String> premiumCollections = app_state.premiumCollections.toSet();
+    return !rawCollections.cast<String>().any((collection) => premiumCollections.contains(collection.trim()));
+  }
+
+  bool _isTruthy(Object? value) => value != null && value != false && value != '' && value != 0;
+
   @override
   Future<List<MoodList>> fetchMoods() async {
     final Map<String, dynamic>? doc = await _firestoreClient.getById<Map<String, dynamic>>(
@@ -57,7 +76,7 @@ class MoodRepositoryImpl implements MoodRepository {
       final WallMood? mood = WallMood.parse(entry['id']);
       if (mood == null) continue;
       final List<String> ids = _moodWallIds(entry['wallIds']);
-      if (ids.isEmpty) continue;
+      if (ids.isEmpty || moods.any((list) => list.mood == mood)) continue;
       moods.add(MoodList(mood: mood, wallIds: ids));
     }
     return moods;
@@ -90,9 +109,9 @@ class MoodRepositoryImpl implements MoodRepository {
 
   /// Loads the walls by id in batches of 30. Ids match case-sensitively, as the daily job stores them.
   Future<List<PrismWallpaper>> _loadWalls(List<String> ids) async {
-    final List<List<PrismWallpaper>> batches = await Future.wait(
+    final List<List<PrismWallpaper?>> batches = await Future.wait(
       ids.slices(_whereInLimit).map((batch) {
-        return _firestoreClient.query<PrismWallpaper>(
+        return _firestoreClient.query<PrismWallpaper?>(
           FirestoreQuerySpec(
             collection: FirebaseCollections.walls,
             sourceTag: 'moods.walls',
@@ -103,12 +122,13 @@ class MoodRepositoryImpl implements MoodRepository {
             limit: _whereInLimit,
             cachePolicy: FirestoreCachePolicy.memoryFirst,
           ),
-          (data, docId) => PrismWallDocDto.fromJson(data).toDomain(docId: docId),
+          (data, docId) => _isEligible(data) ? PrismWallDocDto.fromJson(data).toDomain(docId: docId) : null,
         );
       }),
     );
     final Map<String, PrismWallpaper> byId = <String, PrismWallpaper>{
-      for (final PrismWallpaper wall in batches.expand((batch) => batch)) wall.id: wall,
+      for (final PrismWallpaper? wall in batches.expand((batch) => batch))
+        if (wall != null) wall.id: wall,
     };
     return <PrismWallpaper>[for (final String id in ids) ?byId[id]];
   }
@@ -134,6 +154,7 @@ List<String> _moodWallIds(Object? value) {
     if (id is! String) continue;
     final String trimmed = id.trim();
     if (trimmed.isNotEmpty) ids.add(trimmed);
+    if (ids.length == _maxMoodWallIds) break;
   }
   return ids.toList(growable: false);
 }

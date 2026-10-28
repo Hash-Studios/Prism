@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -14,6 +16,9 @@ class _FakeMoodRepository implements MoodRepository {
   List<MoodList> moods = const <MoodList>[];
   bool fail = false;
   final List<List<String>> requested = <List<String>>[];
+  final Map<String, Completer<List<PrismWallpaper>>> pendingWalls = <String, Completer<List<PrismWallpaper>>>{};
+  Completer<void>? firstWallRequest;
+  Completer<void>? twoWallRequests;
 
   @override
   Future<List<MoodList>> fetchMoods() async {
@@ -24,6 +29,10 @@ class _FakeMoodRepository implements MoodRepository {
   @override
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
     requested.add(ids);
+    if (requested.length == 1) firstWallRequest?.complete();
+    if (requested.length == 2) twoWallRequests?.complete();
+    final Completer<List<PrismWallpaper>>? pending = pendingWalls[ids.isEmpty ? null : ids.first];
+    if (pending != null) return pending.future;
     return ids.map(_wall).toList(growable: false);
   }
 }
@@ -102,5 +111,31 @@ void main() {
 
     await ios26.load(WallMood.spatialReady);
     expect(_idsOf(ios26.state), <String>['S']);
+  });
+
+  test('does not let an older mood load overwrite a newer result', () async {
+    final Completer<List<PrismWallpaper>> olderWalls = Completer<List<PrismWallpaper>>();
+    final Completer<List<PrismWallpaper>> newerWalls = Completer<List<PrismWallpaper>>();
+    repository
+      ..pendingWalls['A'] = olderWalls
+      ..pendingWalls['D'] = newerWalls;
+    final MoodWallsCubit cubit = MoodWallsCubit(repository);
+    addTearDown(cubit.close);
+
+    final Future<void> olderLoad = cubit.load(WallMood.dreamy);
+    final Completer<void> firstRequestStarted = Completer<void>();
+    final Completer<void> secondRequestStarted = Completer<void>();
+    repository
+      ..firstWallRequest = firstRequestStarted
+      ..twoWallRequests = secondRequestStarted;
+    await firstRequestStarted.future;
+    final Future<void> newerLoad = cubit.load(WallMood.minimal);
+    await secondRequestStarted.future;
+    newerWalls.complete(<PrismWallpaper>[_wall('NEW')]);
+    await newerLoad;
+    olderWalls.complete(<PrismWallpaper>[_wall('OLD')]);
+    await olderLoad;
+
+    expect(_idsOf(cubit.state), <String>['NEW']);
   });
 }

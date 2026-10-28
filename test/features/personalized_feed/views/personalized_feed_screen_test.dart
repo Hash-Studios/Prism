@@ -50,6 +50,7 @@ import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -78,12 +79,17 @@ class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
 
 class _FakeMoodRepository implements MoodRepository {
   List<MoodList> moods = const <MoodList>[];
+  final List<List<String>> fetchedWallIds = <List<String>>[];
+  Completer<List<MoodList>>? pendingMoods;
 
   @override
-  Future<List<MoodList>> fetchMoods() async => moods;
+  Future<List<MoodList>> fetchMoods() => pendingMoods?.future ?? Future<List<MoodList>>.value(moods);
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async => const <PrismWallpaper>[];
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids) async {
+    fetchedWallIds.add(ids);
+    return const <PrismWallpaper>[];
+  }
 }
 
 class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
@@ -159,6 +165,7 @@ void main() {
   late _MockFetchTrending fetchTrending;
   late _MockCacheManager cache;
   late _FakeMoodRepository moodRepository;
+  late FakeUserBlockRepository blockRepository;
 
   setUpAll(() {
     registerFallbackValue(
@@ -180,6 +187,7 @@ void main() {
     prismRepository = _MockPrismRepository();
     cache = _MockCacheManager();
     moodRepository = _FakeMoodRepository();
+    blockRepository = FakeUserBlockRepository.pending();
     PrismImageCache.testOverride = cache;
     when(
       () => cache.getFileStream(
@@ -212,7 +220,7 @@ void main() {
         () => PersonalizedFeedBloc(
           fetchUseCase,
           feedRepository,
-          FakeUserBlockRepository.pending(),
+          blockRepository,
           _FakeDropsRepository(),
         ),
       )
@@ -221,6 +229,7 @@ void main() {
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
       ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+      ..registerSingleton<UserBlockRepository>(blockRepository)
       ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(moodRepository))
       ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository));
   });
@@ -325,6 +334,68 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Dreamy'), findsNothing);
+  });
+
+  testWidgets('feed settings changes reload the visible mood row walls', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
+    );
+    await pumpScreen(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(1));
+
+    personalizedFeedSettingsRevision.value++;
+    await _settle(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('blocked creator changes reload the visible mood row walls', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
+    );
+    await pumpScreen(tester);
+    expect(moodRepository.fetchedWallIds, hasLength(1));
+
+    blockRepository.completeInitial(const <String>{});
+    await _settle(tester);
+    blockRepository.completeInitial(const <String>{'blocked-creator'});
+    await _settle(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('reentry waits for the current mood list before building rows from singleton state', (tester) async {
+    final List<MoodList> oldMoods = <MoodList>[
+      const MoodList(mood: WallMood.dreamy, wallIds: <String>['old-wall']),
+    ];
+    final List<MoodList> newMoods = <MoodList>[
+      const MoodList(mood: WallMood.minimal, wallIds: <String>['new-wall']),
+    ];
+    moodRepository.moods = oldMoods;
+    await getIt<MoodsCubit>().load();
+    moodRepository.moods = newMoods;
+    moodRepository.pendingMoods = Completer<List<MoodList>>();
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
+    );
+
+    await pumpScreen(tester);
+
+    expect(find.text('Dreamy'), findsNothing);
+    expect(moodRepository.fetchedWallIds, isEmpty);
+
+    moodRepository.pendingMoods!.complete(newMoods);
+    await _settle(tester);
+
+    expect(find.text('Minimal'), findsWidgets);
+    expect(moodRepository.fetchedWallIds, <List<String>>[<String>['new-wall']]);
   });
 
   testWidgets('tapping Latest selects it and the underline follows', (tester) async {
@@ -492,8 +563,15 @@ void main() {
   testWidgets('pull to refresh on For you reloads the feed and the trending list that feeds the carousel', (
     tester,
   ) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))),
+    );
     await pumpScreen(tester);
     verify(() => fetchTrending(any())).called(1);
+    expect(moodRepository.fetchedWallIds, hasLength(1));
     clearInteractions(fetchUseCase);
 
     await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
@@ -501,6 +579,7 @@ void main() {
 
     verify(() => fetchUseCase(any())).called(1);
     verify(() => fetchTrending(any())).called(1);
+    expect(moodRepository.fetchedWallIds, hasLength(2));
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {

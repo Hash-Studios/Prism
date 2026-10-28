@@ -89,16 +89,18 @@ const createdMillis = (wall: {data: admin.firestore.DocumentData}): number => {
   return typeof ms === "number" ? ms : -Infinity;
 };
 
-/** The id the app queries: the wall's `id` field, or the document id when that field is missing. */
-const wallId = (wall: {id: string; data: admin.firestore.DocumentData}): string =>
-  typeof wall.data.id === "string" && wall.data.id.trim() !== "" ? wall.data.id.trim() : wall.id;
+/** The logical id the app queries and the owned-preview service accepts. */
+const wallId = (wall: {id: string; data: admin.firestore.DocumentData}): string | undefined => {
+  const id = typeof wall.data.id === "string" ? wall.data.id : "";
+  return /^[A-Za-z0-9_-]{1,200}$/.test(id) ? id : undefined;
+};
 
 /** Newest first, ties by wall id. A wall without createdAt sorts last. */
 function newestFirst(a: {id: string; data: admin.firestore.DocumentData}, b: typeof a): number {
   const x = createdMillis(a);
   const y = createdMillis(b);
   if (x !== y) return x > y ? -1 : 1;
-  const [ia, ib] = [wallId(a), wallId(b)];
+  const [ia, ib] = [wallId(a) ?? "", wallId(b) ?? ""];
   return ia < ib ? -1 : ia > ib ? 1 : 0;
 }
 
@@ -108,12 +110,19 @@ export function moodLists(
   premium: string[],
 ): Array<{id: string; wallIds: string[]}> {
   const eligible = walls
-    .filter((w) => w.data.review === true && isWotdEligible(w.data, premium))
+    .filter((w) => w.data.review === true && isWotdEligible(w.data, premium) && wallId(w) !== undefined)
     .sort(newestFirst);
   return MOODS.flatMap((rule) => {
-    const matches = eligible.filter((w) => matchesMood(rule, w.data));
+    const seen = new Set<string>();
+    const matches: string[] = [];
+    for (const wall of eligible) {
+      const id = wallId(wall);
+      if (id === undefined || seen.has(id) || !matchesMood(rule, wall.data)) continue;
+      seen.add(id);
+      matches.push(id);
+    }
     if (matches.length < MIN_MOOD_WALLS) return [];
-    return [{id: rule.id, wallIds: matches.slice(0, MAX_MOOD_WALLS).map(wallId)}];
+    return [{id: rule.id, wallIds: matches.slice(0, MAX_MOOD_WALLS)}];
   });
 }
 

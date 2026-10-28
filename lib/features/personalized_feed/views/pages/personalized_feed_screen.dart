@@ -35,6 +35,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sli
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -53,11 +54,11 @@ List<(int start, int end, MoodList? rowAfter)> forYouChunks(int itemCount, int c
   int start = 0;
   for (int i = 0; i < rowMoods.length && i < _moodRowGridRows.length; i++) {
     final int split = _moodRowGridRows[i] * columns;
-    if (itemCount <= split) break;
+    if (itemCount < split) break;
     chunks.add((start, split, rowMoods[i]));
     start = split;
   }
-  chunks.add((start, itemCount, null));
+  if (start < itemCount || chunks.isEmpty) chunks.add((start, itemCount, null));
   return chunks;
 }
 
@@ -86,9 +87,13 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
   late final MoodsCubit _moods;
+  StreamSubscription<Set<String>>? _blockedCreatorsSub;
   final Set<String> _knownItemIds = <String>{};
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
+  int _moodRowsRevision = 0;
+  int _moodLoadVersion = 0;
+  bool _moodsReady = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -99,7 +104,16 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _bloc = getIt<PersonalizedFeedBloc>();
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _moods = getIt<MoodsCubit>();
-    unawaited(_moods.load());
+    unawaited(_loadHomeMoods());
+    if (getIt.isRegistered<UserBlockRepository>()) {
+      final UserBlockRepository blocks = getIt<UserBlockRepository>();
+      Set<String> blocked = <String>{...blocks.cachedBlockedCreatorUids};
+      _blockedCreatorsSub = blocks.watchBlockedCreatorUids().listen((next) {
+        if (next.length == blocked.length && next.containsAll(blocked)) return;
+        blocked = <String>{...next};
+        _reloadMoodRows();
+      });
+    }
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
@@ -107,9 +121,25 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
 
   void _onFeedSettingsChanged() {
     if (mounted) {
-      setState(() => _impressions = WallpaperImpressionSession());
+      _reloadMoodRows(resetImpressions: true);
       _bloc.add(const PersonalizedFeedEvent.settingsChanged());
     }
+  }
+
+  void _reloadMoodRows({bool resetImpressions = false}) {
+    if (!mounted) return;
+    setState(() {
+      if (resetImpressions) _impressions = WallpaperImpressionSession();
+      _moodRowsRevision++;
+    });
+  }
+
+  Future<bool> _loadHomeMoods() async {
+    final int request = ++_moodLoadVersion;
+    await _moods.load();
+    if (!mounted || request != _moodLoadVersion) return false;
+    setState(() => _moodsReady = true);
+    return true;
   }
 
   @override
@@ -117,6 +147,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     _scrollController.dispose();
     _tabs.dispose();
+    unawaited(_blockedCreatorsSub?.cancel());
     unawaited(_bloc.close());
     unawaited(_trending.close());
     unawaited(_latest?.close());
@@ -205,7 +236,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
     // The trending list holds the boosted walls of the carousel.
     _trending.add(const TrendingEvent.started());
-    unawaited(_moods.load());
+    final Future<bool> moodsRefreshed = _loadHomeMoods();
+    unawaited(moodsRefreshed.then((loaded) {
+      if (loaded) _reloadMoodRows();
+    }));
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,
@@ -401,8 +435,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
             builder: (context, moods) => BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
               bloc: _trending,
               selector: (trending) => trending.walls,
-              builder: (context, weekWalls) =>
-                  _forYouSliver(context, state, weekWalls, moods, crossAxisCount, tileMemCacheHeight),
+              builder: (context, weekWalls) => _forYouSliver(
+                context,
+                state,
+                weekWalls,
+                _moodsReady ? moods : const <MoodList>[],
+                crossAxisCount,
+                tileMemCacheHeight,
+              ),
             ),
           ),
         ];
@@ -563,7 +603,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ),
         if (chunks[i].$3 case final MoodList rowAfter)
           SliverToBoxAdapter(
-            child: MoodRow(key: ValueKey<String>('mood-row-${rowAfter.mood.id}'), list: rowAfter, slot: i),
+            child: MoodRow(
+              key: ValueKey<String>('mood-row-${rowAfter.mood.id}-$_moodRowsRevision'),
+              list: rowAfter,
+              slot: i,
+            ),
           ),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),

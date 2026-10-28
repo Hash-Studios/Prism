@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -13,6 +14,7 @@ import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -35,20 +37,27 @@ class _MoodRowState extends State<MoodRow> {
   static const double _visibleCards = 2.4;
 
   late final MoodWallsCubit _cubit;
+  late WallpaperImpressionSession _impressionSession;
   bool _seenTracked = false;
 
   @override
   void initState() {
     super.initState();
     _cubit = getIt<MoodWallsCubit>();
-    unawaited(_cubit.load(widget.list.mood, limit: _loadLimit));
+    _impressionSession = WallpaperImpressionSession();
+    unawaited(_cubit.load(widget.list.mood, limit: _loadLimit, wallIds: widget.list.wallIds));
   }
 
   @override
   void didUpdateWidget(MoodRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.list.mood != widget.list.mood) {
-      unawaited(_cubit.load(widget.list.mood, limit: _loadLimit));
+    final bool moodChanged = oldWidget.list.mood != widget.list.mood;
+    if (moodChanged || !listEquals(oldWidget.list.wallIds, widget.list.wallIds)) {
+      if (moodChanged) {
+        _seenTracked = false;
+        _impressionSession = WallpaperImpressionSession();
+      }
+      unawaited(_cubit.load(widget.list.mood, limit: _loadLimit, wallIds: widget.list.wallIds));
     }
   }
 
@@ -185,9 +194,10 @@ class _MoodRowState extends State<MoodRow> {
           index: index,
           crossAxisCount: 2,
           memCacheHeight: decodeHeight,
+          impressionSession: _impressionSession,
           sourceContext: 'home_mood_row',
           feed: items,
-          onVisible: index == 0 ? _seen : null,
+          onVisible: _seen,
         ),
       ),
     );

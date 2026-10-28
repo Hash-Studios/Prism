@@ -24,4 +24,12 @@ void main() {
   test('a grid too short for the first row gives one chunk with no row', () {
     expect(forYouChunks(10, 3, <MoodList>[dreamy, minimal]), <(int, int, MoodList?)>[(0, 10, null)]);
   });
+
+  test('a mood row still follows a grid that ends exactly at its boundary', () {
+    expect(forYouChunks(12, 3, <MoodList>[dreamy, minimal]), <(int, int, MoodList?)>[(0, 12, dreamy)]);
+    expect(forYouChunks(36, 3, <MoodList>[dreamy, minimal]), <(int, int, MoodList?)>[
+      (0, 12, dreamy),
+      (12, 36, minimal),
+    ]);
+  });
 }

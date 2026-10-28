@@ -15,18 +15,21 @@ class MoodsCubit extends Cubit<List<MoodList>> {
 
   final MoodRepository _repository;
   final Future<int?> Function() _iosMajor;
+  int _loadVersion = 0;
 
   /// A failed read keeps the moods that are on screen.
   Future<void> load() async {
+    final int loadVersion = ++_loadVersion;
     try {
       final List<MoodList> moods = await _repository.fetchMoods();
       final int? iosMajor = await _iosMajor();
-      if (isClosed) return;
+      if (isClosed || loadVersion != _loadVersion) return;
       emit(<MoodList>[
         for (final MoodList list in moods)
           if (list.mood.shownOn(iosMajor: iosMajor)) list,
       ]);
     } catch (error, stackTrace) {
+      if (loadVersion != _loadVersion) return;
       logger.w('[MoodsCubit] load failed', error: error, stackTrace: stackTrace);
     }
   }

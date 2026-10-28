@@ -12,14 +12,28 @@ import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 
-Map<String, dynamic> _wall(String id, {String creatorUid = 'creator-id', String? category}) => <String, dynamic>{
+Map<String, dynamic> _wall(
+  String id, {
+  String creatorUid = 'creator-id',
+  String? category,
+  List<String> collections = const <String>[],
+  bool streakExclusive = false,
+  bool dropReserved = false,
+  Object? dropWeek,
+  bool review = true,
+}) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://example.com/$id.jpg',
   'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
   'wallpaper_provider': 'Prism',
   'by': 'Ana',
   'creatorUid': creatorUid,
-  'review': true,
+  'review': review,
+  'originalProtected': true,
+  'collections': collections,
+  'is_streak_exclusive': streakExclusive,
+  'dropReserved': dropReserved,
+  'dropWeek': dropWeek,
   'category': ?category,
 };
 
@@ -80,6 +94,10 @@ void main() {
               'id': 'dreamy',
               'wallIds': <Object?>[' 0CFI ', '0CFI', 'ab12', 3, ''],
             },
+            <String, Object?>{
+              'id': 'dreamy',
+              'wallIds': <Object?>['SHOULD_NOT_DUPLICATE'],
+            },
           ],
         },
       };
@@ -89,6 +107,24 @@ void main() {
       expect(moods.map((list) => list.mood), <WallMood>[WallMood.minimal, WallMood.dreamy]);
       expect(moods.first.wallIds, <String>['A', 'B']);
       expect(moods.last.wallIds, <String>['0CFI', 'ab12']);
+    });
+
+    test('caps hand-edited mood ids at the server limit of 60', () async {
+      client.docs['moods'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'moods': <Object?>[
+            <String, Object?>{
+              'id': 'dreamy',
+              'wallIds': <String>[for (int i = 0; i < 75; i++) 'ID$i'],
+            },
+          ],
+        },
+      };
+
+      final List<MoodList> moods = await repository.fetchMoods();
+
+      expect(moods.single.wallIds, hasLength(60));
+      expect(moods.single.wallIds.last, 'ID59');
     });
 
     test('returns an empty list when the doc is missing', () async {
@@ -125,6 +161,36 @@ void main() {
       final List<String> ids = (await repository.fetchMoodWalls(<String>['A', 'B'])).map((wall) => wall.id).toList();
 
       expect(ids, <String>['B']);
+    });
+
+    test('drops stale walls that are no longer eligible for free daily picks', () async {
+      walls = <String, Map<String, dynamic>>{
+        'A': _wall('A'),
+        'STREAK': _wall('STREAK', streakExclusive: true),
+        'RESERVED': _wall('RESERVED', dropReserved: true),
+        'DROP': _wall('DROP', dropWeek: '2026-W44'),
+        'PREMIUM': _wall('PREMIUM', collections: <String>['space']),
+        'UNPROTECTED': <String, dynamic>{..._wall('UNPROTECTED'), 'originalProtected': false},
+        'UNREVIEWED': _wall('UNREVIEWED', review: false),
+      };
+
+      final List<String> ids = (await repository.fetchMoodWalls(<String>[
+        'A',
+        'STREAK',
+        'RESERVED',
+        'DROP',
+        'PREMIUM',
+        'UNPROTECTED',
+        'UNREVIEWED',
+      ])).map((wall) => wall.id).toList();
+
+      expect(ids, <String>['A']);
+      expect(
+        client.querySpecs.single.filters.any(
+          (filter) => filter.field == 'review' && filter.op == FirestoreFilterOp.isEqualTo && filter.value == true,
+        ),
+        isTrue,
+      );
     });
 
     test('ranks the walls that match the taste profile first', () async {

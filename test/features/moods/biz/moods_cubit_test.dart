@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
@@ -7,10 +9,14 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeMoodRepository implements MoodRepository {
   List<MoodList> moods = const <MoodList>[];
   bool fail = false;
+  List<Future<List<MoodList>>>? pendingReads;
+  int _readIndex = 0;
 
   @override
   Future<List<MoodList>> fetchMoods() async {
     if (fail) throw StateError('offline');
+    final List<Future<List<MoodList>>>? reads = pendingReads;
+    if (reads != null) return reads[_readIndex++];
     return moods;
   }
 
@@ -74,6 +80,27 @@ void main() {
     await cubit.load();
 
     expect(cubit.state, same(before));
+  });
+
+  test('does not let an older read overwrite a newer result', () async {
+    final Completer<List<MoodList>> older = Completer<List<MoodList>>();
+    final Completer<List<MoodList>> newer = Completer<List<MoodList>>();
+    repository.pendingReads = <Future<List<MoodList>>>[older.future, newer.future];
+    final MoodsCubit cubit = MoodsCubit(repository, iosMajor: () async => 26);
+    addTearDown(cubit.close);
+
+    final Future<void> olderLoad = cubit.load();
+    final Future<void> newerLoad = cubit.load();
+    newer.complete(<MoodList>[
+      const MoodList(mood: WallMood.minimal, wallIds: <String>['NEW']),
+    ]);
+    await newerLoad;
+    older.complete(<MoodList>[
+      const MoodList(mood: WallMood.dreamy, wallIds: <String>['OLD']),
+    ]);
+    await olderLoad;
+
+    expect(_shown(cubit), <WallMood>[WallMood.minimal]);
   });
 
   group('rowMoodsFor', () {
