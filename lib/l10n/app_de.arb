@@ -1,4 +1,57 @@
 {
+  "foldersLibraryEmptyTitle": "Noch keine Ordner",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
+  "foldersLibraryEmptyBody": "Halte das Herz bei einem Hintergrundbild gedrückt, um es in einem Ordner zu speichern.",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
+  "foldersLoadAllError": "Deine Ordner konnten nicht geladen werden",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 Favorit durchsuchen} other{{count} Favoriten durchsuchen}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "wallpaperFavouriteSortAndFilter": "Sortieren und filtern",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
+  "wallpaperFavouriteSortBy": "Sortieren nach",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
+  "wallpaperFavouriteFilterSource": "Quelle",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
+  "wallpaperHistorySetAgain": "Erneut festlegen",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, festgelegt um {time}",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "de",
   "economyExportFailedLabel": "Export fehlgeschlagen",
@@ -7552,25 +7605,6 @@
   "@wallpaperHistoryRemoveAction": {
     "description": "Action to remove a wallpaper from history."
   },
-  "wallpaperHistoryTileSemantic": "{current}Erneut festlegen. {target}, {date}",
-  "@wallpaperHistoryTileSemantic": {
-    "description": "Accessibility description for a wallpaper history tile.",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "wallpaperHistoryTitle": "Verlauf der Hintergrundbilder",
-  "@wallpaperHistoryTitle": {
-    "description": "Title of the wallpaper history screen."
-  },
   "wallpaperHomeAppName": "Prism",
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
@@ -7633,18 +7667,6 @@
   "wallpaperLibraryHistory": "Verlauf",
   "@wallpaperLibraryHistory": {
     "description": "History tab label in the library."
-  },
-  "wallpaperLibraryHistoryBody": "Hier findest du Hintergrundbilder, die du festgelegt hast, und kannst sie erneut verwenden.",
-  "@wallpaperLibraryHistoryBody": {
-    "description": "Description for the history introduction in the library."
-  },
-  "wallpaperLibraryHistoryTitle": "Verlauf der Hintergrundbilder",
-  "@wallpaperLibraryHistoryTitle": {
-    "description": "Title for the history introduction in the library."
-  },
-  "wallpaperLibraryOpenHistory": "Verlauf öffnen",
-  "@wallpaperLibraryOpenHistory": {
-    "description": "Action to open wallpaper history."
   },
   "wallpaperLibraryTitle": "Mediathek",
   "@wallpaperLibraryTitle": {
@@ -7853,6 +7875,14 @@
   "wallpaperLiveStyleShimmerDescription": "Ein sanfter Lichtschein, der über das Bild wandert.",
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
+  },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Das Foto bewegt sich in die Tiefe, wenn du zwischen Startbildschirmen wischst und das Handy neigst.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
   },
   "wallpaperLiveStyleStarfield": "Sternenfeld",
   "@wallpaperLiveStyleStarfield": {
@@ -8287,10 +8317,6 @@
   "@wallpaperQuickWotdTitle": {
     "description": "Title of the Wall of the Day quick tile."
   },
-  "wallpaperRecentlySet": "Kürzlich festgelegt",
-  "@wallpaperRecentlySet": {
-    "description": "Section heading for recently set wallpapers."
-  },
   "wallpaperRefresh": "Aktualisieren",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -8347,10 +8373,6 @@
   "wallpaperSet": "Festlegen",
   "@wallpaperSet": {
     "description": "Wallpaper interface text: wallpaperSet."
-  },
-  "wallpaperSetAgain": "Dieses Hintergrundbild erneut festlegen",
-  "@wallpaperSetAgain": {
-    "description": "Accessibility label to set a recently set wallpaper again."
   },
   "wallpaperSetAsWallpaper": "Als Hintergrundbild festlegen",
   "@wallpaperSetAsWallpaper": {
@@ -8471,10 +8493,6 @@
   "wallpaperSignInForPremiumFilters": "Melde dich an, um Premium-Filter mit Coins zu verwenden.",
   "@wallpaperSignInForPremiumFilters": {
     "description": "Message shown when a signed-out user selects a premium filter."
-  },
-  "wallpaperSort": "Sortieren",
-  "@wallpaperSort": {
-    "description": "Accessibility label for the favourites sort menu."
   },
   "wallpaperSortDownloads": "Downloads sortieren",
   "@wallpaperSortDownloads": {
@@ -9433,10 +9451,6 @@
   "foldersEmptyBody": "Halte das Herz bei einem Hintergrundbild gedrückt, um es hier zu speichern.",
   "@foldersEmptyBody": {
     "description": "Body of the empty state of a folder."
-  },
-  "foldersNoFolders": "Sortiere deine gespeicherten Hintergrundbilder in Ordnern.",
-  "@foldersNoFolders": {
-    "description": "Hint next to the New folder card when the user has no folders."
   },
   "foldersLoadError": "Dieser Ordner konnte nicht geladen werden.",
   "@foldersLoadError": {

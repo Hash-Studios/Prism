@@ -35,7 +35,7 @@ The Wallpaper history row shows on Android only. iOS cannot set a wallpaper from
 - **Ad privacy choices** shows only when `AdConsent.instance.privacyOptionsRequired()` is true. It opens the Google consent form with `AdConsent.instance.showPrivacyOptions()`. Users in the EEA and the UK can change their choice there.
 - **Clear learned taste** asks first and shows how many signals Prism holds. After the user confirms, it clears the `TasteSignalStore` and raises `personalizedFeedSettingsRevision`, so the home feed refreshes. When nothing is learned yet, it shows a neutral toast and no dialog.
 - **Delete account** (signed-in users only) is in this section. See "Delete account" below.
-- **Export favourites** is not in the app yet. See Limits.
+- **Export favourites** opens Library > Favourites. Use **More favourites actions** > **Export favourites** to share a JSON export. See [library.md](library.md).
 
 ### Delete account
 
@@ -118,7 +118,6 @@ Code: `lib/core/rating/rate_prompt_service.dart`.
 
 ## Limits
 
-- Export favourites is missing. The Library hub (`LibraryRoute`) did not exist when this page was written. When it lands, add a row "Export favourites" in PRIVACY AND DATA that opens it.
 - "Download my data" from the server is not built. It needs a new function and a deploy.
 - The Data saver switch only saves the value. The screens that read it belong to other features. The list above is the plan.
 - The session count goes up only when something reads `AppSessionTracker.instance.sessionNumber`. The profile nudge and the rate prompt do this. A session in which neither runs is not counted.

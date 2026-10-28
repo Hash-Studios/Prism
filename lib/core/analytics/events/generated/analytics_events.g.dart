@@ -12,6 +12,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
+  'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
   'subscription_entitlement_refresh_result': SubscriptionEntitlementRefreshResultValue.values
       .map((value) => value.wireValue)
@@ -2456,17 +2457,46 @@ class MoodPageOpenedEvent extends AnalyticsEvent {
   }
 }
 
-class LibraryTabChangedEvent extends AnalyticsEvent {
-  const LibraryTabChangedEvent({required this.tab});
+class LibraryTabViewedEvent extends AnalyticsEvent {
+  const LibraryTabViewedEvent({required this.tab});
 
   final String tab;
 
   @override
-  String get eventName => 'library_tab_changed';
+  String get eventName => 'library_tab_viewed';
 
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'tab': tab};
+  }
+}
+
+class LibraryHistorySetAgainEvent extends AnalyticsEvent {
+  const LibraryHistorySetAgainEvent({required this.provider, required this.target});
+
+  final String provider;
+  final String target;
+
+  @override
+  String get eventName => 'library_history_set_again';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider, 'target': target};
+  }
+}
+
+class LibraryHistoryClearedEvent extends AnalyticsEvent {
+  const LibraryHistoryClearedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'library_history_cleared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
   }
 }
 
@@ -2574,7 +2604,7 @@ class AccentMatchedFromWallEvent extends AnalyticsEvent {
 class LiveWallpaperAppliedEvent extends AnalyticsEvent {
   const LiveWallpaperAppliedEvent({required this.style, required this.result});
 
-  final String style;
+  final LiveWallpaperStyleValue style;
   final String result;
 
   @override
@@ -2582,7 +2612,7 @@ class LiveWallpaperAppliedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'style': style, 'result': result};
+    return <String, Object?>{'style': style.wireValue, 'result': result};
   }
 }
 

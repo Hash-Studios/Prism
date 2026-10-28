@@ -6,9 +6,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -254,6 +256,81 @@ void main() {
           verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
       expect(route.args!.wallId, 'card-old');
       expect(route.args!.entity, isNull);
+    });
+
+    testWidgets('a legacy Prism pick without a thumbnail never routes its original as the thumbnail', (tester) async {
+      const String original = 'https://example.test/private-original.jpg';
+      await pumpCard(
+        tester,
+        const WallOfTheDayEntity(
+          wallId: 'legacy-prism',
+          url: original,
+          thumbnailUrl: '',
+          photographer: 'Ana',
+          source: WallpaperSource.unknown,
+        ),
+      );
+
+      await tester.tap(find.text('by Ana'), warnIfMissed: false);
+      await tester.pump();
+
+      final WallpaperDetailRoute route =
+          verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      expect(route.args!.source, WallpaperSource.prism);
+      expect(route.args!.thumbnailUrl, isNot(original));
+      expect(route.args!.thumbnailUrl, isEmpty);
+      final WallpaperDisplaySource display = tester
+          .widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage))
+          .display;
+      expect(display.thumbnail, isEmpty);
+      expect(display.full, isEmpty);
+    });
+
+    testWidgets('a public Wallhaven pick may still use its original when no thumbnail exists', (tester) async {
+      const String original = 'https://example.test/public-wallhaven.jpg';
+      await pumpCard(
+        tester,
+        const WallOfTheDayEntity(
+          wallId: 'wallhaven-pick',
+          url: original,
+          thumbnailUrl: '',
+          photographer: 'Ana',
+          source: WallpaperSource.wallhaven,
+        ),
+      );
+
+      await tester.tap(find.text('by Ana'), warnIfMissed: false);
+      await tester.pump();
+
+      final WallpaperDetailRoute route =
+          verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      expect(route.args!.source, WallpaperSource.wallhaven);
+      expect(route.args!.thumbnailUrl, original);
+    });
+
+    testWidgets('a legacy Prism pick never treats its original as a thumbnail', (tester) async {
+      const String original = 'https://example.test/private-original-equals-thumbnail.jpg';
+      await pumpCard(
+        tester,
+        const WallOfTheDayEntity(
+          wallId: 'legacy-prism-equal-thumbnail',
+          url: original,
+          thumbnailUrl: original,
+          photographer: 'Ana',
+        ),
+      );
+
+      await tester.tap(find.text('by Ana'), warnIfMissed: false);
+      await tester.pump();
+
+      final WallpaperDetailRoute route =
+          verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      expect(route.args!.thumbnailUrl, isNot(original));
+      final WallpaperDisplaySource display = tester
+          .widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage))
+          .display;
+      expect(display.thumbnail, isEmpty);
+      expect(display.full, isEmpty);
     });
 
     testWidgets('the Past picks pill opens the archive and does not open the wall', (tester) async {

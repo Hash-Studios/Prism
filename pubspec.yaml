@@ -19,7 +19,7 @@ environment:
 
 dependencies:
   animations: ^2.0.0
-  async_wallpaper: ^3.5.0
+  async_wallpaper: ^3.6.0
   audioplayers: ^6.8.1
   auto_route: ^11.1.0
   bloc: ^8.1.4

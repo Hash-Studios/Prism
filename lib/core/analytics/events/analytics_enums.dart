@@ -50,6 +50,24 @@ enum RcOrFallbackValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum LiveWallpaperStyleValue {
+  drift,
+  breathe,
+  ripple,
+  shimmer,
+
+  /// Wire value '3d'.
+  threeD,
+  aurora,
+  mesh,
+  waves,
+  plasma,
+  starfield,
+  video;
+
+  String get wireValue => this == threeD ? '3d' : _snakeCase(name);
+}
+
 enum PaywallResultValue {
   placementOverriddenToV3,
   noOffering,

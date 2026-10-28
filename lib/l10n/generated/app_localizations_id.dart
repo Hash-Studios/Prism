@@ -11,6 +11,41 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get foldersLibraryEmptyTitle => 'Belum ada folder';
+
+  @override
+  String get foldersLibraryEmptyBody => 'Tekan lama ikon hati pada wallpaper untuk menyimpannya ke folder.';
+
+  @override
+  String get foldersLoadAllError => 'Folder Anda tidak dapat dimuat';
+
+  @override
+  String wallpaperFavouriteSearchCountHint(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Cari di $countString favorit');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallpaperFavouriteSortAndFilter => 'Urutkan dan filter';
+
+  @override
+  String get wallpaperFavouriteSortBy => 'Urutkan menurut';
+
+  @override
+  String get wallpaperFavouriteFilterSource => 'Sumber';
+
+  @override
+  String get wallpaperHistorySetAgain => 'Pasang lagi';
+
+  @override
+  String wallpaperHistoryTileLabel(String current, String target, String time) {
+    return '$current$target, dipasang pukul $time';
+  }
+
+  @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
@@ -8476,14 +8511,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHistoryRemoveAction => 'Hapus dari riwayat';
 
   @override
-  String wallpaperHistoryTileSemantic(String current, String target, String date) {
-    return '${current}Pasang lagi. $target, $date';
-  }
-
-  @override
-  String get wallpaperHistoryTitle => 'Riwayat wallpaper';
-
-  @override
   String get wallpaperHomeAppName => 'Prism';
 
   @override
@@ -8529,15 +8556,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperLibraryHistory => 'Riwayat';
-
-  @override
-  String get wallpaperLibraryHistoryBody => 'Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.';
-
-  @override
-  String get wallpaperLibraryHistoryTitle => 'Riwayat wallpaper';
-
-  @override
-  String get wallpaperLibraryOpenHistory => 'Buka riwayat';
 
   @override
   String get wallpaperLibraryTitle => 'Koleksi saya';
@@ -8688,6 +8706,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperLiveStyleShimmerDescription => 'Sapuan cahaya yang lembut.';
+
+  @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.';
 
   @override
   String get wallpaperLiveStyleStarfield => 'Hamparan bintang';
@@ -9007,9 +9032,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperQuickWotdTitle => 'Pintasan Wallpaper Hari Ini';
 
   @override
-  String get wallpaperRecentlySet => 'Baru dipasang';
-
-  @override
   String get wallpaperRefresh => 'Muat ulang';
 
   @override
@@ -9049,9 +9071,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperSet => 'Pasang';
-
-  @override
-  String get wallpaperSetAgain => 'Pasang wallpaper ini lagi';
 
   @override
   String get wallpaperSetAsWallpaper => 'Jadikan wallpaper';
@@ -9172,9 +9191,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperSignInForPremiumFilters => 'Masuk untuk menggunakan filter premium dengan koin.';
-
-  @override
-  String get wallpaperSort => 'Urutkan';
 
   @override
   String get wallpaperSortDownloads => 'Urutkan unduhan';
@@ -10388,9 +10404,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersEmptyBody => 'Tekan lama ikon hati pada wallpaper untuk menyimpannya di sini.';
-
-  @override
-  String get foldersNoFolders => 'Atur wallpaper tersimpan Anda ke dalam folder.';
 
   @override
   String get foldersLoadError => 'Folder ini tidak dapat dimuat.';

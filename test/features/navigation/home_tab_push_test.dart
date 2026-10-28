@@ -482,7 +482,7 @@ void main() {
     expect(args.thumbnailUrl, 'https://example.com/thumb.jpg');
   });
 
-  test('the Wall of the Day shortcut falls back to the full url and never to an unknown source', () {
+  test('the Wall of the Day shortcut never puts a Prism original in the route, and never an unknown source', () {
     final WallpaperDetailRoute route = wallOfTheDayRoute(
       const WallOfTheDayEntity(
         wallId: 'w2',
@@ -495,7 +495,21 @@ void main() {
 
     final WallpaperDetailRouteArgs args = route.args!;
     expect(args.source, WallpaperSource.prism);
-    expect(args.thumbnailUrl, 'https://example.com/full.jpg');
+    expect(args.thumbnailUrl, isEmpty);
+  });
+
+  test('the Wall of the Day shortcut falls back to a public Wallhaven original', () {
+    final WallpaperDetailRoute route = wallOfTheDayRoute(
+      const WallOfTheDayEntity(
+        wallId: 'w3',
+        url: 'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg',
+        thumbnailUrl: '',
+        photographer: '',
+        source: WallpaperSource.wallhaven,
+      ),
+    );
+
+    expect(route.args!.thumbnailUrl, 'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg');
   });
 
   test('the Wall of the Day shortcut opens no tab', () {

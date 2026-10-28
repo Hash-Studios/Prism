@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/favourite_test_scope.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/wallpaper_image_finders.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -33,7 +34,9 @@ void main() {
       whenListen(
         bloc,
         const Stream<WallpaperDetailState>.empty(),
-        initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+        initialState: const WallpaperDetailLoading(
+          thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+        ),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -54,9 +57,18 @@ void main() {
       } else {
         expect(find.byType(Hero), findsNothing);
       }
-      final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
-      expect(image.fadeInDuration, Duration.zero);
-      expect(image.fadeOutDuration, Duration.zero);
+      expect(networkImageUrls(tester), ['https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg']);
+      // No fade under reduced motion: no translucent Opacity wraps the thumbnail.
+      final Finder thumbnail = find.byWidgetPredicate(
+        (widget) => widget is Image && unwrapImageProvider(widget.image) is CachedNetworkImageProvider,
+      );
+      expect(
+        find.ancestor(
+          of: thumbnail,
+          matching: find.byWidgetPredicate((widget) => widget is Opacity && widget.opacity < 1),
+        ),
+        findsNothing,
+      );
       await tester.pumpWidget(const SizedBox());
     });
   }
@@ -71,7 +83,9 @@ void main() {
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
-      initialState: const WallpaperDetailLoading(thumbnailUrl: 'https://example.com/thumb.jpg'),
+      initialState: const WallpaperDetailLoading(
+        thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+      ),
     );
     await tester.pumpWidget(
       MaterialApp(

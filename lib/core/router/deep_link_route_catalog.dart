@@ -314,7 +314,7 @@ final class DeepLinkRouteCatalog {
     }
     if (target == DeepLinkPageTarget.library &&
         query['tab'] != null &&
-        !const <String>{'favourites', 'downloads', 'history'}.contains(query['tab']!.toLowerCase())) {
+        !const <String>{'favourites', 'folders', 'downloads', 'history'}.contains(query['tab']!.toLowerCase())) {
       return null;
     }
     if (target == DeepLinkPageTarget.debugPanel &&

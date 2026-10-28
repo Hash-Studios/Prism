@@ -19,6 +19,20 @@ enums:
       - rc_attempt
       - fallback_only
       - rc
+  - name: live_wallpaper_style
+    dart_type: LiveWallpaperStyleValue
+    values:
+      - drift
+      - breathe
+      - ripple
+      - shimmer
+      - 3d
+      - aurora
+      - mesh
+      - waves
+      - plasma
+      - starfield
+      - video
   - name: paywall_result
     dart_type: PaywallResultValue
     values:
@@ -1836,11 +1850,24 @@ events:
       - name: source
         key: source
         type: string
-  - id: library_tab_changed
+  - id: library_tab_viewed
     fields:
       - name: tab
         key: tab
         type: string
+  - id: library_history_set_again
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: target
+        key: target
+        type: string
+  - id: library_history_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
   - id: favourites_exported
     fields:
       - name: count
@@ -1896,7 +1923,8 @@ events:
     fields:
       - name: style
         key: style
-        type: string
+        type: enum
+        enum: LiveWallpaperStyleValue
       - name: result
         key: result
         type: string

@@ -1,4 +1,57 @@
 {
+  "foldersLibraryEmptyTitle": "Belum ada folder",
+  "@foldersLibraryEmptyTitle": {
+    "description": "Title of the empty Folders tab in the Library."
+  },
+  "foldersLibraryEmptyBody": "Tekan lama ikon hati pada wallpaper untuk menyimpannya ke folder.",
+  "@foldersLibraryEmptyBody": {
+    "description": "Body of the empty Folders tab in the Library. It says how to save a wallpaper to a folder."
+  },
+  "foldersLoadAllError": "Folder Anda tidak dapat dimuat",
+  "@foldersLoadAllError": {
+    "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "wallpaperFavouriteSearchCountHint": "{count, plural, other{Cari di {count} favorit}}",
+  "@wallpaperFavouriteSearchCountHint": {
+    "description": "Hint in the favourites search field. It also tells how many favourites there are.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "wallpaperFavouriteSortAndFilter": "Urutkan dan filter",
+  "@wallpaperFavouriteSortAndFilter": {
+    "description": "Title of the favourites sort and filter sheet, and the tooltip of its button."
+  },
+  "wallpaperFavouriteSortBy": "Urutkan menurut",
+  "@wallpaperFavouriteSortBy": {
+    "description": "Heading above the sort choices in the favourites sort and filter sheet."
+  },
+  "wallpaperFavouriteFilterSource": "Sumber",
+  "@wallpaperFavouriteFilterSource": {
+    "description": "Heading above the source filter chips in the favourites sort and filter sheet."
+  },
+  "wallpaperHistorySetAgain": "Pasang lagi",
+  "@wallpaperHistorySetAgain": {
+    "description": "Tooltip and screen reader label of the button that sets a wallpaper from history again."
+  },
+  "wallpaperHistoryTileLabel": "{current}{target}, dipasang pukul {time}",
+  "@wallpaperHistoryTileLabel": {
+    "description": "Screen reader label of a wallpaper history tile. current is empty or the Current prefix, target is the screen, time is the time it was set.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
   "economyExportFailedLabel": "Ekspor gagal",
@@ -7775,25 +7828,6 @@
   "@wallpaperHistoryRemoveAction": {
     "description": "Action to remove a wallpaper from history."
   },
-  "wallpaperHistoryTileSemantic": "{current}Pasang lagi. {target}, {date}",
-  "@wallpaperHistoryTileSemantic": {
-    "description": "Accessibility description for a wallpaper history tile.",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "wallpaperHistoryTitle": "Riwayat wallpaper",
-  "@wallpaperHistoryTitle": {
-    "description": "Title of the wallpaper history screen."
-  },
   "wallpaperHomeAppName": "Prism",
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
@@ -7856,18 +7890,6 @@
   "wallpaperLibraryHistory": "Riwayat",
   "@wallpaperLibraryHistory": {
     "description": "History tab label in the library."
-  },
-  "wallpaperLibraryHistoryBody": "Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.",
-  "@wallpaperLibraryHistoryBody": {
-    "description": "Description for the history introduction in the library."
-  },
-  "wallpaperLibraryHistoryTitle": "Riwayat wallpaper",
-  "@wallpaperLibraryHistoryTitle": {
-    "description": "Title for the history introduction in the library."
-  },
-  "wallpaperLibraryOpenHistory": "Buka riwayat",
-  "@wallpaperLibraryOpenHistory": {
-    "description": "Action to open wallpaper history."
   },
   "wallpaperLibraryTitle": "Koleksi saya",
   "@wallpaperLibraryTitle": {
@@ -8076,6 +8098,14 @@
   "wallpaperLiveStyleShimmerDescription": "Sapuan cahaya yang lembut.",
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
+  },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
   },
   "wallpaperLiveStyleStarfield": "Hamparan bintang",
   "@wallpaperLiveStyleStarfield": {
@@ -8510,10 +8540,6 @@
   "@wallpaperQuickWotdTitle": {
     "description": "Title of the Wall of the Day quick tile."
   },
-  "wallpaperRecentlySet": "Baru dipasang",
-  "@wallpaperRecentlySet": {
-    "description": "Section heading for recently set wallpapers."
-  },
   "wallpaperRefresh": "Muat ulang",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -8570,10 +8596,6 @@
   "wallpaperSet": "Pasang",
   "@wallpaperSet": {
     "description": "Wallpaper interface text: wallpaperSet."
-  },
-  "wallpaperSetAgain": "Pasang wallpaper ini lagi",
-  "@wallpaperSetAgain": {
-    "description": "Accessibility label to set a recently set wallpaper again."
   },
   "wallpaperSetAsWallpaper": "Jadikan wallpaper",
   "@wallpaperSetAsWallpaper": {
@@ -8716,10 +8738,6 @@
   "wallpaperSignInForPremiumFilters": "Masuk untuk menggunakan filter premium dengan koin.",
   "@wallpaperSignInForPremiumFilters": {
     "description": "Message shown when a signed-out user selects a premium filter."
-  },
-  "wallpaperSort": "Urutkan",
-  "@wallpaperSort": {
-    "description": "Accessibility label for the favourites sort menu."
   },
   "wallpaperSortDownloads": "Urutkan unduhan",
   "@wallpaperSortDownloads": {
@@ -9482,10 +9500,6 @@
   "foldersEmptyBody": "Tekan lama ikon hati pada wallpaper untuk menyimpannya di sini.",
   "@foldersEmptyBody": {
     "description": "Body of the empty state of a folder."
-  },
-  "foldersNoFolders": "Atur wallpaper tersimpan Anda ke dalam folder.",
-  "@foldersNoFolders": {
-    "description": "Hint next to the New folder card when the user has no folders."
   },
   "foldersLoadError": "Folder ini tidak dapat dimuat.",
   "@foldersLoadError": {

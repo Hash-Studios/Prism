@@ -17,7 +17,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +25,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
 
@@ -61,7 +61,7 @@ List<_SemanticsNodeEntry> _semanticsNodes(WidgetTester tester) {
 
 Future<void> _pumpOfflinePreview(WidgetTester tester) async {
   final Stopwatch timeout = Stopwatch()..start();
-  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+  while (networkImageUrls(tester).isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
     );
@@ -160,8 +160,7 @@ void main() {
     blocWalls.addAll([b, c]);
     await _pumpFeed(tester, feed: [a, b, c], open: b);
 
-    List<String?> urls() =>
-        tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl).toList();
+    List<String?> urls() => networkImageUrls(tester).toList();
     expect(urls(), contains('https://example.com/b-thumb.jpg'));
     expect(find.byType(Hero), findsOneWidget);
 
@@ -189,7 +188,7 @@ void main() {
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/a-thumb.jpg'));
     expect(urls.where((u) => u.contains('b-thumb')), isEmpty);
     await tester.pumpWidget(const SizedBox());
@@ -286,7 +285,7 @@ void main() {
     final double afterNextStep = tester.getRect(currentCard).left;
     expect(afterNextStep, closeTo(beforeNextStep, 3));
     await tester.pumpAndSettle();
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/c-thumb.jpg'));
     expect(blocWalls, isEmpty);
     await tester.pumpWidget(const SizedBox());
@@ -368,7 +367,7 @@ void main() {
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     expect(find.byType(Hero), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
@@ -416,7 +415,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await _pumpOfflinePreview(tester);
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     await tester.pumpWidget(const SizedBox());
   });
@@ -444,7 +443,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 160));
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     semantics.dispose();
     await tester.pumpWidget(const SizedBox());
@@ -494,7 +493,7 @@ void main() {
     await tester.pumpWidget(app());
 
     expect(tester.takeException(), isNull);
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/c-thumb.jpg'));
     await tester.pumpWidget(const SizedBox());
   });
@@ -583,7 +582,7 @@ void main() {
     await tester.pumpAndSettle();
     await _pumpOfflinePreview(tester);
 
-    final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
+    final urls = networkImageUrls(tester);
     expect(urls, contains('https://example.com/b-thumb.jpg'));
     await tester.pumpWidget(const SizedBox());
   });

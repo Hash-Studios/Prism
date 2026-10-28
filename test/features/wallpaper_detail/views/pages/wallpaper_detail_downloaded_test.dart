@@ -25,7 +25,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -35,6 +34,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/favourite_test_scope.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/wait_for_real_io.dart';
+import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -127,7 +127,7 @@ void main() {
     );
 
     final image = tester.widget<Image>(find.byType(Image).first);
-    expect(image.image, isA<FileImage>());
+    expect(unwrapImageProvider(image.image), isA<FileImage>());
     expect(image.errorBuilder, isNotNull);
     expect(find.byTooltip('Back'), findsOneWidget);
     await pumpFileError(tester);
@@ -339,36 +339,12 @@ void main() {
           4,
       reason: 'the retained original and its three swatch images to appear',
     );
-    // Until the retained copy has a frame, the card keeps the network picture instead of going blank.
-    final Finder retainedCard = find.descendant(
-      of: find.byType(ShakeOnce),
-      matching: find.byWidgetPredicate((Widget widget) {
-        if (widget is! Image) return false;
-        final ImageProvider provider = widget.image is ResizeImage
-            ? (widget.image as ResizeImage).imageProvider
-            : widget.image;
-        return provider is FileImage && provider.file.path == setup.retained.path;
-      }),
-    );
-    final Image card = tester.widget<Image>(retainedCard.first);
-    final BuildContext cardContext = tester.element(retainedCard.first);
-    const Widget decoded = SizedBox(key: ValueKey<String>('decoded'));
-    expect(card.frameBuilder, isNotNull);
-    expect(card.frameBuilder!(cardContext, decoded, null, false), isNot(same(decoded)));
-    expect(card.frameBuilder!(cardContext, decoded, null, true), same(decoded));
-    expect(card.frameBuilder!(cardContext, decoded, 0, false), same(decoded));
     await waitForRealIo(
       tester,
-      () => find
-          .byWidgetPredicate((Widget widget) => widget is CachedNetworkImage && widget.imageUrl == url)
-          .evaluate()
-          .isEmpty,
+      () => !networkImageUrls(tester).contains(url),
       reason: 'the decoded retained original to replace the network picture',
     );
-    expect(
-      find.byWidgetPredicate((Widget widget) => widget is CachedNetworkImage && widget.imageUrl == url),
-      findsNothing,
-    );
+    expect(networkImageUrls(tester), isNot(contains(url)));
     final File? resolved = await tester.runAsync<File?>(() => setup.assets.lookup(url));
     expect(resolved?.path, setup.retained.path);
     Finder retainedImageFinder() => find.byWidgetPredicate((Widget widget) {
@@ -395,6 +371,8 @@ void main() {
     expect(retainedImages, hasLength(4));
     await _waitForImageDecode(tester, retainedImages.first);
     await tester.pump();
+    // The card shows the retained original, not the network picture.
+    expect(fileImagePaths(tester, within: find.byType(ShakeOnce)), contains(setup.retained.path));
     final List<Image> retainedImageWidgets = tester.widgetList<Image>(retainedImageFinder()).toList(growable: false);
     expect(retainedImageWidgets.map((Image image) => image.color).toList(), <Color?>[
       null,

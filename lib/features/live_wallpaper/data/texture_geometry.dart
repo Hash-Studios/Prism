@@ -48,4 +48,25 @@ class TextureGeometry {
 
   /// Scale from source pixels to output pixels.
   double get scale => outputHeight / cropHeight;
+
+  /// The same crop on a [toWidth] x [toHeight] copy of the [fromWidth] x [fromHeight] source, such as its depth
+  /// map. The output keeps this aspect and is never larger than the crop on the copy.
+  TextureGeometry scaledTo({
+    required int fromWidth,
+    required int fromHeight,
+    required int toWidth,
+    required int toHeight,
+  }) {
+    final double scaleX = toWidth / fromWidth;
+    final double scaleY = toHeight / fromHeight;
+    final int height = math.max(1, math.min(outputHeight, (cropHeight * scaleY).floor()));
+    return TextureGeometry(
+      cropLeft: cropLeft * scaleX,
+      cropTop: cropTop * scaleY,
+      cropWidth: cropWidth * scaleX,
+      cropHeight: cropHeight * scaleY,
+      outputWidth: math.max(1, (height * outputWidth / outputHeight).round()),
+      outputHeight: height,
+    );
+  }
 }
