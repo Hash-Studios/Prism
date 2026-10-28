@@ -1,0 +1,6 @@
+# Shorebird Cloud code push config. The app_id is not a secret. The owner creates the app in the
+# Shorebird console and puts its id here (see docs/development/ota.md).
+app_id: REPLACE_WITH_SHOREBIRD_APP_ID
+
+# lib/core/updates/ owns when the app checks for and downloads patches.
+auto_update: false

@@ -1,0 +1,117 @@
+name: Shorebird Patch
+
+# Publishes a signed Dart-only patch for one store release to a test track. Promotion to stable is a
+# separate, manual command (make patch-promote). See docs/development/ota.md.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform of the store release
+        required: true
+        type: choice
+        options:
+          - android
+          - ios
+      release_version:
+        description: Exact store release version (e.g. 3.14.0+353)
+        required: true
+        type: string
+      track:
+        description: Test track (stable is refused; promote later)
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - beta
+
+concurrency:
+  group: shorebird-patch-${{ github.event.inputs.platform }}-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ${{ github.event.inputs.platform == 'ios' && 'macos-latest' || 'ubuntu-latest' }}
+    env:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
+      DOPPLER_PROJECT: prism
+      DOPPLER_CONFIG: prd
+      PLATFORM: ${{ github.event.inputs.platform }}
+      RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+      TRACK: ${{ github.event.inputs.track }}
+
+    steps:
+      # Full history and tags: the patch reads the release record tag and diffs against its commit.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Java
+        if: env.PLATFORM == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Doppler CLI
+        run: |
+          (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
+
+      - name: Prepare real Firebase configuration
+        env:
+          IOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ "$PLATFORM" = ios ]; then
+            python3 tool/prepare_release_firebase.py ios --from-environment
+          else
+            python3 tool/prepare_release_firebase.py android --from-doppler
+          fi
+
+      - name: Install iOS pods
+        if: env.PLATFORM == 'ios'
+        run: cd ios && pod install --repo-update
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+
+      - name: Install pinned Shorebird CLI
+        run: |
+          version="$(python3 tool/shorebird_ota.py cli-version)"
+          git clone --quiet --depth 1 --branch "v$version" https://github.com/shorebirdtech/shorebird.git "$HOME/.shorebird"
+          "$HOME/.shorebird/bin/shorebird" --version
+          echo "$HOME/.shorebird/bin" >> "$GITHUB_PATH"
+
+      # The Android release workflow picks the Sentry DSN and project by environment. Use the same pair.
+      - name: Resolve the release Sentry environment
+        run: |
+          sentry_env="$(git tag -l --format='%(contents)' "shorebird/$PLATFORM/$RELEASE_VERSION" | jq -r '.sentry.SENTRY_ENV // empty')"
+          if [ -n "$sentry_env" ]; then
+            suffix="$(printf '%s' "$sentry_env" | tr '[:lower:]' '[:upper:]')"
+            echo "SENTRY_DSN=$(doppler secrets get "SENTRY_DSN_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
+            echo "SENTRY_PROJECT=$(doppler secrets get "SENTRY_PROJECT_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build and publish signed patch
+        run: |
+          codesign=""
+          if [ "$PLATFORM" = ios ]; then codesign="--no-codesign"; fi
+          python3 tool/flutter_with_doppler.py --release-platform "$PLATFORM" -- \
+            shorebird patch "$PLATFORM" --release-version="$RELEASE_VERSION" --track="$TRACK" \
+            --split-debug-info=build/symbols $codesign
+
+      - name: Upload patch debug symbols to Sentry
+        run: DOPPLER_PROJECT=prism SENTRY_DOPPLER_CONFIG=prd DART_CMD=dart ./tool/sentry_upload.sh

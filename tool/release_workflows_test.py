@@ -13,6 +13,7 @@ import subprocess
 import unittest
 
 from tool import release_tools_test as fixture
+from tool import shorebird_ota_test as shorebird
 
 
 def yaml_data(text):
@@ -32,6 +33,9 @@ def profile_bytes(bundle_id, name, uuid, team='X2955Z4CKQ'):
     return b'\x30\x82junk' + fixture.plistlib.dumps(profile) + b'\x00trailer'
 
 
+RELEASE_JOBS = (('testflight.yml', 'build-and-upload'), ('sentry_release_android.yml', 'build_android_with_sentry'))
+
+
 def scheduled(job, outputs):
     """Evaluate this job's simple changes-output condition without eval."""
     return any(all(outputs[match[0]] == match[1]
@@ -46,15 +50,16 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
 
     def test_actual_release_build_steps_preserve_argv(self):
         value = ' spaces "quotes" \'apostrophe\' == \\ $(touch OWNED); & | *'
+        shorebird.setup_release_repo(self)
         self.values['PEXELS_API_KEY'] = value
         self.write_payload()
         runner_temp = self.work / 'runner-temp'
         for name, job_name, platform, build_command in (
             ('testflight.yml', 'build-and-upload', 'ios',
-             ['build', 'ipa', '--release', '--build-number=401',
+             ['release', 'ios', '--flutter-version=3.47.5', '--build-number=401',
               f'--export-options-plist={runner_temp}/ExportOptions.plist']),
             ('sentry_release_android.yml', 'build_android_with_sentry', 'android',
-             ['build', 'appbundle', '--release', '--obfuscate', '--split-debug-info=build/symbols']),
+             ['release', 'android', '--flutter-version=3.47.5', '--obfuscate', '--split-debug-info=build/symbols']),
         ):
             with self.subTest(workflow=name):
                 self.native(platform)
@@ -66,7 +71,9 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                 build = next(step for step in steps if step.get('name', '').startswith('Build '))
                 result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', build['run'])
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                argv = json.loads(Path(self.env['CAPTURE']).read_text())
+                argv = json.loads(Path(self.env['CAPTURE']).read_text())['argv']
+                self.assertTrue(argv[len(build_command)].startswith('--public-key-path='))
+                del argv[len(build_command)]
                 expected = build_command + ['--dart-define=GH_USERNAME=owner',
                     '--dart-define=R2_PREVIEW_BASE_URL=https://images.example.com',
                     '--dart-define=PEXELS_API_KEY=' + value, '--dart-define=SENTRY_RELEASE=' + value]
@@ -75,6 +82,43 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                 self.assertEqual(argv, expected)
                 self.assertEqual(result.stdout + result.stderr, '')
                 self.assertFalse((self.work / 'OWNED').exists())
+                shorebird.delete_release_tags(self)
+
+    def test_release_workflows_install_pinned_shorebird_before_build(self):
+        for name, job_name in RELEASE_JOBS:
+            with self.subTest(workflow=name):
+                steps = workflow(name)['jobs'][job_name]['steps']
+                install = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned Shorebird CLI')
+                build = next(i for i, step in enumerate(steps) if step.get('name', '').startswith('Build '))
+                self.assertLess(install, build)
+                run = steps[install]['run']
+                self.assertIn('tool/shorebird_ota.py cli-version', run)
+                self.assertIn('--branch "v$version"', run)
+
+    def test_release_workflows_push_release_record_after_build(self):
+        for name, job_name in RELEASE_JOBS:
+            with self.subTest(workflow=name):
+                job = workflow(name)['jobs'][job_name]
+                self.assertEqual(job['permissions']['contents'], 'write')
+                names = [step.get('name') for step in job['steps']]
+                push = names.index('Push Shorebird release record')
+                build = next(i for i, step in enumerate(job['steps']) if (step.get('name') or '').startswith('Build '))
+                self.assertLess(build, push)
+                if name == 'testflight.yml':
+                    self.assertEqual(names[push - 1], 'Check IPA was exported')
+                    self.assertLess(push, names.index('Upload to TestFlight (Prism Alpha)'))
+                else:
+                    self.assertEqual(push, build + 1)
+
+    def test_shorebird_patch_workflow_refuses_stable_and_fetches_history(self):
+        patch = workflow('shorebird_patch.yml')
+        triggers = patch.get('on', patch.get('true'))
+        self.assertNotIn('stable', triggers['workflow_dispatch']['inputs']['track']['options'])
+        steps = patch['jobs']['patch']['steps']
+        checkout = next(step for step in steps if step.get('uses', '').startswith('actions/checkout'))
+        self.assertEqual(checkout['with']['fetch-depth'], 0)
+        run = next(step['run'] for step in steps if 'shorebird patch' in step.get('run', ''))
+        self.assertIn('--track="$TRACK"', run)
 
     def test_testflight_installs_and_cleans_every_profile(self):
         if shutil.which('jq') is None:

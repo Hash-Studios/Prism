@@ -16,6 +16,8 @@ on:
 jobs:
   build-and-upload:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -102,6 +104,14 @@ jobs:
           gem install xcodeproj --conservative --no-document
           ruby tool/ios_ci_manual_signing.rb ios/Runner.xcodeproj "$RUNNER_TEMP/provisioning-profiles.json"
 
+      - name: Install pinned Shorebird CLI
+        run: |
+          version="$(python3 tool/shorebird_ota.py cli-version)"
+          git clone --quiet --depth 1 --branch "v$version" https://github.com/shorebirdtech/shorebird.git "$HOME/.shorebird"
+          "$HOME/.shorebird/bin/shorebird" --version
+          echo "$HOME/.shorebird/bin" >> "$GITHUB_PATH"
+
+      # shorebird release ios runs flutter build ipa with the Shorebird engine and uploads the release.
       - name: Build IPA
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
@@ -110,7 +120,7 @@ jobs:
           BUILD_NUMBER: ${{ github.event.inputs.build_number }}
         run: |
           python3 tool/flutter_with_doppler.py --release-platform ios -- \
-            flutter build ipa --release --build-number="$BUILD_NUMBER" \
+            shorebird release ios --flutter-version="$(jq -r '.flutter' .fvmrc)" --build-number="$BUILD_NUMBER" \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
 
       # flutter build ipa exits 0 even when the IPA export fails.
@@ -120,6 +130,9 @@ jobs:
             echo "::error::flutter build ipa did not export build/ios/ipa/Prism.ipa. See the Build IPA log."
             exit 1
           fi
+
+      - name: Push Shorebird release record
+        run: git push origin "refs/tags/$(cat build/shorebird/release-tag-ios)"
 
       - name: Install asc CLI
         run: brew install rudrankriyam/tap/asc

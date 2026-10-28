@@ -15,6 +15,8 @@ on:
 jobs:
   build_android_with_sentry:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -83,10 +85,20 @@ jobs:
             exit 1
           fi
 
+      - name: Install pinned Shorebird CLI
+        run: |
+          version="$(python3 tool/shorebird_ota.py cli-version)"
+          git clone --quiet --depth 1 --branch "v$version" https://github.com/shorebirdtech/shorebird.git "$HOME/.shorebird"
+          "$HOME/.shorebird/bin/shorebird" --version
+          echo "$HOME/.shorebird/bin" >> "$GITHUB_PATH"
+
       - name: Build release AAB with split debug info
         run: |
           SENTRY_ENABLED=true python3 tool/flutter_with_doppler.py --release-platform android -- \
-            flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+            shorebird release android --flutter-version="$(jq -r '.flutter' .fvmrc)" --obfuscate --split-debug-info=build/symbols
+
+      - name: Push Shorebird release record
+        run: git push origin "refs/tags/$(cat build/shorebird/release-tag-android)"
 
       - name: Upload debug symbols and mappings to Sentry
         run: dart run sentry_dart_plugin

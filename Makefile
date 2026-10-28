@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -24,6 +24,14 @@ SENTRY_ENABLED ?=
 SENTRY_UPLOAD ?= true
 SENTRY_DOPPLER_CONFIG ?= prd
 export SENTRY_DSN SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED
+SHOREBIRD ?= shorebird
+FLUTTER_PIN = $(shell python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')
+PLATFORM ?=
+RELEASE_VERSION ?=
+PATCH_NUMBER ?=
+TRACK ?= staging
+PATCH_ARGS ?=
+ALLOW_STORAGE_CHANGES ?=
 ANDROID_JAVA_HOME ?= $(or $(JAVA_HOME),$(shell /usr/libexec/java_home -v 21 2>/dev/null),$(shell [ ! -d '/Applications/Android Studio.app/Contents/jbr/Contents/Home' ] || printf '%s' '/Applications/Android Studio.app/Contents/jbr/Contents/Home'))
 ifeq ($(OS),Windows_NT)
   GRADLE_USER_HOME_DIR ?= $(HOME)/.gradle-prism
@@ -148,7 +156,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.shorebird_ota_test
 
 .PHONY: notification-contract-fixture-test
 notification-contract-fixture-test: ensure-fvm
@@ -216,6 +224,78 @@ build-aab: ensure-fvm doppler-check
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
+
+# Shorebird store releases and over-the-air Dart patches. See docs/development/ota.md.
+ensure-shorebird:
+	@$(SHOREBIRD) --version >/dev/null 2>&1 || { \
+		echo "Shorebird CLI $$(python3 tool/shorebird_ota.py cli-version) is not installed. See docs/development/ota.md."; \
+		exit 1; \
+	}
+
+release-android: ensure-fvm ensure-shorebird doppler-check
+	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
+		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
+		export PATH="$$JAVA_HOME/bin:$$PATH"; \
+		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+	fi; \
+	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	$(DOPPLER_FLUTTER) --release-platform android -- $(SHOREBIRD) release android --flutter-version=$(FLUTTER_PIN) --obfuscate --split-debug-info=build/app/outputs/symbols $(BUILD_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
+	@git push origin "refs/tags/$$(cat build/shorebird/release-tag-android)"
+
+release-ios: ensure-fvm ensure-shorebird doppler-check
+	@if [ -z "$(BUILD_NUMBER)" ]; then \
+		echo "Usage: make release-ios BUILD_NUMBER=353"; \
+		exit 1; \
+	fi
+	@$(DOPPLER_FLUTTER) --release-platform ios -- $(SHOREBIRD) release ios --flutter-version=$(FLUTTER_PIN) --build-number=$(BUILD_NUMBER) --obfuscate --split-debug-info=build/ios/outputs/symbols $(IOS_BUILD_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
+	@git push origin "refs/tags/$$(cat build/shorebird/release-tag-ios)"
+
+patch: ensure-fvm ensure-shorebird doppler-check
+	@if [ "$(PLATFORM)" != "android" ] && [ "$(PLATFORM)" != "ios" ] || [ -z "$(RELEASE_VERSION)" ]; then \
+		echo "Usage: make patch PLATFORM=android|ios RELEASE_VERSION=3.14.0+353 [TRACK=staging]"; \
+		exit 1; \
+	fi
+	@git fetch --quiet origin 'refs/tags/shorebird/*:refs/tags/shorebird/*'
+	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
+		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
+		export PATH="$$JAVA_HOME/bin:$$PATH"; \
+		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+	fi; \
+	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	$(DOPPLER_FLUTTER) --release-platform $(PLATFORM) $(if $(ALLOW_STORAGE_CHANGES),--allow-storage-changes,) -- \
+		$(SHOREBIRD) patch $(PLATFORM) --release-version=$(RELEASE_VERSION) --track=$(TRACK) \
+		--split-debug-info=$(if $(filter ios,$(PLATFORM)),build/ios/outputs/symbols,build/app/outputs/symbols) $(PATCH_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
+
+patch-list: ensure-shorebird doppler-check
+	@if [ -z "$(RELEASE_VERSION)" ]; then echo "Usage: make patch-list RELEASE_VERSION=3.14.0+353"; exit 1; fi
+	@$(DOPPLER_FLUTTER) -- $(SHOREBIRD) patches list --release-version=$(RELEASE_VERSION)
+
+patch-promote: ensure-shorebird doppler-check
+	@if [ -z "$(RELEASE_VERSION)" ] || [ -z "$(PATCH_NUMBER)" ]; then \
+		echo "Usage: make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1"; \
+		exit 1; \
+	fi
+	@$(DOPPLER_FLUTTER) -- $(SHOREBIRD) patches promote --release-version=$(RELEASE_VERSION) --patch-number=$(PATCH_NUMBER)
+
+patch-rollback: ensure-shorebird doppler-check
+	@if [ -z "$(RELEASE_VERSION)" ] || [ -z "$(PATCH_NUMBER)" ]; then \
+		echo "Usage: make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1"; \
+		exit 1; \
+	fi
+	@$(DOPPLER_FLUTTER) -- $(SHOREBIRD) patches rollback --release-version=$(RELEASE_VERSION) --patch-number=$(PATCH_NUMBER)
 
 # Cloud Functions config comes from Doppler ($(FUNCTIONS_DOPPLER_CONFIG)). Values are piped, never printed.
 functions-env:
