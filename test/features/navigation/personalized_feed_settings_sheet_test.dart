@@ -14,6 +14,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -33,8 +34,10 @@ import 'package:firebase_remote_config_platform_interface/firebase_remote_config
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_mood_repository.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _MockPersonalizedFeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState>
@@ -432,6 +435,7 @@ void main() {
     when(() => trendingBloc.state).thenReturn(TrendingState.initial());
     when(trendingBloc.close).thenAnswer((_) async {});
     getIt.registerSingleton<TrendingBloc>(trendingBloc);
+    getIt.registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     final _MockWotdBloc wotd = _MockWotdBloc();
     when(() => wotd.state).thenReturn(WotdState.initial());
     final _MockNotificationsBloc notifications = _MockNotificationsBloc();

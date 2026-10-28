@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
@@ -13,6 +14,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../support/empty_mood_repository.dart';
 
 class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
@@ -58,6 +61,7 @@ void main() {
     when(() => trendingBloc.state).thenReturn(TrendingState.initial());
     when(trendingBloc.close).thenAnswer((_) async {});
     getIt.registerSingleton<TrendingBloc>(trendingBloc);
+    getIt.registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     final _MockWotdBloc wotdBloc = _MockWotdBloc();
     when(() => wotdBloc.state).thenReturn(WotdState.initial());
     final _MockNotificationsBloc notificationsBloc = _MockNotificationsBloc();

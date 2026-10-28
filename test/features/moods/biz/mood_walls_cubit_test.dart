@@ -82,4 +82,25 @@ void main() {
 
     expect(cubit.state, isA<MoodWallsFailed>());
   });
+
+  test('loads no walls for a platform-only mood on the wrong platform', () async {
+    repository.moods = const <MoodList>[
+      MoodList(mood: WallMood.spatialReady, wallIds: <String>['S']),
+    ];
+    final MoodWallsCubit android = MoodWallsCubit(repository, iosMajor: () async => null);
+    final MoodWallsCubit ios18 = MoodWallsCubit(repository, iosMajor: () async => 18);
+    final MoodWallsCubit ios26 = MoodWallsCubit(repository, iosMajor: () async => 26);
+    addTearDown(android.close);
+    addTearDown(ios18.close);
+    addTearDown(ios26.close);
+
+    await android.load(WallMood.spatialReady);
+    await ios18.load(WallMood.spatialReady);
+    expect(_idsOf(android.state), isEmpty);
+    expect(_idsOf(ios18.state), isEmpty);
+    expect(repository.requested, isEmpty);
+
+    await ios26.load(WallMood.spatialReady);
+    expect(_idsOf(ios26.state), <String>['S']);
+  });
 }

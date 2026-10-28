@@ -1,4 +1,5 @@
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -28,14 +29,22 @@ final class MoodWallsFailed extends MoodWallsState {
 /// The walls of one mood, ordered by the user's taste.
 @injectable
 class MoodWallsCubit extends Cubit<MoodWallsState> {
-  MoodWallsCubit(this._repository) : super(const MoodWallsLoading());
+  MoodWallsCubit(this._repository, {@ignoreParam Future<int?> Function()? iosMajor})
+    : _iosMajor = iosMajor ?? deviceIosMajor,
+      super(const MoodWallsLoading());
 
   final MoodRepository _repository;
+  final Future<int?> Function() _iosMajor;
 
-  /// Loads the first [limit] wall ids of [mood], or all of them when [limit] is null.
+  /// Loads the first [limit] wall ids of [mood], or all of them when [limit] is null. A mood that this device does not
+  /// show, for example from a link, loads no walls.
   Future<void> load(WallMood mood, {int? limit}) async {
     emit(const MoodWallsLoading());
     try {
+      if (!mood.shownOn(iosMajor: await _iosMajor())) {
+        if (!isClosed) emit(const MoodWallsLoaded(<PrismWallpaper>[]));
+        return;
+      }
       final List<MoodList> moods = await _repository.fetchMoods();
       final List<String> ids = moods.firstWhereOrNull((list) => list.mood == mood)?.wallIds ?? const <String>[];
       final List<PrismWallpaper> walls = await _repository.fetchMoodWalls(

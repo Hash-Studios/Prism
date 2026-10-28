@@ -10,7 +10,7 @@ import 'package:injectable/injectable.dart';
 @lazySingleton
 class MoodsCubit extends Cubit<List<MoodList>> {
   MoodsCubit(this._repository, {@ignoreParam Future<int?> Function()? iosMajor})
-    : _iosMajor = iosMajor ?? _deviceIosMajor,
+    : _iosMajor = iosMajor ?? deviceIosMajor,
       super(const <MoodList>[]);
 
   final MoodRepository _repository;
@@ -40,7 +40,8 @@ List<MoodList> rowMoodsFor(List<MoodList> moods, DateTime now) {
   return <MoodList>[moods[start], moods[(start + 1) % moods.length]];
 }
 
-Future<int?> _deviceIosMajor() async {
+/// Null on Android and the web. 0 on iOS when the version cannot be read.
+Future<int?> deviceIosMajor() async {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
   return await iosMajor() ?? 0;
 }

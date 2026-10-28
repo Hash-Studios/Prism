@@ -12,6 +12,7 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
@@ -22,8 +23,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_mood_repository.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -85,7 +88,8 @@ void main() {
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<FavouritesSyncService>(_Sync())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
-      ..registerSingleton<TrendingBloc>(trending);
+      ..registerSingleton<TrendingBloc>(trending)
+      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     messenger.setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/quick_actions'), (_) async => null);
     messenger.setMockMethodCallHandler(messaging, (call) async {
       messagingCalls.add(call.method);
