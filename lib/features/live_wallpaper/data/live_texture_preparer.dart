@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/data/texture_geometry.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as p;
