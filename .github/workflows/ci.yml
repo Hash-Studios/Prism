@@ -419,19 +419,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Read Flutter version from .fvmrc
-        id: fvm
-        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm.outputs.version }}
-          channel: stable
-          cache: true
-          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
-          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-
       # pubspec.lock is in the key because Flutter plugins bring their own
       # Gradle dependencies. A plain actions/cache entry never changes after
       # it is written, so the key must move when the dependencies move.
@@ -445,16 +432,49 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
+      - name: Checkout base for build
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        run: git checkout --force --detach "$BASE_SHA"
+
+      - name: Read base Flutter version from .fvmrc
+        id: base_fvm
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup base Flutter
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.base_fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.base_fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
       - name: Build base APK
         if: steps.base_apk.outputs.cache-hit != 'true'
         run: |
-          git checkout --force --detach "$BASE_SHA"
           "$RUNNER_TEMP/build_size_apk.sh" build/size/base
           ./android/gradlew --stop || true
 
+      - name: Checkout head for build
+        run: git checkout --force --detach "$HEAD_SHA"
+
+      - name: Read head Flutter version from .fvmrc
+        id: head_fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup head Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.head_fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.head_fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
       - name: Build head APK
         run: |
-          git checkout --force --detach "$HEAD_SHA"
           "$RUNNER_TEMP/build_size_apk.sh" build/size/head
 
       - name: Compare app size and enforce thresholds
