@@ -414,9 +414,8 @@ service cloud.firestore {
     // UGC reports (created via submitContentReport callable). Admin read/update for moderation UI.
     // Wall requests are written only by Cloud Functions; the app lists them through listWallRequests.
     match /wallRequests/{requestId} {
-      allow read: if resource.data.hidden == false
-          || (isSignedIn() && resource.data.requesterUid == request.auth.uid)
-          || isConfiguredAdmin();
+      // Docs hold uids; others see only the display name and avatar that listWallRequests returns.
+      allow read: if (isSignedIn() && resource.data.requesterUid == request.auth.uid) || isConfiguredAdmin();
       allow write: if false;
 
       match /votes/{voterUid} {

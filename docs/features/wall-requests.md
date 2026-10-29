@@ -121,7 +121,7 @@ Votes go through `setWallRequestVote`, not through client writes. The callable r
 
 ## Firestore rules
 
-Clients cannot write `wallRequests`, its `votes`, `wallRequestRateDaily` or `wallRequestVoteRateDaily`. A visible request is readable by anyone. A hidden request is readable only by its requester and admins. A vote doc is readable only by its voter.
+Clients cannot write `wallRequests`, its `votes`, `wallRequestRateDaily` or `wallRequestVoteRateDaily`. A request doc holds uids, so only its requester and admins can read it directly. Everyone else reads requests through `listWallRequests`, which returns only the display name and the avatar and applies the block and hidden filters. A vote doc is readable only by its voter.
 
 ## Analytics
 
