@@ -3465,6 +3465,8 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "Wähle einen Stil",
+  "economyAiStyleSheetSubject": "Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.",
   "economyAiStyleWatercolor": "Aquarell",
   "economyAiStyleSpace": "Weltraum",
   "economyAiStyleSynthwave": "Synthwave",

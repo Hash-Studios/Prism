@@ -32,4 +32,5 @@ abstract class OnboardingV2Event with _$OnboardingV2Event {
   const factory OnboardingV2Event.aiGenerationCompleted({required String? imageUrl, required String? thumbnailUrl}) =
       _AiGenerationCompleted;
   const factory OnboardingV2Event.aiGenerationStepContinued() = _AiGenerationStepContinued;
+  const factory OnboardingV2Event.aiStyleSelected({required AiStylePreset style}) = _AiStyleSelected;
 }

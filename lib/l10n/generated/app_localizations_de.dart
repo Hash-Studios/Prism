@@ -4171,6 +4171,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Wähle einen Stil';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.';
+
+  @override
   String get economyAiStyleWatercolor => 'Aquarell';
 
   @override

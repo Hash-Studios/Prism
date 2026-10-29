@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
@@ -25,9 +26,11 @@ class F3AiGeneratePage extends StatelessWidget {
 
         return OnboardingFrame(
           builder: (context, sx, sy) {
-            // Preview fills from below the chip to just above the CTA.
-            const previewBottom = OnboardingLayout.ctaY - 12;
-            const previewHeight = previewBottom - OnboardingLayout.aiPreviewY;
+            // The style tiles keep their size, so the preview fills what is left between the row and the CTA.
+            final rowTop = OnboardingLayout.aiStyleRowY * sy;
+            final previewTop = rowTop + AiStylePicker.tileHeight + OnboardingLayout.aiStyleRowGap;
+            final previewBottom = (OnboardingLayout.ctaY - 12) * sy;
+            final canPickStyle = aiData.status == AiGenerateStatus.idle || aiData.status == AiGenerateStatus.failure;
 
             return Stack(
               fit: StackFit.expand,
@@ -40,10 +43,23 @@ class F3AiGeneratePage extends StatelessWidget {
                 ),
 
                 Positioned(
-                  top: OnboardingLayout.aiPreviewY * sy,
+                  top: rowTop,
+                  left: 0,
+                  right: 0,
+                  child: AiStylePicker(
+                    selected: aiData.stylePreset,
+                    enabled: canPickStyle,
+                    padding: EdgeInsets.symmetric(horizontal: OnboardingLayout.aiChipX * sx),
+                    onSelected: (style) =>
+                        context.read<OnboardingV2Bloc>().add(OnboardingV2Event.aiStyleSelected(style: style)),
+                  ),
+                ),
+
+                Positioned(
+                  top: previewTop,
                   left: OnboardingLayout.aiPreviewX * sx,
                   right: OnboardingLayout.aiPreviewX * sx,
-                  height: previewHeight * sy,
+                  height: previewBottom - previewTop,
                   child: _PreviewArea(aiData: aiData),
                 ),
 

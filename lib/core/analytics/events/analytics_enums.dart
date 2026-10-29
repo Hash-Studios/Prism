@@ -42,6 +42,14 @@ enum BinaryResultValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum AiStylePickSource {
+  row,
+  sheet,
+  onboarding;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum ImmersiveToggleSourceValue {
   tap,
   semantics;

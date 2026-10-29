@@ -1190,6 +1190,8 @@
   "economyAiStyleMinimal": "Minimalista",
   "economyAiStyleNature": "Natureza",
   "economyAiStyleSemantics": "Estilo: {style}",
+  "economyAiStyleSheetTitle": "Escolha um estilo",
+  "economyAiStyleSheetSubject": "Cada prévia mostra a mesma cena: um farol em um penhasco ao entardecer.",
   "economyAiStyleWatercolor": "Aquarela",
   "economyAiStyleSpace": "Espaço",
   "economyAiStyleSynthwave": "Synthwave",

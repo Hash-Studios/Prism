@@ -25,6 +25,12 @@ enums:
     values:
       - success
       - failure
+  - name: ai_style_pick_source
+    dart_type: AiStylePickSource
+    values:
+      - row
+      - sheet
+      - onboarding
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
@@ -823,6 +829,20 @@ events:
       - name: style
         key: style
         type: string
+  - id: ai_style_sheet_opened
+    fields:
+      - name: style
+        key: style
+        type: string
+  - id: ai_style_picked
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: AiStylePickSource
   - id: ai_history_opened
     fields:
       - name: count

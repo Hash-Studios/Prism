@@ -55,7 +55,7 @@ extension OnboardingV2EventPatterns on OnboardingV2Event {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _LoadRetried value)?  loadRetried,TResult Function( _InterestsSkipped value)?  interestsSkipped,TResult Function( _StarterPackSkipped value)?  starterPackSkipped,TResult Function( _TasteQuizFinished value)?  tasteQuizFinished,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _CompletionRetried value)?  completionRetried,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _LoadRetried value)?  loadRetried,TResult Function( _InterestsSkipped value)?  interestsSkipped,TResult Function( _StarterPackSkipped value)?  starterPackSkipped,TResult Function( _TasteQuizFinished value)?  tasteQuizFinished,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _CompletionRetried value)?  completionRetried,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,TResult Function( _AiStyleSelected value)?  aiStyleSelected,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -80,7 +80,8 @@ return completionRetried(_that);case _StepBack() when stepBack != null:
 return stepBack(_that);case _AiGenerationRequested() when aiGenerationRequested != null:
 return aiGenerationRequested(_that);case _AiGenerationCompleted() when aiGenerationCompleted != null:
 return aiGenerationCompleted(_that);case _AiGenerationStepContinued() when aiGenerationStepContinued != null:
-return aiGenerationStepContinued(_that);case _:
+return aiGenerationStepContinued(_that);case _AiStyleSelected() when aiStyleSelected != null:
+return aiStyleSelected(_that);case _:
   return orElse();
 
 }
@@ -98,7 +99,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _GuestBrowseStarted value)  guestBrowseStarted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _LoadRetried value)  loadRetried,required TResult Function( _InterestsSkipped value)  interestsSkipped,required TResult Function( _StarterPackSkipped value)  starterPackSkipped,required TResult Function( _TasteQuizFinished value)  tasteQuizFinished,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _StarterPackReloadRequested value)  starterPackReloadRequested,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _CompletionRetried value)  completionRetried,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _GuestBrowseStarted value)  guestBrowseStarted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _LoadRetried value)  loadRetried,required TResult Function( _InterestsSkipped value)  interestsSkipped,required TResult Function( _StarterPackSkipped value)  starterPackSkipped,required TResult Function( _TasteQuizFinished value)  tasteQuizFinished,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _StarterPackReloadRequested value)  starterPackReloadRequested,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _CompletionRetried value)  completionRetried,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,required TResult Function( _AiStyleSelected value)  aiStyleSelected,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -123,7 +124,8 @@ return completionRetried(_that);case _StepBack():
 return stepBack(_that);case _AiGenerationRequested():
 return aiGenerationRequested(_that);case _AiGenerationCompleted():
 return aiGenerationCompleted(_that);case _AiGenerationStepContinued():
-return aiGenerationStepContinued(_that);case _:
+return aiGenerationStepContinued(_that);case _AiStyleSelected():
+return aiStyleSelected(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -140,7 +142,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _LoadRetried value)?  loadRetried,TResult? Function( _InterestsSkipped value)?  interestsSkipped,TResult? Function( _StarterPackSkipped value)?  starterPackSkipped,TResult? Function( _TasteQuizFinished value)?  tasteQuizFinished,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _CompletionRetried value)?  completionRetried,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _LoadRetried value)?  loadRetried,TResult? Function( _InterestsSkipped value)?  interestsSkipped,TResult? Function( _StarterPackSkipped value)?  starterPackSkipped,TResult? Function( _TasteQuizFinished value)?  tasteQuizFinished,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _CompletionRetried value)?  completionRetried,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,TResult? Function( _AiStyleSelected value)?  aiStyleSelected,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -165,7 +167,8 @@ return completionRetried(_that);case _StepBack() when stepBack != null:
 return stepBack(_that);case _AiGenerationRequested() when aiGenerationRequested != null:
 return aiGenerationRequested(_that);case _AiGenerationCompleted() when aiGenerationCompleted != null:
 return aiGenerationCompleted(_that);case _AiGenerationStepContinued() when aiGenerationStepContinued != null:
-return aiGenerationStepContinued(_that);case _:
+return aiGenerationStepContinued(_that);case _AiStyleSelected() when aiStyleSelected != null:
+return aiStyleSelected(_that);case _:
   return null;
 
 }
@@ -182,7 +185,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function()?  guestBrowseStarted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function()?  loadRetried,TResult Function()?  interestsSkipped,TResult Function()?  starterPackSkipped,TResult Function( bool completed)?  tasteQuizFinished,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  starterPackReloadRequested,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  completionRetried,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function()?  guestBrowseStarted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function()?  loadRetried,TResult Function()?  interestsSkipped,TResult Function()?  starterPackSkipped,TResult Function( bool completed)?  tasteQuizFinished,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  starterPackReloadRequested,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  completionRetried,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,TResult Function( AiStylePreset style)?  aiStyleSelected,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -206,7 +209,8 @@ return completionRetried();case _StepBack() when stepBack != null:
 return stepBack();case _AiGenerationRequested() when aiGenerationRequested != null:
 return aiGenerationRequested(_that.targetSize);case _AiGenerationCompleted() when aiGenerationCompleted != null:
 return aiGenerationCompleted(_that.imageUrl,_that.thumbnailUrl);case _AiGenerationStepContinued() when aiGenerationStepContinued != null:
-return aiGenerationStepContinued();case _:
+return aiGenerationStepContinued();case _AiStyleSelected() when aiStyleSelected != null:
+return aiStyleSelected(_that.style);case _:
   return orElse();
 
 }
@@ -224,7 +228,7 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function()  guestBrowseStarted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function()  loadRetried,required TResult Function()  interestsSkipped,required TResult Function()  starterPackSkipped,required TResult Function( bool completed)  tasteQuizFinished,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  starterPackReloadRequested,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  completionRetried,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function()  guestBrowseStarted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function()  loadRetried,required TResult Function()  interestsSkipped,required TResult Function()  starterPackSkipped,required TResult Function( bool completed)  tasteQuizFinished,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  starterPackReloadRequested,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  completionRetried,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,required TResult Function( AiStylePreset style)  aiStyleSelected,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _AuthCompleted():
@@ -248,7 +252,8 @@ return completionRetried();case _StepBack():
 return stepBack();case _AiGenerationRequested():
 return aiGenerationRequested(_that.targetSize);case _AiGenerationCompleted():
 return aiGenerationCompleted(_that.imageUrl,_that.thumbnailUrl);case _AiGenerationStepContinued():
-return aiGenerationStepContinued();case _:
+return aiGenerationStepContinued();case _AiStyleSelected():
+return aiStyleSelected(_that.style);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -265,7 +270,7 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function()?  guestBrowseStarted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function()?  loadRetried,TResult? Function()?  interestsSkipped,TResult? Function()?  starterPackSkipped,TResult? Function( bool completed)?  tasteQuizFinished,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  starterPackReloadRequested,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  completionRetried,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function()?  guestBrowseStarted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function()?  loadRetried,TResult? Function()?  interestsSkipped,TResult? Function()?  starterPackSkipped,TResult? Function( bool completed)?  tasteQuizFinished,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  starterPackReloadRequested,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  completionRetried,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,TResult? Function( AiStylePreset style)?  aiStyleSelected,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -289,7 +294,8 @@ return completionRetried();case _StepBack() when stepBack != null:
 return stepBack();case _AiGenerationRequested() when aiGenerationRequested != null:
 return aiGenerationRequested(_that.targetSize);case _AiGenerationCompleted() when aiGenerationCompleted != null:
 return aiGenerationCompleted(_that.imageUrl,_that.thumbnailUrl);case _AiGenerationStepContinued() when aiGenerationStepContinued != null:
-return aiGenerationStepContinued();case _:
+return aiGenerationStepContinued();case _AiStyleSelected() when aiStyleSelected != null:
+return aiStyleSelected(_that.style);case _:
   return null;
 
 }
@@ -1280,6 +1286,72 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _AiStyleSelected implements OnboardingV2Event {
+  const _AiStyleSelected({required this.style});
+  
+
+ final  AiStylePreset style;
+
+/// Create a copy of OnboardingV2Event
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$AiStyleSelectedCopyWith<_AiStyleSelected> get copyWith => __$AiStyleSelectedCopyWithImpl<_AiStyleSelected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AiStyleSelected&&(identical(other.style, style) || other.style == style));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,style);
+
+@override
+String toString() {
+  return 'OnboardingV2Event.aiStyleSelected(style: $style)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$AiStyleSelectedCopyWith<$Res> implements $OnboardingV2EventCopyWith<$Res> {
+  factory _$AiStyleSelectedCopyWith(_AiStyleSelected value, $Res Function(_AiStyleSelected) _then) = __$AiStyleSelectedCopyWithImpl;
+@useResult
+$Res call({
+ AiStylePreset style
+});
+
+
+
+
+}
+/// @nodoc
+class __$AiStyleSelectedCopyWithImpl<$Res>
+    implements _$AiStyleSelectedCopyWith<$Res> {
+  __$AiStyleSelectedCopyWithImpl(this._self, this._then);
+
+  final _AiStyleSelected _self;
+  final $Res Function(_AiStyleSelected) _then;
+
+/// Create a copy of OnboardingV2Event
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? style = null,}) {
+  return _then(_AiStyleSelected(
+style: null == style ? _self.style : style // ignore: cast_nullable_to_non_nullable
+as AiStylePreset,
+  ));
+}
+
+
+}
 
 /// @nodoc
 mixin _$OnboardingInterestsData {
