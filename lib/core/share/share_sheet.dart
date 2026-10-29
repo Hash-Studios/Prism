@@ -295,6 +295,19 @@ class _ShareSheetState extends State<ShareSheet> {
     ShareCardFormat.clean => l10n.coreShareFormatClean,
   };
 
+  /// Moves the carousel to [index]. Reduced motion asks for [Duration.zero], and
+  /// [PageController.animateToPage] with that duration builds a [DrivenScrollActivity]
+  /// that reads its late controller during construction. Release builds crash there
+  /// (PRISM-G5). Jump instead, and leave the card on its skeleton until the render finishes.
+  void _showFormat(BuildContext context, int index) {
+    final Duration duration = context.motion(PrismDurations.base);
+    if (duration == Duration.zero) {
+      _pages.jumpToPage(index);
+      return;
+    }
+    _pages.animateToPage(index, duration: duration, curve: PrismCurves.move);
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -323,13 +336,7 @@ class _ShareSheetState extends State<ShareSheet> {
                   label: _formatLabel(l10n, format),
                   selected: selected,
                   render: selected || _renders.containsKey(format) ? _render(format) : null,
-                  onTap: selected
-                      ? null
-                      : () => _pages.animateToPage(
-                          index,
-                          duration: context.motion(PrismDurations.base),
-                          curve: PrismCurves.move,
-                        ),
+                  onTap: selected ? null : () => _showFormat(context, index),
                 );
               },
             ),
