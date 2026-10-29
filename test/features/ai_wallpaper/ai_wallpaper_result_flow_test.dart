@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,6 +27,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -107,6 +109,7 @@ class _FakeAssetStore extends OfflineAssetStore {
 
   final File file;
   final bool failResolve;
+  Completer<File>? resolveGate;
   int resolves = 0;
   int lookups = 0;
 
@@ -120,11 +123,22 @@ class _FakeAssetStore extends OfflineAssetStore {
   Future<File> resolve(String source, {bool allowNetwork = true}) async {
     resolves++;
     if (failResolve) throw const SocketException('offline');
+    if (resolveGate != null) return resolveGate!.future;
     return file;
   }
 
   @override
   Future<File> retain(String source, {File? file}) async => this.file;
+}
+
+class _InMemoryCopyFile extends Fake implements File {
+  _InMemoryCopyFile(this.path);
+
+  @override
+  final String path;
+
+  @override
+  Future<File> copy(String newPath) async => File(newPath);
 }
 
 class _CountingAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
@@ -583,6 +597,101 @@ void main() {
       expect(appliedAgain, hasLength(2));
       expect(appliedAgain.last.platform, 'android');
       expect(appliedAgain.last.from, AiApplyFromValue.strip);
+    });
+  });
+
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final bool returnToOriginalOwner in <bool>[false, true]) {
+      testWidgets('Apply on ${platform.name} stops after an owner ${returnToOriginalOwner ? 'round trip' : 'change'}', (
+        tester,
+      ) async {
+        await _onPlatform(platform, () async {
+          final List<SetScreenRequest> opened = <SetScreenRequest>[];
+          final originalOpener = SetWallpaperFlow.screenOpener;
+          SetWallpaperFlow.screenOpener = (BuildContext context, SetScreenRequest request) async {
+            opened.add(request);
+            return null;
+          };
+          addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+          const BasicMessageChannel<Object?> downloadChannel = BasicMessageChannel<Object?>(
+            'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+            PrismMediaHostApi.pigeonChannelCodec,
+          );
+          final List<DownloadRequest> downloads = <DownloadRequest>[];
+          tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, (message) async {
+            downloads.add((message! as List<Object?>).single! as DownloadRequest);
+            return <Object?>[OperationResult(success: true)];
+          });
+          addTearDown(
+            () => tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, null),
+          );
+          final _FakeAssetStore store = _FakeAssetStore(heroFile)..resolveGate = Completer<File>();
+          OfflineAssetStore.testOverride = store;
+          await _pumpPage(tester, _CountingAiGenerationRepository());
+          await _generate(tester);
+          toastMessages.clear();
+          await tester.tap(find.text('Apply'));
+          await tester.pump();
+          expect(store.resolves, 1);
+          expect(tester.widget<AiResultActions>(find.byType(AiResultActions)).applying, isTrue);
+
+          app_state.prismUser = app_constants.createGuestPrismUser()
+            ..id = 'user-2'
+            ..loggedIn = true;
+          CoinsService.instance.resetSession();
+          if (returnToOriginalOwner) {
+            app_state.prismUser = app_constants.createGuestPrismUser()
+              ..id = 'user-1'
+              ..loggedIn = true;
+            CoinsService.instance.resetSession();
+          }
+          store.resolveGate!.complete(_InMemoryCopyFile(heroFile.path));
+          await tester.pumpAndSettle();
+
+          expect(opened, isEmpty, reason: 'an old account action must not open the Set screen');
+          expect(downloads, isEmpty, reason: 'an old account action must not save to Photos');
+          expect(find.byType(IosWallpaperGuideSheet), findsNothing);
+          expect(toastMessages, isEmpty);
+          if (find.byType(AiResultActions).evaluate().isNotEmpty) {
+            expect(tester.widget<AiResultActions>(find.byType(AiResultActions)).applying, isFalse);
+          }
+          await tester.pump(const Duration(seconds: 2));
+        });
+      });
+    }
+  }
+
+  testWidgets('a same-owner Save continues after the AI page closes', (tester) async {
+    await _onPlatform(TargetPlatform.android, () async {
+      const BasicMessageChannel<Object?> downloadChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      final List<DownloadRequest> downloads = <DownloadRequest>[];
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, (message) async {
+        downloads.add((message! as List<Object?>).single! as DownloadRequest);
+        return <Object?>[OperationResult(success: true)];
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, null),
+      );
+      final _FakeAssetStore store = _FakeAssetStore(heroFile)..resolveGate = Completer<File>();
+      OfflineAssetStore.testOverride = store;
+      await _pumpPage(tester, _CountingAiGenerationRepository());
+      await _generate(tester);
+      await tester.tap(find.byTooltip(AppLocalizationsEn().economyAiSave));
+      await tester.pump();
+      expect(store.resolves, 1);
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      store.resolveGate!.complete(_InMemoryCopyFile(heroFile.path));
+      await tester.pumpAndSettle();
+
+      expect(downloads, hasLength(1), reason: 'closing the page must not cancel an authorized same-owner Save');
+      expect(downloads.single.link, heroFile.path);
+      expect(find.byType(IosWallpaperGuideSheet), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 2));
     });
   });
 

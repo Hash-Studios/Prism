@@ -19,9 +19,12 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_generate_bar.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_remix_chip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -95,11 +98,12 @@ class _RecordingLiveActivityApi extends PrismLiveActivityHostApi {
 }
 
 class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
-  _FollowUpRepository({this.heroQuality = AiQualityTier.balanced});
+  _FollowUpRepository({this.heroQuality = AiQualityTier.balanced, this.history = const <AiGenerationRecord>[]});
 
   final AiQualityTier heroQuality;
-  final List<({String generationId, String variationPrompt, int coinsSpent})> variations =
-      <({String generationId, String variationPrompt, int coinsSpent})>[];
+  final List<AiGenerationRecord> history;
+  final List<({String generationId, String variationPrompt, int coinsSpent, String? remixOf})> variations =
+      <({String generationId, String variationPrompt, int coinsSpent, String? remixOf})>[];
   Completer<void>? variationGate;
   Object? variationError;
 
@@ -113,12 +117,10 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
   Future<void> clearForUser(String userId) async {}
 
   @override
-  Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async =>
-      const <AiGenerationRecord>[];
+  Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => history;
 
   @override
-  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
-      const <AiGenerationRecord>[];
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async => history;
 
   @override
   Future<AiGenerationRecord> generate({
@@ -131,7 +133,7 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
     int? seed,
     String? chargeTxId,
     String? remixOf,
-  }) async => _record(id: 'hero-1', quality: heroQuality);
+  }) async => _record(id: 'hero-1', quality: heroQuality).copyWith(remixOf: remixOf);
 
   @override
   Future<AiGenerationRecord> generateVariation({
@@ -143,11 +145,16 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
     String? chargeTxId,
     String? remixOf,
   }) async {
-    variations.add((generationId: generationId, variationPrompt: variationPrompt, coinsSpent: coinsSpent));
+    variations.add((
+      generationId: generationId,
+      variationPrompt: variationPrompt,
+      coinsSpent: coinsSpent,
+      remixOf: remixOf,
+    ));
     final Completer<void>? gate = variationGate;
     if (gate != null) await gate.future;
     if (variationError != null) throw variationError!;
-    return _record(id: 'var-${variations.length}', quality: heroQuality);
+    return _record(id: 'var-${variations.length}', quality: heroQuality).copyWith(remixOf: remixOf);
   }
 }
 
@@ -168,6 +175,15 @@ AiGenerationRecord _record({required String id, required AiQualityTier quality})
   chargeMode: AiChargeMode.freeTrial,
   coinsSpent: 0,
   status: 'success',
+);
+
+const AiRemixSeed _remixSeed = AiRemixSeed(
+  wallDocId: 'orig_1',
+  title: 'Koi',
+  creatorName: 'Asha',
+  thumbnailUrl: '',
+  prompt: 'A koi pond at dusk',
+  sourceType: RemixSourceType.user,
 );
 
 StartupConfigEntity _startupConfig({required bool aiVariationsEnabled}) => StartupConfigEntity(
@@ -244,6 +260,7 @@ void main() {
     required bool aiVariationsEnabled,
     int? confirmedCost,
     bool failPriceSave = false,
+    AiRemixSeed? remixSeed,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -269,7 +286,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AiWallpaperTabPage(repository: repository),
+        home: AiWallpaperTabPage(repository: repository, remixSeed: remixSeed),
       ),
     );
     await tester.pumpAndSettle();
@@ -289,6 +306,15 @@ void main() {
 
   Future<void> tapChip(WidgetTester tester, String name) async {
     await tester.tap(find.byKey(ValueKey<String>('ai-follow-up-$name')));
+  }
+
+  Future<void> openFirstRecent(WidgetTester tester) async {
+    final Finder thumb = find
+        .descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb))
+        .first;
+    await tester.ensureVisible(thumb);
+    await tester.tap(thumb);
+    await tester.pumpAndSettle();
   }
 
   List<PrismChip> followUpChips(WidgetTester tester) => tester
@@ -335,6 +361,101 @@ void main() {
       'hero-1',
       'var-1',
     ]);
+  });
+
+  testWidgets('a chip keeps linked hero credit after Edit prompt and Back retain the remix chip', (tester) async {
+    final repository = _FollowUpRepository();
+    await setUpPage(
+      tester,
+      repository: repository,
+      aiVariationsEnabled: true,
+      confirmedCost: 1000,
+      remixSeed: _remixSeed,
+    );
+    await generateHero(tester);
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.remixOf, 'orig_1');
+
+    await tester.tap(find.text('Edit prompt'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AiRemixChip).hitTestable(), findsOneWidget);
+    await openFirstRecent(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(AiRemixChip).hitTestable(), findsOneWidget);
+    await openFirstRecent(tester);
+
+    await tapChip(tester, 'night');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.variations.single.generationId, 'hero-1');
+    expect(repository.variations.single.remixOf, 'orig_1');
+    final AiResultView result = tester.widget<AiResultView>(find.byType(AiResultView));
+    expect(result.record.id, 'var-1');
+    expect(result.record.remixOf, 'orig_1');
+    expect(result.session.map((record) => record.remixOf), <String?>['orig_1', 'orig_1']);
+    expect(
+      tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((record) => record.remixOf),
+      <String?>['orig_1', 'orig_1'],
+    );
+  });
+
+  testWidgets('a chip on unlinked Recent history does not use the active remix seed', (tester) async {
+    final repository = _FollowUpRepository(
+      history: <AiGenerationRecord>[_record(id: 'unlinked-history', quality: AiQualityTier.balanced)],
+    );
+    await setUpPage(
+      tester,
+      repository: repository,
+      aiVariationsEnabled: true,
+      confirmedCost: 1000,
+      remixSeed: _remixSeed,
+    );
+    expect(find.byType(AiRemixChip).hitTestable(), findsOneWidget);
+    await openFirstRecent(tester);
+
+    await tapChip(tester, 'night');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.variations.single.generationId, 'unlinked-history');
+    expect(repository.variations.single.remixOf, isNull);
+    final AiResultView result = tester.widget<AiResultView>(find.byType(AiResultView));
+    expect(result.record.id, 'var-1');
+    expect(result.record.remixOf, isNull);
+    expect(result.session.map((record) => record.id), <String>['var-1']);
+  });
+
+  testWidgets('dropping the seed stops chip remix credit even for a linked Recent result', (tester) async {
+    final repository = _FollowUpRepository();
+    await setUpPage(
+      tester,
+      repository: repository,
+      aiVariationsEnabled: true,
+      confirmedCost: 1000,
+      remixSeed: _remixSeed,
+    );
+    await generateHero(tester);
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.remixOf, 'orig_1');
+    await tester.tap(find.text('Edit prompt'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AiRemixChip).hitTestable(), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove remix link'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AiRemixChip), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, 'A quiet mountain lake');
+    await openFirstRecent(tester);
+
+    await tapChip(tester, 'night');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.variations.single.generationId, 'hero-1');
+    expect(repository.variations.single.remixOf, isNull);
+    final AiResultView result = tester.widget<AiResultView>(find.byType(AiResultView));
+    expect(result.record.id, 'var-1');
+    expect(result.record.remixOf, isNull);
+    expect(result.session.map((record) => record.remixOf), <String?>['orig_1', null]);
   });
 
   testWidgets('chips are hidden when variations are off', (tester) async {
