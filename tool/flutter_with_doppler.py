@@ -4,10 +4,12 @@
 import argparse
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 
 from prepare_release_firebase import prepare
+import shorebird_ota
 
 
 # Only shipping app settings read by Env. Exclude backend credentials and
@@ -21,7 +23,7 @@ APP_KEYS = (
 SENTRY_OVERRIDES = ('SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
 
 
-def defines():
+def download():
     result = subprocess.run([
         'doppler', 'secrets', 'download', '--no-file', '--no-fallback', '--format', 'json',
         '--project', os.environ.get('DOPPLER_PROJECT', 'prism'),
@@ -32,12 +34,21 @@ def defines():
         raise SystemExit(result.returncode)
     try:
         payload = json.loads(result.stdout)
-        if not isinstance(payload, dict):
-            raise ValueError()
+    except ValueError:
+        raise ValueError('App configuration failed: invalid Doppler JSON or app value.') from None
+    if not isinstance(payload, dict):
+        raise ValueError('App configuration failed: invalid Doppler JSON or app value.')
+    return payload
+
+
+def defines(payload, sentry_overrides=None):
+    try:
         args = []
         for key in APP_KEYS:
             value = payload.get(key, '')
-            if key in SENTRY_OVERRIDES and os.environ.get(key):
+            if sentry_overrides is not None and key in shorebird_ota.SENTRY_RECORDED:
+                value = sentry_overrides.get(key, '')
+            elif key in SENTRY_OVERRIDES and os.environ.get(key):
                 value = os.environ[key]
             if not isinstance(value, str) or '\0' in value:
                 raise ValueError()
@@ -51,6 +62,8 @@ def defines():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--release-platform', choices=('android', 'ios'))
+    parser.add_argument('--allow-storage-changes', action='store_true',
+                        help='Let a Shorebird patch change local storage code.')
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command
@@ -63,7 +76,10 @@ def main():
                or arg == '--dart-define' for arg in command):
             raise ValueError('Release configuration failed: unchecked define files and Firebase skip flags are forbidden.')
         prepare(args.release_platform)
-    return subprocess.run(command + defines()).returncode
+    payload = download()
+    if Path(command[0]).name == 'shorebird':
+        return shorebird_ota.run(command, args.release_platform, payload, defines, args.allow_storage_changes)
+    return subprocess.run(command + defines(payload)).returncode
 
 
 if __name__ == '__main__':

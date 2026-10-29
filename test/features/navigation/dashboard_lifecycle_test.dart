@@ -3,6 +3,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/updates/code_push_updater.dart';
+import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
@@ -16,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _Notifications extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
@@ -64,7 +67,16 @@ void main() {
     when(() => badges.unseen).thenReturn(unseen);
     getIt.registerSingleton<InAppNotificationsBloc>(notifications);
     getIt.registerSingleton<BadgeRepository>(badges);
-    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    getIt.registerSingleton<OtaUpdateController>(
+      OtaUpdateController(
+        updater: ShorebirdCodePushUpdater(track: () => 'stable'),
+        settings: settings,
+        analytics: FakeAppAnalytics(),
+        release: () => (version: '3.14.0', build: '353'),
+      ),
+    );
     app_state.prismUser = constants.createGuestPrismUser();
     final router = _Router();
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);

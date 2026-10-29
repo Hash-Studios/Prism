@@ -346,6 +346,15 @@ enums:
       - rejection
       - win_back
       - drop
+  - name: ota_failure_reason
+    dart_type: OtaFailureReasonValue
+    values:
+      - check_timeout
+      - check_failed
+      - download_timeout
+      - download_failed
+      - install_failed
+      - unknown
 
 events:
   - id: content_report_submit
@@ -2293,3 +2302,41 @@ events:
       - name: tier
         key: tier
         type: string
+  - id: ota_check_started
+    fields:
+      - name: trigger
+        key: trigger
+        type: string
+      - name: patch_number
+        key: patch_number
+        type: int
+  - id: ota_update_available
+    fields:
+      - name: patch_number
+        key: patch_number
+        type: int
+  - id: ota_download_done
+    fields:
+      - name: patch_number
+        key: patch_number
+        type: int
+      - name: pending_patch_number
+        key: pending_patch_number
+        type: int
+  - id: ota_download_failed
+    fields:
+      - name: reason
+        key: reason
+        type: enum
+        enum: OtaFailureReasonValue
+      - name: patch_number
+        key: patch_number
+        type: int
+  - id: ota_patch_running
+    fields:
+      - name: patch_number
+        key: patch_number
+        type: int
+      - name: previous_patch_number
+        key: previous_patch_number
+        type: int

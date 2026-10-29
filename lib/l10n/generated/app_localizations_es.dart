@@ -3299,6 +3299,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get debugClearSearch => 'Borrar búsqueda';
 
   @override
+  String get debugCodePush => 'Actualizaciones de código';
+
+  @override
   String get debugCoins => 'Monedas';
 
   @override
@@ -3676,6 +3679,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get debugSequence => 'Secuencia';
 
   @override
+  String get debugShorebirdPatch => 'Parche de Shorebird';
+
+  @override
   String get debugShowLogToasts => 'Mostrar avisos de registros';
 
   @override
@@ -3696,6 +3702,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get debugStackTraceCopied => 'Seguimiento de pila copiado';
+
+  @override
+  String get debugStagingPatches => 'Obtener parches de staging';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'Consulta el canal de staging de Shorebird en lugar del estable. Reinicia para aplicar un parche.';
 
   @override
   String get debugStillPoses => 'Poses estáticas';
@@ -7574,6 +7587,12 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get premiumPurchaseUnconfirmed =>
       'No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.';
+
+  @override
+  String get updatesRestartToFinish => 'Cierra y vuelve a abrir Prism para terminar de actualizar.';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Hay una nueva versión de Prism disponible.';
 
   @override
   String get wallpaperAccentColor => 'Color de acento';

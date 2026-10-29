@@ -3304,6 +3304,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugClearSearch => 'Suche leeren';
 
   @override
+  String get debugCodePush => 'Code-Push';
+
+  @override
   String get debugCoins => 'Coins';
 
   @override
@@ -3681,6 +3684,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugSequence => 'Abfolge';
 
   @override
+  String get debugShorebirdPatch => 'Shorebird-Patch';
+
+  @override
   String get debugShowLogToasts => 'Log-Toasts anzeigen';
 
   @override
@@ -3700,6 +3706,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get debugStackTraceCopied => 'Stacktrace kopiert';
+
+  @override
+  String get debugStagingPatches => 'Staging-Patches abrufen';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'Den Shorebird-Staging-Kanal statt des stabilen Kanals prüfen. Zum Anwenden eines Patches neu starten.';
 
   @override
   String get debugStillPoses => 'Statische Posen';
@@ -7572,6 +7585,12 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get premiumPurchaseUnconfirmed =>
       'Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.';
+
+  @override
+  String get updatesRestartToFinish => 'Schließe Prism und öffne es erneut, um das Update abzuschließen.';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Eine neue Version von Prism ist verfügbar.';
 
   @override
   String get wallpaperAccentColor => 'Akzentfarbe';

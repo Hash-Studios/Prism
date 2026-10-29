@@ -2988,6 +2988,10 @@
   "debugClearLogsBody": "This removes every log entry held in memory.",
   "debugClearLogsTitle": "Clear logs?",
   "debugClearSearch": "Clear search",
+  "debugCodePush": "Code push",
+  "@debugCodePush": {
+    "description": "Admin debug panel section title for Shorebird over-the-air patches."
+  },
   "debugCoins": "Coins",
   "debugCopied": "Copied",
   "debugCopiedToClipboard": "Copied to clipboard",
@@ -3143,6 +3147,10 @@
   "debugSentryEnabled": "Sentry Enabled",
   "debugSentryEnv": "Sentry Env",
   "debugSequence": "Sequence",
+  "debugShorebirdPatch": "Shorebird patch",
+  "@debugShorebirdPatch": {
+    "description": "Admin debug panel row label: the Shorebird patch number the app runs."
+  },
   "debugShowLogToasts": "Show log toasts",
   "debugShowLogToastsDescription": "Display log entries as brief overlay toasts",
   "debugSimulateNoInternet": "Simulate no internet",
@@ -3150,6 +3158,14 @@
   "debugSpeed": "Speed",
   "debugStackTrace": "Stack trace",
   "debugStackTraceCopied": "Stack trace copied",
+  "debugStagingPatches": "Get staging patches",
+  "@debugStagingPatches": {
+    "description": "Admin debug panel switch: check the Shorebird staging track."
+  },
+  "debugStagingPatchesDescription": "Check the Shorebird staging track instead of stable. Restart to apply a patch.",
+  "@debugStagingPatchesDescription": {
+    "description": "Subtitle for the staging patches switch."
+  },
   "debugStillPoses": "Still poses",
   "debugStorage": "Storage",
   "debugStorageCleared": "All storage cleared",
@@ -6363,6 +6379,14 @@
   "premiumPurchaseUnconfirmed": "Could not confirm your purchase. Try Restore purchases in Settings.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
+  },
+  "updatesRestartToFinish": "Close and reopen Prism to finish updating.",
+  "@updatesRestartToFinish": {
+    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
+  },
+  "updatesStoreUpdateAvailable": "A new version of Prism is available.",
+  "@updatesStoreUpdateAvailable": {
+    "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."
   },
   "wallpaperAccentColor": "Accent color",
   "@wallpaperAccentColor": {

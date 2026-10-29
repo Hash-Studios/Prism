@@ -11,6 +11,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
@@ -23,6 +24,25 @@ class PaywallPlacement {
   static const String afterAdWatch3 = 'after_ad_watch_3';
   static const String uploadLimitReached = 'upload_limit_reached';
   static const String autoRotate = 'auto_rotate';
+}
+
+/// Tracks overlapping presentations so an early result cannot hide a paywall that is still open.
+class PaywallPresentationGate {
+  final ValueNotifier<bool> presenting = ValueNotifier<bool>(false);
+  int _activePresentations = 0;
+
+  Future<T> run<T>(Future<T> Function() presentation) async {
+    _activePresentations++;
+    presenting.value = true;
+    try {
+      return await presentation();
+    } finally {
+      _activePresentations--;
+      presenting.value = _activePresentations > 0;
+    }
+  }
+
+  void dispose() => presenting.dispose();
 }
 
 class PaywallOrchestrator {
@@ -40,7 +60,14 @@ class PaywallOrchestrator {
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
-  Future<PaywallResultValue> present({
+  /// True while a paywall is loading or on screen. Prompts that Prism opens on its own wait until it is false.
+  final PaywallPresentationGate _presentationGate = PaywallPresentationGate();
+  ValueListenable<bool> get presenting => _presentationGate.presenting;
+
+  Future<PaywallResultValue> present({required String placement, required String source, AppLocalizations? messages}) =>
+      _presentationGate.run(() => _present(placement: placement, source: source, messages: messages));
+
+  Future<PaywallResultValue> _present({
     required String placement,
     required String source,
     AppLocalizations? messages,

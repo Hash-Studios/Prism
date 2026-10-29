@@ -2,8 +2,10 @@ import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
+import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
@@ -39,9 +41,15 @@ void main() {
   setUp(() {
     InMemoryLogSink.instance.clear();
     DebugFlags.instance.reset();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<CodePushUpdater>(ShorebirdCodePushUpdater(track: () => 'stable'));
   });
 
-  tearDown(() => DebugFlags.instance.reset());
+  tearDown(() {
+    DebugFlags.instance.reset();
+    getIt.unregister<SettingsLocalDataSource>();
+    getIt.unregister<CodePushUpdater>();
+  });
 
   group('debug panel shell', () {
     testWidgets('has a Debug title, no admin badge and five tabs', (tester) async {

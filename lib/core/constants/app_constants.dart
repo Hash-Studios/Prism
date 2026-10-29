@@ -25,6 +25,10 @@ const bool defaultAiVariationsEnabled = true;
 const bool defaultUseRcPaywalls = true;
 
 const bool defaultOnboardingV2Enabled = true;
+
+// Store builds below the minimum get a store-update prompt. 0 turns the prompt off.
+const int defaultMinStoreBuild = 0;
+const bool defaultStoreUpdateBlocking = false;
 const String defaultOnboardingStarterPack = '[]';
 
 const String categoriesRemoteConfigKey = 'categories_v1';

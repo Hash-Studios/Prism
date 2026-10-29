@@ -3206,6 +3206,10 @@
   "debugClearLogsBody": "Ini menghapus semua entri log yang tersimpan di memori.",
   "debugClearLogsTitle": "Hapus log?",
   "debugClearSearch": "Hapus pencarian",
+  "debugCodePush": "Pembaruan kode",
+  "@debugCodePush": {
+    "description": "Admin debug panel section title for Shorebird over-the-air patches."
+  },
   "debugCoins": "Koin",
   "debugCopied": "Disalin",
   "debugCopiedToClipboard": "Disalin ke papan klip",
@@ -3361,6 +3365,10 @@
   "debugSentryEnabled": "Sentry aktif",
   "debugSentryEnv": "Lingkungan Sentry",
   "debugSequence": "Urutan",
+  "debugShorebirdPatch": "Patch Shorebird",
+  "@debugShorebirdPatch": {
+    "description": "Admin debug panel row label: the Shorebird patch number the app runs."
+  },
   "debugShowLogToasts": "Tampilkan toast log",
   "debugShowLogToastsDescription": "Tampilkan entri log sebagai toast singkat",
   "debugSimulateNoInternet": "Simulasikan tanpa internet",
@@ -3368,6 +3376,14 @@
   "debugSpeed": "Kecepatan",
   "debugStackTrace": "Jejak tumpukan",
   "debugStackTraceCopied": "Jejak tumpukan disalin",
+  "debugStagingPatches": "Ambil patch staging",
+  "@debugStagingPatches": {
+    "description": "Admin debug panel switch: check the Shorebird staging track."
+  },
+  "debugStagingPatchesDescription": "Cek kanal staging Shorebird, bukan kanal stabil. Mulai ulang untuk menerapkan patch.",
+  "@debugStagingPatchesDescription": {
+    "description": "Subtitle for the staging patches switch."
+  },
   "debugStillPoses": "Pose diam",
   "debugStorage": "Penyimpanan",
   "debugStorageCleared": "Semua penyimpanan dihapus",
@@ -6578,6 +6594,14 @@
   "premiumPurchaseUnconfirmed": "Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
+  },
+  "updatesRestartToFinish": "Tutup lalu buka lagi Prism untuk menyelesaikan pembaruan.",
+  "@updatesRestartToFinish": {
+    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
+  },
+  "updatesStoreUpdateAvailable": "Versi baru Prism tersedia.",
+  "@updatesStoreUpdateAvailable": {
+    "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."
   },
   "wallpaperAccentColor": "Warna aksen",
   "@wallpaperAccentColor": {

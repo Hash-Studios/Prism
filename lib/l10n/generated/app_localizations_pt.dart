@@ -3326,6 +3326,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugClearSearch => 'Limpar busca';
 
   @override
+  String get debugCodePush => 'Atualização de código';
+
+  @override
   String get debugCoins => 'Moedas';
 
   @override
@@ -3704,6 +3707,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugSequence => 'Sequência';
 
   @override
+  String get debugShorebirdPatch => 'Patch do Shorebird';
+
+  @override
   String get debugShowLogToasts => 'Mostrar toasts de log';
 
   @override
@@ -3723,6 +3729,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get debugStackTraceCopied => 'Rastreamento da pilha copiado';
+
+  @override
+  String get debugStagingPatches => 'Buscar patches de staging';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'Verifique o canal de staging do Shorebird em vez do estável. Reinicie para aplicar um patch.';
 
   @override
   String get debugStillPoses => 'Poses estáticas';
@@ -7748,6 +7761,12 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get premiumPurchaseUnconfirmed =>
       'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
+
+  @override
+  String get updatesRestartToFinish => 'Feche e abra o Prism novamente para concluir a atualização.';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Uma nova versão do Prism está disponível.';
 
   @override
   String get wallpaperAccentColor => 'Cor de destaque';
@@ -14343,6 +14362,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get debugClearSearch => 'Limpar busca';
 
   @override
+  String get debugCodePush => 'Atualização de código';
+
+  @override
   String get debugCoins => 'Moedas';
 
   @override
@@ -14721,6 +14743,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get debugSequence => 'Sequência';
 
   @override
+  String get debugShorebirdPatch => 'Patch do Shorebird';
+
+  @override
   String get debugShowLogToasts => 'Mostrar toasts de log';
 
   @override
@@ -14740,6 +14765,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get debugStackTraceCopied => 'Rastreamento da pilha copiado';
+
+  @override
+  String get debugStagingPatches => 'Buscar patches de staging';
+
+  @override
+  String get debugStagingPatchesDescription =>
+      'Verifique o canal de staging do Shorebird em vez do estável. Reinicie para aplicar um patch.';
 
   @override
   String get debugStillPoses => 'Poses estáticas';
@@ -18765,6 +18797,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get premiumPurchaseUnconfirmed =>
       'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
+
+  @override
+  String get updatesRestartToFinish => 'Feche e abra o Prism novamente para concluir a atualização.';
+
+  @override
+  String get updatesStoreUpdateAvailable => 'Uma nova versão do Prism está disponível.';
 
   @override
   String get wallpaperAccentColor => 'Cor de destaque';

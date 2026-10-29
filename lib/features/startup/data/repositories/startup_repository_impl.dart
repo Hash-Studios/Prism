@@ -54,6 +54,9 @@ Future<void> prepareRemoteConfig(
     'ai_variations_enabled': defaultAiVariationsEnabled,
     'use_rc_paywalls': defaultUseRcPaywalls,
     'onboarding_v2_enabled': defaultOnboardingV2Enabled,
+    'min_build_android': defaultMinStoreBuild,
+    'min_build_ios': defaultMinStoreBuild,
+    'store_update_blocking': defaultStoreUpdateBlocking,
     OnboardingV2Config.remoteConfigStarterPackKey: defaultOnboardingStarterPack,
     personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
   });
@@ -166,6 +169,9 @@ class StartupRepositoryImpl implements StartupRepository {
       final aiVariationsEnabled = remoteConfig?.getBool('ai_variations_enabled') ?? defaultAiVariationsEnabled;
       final useRcPaywalls = remoteConfig?.getBool('use_rc_paywalls') ?? defaultUseRcPaywalls;
       final onboardingV2Enabled = remoteConfig?.getBool('onboarding_v2_enabled') ?? defaultOnboardingV2Enabled;
+      final String minBuildKey = defaultTargetPlatform == TargetPlatform.iOS ? 'min_build_ios' : 'min_build_android';
+      final minStoreBuild = remoteConfig?.getInt(minBuildKey) ?? defaultMinStoreBuild;
+      final storeUpdateBlocking = remoteConfig?.getBool('store_update_blocking') ?? defaultStoreUpdateBlocking;
 
       final entity = StartupConfigEntity(
         topImageLink: topImageLink,
@@ -181,6 +187,8 @@ class StartupRepositoryImpl implements StartupRepository {
         aiVariationsEnabled: aiVariationsEnabled,
         useRcPaywalls: useRcPaywalls,
         onboardingV2Enabled: onboardingV2Enabled,
+        minStoreBuild: minStoreBuild,
+        storeUpdateBlocking: storeUpdateBlocking,
       );
 
       _currentConfig = entity;

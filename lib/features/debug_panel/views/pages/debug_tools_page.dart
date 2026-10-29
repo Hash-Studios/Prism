@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/live_activity_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
@@ -23,6 +27,9 @@ class DebugToolsPage extends StatefulWidget {
 class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
+  bool get _stagingPatches =>
+      getIt<SettingsLocalDataSource>().get<String>(OtaUpdateController.trackKey, defaultValue: 'stable') == 'staging';
 
   Future<void> _previewReviewActivity(BuildContext context) async {
     final bool started = await LiveActivityChannel.startReviewQueue(
@@ -151,6 +158,22 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
                 subtitle: context.l10n.debugSimulateNoInternetDescription,
                 value: DebugFlags.instance.simulateNoInternet,
                 onChanged: (v) => DebugFlags.instance.simulateNoInternet = v,
+              ),
+            ],
+          ),
+          _Section(context.l10n.debugCodePush),
+          PrismGroup(
+            children: [
+              PrismSwitchRow(
+                icon: Icons.system_update_alt_rounded,
+                title: context.l10n.debugStagingPatches,
+                subtitle: context.l10n.debugStagingPatchesDescription,
+                value: _stagingPatches,
+                onChanged: (bool value) => setState(
+                  () => unawaited(
+                    getIt<SettingsLocalDataSource>().set(OtaUpdateController.trackKey, value ? 'staging' : 'stable'),
+                  ),
+                ),
               ),
             ],
           ),
