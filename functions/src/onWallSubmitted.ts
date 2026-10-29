@@ -44,9 +44,14 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
-    if (data.remixOf !== undefined && !(await keepRemixOf(wallId, data)) && event.data) {
-      if (await removeRemixOfIfUnchanged(event.data, data.remixOf)) {
-        logger.info("onWallSubmitted: removed an unverified remixOf.", {wallId});
+    if (data.remixOf !== undefined && event.data) {
+      try {
+        if (!(await keepRemixOf(wallId, data)) && await removeRemixOfIfUnchanged(event.data, data.remixOf)) {
+          logger.info("onWallSubmitted: removed an unverified remixOf.", {wallId});
+        }
+      } catch (err) {
+        // onWallRemixWritten checks the link again before it credits anything.
+        logger.warn("onWallSubmitted: remixOf check failed.", {wallId, err});
       }
     }
     if (await isStudioWall(wallId, data)) {

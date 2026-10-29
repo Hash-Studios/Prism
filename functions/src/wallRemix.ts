@@ -110,11 +110,11 @@ async function reconcileRemixesOf(originalId: string): Promise<void> {
     if (!currentId || visited.has(currentId)) continue;
     visited.add(currentId);
     const rows = await db.collection("walls").where("remixOf", "==", currentId).get();
-    await Promise.all(rows.docs.map(async (row) => {
+    for (const row of rows.docs) {
       pending.push(row.id);
       const notice = await syncRemixCredit(row.id);
       if (notice) await sendRemixNotice(notice);
-    }));
+    }
   }
   await Promise.all([...visited].map(async (wallId) => {
     const wallRef = db.doc(`walls/${wallId}`);

@@ -138,7 +138,7 @@ Share and favourite:
 
 Remix (AI wallpapers with a prompt):
 
-- The **Remix** action opens the AI tab with the prompt, style and tier of the wallpaper. It is hidden when AI is off, the wallpaper is not approved, the wallpaper is premium-gated for a free user or streak exclusive, or the creator is blocked.
+- The **Remix** action opens the AI tab with the prompt of the wallpaper, and its style when it stores one. The tier comes from the wallpaper's `aiModel`. The app picks that tier, or the best lower tier that the coin balance covers, else Fast. It is hidden when AI is off, the wallpaper is not approved, the wallpaper is premium-gated for a free user or streak exclusive, or the creator is blocked.
 - In the detail panel, an original with remixes shows **Remixes**, the count and a row of approved remixes by other creators.
 - A remix shows **Remix of <title> by <creator>**. A tap opens the original.
 

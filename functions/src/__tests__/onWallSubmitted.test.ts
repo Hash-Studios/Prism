@@ -272,3 +272,12 @@ test("submission keeps a link if its original is approved before sanitization co
   assert.equal(await removeRemixOfIfUnchanged(expected as Parameters<typeof removeRemixOfIfUnchanged>[0], "orig"), false);
   assert.equal(store.get("walls/w1")?.remixOf, "orig");
 });
+
+test("a failed remixOf check still notifies the admins", async (t) => {
+  const {store, pushes} = setup(t, {name: "Maker", premium: true}, wall({isAiGenerated: true, remixOf: "a/b"}));
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("unavailable");
+  });
+  await fire(store);
+  assert.deepEqual(pushes.map((push) => push.token), ["admin-token"]);
+});
