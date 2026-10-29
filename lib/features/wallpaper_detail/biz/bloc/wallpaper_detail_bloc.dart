@@ -69,7 +69,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final PrismWallpaper wall = (initial.entity as PrismFeedItem).wallpaper;
     if (wall.firestoreDocumentId != event.wallDocId) return;
     final generation = ++_metadataRefreshGeneration;
-    // The returned text is canonical, so update the visible tags/title even if the following read is offline.
     final saved = event.saved;
     if (saved != null) {
       final PrismWallpaper updated = PrismWallpaper(

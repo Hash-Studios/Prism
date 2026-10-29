@@ -18,7 +18,6 @@ class WallResubmissionContextCubit extends Cubit<WallResubmissionContextState> {
 
   Future<void> load(List<String> ids) async {
     final int generation = ++_generation;
-    // Do not keep a verified badge across a refresh, including delete/recreate with the same ID.
     emit(const WallResubmissionContextState(loading: true));
     try {
       final Map<String, WallResubmissionContext> contexts = await _actions.contexts(ids);

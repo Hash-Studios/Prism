@@ -7,7 +7,6 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// A single bounded lookup for a queue snapshot, not one callable per card.
 class WallResubmissionScope extends StatefulWidget {
   const WallResubmissionScope({super.key, required this.walls, required this.actions, required this.child});
 

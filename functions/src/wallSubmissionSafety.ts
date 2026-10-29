@@ -5,7 +5,6 @@ import {sameTimestamp} from "./wallEditingCommon";
 import {boundedText, parseWallText} from "./wallMetadataValidation";
 import {wallSearchTermsFor} from "./wallSearchTerms";
 
-/** Old clients can still create pending walls directly. Clear rejected text, never delete their image or wall. */
 export async function sanitizeSubmissionText(expected: admin.firestore.DocumentSnapshot): Promise<boolean> {
   const original = expected.data();
   if (!original || !expected.createTime) return false;

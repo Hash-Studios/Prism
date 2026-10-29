@@ -211,7 +211,6 @@ void main() {
     const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
     client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
     await repository.rejectWall(wall, reason: 'no');
-    // Another authorized session restores the wall; this repository has not run undo.
     client.docs[FirebaseCollections.rejectedWalls]!.clear();
     client.docs[FirebaseCollections.walls]!['wall-1'] = {...wall.payload, 'title': 'Restored'};
     await repository.rejectWall(wall, reason: 'no');

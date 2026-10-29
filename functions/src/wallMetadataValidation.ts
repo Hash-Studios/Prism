@@ -46,7 +46,6 @@ export function parseWallText(raw: unknown): WallText {
   return {title: boundedText(input.title, 60), desc: boundedText(input.desc, 500), tags};
 }
 
-/** Read legacy optional fields without republishing or silently discarding unsafe values. */
 export function wallTextForEdit(data: Record<string, unknown>): WallText {
   return {title: typeof data.title === "string" ? data.title : "", desc: typeof data.desc === "string" ? data.desc : "",
     tags: Array.isArray(data.tags) ? data.tags.filter((t): t is string => typeof t === "string") : []};

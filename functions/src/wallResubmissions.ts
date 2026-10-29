@@ -28,8 +28,6 @@ const rootRefFor = (docId: string) => db.collection(RESUBMISSION_ROOTS).doc(dige
 async function matchesIdentity(tx: admin.firestore.Transaction, data: admin.firestore.DocumentData,
   identity: admin.firestore.DocumentData, canonicalPath: string, incarnation: admin.firestore.Timestamp): Promise<boolean> {
   if (isDeepStrictEqual(identityOf(data), identity)) return true;
-  // Approval can legitimately redact the public source fields. Only the private, incarnation-bound manifest
-  // may reconstruct that original identity; a logical ID or mutable originalProtected flag is not proof.
   if (data.originalProtected !== true || data.id !== identity.id || typeof data.id !== "string" ||
     !/^[A-Za-z0-9_-]{1,200}$/.test(data.id)) return false;
   const manifest = (await tx.get(db.collection("ownedAssets").doc(data.id))).data();
@@ -48,8 +46,6 @@ async function matchesIdentity(tx: admin.firestore.Transaction, data: admin.fire
 }
 async function validAdmission(tx: admin.firestore.Transaction, wall: admin.firestore.DocumentSnapshot,
   ledger: admin.firestore.DocumentSnapshot): Promise<boolean> {
-  // A new admission creates both docs together; a guarded undo updates this private doc while re-creating the wall.
-  // No mutable public marker and no millisecond-rounded timestamp transform can stand in for the commit timestamp.
   return ledger.exists && wall.exists && sameTimestamp(wall.createTime, ledger.updateTime) &&
     matchesIdentity(tx, wall.data()!, ledger.data()!.identity, wall.ref.path, wall.createTime!);
 }

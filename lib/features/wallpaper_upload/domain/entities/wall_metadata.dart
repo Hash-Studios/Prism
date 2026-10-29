@@ -62,7 +62,6 @@ class PendingWallMetadata {
   int get hashCode => Object.hash(text, category);
 }
 
-/// The raw pending tuple retains absent versus empty values for the transaction's compare-and-set.
 class WallMetadataSnapshot {
   const WallMetadataSnapshot({
     required this.metadata,
@@ -93,7 +92,6 @@ class WallMetadataException implements Exception {
   String toString() => 'WallMetadataException(${failure.name})';
 }
 
-/// Exact audit field maps preserve absence. Display them, but never send their values back as a patch.
 class WallMetadataAudit {
   const WallMetadataAudit({
     required this.id,

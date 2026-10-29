@@ -53,7 +53,6 @@ void main() {
     expect(find.text('Before title'), findsOneWidget);
     expect(find.text('After title'), findsOneWidget);
     expect(find.text('blue'), findsOneWidget);
-    // Missing legacy fields are distinct from an explicitly empty description.
     final absent = AppLocalizations.of(tester.element(find.byType(WallMetadataHistoryPage))).wallMetadataAbsent;
     expect(find.text(absent), findsNWidgets(2));
     expect(find.byType(PrismButton), findsOneWidget);

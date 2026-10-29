@@ -1,6 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
-/// Stateful callable boundary for client adapter tests. Server transactions have their own Functions tests.
 class FakeReviewCallables {
   FakeReviewCallables(this.docs);
 

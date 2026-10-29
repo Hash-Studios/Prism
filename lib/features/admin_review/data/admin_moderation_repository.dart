@@ -204,7 +204,6 @@ class AdminModerationRepository {
       request = (operationId: newWallMetadataOperationId(), revision: revision);
       _undoRequests[wall.id] = request;
     }
-    // The server checks again inside the same transaction as lineage and restoration.
     await _call('undoWallRejection', <String, Object?>{
       'wallDocId': wall.id,
       'expectedRejectionRevision': request.revision,

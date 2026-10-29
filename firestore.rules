@@ -141,7 +141,6 @@ service cloud.firestore {
               && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
     }
 
-    // Upload IDs contain dots and long basenames. This is syntax only, not verified lineage.
     function validResubmitOf() {
       return !('resubmitOf' in request.resource.data)
           || (request.resource.data.resubmitOf is string

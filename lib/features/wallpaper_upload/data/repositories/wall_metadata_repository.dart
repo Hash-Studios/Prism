@@ -186,7 +186,6 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
   @override
   Future<Map<String, WallResubmissionContext>> resubmissionContexts(List<String> wallDocIds) async {
     final Map<String, WallResubmissionContext> result = <String, WallResubmissionContext>{};
-    // The server accepts at most 50 IDs. Never issue one callable per tile.
     for (int start = 0; start < wallDocIds.length; start += 50) {
       final List<String> ids = wallDocIds.skip(start).take(50).toList(growable: false);
       final Map<String, dynamic> body = await _invoke('getWallResubmissionContext', <String, Object?>{
@@ -210,7 +209,6 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
   }
 
   Future<void> _afterSave() async {
-    // Cache maintenance must not turn a confirmed save into a reported failure or another write on retry.
     try {
       await _invalidateCaches?.call();
     } catch (_) {}
@@ -246,7 +244,6 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
 
   static WallMetadataException _failure(Object error) {
     if (error is WallMetadataException) return error;
-    // Tracked transactions wrap callback failures, including our compare-and-set guards.
     if (error is FirestoreError && error.original is WallMetadataException) {
       return error.original! as WallMetadataException;
     }

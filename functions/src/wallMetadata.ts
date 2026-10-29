@@ -83,7 +83,6 @@ async function save(request: CallableRequest<unknown>, revert: boolean): Promise
         latest.docs[0]?.id !== auditId || !isDeepStrictEqual(selected.after, before)) {
         throw new HttpsError("aborted", "edit-is-not-latest");
       }
-      // Validate legacy data, but restore exact values and field presence, never a normalized full-wall snapshot.
       const original = selected.before;
       parseWallText({...{title: "", desc: "", tags: []}, ...original});
       after = original;

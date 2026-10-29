@@ -189,7 +189,6 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                   label: context.l10n.wallMetadataSave,
                   loading: state.status == WallMetadataStatus.saving,
                   expand: true,
-                  // Keep Save available for a tag that has not yet been committed by the keyboard.
                   onPressed: state.busy || state.needsReload ? null : _save,
                 ),
         ),

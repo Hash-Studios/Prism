@@ -72,7 +72,6 @@ class WallMetadataCubit extends Cubit<WallMetadataState> {
 
   void change(PendingWallMetadata draft) {
     if (state.busy || state.snapshot == null) return;
-    // Approved forms cannot mutate category, even if a caller supplies one.
     final PendingWallMetadata next = approved
         ? PendingWallMetadata(text: draft.text, category: state.snapshot!.metadata.category)
         : draft;
