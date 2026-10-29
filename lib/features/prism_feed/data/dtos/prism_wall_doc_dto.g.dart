@@ -43,7 +43,7 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['spatial']),
-  isAiGenerated: json['isAiGenerated'],
+  isAiGenerated: json['isAiGenerated'] as bool? ?? false,
   aiPrompt: json['aiPrompt'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiPrompt']),
   aiStylePreset: json['aiStylePreset'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiStylePreset']),
   aiModel: json['aiModel'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiModel']),

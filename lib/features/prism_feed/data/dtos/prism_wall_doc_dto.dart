@@ -36,7 +36,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreDateTimeConverter() DateTime? boostedUntil,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
-    Object? isAiGenerated,
+    @Default(false) bool isAiGenerated,
     @FirestoreStringConverter() @Default('') String aiPrompt,
     @FirestoreStringConverter() @Default('') String aiStylePreset,
     @FirestoreStringConverter() @Default('') String aiModel,
