@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -51,6 +52,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -123,6 +125,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _settingPromptProgrammatically = false;
   String _observedPromptText = '';
   Timer? _promptSaveTimer;
+  StreamSubscription<PrismUsersV2>? _sessionSubscription;
+  bool _ownerSyncScheduled = false;
 
   /// The last prompt the app wrote itself. While the field still holds it, a new style may replace it.
   String _seededPrompt = '';
@@ -147,6 +151,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void initState() {
     super.initState();
     _promptController.addListener(_onPromptChanged);
+    if (getIt.isRegistered<SessionRepository>()) {
+      _sessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((_) => _syncOwnerAndReload());
+    }
     _loadHistory();
     final AiRemixSeed? remixSeed = widget.remixSeed;
     if (remixSeed != null) _applyRemixSeed(remixSeed);
@@ -195,6 +202,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   void dispose() {
     _promptSaveTimer?.cancel();
+    unawaited(_sessionSubscription?.cancel());
     _promptController.dispose();
     _variationController.dispose();
     _promptFocus.dispose();
@@ -205,6 +213,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool get _isLoggedIn => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
 
   String get _localOwnerId => _isLoggedIn ? app_state.prismUser.id : 'guest';
+
+  void _syncOwnerAndReload() {
+    if (!mounted || _promptOwner == _localOwnerId) return;
+    unawaited(_loadHistory());
+  }
+
+  void _scheduleOwnerSync() {
+    if (_ownerSyncScheduled) return;
+    _ownerSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ownerSyncScheduled = false;
+      _syncOwnerAndReload();
+    });
+  }
 
   void _switchPromptOwner(String owner) {
     if (_promptOwner == owner && (_promptHydrated || _promptLoadingOwner == owner)) return;
@@ -218,6 +240,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptHasUserIntent = false;
     final AppLocalizations? messages = _promptMessages;
     if (messages != null) _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+    _variationController.clear();
     if (_remixLink != null && fromGuest) {
       _setPrompt(promptBeforeSwitch, userInitiated: true, updateSeed: false);
     } else {
@@ -609,6 +632,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
+    if (_promptOwner != _localOwnerId) {
+      unawaited(_loadHistory());
+      return;
+    }
     if (!_canStartGeneration()) return;
     final AiRemixSeed? remixLink = _remixLink;
     final String ownerId = app_state.prismUser.id;
@@ -852,7 +879,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   /// Android opens the Set screen with this wall and no crop step. iOS saves it to Photos and shows the set guide.
   Future<void> _apply(AiGenerationRecord record) async {
-    if (_applying || record.userId != app_state.prismUser.id) return;
+    if (_applying || !_isLoggedIn || record.userId != app_state.prismUser.id) return;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        mounted &&
+        _isLoggedIn &&
+        record.userId == app_state.prismUser.id &&
+        ownerSession == CoinsService.instance.economySession;
     analytics.track(AiResultAppliedEvent(platform: hideSetWallpaperUi ? 'ios' : 'android', from: _heroFrom));
     setState(() => _applying = true);
     try {
@@ -866,10 +899,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         file = await aiDownloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       } catch (error, stackTrace) {
         logger.w('AI apply prep failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-        toasts.error(aiDownloadFailureMessage(l10n, error));
+        if (ownsSession()) toasts.error(aiDownloadFailureMessage(l10n, error));
         return;
       }
-      if (!mounted) return;
+      if (!mounted || !ownsSession()) return;
       await SetWallpaperFlow.run(
         context,
         url: file.path,
@@ -883,18 +916,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _save(AiGenerationRecord record) async {
-    if (_saving) return;
+    if (_saving || !_isLoggedIn || record.userId != app_state.prismUser.id) return;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        _isLoggedIn && record.userId == app_state.prismUser.id && ownerSession == CoinsService.instance.economySession;
     final AppLocalizations l10n = context.l10n;
     _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
       final File localFile = await OfflineAssetStore.instance.resolve(link).timeout(aiAssetTransferTimeout);
+      if (!ownsSession()) return;
       final request = DownloadRequest(
         link: localFile.path,
         filenameWithoutExtension: downloadBaseName(link),
         isLocalFile: true,
       );
       final result = await PrismMediaHostApi().enqueueDownload(request);
+      if (!ownsSession()) return;
       if (result.success) {
         unawaited(() async {
           try {
@@ -905,7 +943,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         }());
         toasts.success(wallpaperSavedMessage(l10n));
         if (mounted) await showIosSetWallpaperGuide(context);
-        unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.aiWallpaperSaved));
+        if (ownsSession()) unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.aiWallpaperSaved));
       } else if (isPhotosPermissionDenied(result.errorCode)) {
         if (mounted) showPhotosPermissionDenied(context);
       } else {
@@ -913,7 +951,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
     } catch (error, stackTrace) {
       logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(aiDownloadFailureMessage(l10n, error));
+      if (ownsSession()) toasts.error(aiDownloadFailureMessage(l10n, error));
     } finally {
       _saving = false;
     }
@@ -989,7 +1027,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(AiSubmitStartedEvent(generationId: record.id));
       final AiSubmissionMetadata metadata = await _repository.prefillSubmissionMetadata(
         generationId: record.id,
-        defaultTags: <String>[_selectedStyle.apiValue],
+        defaultTags: <String>[record.stylePreset.apiValue],
       );
       if (!mounted || app_state.prismUser.id != record.userId) return;
       final AiSubmissionMetadata? edited = await showAiSubmitSheet(
@@ -997,8 +1035,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         record: record,
         isPremium: app_state.prismUser.premium,
         metadata: metadata,
-        prompt: _promptController.text.trim(),
-        style: _selectedStyle,
+        prompt: record.prompt,
+        style: record.stylePreset,
       );
       if (!mounted || app_state.prismUser.id != record.userId) return;
       if (edited == null) {
@@ -1288,6 +1326,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_promptOwner != _localOwnerId) _scheduleOwnerSync();
     final bool available = _isRolloutEligible && _isLoggedIn;
     final AiGenerationRecord? hero = available && _hero?.userId == app_state.prismUser.id ? _hero : null;
     final Widget compose = PrismPage(
