@@ -144,6 +144,7 @@
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
                 <data android:path="/gallery" />
+                <data android:path="/requests" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
@@ -265,6 +266,7 @@
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
                 <data android:path="/gallery" />
+                <data android:path="/requests" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
@@ -375,6 +377,7 @@
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
                 <data android:path="/gallery" />
+                <data android:path="/requests" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
@@ -485,6 +488,7 @@
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
                 <data android:path="/gallery" />
+                <data android:path="/requests" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
@@ -595,6 +599,7 @@
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
                 <data android:path="/gallery" />
+                <data android:path="/requests" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
