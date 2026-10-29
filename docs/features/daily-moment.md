@@ -18,13 +18,15 @@ These values are server defaults. `economyConfig/current` can override them. The
 | Rewarded video | Completed ad; `awardCoins(action: rewardedAd, sourceTag, requestId)` | First ad pays 20, later ads pay 10 | 20 per UTC day, minimum 20-second gap | Earn coins |
 | First upload | Verified submission or qualifying community wall; `awardCoins(action: firstWallpaperUpload, sourceTag, reason)` | 50 coins and 50 XP | Once per account | Upload and Earn coins |
 | Profile completion | Complete profile; `awardCoins(action: profileCompletion, sourceTag, reason)` | 25 coins and 25 XP | Once per account | Profile and Earn coins |
+| Badge milestones | `checkBadges()` checks server evidence | Week Warrior 25 coins/25 XP; Streak Master 100/100; Creator (first approved wallpaper) 50/0; AI Artist 30/30; Prism Veteran 75/75. Collector, Art Curator, Social Butterfly, and Profile Complete pay no coins or XP. | Each badge once per account | Badge celebration, profile, and Rewards |
+| Rank rewards | XP award transactions or `reconcileRankRewards(sourceTag)` | Silver at 500 XP grants Aurora glow; Gold at 2,000 grants Gold frame; Prism at 6,000 grants Prism glow. No coins. | Each item once per account | Rank card and shop |
 | Referral | Accepted referral; `processReferral(inviterUserId)` | 100 coins for each account | Referee once; inviter three per day and 20 lifetime | Invite friends |
 | Legacy Pro spin | `claimProSpin(requestId)` | 20 coins 40%, 30 coins 25%, 50 coins 20%, 75 coins 10%, 100 coins 5% | Shares the free Pro spin receipt | No current client caller |
 | Legacy Pro daily bonus | `awardCoins(action: proDailyBonus, sourceTag, reason)` | Lowest legacy spin prize, default 20 | Shares the free Pro spin receipt | No current client caller |
 | Legacy quest chest | `openQuestChest(requestId)` | Uniform 5 to 15 coins, bonus doubles coins, 10% cosmetic chance, and 10 XP | All three quests required. Shares the daily chest receipt. | No current client caller |
 | Drops, shop, freeze | Existing purchase callables | Spend or unlock features. No new coin reward. | Existing ownership and purchase rules | Drops, shop, and Rewards |
 
-Sources are `functions/src/economy.ts`, `streak.ts`, `quests.ts`, `coinsCallables.ts`, `questCatalog.ts`, and `wallStats.ts`.
+Sources are `functions/src/economy.ts`, `streak.ts`, `quests.ts`, `coinsCallables.ts`, `questCatalog.ts`, `wallStats.ts`, `badges.ts`, and `rankRewards.ts`.
 
 ## Flow decision
 
@@ -66,7 +68,11 @@ A request ID cannot be reused for a different wallpaper or action. Incomplete pr
 The client displays a positive amount only from a complete, matching receipt. It never calculates earnings from a balance difference.
 Account changes stop action retries. Account deletion closes receipt writes before deleting the receipt tree.
 
-Upload feedback uses the existing first-upload award result. An approval does not create another reward.
+Submission feedback uses the existing first-upload award result.
+Approval feedback uses the separate Creator badge receipt from `checkBadges`.
+With the flag on, the approval description shows the confirmed amount inline.
+The receipt has no wallpaper ID, so the UI does not attribute it to a specific wallpaper.
+Neither feedback path creates another reward.
 
 The owner approved this additive backend response change. Reward amounts, odds, limits, and Firestore rules stay unchanged.
 Deploy the callable update before enabling the feature in a release. Deployment requires separate owner approval.

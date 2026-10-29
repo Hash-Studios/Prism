@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_host.dart';
@@ -37,6 +38,28 @@ Widget _app(Widget child) => MaterialApp(
   supportedLocales: AppLocalizations.supportedLocales,
   home: Scaffold(body: child),
 );
+
+Future<void> _openBadge(WidgetTester tester, EarnedBadge badge, {double textScale = 1}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
+      home: Scaffold(
+        body: Builder(
+          builder: (context) =>
+              TextButton(onPressed: () => showBadgeCelebrateSheet(context, badge), child: const Text('open')),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('open'));
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
+}
 
 void main() {
   test('catalog matches the server badge ids', () {
@@ -97,6 +120,49 @@ void main() {
     await open(const EarnedBadge(id: 'collector', coins: 0));
     expect(find.text('Collector'), findsOneWidget);
     expect(find.textContaining('+'), findsNothing);
+  });
+
+  testWidgets('creator approval shows only the confirmed inline amount and keeps Glint calm', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
+    await _openBadge(tester, const EarnedBadge(id: 'creator', coins: 37));
+    expect(find.text('+37 coins'), findsOneWidget);
+    expect(find.text('+37'), findsNothing);
+    expect(tester.widget<Text>(find.text('+37 coins')).style!.fontSize, lessThan(44));
+    final inline = find.ancestor(of: find.text('+37 coins'), matching: find.byType(Wrap));
+    expect(inline, findsOneWidget);
+    expect(find.descendant(of: inline, matching: find.text('Get a wallpaper approved')), findsOneWidget);
+    expect(tester.widget<Glint>(find.byType(Glint)).mood, GlintMood.calm);
+    final announcement = tester.widget<Semantics>(
+      find.ancestor(of: find.text('+37 coins'), matching: find.byType(Semantics)).first,
+    );
+    expect(announcement.properties.liveRegion, isTrue);
+
+    await tester.tap(find.text('Nice'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await _openBadge(tester, const EarnedBadge(id: 'creator', coins: 0));
+    expect(find.textContaining('+'), findsNothing);
+  });
+
+  testWidgets('creator approval keeps the legacy amount when the flag is off', (tester) async {
+    DailyMomentConfig.enabledOverride = false;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
+    await _openBadge(tester, const EarnedBadge(id: 'creator', coins: 37));
+    expect(find.text('+37'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('+37')).style!.fontSize, 44);
+    expect(tester.widget<Glint>(find.byType(Glint)).mood, GlintMood.celebrate);
+  });
+
+  testWidgets('inline creator approval wraps on a narrow screen with large text', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _openBadge(tester, const EarnedBadge(id: 'creator', coins: 37), textScale: 3);
+    expect(find.text('+37 coins'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('host shows each queued badge once, in order', (tester) async {
