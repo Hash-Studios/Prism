@@ -80,17 +80,23 @@ The owner of an approved Prism wallpaper can open **Edit details** from wallpape
 
 The server permits ten changed approved saves per owner per UTC day. No-op saves and identical operation retries do not use another save. A private audit records exact old and new text fields. Admins can inspect edit history and revert the latest applicable edit. Revert does not change the image, category, approval, credit, or rewards.
 
+Wallpaper details show the saved text immediately. An older metadata refresh cannot replace a newer save on the same wall.
+
 ### Fix a rejected upload
 
 **Fix and resubmit** keeps the previous rejection reason and metadata. If the full original remains retrievable through its URL, the app retrieves it. Otherwise, **Choose image** keeps the editing context. The app never uses the thumbnail as the original. AI source details are not copied or asserted from an archive.
 
 Resubmission uploads fresh original and thumbnail bytes through the normal upload quota path. `submitWallResubmission` verifies those completed uploads and creates a new pending wall. `resubmitOf` points to the immediate rejected document. A private root record limits the original lineage to three lifetime linked admissions. Rejection, withdrawal, and history deletion do not return an attempt. An identical operation retry returns its original result, even after the new wall was deleted.
 
+The local weekly counter uses durable receipts keyed by owner and operation. A successful retry does not charge the counter again after restart or an interrupted local write. A retry from an earlier week does not charge the current week. Local account cleanup removes the owner's receipts. These receipts do not replace server quota checks. After quota persistence, the app rechecks the account before it updates the signed-in user's upload fields. It also rechecks the account before it requests the first-upload reward.
+
 The limit applies only to callable-admitted linked resubmissions. Existing general-create rules still permit an unrelated upload of the same artwork. The feature is not a universal duplicate-image limit.
 
 The review queue shows a resubmission label and the captured old reason only after an admin callable verifies the private admission record. A raw `resubmitOf` value is not proof. Failed context lookup shows unavailable details.
 
 `rejectWallForReview` reads the current wall and archives its exact server creation time in one transaction. It refuses a changed revision or review state. `undoWallRejection` refuses a changed archive or an admitted child. Undo preserves the previous approval state, but does not restore deleted image files.
+
+Admin rejection and undo support legacy walls without a mapped owner, missing owner profiles, and anonymized walls retained after account deletion. Identifiable owners remain subject to the transactional account-deletion fence. A closed deletion fence blocks rejection and undo for those owners. Creator edits and resubmission admission still require an active verified owner.
 
 ### Reuse the last successful details
 
@@ -123,7 +129,7 @@ The wall record no longer holds `aiOriginalImageUrl` (the image without the wate
 
 ## Limits
 
-- The title, tags and category editor is on the gallery upload only. The AI wallpaper submit step does not use it. It still sends the title, category and tags that the server suggests.
+- New gallery uploads use the shared metadata form. The AI wallpaper submit step does not use it. It still sends the title, category, and tags that the server suggests.
 - The batch lives in memory. If the app closes, the batch is lost. The images the user did not send are not saved as drafts.
 - There is no id check for repeats (see above). A script that lists repeated ids is a follow-up for the backend owner.
 - Walls that were saved with `aiOriginalImageUrl` before this change still hold the field. A one-off script must unset it. The script is not part of this change.
