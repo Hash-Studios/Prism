@@ -148,7 +148,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test
 
 .PHONY: notification-contract-fixture-test
 notification-contract-fixture-test: ensure-fvm
