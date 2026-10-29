@@ -24,7 +24,9 @@ export const MODEL = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
 export const COST_PER_IMAGE_USD = 0.04;
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
-// Seedream 5 Lite takes no seed, so the seed only names the attempt. A new seed for a style makes a new image.
+// Seedream 5 Lite takes no seed, so the seed only names the attempt. A new seed for a style makes a new image, but
+// only before upload: an uploaded file is skipped, and its URL is cached as immutable. To replace uploaded samples,
+// bump VERSION and AiStylePreset.sampleVersion together.
 export const DEFAULT_SEED = 20261029;
 export const SEED_OVERRIDES = {};
 export const SIZES = { tile: { width: 288, height: 360 }, sheet: { width: 540, height: 960 } };

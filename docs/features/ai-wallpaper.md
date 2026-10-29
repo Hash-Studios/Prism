@@ -128,7 +128,8 @@ The script `tool/ai_style_samples.mjs` makes the samples. Its test, `tool/ai_sty
 - It costs about $0.04 an image, or $0.52 for all 13. It counts against the Studio budget (`STUDIO_DAILY_BUDGET_USD`, 2 USD a day).
 - It needs `STUDIO_SECRET` and `sharp`. Run `cd functions && npm ci` first.
 - It is idempotent. It skips files that already exist in R2 (HEAD check). It reuses raw images in `build/ai-style-samples/raw`. The worker replays a finished generation id, so it makes no second fal call.
-- To redo one style, add its slug to `SEED_OVERRIDES` in the script. A new seed gives a new generation id. Seedream 5 Lite takes no seed input, so the seed only names the attempt.
+- To redo one style before upload, add its slug to `SEED_OVERRIDES` in the script. A new seed gives a new generation id. Seedream 5 Lite takes no seed input, so the seed only names the attempt.
+- A seed change does not replace an uploaded sample. The script skips files that exist, and the URL is cached as immutable. To replace uploaded samples, bump `VERSION` in the script and `AiStylePreset.sampleVersion` together.
 - `--only=<slug,slug>` limits the styles.
 
 Steps:
