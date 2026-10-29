@@ -10131,5 +10131,8 @@
   "@wallRequestErrorAccountAge": {
     "description": "Error when an account younger than 10 days tries to request or vote."
   },
-  "adminFillsRequest": "Memenuhi permintaan"
+  "adminFillsRequest": "Memenuhi permintaan",
+  "@adminFillsRequest": {
+    "description": "Admin review card label: the text of the request this wall says it fills."
+  }
 }
