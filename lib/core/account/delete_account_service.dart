@@ -3,6 +3,7 @@ import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -56,8 +57,8 @@ class DeleteAccountService {
   }
 
   static Future<void> _reauthenticateWithProvider() async {
-    final providerIds =
-        FirebaseAuth.instance.currentUser?.providerData.map((provider) => provider.providerId).toSet() ?? {};
+    final User? user = FirebaseInit.hasDefaultApp ? FirebaseAuth.instance.currentUser : null;
+    final Set<String> providerIds = user?.providerData.map((provider) => provider.providerId).toSet() ?? {};
     if (providerIds.contains('apple.com')) {
       await globalAppleAuth.reauthenticateCurrentUser();
     } else {

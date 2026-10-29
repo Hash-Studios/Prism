@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class FirebaseInit {
@@ -31,6 +32,9 @@ class FirebaseInit {
 
   static Future<bool> waitUntilReady({Duration timeout = const Duration(seconds: 3)}) =>
       readyFuture.timeout(timeout, onTimeout: () => false);
+
+  /// The default app exists. False while startup is still initializing Firebase, and after init failed or was skipped.
+  static bool get hasDefaultApp => Firebase.apps.isNotEmpty;
 
   static FirebaseRemoteConfig? get remoteConfigIfInitialized {
     if (!_initialized) return null;

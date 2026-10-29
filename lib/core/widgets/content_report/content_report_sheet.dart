@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -38,7 +39,7 @@ Future<void> showContentReportSheet(
   if (!context.mounted) {
     return;
   }
-  if (FirebaseAuth.instance.currentUser == null) {
+  if (!FirebaseInit.hasDefaultApp || FirebaseAuth.instance.currentUser == null) {
     toasts.error(context.l10n.coreSignInToReportContent);
     googleSignInPopUp(context, () {
       if (!context.mounted) return;

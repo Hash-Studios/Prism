@@ -18,6 +18,7 @@ import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app;
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -153,9 +154,8 @@ void main() {
     await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
     await tester.pump();
 
-    verify(
-      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a')),
-    ).called(1);
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a')))
+        .called(1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('late pass restore updates the signed-in owner entitlement', (tester) async {
@@ -213,9 +213,8 @@ void main() {
 
     await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
     await tester.pump();
-    verify(
-      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'account-a')),
-    ).called(1);
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'account-a')))
+        .called(1);
     CoinsService.instance.setPassesForTest(Passes.empty);
     await tester.pump();
 
@@ -345,9 +344,8 @@ void main() {
     );
     await tester.pump();
 
-    verify(
-      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-b')),
-    ).called(1);
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-b')))
+        .called(1);
     await states.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -406,9 +404,8 @@ void main() {
     );
     await tester.pump();
 
-    verify(
-      () => autoRotateBloc.add(const AutoRotateEvent.favouritesChanged(<String>['https://example.test/a.jpg'])),
-    ).called(1);
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.favouritesChanged(<String>['https://example.test/a.jpg'])))
+        .called(1);
     await favourites.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -502,6 +499,14 @@ void main() {
     await tester.runAsync(bloc.close);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('a pro lapse above MaterialApp still shows the localized reason', (tester) async {
+    await _expectProLapseToast(tester, aboveMaterialApp: true);
+  });
+
+  testWidgets('a pro lapse under MaterialApp shows the localized reason', (tester) async {
+    await _expectProLapseToast(tester, aboveMaterialApp: false);
+  });
+
   testWidgets('resume retries a failed signed-out stop without RevenueCat refresh', (tester) async {
     final _FakeAutoRotateRepository repository = _FakeAutoRotateRepository(
       config: const AutoRotateConfig(enabled: true),
@@ -559,6 +564,60 @@ void main() {
     await tester.runAsync(autoRotateBloc.close);
     await sessions.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+}
+
+Future<void> _expectProLapseToast(WidgetTester tester, {required bool aboveMaterialApp}) async {
+  final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
+  final _MockSessionBloc sessionBloc = _MockSessionBloc();
+  final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
+  final _MockFoldersBloc foldersBloc = _MockFoldersBloc();
+  final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+  when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial());
+  when(() => sessionBloc.state).thenReturn(SessionState.initial());
+  when(() => favouriteWallsBloc.state).thenReturn(FavouriteWallsState.initial());
+  when(() => foldersBloc.state).thenReturn(FoldersState.initial());
+  whenListen(autoRotateBloc, states.stream, initialState: AutoRotateState.initial());
+  whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: SessionState.initial());
+  whenListen(
+    favouriteWallsBloc,
+    const Stream<FavouriteWallsState>.empty(),
+    initialState: FavouriteWallsState.initial(),
+  );
+  whenListen(foldersBloc, const Stream<FoldersState>.empty(), initialState: FoldersState.initial());
+  addTearDown(() async {
+    toasts.overlayResolver = null;
+    await states.close();
+  });
+
+  final Widget app = MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    builder: aboveMaterialApp
+        ? null
+        : (context, child) => AutoRotateSessionListener(child: child ?? const SizedBox.shrink()),
+    home: const SizedBox.shrink(),
+  );
+  await tester.pumpWidget(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
+        BlocProvider<SessionBloc>.value(value: sessionBloc),
+        BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
+        BlocProvider<FoldersBloc>.value(value: foldersBloc),
+      ],
+      child: aboveMaterialApp ? AutoRotateSessionListener(child: app) : app,
+    ),
+  );
+  toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+
+  final AutoRotateState lapsed = AutoRotateState.initial().copyWith(proLapsed: true);
+  when(() => autoRotateBloc.state).thenReturn(lapsed);
+  states.add(lapsed);
+  await tester.pump();
+  await tester.pump();
+
+  expect(find.text(lookupAppLocalizations(const Locale('en')).wallpaperAutoRotateOffEnded), findsOneWidget);
+  verify(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged())).called(1);
 }
 
 Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) {

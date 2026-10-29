@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/logger/logger.dart';
@@ -13,12 +14,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AppleAuth {
-  AppleAuth({FirebaseAuth? auth, GoogleAuth? googleAuth})
-    : _auth = auth ?? FirebaseAuth.instance,
-      _googleAuth = googleAuth;
+  AppleAuth({FirebaseAuth? auth, GoogleAuth? googleAuth, Future<bool> Function()? firebaseReady})
+    : _authOverride = auth,
+      _googleAuth = googleAuth,
+      _firebaseReady = firebaseReady ?? (() => FirebaseInit.waitUntilReady());
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _authOverride;
+  FirebaseAuth? _resolvedAuth;
+  final Future<bool> Function() _firebaseReady;
   final GoogleAuth? _googleAuth;
+
+  Future<void> _requireAuth() async {
+    if (_authOverride != null || _resolvedAuth != null) return;
+    if (!await _firebaseReady()) throw const FirebaseUnavailableException();
+    _resolvedAuth = FirebaseAuth.instance;
+  }
+
+  FirebaseAuth get _auth {
+    final FirebaseAuth? resolved = _authOverride ?? _resolvedAuth;
+    if (resolved == null) throw const FirebaseUnavailableException();
+    return resolved;
+  }
 
   String _generateNonce([int length = 32]) {
     const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
@@ -34,6 +50,7 @@ class AppleAuth {
 
   Future<SignInOutcome> signInWithApple() async {
     logger.i('signInWithApple start', tag: 'AppleAuth');
+    await _requireAuth();
     final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
@@ -162,6 +179,7 @@ class AppleAuth {
   /// with Apple authorization. Required by Apple before account deletion
   /// (HIG: apps must let users revoke "Sign in with Apple" on deletion).
   Future<void> reauthenticateCurrentUser() async {
+    await _requireAuth();
     final rawNonce = _generateNonce();
     final credential = await SignInWithApple.getAppleIDCredential(
       scopes: [AppleIDAuthorizationScopes.email],
