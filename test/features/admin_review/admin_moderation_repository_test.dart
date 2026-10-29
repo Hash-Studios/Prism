@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' show FieldValue;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
+import 'fake_review_callables.dart';
 
 class _RecordingFirestoreClient extends FakeFirestoreClient {
   final List<FirestoreQuerySpec> watchedQueries = <FirestoreQuerySpec>[];
@@ -32,22 +33,26 @@ class _RecordingFirestoreClient extends FakeFirestoreClient {
     transactionSourceTag = sourceTag;
     transactionCollection = collection;
     transactionDocId = docId;
-    final _RecordingTransaction recorder = _RecordingTransaction();
+    final _RecordingTransaction recorder = _RecordingTransaction(this);
     transaction = recorder;
     return action(recorder);
   }
 }
 
 class _RecordingTransaction implements FirestoreTransaction {
+  _RecordingTransaction(this.client);
+
+  final _RecordingFirestoreClient client;
   final List<({String op, String collection, String id, Map<String, dynamic>? data})> writes =
       <({String op, String collection, String id, Map<String, dynamic>? data})>[];
 
   @override
-  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => null;
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => client.docs[collection]?[id];
 
   @override
   void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) {
     writes.add((op: 'set', collection: collection, id: id, data: Map<String, dynamic>.of(data)));
+    client.docs.putIfAbsent(collection, () => <String, Map<String, dynamic>>{})[id] = Map<String, dynamic>.of(data);
   }
 
   @override
@@ -56,17 +61,21 @@ class _RecordingTransaction implements FirestoreTransaction {
   }
 
   @override
-  void deleteDoc(String collection, String id) =>
-      writes.add((op: 'delete', collection: collection, id: id, data: null));
+  void deleteDoc(String collection, String id) {
+    writes.add((op: 'delete', collection: collection, id: id, data: null));
+    client.docs[collection]?.remove(id);
+  }
 }
 
 void main() {
   late _RecordingFirestoreClient client;
   late AdminModerationRepository repository;
+  late FakeReviewCallables callables;
 
   setUp(() {
     client = _RecordingFirestoreClient();
-    repository = AdminModerationRepository(client);
+    callables = FakeReviewCallables(client.docs);
+    repository = AdminModerationRepository.withCaller(client, callables.call);
   });
 
   test('pending wall stream queries only unreviewed walls by newest first', () async {
@@ -91,25 +100,125 @@ void main() {
       'wallpaper_thumb': 'https://example.com/wall.jpg',
       'review': false,
     });
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
     await repository.rejectWall(wall, reason: 'Wrong aspect ratio');
 
-    expect(client.transactionSourceTag, 'admin_review.reject_wall');
-    expect(client.transactionCollection, FirebaseCollections.walls);
-    expect(client.transactionDocId, 'wall-1');
-    expect(
-      client.transaction!.writes.map((write) => (write.op, write.collection, write.id)),
-      <(String, String, String)>[
-        ('set', FirebaseCollections.rejectedWalls, 'wall-1'),
-        ('delete', FirebaseCollections.walls, 'wall-1'),
-      ],
-    );
-    final Map<String, dynamic> rejected = client.transaction!.writes.first.data!;
+    final request = callables.requests.last;
+    expect(request.name, 'rejectWallForReview');
+    expect(request.data.keys.toSet(), {
+      'wallDocId',
+      'expectedWallRevision',
+      'expectedReview',
+      'rejectionOperationId',
+      'reason',
+    });
+    expect(request.data['expectedReview'], isFalse);
+    expect(request.data['reason'], 'Wrong aspect ratio');
+    expect(client.transaction, isNull);
+    final Map<String, dynamic> rejected = client.docs[FirebaseCollections.rejectedWalls]!['wall-1']!;
     expect(rejected['review'], isFalse);
     expect(rejected['rejectionReason'], 'Wrong aspect ratio');
     expect(rejected['rejectedAt'], isA<DateTime>());
     expect(client.writes.single.op, 'add');
     expect(client.writes.single.collection, FirebaseCollections.notifications);
     expect((client.writes.single.data!['notification'] as Map<String, dynamic>)['body'], 'Wrong aspect ratio');
+  });
+
+  test('reject archives current metadata rather than the stale review card', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{
+      'review': false,
+      'email': 'creator@example.com',
+      'title': 'Old title',
+      'desc': '',
+    });
+    client.docs[FirebaseCollections.walls] = {
+      'wall-1': {
+        ...wall.payload,
+        'title': 'Saved just now',
+        'desc': 'Fresh description',
+        'tags': ['new tag'],
+        'category': 'Nature',
+      },
+    };
+    await repository.rejectWall(wall, reason: 'Wrong crop');
+    final archive = client.docs[FirebaseCollections.rejectedWalls]!['wall-1']!;
+    expect(archive['title'], 'Saved just now');
+    expect(archive['desc'], 'Fresh description');
+    expect(archive['tags'], ['new tag']);
+    expect(archive['category'], 'Nature');
+  });
+
+  test('reject refuses an approval race or disappeared wall with no writes', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {
+      'wall-1': {'review': true},
+    };
+    await expectLater(repository.rejectWall(wall, reason: 'no'), throwsA(isA<Exception>()));
+    expect(client.transaction, isNull);
+    client.docs[FirebaseCollections.walls]!.clear();
+    await expectLater(repository.rejectWall(wall, reason: 'no'), throwsStateError);
+    expect(client.transaction, isNull);
+    expect(client.writes, isEmpty);
+  });
+
+  test('undo rejection restores the fresh archived metadata and removes rejection-only fields', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false, 'title': 'Old'});
+    client.docs[FirebaseCollections.walls] = {
+      'wall-1': {...wall.payload, 'title': 'New'},
+    };
+    await repository.rejectWall(wall, reason: 'no');
+    await repository.undoRejectWall(wall);
+    expect(client.docs[FirebaseCollections.walls]!['wall-1'], {'review': false, 'title': 'New'});
+    expect(client.docs[FirebaseCollections.rejectedWalls], isNot(contains('wall-1')));
+  });
+
+  test('undo never overwrites a live wall or a replacement rejection archive', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    await repository.rejectWall(wall, reason: 'no');
+    client.docs[FirebaseCollections.walls]!['wall-1'] = {'review': false, 'title': 'New incarnation'};
+    await expectLater(repository.undoRejectWall(wall), throwsStateError);
+    expect(client.transaction, isNull);
+    client.docs[FirebaseCollections.walls]!.clear();
+    client.docs[FirebaseCollections.rejectedWalls]!['wall-1']!['rejectionOperationId'] = 'another-rejection';
+    await expectLater(repository.undoRejectWall(wall), throwsStateError);
+    expect(client.transaction, isNull);
+  });
+
+  test('undo refuses a verified child admission without calling the undo endpoint', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    await repository.rejectWall(wall, reason: 'no');
+    callables.admittedParents.add('wall-1');
+    await expectLater(repository.undoRejectWall(wall), throwsStateError);
+    expect(callables.requests.where((r) => r.name == 'undoWallRejection'), isEmpty);
+    expect(client.docs[FirebaseCollections.rejectedWalls], contains('wall-1'));
+  });
+
+  test('lost rejection response replays the same operation before reading now-deleted live wall', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    callables.loseNextRejectResponse = true;
+    await expectLater(repository.rejectWall(wall, reason: 'no'), throwsA(isA<Exception>()));
+    await repository.rejectWall(wall, reason: 'no');
+    final rejects = callables.requests.where((r) => r.name == 'rejectWallForReview').toList();
+    expect(rejects, hasLength(2));
+    expect(rejects.first.data, rejects.last.data);
+    expect(callables.requests.where((r) => r.name == 'getWallResubmissionContext'), hasLength(1));
+  });
+
+  test('a confirmed rejection cannot replay its old operation against a recreated wall', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    await repository.rejectWall(wall, reason: 'no');
+    // Another authorized session restores the wall; this repository has not run undo.
+    client.docs[FirebaseCollections.rejectedWalls]!.clear();
+    client.docs[FirebaseCollections.walls]!['wall-1'] = {...wall.payload, 'title': 'Restored'};
+    await repository.rejectWall(wall, reason: 'no');
+    final rejects = callables.requests.where((r) => r.name == 'rejectWallForReview').toList();
+    expect(rejects.last.data['rejectionOperationId'], isNot(rejects.first.data['rejectionOperationId']));
+    expect(client.docs[FirebaseCollections.walls], isNot(contains('wall-1')));
+    expect(client.docs[FirebaseCollections.rejectedWalls]!['wall-1']!['title'], 'Restored');
   });
 
   test('approval updates the wall and leaves the inbox entry to onWallApproved', () async {

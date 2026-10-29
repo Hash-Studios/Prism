@@ -15,11 +15,17 @@ import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
+import 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
+import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
+import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/usecases/submit_resubmission.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/fills_request_row.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadata_form.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
@@ -32,9 +38,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 
+export 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart' show ResubmissionSeed;
 // The generated routes name these types in their arguments.
 export 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart' show SubmissionMetadata;
 export 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart' show UploadBatch;
+export 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart'
+    show LastSubmissionDefaultsStore;
+export 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart' show UploadDraft;
 
 @RoutePage()
 class UploadWallScreen extends StatefulWidget {
@@ -42,6 +52,8 @@ class UploadWallScreen extends StatefulWidget {
     super.key,
     required this.image,
     this.batch,
+    this.resubmission,
+    this.resumedDraft,
     @visibleForTesting this.imageSizeForTesting,
     @visibleForTesting this.prepareImageForTesting,
     @visibleForTesting this.uploadFileForTesting,
@@ -51,9 +63,12 @@ class UploadWallScreen extends StatefulWidget {
     @visibleForTesting this.presentPaywallForTesting,
     @visibleForTesting this.nowForTesting,
     @visibleForTesting this.draftStoreForTesting,
+    @visibleForTesting this.defaultsStoreForTesting,
   });
 
   final File image;
+  final ResubmissionSeed? resubmission;
+  final UploadDraft? resumedDraft;
 
   /// Set when this image is one of several picked together. All screens of the batch share this object.
   final UploadBatch? batch;
@@ -85,6 +100,8 @@ class UploadWallScreen extends StatefulWidget {
 
   @visibleForTesting
   final UploadDraftStore? draftStoreForTesting;
+  @visibleForTesting
+  final LastSubmissionDefaultsStore? defaultsStoreForTesting;
 
   @override
   State<UploadWallScreen> createState() => _UploadWallScreenState();
@@ -104,7 +121,13 @@ enum _UploadStage {
 enum _UploadExitChoice { keepDraft, discard, cancel }
 
 class _UploadWallScreenState extends State<UploadWallScreen> {
-  late final String id = randomUploadId(uploadIdLength);
+  late String id = randomUploadId(uploadIdLength);
+  late String _operationId = 'upload_${randomUploadId(24)}';
+  String _rejectedDocId = '';
+  String _previousReason = '';
+  ResubmissionAdmission? _admission;
+  final _formKey = GlobalKey<SubmissionMetadataFormState>();
+  late final _defaultsStore = widget.defaultsStoreForTesting ?? LastSubmissionDefaultsStore();
   late final UploadDraftStore _draftStore = widget.draftStoreForTesting ?? UploadDraftStore();
   late final String _draftOwner;
   File? _draftImage;
@@ -115,7 +138,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String? wallpaperResolution;
   String? wallpaperProvider = 'Prism';
   String? wallpaperSize;
-  String? wallpaperDesc = 'Community';
   String? wallpaperThumb;
   String? wallpaperUrl;
   String? wallpaperSha;
@@ -161,7 +183,61 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   void initState() {
     super.initState();
     _draftOwner = _activeDraftOwner;
+    if (widget.resubmission case final seed?) {
+      _metadata = seed.metadata;
+      _rejectedDocId = seed.rejectedDocId;
+      _previousReason = seed.previousReason;
+    }
+    if (widget.resumedDraft case final draft? when draft.owner == _draftOwner) {
+      _draftId = draft.draftId;
+      _restoreDraft(draft);
+    }
     unawaited(_prepareImage());
+  }
+
+  void _restoreDraft(UploadDraft draft) {
+    _draftImage = draft.file;
+    _metadata = draft.metadata;
+    final session = draft.session;
+    if (session == null) return;
+    id = session.logicalId;
+    _operationId = session.operationId;
+    _rejectedDocId = session.rejectedDocId;
+    _previousReason = session.previousReason;
+    _fileName = session.fileName;
+    _submissionAttempted = session.submissionAttempted;
+    _submissionUnresolved = session.submissionAttempted;
+    wallpaperPath = session.original?.path;
+    wallpaperSha = session.original?.sha;
+    wallpaperUrl = session.original?.downloadUrl;
+    wallpaperSourceKind = session.original?.sourceKind;
+    thumbPath = session.thumbnail?.path;
+    thumbSha = session.thumbnail?.sha;
+    wallpaperThumb = session.thumbnail?.downloadUrl;
+    thumbSourceKind = session.thumbnail?.sourceKind;
+  }
+
+  String _idForImage(List<int> bytes) => _rejectedDocId.isEmpty
+      ? UploadDraftStore.idForBytes(bytes)
+      : '${UploadDraftStore.idForBytes(bytes)}_${UploadDraftStore.idForBytes(utf8.encode(_rejectedDocId))}';
+
+  Future<void> _useLastDetails() async {
+    try {
+      if (widget.resumedDraft != null && widget.resumedDraft!.owner != _draftOwner) {
+        throw StateError('The draft belongs to another account.');
+      }
+      final defaults = await _defaultsStore.read(_draftOwner);
+      if (!mounted || _activeDraftOwner != _draftOwner) return;
+      if (defaults == null) {
+        toasts.info(context.l10n.wallUploadLastDetailsUnavailable);
+        return;
+      }
+      _formKey.currentState?.useDetails(category: defaults.category, tags: defaults.tags);
+      unawaited(analytics.track(const UploadLastDetailsUsedEvent()));
+    } catch (error) {
+      logger.w('Last upload details could not be loaded: $error');
+      if (mounted) toasts.error(context.l10n.wallUploadLastDetailsUnavailable);
+    }
   }
 
   Future<Uint8List> _compressFile(File file) async {
@@ -184,11 +260,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         if (!mounted) return;
         if (widget.draftStoreForTesting != null && await widget.image.exists()) {
           final Uint8List bytes = await widget.image.readAsBytes();
-          _draftId ??= UploadDraftStore.idForBytes(bytes);
+          _draftId ??= _idForImage(bytes);
           final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
           if (restoredDraft != null) {
-            _draftImage = restoredDraft.file;
-            _metadata = restoredDraft.metadata;
+            _restoreDraft(restoredDraft);
           }
         }
         imageBytes = <int>[];
@@ -199,7 +274,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           _imageHeight = testSize.height.round();
           wallpaperResolution = '${_imageWidth}x$_imageHeight';
           wallpaperSize = '0.00MB';
-          _stage = _UploadStage.ready;
+          _stage = _submissionUnresolved ? _UploadStage.failedSubmission : _UploadStage.ready;
         });
         _trackStage('ready');
         if (widget.draftStoreForTesting != null && _draftId != null) {
@@ -218,11 +293,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _trackFailure('oversize');
         return;
       }
-      _draftId ??= UploadDraftStore.idForBytes(imgList);
+      _draftId ??= _idForImage(imgList);
       final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
       if (restoredDraft != null) {
-        _draftImage = restoredDraft.file;
-        _metadata = restoredDraft.metadata;
+        _restoreDraft(restoredDraft);
       }
       final File selectedImage = _selectedImage;
       final decodedImage = await decodeImageFromList(imgList);
@@ -240,7 +314,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperResolution = resolution;
         wallpaperSize = '${(size / 1024 / 1024).toStringAsFixed(2)}MB';
       });
-      if (mounted) setState(() => _stage = _UploadStage.ready);
+      if (mounted) setState(() => _stage = _submissionUnresolved ? _UploadStage.failedSubmission : _UploadStage.ready);
       _trackStage('ready');
       unawaited(_persistDraft().then<void>((_) {}));
     } catch (error) {
@@ -300,7 +374,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<bool> _uploadFiles() async {
-    if (!mounted || _leaving) return false;
+    if (!mounted || _leaving || _activeDraftOwner != _draftOwner) return false;
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
@@ -320,6 +394,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         basename: path.basename(_selectedImage.path),
       );
       final thumbName = uploadThumbName(baseName);
+      if (_rejectedDocId.isNotEmpty && !await _persistDraft()) {
+        throw StateError('The resubmission identity could not be saved.');
+      }
+      if (_activeDraftOwner != _draftOwner) throw StateError('The upload owner changed.');
       if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
         final value = widget.uploadFileForTesting != null
             ? await widget.uploadFileForTesting!(isThumbnail: false)
@@ -334,6 +412,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperPath = value.path ?? baseName;
         wallpaperSha = value.sha;
         wallpaperSourceKind = value.sourceKind;
+        if (_rejectedDocId.isNotEmpty && !await _persistDraft()) throw StateError('Could not save original receipt.');
         if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
           throw StateError('The wallpaper upload returned incomplete file details.');
         }
@@ -342,6 +421,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         await _deleteFile();
         return false;
       }
+      if (_activeDraftOwner != _draftOwner) throw StateError('The upload owner changed.');
       if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
         final thumbValue = widget.uploadFileForTesting != null
             ? await widget.uploadFileForTesting!(isThumbnail: true)
@@ -356,6 +436,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         thumbPath = thumbValue.path ?? thumbName;
         thumbSha = thumbValue.sha;
         thumbSourceKind = thumbValue.sourceKind;
+        if (_rejectedDocId.isNotEmpty && !await _persistDraft()) throw StateError('Could not save preview receipt.');
         if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
           throw StateError('The preview upload returned incomplete file details.');
         }
@@ -410,6 +491,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _leaving) {
       return;
     }
+    if (_activeDraftOwner != _draftOwner) {
+      toasts.error(context.l10n.wallUploadOwnerChanged);
+      return;
+    }
+    if (_formKey.currentState?.flush() == false) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
@@ -432,10 +519,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     _trackStage('saving');
     _submissionAttempted = true;
     try {
+      if (_activeDraftOwner != _draftOwner) throw StateError('The upload owner changed.');
+      if (_rejectedDocId.isNotEmpty && !await _persistDraft()) throw StateError('Could not save submission operation.');
       final result = widget.createRecordWithMetadataForTesting != null
           ? await widget.createRecordWithMetadataForTesting!(id: id, metadata: _metadata)
           : widget.createRecordForTesting != null
           ? await widget.createRecordForTesting!()
+          : _rejectedDocId.isNotEmpty
+          ? await _submitResubmission()
           : await wall_store.createRecord(
               id,
               wallpaperProvider,
@@ -445,7 +536,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               wallpaperSize,
               _metadata.title,
               _metadata.category,
-              wallpaperDesc,
+              _metadata.description,
               false,
               wallpaperTags: _metadata.tags,
               wallpaperPath: wallpaperPath,
@@ -479,6 +570,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _trackFailure('quota_exceeded');
         return;
       }
+    } on ResubmissionLimitException {
+      _submissionUnresolved = false;
+      _submissionAttempted = false;
+      if (!mounted) return;
+      setState(() {
+        _stage = _UploadStage.quotaExceeded;
+        _errorMessage = context.l10n.wallResubmitLimit;
+      });
+      _trackFailure('resubmission_limit');
+      return;
     } catch (error) {
       logger.w('Wallpaper submission failed: $error');
       _submissionUnresolved = true;
@@ -491,6 +592,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return;
     }
     _submitted = true;
+    try {
+      if (_activeDraftOwner == _draftOwner) await _defaultsStore.save(_draftOwner, _metadata);
+    } catch (error, stackTrace) {
+      logger.w('Upload completed but last details could not be saved', error: error, stackTrace: stackTrace);
+    }
     if (_draftId case final draftId?) {
       try {
         await _draftStore.discard(owner: _draftOwner, draftId: draftId);
@@ -499,6 +605,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
     }
     analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
+    if (_admission case final admission?) {
+      unawaited(analytics.track(WallResubmittedEvent(assetId: admission.wallDocId, attempt: admission.attempt)));
+    }
     analytics.track(
       UploadMetadataSubmittedEvent(
         hasTitle: _metadata.hasTitle,
@@ -507,9 +616,33 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       ),
     );
     _trackStage('submitted');
-    if (!mounted || _leaving) return;
+    if (!mounted || _leaving || _activeDraftOwner != _draftOwner) return;
     widget.batch?.finishCurrent(UploadItemOutcome.submitted);
     await _goToNextOrFinish();
+  }
+
+  Future<wall_store.WallSubmissionResult> _submitResubmission() async {
+    _admission = await SubmitResubmission.fromGetIt().call(
+      ownerUid: _draftOwner,
+      operationId: _operationId,
+      rejectedDocId: _rejectedDocId,
+      original: GitHubContent(
+        downloadUrl: wallpaperUrl,
+        path: wallpaperPath,
+        sha: wallpaperSha,
+        sourceKind: wallpaperSourceKind,
+      ),
+      thumbnail: GitHubContent(
+        downloadUrl: wallpaperThumb,
+        path: thumbPath,
+        sha: thumbSha,
+        sourceKind: thumbSourceKind,
+      ),
+      metadata: _metadata,
+      resolution: wallpaperResolution ?? '',
+      size: wallpaperSize ?? '',
+    );
+    return wall_store.WallSubmissionResult.submitted;
   }
 
   /// Opens the next image of a batch, or ends the flow on Review status.
@@ -640,6 +773,25 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         draftId: draftId,
         selectedFile: _selectedImage,
         metadata: _metadata,
+        session: UploadSession(
+          operationId: _operationId,
+          logicalId: id,
+          rejectedDocId: _rejectedDocId,
+          previousReason: _previousReason,
+          fileName: _fileName,
+          submissionAttempted: _submissionAttempted,
+          original: wallpaperPath == null
+              ? null
+              : GitHubContent(
+                  downloadUrl: wallpaperUrl,
+                  path: wallpaperPath,
+                  sha: wallpaperSha,
+                  sourceKind: wallpaperSourceKind,
+                ),
+          thumbnail: thumbPath == null
+              ? null
+              : GitHubContent(downloadUrl: wallpaperThumb, path: thumbPath, sha: thumbSha, sourceKind: thumbSourceKind),
+        ),
       );
       if (mounted && generation == _draftSaveGeneration && owner == _draftOwner && owner == _activeDraftOwner) {
         setState(() {
@@ -847,7 +999,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               ],
               if (_showMetadataForm) ...<Widget>[
                 const SizedBox(height: PrismSpace.xl),
+                if (_rejectedDocId.isNotEmpty) RejectionFeedback(reason: _previousReason),
+                PrismButton(
+                  label: context.l10n.wallUploadUseLastDetails,
+                  variant: PrismButtonVariant.ghost,
+                  onPressed: _useLastDetails,
+                ),
                 SubmissionMetadataForm(
+                  key: _formKey,
                   initial: _metadata,
                   onChanged: (SubmissionMetadata value) {
                     _metadata = value.copyWith(requestId: _metadata.requestId, requestText: _metadata.requestText);
@@ -855,15 +1014,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   },
                 ),
                 const SizedBox(height: PrismSpace.md),
-                FillsRequestRow(
-                  requestText: _metadata.requestText,
-                  onChanged: (WallRequest? request) {
-                    setState(() {
-                      _metadata = _metadata.copyWith(requestId: request?.id ?? '', requestText: request?.text ?? '');
-                    });
-                    unawaited(_persistDraft().then<void>((_) {}));
-                  },
-                ),
+                if (_rejectedDocId.isEmpty)
+                  FillsRequestRow(
+                    requestText: _metadata.requestText,
+                    onChanged: (WallRequest? request) {
+                      setState(() {
+                        _metadata = _metadata.copyWith(requestId: request?.id ?? '', requestText: request?.text ?? '');
+                      });
+                      unawaited(_persistDraft().then<void>((_) {}));
+                    },
+                  ),
               ],
             ],
           ),

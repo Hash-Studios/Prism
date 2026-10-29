@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -32,11 +33,18 @@ class UploadDraftStore {
     required String draftId,
     required File selectedFile,
     required SubmissionMetadata metadata,
+    UploadSession? session,
   }) {
     final int generation = _ownerGenerations[owner] ?? 0;
     return _serialize(
-      () =>
-          _save(owner: owner, draftId: draftId, selectedFile: selectedFile, metadata: metadata, generation: generation),
+      () => _save(
+        owner: owner,
+        draftId: draftId,
+        selectedFile: selectedFile,
+        metadata: metadata,
+        session: session,
+        generation: generation,
+      ),
     );
   }
 
@@ -50,7 +58,13 @@ class UploadDraftStore {
       if (relativeFile is! String) return null;
       final File? file = await _fileFor(relativeFile);
       if (file == null || !await file.exists() || await file.length() <= 0) return null;
-      return UploadDraft(owner: owner, draftId: draftId, file: file, metadata: _metadataFrom(value['metadata']));
+      return UploadDraft(
+        owner: owner,
+        draftId: draftId,
+        file: file,
+        metadata: _metadataFrom(value['metadata']),
+        session: UploadSession.fromJson(value['session']),
+      );
     });
   }
 
@@ -78,6 +92,7 @@ class UploadDraftStore {
           draftId: draftId,
           file: file,
           metadata: _metadataFrom(entry.value['metadata']),
+          session: UploadSession.fromJson(entry.value['session']),
         );
       }
       return null;
@@ -120,6 +135,7 @@ class UploadDraftStore {
     required String draftId,
     required File selectedFile,
     required SubmissionMetadata metadata,
+    required UploadSession? session,
     required int generation,
   }) async {
     if (owner.isEmpty || draftId.isEmpty) throw ArgumentError('An upload draft needs an owner and id.');
@@ -139,8 +155,8 @@ class UploadDraftStore {
     if (previousFile != null &&
         await previousFile.exists() &&
         path.normalize(previousFile.absolute.path) == path.normalize(selectedFile.absolute.path)) {
-      await _store.write(key, _recordValue(owner, draftId, previousRelative! as String, metadata));
-      return UploadDraft(owner: owner, draftId: draftId, file: previousFile, metadata: metadata);
+      await _store.write(key, _recordValue(owner, draftId, previousRelative! as String, metadata, session));
+      return UploadDraft(owner: owner, draftId: draftId, file: previousFile, metadata: metadata, session: session);
     }
     final int previousLength = previousFile != null && await previousFile.exists() ? await previousFile.length() : 0;
     final bool addingNew = previous == null;
@@ -181,7 +197,7 @@ class UploadDraftStore {
       await temporary.rename(destination.path);
       _checkGeneration(owner, generation);
       final String relativeFile = path.relative(destination.path, from: root.path);
-      await _store.write(key, _recordValue(owner, draftId, relativeFile, metadata));
+      await _store.write(key, _recordValue(owner, draftId, relativeFile, metadata, session));
     } catch (_) {
       if (await temporary.exists()) await temporary.delete();
       if (await destination.exists()) await destination.delete();
@@ -190,7 +206,7 @@ class UploadDraftStore {
     if (previousFile != null && previousFile.path != destination.path && await previousFile.exists()) {
       await previousFile.delete();
     }
-    return UploadDraft(owner: owner, draftId: draftId, file: destination, metadata: metadata);
+    return UploadDraft(owner: owner, draftId: draftId, file: destination, metadata: metadata, session: session);
   }
 
   Future<({int count, int bytes, int ownerCount, int ownerBytes})> _repairFiles({String? owner}) async {
@@ -238,20 +254,27 @@ class UploadDraftStore {
     return (count: count, bytes: bytes, ownerCount: ownerCount, ownerBytes: ownerBytes);
   }
 
-  Map<String, Object?> _recordValue(String owner, String draftId, String file, SubmissionMetadata metadata) =>
-      <String, Object?>{
-        'owner': owner,
-        'draftId': draftId,
-        'file': file,
-        'metadata': <String, Object?>{
-          'title': metadata.title,
-          'category': metadata.category,
-          'tags': metadata.tags,
-          'requestId': metadata.requestId,
-          'requestText': metadata.requestText,
-        },
-        'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
-      };
+  Map<String, Object?> _recordValue(
+    String owner,
+    String draftId,
+    String file,
+    SubmissionMetadata metadata,
+    UploadSession? session,
+  ) => <String, Object?>{
+    'owner': owner,
+    'draftId': draftId,
+    'file': file,
+    if (session != null) 'session': session.toJson(),
+    'metadata': <String, Object?>{
+      'title': metadata.title,
+      'description': metadata.description,
+      'category': metadata.category,
+      'tags': metadata.tags,
+      'requestId': metadata.requestId,
+      'requestText': metadata.requestText,
+    },
+    'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
+  };
 
   Future<File?> _fileFor(String relativeFile) async {
     if (path.isAbsolute(relativeFile)) return null;
@@ -280,6 +303,7 @@ class UploadDraftStore {
     final Object? rawTags = raw['tags'];
     return SubmissionMetadata(
       title: raw['title'] is String ? raw['title'] as String : '',
+      description: raw['description'] is String ? raw['description'] as String : '',
       category: raw['category'] is String ? raw['category'] as String : defaultSubmissionCategory,
       tags: rawTags is List ? rawTags.whereType<String>().toList(growable: false) : const <String>[],
       requestId: raw['requestId'] is String ? raw['requestId'] as String : '',
@@ -304,12 +328,19 @@ class UploadDraftStore {
 }
 
 class UploadDraft {
-  const UploadDraft({required this.owner, required this.draftId, required this.file, required this.metadata});
+  const UploadDraft({
+    required this.owner,
+    required this.draftId,
+    required this.file,
+    required this.metadata,
+    this.session,
+  });
 
   final String owner;
   final String draftId;
   final File file;
   final SubmissionMetadata metadata;
+  final UploadSession? session;
 }
 
 class UploadDraftLimitException implements Exception {

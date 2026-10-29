@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,10 +60,31 @@ void main() {
       selectedFile: original,
       metadata: const SubmissionMetadata(
         title: 'Aurora',
+        description: 'Lights above the forest',
         category: 'Nature',
         tags: <String>['night'],
         requestId: 'r1',
         requestText: 'Northern lights',
+      ),
+      session: const UploadSession(
+        operationId: 'retry-original',
+        logicalId: 'NEWLOGICAL',
+        rejectedDocId: 'wall_old.png',
+        previousReason: 'Remove the border',
+        fileName: 'uid_123_image.png',
+        submissionAttempted: true,
+        original: GitHubContent(
+          downloadUrl: '',
+          path: 'uid_123_image.png',
+          sha: 'original',
+          sourceKind: UploadSourceKind.owned,
+        ),
+        thumbnail: GitHubContent(
+          downloadUrl: 'https://example.test/thumb',
+          path: 'thumb_uid_123_image.png',
+          sha: 'thumb',
+          sourceKind: UploadSourceKind.owned,
+        ),
       ),
     );
     await original.delete();
@@ -76,6 +99,14 @@ void main() {
     expect(restored!.file.path, saved.file.path);
     expect(await restored.file.readAsBytes(), <int>[1, 2, 3, 4]);
     expect(restored.metadata.title, 'Aurora');
+    expect(restored.metadata.description, 'Lights above the forest');
+    expect(restored.session!.operationId, 'retry-original');
+    expect(restored.session!.rejectedDocId, 'wall_old.png');
+    expect(restored.session!.previousReason, 'Remove the border');
+    expect(restored.session!.submissionAttempted, isTrue);
+    expect(restored.session!.original!.downloadUrl, '');
+    expect(restored.session!.original!.sourceKind, UploadSourceKind.owned);
+    expect(restored.session!.thumbnail!.sha, 'thumb');
     expect(restored.metadata.category, 'Nature');
     expect(restored.metadata.tags, <String>['night']);
     expect(restored.metadata.requestId, 'r1');

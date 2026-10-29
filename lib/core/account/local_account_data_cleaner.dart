@@ -23,6 +23,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,6 +96,7 @@ class LocalAccountDataCleaner {
     (name: 'notification inbox', run: (String userId) => getIt<NotificationsLocalDataSource>().clearForUser(userId)),
     (name: 'notification tombstones', run: (String userId) => getIt<NotificationTombstones>().clearForUser(userId)),
     (name: 'upload drafts', run: (String userId) => UploadDraftStore().clearForUser(userId)),
+    (name: 'last upload details', run: (String userId) => LastSubmissionDefaultsStore().clearForUser(userId)),
     (name: 'AI history and prompts', run: (String userId) => getIt<AiGenerationRepositoryImpl>().clearForUser(userId)),
   ];
 

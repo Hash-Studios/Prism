@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:Prism/core/di/injection_module.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
@@ -308,6 +309,37 @@ void main() {
     expect(event.sourceTag, 'test.set');
     expect(event.docId, 'a');
     expect(event.success, isTrue);
+  });
+
+  test('metadata invalidation does not let an older in-flight query restore stale memory data', () async {
+    final oldSnapshot = _MockQuerySnapshot();
+    final newSnapshot = _MockQuerySnapshot();
+    final oldDoc = _MockQueryDoc();
+    final newDoc = _MockQueryDoc();
+    when(() => oldDoc.id).thenReturn('a');
+    when(() => newDoc.id).thenReturn('a');
+    when(() => oldDoc.exists).thenReturn(true);
+    when(() => newDoc.exists).thenReturn(true);
+    when(() => oldDoc.data()).thenReturn({'title': 'Old title'});
+    when(() => newDoc.data()).thenReturn({'title': 'New title'});
+    when(() => oldSnapshot.docs).thenReturn([oldDoc]);
+    when(() => newSnapshot.docs).thenReturn([newDoc]);
+    final oldRequest = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    var calls = 0;
+    when(() => collection.get()).thenAnswer((_) async => ++calls == 1 ? await oldRequest.future : newSnapshot);
+    const spec = FirestoreQuerySpec(
+      collection: 'walls',
+      sourceTag: 'test.metadata.invalidate',
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
+    );
+    final oldRead = client.query<String>(spec, (data, _) => data['title'] as String);
+    await pumpEventQueue();
+    client.invalidateQueryCache();
+    expect(await client.query<String>(spec, (data, _) => data['title'] as String), ['New title']);
+    oldRequest.complete(oldSnapshot);
+    expect(await oldRead, ['Old title']);
+    expect(await client.query<String>(spec, (data, _) => data['title'] as String), ['New title']);
+    expect(calls, 2);
   });
 
   test('updateDoc maps a failure to FirestoreError and emits failure telemetry', () async {

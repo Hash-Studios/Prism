@@ -1,5 +1,6 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -34,6 +35,16 @@ final class LoadFromId extends WallpaperDetailEvent {
 
 final class FetchViews extends WallpaperDetailEvent {
   const FetchViews();
+}
+
+final class RefreshWallMetadata extends WallpaperDetailEvent {
+  const RefreshWallMetadata({required this.wallDocId, this.saved});
+
+  final String wallDocId;
+  final WallMetadataSnapshot? saved;
+
+  @override
+  List<Object?> get props => [wallDocId, saved];
 }
 
 final class LoadRecommendations extends WallpaperDetailEvent {

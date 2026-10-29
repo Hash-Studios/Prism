@@ -10,6 +10,8 @@ void main() {
   test('classifier category survives DTO JSON without using the description', () {
     final dto = PrismWallDocDto.fromJson(<String, dynamic>{'category': 'Nature', 'desc': 'A lake at dawn'});
     expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').core.category, 'Nature');
+    expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').description, 'A lake at dawn');
+    expect(const PrismWallDocDto().toDomain(docId: 'empty').description, isNull);
     expect(const PrismWallDocDto(desc: 'Unclassified prose').toDomain(docId: 'x').core.category, isNull);
   });
   test('Firestore Prism walls cannot spoof an external provider', () {

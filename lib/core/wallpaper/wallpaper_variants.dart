@@ -8,6 +8,7 @@ final class PrismWallpaper {
   const PrismWallpaper({
     required this.core,
     this.title,
+    this.description,
     this.collections,
     this.review,
     this.tags,
@@ -29,6 +30,7 @@ final class PrismWallpaper {
 
   /// Name the creator gave the wallpaper on upload. Null for older uploads.
   final String? title;
+  final String? description;
   final List<String>? collections;
   final bool? review;
   final List<String>? tags;

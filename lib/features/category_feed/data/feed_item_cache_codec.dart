@@ -14,6 +14,7 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
     'wallpaper': <String, Object?>{
       'core': _encodeCore(wall.core),
       if (wall.title != null) 'title': wall.title,
+      if (wall.description != null) 'description': wall.description,
       'collections': wall.collections,
       'review': wall.review,
       'isStreakExclusive': wall.isStreakExclusive,
@@ -88,6 +89,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
         wallpaper: PrismWallpaper(
           core: _decodeCore(toJsonMap(wallpaper['core'])),
           title: wallpaper['title']?.toString(),
+          description: wallpaper['description'] is String ? wallpaper['description'] as String : null,
           collections: strings(wallpaper['collections']),
           review: wallpaper['review'] as bool?,
           isStreakExclusive: wallpaper['isStreakExclusive'] == true,
