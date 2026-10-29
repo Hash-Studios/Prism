@@ -281,7 +281,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   void _scrollToTop() {
     if (!_scroll.hasClients || _scroll.offset <= 0) return;
-    _scroll.animateTo(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter);
+    _scroll.animateOrJump(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter);
   }
 
   void _selectFromHistory(AiGenerationRecord record) {
