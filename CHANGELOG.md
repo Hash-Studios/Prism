@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.15.0
+- Make a folder public, follow other people's folders and share them
+- Ask for a wallpaper, vote for other requests, and get a push when yours is filled
+- Your set and download history now follows you to a new phone
+- Tap a wallpaper to see it full screen, and pin up to 12 favourites
+- On Android, auto-rotate your wallpaper from a folder
+- See one scene in every AI style before you pick
+- A quick "This or that" quiz tunes your feed when you join
+- Security and stability fixes
+
 ### v3.14.0
 - Save wallpapers into your own private folders
 - A new Library with Favourites, Folders, Downloads and History in one place
