@@ -11021,6 +11021,64 @@ class AppLocalizationsPt extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Novidades em $folderName e mais $count';
   }
+
+  @override
+  String get wallRemixAction => 'Remixar';
+
+  @override
+  String get wallRemixActionTooltip => 'Remixar este papel de parede com IA';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remixando $title de $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remover ligação de remix';
+
+  @override
+  String get wallRemixUntitled => 'Sem título';
+
+  @override
+  String get wallRemixUnknownCreator => 'um criador do Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remixes';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remixes', one: '1 remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Abrir remix de $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix de $title de $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Abrir o papel de parede original';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Qualquer pessoa pode ver o seu prompt e remixar este papel de parede.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'O seu papel de parede foi remixado';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remixou $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remixou o seu papel de parede.';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -22037,5 +22095,63 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Novidades em $folderName e mais $count';
+  }
+
+  @override
+  String get wallRemixAction => 'Remixar';
+
+  @override
+  String get wallRemixActionTooltip => 'Remixar este papel de parede com IA';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remixando $title de $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remover vínculo de remix';
+
+  @override
+  String get wallRemixUntitled => 'Sem título';
+
+  @override
+  String get wallRemixUnknownCreator => 'um criador do Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remixes';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remixes', one: '1 remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Abrir remix de $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix de $title de $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Abrir o papel de parede original';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Qualquer pessoa pode ver seu prompt e remixar este papel de parede.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Seu papel de parede foi remixado';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remixou $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remixou seu papel de parede.';
   }
 }

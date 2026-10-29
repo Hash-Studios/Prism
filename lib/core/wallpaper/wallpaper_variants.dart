@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -19,6 +20,9 @@ final class PrismWallpaper {
     this.boostedUntil,
     this.depthTier,
     this.spatial,
+    this.aiSource,
+    this.remixOf,
+    this.remixCount = 0,
   });
 
   final WallpaperCore core;
@@ -47,6 +51,15 @@ final class PrismWallpaper {
 
   /// Spatial Scene tier and depth map from `walls.spatial`. Null when the wall was not checked.
   final WallSpatial? spatial;
+
+  /// The prompt and style of an AI wall. Null on walls that are not AI.
+  final WallAiSource? aiSource;
+
+  /// Firestore document id of the wall this one remixes. The server removes a link it cannot verify.
+  final String? remixOf;
+
+  /// Approved remixes by other creators. Only the server writes it.
+  final int remixCount;
 
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 

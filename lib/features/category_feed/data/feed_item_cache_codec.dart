@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -20,6 +21,9 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       if (wall.firestoreDocumentId != null) 'firestoreDocumentId': wall.firestoreDocumentId,
       if (wall.depthTier != null) 'depthTier': wall.depthTier!.name,
       if (wall.spatial != null) 'spatial': wall.spatial!.toJson(),
+      if (wall.aiSource != null) 'aiSource': wall.aiSource!.toJson(),
+      if (wall.remixOf != null) 'remixOf': wall.remixOf,
+      if (wall.remixCount > 0) 'remixCount': wall.remixCount,
     },
   },
   wallhaven: (id, wall) => <String, Object?>{
@@ -88,6 +92,9 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
           firestoreDocumentId: (firestoreId != null && firestoreId.isNotEmpty) ? firestoreId : null,
           depthTier: WallDepthTier.parse(wallpaper['depthTier']),
           spatial: WallSpatial.parse(wallpaper['spatial']),
+          aiSource: WallAiSource.fromJson(wallpaper['aiSource']),
+          remixOf: wallpaper['remixOf'] is String ? wallpaper['remixOf'] as String : null,
+          remixCount: integer(wallpaper['remixCount']) ?? 0,
         ),
       );
     case 'wallhaven':
