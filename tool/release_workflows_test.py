@@ -76,6 +76,30 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                 self.assertEqual(result.stdout + result.stderr, '')
                 self.assertFalse((self.work / 'OWNED').exists())
 
+    def test_size_android_keeps_shipping_flags_without_analyze_size(self):
+        stub = self.work / 'write_firebase_options_stub.sh'
+        stub.write_text('#!/usr/bin/env bash\nexit 0\n')
+        stub.chmod(0o755)
+        makefile = self.work / 'Makefile'
+        makefile.write_text((fixture.ROOT / 'Makefile').read_text().replace(
+            './tool/write_firebase_options_stub.sh', str(stub)))
+        apk = self.work / 'build/app/outputs/flutter-apk/app-release.apk'
+        apk.parent.mkdir(parents=True)
+        apk.write_bytes(b'fixture apk')
+        result = subprocess.run(
+            ['make', '-f', str(makefile), 'CI=true', 'size-android'],
+            cwd=self.work, env=self.env, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        argv = json.loads(Path(self.env['CAPTURE']).read_text())
+        self.assertEqual(argv[:3], ['build', 'apk', '--release'])
+        self.assertIn('--target-platform=android-arm64', argv)
+        self.assertIn('--obfuscate', argv)
+        self.assertIn('--split-debug-info=build/size/local/symbols', argv)
+        self.assertIn('--dart-define=SKIP_FIREBASE_INIT=true', argv)
+        self.assertNotIn('--analyze-size', argv)
+        self.assertEqual((self.work / 'build/size/local/app-release.apk').read_bytes(), b'fixture apk')
+        self.assertTrue((self.work / 'build/size/local/build.log').is_file())
+
     def test_testflight_installs_and_cleans_every_profile(self):
         if shutil.which('jq') is None:
             self.skipTest('jq is not installed')

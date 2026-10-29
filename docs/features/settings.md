@@ -10,7 +10,7 @@ Profile drawer, then Settings. The sections run in this order:
 2. PERSONALISE (Android only): Auto-rotate wallpapers, Live wallpapers, Quick tiles, Wallpaper history, Default action for Set.
 3. CONTENT FILTERS: Show anime wallpapers, Show sketchy wallpapers (Android only).
 4. NOTIFICATIONS: Notification preferences.
-5. STORAGE: Data saver, Clear cache, Clear all downloads.
+5. STORAGE: Data saver, Save viewing history, Clear cache, Clear all downloads.
 6. ACCOUNT: Sign in (guest) or profile card, Review status, Blocked accounts, Share your profile, Clear favourite wallpapers, Log out.
 7. PREMIUM: Buy premium (free users), Restore purchases (everyone), Manage subscription (Premium users).
 8. PRIVACY AND DATA: Privacy policy, Terms of use, Ad privacy choices (only where required), Clear learned taste, Delete account (signed in).
@@ -42,7 +42,7 @@ The Wallpaper history row shows on Android only. iOS cannot set a wallpaper from
 1. The dialog says what Prism removes, that uploaded wallpapers stay visible as "Deleted Account", and "You will confirm with Google or Apple next."
 2. The user taps "Delete account". A loader shows.
 3. `DeleteAccountService` asks Google or Apple to confirm, calls the `deleteAccount` function (timeout 300 seconds, because the server deletes in batches), signs out, then clears the data on this device.
-4. The local clean up (`LocalAccountDataCleaner`) removes the favourite id set of the user, the guest favourites, the downloaded wallpaper index, the wallpaper history and the feed cache. One failed step does not stop the others.
+4. The local clean up (`LocalAccountDataCleaner`) removes the favourite id set of the user, the guest favourites, the downloaded wallpaper index, the wallpaper history, recently viewed, the synced history copy and the feed cache. `deleteAccount` deletes `usersv2/{uid}/history` on the server. One failed step does not stop the others.
 5. The loader closes first, then the app restarts.
 - If the user closes the Google or Apple prompt, the loader closes and nothing else happens. There is no toast.
 - If the user picks the wrong Google account, a toast asks for the signed-in account.
@@ -58,6 +58,10 @@ The Wallpaper history row shows on Android only. iOS cannot set a wallpaper from
 
 - The Sign in row reads "Sign in to keep your favourites, coins and profile".
 - Restore purchases is in the PREMIUM section, so guests see it too.
+
+### Save viewing history
+
+The switch is on by default. On: the app remembers the wallpapers the user opens on this device, for **Recently viewed** in History and the **Pick up where you left off** row on Home. Off: the app stops recording and clears the list. The value is local (`history.viewed.enabled`). See [wallpaper-history.md](wallpaper-history.md).
 
 ### Data saver
 

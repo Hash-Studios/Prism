@@ -78,6 +78,7 @@ const str = (v) => ({ stringValue: v });
 const ts = () => ({ timestampValue: new Date().toISOString() });
 const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
 const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
+const historyFields = (id = 'abc', provider = 'wallhaven', extra = {}) => ({ id: str(id), provider: str(provider), thumb: str('https://th.wallhaven.cc/small/ab/abc.jpg'), action: str('set'), at: ts(), ...extra });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
@@ -103,6 +104,7 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'usersv2/history-owner', { id: str('history-owner'), coins: { integerValue: '0' }, premium: { booleanValue: false } }, HistoryOwner),
   req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'walls/protected', { ...publicWall, wallpaper_thumb: { stringValue: 'https://example.com/preview.jpg' } }, 'owner'),
@@ -156,7 +158,7 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/a/blockedUsers/dblock', { blockedAt: ts() }, 'owner'),
   req('PATCH', 'publicFolders/orphan/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
 ]);
-const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
+const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const D = tok('dblock', 'dblock@x.com');
@@ -578,13 +580,54 @@ const cases = [
   ['previous item owner cannot delete in a recreated folder owned by another user', () => req('DELETE', 'folders/reused/items/wallhaven_private', null, Bu), 403],
   ['orphan item cannot be read while its parent is absent', () => req('GET', 'folders/absent/items/wallhaven_orphan', null, Bu), 403],
   ['previous item owner can delete an orphan with no parent', () => req('DELETE', 'folders/absent/items/wallhaven_orphan', null, Bu), 200],
+  ['owner creates history before account deletion barrier', () => req('PATCH', 'usersv2/b/history/wallhaven_barrierupdate', historyFields('barrierupdate'), Bu), 200],
   ['account deletion closes the folder write barrier', () => req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'), 200],
   ['deleting account cannot create more folders', () => req('PATCH', 'folders/after-close', folderFields('b'), Bu), 403],
   ['deleting account cannot update a folder', () => req('PATCH', 'folders/fb', { name: str('Too late') }, Bu, ['name']), 403],
   ['deleting account cannot create an item', () => req('PATCH', 'folders/fb/items/prism_late', itemFields('b', 'late', 'Prism'), Bu), 403],
   ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
+  ['deleting account cannot write history after recursive cleanup', () => req('PATCH', 'usersv2/b/history/wallhaven_late', historyFields('late'), Bu), 403],
+  ['deleting account cannot update history after recursive cleanup', () => req('PATCH', 'usersv2/b/history/wallhaven_barrierupdate', historyFields('barrierupdate', 'wallhaven', { action: str('download') }), Bu, ['action']), 403],
+  ['deleting account cannot read history after recursive cleanup', () => req('GET', 'usersv2/b/history/wallhaven_barrierupdate', null, Bu), 403],
+  ['deleting account cannot delete history after recursive cleanup', () => req('DELETE', 'usersv2/b/history/wallhaven_barrierupdate', null, Bu), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
+  ['owner writes a history entry', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_abc', historyFields(), HistoryOwner), 200],
+  ['owner reads own history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc', null, HistoryOwner), 200],
+  ['owner lists own history', () => runCollectionQuery(HistoryOwner, 'history', 'usersv2/history-owner'), 200],
+  ['stranger cannot read history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc', null, C), 403],
+  ['stranger cannot list history', () => runCollectionQuery(C, 'history', 'usersv2/history-owner'), 403],
+  ['signed-out user cannot read history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc'), 403],
+  ['stranger cannot write history', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_x', historyFields('x'), C), 403],
+  ['stranger cannot delete history', () => req('DELETE', 'usersv2/history-owner/history/wallhaven_abc', null, C), 403],
+  ['history extra field is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_extra', historyFields('extra', 'wallhaven', { target: str('home') }), HistoryOwner), 403],
+  ['history original url is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_url', historyFields('url', 'prism', { url: str('https://img.prismwalls.com/o.jpg') }), HistoryOwner), 403],
+  ['history full url field is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_full', historyFields('full', 'prism', { fullUrl: str('https://img.prismwalls.com/o.jpg') }), HistoryOwner), 403],
+  ['history signed thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_signed', historyFields('signed', 'prism', { thumb: str('https://r2.example.com/o.jpg?X-Amz-Signature=abc') }), HistoryOwner), 403],
+  ['history encoded signed query key is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_encoded', historyFields('encoded', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?%73ignature=secret') }), HistoryOwner), 403],
+  ['history X-Amz parameter is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_amz', historyFields('amz', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?X-Amz-Date=20261029') }), HistoryOwner), 403],
+  ['history non-https thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_local', historyFields('local', 'prism', { thumb: str('file:///data/x.jpg') }), HistoryOwner), 403],
+  ['history long thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_long', historyFields('long', 'prism', { thumb: str(`https://x.com/${'a'.repeat(1100)}`) }), HistoryOwner), 403],
+  ['history key must match provider and id', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_other', historyFields('abc'), HistoryOwner), 403],
+  ['history unknown provider is refused', () => req('PATCH', 'usersv2/history-owner/history/local_abc', historyFields('abc', 'local'), HistoryOwner), 403],
+  ['history unknown action is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_view', historyFields('view', 'wallhaven', { action: str('view') }), HistoryOwner), 403],
+  ['history missing time is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_notime', (({ at, ...rest }) => rest)(historyFields('notime')), HistoryOwner), 403],
+  ['owner deletes own history entry', () => req('DELETE', 'usersv2/history-owner/history/wallhaven_abc', null, HistoryOwner), 200],
+  ['history permits public Pexels thumbnail resizing query', () => req('PATCH', 'usersv2/history-owner/history/pexels_123', historyFields('123', 'pexels', { thumb: str('https://images.pexels.com/photos/123/preview.jpeg?auto=compress&cs=tinysrgb&w=640') }), HistoryOwner), 200],
+  ['history X-Goog signed thumbnail is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_google_sig', historyFields('google_sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?X-Goog-Signature=secret') }), HistoryOwner), 403],
+  ['history generic signed thumbnail is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_generic_sig', historyFields('generic_sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?signature=secret') }), HistoryOwner), 403],
+  ['history Google access id is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_google_id', historyFields('google_id', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?GoogleAccessId=secret') }), HistoryOwner), 403],
+  ['history short signature is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_sig', historyFields('sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?sig=secret') }), HistoryOwner), 403],
+  ['history thumbnail with userinfo is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_userinfo', historyFields('userinfo', 'prism', { thumb: str('https://user@cdn.example.com/thumb.jpg') }), HistoryOwner), 403],
+  ['history thumbnail with malformed host is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_badhost', historyFields('badhost', 'prism', { thumb: str('https://./thumb.jpg') }), HistoryOwner), 403],
+  ['history write is refused without a parent user', () => req('PATCH', 'usersv2/orphan/history/wallhaven_x', historyFields('x'), tok('orphan', 'orphan@x.com')), 403],
+  ['history read is refused without a parent user', () => req('GET', 'usersv2/orphan/history/wallhaven_x', null, tok('orphan', 'orphan@x.com')), 403],
+  ['history list is refused without a parent user', () => runCollectionQuery(tok('orphan', 'orphan@x.com'), 'history', 'usersv2/orphan'), 403],
+  ['admin marks history owner deleted', () => req('PATCH', 'usersv2/history-owner', { deleted: { booleanValue: true } }, ADM, ['deleted']), 200],
+  ['late history write is refused after account deletion', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_late', historyFields('late'), HistoryOwner), 403],
+  ['deleted account cannot read history', () => req('GET', 'usersv2/history-owner/history/pexels_123', null, HistoryOwner), 403],
+  ['deleted account cannot list history', () => runCollectionQuery(HistoryOwner, 'history', 'usersv2/history-owner'), 403],
+  ['deleted account cannot delete history', () => req('DELETE', 'usersv2/history-owner/history/pexels_123', null, HistoryOwner), 403],
   ['stranger cannot get a private folder', () => req('GET', 'folders/pf1', null, Bu), 403],
   ['stranger cannot list a private folder items', () => runCollectionQuery(Bu, 'items', 'folders/pf1'), 403],
   ['signed-out user cannot get a public folder', () => req('GET', 'publicFolders/pf1'), 403],

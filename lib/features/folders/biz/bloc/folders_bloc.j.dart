@@ -144,6 +144,13 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   List<FolderEntity> _replace(FolderEntity folder) =>
       _sorted(<FolderEntity>[folder, ...state.folders.where((other) => other.id != folder.id)]);
 
+  FoldersState _forgetFolder(String id) => state.copyWith(
+    folders: state.folders.where((folder) => folder.id != id).toList(),
+    items: <String, List<FavouriteWallEntity>>{...state.items}..remove(id),
+    itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+    membership: state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id))),
+  );
+
   Map<String, Set<String>> _withMembership(String itemKey, String folderId, {required bool member}) {
     final Set<String>? known = state.membership[itemKey];
     if (known == null) return state.membership;
@@ -194,7 +201,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       }
       // Still not in the list: the folder is someone else's or gone. The page shows its public projection, if any.
       if (state.folder(id) == null) {
-        emit(state.copyWith(itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success}));
+        emit(_forgetFolder(id));
         _finish(emit, event.operationId);
         return;
       }
@@ -209,17 +216,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     }
     final List<FavouriteWallEntity>? items = result.data;
     emit(
-      state.copyWith(
-        // Null means the folder is gone or not the user's.
-        folders: items == null ? state.folders.where((folder) => folder.id != id).toList() : state.folders,
-        items: items == null
-            ? (<String, List<FavouriteWallEntity>>{...state.items}..remove(id))
-            : <String, List<FavouriteWallEntity>>{...state.items, id: items},
-        membership: items == null
-            ? state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id)))
-            : state.membership,
-        itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
-      ),
+      items == null
+          ? _forgetFolder(id)
+          : state.copyWith(
+              items: <String, List<FavouriteWallEntity>>{...state.items, id: items},
+              itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+            ),
     );
     _finish(emit, event.operationId);
   }
@@ -391,20 +393,26 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     if (folder == null) return const ValidationFailure('This folder is gone.');
     final String key = folderItemKey(wall);
     final List<FavouriteWallEntity>? loaded = state.items[folderId];
-    if (loaded != null && !loaded.any((item) => folderItemKey(item) == key)) return null;
-    if (loaded == null) {
+    final bool loadedContainsItem = loaded?.any((item) => folderItemKey(item) == key) ?? false;
+    if (!loadedContainsItem) {
       final membership = await session.wait(_repository.foldersContaining(<String>[folderId], key));
       if (membership.failure case final failure?) return failure;
-      if (!membership.data!.contains(folderId)) return null;
+      if (!membership.data!.contains(folderId)) {
+        emit(state.copyWith(membership: _withMembership(key, folderId, member: false)));
+        return null;
+      }
     }
-    List<FavouriteWallEntity>? newest = loaded;
+    List<FavouriteWallEntity>? newest = loadedContainsItem ? loaded : null;
     if (newest == null) {
       final result = await session.wait(
         _repository.fetchItems(folderId, userId: state.userId, limit: folderMaxCovers + 1),
       );
       if (result.failure case final failure?) return failure;
       newest = result.data;
-      if (newest == null) return const ValidationFailure('This folder is gone.');
+      if (newest == null) {
+        emit(_forgetFolder(folderId));
+        return const ValidationFailure('This folder is gone.');
+      }
     }
     final List<String> covers = newest
         .where((item) => folderItemKey(item) != key)
@@ -416,7 +424,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     emit(
       state.copyWith(
         folders: _replace(next),
-        items: loaded == null
+        items: loaded == null || !loadedContainsItem
             ? state.items
             : <String, List<FavouriteWallEntity>>{
                 ...state.items,

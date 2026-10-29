@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -18,6 +21,46 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
+import '../../support/profile_user_fixture.dart';
+
+class _HistoryBatch implements FirestoreBatch {
+  _HistoryBatch(this.ops);
+  final List<String> ops;
+  @override
+  void addDoc(String collection, Map<String, dynamic> data) => throw UnimplementedError();
+  @override
+  void deleteDoc(String collection, String id) => ops.add('delete:$collection/$id');
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data) => ops.add('set:$collection/$id');
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) => throw UnimplementedError();
+}
+
+class _HistoryFirestore extends Fake implements FirestoreClient {
+  final List<String> ops = <String>[];
+  Completer<void>? gate;
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {
+    await action(_HistoryBatch(ops));
+    await gate?.future;
+  }
+}
+
+class _GatedClient extends _FakeClient {
+  _GatedClient() : super(const <aw.WallpaperOperationStatus>[]);
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> finish = Completer<void>();
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    requests.add(request);
+    started.complete();
+    await finish.future;
+    return aw.WallpaperOperationResult(status: aw.WallpaperOperationStatus.applied, requestedTarget: request.target);
+  }
+}
 
 final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
@@ -512,12 +555,20 @@ void main() {
 
   group('history recording', () {
     late WallpaperHistoryStore store;
+    late SyncedHistoryStore syncedStore;
+    late _HistoryFirestore firestore;
+    late SettingsLocalDataSource settings;
     late Directory temporaryDirectory;
     late Directory cacheDirectory;
 
     setUp(() async {
-      store = WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore()));
+      settings = SettingsLocalDataSource(InMemoryLocalStore());
+      store = WallpaperHistoryStore(settings);
+      firestore = _HistoryFirestore();
+      syncedStore = SyncedHistoryStore(settings, firestore);
+      app_state.prismUser = profileUser(id: 'test-user');
       getIt.registerSingleton<WallpaperHistoryStore>(store);
+      getIt.registerSingleton<SyncedHistoryStore>(syncedStore);
       temporaryDirectory = Directory('${assets.directory.path}/temporary');
       cacheDirectory = Directory('${assets.directory.path}/cache');
       await temporaryDirectory.create(recursive: true);
@@ -534,6 +585,7 @@ void main() {
         null,
       );
       await getIt.reset();
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
       aw.AsyncWallpaper.debugResetClient();
     });
 
@@ -733,6 +785,156 @@ void main() {
       expect(result.isPartial, isTrue);
       expect(store.items().single.target, 'home');
       expect(result.historyIds, [store.items().single.id]);
+    });
+
+    test('a Prism original passed as the thumbnail is not synced', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final File image = await assets.createImage('prism-original.png');
+      const String original = 'https://img.prismwalls.com/full.jpg';
+
+      await WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-1',
+        wallpaperSource: WallpaperSource.prism,
+        historySource: original,
+        thumbnailUrl: original,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(syncedStore.items(), isEmpty);
+      expect(firestore.ops, isEmpty);
+      expect(store.items().single.thumbnailUrl, isEmpty);
+    });
+
+    test('the safe history thumbnail overrides a raw original candidate and records one synced action', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final File image = await assets.createImage('prism-original.png');
+      const String original = 'https://img.prismwalls.com/full.jpg';
+      const String thumbnail = 'https://img.prismwalls.com/thumb.jpg';
+
+      await WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-1',
+        wallpaperSource: WallpaperSource.prism,
+        historySource: original,
+        thumbnailUrl: original,
+        historyThumbnail: thumbnail,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(syncedStore.items(), hasLength(1));
+      expect(syncedStore.items().single.thumbnailUrl, thumbnail);
+      expect(syncedStore.items().single.action.name, 'set');
+      expect(firestore.ops, hasLength(1));
+      expect(firestore.ops.single, startsWith('set:'));
+      expect(store.items().single.thumbnailUrl, thumbnail);
+    });
+
+    test('recordHistory false and an unsuccessful set do not sync', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final File image = await assets.createImage('prism-original.png');
+      await WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-silent',
+        wallpaperSource: WallpaperSource.prism,
+        thumbnailUrl: 'https://img.prismwalls.com/thumb.jpg',
+        recordHistory: false,
+      );
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.unsupported]));
+      await WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-failed',
+        wallpaperSource: WallpaperSource.prism,
+        thumbnailUrl: 'https://img.prismwalls.com/failed.jpg',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(syncedStore.items(), isEmpty);
+      expect(firestore.ops, isEmpty);
+    });
+
+    test('a partial successful set syncs once and does not wait for the batch', () async {
+      aw.AsyncWallpaper.debugSetClient(
+        _ResultClient([
+          _result(
+            aw.WallpaperOperationStatus.failed,
+            code: 'partial-apply',
+            home: aw.WallpaperTargetStatus.applied,
+            lock: aw.WallpaperTargetStatus.failed,
+            target: aw.WallpaperTarget.both,
+          ),
+        ]),
+      );
+      final File image = await assets.createImage('prism-partial.png');
+      firestore.gate = Completer<void>();
+
+      final WallpaperSetResult result = await WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.both,
+        wallpaperId: 'wall-partial',
+        wallpaperSource: WallpaperSource.prism,
+        thumbnailUrl: 'https://img.prismwalls.com/partial.jpg',
+      ).timeout(const Duration(seconds: 1));
+
+      expect(result.isPartial, isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(syncedStore.items(), hasLength(1));
+      expect(firestore.ops, hasLength(1));
+      expect(firestore.ops.single, startsWith('set:'));
+      firestore.gate!.complete();
+    });
+
+    test('a set started by one account records neither history after sign-out and account switch', () async {
+      app_state.prismUser = profileUser(id: 'user-a');
+      final _GatedClient client = _GatedClient();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final File image = await assets.createImage('prism-switch.png');
+
+      final Future<WallpaperSetResult> pending = WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-switch',
+        wallpaperSource: WallpaperSource.prism,
+        thumbnailUrl: 'https://img.prismwalls.com/switch.jpg',
+      );
+      await client.started.future;
+      WallpaperService.invalidatePendingHistoryWrites();
+      app_state.prismUser = profileUser(id: 'user-b');
+      client.finish.complete();
+      await pending;
+
+      expect(store.items(), isEmpty);
+      expect(syncedStore.items(), isEmpty);
+      expect(firestore.ops, isEmpty);
+    });
+
+    test('a sign-out and return to the same account invalidates the pending set history', () async {
+      app_state.prismUser = profileUser(id: 'user-a');
+      final _GatedClient client = _GatedClient();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final File image = await assets.createImage('prism-same-account.png');
+
+      final Future<WallpaperSetResult> pending = WallpaperService.setWallpaper(
+        image.path,
+        WallpaperTarget.home,
+        wallpaperId: 'wall-same-account',
+        wallpaperSource: WallpaperSource.prism,
+        thumbnailUrl: 'https://img.prismwalls.com/same-account.jpg',
+      );
+      await client.started.future;
+      WallpaperService.invalidatePendingHistoryWrites();
+      await syncedStore.clearLocal();
+      app_state.prismUser = profileUser(id: 'user-a');
+      client.finish.complete();
+      await pending;
+
+      expect(store.items(), isEmpty);
+      expect(syncedStore.items(), isEmpty);
+      expect(firestore.ops, isEmpty);
     });
 
     test('failures, pending results and opt-outs are not recorded', () async {

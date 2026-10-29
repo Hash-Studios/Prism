@@ -72,7 +72,10 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
+import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -419,6 +422,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   bool _accentToastShown = false;
   bool _openRecorded = false;
+  late final ViewRecorder _views = ViewRecorder(_recordView);
+  FeedItemEntity? _viewEntity;
   bool _loaded = false;
   String? _offlinePreviewKey;
   Future<File?>? _offlinePreviewFuture;
@@ -430,6 +435,51 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       pexels: (_, w) => TasteSignal.forWallpaper(action, w.core),
     );
     unawaited(getIt<TasteSignalStore>().record(signal));
+  }
+
+  bool get _onScreen => _FeedStep.maybeOf(context)?.active ?? true;
+
+  Future<void> _recordView() async {
+    final FeedItemEntity? entity = _viewEntity;
+    final HistoryWall? wall = entity == null ? null : _historyWall(entity, HistoryAction.view);
+    if (wall == null || !getIt.isRegistered<RecentlyViewedStore>()) return;
+    try {
+      await getIt<RecentlyViewedStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('Viewing history could not be saved', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _observeLoaded(WallpaperDetailLoaded state) {
+    if (_openRecorded) return;
+    _openRecorded = true;
+    _recordTaste(TasteAction.open, state.entity);
+    _viewEntity = state.entity;
+    if (_onScreen) _views.shown();
+  }
+
+  /// Zoom, set, save and download count as a view at once.
+  void _actedOn(FeedItemEntity entity) {
+    _viewEntity = entity;
+    _views.acted();
+  }
+
+  HistoryWall? _historyWall(FeedItemEntity entity, HistoryAction action) => HistoryWall.tryCreate(
+    id: entity.id,
+    source: entity.source,
+    thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+    action: action,
+    at: DateTime.now(),
+  );
+
+  Future<void> _recordDownload(FeedItemEntity entity) async {
+    final HistoryWall? wall = _historyWall(entity, HistoryAction.download);
+    if (wall == null || !getIt.isRegistered<SyncedHistoryStore>()) return;
+    try {
+      await getIt<SyncedHistoryStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('Download history did not sync', error: error, stackTrace: stackTrace);
+    }
   }
 
   String _getSourceContext(WallpaperDetailState? blocState) {
@@ -523,12 +573,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       _loaded = true;
       _loadWallpaper(context);
     }
+    final WallpaperDetailState state = context.read<WallpaperDetailBloc>().state;
+    if (state is WallpaperDetailLoaded) _viewEntity ??= state.entity;
+    if (!_onScreen) {
+      _views.hidden();
+    } else if (_viewEntity != null) {
+      _views.shown();
+    }
   }
 
   @override
   void dispose() {
     _shake.dispose();
     _scroll.dispose();
+    _views.dispose();
     super.dispose();
   }
 
@@ -565,10 +623,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         if (state is WallpaperDetailLoaded && !state.recommendations.started) {
           _loadMoreRecommendations();
         }
-        if (state is WallpaperDetailLoaded && !_openRecorded) {
-          _openRecorded = true;
-          _recordTaste(TasteAction.open, state.entity);
-        }
+        if (state is WallpaperDetailLoaded) _observeLoaded(state);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -897,6 +952,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                   ? null
                   : () {
                       final entity = state.entity;
+                      _actedOn(entity);
                       _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
                       if (!hideSetWallpaperUi) {
                         unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
@@ -1590,6 +1646,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final (String, int)? historySession = getIt.isRegistered<SyncedHistoryStore>()
+        ? getIt<SyncedHistoryStore>().recordingSession
+        : null;
+    final (String, bool) historyOwner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = widget.localFile;
@@ -1643,7 +1703,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
+          if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
+              ? getIt<SyncedHistoryStore>().recordingSession
+              : null;
+          if (currentSession != historySession) return;
           _recordTaste(TasteAction.download, entity);
+          _actedOn(entity);
+          unawaited(_recordDownload(entity));
         },
       );
       return label == null ? button : PressScale(child: button);
@@ -1658,7 +1725,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
         prepareSource: prepareSource,
         prepareAuthorized: prepareAuthorized,
-        thumbnailUrl: entity.thumbnailUrl,
+        thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
         promptNotificationPermissionOnSuccess: true,
         entryPoint: 'wallpaper_detail',
         requestId: widget.requestId,
@@ -1708,7 +1775,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 child: FavouriteWallpaperButton(
                   wall: FavouriteWallEntity.fromFeedItem(entity),
                   trash: false,
-                  onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+                  onFavourited: () {
+                    _recordTaste(TasteAction.favourite, entity);
+                    _actedOn(entity);
+                  },
                 ),
               ),
               // The published total sits beside the heart.
@@ -1791,6 +1861,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   void _onWallpaperSet(FeedItemEntity entity) {
     _recordTaste(TasteAction.set, entity);
+    _actedOn(entity);
     if (shouldRecordWallpaperSetStats(entity)) {
       unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
     }

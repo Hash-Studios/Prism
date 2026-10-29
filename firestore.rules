@@ -274,6 +274,37 @@ service cloud.firestore {
       match /setups/{docId} {
         allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
       }
+
+      // Walls the user set or downloaded, so they come back on a new phone. The thumbnail is the only link:
+      // no original URL, and no signed link. The client keeps at most 500 and deletes the oldest; deleteAccount
+      // removes the rest.
+      function validHistoryEntry(key) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.keys().hasAll(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+            && data.provider in ['prism', 'wallhaven', 'pexels']
+            && key == data.provider + '_' + data.id
+            && data.thumb is string && data.thumb.size() <= 1024
+            && data.thumb.matches('https://[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*/[^#]*')
+            && !data.thumb.matches('(?i).*[?&](signature|googleaccessid|sig|x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+)(=[^&#]*)?(&|#|$).*')
+            && !data.thumb.matches('(?i).*[?&][^=&]*%[^=&]*=.*')
+            && data.action in ['set', 'download']
+            && data.at is timestamp;
+      }
+
+      function historyParentOpen(userId) {
+        let parent = /databases/$(database)/documents/usersv2/$(userId);
+        let deletionBarrier = /databases/$(database)/documents/creatorDeletionState/$(userId);
+        return exists(parent)
+            && get(parent).data.get('deleted', false) != true
+            && (!exists(deletionBarrier) || get(deletionBarrier).data.get('closed', false) != true);
+      }
+
+      match /history/{key} {
+        allow read, delete: if isOwner(userId) && historyParentOpen(userId);
+        allow create, update: if isOwner(userId) && historyParentOpen(userId) && validHistoryEntry(key);
+      }
     }
 
     // Private folders of saved walls. Only the owner reads or writes them; deleteAccount removes them.
