@@ -29,6 +29,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String get galleryScreenTitle => 'आपके लिए वॉलपेपर';
 
   @override
+  String get favouritePin => 'सबसे ऊपर पिन करें';
+
+  @override
+  String get favouriteUnpin => 'पिन हटाएँ';
+
+  @override
+  String get favouritePinnedToast => 'पसंदीदा में सबसे ऊपर पिन किया गया';
+
+  @override
+  String get favouriteUnpinnedToast => 'पिन हटाया गया';
+
+  @override
+  String get favouritePinnedBadge => 'पिन किया गया';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप अधिकतम $count पसंदीदा पिन कर सकते हैं। यह वॉलपेपर पिन करने के लिए कोई एक अनपिन करें।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'पिन अपडेट नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7629,9 +7657,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperResetOriginal => 'मूल पर रीसेट करें';
 
   @override
-  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
-
-  @override
   String get wallpaperAll => 'सभी';
 
   @override
@@ -8653,8 +8678,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
+  String get wallpaperImageSemanticHint => 'पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
 
   @override
   String get wallpaperPreviousInFeed => 'पिछला वॉलपेपर';
@@ -8664,6 +8688,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';
+
+  @override
+  String get wallpaperImmersiveHint => 'नियंत्रण छिपाने के लिए टैप करें';
 
   @override
   String get wallpaperInsufficientCoins => 'कॉइन कम हैं। इनाम में कॉइन कमाएँ।';
@@ -10830,4 +10857,148 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return '$folderName में नया और $count और';
   }
+
+  @override
+  String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
+
+  @override
+  String get historyDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String get historyRecentlyViewed => 'हाल में देखे गए';
+
+  @override
+  String get historySyncedNote => 'आपके खाते में सेव है, ताकि नए फ़ोन पर भी ये वापस दिखें।';
+
+  @override
+  String get historySyncedNoteGuest => 'इन्हें नए फ़ोन पर रखने के लिए साइन इन करें।';
+
+  @override
+  String get historyActionSet => 'सेट किया गया';
+
+  @override
+  String get historyActionDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action, $time पर';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'यह यहाँ और आपके खाते से सूची हटा देता है। आपके वॉलपेपर और डाउनलोड जैसे हैं वैसे ही रहेंगे।';
+
+  @override
+  String get historyClearViewedTitle => 'हाल में देखे गए हटाएँ?';
+
+  @override
+  String get historyClearViewedBody => 'यह आपके खोले गए वॉलपेपर इस सूची और होम से हटा देता है।';
+
+  @override
+  String get historyClearViewedAction => 'हाल में देखे गए हटाएँ';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'जो वॉलपेपर आप सेट या डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'जो वॉलपेपर आप डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedEmptyTitle => 'अभी तक कुछ नहीं देखा गया';
+
+  @override
+  String get historyViewedEmptyBody => 'जो वॉलपेपर आप खोलते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedOffTitle => 'देखने का इतिहास बंद है';
+
+  @override
+  String get historyViewedOffBody =>
+      'जो वॉलपेपर आप यहाँ खोलते हैं, उन्हें देखने के लिए देखने का इतिहास सहेजें चालू करें।';
+
+  @override
+  String get historyViewedOffAction => 'चालू करें';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'वॉलपेपर खोलें, $time पर देखा गया';
+  }
+
+  @override
+  String get pickUpTitle => 'जहाँ छोड़ा था, वहीं से जारी रखें';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return '$count में से $index वॉलपेपर खोलें';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'देखने का इतिहास सहेजें';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।';
+
+  @override
+  String get historyClearFailed => 'इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'फ़ोल्डर';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'फ़ोल्डर: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'इस फ़ोल्डर में कम से कम 2 ऐसे वॉलपेपर होने चाहिए जो रोटेट हो सकें। Prism वॉलपेपर डाउनलोड करने के बाद रोटेट होते हैं।';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'फ़ोल्डर खोलें';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'फ़ोल्डर चुनें';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'अभी आपके पास कोई फ़ोल्डर नहीं है। किसी वॉलपेपर को फ़ोल्डर में सेव करें, फिर उसे यहाँ चुनें।';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder रोटेट करें?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'आपका वॉलपेपर नीचे दिए शेड्यूल के अनुसार इस फ़ोल्डर के किसी वॉलपेपर में बदल जाएगा।';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder हटा दिया गया था।';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder में 2 से कम वॉलपेपर हैं।';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String get foldersRotating => 'रोटेट हो रहा है';
+
+  @override
+  String get foldersRotatingDescription => 'ऑटो-रोटेशन इस फ़ोल्डर का उपयोग करता है';
 }

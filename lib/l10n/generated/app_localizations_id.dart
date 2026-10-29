@@ -29,6 +29,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get galleryScreenTitle => 'Wallpaper untuk Anda';
 
   @override
+  String get favouritePin => 'Sematkan ke atas';
+
+  @override
+  String get favouriteUnpin => 'Lepas sematan';
+
+  @override
+  String get favouritePinnedToast => 'Disematkan di atas Favorit';
+
+  @override
+  String get favouriteUnpinnedToast => 'Sematan dilepas';
+
+  @override
+  String get favouritePinnedBadge => 'Disematkan';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat menyematkan hingga $count favorit. Lepas satu sematan untuk menyematkan wallpaper ini.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7523,9 +7551,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperResetOriginal => 'Kembali ke asli';
 
   @override
-  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
-
-  @override
   String get wallpaperAll => 'Semua';
 
   @override
@@ -8546,8 +8571,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
+  String get wallpaperImageSemanticHint => 'Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
   String get wallpaperPreviousInFeed => 'Wallpaper sebelumnya';
@@ -8557,6 +8581,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
+
+  @override
+  String get wallpaperImmersiveHint => 'Ketuk untuk menyembunyikan kontrol';
 
   @override
   String get wallpaperInsufficientCoins => 'Koin tidak cukup. Dapatkan koin di Hadiah.';
@@ -10743,4 +10770,145 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Baru di $folderName dan $count lainnya';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Dipasang dan diunduh';
+
+  @override
+  String get historyDownloaded => 'Diunduh';
+
+  @override
+  String get historyRecentlyViewed => 'Baru dilihat';
+
+  @override
+  String get historySyncedNote => 'Disimpan di akun Anda, jadi ini kembali saat Anda pakai ponsel baru.';
+
+  @override
+  String get historySyncedNoteGuest => 'Masuk untuk menyimpan ini di ponsel baru.';
+
+  @override
+  String get historyActionSet => 'Dipasang';
+
+  @override
+  String get historyActionDownloaded => 'Diunduh';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action pukul $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Ini menghapus daftar di sini dan di akun Anda. Wallpaper dan unduhan Anda tetap seperti semula.';
+
+  @override
+  String get historyClearViewedTitle => 'Hapus baru dilihat?';
+
+  @override
+  String get historyClearViewedBody => 'Ini menghapus wallpaper yang Anda buka dari daftar ini dan dari Beranda.';
+
+  @override
+  String get historyClearViewedAction => 'Hapus baru dilihat';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Wallpaper yang Anda pasang atau unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyEmptyBodyIos => 'Wallpaper yang Anda unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Belum ada yang dilihat';
+
+  @override
+  String get historyViewedEmptyBody => 'Wallpaper yang Anda buka muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedOffTitle => 'Riwayat lihat nonaktif';
+
+  @override
+  String get historyViewedOffBody => 'Aktifkan Simpan riwayat lihat untuk melihat wallpaper yang Anda buka di sini.';
+
+  @override
+  String get historyViewedOffAction => 'Aktifkan';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Buka wallpaper, dilihat pukul $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Lanjutkan dari terakhir';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Buka wallpaper $index dari $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Simpan riwayat lihat';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.';
+
+  @override
+  String get historyClearFailed => 'Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Buka folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pilih folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders => 'Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Putar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Putar folder ini';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder telah dihapus.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder memiliki kurang dari 2 wallpaper.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Putar folder ini';
+
+  @override
+  String get foldersRotating => 'Diputar';
+
+  @override
+  String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
 }

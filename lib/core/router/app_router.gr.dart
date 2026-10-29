@@ -185,18 +185,64 @@ class AiTabRouteArgs {
 
 /// generated route for
 /// [AutoRotateScreen]
-class AutoRotateRoute extends PageRouteInfo<void> {
-  const AutoRotateRoute({List<PageRouteInfo>? children})
-    : super(AutoRotateRoute.name, initialChildren: children);
+class AutoRotateRoute extends PageRouteInfo<AutoRotateRouteArgs> {
+  AutoRotateRoute({
+    Key? key,
+    String? folderId,
+    String? folderName,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AutoRotateRoute.name,
+         args: AutoRotateRouteArgs(
+           key: key,
+           folderId: folderId,
+           folderName: folderName,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'AutoRotateRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AutoRotateScreen();
+      final args = data.argsAs<AutoRotateRouteArgs>(
+        orElse: () => const AutoRotateRouteArgs(),
+      );
+      return AutoRotateScreen(
+        key: args.key,
+        folderId: args.folderId,
+        folderName: args.folderName,
+      );
     },
   );
+}
+
+class AutoRotateRouteArgs {
+  const AutoRotateRouteArgs({this.key, this.folderId, this.folderName});
+
+  final Key? key;
+
+  final String? folderId;
+
+  final String? folderName;
+
+  @override
+  String toString() {
+    return 'AutoRotateRouteArgs{key: $key, folderId: $folderId, folderName: $folderName}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AutoRotateRouteArgs) return false;
+    return key == other.key &&
+        folderId == other.folderId &&
+        folderName == other.folderName;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ folderId.hashCode ^ folderName.hashCode;
 }
 
 /// generated route for

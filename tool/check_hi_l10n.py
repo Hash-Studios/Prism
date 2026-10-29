@@ -85,6 +85,7 @@ UNCHANGED_ENGLISH = {
     'onboardingPro': 'Pro',
     'premiumPageTitle': 'Prism Premium',
     'wallpaperAutoRotateNounCategory': '{category}',
+    'wallpaperAutoRotateNounFolder': '{folder}',
     'wallpaperHomeAppName': 'Prism',
     'wallpaperPremium': 'Premium',
     'wallpaperProviderWallhaven': 'Wallhaven',

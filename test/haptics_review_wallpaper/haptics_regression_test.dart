@@ -200,7 +200,7 @@ void main() {
     expect(haptics, <String>['tap', 'impact']);
   }, variant: android);
 
-  testWidgets('accent tap haptics only when cycling a valid palette', (tester) async {
+  testWidgets('a tap on the wallpaper no longer cycles the accent, so it plays no haptic', (tester) async {
     final List<String> haptics = _recordHaptics(tester);
     _registerDetailHarness(tester);
     const FeedItemEntity entity = FeedItemEntity.wallhaven(
@@ -249,7 +249,7 @@ void main() {
 
     await pumpDetail(colors: <Color>[Colors.red, Colors.blue], accent: Colors.red);
     await tapWallpaper();
-    expect(haptics, <String>['selection']);
+    expect(haptics, isEmpty);
   }, variant: android);
 
   testWidgets('author launch failure emits an error haptic', (tester) async {

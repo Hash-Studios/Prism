@@ -29,6 +29,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get galleryScreenTitle => 'Papéis de parede para você';
 
   @override
+  String get favouritePin => 'Fixar no topo';
+
+  @override
+  String get favouriteUnpin => 'Desafixar';
+
+  @override
+  String get favouritePinnedToast => 'Fixado no topo dos Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desafixado';
+
+  @override
+  String get favouritePinnedBadge => 'Fixado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você pode fixar até $count favoritos. Desafixe um para fixar este papel de parede.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Não foi possível atualizar o fixado. Verifique sua conexão e tente novamente.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7759,9 +7787,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperResetOriginal => 'Restaurar original';
 
   @override
-  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -8812,8 +8837,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
+  String get wallpaperImageSemanticHint => 'Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperPreviousInFeed => 'Papel de parede anterior';
@@ -8823,6 +8847,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toque para ocultar os controles';
 
   @override
   String get wallpaperInsufficientCoins => 'Não há moedas suficientes. Ganhe moedas em recompensas.';
@@ -11021,6 +11048,149 @@ class AppLocalizationsPt extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Novidades em $folderName e mais $count';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Definido e baixado';
+
+  @override
+  String get historyDownloaded => 'Baixado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recentemente';
+
+  @override
+  String get historySyncedNote => 'Salvo na sua conta, então eles voltam em um celular novo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Entre para manter esses itens em um celular novo.';
+
+  @override
+  String get historyActionSet => 'Definido';
+
+  @override
+  String get historyActionDownloaded => 'Baixado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action às $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Isso remove a lista aqui e na sua conta. Seus papéis de parede e downloads continuam como estão.';
+
+  @override
+  String get historyClearViewedTitle => 'Limpar vistos recentemente?';
+
+  @override
+  String get historyClearViewedBody => 'Isso remove da lista e do Início os papéis de parede que você abriu.';
+
+  @override
+  String get historyClearViewedAction => 'Limpar vistos recentemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Os papéis de parede que você define ou baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyEmptyBodyIos => 'Os papéis de parede que você baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Nada visto ainda';
+
+  @override
+  String get historyViewedEmptyBody => 'Os papéis de parede que você abre aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedOffTitle => 'O histórico de visualização está desativado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Ative Salvar histórico de visualização para ver aqui os papéis de parede que você abrir.';
+
+  @override
+  String get historyViewedOffAction => 'Ativar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir papel de parede, visto às $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Continue de onde parou';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir papel de parede $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Salvar histórico de visualização';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
+
+  @override
+  String get historyClearFailed => 'Não foi possível limpar o histórico. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Pasta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Pasta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta pasta precisa de pelo menos 2 papéis de parede que possam rotacionar. Os papéis de parede do Prism rotacionam depois que você os baixa.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir pasta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Escolha uma pasta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Você ainda não tem pastas. Salve um papel de parede em uma pasta e depois escolha-a aqui.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotacionar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Seu papel de parede muda para um desta pasta, de acordo com a programação abaixo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotacionar esta pasta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder foi excluída.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder tem menos de 2 papéis de parede.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotacionar esta pasta';
+
+  @override
+  String get foldersRotating => 'Rotacionando';
+
+  @override
+  String get foldersRotatingDescription => 'A rotação automática usa esta pasta';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -11046,6 +11216,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get galleryScreenTitle => 'Papéis de parede para você';
 
   @override
+  String get favouritePin => 'Fixar no topo';
+
+  @override
+  String get favouriteUnpin => 'Desafixar';
+
+  @override
+  String get favouritePinnedToast => 'Fixado no topo dos Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desafixado';
+
+  @override
+  String get favouritePinnedBadge => 'Fixado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você pode fixar até $count favoritos. Desafixe um para fixar este papel de parede.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Não foi possível atualizar o fixado. Verifique sua conexão e tente novamente.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -18776,9 +18974,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperResetOriginal => 'Restaurar original';
 
   @override
-  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -19829,8 +20024,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
+  String get wallpaperImageSemanticHint => 'Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperPreviousInFeed => 'Papel de parede anterior';
@@ -19840,6 +20034,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toque para ocultar os controles';
 
   @override
   String get wallpaperInsufficientCoins => 'Não há moedas suficientes. Ganhe moedas em recompensas.';
@@ -22038,4 +22235,147 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Novidades em $folderName e mais $count';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Definido e baixado';
+
+  @override
+  String get historyDownloaded => 'Baixado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recentemente';
+
+  @override
+  String get historySyncedNote => 'Salvo na sua conta, então eles voltam em um celular novo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Entre para manter esses itens em um celular novo.';
+
+  @override
+  String get historyActionSet => 'Definido';
+
+  @override
+  String get historyActionDownloaded => 'Baixado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action às $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Isso remove a lista aqui e na sua conta. Seus papéis de parede e downloads continuam como estão.';
+
+  @override
+  String get historyClearViewedTitle => 'Limpar vistos recentemente?';
+
+  @override
+  String get historyClearViewedBody => 'Isso remove da lista e do Início os papéis de parede que você abriu.';
+
+  @override
+  String get historyClearViewedAction => 'Limpar vistos recentemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Os papéis de parede que você define ou baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyEmptyBodyIos => 'Os papéis de parede que você baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Nada visto ainda';
+
+  @override
+  String get historyViewedEmptyBody => 'Os papéis de parede que você abre aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedOffTitle => 'O histórico de visualização está desativado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Ative Salvar histórico de visualização para ver aqui os papéis de parede que você abrir.';
+
+  @override
+  String get historyViewedOffAction => 'Ativar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir papel de parede, visto às $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Continue de onde parou';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir papel de parede $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Salvar histórico de visualização';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
+
+  @override
+  String get historyClearFailed => 'Não foi possível limpar o histórico. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Pasta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Pasta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta pasta precisa de pelo menos 2 papéis de parede que possam rotacionar. Os papéis de parede do Prism rotacionam depois que você os baixa.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir pasta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Escolha uma pasta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Você ainda não tem pastas. Salve um papel de parede em uma pasta e depois escolha-a aqui.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotacionar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Seu papel de parede muda para um desta pasta, de acordo com a programação abaixo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotacionar esta pasta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder foi excluída.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder tem menos de 2 papéis de parede.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotacionar esta pasta';
+
+  @override
+  String get foldersRotating => 'Rotacionando';
+
+  @override
+  String get foldersRotatingDescription => 'A rotação automática usa esta pasta';
 }

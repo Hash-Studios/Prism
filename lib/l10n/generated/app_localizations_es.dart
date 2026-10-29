@@ -30,6 +30,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get galleryScreenTitle => 'Fondos para ti';
 
   @override
+  String get favouritePin => 'Fijar arriba';
+
+  @override
+  String get favouriteUnpin => 'Desfijar';
+
+  @override
+  String get favouritePinnedToast => 'Fijado arriba en Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desfijado';
+
+  @override
+  String get favouritePinnedBadge => 'Fijado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes fijar hasta $count favoritos. Desfija uno para fijar este fondo de pantalla.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'No se pudo actualizar el fijado. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7585,9 +7613,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperResetOriginal => 'Restablecer original';
 
   @override
-  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -8628,7 +8653,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
+      'Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
 
   @override
   String get wallpaperPreviousInFeed => 'Fondo de pantalla anterior';
@@ -8638,6 +8663,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Fondo de pantalla';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toca para ocultar los controles';
 
   @override
   String get wallpaperInsufficientCoins => 'No tienes suficientes monedas. Gana monedas en Recompensas.';
@@ -10824,4 +10852,149 @@ class AppLocalizationsEs extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Nuevo en $folderName y $count más';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Puesto y descargado';
+
+  @override
+  String get historyDownloaded => 'Descargado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recientemente';
+
+  @override
+  String get historySyncedNote => 'Guardado en tu cuenta, así estos vuelven a aparecer en un teléfono nuevo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Inicia sesión para mantenerlos en un teléfono nuevo.';
+
+  @override
+  String get historyActionSet => 'Puesto';
+
+  @override
+  String get historyActionDownloaded => 'Descargado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action a las $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Esto borra la lista de aquí y de tu cuenta. Tus fondos de pantalla y descargas se mantienen igual.';
+
+  @override
+  String get historyClearViewedTitle => '¿Borrar vistos recientemente?';
+
+  @override
+  String get historyClearViewedBody => 'Esto quita de esta lista y de Inicio los fondos de pantalla que abriste.';
+
+  @override
+  String get historyClearViewedAction => 'Borrar vistos recientemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Los fondos de pantalla que pongas o descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Los fondos de pantalla que descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Aún no has visto nada';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Los fondos de pantalla que abras aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedOffTitle => 'El historial de visualización está desactivado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Activa Guardar historial de visualización para ver aquí los fondos de pantalla que abras.';
+
+  @override
+  String get historyViewedOffAction => 'Activar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir fondo de pantalla, visto a las $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Retoma donde lo dejaste';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir fondo de pantalla $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Guardar historial de visualización';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.';
+
+  @override
+  String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Carpeta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Carpeta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta carpeta necesita al menos 2 fondos de pantalla que puedan rotar. Los fondos de Prism rotan después de que los descargues.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir carpeta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Elige una carpeta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Aún no tienes carpetas. Guarda un fondo de pantalla en una carpeta y luego elígela aquí.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '¿Rotar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Tu fondo de pantalla cambiará a uno de esta carpeta, según el horario de abajo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotar esta carpeta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'La rotación automática está desactivada porque se eliminó la carpeta $folder.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'La rotación automática está desactivada porque la carpeta $folder tiene menos de 2 fondos de pantalla.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotar esta carpeta';
+
+  @override
+  String get foldersRotating => 'Rotando';
+
+  @override
+  String get foldersRotatingDescription => 'La rotación automática usa esta carpeta';
 }

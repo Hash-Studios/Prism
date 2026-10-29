@@ -93,6 +93,7 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 
 - A mood is a named set of walls, for example **Dreamy** or **Dark and quiet**. Each mood has a title and one line of text under it.
 - The For you tab shows a row of mood chips under the carousel. A tap on a chip opens the mood page.
+- On a returning session, the For you grid can show **Pick up where you left off** after 2 rows of tiles. It shows recently viewed wallpapers the user did not keep. See [wallpaper-history.md](wallpaper-history.md).
 - The For you grid also shows two mood rows: one after 4 rows of tiles and one after 12 rows. A mood row has the title, the line of text, a **See all** button and a strip of up to 10 walls. The two moods move on one place each day.
 - The mood page shows all the walls of the mood in the normal grid. A tap on a tile opens the detail screen, and the user can swipe through the walls of the mood.
 - The order of the walls in a mood row and on the mood page comes from the For you ranker. The walls that match the user's taste come first.

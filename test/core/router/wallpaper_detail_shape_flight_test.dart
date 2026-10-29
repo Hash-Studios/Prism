@@ -246,8 +246,8 @@ void main() {
         expect(departing.height, greaterThan(departing.width * 9 / 16));
         expect(
           tester.widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage)).decodeBox,
-          const Size(392, 220.5),
-          reason: 'decoding must use the fixed target size, not the changing displayed box',
+          isNull,
+          reason: 'decoding uses the whole screen, never the changing displayed box',
         );
         unawaited(router.maybePop<void>());
         await tester.pump();

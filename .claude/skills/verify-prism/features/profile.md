@@ -1,37 +1,40 @@
 # Profile and edit profile
 
-The signed-in user's own profile is a nested dashboard route (`/dashboard/profile`, `ProfileRoute`, `lib/features/public_profile/views/pages/profile_screen.dart`); the same screen renders another user's public profile at `/user/:identifier`. Editing uses a popup panel, `lib/core/widgets/popup/edit_profile_panel.dart`, reached at `/edit-profile` (guarded) or `/dashboard/profile/edit`.
+Every profile is `ProfileRoute` at `/user/:identifier` (`lib/features/public_profile/views/pages/profile_screen.dart`). Your own profile uses your user id as the identifier. There is no `/dashboard/profile` route. Edit uses `EditProfilePanelRoute` at `/edit-profile` (`_signedInGuard`, `app_router.dart`), built in `lib/core/widgets/popup/edit_profile_panel.dart`.
 
 ## Sub-features
 
-- `own-profile`: tooltip `Edit profile` (pencil/edit affordance) and tooltip `Menu` (opens a popup menu with `Block user` when viewing someone else's profile).
-- `followers` / `following`: tappable counters labeled `Followers` and `Following`, each pushing `FollowersRoute` / `FollowingListRoute`.
-- `edit-profile` panel: tooltip `Close`, `Change cover photo` / `Remove cover photo`, `Change profile photo`, text fields `Name`, `Username`, `Bio` (hint `Tell people about yourself…`, tooltip `Remove bio`), and a link section (`Link type`, tooltip `Remove link`).
-- `share-profile`: `/share-prism` (guarded when reached from own profile), see `lib/features/session/views/pages/share_prism_screen.dart`.
-- `block-user`: from the `Menu` popup on someone else's profile.
+- `own-profile`: tooltip `Edit profile` (pencil) and tooltip `Menu`, which opens the end drawer (`views/widgets/drawer_widget.dart`): `Share profile`, `Library` (under `Your content`), `Settings`, `Log out`.
+- `other-profile`: `Follow` / `Unfollow`, `Gift a 24 h pass`, and `More options` with `Report user` and `Block user`.
+- `counters`: Semantics `{n} Followers` and `{n} Following`. Following is tappable on your own profile only.
+- `extras`: badge row, `Complete your profile` card (own, incomplete), `Folders` row of public folders (opens `/folder/:id`), `More links` sheet. Blocked accounts: `/blocked-accounts`.
+- `edit-profile` panel: title `Edit profile`, fields `Name`, `Username`, `Bio`, buttons `Change photo`, `Remove photo`, `Change cover photo`, and `Save changes` (disabled until you change something). Back tooltip is `Back`.
+- `share-profile`: drawer `Share profile` makes a link with `createUserDynamicLink`. It is not `/share-prism` (that is `Invite friends` from Rewards).
 
 ## How to get to it (user POV)
 
-- Tap `Your profile` in the top app bar (see `features/home-feed.md`) to reach your own profile.
-- Tap a user's name/avatar anywhere in the app (search results, a wallpaper's author, a comment) to reach `/user/:identifier`.
-- On your own profile, tap the edit tooltip to open the edit panel.
-- Tap `Followers` or `Following` counters to see the respective list.
+- Tap `Your profile` (the avatar) in the top app bar (`features/home-feed.md`).
+- Tap a user's name or avatar in search, a wallpaper author, or a follower list.
+- Own profile: tap `Edit profile`, or `Menu` then the drawer rows.
+- Signed out: the page shows a sign-in prompt and a `Settings` icon only.
 
 ## Driving it with the helper
 
 Preconditions:
 
-- Signed-in human for own-profile edit, share, and any guarded action. Signed-out or another user's profile is fine for read-only viewing.
+- A signed-in human for own-profile edit, drawer, and guarded actions. Signed-out users only see the prompt.
 
-- **Own profile.** Snapshot `--tag profile-own`. Assert tooltip `Edit profile`.
-- **Someone else's profile.** Assert tooltip `Menu`; open it and assert `Block user`. Do not actually block a real account; this is a real, visible moderation action. Only exercise it against a disposable test account, and confirm with the human first.
-- **Followers / Following.** Tap `Following`; assert the list route opens (label `Following` per `profile_screen.dart:635`). Tap `Followers` similarly (`profile_screen.dart:655`).
-- **Edit profile.** Open the panel; assert `Name`, `Username`, `Bio` fields and the `Change profile photo` / `Change cover photo` affordances. Typing into `Name`/`Bio` and closing with `Close` without saving is a safe, reversible check. Saving a real change to a real account's profile needs the human's go-ahead.
-- **Share profile.** From own profile, reach `/share-prism`; confirm it renders a shareable link/QR without actually posting it anywhere.
-- **Proof.** Snapshot own profile, another user's profile with the menu open, and the edit panel.
+- **Own profile.** Snapshot `--tag profile-own`. Assert `Edit profile` and `Menu`. Open `Menu` and assert `Share profile`, `Library`, `Settings`.
+- **Other profile.** Open `More options`; assert `Report user` and `Block user`. Do not tap them on a real account; ask the human first.
+- **Counters.** Tap the `Following` pill on your own profile and assert the list opens. Do the same for `Followers`.
+- **Edit profile.** Assert `Name`, `Username`, `Bio`, `Change photo`, `Change cover photo`, `Save changes`. Type, then tap `Back` and discard. Saving a real account needs the human's go-ahead.
+- **Share profile.** Tap `Share profile` in the drawer and assert the share sheet opens. Do not send it.
+- **Proof.** Snapshot own profile, the drawer, another profile with `More options` open, and the edit panel.
 
 ## Gotchas
 
-- `EditProfilePanel` lives under `lib/core/widgets/popup/`, not under a `profile` feature folder; it is shared UI, not screen-scoped.
-- Following a real account, blocking a real account, or changing a real profile are all real, user-visible actions. Prefer read-only assertions (labels present, fields editable) over completing them, unless the recipe's whole point is that action and the account is a disposable QA account.
-- `Bio`'s hint text ends with a real ellipsis character (`…`), not three periods; match it exactly if asserting on it.
+- `EditProfilePanel` is shared UI under `lib/core/widgets/popup/`. Its photo buttons are in `edit_profile_header.dart`.
+- The panel has no `Close` tooltip. Use `Back`. Back with unsaved changes asks to discard.
+- Follow, block, report, gift and save change real accounts. Prefer read-only checks.
+- The drawer `Log out` is terminal. Never tap it in a recipe.
+- `Bio` hint ends with a real ellipsis character, not three periods.

@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart' show isWallpaperTargetSupported;
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
@@ -20,11 +21,15 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AutoRotateRepository)
 class AutoRotateRepositoryImpl implements AutoRotateRepository {
-  AutoRotateRepositoryImpl(this._settings, this._wallpapers, this._wallOfTheDay, this._history);
+  AutoRotateRepositoryImpl(this._settings, this._wallpapers, this._wallOfTheDay, this._history, this._folders);
 
   static const String _sourceKey = 'autoRotate.source';
   static const String _categoryKey = 'autoRotate.category';
+  static const String _folderIdKey = 'autoRotate.folderId';
+  static const String _folderNameKey = 'autoRotate.folderName';
+  static const String _folderOwnerKey = 'autoRotate.folderOwnerId';
   static const int _categoryLimit = 40;
+  static const int _folderLimit = 100;
   static const String _appliedSourcesKey = 'autoRotate.appliedSources';
   static const String _passRecordKey = 'autoRotate.passRecord';
   static Future<void>? _passRecordOperation;
@@ -34,6 +39,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   final PrismWallpaperRepository _wallpapers;
   final WallOfTheDayRepository _wallOfTheDay;
   final WallpaperHistoryStore _history;
+  final FoldersRepository _folders;
 
   @visibleForTesting
   static Set<aw.WallpaperRotationTrigger> triggersFor(AutoRotateConfig config) {
@@ -55,6 +61,14 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       defaultValue: defaults.target.name,
     );
     final String sourceName = _settings.get<String>(_sourceKey, defaultValue: defaults.source.name);
+    final String folderId = _settings.get<String>(_folderIdKey, defaultValue: '');
+    final String folderOwnerId = _settings.get<String>(_folderOwnerKey, defaultValue: '');
+    final AutoRotateSource source = AutoRotateSource.values.asNameMap()[sourceName] ?? defaults.source;
+    final String requestedOwnerId = ownerId?.trim() ?? '';
+    final bool folderBelongsToOwner =
+        folderId.trim().isNotEmpty && requestedOwnerId.isNotEmpty && folderOwnerId == requestedOwnerId;
+    final bool validFolder = source == AutoRotateSource.folder && folderBelongsToOwner;
+    final bool enabled = _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled);
     final Map<String, Object?>? passRecord = _readPassRecord();
     final Object? storedUntilMs = passRecord?['untilMs'];
     final int passUntilMs =
@@ -62,14 +76,18 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         ? storedUntilMs
         : 0;
     return AutoRotateConfig(
-      enabled: _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled),
+      enabled: enabled && (source != AutoRotateSource.folder || validFolder),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
       target: WallpaperTarget.values.asNameMap()[targetName] ?? defaults.target,
       shuffle: _settings.get<bool>(PersistenceKeys.autoRotateShuffle, defaultValue: defaults.shuffle),
-      source: AutoRotateSource.values.asNameMap()[sourceName] ?? defaults.source,
+      source: source == AutoRotateSource.folder && !validFolder ? defaults.source : source,
       categoryName: _settings.get<String>(_categoryKey, defaultValue: defaults.categoryName),
       chargingOnly: _settings.get<bool>(PersistenceKeys.autoRotateChargingOnly, defaultValue: defaults.chargingOnly),
       passUntil: passUntilMs > 0 ? DateTime.fromMillisecondsSinceEpoch(passUntilMs, isUtc: true) : null,
+      folderId: folderBelongsToOwner ? folderId : null,
+      folderName: folderBelongsToOwner
+          ? _settings.get<String>(_folderNameKey, defaultValue: defaults.folderName)
+          : defaults.folderName,
     );
   }
 
@@ -82,6 +100,11 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(PersistenceKeys.autoRotateShuffle, config.shuffle);
     await _settings.set(_sourceKey, config.source.name);
     await _settings.set(_categoryKey, config.categoryName);
+    final String folderOwnerId = ownerId?.trim() ?? '';
+    final bool hasOwnedFolder = config.folderId?.trim().isNotEmpty == true && folderOwnerId.isNotEmpty;
+    await _settings.set(_folderIdKey, hasOwnedFolder ? config.folderId!.trim() : '');
+    await _settings.set(_folderNameKey, hasOwnedFolder ? config.folderName : '');
+    await _settings.set(_folderOwnerKey, hasOwnedFolder ? folderOwnerId : '');
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
     final DateTime? passUntil = config.passUntil;
     if (ownerId == null || ownerId.isEmpty) return;
@@ -139,7 +162,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
-    final List<String> safe = await _safeSources(imageUrls);
+    final List<String> safe = await resolveSources(imageUrls);
     if (safe.isEmpty) {
       await stop();
       return false;
@@ -164,6 +187,9 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(safe));
     return result.isSuccess;
   }
+
+  @override
+  Future<List<String>> resolveSources(List<String> imageUrls) => _safeSources(imageUrls);
 
   @override
   Future<bool> stop() async {
@@ -250,8 +276,19 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         ))..sort();
       case AutoRotateSource.favourites:
       case AutoRotateSource.downloads:
+      case AutoRotateSource.folder:
         return const <String>[];
     }
+  }
+
+  @override
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async {
+    if (folderId.trim().isEmpty || userId.trim().isEmpty) return null;
+    final result = await _folders.fetchItems(folderId, userId: userId, limit: _folderLimit);
+    if (result.isFailure) return null;
+    final walls = result.data;
+    if (walls == null) return (found: false, urls: const <String>[]);
+    return (found: true, urls: await _safeWallSources(walls.map((wall) => (wall.id, wall.source, wall.fullUrl))));
   }
 
   @override
@@ -316,7 +353,17 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   bool _isLocalSource(String source) {
     final Uri? uri = Uri.tryParse(source);
-    return uri?.scheme == 'file' || (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
+    if (uri?.scheme == 'file') {
+      if (!source.substring('file:'.length).startsWith('/') || !(uri!.host.isEmpty || uri.host == 'localhost')) {
+        return false;
+      }
+      try {
+        return uri.toFilePath().isNotEmpty;
+      } catch (_) {
+        return false;
+      }
+    }
+    return (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
   }
 
   String _rotationSource(String source) {

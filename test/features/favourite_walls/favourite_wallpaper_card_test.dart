@@ -70,6 +70,13 @@ class _Favourites implements FavouriteWallsRepository {
 
   @override
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async => Result.success(true);
+
+  @override
+  Future<Result<void>> setPinned({
+    required String userId,
+    required FavouriteWallEntity wall,
+    DateTime? pinnedAt,
+  }) async => Result.success(null);
 }
 
 FeedItemEntity _item(WallpaperSource source, {String id = 'wall', int? count, int? views}) {
@@ -110,6 +117,7 @@ void main() {
       FetchFavouriteWallsUseCase(repository),
       ToggleFavouriteWallUseCase(repository),
       ClearFavouriteWallsUseCase(repository),
+      SetFavouritePinUseCase(repository),
     );
     getIt.registerSingleton<FavouriteCountsCubit>(cubit);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));

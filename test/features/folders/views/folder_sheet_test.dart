@@ -39,6 +39,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 class _FakeFoldersRepository implements FoldersRepository {
   _FakeFoldersRepository({
     this.folders = const <FolderEntity>[],
@@ -240,7 +242,12 @@ void main() {
 
   /// Pumps a button that opens the folder sheet for [wall], then taps it.
   Future<void> openSheet(WidgetTester tester, FoldersBloc bloc, FavouriteWallEntity wall) async {
-    final FavouriteWallsBloc favourites = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final FavouriteWallsBloc favourites = FavouriteWallsBloc(
+      fetchUseCase,
+      toggleUseCase,
+      clearUseCase,
+      _MockSetFavouritePinUseCase(),
+    );
     addTearDown(favourites.close);
     await tester.pumpWidget(
       MaterialApp(
