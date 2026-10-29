@@ -76,6 +76,7 @@ class _ReportProblemBody extends StatefulWidget {
 
 class _ReportProblemBodyState extends State<_ReportProblemBody> {
   final TextEditingController _note = TextEditingController();
+  final FocusNode _noteFocus = FocusNode();
   _Phase _phase = _Phase.loading;
   String? _report;
   ReportTopic? _topic;
@@ -83,6 +84,7 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   bool _includeDiagnostics = true;
   bool _showDiagnostics = false;
   bool _sharing = false;
+  bool _pickingScreenshot = false;
 
   @override
   void initState() {
@@ -93,6 +95,7 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   @override
   void dispose() {
     _note.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -120,10 +123,12 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
 
   Future<void> _send(ReportTopic topic) async {
     final AppLocalizations l10n = context.l10n;
+    final ProblemReportDraft draft = _draft(topic);
+    _noteFocus.unfocus();
     setState(() => _phase = _Phase.sending);
     String? reference;
     try {
-      reference = await widget.service.send(_draft(topic));
+      reference = await widget.service.send(draft);
     } catch (error, stackTrace) {
       logger.w('Could not send the problem report.', error: error, stackTrace: stackTrace);
     }
@@ -131,8 +136,8 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
       analytics.track(
         ReportProblemSentEvent(
           result: reference == null ? 'failed' : 'sent',
-          topic: topic.wire,
-          hasScreenshot: _screenshot != null,
+          topic: draft.topic.wire,
+          hasScreenshot: draft.screenshot != null,
           trigger: widget.trigger.name,
         ),
       ),
@@ -149,6 +154,9 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   Future<void> _share() async {
     final AppLocalizations l10n = context.l10n;
     final String text = _shareText();
+    final String? topic = _topic?.wire;
+    final bool hasScreenshot = _screenshot != null;
+    _noteFocus.unfocus();
     setState(() => _sharing = true);
     String result = 'shared';
     try {
@@ -160,19 +168,19 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
     } catch (error, stackTrace) {
       result = 'failed';
       logger.w('Could not share the problem report.', error: error, stackTrace: stackTrace);
-      toasts.error(l10n.accountCouldNotShareReport);
     }
     unawaited(
       analytics.track(
         ReportProblemSharedEvent(
           result: result,
-          topic: _topic?.wire,
-          hasScreenshot: _screenshot != null,
+          topic: topic,
+          hasScreenshot: hasScreenshot,
           trigger: widget.trigger.name,
         ),
       ),
     );
     if (!mounted) return;
+    if (result == 'failed') toasts.error(l10n.accountCouldNotShareReport);
     setState(() => _sharing = false);
     if (result == 'shared') Navigator.of(context).pop();
   }
@@ -189,23 +197,31 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   }
 
   Future<void> _pickScreenshot() async {
+    if (_pickingScreenshot) return;
+    setState(() => _pickingScreenshot = true);
     try {
       final Uint8List? bytes = await widget.pickScreenshot();
       if (bytes != null && mounted) setState(() => _screenshot = bytes);
     } catch (error, stackTrace) {
       logger.w('Could not pick a screenshot.', error: error, stackTrace: stackTrace);
+    } finally {
+      if (mounted) setState(() => _pickingScreenshot = false);
     }
   }
 
   void _previewScreenshot(Uint8List bytes) {
+    final AppLocalizations l10n = context.l10n;
     unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (BuildContext dialogContext) => GestureDetector(
-          onTap: () => Navigator.of(dialogContext).pop(),
-          child: Dialog(
-            clipBehavior: Clip.antiAlias,
-            child: InteractiveViewer(child: Image.memory(bytes, fit: BoxFit.contain)),
+      showPrismSheet<void>(
+        context,
+        detents: const <PrismSheetDetent>[PrismSheetDetent.large],
+        builder: (BuildContext sheetContext) => PrismSheetBody(
+          title: l10n.reportViewScreenshot,
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.72,
+            child: Center(
+              child: InteractiveViewer(child: Image.memory(bytes, fit: BoxFit.contain)),
+            ),
           ),
         ),
       ),
@@ -216,7 +232,7 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ReportTopic? topic = _topic;
-    final bool busy = _phase == _Phase.sending || _sharing;
+    final bool busy = _phase == _Phase.sending || _sharing || _pickingScreenshot;
     return PrismSheetBody(
       title: l10n.accountReportAProblem,
       message: l10n.reportSheetMessage,
@@ -232,7 +248,7 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
           label: l10n.reportShareAsFile,
           expand: true,
           variant: PrismButtonVariant.ghost,
-          onPressed: busy || _phase == _Phase.loading ? null : () => unawaited(_share()),
+          onPressed: busy || _phase == _Phase.loading || _shareText().trim().isEmpty ? null : () => unawaited(_share()),
         ),
         PrismButton(
           label: l10n.accountCancel,
@@ -241,13 +257,14 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ],
-      child: _phase == _Phase.loading ? const _ReportSkeleton() : _form(l10n),
+      child: _phase == _Phase.loading ? const _ReportSkeleton() : IgnorePointer(ignoring: busy, child: _form(l10n)),
     );
   }
 
   Widget _form(AppLocalizations l10n) {
     final Uint8List? screenshot = _screenshot;
     final String? report = _report;
+    final bool busy = _phase == _Phase.sending || _sharing || _pickingScreenshot;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -266,11 +283,14 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
         const SizedBox(height: PrismSpace.md),
         PrismTextField(
           controller: _note,
+          focusNode: _noteFocus,
           hint: l10n.reportNoteHint,
           minLines: 3,
           maxLines: 6,
           maxLength: _noteMaxLength,
+          enabled: !busy,
           textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: PrismSpace.md),
         _ScreenshotCard(
@@ -366,8 +386,9 @@ class _ScreenshotCard extends StatelessWidget {
         child: Row(
           children: <Widget>[
             Semantics(
-              button: bytes != null,
-              label: bytes == null ? null : l10n.reportViewScreenshot,
+              key: const Key('report_problem_screenshot_thumbnail'),
+              button: true,
+              label: bytes == null ? l10n.reportAddScreenshot : l10n.reportViewScreenshot,
               child: GestureDetector(
                 onTap: bytes == null ? onAdd : onPreview,
                 child: ClipRRect(

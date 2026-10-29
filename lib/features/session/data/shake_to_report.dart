@@ -57,6 +57,9 @@ class ShakeDetector {
   final List<DateTime> _recent = <DateTime>[];
   DateTime? _quietUntil;
 
+  /// Drops partial motion samples when sensor listening pauses.
+  void reset() => _recent.clear();
+
   /// Returns true when this sample completes a shake.
   bool add(double x, double y, double z, DateTime at) {
     if (_quietUntil != null && at.isBefore(_quietUntil!)) return false;

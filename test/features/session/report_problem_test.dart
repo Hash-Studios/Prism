@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -43,6 +46,35 @@ const ReportEnvironment _environment = ReportEnvironment(
   theme: 'dark',
   signedIn: true,
 );
+
+const SentryConfig _reportConfig = SentryConfig(
+  dsn: 'https://public@o1.ingest.sentry.io/1',
+  environment: 'staging',
+  release: 'Prism@test',
+  dist: 'test',
+  enabled: true,
+);
+
+class _ReportTransport implements Transport {
+  _ReportTransport(this.sent, {this.response});
+
+  final List<String> sent;
+  final Future<SentryId> Function()? response;
+
+  @override
+  Future<SentryId?> send(SentryEnvelope envelope) async {
+    for (final SentryEnvelopeItem item in envelope.items) {
+      final List<int> data = await item.dataFactory();
+      final Map<String, dynamic> header = await item.header.toJson(data.length);
+      if (header['type'] != 'feedback') continue;
+      final Map<String, dynamic> event = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
+      final Map<String, dynamic> contexts = event['contexts'] as Map<String, dynamic>;
+      final Map<String, dynamic> feedback = contexts['feedback'] as Map<String, dynamic>;
+      sent.add(feedback['message'] as String);
+    }
+    return response == null ? envelope.header.eventId : response!();
+  }
+}
 
 void main() {
   group('scrubSensitive', () {
@@ -192,18 +224,20 @@ void main() {
       Future<SentryId> Function()? capture,
       bool online = true,
       Future<String> Function()? readAppVersion,
+      Future<String> Function()? readDevice,
+      Future<void> Function()? share,
     }) => ReportProblemService(
       readRecords: () => <AppLogRecord>[_record('visible line')],
-      readDevice: () async => 'Pixel 8',
+      readDevice: readDevice ?? () async => 'Pixel 8',
       readAppVersion: readAppVersion ?? () async => '3.4.0+340',
-      shareFile: (text) async => shared.add(text),
+      shareFile: (text) async {
+        shared.add(text);
+        await share?.call();
+      },
       isOnline: () async => online,
       canSend: () => true,
-      readConfig: () => null,
-      captureFeedback: (feedback, {withScope}) {
-        sent.add(feedback.message);
-        return capture?.call() ?? Future<SentryId>.value(SentryId.newId());
-      },
+      readConfig: () => _reportConfig,
+      feedbackTransport: _ReportTransport(sent, response: capture),
     );
 
     Future<void> openSheet(
@@ -299,6 +333,7 @@ void main() {
       await openSheet(tester, service(capture: () => pending.future));
 
       await tester.tap(find.text('Slow'));
+      await tester.enterText(find.byType(TextField), 'The screen freezes on Save');
       await tester.pump();
       await tapSend(tester);
       await tester.pump();
@@ -310,6 +345,114 @@ void main() {
       expect(sent, hasLength(1));
 
       pending.complete(SentryId.newId());
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('Send and Share wait for a pending screenshot picker to finish', (tester) async {
+      final picker = Completer<Uint8List?>();
+      await openSheet(tester, service(), pick: () => picker.future);
+
+      await tester.tap(find.text('Slow'));
+      await tester.pump();
+      await tester.ensureVisible(find.text('Add screenshot'));
+      await tester.tap(find.text('Add screenshot'));
+      await tester.pump();
+
+      expect(sendButton(tester).onPressed, isNull);
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNull);
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Cancel')).onPressed, isNotNull);
+      await tapSend(tester);
+      await tester.ensureVisible(find.text('Share as file'));
+      await tester.tap(find.text('Share as file'), warnIfMissed: false);
+      await tester.pump();
+      expect(sent, isEmpty);
+      expect(shared, isEmpty);
+
+      picker.complete(Uint8List.fromList(_png));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('report_problem_screenshot')), findsOneWidget);
+      expect(sendButton(tester).onPressed, isNotNull);
+
+      await tapSend(tester);
+      await tester.pumpAndSettle();
+      expect(sent, hasLength(1));
+      expect(events.events.last.toWireParameters()['has_screenshot'], 1);
+    });
+
+    testWidgets('a failed screenshot picker restores Send and Share', (tester) async {
+      final picker = Completer<Uint8List?>();
+      await openSheet(tester, service(), pick: () => picker.future);
+
+      await tester.tap(find.text('Slow'));
+      await tester.pump();
+      await tester.ensureVisible(find.text('Add screenshot'));
+      await tester.tap(find.text('Add screenshot'));
+      await tester.pump();
+
+      expect(sendButton(tester).onPressed, isNull);
+      picker.completeError(StateError('gallery unavailable'));
+      await tester.pumpAndSettle();
+
+      expect(sendButton(tester).onPressed, isNotNull);
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNotNull);
+    });
+
+    testWidgets('the sent report inputs stay fixed until Send completes', (tester) async {
+      final pending = Completer<SentryId>();
+      await openSheet(tester, service(capture: () => pending.future), screenshot: Uint8List.fromList(_png));
+
+      await tester.tap(find.text('Slow'));
+      await tester.pump();
+      await tapSend(tester);
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('Remove'));
+      await tester.tap(find.text('Remove'), warnIfMissed: false);
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+      expect(find.byKey(const Key('report_problem_screenshot')), findsOneWidget);
+      expect(find.text('Slow'), findsOneWidget);
+
+      pending.complete(SentryId.newId());
+      await tester.pumpAndSettle();
+      expect(events.events.last.toWireParameters()['has_screenshot'], 1);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('failed send can retry the same note topic and screenshot', (tester) async {
+      var attempts = 0;
+      await openSheet(
+        tester,
+        service(
+          capture: () async {
+            attempts++;
+            return attempts == 1 ? const SentryId.empty() : SentryId.newId();
+          },
+        ),
+        screenshot: Uint8List.fromList(_png),
+      );
+
+      await tester.tap(find.text("Wallpaper won't set"));
+      await tester.enterText(find.byType(TextField), 'Set button freezes');
+      await tapSend(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't send"), findsOneWidget);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller?.text, 'Set button freezes');
+      expect(sendButton(tester).onPressed, isNotNull);
+      await tapSend(tester);
+      await tester.pumpAndSettle();
+
+      expect(sent, <String>['[wallpaper_wont_set] Set button freezes', '[wallpaper_wont_set] Set button freezes']);
+      expect(events.events.last.toWireParameters(), <String, Object?>{
+        'result': 'sent',
+        'topic': 'wallpaper_wont_set',
+        'has_screenshot': 1,
+        'trigger': 'settings',
+      });
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });
 
@@ -368,6 +511,60 @@ void main() {
       expect(find.text('Report a problem'), findsNothing);
     });
 
+    testWidgets('share is unavailable when report building fails and the user has no other content', (tester) async {
+      await openSheet(tester, service(readDevice: () async => throw StateError('device info unavailable')));
+
+      expect(find.text("Couldn't build the report. Try again."), findsOneWidget);
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNull);
+    });
+
+    testWidgets('share needs a note or topic when diagnostics are off and enables after a note is entered', (
+      tester,
+    ) async {
+      await openSheet(tester, service());
+
+      await tester.ensureVisible(find.byType(Switch));
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), 'The screen freezes');
+      await tester.pump();
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNotNull);
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Share as file')).onPressed, isNull);
+      await tester.enterText(find.byType(TextField), 'The screen freezes');
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('Share as file'));
+      await tester.tap(find.text('Share as file'));
+      await tester.pumpAndSettle();
+      expect(shared.single, 'Note: The screen freezes\n\n');
+    });
+
+    testWidgets('a failed share after cancel does not show an error over the previous screen', (tester) async {
+      final pending = Completer<void>();
+      await openSheet(tester, service(share: () => pending.future));
+
+      await tester.ensureVisible(find.text('Share as file'));
+      await tester.tap(find.text('Share as file'));
+      await tester.pump();
+      final Switch diagnostics = tester.widget<Switch>(find.byType(Switch));
+      expect(diagnostics.value, isTrue);
+      await tester.tap(find.byType(Switch), warnIfMissed: false);
+      await tester.pump();
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+      await tester.ensureVisible(find.text('Cancel'));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Report a problem'), findsNothing);
+
+      pending.completeError(StateError('share unavailable'));
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't share the report. Try again."), findsNothing);
+    });
+
     testWidgets('turning logs off leaves them out of the shared file, and the preview shows them', (tester) async {
       await openSheet(tester, service());
 
@@ -401,6 +598,31 @@ void main() {
       await tester.tap(find.text('Remove'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('report_problem_screenshot')), findsNothing);
+    });
+
+    testWidgets('empty screenshot thumbnail has an accessible add action', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await openSheet(tester, service(), pick: () async => Uint8List.fromList(_png));
+      final SemanticsData thumbnail = tester
+          .getSemantics(find.byKey(const Key('report_problem_screenshot_thumbnail')))
+          .getSemanticsData();
+      expect(thumbnail.flagsCollection.isButton, isTrue);
+      expect(thumbnail.label, 'Add screenshot');
+      semantics.dispose();
+    });
+
+    testWidgets('screenshot preview opens in a labeled, back-dismissible Prism sheet', (tester) async {
+      await openSheet(tester, service(), screenshot: Uint8List.fromList(_png));
+
+      await tester.tap(find.byKey(const Key('report_problem_screenshot')));
+      await tester.pumpAndSettle();
+      expect(find.text('View screenshot'), findsOneWidget);
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('View screenshot'), findsNothing);
+      expect(find.text('Report a problem'), findsOneWidget);
     });
 
     testWidgets('Cancel closes the sheet without sending or sharing', (tester) async {

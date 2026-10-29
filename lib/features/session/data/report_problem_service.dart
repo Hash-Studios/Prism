@@ -9,6 +9,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/app_logger.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -170,10 +171,26 @@ String _newReference(Random random) => String.fromCharCodes(
 typedef DeviceLabelReader = Future<String> Function();
 typedef AppVersionReader = Future<String> Function();
 typedef ReportFileSharer = Future<void> Function(String text);
-typedef FeedbackCapture = Future<SentryId> Function(SentryFeedback feedback, {ScopeCallback? withScope});
 
-Future<SentryId> _sentryCapture(SentryFeedback feedback, {ScopeCallback? withScope}) =>
-    Sentry.captureFeedback(feedback, withScope: withScope);
+SentryClient _createFeedbackClient(
+  SentryConfig config,
+  Map<String, String> tags,
+  Transport? transport,
+  http.Client? httpClient,
+) {
+  final SentryOptions options = SentryOptions(dsn: config.dsn)
+    ..environment = config.environment
+    ..release = config.release
+    ..dist = config.dist
+    ..sendDefaultPii = false
+    ..beforeSendFeedback = (SentryEvent event, Hint hint) {
+      event.tags = Map<String, String>.of(tags);
+      return event;
+    };
+  if (transport != null) options.transport = transport;
+  if (httpClient != null) options.httpClient = httpClient;
+  return SentryClient(options);
+}
 
 Future<String> _platformDeviceLabel() async {
   try {
@@ -222,21 +239,23 @@ class ReportProblemService {
     AppVersionReader? readAppVersion,
     ReportFileSharer? shareFile,
     DateTime Function()? clock,
-    FeedbackCapture? captureFeedback,
     Future<bool> Function()? isOnline,
     bool Function()? canSend,
     SentryConfig? Function()? readConfig,
     Random? random,
+    Transport? feedbackTransport,
+    http.Client? feedbackHttpClient,
   }) : _readRecords = readRecords ?? (() => InMemoryLogSink.instance.records),
        _readDevice = readDevice ?? _platformDeviceLabel,
        _readAppVersion = readAppVersion ?? _platformAppVersion,
        _shareFile = shareFile,
        _clock = clock ?? DateTime.now,
-       _captureFeedback = captureFeedback ?? _sentryCapture,
        _isOnline = isOnline ?? (() => InternetConnectionChecker.instance.hasConnection),
        _canSend = canSend ?? (() => MonitoringRuntime.reporter.isEnabled),
        _readConfig = readConfig ?? (() => MonitoringRuntime.config),
-       _random = random ?? Random.secure();
+       _random = random ?? Random.secure(),
+       _feedbackTransport = feedbackTransport,
+       _feedbackHttpClient = feedbackHttpClient;
 
   static final ReportProblemService instance = ReportProblemService();
 
@@ -245,11 +264,12 @@ class ReportProblemService {
   final AppVersionReader _readAppVersion;
   final ReportFileSharer? _shareFile;
   final DateTime Function() _clock;
-  final FeedbackCapture _captureFeedback;
   final Future<bool> Function() _isOnline;
   final bool Function() _canSend;
   final SentryConfig? Function() _readConfig;
   final Random _random;
+  final Transport? _feedbackTransport;
+  final http.Client? _feedbackHttpClient;
 
   /// The report text, with [theme] set to what the user sees, such as `dark`.
   Future<String> buildReport({required String theme}) async {
@@ -267,54 +287,69 @@ class ReportProblemService {
     );
   }
 
-  Future<void> share(String report, {required String subject, required String shareText}) =>
-      _shareFile?.call(report) ?? _shareReportFile(report, subject: subject, shareText: shareText);
+  Future<void> share(String report, {required String subject, required String shareText}) {
+    final String safeReport = scrubSensitive(report);
+    return _shareFile?.call(safeReport) ?? _shareReportFile(safeReport, subject: subject, shareText: shareText);
+  }
 
   /// Sends [draft] as Sentry user feedback and returns the 6-character reference the user can quote to support.
   /// Throws [ReportNotSentException] when the report cannot reach Sentry, so the user can share the file instead.
   Future<String> send(ProblemReportDraft draft) async {
     if (!_canSend()) throw const ReportNotSentException('monitoring_off');
-    if (!await _isOnline()) throw const ReportNotSentException('offline');
     final SentryConfig? config = _readConfig();
+    if (config == null ||
+        !config.enabled ||
+        config.dsn.trim().isEmpty ||
+        config.release.trim().isEmpty ||
+        config.environment.trim().isEmpty) {
+      throw const ReportNotSentException('configuration_missing');
+    }
+    if (!await _isOnline()) throw const ReportNotSentException('offline');
     final String reference = _newReference(_random);
     final String note = scrubSensitive(draft.note.trim());
     final SentryId lastEventId = Sentry.lastEventId;
-    final SentryId id = await _captureFeedback(
-      SentryFeedback(
-        message: note.isEmpty ? '[${draft.topic.wire}]' : '[${draft.topic.wire}] $note',
-        associatedEventId: lastEventId == const SentryId.empty() ? null : lastEventId,
-      ),
-      withScope: (Scope scope) async {
-        // Error events carry the signed-in account. A report keeps to what the scrubber allows.
-        await scope.setUser(null);
-        final Map<String, String> tags = <String, String>{
-          'release': config?.release ?? '',
-          'environment': config?.environment ?? '',
-          'topic': draft.topic.wire,
-          'trigger': draft.trigger.name,
-          'hasScreenshot': '${draft.screenshot != null}',
-          'reference': reference,
-        };
-        for (final MapEntry<String, String> tag in tags.entries) {
-          await scope.setTag(tag.key, tag.value);
-        }
-        final Uint8List? screenshot = draft.screenshot;
-        if (screenshot != null) {
-          scope.addAttachment(SentryAttachment.fromUint8List(screenshot, 'screenshot.png', contentType: 'image/png'));
-        }
-        final String? diagnostics = draft.diagnostics;
-        if (diagnostics != null) {
-          scope.addAttachment(
-            SentryAttachment.fromIntList(
-              utf8.encode(diagnostics),
-              'prism-problem-report.txt',
-              contentType: 'text/plain',
-            ),
-          );
-        }
-      },
+    final SentryFeedback feedback = SentryFeedback(
+      message: note.isEmpty ? '[${draft.topic.wire}]' : '[${draft.topic.wire}] $note',
+      associatedEventId: lastEventId == const SentryId.empty() ? null : lastEventId,
     );
+    final Map<String, String> tags = <String, String>{
+      'release': config.release,
+      'environment': config.environment,
+      'topic': draft.topic.wire,
+      'trigger': draft.trigger.name,
+      'hasScreenshot': '${draft.screenshot != null}',
+      'reference': reference,
+    };
+    final SentryClient client = _createFeedbackClient(config, tags, _feedbackTransport, _feedbackHttpClient);
+    final Hint hint = Hint();
+    _addDraftAttachments(hint, draft);
+    final SentryId id;
+    try {
+      // No scope: feedback must not inherit the app's native identity, contexts, breadcrumbs, or replay state.
+      id = await client.captureFeedback(feedback, hint: hint);
+    } catch (_) {
+      throw const ReportNotSentException('rejected');
+    } finally {
+      await client.close();
+    }
     if (id == const SentryId.empty()) throw const ReportNotSentException('rejected');
     return reference;
+  }
+}
+
+void _addDraftAttachments(Hint hint, ProblemReportDraft draft) {
+  final Uint8List? screenshot = draft.screenshot;
+  if (screenshot != null) {
+    hint.attachments.add(SentryAttachment.fromUint8List(screenshot, 'screenshot.png', contentType: 'image/png'));
+  }
+  final String? diagnostics = draft.diagnostics;
+  if (diagnostics != null) {
+    hint.attachments.add(
+      SentryAttachment.fromIntList(
+        utf8.encode(scrubSensitive(diagnostics)),
+        'prism-problem-report.txt',
+        contentType: 'text/plain',
+      ),
+    );
   }
 }

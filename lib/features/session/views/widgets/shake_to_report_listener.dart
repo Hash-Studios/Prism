@@ -13,6 +13,7 @@ import 'package:flutter/widgets.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 typedef AccelerometerStream = Stream<UserAccelerometerEvent> Function();
+typedef ScreenshotCapture = Future<Uint8List?> Function();
 
 Stream<UserAccelerometerEvent> _deviceAccelerometer() =>
     userAccelerometerEventStream(samplingPeriod: SensorInterval.gameInterval);
@@ -25,11 +26,14 @@ class ShakeToReportListener extends StatefulWidget {
     required this.navigatorKey,
     required this.child,
     this.accelerometer = _deviceAccelerometer,
+    this.captureScreenshot,
   });
 
   final GlobalKey<NavigatorState> navigatorKey;
   final Widget child;
   final AccelerometerStream accelerometer;
+  @visibleForTesting
+  final ScreenshotCapture? captureScreenshot;
 
   @override
   State<ShakeToReportListener> createState() => _ShakeToReportListenerState();
@@ -40,6 +44,9 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
   final ShakeDetector _detector = ShakeDetector();
   StreamSubscription<UserAccelerometerEvent>? _subscription;
   bool _opening = false;
+  bool _startingSubscription = false;
+  Future<void> _pendingCancellation = Future<void>.value();
+  int _listenGeneration = 0;
 
   @override
   void initState() {
@@ -51,9 +58,11 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
 
   @override
   void dispose() {
+    _listenGeneration += 1;
+    _detector.reset();
     WidgetsBinding.instance.removeObserver(this);
     ShakeToReport.enabled.removeListener(_sync);
-    unawaited(_subscription?.cancel());
+    if (_subscription != null) _pendingCancellation = _cancelSubscription();
     super.dispose();
   }
 
@@ -61,34 +70,79 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
   void didChangeAppLifecycleState(AppLifecycleState state) => _sync();
 
   void _sync() {
-    final AppLifecycleState? lifecycle = WidgetsBinding.instance.lifecycleState;
-    final bool listen = ShakeToReport.enabled.value && (lifecycle == null || lifecycle == AppLifecycleState.resumed);
-    if (listen == (_subscription != null)) return;
-    if (!listen) {
-      unawaited(_subscription?.cancel());
-      _subscription = null;
+    if (!_shouldListen) {
+      if (_subscription == null && !_startingSubscription) return;
+      _listenGeneration += 1;
+      _detector.reset();
+      if (_subscription != null) _pendingCancellation = _cancelSubscription();
       return;
     }
-    _subscription = widget.accelerometer().listen(
-      (UserAccelerometerEvent e) {
-        if (_detector.add(e.x, e.y, e.z, e.timestamp)) unawaited(_onShake());
-      },
-      onError: (Object error) {
-        logger.w('Accelerometer stream failed; shake to report is off for this session.', error: error);
-        _subscription = null;
-      },
-      cancelOnError: true,
-    );
+    if (_subscription != null || _startingSubscription) return;
+    final int generation = ++_listenGeneration;
+    _startingSubscription = true;
+    unawaited(_startSubscription(generation));
   }
 
-  Future<void> _onShake() async {
+  Future<void> _startSubscription(int generation) async {
+    try {
+      await _pendingCancellation;
+      if (!mounted || generation != _listenGeneration || !_shouldListen) return;
+      _subscription = widget.accelerometer().listen(
+        (UserAccelerometerEvent e) {
+          if (generation == _listenGeneration && _detector.add(e.x, e.y, e.z, e.timestamp)) {
+            unawaited(_onShake(generation));
+          }
+        },
+        onError: (Object error) {
+          logger.w('Accelerometer stream failed; waiting for a retry trigger.', error: error);
+          if (generation == _listenGeneration) {
+            _detector.reset();
+            _listenGeneration += 1;
+            if (_subscription != null) _pendingCancellation = _cancelSubscription();
+          }
+        },
+      );
+    } catch (error, stackTrace) {
+      logger.w('Could not start the accelerometer stream.', error: error, stackTrace: stackTrace);
+    } finally {
+      _startingSubscription = false;
+      if (mounted && generation != _listenGeneration && _shouldListen && _subscription == null) _sync();
+    }
+  }
+
+  Future<void> _cancelSubscription() async {
+    final Future<void>? cancellation;
+    try {
+      cancellation = _subscription?.cancel();
+    } catch (error, stackTrace) {
+      _subscription = null;
+      logger.w('Could not stop the accelerometer stream.', error: error, stackTrace: stackTrace);
+      return;
+    }
+    _subscription = null;
+    if (cancellation == null) return;
+    try {
+      await cancellation;
+    } catch (error, stackTrace) {
+      logger.w('Could not stop the accelerometer stream.', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _onShake(int generation) async {
     if (_opening || openPrismSheetCount > 0) return;
     final BuildContext? navigatorContext = widget.navigatorKey.currentContext;
     if (navigatorContext == null) return;
     _opening = true;
     try {
-      final Uint8List? screenshot = await _capture();
-      if (!navigatorContext.mounted) return;
+      final Uint8List? screenshot = await (widget.captureScreenshot?.call() ?? _capture());
+      if (!mounted ||
+          generation != _listenGeneration ||
+          !ShakeToReport.enabled.value ||
+          !_isForeground ||
+          openPrismSheetCount > 0 ||
+          !navigatorContext.mounted) {
+        return;
+      }
       await showReportProblemSheet(
         navigatorContext,
         source: 'shake',
@@ -106,15 +160,37 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
       if (render is! RenderRepaintBoundary) return null;
       final double ratio = min(View.of(context).devicePixelRatio, 2);
       final ui.Image image = await render.toImage(pixelRatio: ratio);
-      final ByteData? data = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      return data?.buffer.asUint8List();
+      return await encodeAndDisposeScreenshotImage(image);
     } catch (error, stackTrace) {
       logger.w('Could not capture the screen for the report.', error: error, stackTrace: stackTrace);
       return null;
     }
   }
 
+  bool get _isForeground {
+    final AppLifecycleState? lifecycle = WidgetsBinding.instance.lifecycleState;
+    return lifecycle == null || lifecycle == AppLifecycleState.resumed;
+  }
+
+  bool get _shouldListen => ShakeToReport.enabled.value && _isForeground;
+
   @override
   Widget build(BuildContext context) => RepaintBoundary(key: _boundary, child: widget.child);
+}
+
+@visibleForTesting
+Future<Uint8List?> encodeAndDisposeScreenshotImage(
+  ui.Image image, {
+  Future<ByteData?> Function(ui.Image image, ui.ImageByteFormat format)? encode,
+}) async {
+  try {
+    final ByteData? data =
+        await (encode ?? (ui.Image image, ui.ImageByteFormat format) => image.toByteData(format: format))(
+          image,
+          ui.ImageByteFormat.png,
+        );
+    return data?.buffer.asUint8List();
+  } finally {
+    image.dispose();
+  }
 }
