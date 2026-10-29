@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
@@ -32,7 +33,7 @@ class _FakeRemixRepository extends WallRemixRepository {
   Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async => remixes;
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 
   @override
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
@@ -53,7 +54,7 @@ class _MappedRemixRepository extends WallRemixRepository {
   }
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 
   @override
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async {
@@ -79,11 +80,14 @@ class _DeferredRemixRepository extends WallRemixRepository {
       Future<List<PrismWallpaper>>.value(remixesByOriginal[originalDocId] ?? const []);
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
-WallViewer _viewer({bool isPremium = true}) =>
-    WallViewer(isPremium: isPremium, premiumCollections: const <String>['space'], blockedCreatorUids: const <String>{});
+WallViewer _viewer({bool isPremium = true}) => WallViewer(
+  isPremium: isPremium,
+  premiumCollections: const <String>['space'],
+  blockedCreators: KnownBlockedCreators(const <String>{}),
+);
 
 Future<void> _pump(
   WidgetTester tester, {

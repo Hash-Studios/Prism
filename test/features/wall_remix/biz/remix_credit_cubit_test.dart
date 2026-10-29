@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
@@ -23,11 +24,22 @@ class _ScriptedRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) => onFetchApproved(docId);
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
-WallViewer _viewer({bool isPremium = true, Set<String> blocked = const <String>{}}) =>
-    WallViewer(isPremium: isPremium, premiumCollections: const <String>['space'], blockedCreatorUids: blocked);
+/// Serves the same fake but reports the block list as not loaded.
+class _UnknownBlocksRepository extends _ScriptedRepository {
+  _UnknownBlocksRepository(super.onFetchApproved);
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => const UnknownBlockedCreators();
+}
+
+WallViewer _viewer({bool isPremium = true, Set<String> blocked = const <String>{}}) => WallViewer(
+  isPremium: isPremium,
+  premiumCollections: const <String>['space'],
+  blockedCreators: KnownBlockedCreators(blocked),
+);
 
 void main() {
   test('shows the original of a remix the viewer may open', () async {
@@ -70,6 +82,17 @@ void main() {
     addTearDown(cubit.close);
 
     await cubit.load('doc-orig', viewer: _viewer(blocked: const <String>{'uid-asha'}));
+
+    expect(cubit.state, isA<RemixCreditHidden>());
+  });
+
+  test('hides the credit when the block list is unknown and the original has an author UID', () async {
+    final RemixCreditCubit cubit = RemixCreditCubit(
+      _UnknownBlocksRepository((String docId) async => remixWall(id: 'orig', docId: 'doc-orig')),
+    );
+    addTearDown(cubit.close);
+
+    await cubit.load('doc-orig');
 
     expect(cubit.state, isA<RemixCreditHidden>());
   });

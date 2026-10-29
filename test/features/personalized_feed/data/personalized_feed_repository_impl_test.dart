@@ -2472,6 +2472,31 @@ void main() {
   });
 
   group('fetchFollowing', () {
+    test('an unknown block list fails the page, and the retry queries from the first creator page', () async {
+      app_state.prismUser = _signedInUser();
+      final firestore = _FollowingGraphFirestore();
+      final blocks = _BlocksLoadedLater();
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final failed = await repository.fetchFollowing(page: 1);
+
+      expect(failed.isFailure, isTrue);
+      expect(failed.data, isNull);
+      blocks.listLoaded = true;
+
+      final retry = await repository.fetchFollowing(page: 1);
+
+      expect(retry.data!.items.map((item) => item.id), <String>['wall-for-creator-uid']);
+      final wallQueries = firestore.specs.where((spec) => spec.collection == 'walls').toList();
+      expect(wallQueries, hasLength(2));
+      expect(wallQueries.every((spec) => spec.startAfterDocId == null), isTrue);
+    });
+
     test('reads UID relation edges and queries walls by creatorUid, ignoring session email follows', () async {
       app_state.prismUser = _signedInUser(following: const <String>['private@example.test']);
       final firestore = _FollowingGraphFirestore();
@@ -2572,6 +2597,26 @@ void main() {
       firestore.release.complete();
       expect((await old).isFailure, isTrue);
       expect((await repository.fetchFollowing(page: 3)).data!.items.first.id, 'W24');
+    });
+    test('an unknown block list on a later Following page keeps its cursor for the retry', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+      final firestore = _FollowingFirestore(rows: 57);
+      final blocks = _BlocksLoadedLater()..listLoaded = true;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+      final first = (await repository.fetchFollowing(page: 1)).data!;
+      expect(first.items.map((item) => item.id), List<String>.generate(12, (i) => 'W$i'));
+
+      blocks.listLoaded = false;
+      expect((await repository.fetchFollowing(page: 2)).isFailure, isTrue);
+      blocks.listLoaded = true;
+      final second = (await repository.fetchFollowing(page: 2)).data!;
+
+      expect(second.items.map((item) => item.id), List<String>.generate(12, (i) => 'W${i + 12}'));
     });
     test('cursor pages reach all 57 walls once without growing query limits', () async {
       app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
@@ -2850,6 +2895,18 @@ class _UnknownBlocks extends _EmptyBlocks {
 
   @override
   Future<BlockedCreators> loadBlockedCreators() async => const UnknownBlockedCreators();
+}
+
+/// Unknown until [loaded] is set, then an empty known list.
+class _BlocksLoadedLater extends _EmptyBlocks {
+  bool listLoaded = false;
+
+  @override
+  BlockedCreators get blockedCreators =>
+      listLoaded ? KnownBlockedCreators(const <String>{}) : const UnknownBlockedCreators();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => blockedCreators;
 }
 
 class _FollowingGraphFirestore extends _EmptyFirestore {

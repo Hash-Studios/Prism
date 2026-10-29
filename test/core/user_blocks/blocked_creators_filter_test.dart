@@ -92,6 +92,11 @@ void main() {
       expect(filtered.map((e) => e.id), <String>['2', '3']);
     });
 
+    test('UnknownBlockedCreators is equal only to another unknown list', () {
+      expect(const UnknownBlockedCreators() == const UnknownBlockedCreators(), isTrue);
+      expect(const UnknownBlockedCreators() == KnownBlockedCreators(const <String>{}), isFalse);
+    });
+
     test('KnownBlockedCreators compares its UID set by value', () {
       expect(KnownBlockedCreators(<String>{'a', 'b'}) == KnownBlockedCreators(<String>{'b', 'a'}), isTrue);
       expect(KnownBlockedCreators(<String>{'a', 'b'}) != KnownBlockedCreators(<String>{'a'}), isTrue);

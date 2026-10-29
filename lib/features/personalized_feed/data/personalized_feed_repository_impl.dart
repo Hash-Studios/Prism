@@ -865,6 +865,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       }
       final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
+      // Every Following row has a creator, so an unknown list would hide the page and still advance the cursors.
+      if (blocked is UnknownBlockedCreators) {
+        return Result.error(const ServerFailure('Failed to fetch following feed: blocked accounts did not load'));
+      }
       _followingChunks = chunks;
       return Result.success(
         PersonalizedFeedPage(

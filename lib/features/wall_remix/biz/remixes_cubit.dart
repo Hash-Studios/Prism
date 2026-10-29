@@ -1,6 +1,7 @@
 import 'dart:math' show max;
 
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -82,11 +83,11 @@ class RemixesCubit extends Cubit<RemixesState> {
   }
 
   Future<WallViewer> _currentViewer() async {
-    final Set<String> blockedCreatorUids = await _repository.blockedCreatorUids();
+    final BlockedCreators blockedCreators = await _repository.loadBlockedCreators();
     return WallViewer(
       isPremium: app_state.prismUser.premium,
       premiumCollections: app_state.premiumCollections,
-      blockedCreatorUids: blockedCreatorUids,
+      blockedCreators: blockedCreators,
     );
   }
 }

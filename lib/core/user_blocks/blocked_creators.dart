@@ -14,6 +14,12 @@ final class UnknownBlockedCreators extends BlockedCreators {
 
   @override
   bool blocks(String creatorUid) => true;
+
+  @override
+  bool operator ==(Object other) => other is UnknownBlockedCreators;
+
+  @override
+  int get hashCode => (UnknownBlockedCreators).hashCode;
 }
 
 /// The block list loaded for this session. [uids] is the complete set.
