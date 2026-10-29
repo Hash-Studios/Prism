@@ -53,10 +53,6 @@ final class SelectAccentColor extends WallpaperDetailEvent {
   List<Object?> get props => [color];
 }
 
-final class CycleAccentColor extends WallpaperDetailEvent {
-  const CycleAccentColor();
-}
-
 final class ResetAccentColor extends WallpaperDetailEvent {
   const ResetAccentColor();
 }

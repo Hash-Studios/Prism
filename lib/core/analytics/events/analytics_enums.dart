@@ -50,6 +50,20 @@ enum AiStylePickSource {
   String get wireValue => _snakeCase(name);
 }
 
+enum ImmersiveToggleSourceValue {
+  tap,
+  semantics;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum FavouritePinSurfaceValue {
+  library,
+  detail;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum RcOrFallbackValue {
   rcAttempt,
   fallbackOnly,

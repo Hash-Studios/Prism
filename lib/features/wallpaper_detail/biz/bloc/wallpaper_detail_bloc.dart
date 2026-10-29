@@ -41,7 +41,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<FetchViews>(_onFetchViews);
     on<FetchSetCount>(_onFetchSetCount);
     on<SelectAccentColor>(_onSelectAccentColor);
-    on<CycleAccentColor>(_onCycleAccentColor);
     on<ResetAccentColor>(_onResetAccentColor);
     on<OnPanelOpened>(_onPanelOpened);
     on<OnPanelClosed>(_onPanelClosed);
@@ -221,21 +220,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(accent: event.color, colorChanged: true));
-  }
-
-  void _onCycleAccentColor(CycleAccentColor event, Emitter<WallpaperDetailState> emit) {
-    final currentState = state;
-    if (currentState is! WallpaperDetailLoaded) return;
-
-    final colors = currentState.colors;
-    final accent = currentState.accent;
-
-    if (colors == null || colors.isEmpty) return;
-    if (accent == null || !colors.contains(accent)) return;
-
-    final nextColor = colors[(colors.indexOf(accent) + 1) % colors.length];
-
-    emit(currentState.copyWith(accent: nextColor, colorChanged: true));
   }
 
   void _onResetAccentColor(ResetAccentColor event, Emitter<WallpaperDetailState> emit) {

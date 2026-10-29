@@ -352,6 +352,16 @@ enums:
       - rejection
       - win_back
       - drop
+  - name: immersive_toggle_source
+    dart_type: ImmersiveToggleSourceValue
+    values:
+      - tap
+      - semantics
+  - name: favourite_pin_surface
+    dart_type: FavouritePinSurfaceValue
+    values:
+      - library
+      - detail
 
 events:
   - id: content_report_submit
@@ -2341,3 +2351,28 @@ events:
       - name: tier
         key: tier
         type: string
+  - id: detail_immersive_toggled
+    fields:
+      - name: immersive
+        key: immersive
+        type: bool
+      - name: source
+        key: source
+        type: enum
+        enum: ImmersiveToggleSourceValue
+  - id: detail_immersive_hint_shown
+  - id: favourite_pin_changed
+    fields:
+      - name: pinned
+        key: pinned
+        type: bool
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue
+  - id: favourite_pin_limit_hit
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue

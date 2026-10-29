@@ -382,7 +382,11 @@ void main() {
       tester,
     ).where((entry) => entry.data.label == cardLabel).toList();
     expect(cardNodes, hasLength(1));
-    expect(cardNodes.single.data.customSemanticsActionIds, hasLength(1));
+    expect(
+      cardNodes.single.data.customSemanticsActionIds,
+      hasLength(3),
+      reason: 'Hide controls, Previous wallpaper, and the tap hint override',
+    );
     semantics.dispose();
     await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
@@ -729,6 +733,7 @@ void main() {
         .widgetList<Semantics>(find.byType(Semantics))
         .firstWhere((s) => s.properties.customSemanticsActions != null);
     expect(card.properties.customSemanticsActions!.keys.map((a) => a.label), <String>[
+      'Hide controls',
       'Previous wallpaper',
       'Next wallpaper',
     ]);

@@ -92,7 +92,7 @@ Actions:
 - **Set** uses the first selected wall. With more than one wall selected, the header shows "Set uses the first one you picked".
 - **Share**: one wall shares a link. More than one wall shares the full image URLs, one per line. On failure the toast is "Could not share. Try again."
 
-**Clear all favourites**: a dialog asks "Clear N favourites?" with the text "This removes them from your account." (a guest reads "This removes them from this device."). After **Clear all**, the bloc reads the server list first and removes what the server holds. A snackbar shows "Cleared N favourites" with **Undo**. **Undo** adds back the list as it was before the clear (`restoreRequested`). If the clear fails, the toast is "Couldn't clear favourites. Try again."
+**Clear all favourites**: a dialog asks "Clear N favourites?" with the text "This removes them from your account." (a guest reads "This removes them from this device."). After **Clear all**, the bloc reads the server list first and removes what the server holds. A snackbar shows "Cleared N favourites" with **Undo**. **Undo** adds back the list as it was before the clear, but the pins do not come back (`restoreRequested`). If the clear fails, the toast is "Couldn't clear favourites. Try again."
 
 **Export favourites**: the action writes `prism-favourites-YYYY-MM-DD.json` to the temp directory and opens the system share sheet with the file. The file has `app`, `exportedAt`, `count` and `favourites`. Each item is the same map that Prism saves in the Firestore doc of the favourite (dates are ISO 8601 strings). The log tag is `favourite_walls.export`. The event is `favourites_exported{count}`. With no favourites, the toast is "No favourites to export yet." and nothing is shared. If the write or the share fails, the toast is "Couldn't export favourites. Try again."
 
@@ -117,6 +117,28 @@ Each state sits inside a scrollable list, so pull to refresh works.
 Legacy favourites: a favourite that older app versions wrote and the app cannot map to a source is a `LegacyFavouriteWall`. A tap shows the snackbar "This favourite is from an older version and cannot be opened. Press and hold to remove it." A long press selects it, so the user can remove it.
 
 Quick tile: `FavouriteQuickTileListener` pushes the favourite URLs to the tile after a successful load. It pushes an empty list only on logout or account switch.
+
+#### Pinned favourites
+
+A user pins a favourite from its hold menu. The hold menu opens with a long press in the Favourites tab. On the detail screen, the hold menu has the action when the wall is a favourite. The action reads "Pin to top" or "Unpin".
+
+A user can pin up to 12 favourites (`maxPinnedFavourites`). At the limit, the message "You can pin up to 12 favourites. Unpin one to pin this wallpaper." shows.
+
+Pinned walls show first, in the order that the user pinned them. The chosen sort orders the other walls. The source filter and the search apply to pinned walls too. A pinned wall has a small pin badge. Screen readers read "Pinned".
+
+A pin is an optional `pinnedAt` timestamp on the favourite doc, `usersv2/{uid}/images/{id}`. Unpin deletes the field. Pins sync to other devices through the existing favourites listener. Guests keep pins in the guest store on the device.
+
+Removing a favourite deletes its doc, so the pin goes too. An undo of a removal, including Clear all, brings the wall back unpinned. Folder items never store `pinnedAt`.
+
+Older app versions ignore `pinnedAt`. An older client that saves the same favourite again writes the doc without it. The pin is lost on that wall only.
+
+Before you ship a build that writes `pinnedAt`, deploy the Firestore rules. The `validFavourite` rule allows `pinnedAt` only as a timestamp.
+
+```sh
+firebase deploy --only firestore:rules --project prism-wallpapers
+```
+
+Analytics: `favourite_pin_changed{pinned, surface}`, where `surface` is `library` or `detail`, and `favourite_pin_limit_hit{surface}`.
 
 ### Folders
 
@@ -197,7 +219,7 @@ Saving:
 - If Firestore refuses the write (for example `permission-denied`), the repository puts the local heart back and the toast "Couldn't update favourites. Try again." shows.
 - Clear all uses the same rule for each batch.
 - The heart ignores a second tap for 300 ms. A new favourite shows a short Glint (`GlintMood.love`). Reduce motion turns the Glint off.
-- Every new favourite stores `favouritedAt`. The lists sort by `favouritedAt`, then by `createdAt` for older docs. A new favourite from any source shows first. `FavStatusChangedEvent` has `isFavourite`.
+- Every new favourite stores `favouritedAt`. The lists sort by `favouritedAt`, then by `createdAt` for older docs. A new favourite from any source shows first, after any pinned walls. `FavStatusChangedEvent` has `isFavourite`.
 - **Clear favourite walls** first reads the favourites from the server. If that read fails, it stops with a failure and removes nothing. It clears what the server holds, not the list on the device. Undo uses `FavouriteWallsAdapter.restoreWalls(walls)` (event `restoreRequested`).
 
 Guest favourites:

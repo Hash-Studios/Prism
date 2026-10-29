@@ -35,6 +35,8 @@ class _ToggleFavourite extends Mock implements ToggleFavouriteWallUseCase {}
 
 class _ClearFavourites extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   setUpFavouriteCounts();
 
@@ -62,7 +64,7 @@ void main() {
       await local.setWallFavourite('', 'wall', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetch, toggle, clear);
+    final bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('PonnamKarthik/fluttertoast'),
       (_) async => true,
