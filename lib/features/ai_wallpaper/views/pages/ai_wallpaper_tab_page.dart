@@ -28,6 +28,7 @@ import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -70,9 +71,12 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet, this.remixSeed});
 
   final AiGenerationRepositoryImpl? repository;
+
+  /// The wall the user tapped Remix on. Its prompt and style fill the form, and a generation links back to it.
+  final AiRemixSeed? remixSeed;
 
   /// Opens the share sheet. Tests replace it.
   final ShareSheetOpen? shareSheet;

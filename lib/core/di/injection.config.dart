@@ -219,6 +219,7 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_use
     as _i398;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecase.dart'
     as _i353;
+import '../../features/wall_remix/data/wall_remix_repository.dart' as _i244;
 import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart'
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
@@ -581,6 +582,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i289.PrismWallSearch>(
     () => _i289.PrismWallSearch(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i244.WallRemixRepository>(
+    () => _i244.WallRemixRepository(
       gh<_i349.FirestoreClient>(),
       gh<_i112.UserBlockRepository>(),
     ),
