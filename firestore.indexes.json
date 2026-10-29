@@ -1407,6 +1407,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "creatorUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -1573,6 +1587,22 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
+    },
+    {
+      "collectionGroup": "creatorStatsCache",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorStatsHistory",
+      "fieldPath": "weeks",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorStatsCache",
+      "fieldPath": "row",
+      "indexes": []
     }
   ]
 }

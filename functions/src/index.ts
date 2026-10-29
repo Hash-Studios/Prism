@@ -57,3 +57,6 @@ export {
   listWallRequestsCallable as listWallRequests,
   setWallRequestHiddenCallable as setWallRequestHidden,
 } from "./wallRequests";
+
+export {getCreatorStats, creatorStatsWeekly} from "./creatorStats";
+export {onCreatorStatsDailyWritten, onCreatorStatsFolderCreated} from "./creatorStatsHistory";

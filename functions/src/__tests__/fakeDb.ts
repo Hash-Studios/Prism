@@ -96,7 +96,7 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  * An in-memory Firestore for tests: documents, queries, transactions and the FieldValue helpers that the
  * functions use. Returns the store so a test can seed and inspect documents by path.
  */
-export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
+export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}, observed?: {reads: number; writes: number}) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
   let incarnation = 1;
@@ -245,6 +245,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     let failure: unknown;
     const guarded = <A extends unknown[]>(fn: (...args: A) => Promise<unknown>) => (...args: A) => {
       wrote = true;
+      if (observed) observed.writes++;
       fn(...args).catch((err: unknown) => {
         failure ??= err;
       });
@@ -252,7 +253,12 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     const tx = {
       get: async (target: {get: () => Promise<unknown>}) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        return target.get();
+        const result = await target.get();
+        if (observed) {
+          observed.reads += result && typeof result === "object" && "size" in result ?
+            Math.max(1, Number(result.size)) : 1;
+        }
+        return result;
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),

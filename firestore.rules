@@ -618,6 +618,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /creatorStatsHistory/{document=**} { allow read, write: if false; }
+    match /creatorStatsCache/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyCheckpoints/{document=**} { allow read, write: if false; }
+    match /creatorStatsFolderMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsRemixMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsWeeklyMarkers/{document=**} { allow read, write: if false; }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;
