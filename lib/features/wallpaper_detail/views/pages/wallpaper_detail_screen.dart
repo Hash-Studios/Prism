@@ -100,6 +100,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.aspectRatio,
     this.requestId,
     this.feed,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
@@ -116,6 +117,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
+
+  /// Width over height of the picture the opener already shows, such as a decoded Downloads tile. The card opens at
+  /// this shape and keeps it, so it does not jump when the wallpaper loads. As on Pinterest, where a pin's size comes
+  /// with the feed.
+  final double? aspectRatio;
 
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
   final WallpaperFeed? feed;
@@ -956,7 +962,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final width = stableCore?.width;
     final height = stableCore?.height;
     final parts = stableCore?.resolution?.toLowerCase().split('x');
-    final parsed = width != null && height != null && width > 0 && height > 0
+    final hint = widget.aspectRatio;
+    final parsed = hint != null && hint.isFinite && hint > 0
+        ? hint
+        : width != null && height != null && width > 0 && height > 0
         ? width / height
         : parts?.length == 2
         ? (double.tryParse(parts![0]) ?? 0) / (double.tryParse(parts[1]) ?? 1)

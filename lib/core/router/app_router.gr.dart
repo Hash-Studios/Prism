@@ -2170,6 +2170,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         AnalyticsSurfaceValue.wallpaperScreen,
     String? heroTag,
     File? localFile,
+    double? aspectRatio,
     String? requestId,
     WallpaperFeed? feed,
     List<PageRouteInfo>? children,
@@ -2184,6 +2185,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            analyticsSurface: analyticsSurface,
            heroTag: heroTag,
            localFile: localFile,
+           aspectRatio: aspectRatio,
            requestId: requestId,
            feed: feed,
          ),
@@ -2208,6 +2210,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           analyticsSurface: args.analyticsSurface,
           heroTag: args.heroTag,
           localFile: args.localFile,
+          aspectRatio: args.aspectRatio,
           requestId: args.requestId,
           feed: args.feed,
         ),
@@ -2226,6 +2229,7 @@ class WallpaperDetailRouteArgs {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.aspectRatio,
     this.requestId,
     this.feed,
   });
@@ -2246,13 +2250,15 @@ class WallpaperDetailRouteArgs {
 
   final File? localFile;
 
+  final double? aspectRatio;
+
   final String? requestId;
 
   final WallpaperFeed? feed;
 
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, requestId: $requestId, feed: $feed}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed}';
   }
 
   @override
@@ -2267,6 +2273,7 @@ class WallpaperDetailRouteArgs {
         analyticsSurface == other.analyticsSurface &&
         heroTag == other.heroTag &&
         localFile == other.localFile &&
+        aspectRatio == other.aspectRatio &&
         requestId == other.requestId &&
         feed == other.feed;
   }
@@ -2281,6 +2288,7 @@ class WallpaperDetailRouteArgs {
       analyticsSurface.hashCode ^
       heroTag.hashCode ^
       localFile.hashCode ^
+      aspectRatio.hashCode ^
       requestId.hashCode ^
       feed.hashCode;
 }

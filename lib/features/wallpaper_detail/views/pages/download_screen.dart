@@ -47,6 +47,24 @@ String _formatDownloadSize(AppLocalizations l10n, int bytes) {
   return '${number.format(bytes / (1024 * 1024 * 1024))} GB';
 }
 
+/// The picture a download tile draws. Opening the tile reads its shape from the same decode.
+ImageProvider _tilePicture(File file) => ResizeImage(FileImage(file), width: 400);
+
+/// Width over height of [picture] when it is already decoded, else null. It reads the image cache and never waits.
+@visibleForTesting
+double? decodedAspectRatio(ImageProvider picture) {
+  double? ratio;
+  final ImageStreamListener listener = ImageStreamListener((ImageInfo info, bool _) {
+    if (info.image.height > 0) ratio = info.image.width / info.image.height;
+    info.dispose();
+  });
+  // A decoded picture calls the listener at once. A picture that is not decoded yet does not, and stays null.
+  picture.resolve(ImageConfiguration.empty)
+    ..addListener(listener)
+    ..removeListener(listener);
+  return ratio;
+}
+
 @RoutePage()
 class DownloadScreen extends StatelessWidget {
   @override
@@ -172,6 +190,8 @@ class _DownloadsBodyState extends State<DownloadsBody> {
               wallId: wall.id,
               source: wall.source,
               localFile: file,
+              // The tile already knows the picture's shape, so the card opens at it and does not jump on load.
+              aspectRatio: decodedAspectRatio(_tilePicture(file)),
               analyticsSurface: AnalyticsSurfaceValue.downloadWallpaperScreen,
               heroTag: heroTag,
             ),
@@ -425,7 +445,7 @@ class _DownloadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Widget image = Image(
-      image: ResizeImage(FileImage(file), width: 400),
+      image: _tilePicture(file),
       fit: BoxFit.cover,
       frameBuilder: (context, child, frame, sync) =>
           AnimatedOpacity(duration: context.motion(PrismDurations.fast), opacity: frame == null ? 0 : 1, child: child),
