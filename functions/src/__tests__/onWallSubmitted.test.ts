@@ -30,7 +30,14 @@ const fire = (store: Map<string, Doc>) => onWallSubmitted.run({
   params: {wallId: "w1"},
   data: {
     data: () => store.get("walls/w1"),
-    ref: {update: async (update: Doc) => void store.set("walls/w1", {...store.get("walls/w1"), ...update})},
+    ref: {update: async (update: Doc) => {
+      const next: Doc = {...store.get("walls/w1")};
+      for (const [key, value] of Object.entries(update)) {
+        if ((value as {__op?: string}).__op === "delete") delete next[key];
+        else next[key] = value;
+      }
+      store.set("walls/w1", next);
+    }},
   },
 } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
 
@@ -194,3 +201,35 @@ test("a wall that is not a Worker AI wall reads no record", async (t) => {
   assert.deepEqual(requests, []);
   assert.equal(store.has(`aiGenerationReceipts/${GEN}`), false);
 });
+
+const remixOriginal = (extra: Doc = {}): Doc => ({
+  email: "other@example.com", title: "Dunes", review: true, isAiGenerated: true, aiPrompt: "neon dunes", ...extra,
+});
+const remixWall = (remixOf: string, extra: Doc = {}) => wall({isAiGenerated: true, remixOf, ...extra});
+
+test("a remix of an approved AI wall keeps its remixOf", async (t) => {
+  const {store} = setup(t, {name: "Maker"}, remixWall("orig"));
+  store.set("walls/orig", remixOriginal());
+  await fire(store);
+  assert.equal(store.get("walls/w1")?.remixOf, "orig");
+});
+
+const unverifiedRemixes: Array<[string, Doc, Doc | null]> = [
+  ["a remixOf to the wall itself", remixWall("w1"), null],
+  ["a remixOf to a missing original", remixWall("gone"), null],
+  ["a remixOf to an original that is not approved", remixWall("orig"), remixOriginal({review: false})],
+  ["a remixOf to an original that is not AI generated", remixWall("orig"), remixOriginal({isAiGenerated: false})],
+  ["a remixOf to an original without an AI prompt", remixWall("orig"), remixOriginal({aiPrompt: "  "})],
+  ["a remixOf with a slash", remixWall("a/b"), remixOriginal()],
+  ["a remixOf longer than 64 characters", remixWall("x".repeat(70)), remixOriginal()],
+  ["a remixOf on a wall that is not AI generated", wall({remixOf: "orig"}), remixOriginal()],
+];
+
+for (const [name, remix, original] of unverifiedRemixes) {
+  test(`${name} is removed on submission`, async (t) => {
+    const {store} = setup(t, {name: "Maker"}, remix);
+    if (original) store.set("walls/orig", original);
+    await fire(store);
+    assert.equal("remixOf" in (store.get("walls/w1") ?? {}), false);
+  });
+}
