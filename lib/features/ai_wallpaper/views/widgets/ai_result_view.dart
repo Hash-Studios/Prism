@@ -61,7 +61,7 @@ class AiResultView extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: ColoredBox(
+      child: Material(
         color: Colors.black,
         child: Stack(
           fit: StackFit.expand,
@@ -130,9 +130,15 @@ class AiResultView extends StatelessWidget {
                 child: Align(
                   alignment: AlignmentDirectional.topStart,
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      _ImagePill(icon: Icons.edit_rounded, label: l10n.aiResultEditPrompt, onTap: onEditPrompt),
-                      const Spacer(),
+                      Flexible(
+                        child: _ImagePill(
+                          icon: Icons.edit_rounded,
+                          label: l10n.aiResultEditPrompt,
+                          onTap: onEditPrompt,
+                        ),
+                      ),
                       ?trailing,
                     ],
                   ),

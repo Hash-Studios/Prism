@@ -16,6 +16,7 @@ import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -331,6 +332,45 @@ void main() {
       expect(find.byType(AiResultView), findsNothing);
       expect(find.byType(AiPromptField).hitTestable(), findsOneWidget);
       expect(tester.widget<TextField>(_promptField()).controller!.text, typed);
+    });
+  });
+
+  testWidgets('result text has the theme style, not the no-Material fallback', (tester) async {
+    await _onPlatform(TargetPlatform.android, () async {
+      OfflineAssetStore.testOverride = _FakeAssetStore(heroFile);
+      await _pumpPage(tester, _CountingAiGenerationRepository());
+      await _typePrompt(tester, 'A glass lighthouse at dawn');
+      await _generate(tester);
+
+      final Iterable<RichText> texts = tester.widgetList<RichText>(
+        find.descendant(of: find.byType(AiResultView), matching: find.byType(RichText)),
+      );
+      expect(
+        texts.map((RichText t) => t.text.toPlainText()),
+        containsAll(<String>['Edit prompt', '90', '10', 'Night version']),
+      );
+      for (final RichText text in texts) {
+        expect(
+          text.text.style?.decoration ?? TextDecoration.none,
+          TextDecoration.none,
+          reason: text.text.toPlainText(),
+        );
+      }
+    });
+  });
+
+  testWidgets('Edit prompt and the coin balance sit at the top of the result', (tester) async {
+    await _onPlatform(TargetPlatform.android, () async {
+      OfflineAssetStore.testOverride = _FakeAssetStore(heroFile);
+      await _pumpPage(tester, _CountingAiGenerationRepository());
+      await _typePrompt(tester, 'A glass lighthouse at dawn');
+      await _generate(tester);
+
+      final Finder result = find.byType(AiResultView);
+      final Finder coins = find.descendant(of: result, matching: find.byType(CoinBalanceChip));
+      expect(tester.getRect(find.descendant(of: result, matching: find.text('Edit prompt'))).bottom, lessThan(60));
+      expect(tester.getSize(coins).height, 44);
+      expect(tester.getRect(coins).top, lessThan(60));
     });
   });
 
