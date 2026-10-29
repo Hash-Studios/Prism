@@ -149,18 +149,46 @@ void main() {
     expect(item.data?['wallpaperDocumentId'], 'source-document');
   });
 
-  test('item reads filter on item ownership and preserve newest-first limit', () async {
-    final client = _Client()
-      ..onQuery = (_) => <FakeDocRow>[
-        (id: 'prism_old', data: {'id': 'old', 'provider': 'Prism', 'addedAt': DateTime.utc(2026)}),
-        (id: 'prism_new', data: {'id': 'new', 'provider': 'Prism', 'addedAt': DateTime.utc(2026, 2)}),
-      ];
+  List<FakeDocRow> newestFirst(FirestoreQuerySpec spec) => <FakeDocRow>[
+    (id: 'prism_new', data: {'id': 'new', 'provider': 'Prism', 'addedAt': DateTime.utc(2026, 2)}),
+    (id: 'prism_old', data: {'id': 'old', 'provider': 'Prism', 'addedAt': DateTime.utc(2026)}),
+  ].take(spec.limit ?? 2).toList();
+
+  test('a limited item read asks Firestore for only that many owned items, newest first', () async {
+    final client = _Client()..onQuery = newestFirst;
     final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u1', limit: 1);
 
-    expect(client.querySpecs.single.filters.single.field, 'ownerId');
-    expect(client.querySpecs.single.filters.single.value, 'u1');
+    final spec = client.querySpecs.single;
+    expect(spec.sourceTag, 'folders.fetch_items');
+    expect(spec.filters.single.field, 'ownerId');
+    expect(spec.filters.single.value, 'u1');
+    expect(spec.orderBy.single.field, 'addedAt');
+    expect(spec.orderBy.single.descending, isTrue);
+    expect(spec.limit, 1);
     expect(result.data?.map((wall) => wall.id), <String>['new']);
-    expect(client.querySpecs.single.sourceTag, 'folders.fetch_items');
+  });
+
+  test('a folder under the limit returns every item newest first', () async {
+    final client = _Client()..onQuery = newestFirst;
+    final repository = FoldersRepositoryImpl(client);
+
+    expect((await repository.fetchItems('a', userId: 'u1')).data?.map((wall) => wall.id), <String>['new', 'old']);
+    expect((await repository.fetchItems('a', userId: 'u1', limit: 5)).data?.map((wall) => wall.id), <String>[
+      'new',
+      'old',
+    ]);
+    expect(client.querySpecs.map((spec) => spec.limit), <int?>[null, 5]);
+  });
+
+  test('a denied item read means the folder is gone while other read failures still fail', () async {
+    final client = _Client()..queryError = FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied');
+    final repository = FoldersRepositoryImpl(client);
+    final denied = await repository.fetchItems('a', userId: 'u1', limit: 1);
+    expect(denied.isSuccess, isTrue);
+    expect(denied.data, isNull);
+
+    client.queryError = FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
+    expect((await repository.fetchItems('a', userId: 'u1', limit: 1)).isFailure, isTrue);
   });
 
   test('delete lists only items owned by this user and stops before parent on chunk failure', () async {
