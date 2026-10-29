@@ -10,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/content_reports/firebase_content_report_repository.dart';
 import 'package:Prism/data/user_blocks/firebase_user_block_repository.dart';
@@ -318,6 +319,21 @@ void main() {
       async.elapse(const Duration(seconds: 2));
 
       expect(result, isEmpty);
+    });
+    await repo.dispose();
+  });
+
+  test('a timed-out initial load does not report creators as unblocked', () async {
+    final repo = createRepository();
+    fakeAsync((async) {
+      sessionUsers.add(profileUser(id: 'me'));
+      async.flushMicrotasks();
+      Set<String>? result;
+      unawaited(repo.getBlockedCreatorUids(waitForInitialLoad: true).then((value) => result = value));
+      async.elapse(const Duration(seconds: 30));
+
+      expect(result, isNotNull);
+      expect(BlockedCreatorsFilter.hidesCreatorUid('blocked-creator', result!), isTrue);
     });
     await repo.dispose();
   });
