@@ -72,7 +72,8 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
       if (!_isCurrent(generation, userId, loggedIn, entity)) return;
       final String? documentId = entity?.wallDocumentId;
       final DateTime? day = entity?.featuredDayUtc;
-      final String assetKey = defaultTargetPlatform == TargetPlatform.iOS && documentId != null
+      // A protected wall has no public URL, so its downloaded original is keyed by the wall document.
+      final String assetKey = (defaultTargetPlatform == TargetPlatform.iOS || url.isEmpty) && documentId != null
           ? 'wotd:$documentId'
           : url;
       String? absolutePath = paths[url];

@@ -183,6 +183,89 @@ void main() {
     SharedPreferences.resetStatic();
   }
 
+  Future<void> verifyAndroidProtectedHandoff(WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.quickTileWotdTarget: 'both',
+      PersistenceKeys.quickTileWotdUrl: 'https://example.com/old.jpg',
+    });
+    app_state.prismUser = profileUser(id: 'alice');
+    addTearDown(() => app_state.prismUser = profileUser(id: '', loggedIn: false));
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => 'alice');
+    getIt.registerSingleton<DownloadedWallIndex>(index);
+    // Reset before the handoff test registers its own index.
+    final day = DateTime.utc(2026, 8, 24);
+    final wall = WallOfTheDayEntity(
+      wallId: 'logical-id',
+      url: '',
+      thumbnailUrl: 'preview',
+      photographer: 'Ana',
+      wallDocumentId: 'protected-doc',
+      featuredDayUtc: day,
+    );
+    final bloc = _MockWotdBloc();
+    whenListen(
+      bloc,
+      const Stream<WotdState>.empty(),
+      initialState: WotdState.initial().copyWith(status: LoadStatus.success, entity: wall),
+    );
+    final session = _MockSessionBloc();
+    final states = StreamController<SessionState>();
+    whenListen(
+      session,
+      states.stream,
+      initialState: SessionState.initial().copyWith(
+        session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+      ),
+    );
+    final file = File('${fixture.directory.path}/PrismDownloads/acquired.png');
+    file.parent.createSync(recursive: true);
+    file.writeAsBytesSync((await fixture.createImage('original.png')).readAsBytesSync());
+    var listed = <String>[];
+    const channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(
+      channel,
+      (_) async => <Object?>[DownloadItemsResult(success: true, items: listed)],
+    );
+    addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+    await tester.pumpWidget(
+      _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await waitForRealIo(
+      tester,
+      () => prefs.getString('quick_tile.wotd.url') == '',
+      reason: 'protected WOTD quick-tile URL persistence',
+    );
+    listed = [file.path];
+    await index.remember(link: 'https://expired.example/acquired.png', id: 'logical-id', source: WallpaperSource.prism);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await waitForRealIo(
+      tester,
+      () => prefs.getString('quick_tile.wotd.retained') != null,
+      reason: 'protected original acquisition handoff mirror',
+    );
+    expect(jsonDecode(prefs.getString('offline.native_asset_paths')!), <String, String>{
+      'wotd:protected-doc': file.path,
+    });
+    expect(jsonDecode(prefs.getString('quick_tile.wotd.retained')!)['assetKey'], 'wotd:protected-doc');
+    expect(prefs.getString('quick_tile.wotd.url'), '');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await states.close();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    var drained = false;
+    NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => drained = true);
+    await waitForRealIo(tester, () => drained, reason: 'protected handoff mirror drained');
+    debugDefaultTargetPlatformOverride = null;
+    await getIt.reset();
+  }
+
   Future<void> verifyOriginalAcquisitionHandoff(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       PersistenceKeys.quickTileWotdTarget: 'both',
@@ -445,6 +528,7 @@ void main() {
       await sessionStates.close();
     }
     await verifyPendingLookupDisposal(tester);
+    await verifyAndroidProtectedHandoff(tester);
     await verifyOriginalAcquisitionHandoff(tester);
   });
 }
