@@ -12,6 +12,7 @@ import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart'
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/creator_stats_emulator.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/debug/perf_autodrive.dart';
@@ -108,6 +109,7 @@ const double _sentryReplayOnErrorSampleRate = 1.0;
 /// Avoid any UI work here — only lightweight processing.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (CreatorStatsEmulator.enabled) return;
   // Firebase.initializeApp() is already called before main() is reached, but
   // in the background isolate we may need to re-initialise.  The guard inside
   // Firebase.initializeApp makes this safe to call multiple times.
@@ -186,12 +188,17 @@ Future<void> main() async {
       };
       installFlutterFrameworkErrorHandler();
 
-      const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      const skipFirebaseInit = Env.skipFirebaseInit;
       final SentryConfig sentryConfig = _resolveSentryConfig();
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
-      if (!skipFirebaseInit) {
+      if (CreatorStatsEmulator.enabled) {
+        await CreatorStatsEmulator.connect();
+        // Keep Remote Config, economy remote config and FCM gates closed. The
+        // three emulated services are already connected before DI or runApp.
+        FirebaseInit.setFuture(Future<bool>.value(false));
+      } else if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
           PerformanceProbe.measure(
             'startup',
@@ -236,6 +243,7 @@ Future<void> main() async {
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (CreatorStatsEmulator.enabled) return;
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
@@ -288,7 +296,9 @@ Future<void> main() async {
       }
 
       PerformanceProbe.mark('startup.before_di');
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.signIn();
       configureDependencies();
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.installFirestore();
       PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
@@ -378,7 +388,7 @@ SentryConfig _resolveSentryConfig() {
 }
 
 Future<void> _initializeMonitoring(SentryConfig config) async {
-  if (!config.enabled) {
+  if (CreatorStatsEmulator.enabled || !config.enabled) {
     MonitoringRuntime.reset();
     return;
   }
@@ -777,11 +787,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         return false;
       }),
     );
-    unawaited(
-      localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
-        logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
-      }),
-    );
+    if (!CreatorStatsEmulator.enabled) {
+      unawaited(
+        localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
+          logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+        }),
+      );
+    }
     unawaited(_listenForPushMessages());
     unawaited(_watchSession());
     unawaited(NotificationSignals.instance.onResumed());

@@ -38,6 +38,8 @@ There is one cache document per wall fingerprint. Each document is limited to 12
 
 The callable processes at most ten wall tasks at once. All reads precede cache writes. A cold 500-wall call writes at most 500 cache documents. Firestore transaction conflicts can retry the full operation. There is no shared process cache or promise that can cross creator identities.
 
+[Firestore transaction limits](https://firebase.google.com/docs/firestore/manage-data/transactions) include a 10 MiB request limit, a 20-second lock deadline, a 270-second total limit and a 60-second idle limit. Document and modified index entry sizes contribute to the transaction request. The cache and response byte caps bound application JSON; they are not a measurement of protobuf or index bytes. Excluding the cached row from indexes limits index growth. The real emulator accepts the supported 500 writes and maximum census, but cannot prove production latency under contention.
+
 ## Read costs
 
 These counts are document reads for one successful transaction attempt. They include missing document reads and the minimum one read for an empty query. They exclude network transfer, index entry billing, Firestore internal retries, and rule reads. Admin SDK operations do not run client rules.

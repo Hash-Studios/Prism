@@ -1,0 +1,30 @@
+{
+  "firestore": {
+    "rules": ".runtime/firestore.rules",
+    "indexes": ".runtime/firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": ".runtime",
+      "codebase": "creator-stats-qa"
+    }
+  ],
+  "emulators": {
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8080
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  }
+}
