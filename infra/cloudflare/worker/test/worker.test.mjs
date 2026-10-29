@@ -396,6 +396,62 @@ test('every Dart deep-link catalog example resolves to a Worker landing', async 
   }
 });
 
+test('challenge links cover both hosts, campaigns, associations and app fallbacks', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    for (const suffix of ['', '?utm_source=mail', '?utm_medium=social', '?utm_campaign=warm%2Fwood',
+      '?utm_source=mail&utm_medium=social&utm_campaign=warm%2Fwood']) {
+      const path = `/challenges/2026-10-26${suffix}`;
+      for (const ua of [ANDROID_UA, IOS_UA, 'Twitterbot']) {
+        const response = await worker.fetch(new Request(`https://${host}${path}`, {
+          headers: { 'user-agent': ua },
+        }), env, { waitUntil() {} });
+        assert.equal(response.status, 200, `${host}${path}`);
+        const html = await response.text();
+        assert.match(html, /Weekly challenge - Prism/);
+        assert.match(html, /Explore this weekly wallpaper challenge in Prism\./);
+        assert.ok(html.includes(path.replaceAll('&', '&amp;')), path);
+        if (ua === ANDROID_UA) assert.match(html, /#Intent;scheme=https/);
+      }
+    }
+    for (const path of ['/.well-known/apple-app-site-association', '/apple-app-site-association']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.ok((await response.json()).applinks.details[0].paths.includes('/challenges/*'));
+    }
+  }
+  for (const path of ['/challenges/2026-10-26', '/challenges/2024-02-26', '/challenges/0000-01-03',
+    '/challenges/9999-12-27?utm_source=mail&utm_campaign=a%2Fb']) {
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 201, path);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.canonical_url, `https://prismwalls.com${path}`);
+    assert.equal(record.preview.title, 'Weekly challenge - Prism');
+  }
+});
+
+test('challenge links reject unsupported roots, invalid dates, extra segments and query keys', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({ PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism' });
+  for (const path of ['/challenges', '/challenges/', '/challenges/2026-10-27', '/challenges/2026-02-30',
+    '/challenges/2026-13-01', '/challenges/2026-00-01', '/challenges/2026-10-00',
+    '/challenges/2026-1-26', '/challenges/26-10-26', '/challenges/+010000-01-03',
+    '/challenges/2026-10-26T00:00:00Z', '/challenges/2026-10-26/entries',
+    '/challenges/2026-10-26%2Fentries', '/challenges/not-a-date',
+    '/challenges/2026-10-26?next=other', '/challenges/2026-10-26?utm_source=a&utm_source=b']) {
+    for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.equal(response.status, 302, `${host}${path}`);
+    }
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 400, path);
+    assert.equal((await response.json()).error, 'invalid_canonical_url', path);
+  }
+});
+
 test('direct app landings preserve encoded query values and reject unsupported workflows', async () => {
   const env = workerEnv({
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',

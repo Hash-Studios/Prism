@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
-import {onDocumentWritten} from "firebase-functions/v2/firestore";
+import {onDocumentCreatedWithAuthContext, onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {CALLABLE_REGIONS, db, int, REGION, str} from "./common";
@@ -151,6 +151,13 @@ export async function admitChallengeWall(snapshot: Snap, authId?: string, authTy
     return true;
   });
 }
+
+export const onChallengeWallSubmitted = onDocumentCreatedWithAuthContext(
+  {document: "walls/{wallId}", region: REGION, retry: true},
+  async (event) => {
+    if (event.data) await admitChallengeWall(event.data, event.authId, event.authType);
+  },
+);
 
 export async function reconcileChallengeWall(wallId: string, challengeId: string,
   approvedAt?: admin.firestore.Timestamp, expectedCreateTime?: admin.firestore.Timestamp): Promise<void> {

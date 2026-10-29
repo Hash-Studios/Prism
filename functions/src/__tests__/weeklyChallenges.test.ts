@@ -3,9 +3,10 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import * as wotd from "../wallOfTheDay";
+import {onWallSubmitted} from "../onWallSubmitted";
 import {installFakeDb, type Doc} from "./fakeDb";
 import {
-  admitChallengeWall, admissionIdentity, challengeIo, compareTimestamp, dateKey, fallbackTheme, finalizeChallenge,
+  onChallengeWallSubmitted, admitChallengeWall, admissionIdentity, challengeIo, compareTimestamp, dateKey, fallbackTheme, finalizeChallenge,
   getChallenge, getWeeklyChallenge, listWeeklyChallenges, mondayAt, notifyChallengeWinner, openChallengeSlot,
   reconcileChallengeWall, reservedChallengePick, runChallengeSchedule, scanClosedChallenge, setChallengeVote,
   voteChallenge, commitChallengeReservation, removeChallengeVotesForAccount, refreshPublishedChallengeAward,
@@ -543,4 +544,42 @@ test("the recurring schedule refreshes a published award whose challenge link wa
   await db.doc("walls/w1").update({challengeId: admin.firestore.FieldValue.delete()});
   await refreshPublishedChallengeAward(day);
   assert.equal(replacements, 1);
+});
+test("authenticated challenge trigger forwards provenance and retries without duplicate admission", async (t) => {
+  const store = setup(t, {"walls/w1": wall(), "walls/spoofed": wall()});
+  const snap = await db.doc("walls/w1").get();
+  const event = {data: snap, params: {wallId: "w1"}, authId: "maker", authType: "api_key"};
+  await onChallengeWallSubmitted.run(event as Parameters<typeof onChallengeWallSubmitted.run>[0]);
+  await onChallengeWallSubmitted.run(event as Parameters<typeof onChallengeWallSubmitted.run>[0]);
+  assert.equal(store.get(`weeklyChallenges/${CH}/members/maker`)?.count, 1);
+  assert.equal(store.get("walls/w1")?.challengeId, CH);
+  await onChallengeWallSubmitted.run({
+    ...event, data: await db.doc("walls/spoofed").get(), authId: "voter", params: {wallId: "spoofed"},
+  } as Parameters<typeof onChallengeWallSubmitted.run>[0]);
+  assert.equal(store.get("walls/spoofed")?.challengeId, undefined);
+});
+
+test("challenge admission has its own retrying auth trigger; legacy submission keeps its event type", () => {
+  const trigger = onChallengeWallSubmitted.__endpoint.eventTrigger;
+  assert.equal(trigger?.eventType, "google.cloud.firestore.document.v1.created.withAuthContext");
+  assert.equal(trigger?.eventFilterPathPatterns?.document, "walls/{wallId}");
+  assert.equal(trigger?.retry, true);
+  assert.equal(onWallSubmitted.__endpoint.eventTrigger?.eventType, "google.cloud.firestore.document.v1.created");
+  assert.notEqual(onWallSubmitted.__endpoint.eventTrigger?.retry, true);
+});
+
+test("challenge trigger propagates transient identity errors and admits on redelivery", async (t) => {
+  const store = setup(t, {"walls/w1": wall()});
+  const event = {data: await db.doc("walls/w1").get(), params: {wallId: "w1"}, authId: "maker", authType: "unknown"};
+  let attempts = 0;
+  t.mock.method(challengeIo, "owner", async (uid: string) => {
+    if (++attempts === 1) throw new Error("identity-unavailable");
+    return {uid, email: "maker@example.com"};
+  });
+  const run = () => onChallengeWallSubmitted.run(event as Parameters<typeof onChallengeWallSubmitted.run>[0]);
+  await assert.rejects(run(), /identity-unavailable/);
+  assert.equal(store.get("walls/w1")?.challengeId, CH);
+  assert.equal(store.has(`weeklyChallenges/${CH}/members/maker`), false);
+  await run();
+  assert.equal(store.get(`weeklyChallenges/${CH}/members/maker`)?.count, 1);
 });
