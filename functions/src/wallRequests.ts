@@ -150,7 +150,8 @@ function toView(doc: admin.firestore.DocumentSnapshot, viewer: string, voted: bo
     mine: viewer !== "" && d.requesterUid === viewer,
     voted,
     hidden: d.hidden === true,
-    filledWallId: str(d.filledWallId),
+    // The app opens the wall by its logical id. An upload's doc id is its file name.
+    filledWallId: str(d.filledWallLogicalId) || str(d.filledWallId),
     filledWallThumb: str(d.filledWallThumb),
     filledBy: d.filledBy === "creator" || d.filledBy === "studio" ? d.filledBy : "",
     filledAtMs: millis(d.filledAt),
@@ -358,6 +359,7 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
     fillerUid = str(wall.creatorUid) || (str(wall.email) ? (await findUserByEmail(str(wall.email)))?.id ?? "" : "");
   }
   const thumb = str(wall.wallpaper_thumb);
+  const logicalId = str(wall.id) || wallId;
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
     if (!data || data.hidden === true) return null;
@@ -373,12 +375,15 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
     }
     if (data.status === "filled") {
       if (data.filledWallId !== wallId) return null;
-      if (data.filledWallThumb !== thumb) tx.update(ref, {filledWallThumb: thumb});
+      if (data.filledWallThumb !== thumb || data.filledWallLogicalId !== logicalId) {
+        tx.update(ref, {filledWallThumb: thumb, filledWallLogicalId: logicalId});
+      }
       return requestId;
     }
     tx.update(ref, {
       status: "filled",
       filledWallId: wallId,
+      filledWallLogicalId: logicalId,
       filledWallThumb: thumb,
       filledBy: studio ? "studio" : "creator",
       fillerUid,
@@ -389,19 +394,26 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
   });
 }
 
-/** The filled wall first, then up to 3 walls like it, for the gallery page the push opens. */
+/**
+ * The logical ids of the filled wall and up to 3 walls like it, for the gallery page the push opens. The gallery loads
+ * walls by their `id` field, which differs from the doc id for uploads.
+ */
 async function galleryIds(wallId: string): Promise<string[]> {
+  const logical = (doc: {id: string; data: admin.firestore.DocumentData}) => str(doc.data.id) || doc.id;
   try {
     const wall = await db.collection("walls").doc(wallId).get();
-    if (!wall.exists) return [wallId];
+    if (!wall.exists) return [];
+    const lead = {id: wallId, data: wall.data() ?? {}};
     // ponytail: one scan of the protected walls per fill, as the Wall of the Day pick does; fills are a few a day.
     const snap = await protectedWalls().select(...SIMILAR_FIELDS).get();
-    const others = similarWallIds({id: wallId, data: wall.data() ?? {}},
-      snap.docs.map((d) => ({id: d.id, data: d.data()})), await premiumCollections());
-    return [wallId, ...others];
+    const candidates = snap.docs.map((d) => ({id: d.id, data: d.data()}));
+    const byDocId = new Map(candidates.map((c) => [c.id, c]));
+    const others = similarWallIds(lead, candidates, await premiumCollections())
+      .map((id) => byDocId.get(id)).filter((c): c is typeof lead => c !== undefined).map(logical);
+    return [logical(lead), ...others];
   } catch (err) {
     logger.warn("wallRequests: no similar walls for the filled push.", {wallId, err});
-    return [wallId];
+    return [];
   }
 }
 
@@ -460,14 +472,14 @@ async function notifyOne(uid: string, request: admin.firestore.DocumentData, pay
   return push ? "sent" : "inbox";
 }
 
-function filledPayload(requestId: string, text: string, ids: string[], thumb: string) {
+function filledPayload(requestId: string, text: string, wallId: string, galleryIds: string[], thumb: string) {
   return {
     ...notificationCopyPayload({kind: "wallRequestFilled", requestText: text}),
     // Route `wall` opens the filled wall on a build without the gallery page; `wall_ids` opens the gallery.
     data: {
       route: "wall",
-      wall_id: ids[0],
-      ...(ids.length > 1 ? {wall_ids: ids.join(",")} : {}),
+      wall_id: wallId,
+      ...(galleryIds.length > 1 ? {wall_ids: galleryIds.join(",")} : {}),
       request_id: requestId,
       notification_kind: "wall_request_filled",
     },
@@ -507,8 +519,8 @@ export async function notifyRequestFilled(requestId: string, nowMs = Date.now())
   if (!request) return counts;
   const voters = (await ref.collection(VOTES).get()).docs.map((d) => d.id);
   const recipients = [...new Set([str(request.requesterUid), ...voters])].filter(Boolean);
-  const payload = filledPayload(requestId, str(request.text), await galleryIds(str(request.filledWallId)),
-    str(request.filledWallThumb));
+  const payload = filledPayload(requestId, str(request.text), str(request.filledWallId),
+    await galleryIds(str(request.filledWallId)), str(request.filledWallThumb));
   const day = utcDateString(new Date(nowMs));
   for (let i = 0; i < recipients.length; i += PUSH_CHUNK) {
     const results = await Promise.allSettled(recipients.slice(i, i + PUSH_CHUNK)

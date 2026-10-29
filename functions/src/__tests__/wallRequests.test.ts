@@ -686,3 +686,42 @@ function notifySeed(extra: Doc = {}): Record<string, Doc> {
     "usersv2/u5/blockedUsers/u1": {},
   };
 }
+
+const protectedWall = (id: string, extra: Doc = {}): Doc => ({
+  id, review: true, originalProtected: true, wallpaper_url: "", wallpaper_path: "", wallpaper_sha: "", thumb_path: "",
+  thumb_sha: "", wallpaper_thumb: `https://img.prismwalls.com/previews/${id}.jpg`, collections: ["community"],
+  visionLabels: ["Mountain"], createdAt: at(NOW - DAY), ...extra,
+});
+
+test("an upload fills by doc id, but the list and the push gallery use its logical id", async (t) => {
+  const previousBase = process.env.R2_PREVIEW_BASE_URL;
+  process.env.R2_PREVIEW_BASE_URL = "https://img.prismwalls.com";
+  t.after(() => {
+    if (previousBase === undefined) delete process.env.R2_PREVIEW_BASE_URL;
+    else process.env.R2_PREVIEW_BASE_URL = previousBase;
+  });
+  const store = installFakeDb(t, {
+    ...notifySeed({status: "open", filledWallId: admin.firestore.FieldValue.delete()}),
+    "walls/wall_up.jpg": protectedWall("LOGIC1"),
+    "walls/other_doc.jpg": protectedWall("LOGIC2"),
+  });
+  delete store.get("wallRequests/r1")?.filledWallId;
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: "space"}},
+  }}));
+  const wall = {...protectedWall("LOGIC1"), requestId: "r1", creatorUid: "c1", by: "Cee"};
+  assert.equal(await fillRequestFromWall("wall_up.jpg", wall, false), "r1");
+  assert.equal(store.get("wallRequests/r1")?.filledWallId, "wall_up.jpg");
+  assert.equal(store.get("wallRequests/r1")?.filledWallLogicalId, "LOGIC1");
+
+  const [row] = await listWallRequests("u2", "filled", false, NOW);
+  assert.equal(row.filledWallId, "LOGIC1");
+
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.ok(messages.length > 0);
+  for (const message of messages) {
+    assert.equal(message.data?.wall_id, "wall_up.jpg");
+    assert.equal(message.data?.wall_ids, "LOGIC1,LOGIC2");
+  }
+});
