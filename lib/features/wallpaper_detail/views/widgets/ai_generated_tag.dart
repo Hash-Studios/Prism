@@ -11,6 +11,25 @@ import 'package:flutter/material.dart';
 /// Moderator-facing text. Not localized on purpose.
 const String kWrongAiLabelDetails = 'Wrong AI label';
 
+/// Walls store the provider's model id, such as `openai/gpt-image-2.5/sunburst/text-to-image`. Keys are id prefixes.
+const Map<String, String> _aiModelNames = <String, String>{
+  'openai/gpt-image-2.5': 'GPT Image 2.5',
+  'fal-ai/bytedance/seedream/v5/lite': 'Seedream 5 Lite',
+  'fal-ai/bytedance/seedream/v4.5': 'Seedream 4.5',
+  'fal-ai/z-image/turbo': 'Z-Image Turbo',
+  'fal-ai/flux/schnell': 'FLUX.1 schnell',
+  'gemini-2.5-flash-image': 'Gemini 2.5 Flash Image',
+};
+
+/// The readable name of an AI model id, or null for an unknown id so the sheet never shows a raw provider path.
+String? aiModelDisplayName(String? modelId) {
+  if (modelId == null) return null;
+  for (final MapEntry<String, String> entry in _aiModelNames.entries) {
+    if (modelId.startsWith(entry.key)) return entry.value;
+  }
+  return null;
+}
+
 /// The "AI-generated" tag on the wall detail screen. Tap opens a sheet that names the model and lets the user report
 /// a wrong label. Without [reportDocId] (a bundled wall) the sheet has no report row.
 class AiGeneratedTag extends StatelessWidget {
@@ -23,7 +42,7 @@ class AiGeneratedTag extends StatelessWidget {
   void _open(BuildContext context) {
     PrismHaptics.tap();
     final String? docId = reportDocId;
-    final String? model = wallpaper.aiModel;
+    final String? model = aiModelDisplayName(wallpaper.aiModel);
     unawaited(
       showPrismSheet<void>(
         context,

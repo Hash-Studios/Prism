@@ -4,9 +4,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'prism_wall_doc_dto.freezed.dart';
 part 'prism_wall_doc_dto.g.dart';
 
-bool _firestoreBool(Object? value) => value == true;
-String _firestoreAiModel(Object? value) => value is String ? value : '';
-
 @freezed
 abstract class PrismWallDocDto with _$PrismWallDocDto {
   const factory PrismWallDocDto({
@@ -33,8 +30,8 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreJsonMapConverter()
     @Default(<String, Object?>{})
     Map<String, Object?> aiMetadata,
-    @JsonKey(fromJson: _firestoreBool) @Default(false) bool isAiGenerated,
-    @JsonKey(fromJson: _firestoreAiModel) @Default('') String aiModel,
+    @FirestoreTrueConverter() @Default(false) bool isAiGenerated,
+    @FirestoreStrictStringConverter() @Default('') String aiModel,
     @JsonKey(name: 'is_streak_exclusive') @Default(false) bool isStreakExclusive,
     @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
     @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,

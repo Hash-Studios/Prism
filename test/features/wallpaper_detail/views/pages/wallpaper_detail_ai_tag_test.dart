@@ -146,7 +146,7 @@ void main() {
     });
 
     testWidgets('tapping names the model and offers Report wrong label', (tester) async {
-      await pumpTag(tester, _wall(isAiGenerated: true, aiModel: 'Seedream 5 Lite'));
+      await pumpTag(tester, _wall(isAiGenerated: true, aiModel: 'fal-ai/bytedance/seedream/v5/lite/text-to-image'));
 
       await tester.tap(find.text('AI-generated'));
       await tester.pumpAndSettle();
@@ -155,7 +155,17 @@ void main() {
       expect(find.text('Report wrong label'), findsOneWidget);
     });
 
-    testWidgets('an unknown model reads Made with AI', (tester) async {
+    testWidgets('a missing or unknown model reads Made with AI, never a raw provider id', (tester) async {
+      await pumpTag(tester, _wall(isAiGenerated: true, aiModel: 'acme/new-model/v9'));
+
+      await tester.tap(find.text('AI-generated'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Made with AI'), findsOneWidget);
+      expect(find.textContaining('acme'), findsNothing);
+    });
+
+    testWidgets('a wall with no model reads Made with AI', (tester) async {
       await pumpTag(tester, _wall(isAiGenerated: true));
 
       await tester.tap(find.text('AI-generated'));
@@ -173,5 +183,15 @@ void main() {
       expect(find.text('Made with AI'), findsOneWidget);
       expect(find.text('Report wrong label'), findsNothing);
     });
+  });
+
+  test('live model ids map to readable names', () {
+    expect(aiModelDisplayName('openai/gpt-image-2.5/sunburst/text-to-image'), 'GPT Image 2.5');
+    expect(aiModelDisplayName('fal-ai/bytedance/seedream/v4.5/text-to-image'), 'Seedream 4.5');
+    expect(aiModelDisplayName('fal-ai/z-image/turbo'), 'Z-Image Turbo');
+    expect(aiModelDisplayName('fal-ai/flux/schnell'), 'FLUX.1 schnell');
+    expect(aiModelDisplayName('gemini-2.5-flash-image'), 'Gemini 2.5 Flash Image');
+    expect(aiModelDisplayName('acme/new-model'), isNull);
+    expect(aiModelDisplayName(null), isNull);
   });
 }
