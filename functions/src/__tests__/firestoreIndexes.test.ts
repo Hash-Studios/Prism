@@ -110,3 +110,19 @@ test("walls have the protected spatial index the app queries: protected asset fi
   assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["spatial.tier", "ASCENDING"],
     ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
 });
+
+test("wall requests have the status and hidden indexes for top, new, filled and the token search", () => {
+  for (const [field, order] of [["voteCount", "DESCENDING"], ["createdAt", "DESCENDING"], ["filledAt", "DESCENDING"]]) {
+    assert.ok(hasIndex("wallRequests", [["status", "ASCENDING"], ["hidden", "ASCENDING"], [field, order]]), field);
+  }
+  assert.ok(config.indexes.some((i) => i.collectionGroup === "wallRequests" &&
+    JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order ?? f.arrayConfig])) ===
+      JSON.stringify([["status", "ASCENDING"], ["hidden", "ASCENDING"], ["tokens", "CONTAINS"]])));
+});
+
+test("wall request votes have a collection group index on uid for account deletion", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "votes" && o.fieldPath === "uid") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  assert.ok(override.indexes.some((i) => i.order === "ASCENDING" && i.queryScope === "COLLECTION_GROUP"));
+});

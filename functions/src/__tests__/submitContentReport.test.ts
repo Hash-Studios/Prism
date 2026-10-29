@@ -79,3 +79,19 @@ for (const [contentType, collection] of [["user", "usersv2"], ["setup", "setups"
     assert.equal(store.get("contentReportRateDaily/reporter_2026-01-10")?.count, 1);
   });
 }
+
+test("a wall request report resolves the request collection", async (t) => {
+  const store = setup(t, {"wallRequests/r1": {status: "open"}});
+  const result = await submitContentReport.run(request({contentType: "wallRequest", targetFirestoreDocId: "r1"}));
+  assert.equal(store.get(`contentReports/${result.reportId}`)?.contentType, "wallRequest");
+  assert.equal(store.get(`contentReports/${result.reportId}`)?.targetCollection, "wallRequests");
+});
+
+test("a wall request report for a missing request is not found, and a folder report is invalid", async (t) => {
+  const store = setup(t);
+  const before = [...store.entries()];
+  await assert.rejects(() => submitContentReport.run(request({contentType: "wallRequest", targetFirestoreDocId: "missing"})),
+    {code: "not-found"});
+  await assert.rejects(() => submitContentReport.run(request({contentType: "folder"})), {code: "invalid-argument"});
+  assert.deepEqual([...store.entries()], before);
+});
