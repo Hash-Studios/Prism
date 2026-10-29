@@ -24,6 +24,8 @@ Future<WallRequest?> showWallRequestSheet(
   unawaited(analytics.track(WallRequestSheetOpenedEvent(source: source)));
   return showPrismSheet<WallRequest>(
     context,
+    // Search and Home have their own navigators under the floating nav bar; the root one puts the sheet above it.
+    useRootNavigator: true,
     dismissKeyboardOnDrag: true,
     builder: (_) => BlocProvider<WallRequestSheetCubit>(
       create: (_) => getIt<WallRequestSheetCubit>(),

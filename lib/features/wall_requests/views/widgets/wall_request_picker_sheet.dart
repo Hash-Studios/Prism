@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 Future<WallRequest?> showWallRequestPicker(BuildContext context) {
   return showPrismSheet<WallRequest>(
     context,
+    // Search and Home have their own navigators under the floating nav bar; the root one puts the sheet above it.
+    useRootNavigator: true,
     dismissKeyboardOnDrag: true,
     detents: const <PrismSheetDetent>[PrismSheetDetent.medium, PrismSheetDetent.large],
     builder: (_) => WallRequestPickerBody(repository: getIt<WallRequestsRepository>()),
