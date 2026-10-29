@@ -54,13 +54,14 @@ class _CreatorStatsPageState extends State<CreatorStatsPage> {
         : BlocProvider(
             key: ValueKey(owner),
             create: (_) => getIt<CreatorStatsBloc>()..add(const CreatorStatsEvent.load()),
-            child: const CreatorStatsView(),
+            child: CreatorStatsView(ownerUid: owner),
           ),
   );
 }
 
 class CreatorStatsView extends StatelessWidget {
-  const CreatorStatsView({super.key});
+  const CreatorStatsView({super.key, required this.ownerUid});
+  final String ownerUid;
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(context.l10n.statsTitle)),
@@ -149,7 +150,7 @@ class CreatorStatsView extends StatelessWidget {
                     analytics.track(CreatorWallStatsOpenedEvent(wallId: wall.wallId));
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => WallStatsPage(wall: wall, initialMetric: state.metric),
+                        builder: (_) => WallStatsPage(ownerUid: ownerUid, wall: wall, initialMetric: state.metric),
                       ),
                     );
                   },
@@ -234,7 +235,8 @@ class _Selector extends StatelessWidget {
 }
 
 class WallStatsPage extends StatefulWidget {
-  const WallStatsPage({super.key, required this.wall, required this.initialMetric});
+  const WallStatsPage({super.key, required this.ownerUid, required this.wall, required this.initialMetric});
+  final String ownerUid;
   final WallStats wall;
   final StatsMetric initialMetric;
   @override
@@ -244,26 +246,34 @@ class WallStatsPage extends StatefulWidget {
 class _WallStatsPageState extends State<WallStatsPage> {
   late StatsMetric metric = widget.initialMetric;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.wall.title.isEmpty ? context.l10n.statsUntitled : widget.wall.title)),
-    body: SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _Selector(
-            metric: metric,
-            onSelected: (value) {
-              setState(() => metric = value);
-              analytics.track(CreatorStatsMetricSwitchedEvent(metric: value.name));
-            },
+  Widget build(BuildContext context) => BlocSelector<SessionBloc, SessionState, String?>(
+    selector: (state) => state.session.loggedIn ? state.session.userId : null,
+    builder: (context, owner) => owner != widget.ownerUid
+        ? Scaffold(
+            appBar: AppBar(title: Text(context.l10n.statsTitle)),
+            body: Center(child: Text(context.l10n.statsUnavailable)),
+          )
+        : Scaffold(
+            appBar: AppBar(title: Text(widget.wall.title.isEmpty ? context.l10n.statsUntitled : widget.wall.title)),
+            body: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _Selector(
+                    metric: metric,
+                    onSelected: (value) {
+                      setState(() => metric = value);
+                      analytics.track(CreatorStatsMetricSwitchedEvent(metric: value.name));
+                    },
+                  ),
+                  _MetricSummary(metric: metric, weeks: widget.wall.weeks, total: widget.wall.totals[metric]),
+                  StatsChart(weeks: widget.wall.weeks, metric: metric),
+                  Text(context.l10n.statsHistoryNote),
+                  Text(context.l10n.statsCountingNote),
+                ],
+              ),
+            ),
           ),
-          _MetricSummary(metric: metric, weeks: widget.wall.weeks, total: widget.wall.totals[metric]),
-          StatsChart(weeks: widget.wall.weeks, metric: metric),
-          Text(context.l10n.statsHistoryNote),
-          Text(context.l10n.statsCountingNote),
-        ],
-      ),
-    ),
   );
 }
 

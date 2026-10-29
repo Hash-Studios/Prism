@@ -50,4 +50,12 @@ The current-wall census cannot reconstruct deleted historical aliases or repair 
 
 The Model the Domain principle led to a BLoC owned by one session UID. The Test Behavior, Not Implementation principle led to actual profile and router integration tests in place of button visibility booleans.
 
-The parent still owns final full `make ci` after these commits, integration with current master, and final Android and iOS screenshot/clip proof. Linux cannot provide the required iOS Simulator proof. No deployment, push, merge, production data access, dependency change or toolchain change was performed. Deploy order remains rules, indexes, functions, then the store build.
+The parent rebased the reviewed commits onto `5dee629d0` without conflicts. Final full `make ci` and Android and iOS screenshot/clip proof remain separate gates. Linux cannot provide the required iOS Simulator proof. No deployment, push, merge, production data access, dependency change or toolchain change was performed. Deploy order remains rules, indexes, functions, then the store build.
+
+## Astra final pass
+
+Astra found that the independently pushed wall detail retained its snapshot after account change or logout. The root added two failing regressions that open detail first, then change the session. Detail now checks the UID that owned its original snapshot and hides private content on mismatch. The earlier dashboard-only session claim did not cover this route.
+
+Astra also found that deterministic identity-census overflow retried every background event. The trigger boundary now distinguishes this capacity failure, acknowledges it without a checkpoint, and retains retries for transient failures. The new wrapper-level regression failed before the fix. All 37 backend tests and all 16 creator-stats Dart tests passed after the fixes. Both account-change regressions failed before the fix, and the capacity wrapper regression failed before its fix.
+
+Production rollout needs an event-volume budget before Functions deployment. At 20,000 walls, 10,000 changed daily documents cost 200,050,000 projection reads before retries. No production volume or affordability claim has been verified. The five-minute callable cache does not reduce projection cost.

@@ -98,3 +98,9 @@ Deploy rules, indexes, and Functions, in that order, before the store build that
 No deploy, production action, data migration, dependency change, or push was performed. Feature commits and review fixes are local. The parent owns final full Flutter CI and device proof.
 
 See `creator-stats-review.md` for the independent review findings, current test results, and remaining proof limits.
+
+## Capacity failures in triggers
+
+Daily and legacy-folder triggers log and acknowledge identity-census overflow. They do not advance a checkpoint or marker. Transient errors still retry. A later source update can recover its cumulative daily count while that source exists. If daily TTL deletes it first, the skipped history cannot be recovered by these triggers. Recorded history can therefore contain a gap. The callable still returns an explicit capacity error.
+
+Do not deploy projection without an agreed event-volume/read budget. At the 20,000-wall cap, 10,000 daily changes require 200,050,000 reads before retries. No production volume was inspected in this task.

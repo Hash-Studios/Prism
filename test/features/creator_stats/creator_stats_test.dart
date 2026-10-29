@@ -169,13 +169,26 @@ void main() {
   Future<MockStatsBloc> pump(WidgetTester tester, CreatorStatsState state, {double scale = 1}) async {
     final bloc = MockStatsBloc();
     when(() => bloc.state).thenReturn(state);
+    final session = MockSessionBloc();
+    whenListen(
+      session,
+      const Stream<SessionState>.empty(),
+      initialState: const SessionState(
+        status: LoadStatus.success,
+        session: SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+      ),
+    );
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => BlocProvider<SessionBloc>.value(value: session, child: child),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-          child: BlocProvider<CreatorStatsBloc>.value(value: bloc, child: const CreatorStatsView()),
+          child: BlocProvider<CreatorStatsBloc>.value(
+            value: bloc,
+            child: const CreatorStatsView(ownerUid: 'alice'),
+          ),
         ),
       ),
     );
@@ -226,6 +239,43 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await sessions.close();
   });
+  for (final nextOwner in ['bob', '']) {
+    testWidgets('open wall detail hides its snapshot when owner becomes $nextOwner', (tester) async {
+      final sessions = StreamController<SessionState>.broadcast();
+      final session = MockSessionBloc();
+      SessionState signedIn(String uid) => SessionState(
+        status: LoadStatus.success,
+        session: SessionEntity(userId: uid, loggedIn: true, premium: false, subscriptionTier: 'free'),
+      );
+      whenListen(session, sessions.stream, initialState: signedIn('alice'));
+      final usecase = MockGetStats();
+      when(() => usecase()).thenAnswer((_) async => parseCreatorStats(fixture()));
+      getIt.registerFactory<CreatorStatsBloc>(() => CreatorStatsBloc(usecase));
+      await tester.pumpWidget(
+        BlocProvider<SessionBloc>.value(
+          value: session,
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: CreatorStatsPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Blue sky'), 300);
+      await tester.tap(find.text('Blue sky'));
+      await tester.pumpAndSettle();
+      expect(find.byType(WallStatsPage), findsOneWidget);
+      expect(find.text('Blue sky'), findsOneWidget);
+      sessions.add(nextOwner.isEmpty ? SessionState.initial() : signedIn(nextOwner));
+      await tester.pumpAndSettle();
+      expect(find.text('Blue sky'), findsNothing);
+      expect(find.byType(StatsChart), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await sessions.close();
+    });
+  }
   testWidgets('loading and error offer clear states and retry', (tester) async {
     await pump(tester, const CreatorStatsState(loading: true));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);

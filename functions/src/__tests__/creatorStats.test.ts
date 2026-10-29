@@ -3,7 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {readCreatorStats, deliverCreatorWeek, sendCreatorWeeklyStats} from "../creatorStats";
-import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, projectDailyStats, weekWindows} from "../creatorStatsHistory";
+import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, onCreatorStatsDailyWritten, onCreatorStatsFolderCreated, projectDailyStats, weekWindows} from "../creatorStatsHistory";
 import {syncRemixCredit} from "../wallRemix";
 import {nativeNotificationLocalization, renderNotificationCopy} from "../notificationCatalog";
 import {installFakeDb, type Doc} from "./fakeDb";
@@ -432,4 +432,31 @@ test("a uniquely identified lowercase wall uses normalized lifetime and explicit
   const result = await readCreatorStats("alice", {}, NOW);
   assert.equal(result.totals.views, 10);
   assert.equal(result.totals.folderAdds, 1);
+});
+
+
+test("trigger boundaries acknowledge permanent census overflow without checkpoints", async (t) => {
+  const path = "wallpaper_stats_daily/20261025_WALL";
+  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5},
+    "folders/f": {ownerId: "bob"}, "folders/f/items/item": {...item, wallpaperDocumentId: undefined}}));
+  for (let i = 0; i < MAX_IDENTITY_WALLS; i++) store.set(`walls/foreign${i}`, wall({id: `X${i}`, creatorUid: "bob"}));
+  const daily = await db.doc(path).get();
+  await onCreatorStatsDailyWritten.run({data: {after: daily}} as Parameters<typeof onCreatorStatsDailyWritten.run>[0]);
+  await onCreatorStatsFolderCreated.run({data: await folderSource()} as Parameters<typeof onCreatorStatsFolderCreated.run>[0]);
+  for (const prefix of ["creatorStatsHistory/", "creatorStatsDailyCheckpoints/", "creatorStatsFolderMarkers/"]) {
+    assert.equal([...store.keys()].some((key) => key.startsWith(prefix)), false);
+  }
+});
+
+test("trigger boundaries propagate transient failures for retry", async (t) => {
+  const path = "wallpaper_stats_daily/20261025_WALL";
+  installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5},
+    "folders/f": {ownerId: "bob"}, "folders/f/items/item": item}));
+  const daily = await db.doc(path).get();
+  const folder = await folderSource();
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("temporary outage");
+  });
+  await assert.rejects(onCreatorStatsDailyWritten.run({data: {after: daily}} as Parameters<typeof onCreatorStatsDailyWritten.run>[0]), /temporary outage/);
+  await assert.rejects(onCreatorStatsFolderCreated.run({data: folder} as Parameters<typeof onCreatorStatsFolderCreated.run>[0]), /temporary outage/);
 });

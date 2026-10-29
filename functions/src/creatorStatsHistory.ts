@@ -3,6 +3,7 @@ import {createHash} from "node:crypto";
 import {onDocumentCreated, onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
 import {HttpsError} from "firebase-functions/v2/https";
+import {logger} from "firebase-functions/v2";
 import {normalizeId} from "./viewStats";
 
 export const METRICS = ["views", "saves", "sets", "downloads", "shares", "folderAdds", "remixes"] as const;
@@ -67,11 +68,26 @@ export async function activeOwner(tx: admin.firestore.Transaction, uid: string):
   return user.exists && user.data()?.deleted !== true && barrier.data()?.closed !== true;
 }
 
+class IdentityCapacityError extends HttpsError {
+  constructor() {
+    super("resource-exhausted", "Creator stats global identity capacity exceeded. Contact support.");
+  }
+}
+
+async function projectHistoryEvent(path: string, project: () => Promise<void>): Promise<void> {
+  try {
+    await project();
+  } catch (error) {
+    if (!(error instanceof IdentityCapacityError)) throw error;
+    logger.error("Creator stats history skipped because identity capacity was exceeded.", {path});
+  }
+}
+
 export const MAX_IDENTITY_WALLS = 20000;
 export async function readWallIdentities(tx: admin.firestore.Transaction) {
   const walls = await tx.get(db.collection("walls").select("id", "creatorUid", "review").limit(MAX_IDENTITY_WALLS + 1));
   if (walls.size > MAX_IDENTITY_WALLS) {
-    throw new HttpsError("resource-exhausted", "Creator stats global identity capacity exceeded. Contact support.");
+    throw new IdentityCapacityError();
   }
   const identities = new Map<string, admin.firestore.QueryDocumentSnapshot | null>();
   for (const wall of walls.docs) {
@@ -131,7 +147,8 @@ export const onCreatorStatsDailyWritten = onDocumentWritten(
   {document: "wallpaper_stats_daily/{dayId}", region: REGION, retry: true},
   async (event) => {
     if (!event.data?.after.exists) return;
-    await projectDailyStats(event.data.after.ref.path, Date.now(), event.data.after);
+    const source = event.data.after;
+    await projectHistoryEvent(source.ref.path, () => projectDailyStats(source.ref.path, Date.now(), source));
   },
 );
 
@@ -173,6 +190,7 @@ export async function countFolderCreation(source: admin.firestore.DocumentSnapsh
 export const onCreatorStatsFolderCreated = onDocumentCreated(
   {document: "folders/{folderId}/items/{itemId}", region: REGION, retry: true},
   async (event) => {
-    if (event.data) await countFolderCreation(event.data);
+    const source = event.data;
+    if (source) await projectHistoryEvent(source.ref.path, () => countFolderCreation(source));
   },
 );
