@@ -18,7 +18,7 @@ Read `features/README.md` before driving. Drive the feature file, not a convenie
 
 Use only these two devices. Never boot, erase, wipe, or drive any other simulator or emulator, even if one is already booted or running.
 
-- **iOS**: simulator named `Prism QA iPhone 17 Pro`. Resolve its UDID by name at run time, do not hardcode one. As of 2026-09-28 this Mac has no simulator with that name (only the stock Xcode set: iPhone 18 Pro and friends). Create it once, then reuse it:
+- **iOS**: simulator named `Prism QA iPhone 17 Pro`. Resolve its UDID by name at run time, do not hardcode one. It exists on this Mac as of 2026-10-29 (iOS 27.0). If `doctor` says it is missing, create it once, then reuse it:
   ```bash
   xcrun simctl list runtimes                 # pick the iOS runtime id
   xcrun simctl create "Prism QA iPhone 17 Pro" "iPhone 17 Pro" <runtime-id>
@@ -61,6 +61,19 @@ The runner passes allowlisted app settings directly as argv without printing val
 `fvm flutter run` with the required debug build command if needed. Real native Firebase config
 and Dart options must already exist for Firebase-backed debug verification.
 
+In a T3 worktree, copy the gitignored `ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`
+and `lib/firebase_options.dart` from the main checkout first. The Doppler token is scoped to the main checkout,
+so pass it without printing it. This builds, installs and launches on our simulator (proven 2026-10-29):
+
+```bash
+TOK=$(doppler configure get token --plain --scope <main checkout>)
+env DOPPLER_TOKEN="$TOK" DOPPLER_PROJECT=prism DOPPLER_CONFIG=dev python3 tool/flutter_with_doppler.py -- \
+  fvm flutter run --debug --no-resident -d <our udid> < /dev/null
+```
+
+Installing over the existing app keeps its sign-in. A Flutter build can rewrite `lib/l10n/generated/*`; check
+`git status` before you commit.
+
 **One lock per platform.** The helper takes `/tmp/prism-verify-ios.lock` and `/tmp/prism-verify-android.lock`. If a lock is held by a live run, **stop**; run `cleanup` first. Override only with `PRISM_VERIFY_TAKEOVER=1` after you confirm the other run is done.
 
 **Start a verification instance** (from repo root):
@@ -79,7 +92,7 @@ and Dart options must already exist for Firebase-backed debug verification.
 .claude/skills/verify-prism/bin/verify-prism cleanup --platform android
 ```
 
-Cleanup terminates/force-stops the app on our device only, drops that platform's lock, and keeps `artifacts/`. It does not quit Simulator.app, does not kill the emulator process, and does not delete evidence.
+Cleanup terminates/force-stops the app on our device only, drops that platform's lock, and keeps `artifacts/`. It does not quit Simulator.app, does not kill the emulator process, and does not delete evidence. It refuses (exit 3) when another run holds the lock, so it never stops a peer's app.
 
 ## Doctor
 
@@ -91,7 +104,7 @@ Run this first whenever anything looks off, and after every failed drive before 
 .claude/skills/verify-prism/bin/verify-prism doctor --platform android
 ```
 
-It is read-only. It checks: `axe` on PATH (>= 1.7) for iOS, `adb`/`emulator` on PATH for Android, whether our named device exists and its boot state, any other booted/running device (printed as "do not touch", never acted on), whether the lock is free, and whether `com.hash.prism` is installed. Exit 0 means drive it; any other exit means fix the printed cause first.
+It is read-only. It checks: `axe` on PATH (>= 1.7) for iOS, `adb`/`emulator` on PATH for Android, whether our named device exists and its boot state, any other booted/running device (printed as "do not touch", never acted on), whether the lock is free or held by this run, and whether `com.hash.prism` is installed. A lock held by another run (even a free-text lock a peer wrote by hand) fails `doctor`. Exit 0 means drive it; any other exit means fix the printed cause first.
 
 ## Drive
 
@@ -107,9 +120,11 @@ Helper commands (repo root), same shape on both platforms via `--platform`:
 
 - **iOS**: `describe`/`tap`/`type` shell out to `axe describe-ui` / `axe tap --label` / `axe type`. Prefer `--label` (accessibility label) over `-x/-y` coordinates.
 - **Android**: `describe` dumps the `uiautomator` view tree; `tap` matches a node's `text` or `content-desc` and taps its bounds' center; `type` shells out to `adb shell input text` (US keyboard characters only, same limits as `axe type`).
+- **Android UiAutomation is single-client.** While another client is connected (the T3 `agent-device` session, Appium), `describe`, `tap` and `snapshot` fail with `uiautomator dump failed (exit 137)`. Close that session first (`agent-device close`).
+- **Host load.** When the Mac's load average is very high (other sessions building), `screencap` and `uiautomator dump` can time out. Check `uptime` and retry once.
 - Prefer accessibility labels / text from live Dart source (see `features/*.md`) over coordinates or memorized strings; source drifts, re-check with `describe` when a tap misses.
 
-**When `axe describe-ui` shows only `Application`** (iOS): the Flutter accessibility tree did not attach. Fall back to the Dart VM service, or `lldb` the `Runner` process for `FlutterView.accessibilityElements`, per prior QA notes. This has happened before with `Semantics(container)` gaps around sliders in a popped route.
+**When `axe describe-ui` shows only `Application`** (iOS): the Flutter accessibility tree did not attach. Fall back to the Dart VM service, or `lldb` the `Runner` process for `FlutterView.accessibilityElements`, per prior QA notes. This has happened before with `Semantics(container)` gaps around sliders in a popped route. It also happens after the iOS system photo picker closes (upload flow, 2026-10-29): the tree stays empty until the app relaunches. Drive by screenshot and coordinates, then relaunch.
 
 **Jumping to a page**: use its documented URL through `simctl openurl` or Android's VIEW intent. The [deep-link recipe](features/deep-links.md) and [page catalog](../../../docs/features/deep-links.md) cover all page families, including picker continuations for local images. This exercises the same dispatcher as external links and push taps. Keep normal sign-in and admin guards in place.
 
@@ -164,8 +179,11 @@ See `features/README.md` for the full index and driving conventions, then the ma
 - [Wallpaper detail](./features/wallpaper-detail.md)
 - [Search](./features/search.md)
 - [Profile and edit profile](./features/profile.md)
-- [Coins and streak](./features/coins-streak.md)
+- [Rewards and coins](./features/rewards.md)
 - [AI wallpaper](./features/ai-wallpaper.md)
 - [Notifications inbox](./features/notifications.md)
 - [Settings](./features/settings.md)
 - [Deep links](./features/deep-links.md)
+- [Library and Folders](./features/library-folders.md)
+- [Drops, Shop and Premium](./features/drops-shop-premium.md)
+- [Upload](./features/upload.md)
