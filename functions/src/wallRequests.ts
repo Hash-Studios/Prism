@@ -28,6 +28,7 @@ const LIST_LIMIT = 50;
 const TOP_SCAN = 200;
 const PUSH_CHUNK = 25;
 const DOC_ID = /^[A-Za-z0-9_-]{1,128}$/;
+const WALL_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 /** The browse categories (lib/data/categories/categories.dart) and the mood ids a request may carry as tags. */
 export const REQUEST_CATEGORIES = [
@@ -129,6 +130,7 @@ export function requestIdFrom(raw: unknown): string {
 const requestRef = (id: string) => db.collection(WALL_REQUESTS).doc(id);
 const millis = (value: unknown): number => value instanceof admin.firestore.Timestamp ? value.toMillis() : 0;
 const blockRef = (owner: string, other: string) => db.doc(`usersv2/${owner}/blockedUsers/${other}`);
+const logicalWallId = (value: unknown): string => typeof value === "string" && WALL_ID.test(value) ? value : "";
 
 export async function blockedEitherWay(a: string, b: string): Promise<boolean> {
   if (!a || !b || a === b) return false;
@@ -150,12 +152,20 @@ function toView(doc: admin.firestore.DocumentSnapshot, viewer: string, voted: bo
     mine: viewer !== "" && d.requesterUid === viewer,
     voted,
     hidden: d.hidden === true,
-    // The app opens the wall by its logical id. An upload's doc id is its file name.
-    filledWallId: str(d.filledWallLogicalId) || str(d.filledWallId),
+    filledWallId: logicalWallId(d.filledWallLogicalId),
     filledWallThumb: str(d.filledWallThumb),
     filledBy: d.filledBy === "creator" || d.filledBy === "studio" ? d.filledBy : "",
     filledAtMs: millis(d.filledAt),
   };
+}
+
+async function filledLogicalId(request: admin.firestore.DocumentData): Promise<string> {
+  const cached = logicalWallId(request.filledWallLogicalId);
+  if (cached) return cached;
+  const wallId = str(request.filledWallId);
+  if (!wallId || wallId.includes("/")) return "";
+  const wall = await db.collection("walls").doc(wallId).get();
+  return logicalWallId(wall.data()?.id);
 }
 
 /** The caller may write: signed in, account not deleted and not in account deletion. */
@@ -333,7 +343,11 @@ export async function listWallRequests(viewer: string, tab: RequestTab, isAdmin:
   }
   const voted = viewer ? await Promise.all(docs.map(async (d) => (await d.ref.collection(VOTES).doc(viewer).get()).exists)) :
     docs.map(() => false);
-  return docs.map((d, i) => toView(d, viewer, voted[i]));
+  return Promise.all(docs.map(async (d, i) => {
+    const view = toView(d, viewer, voted[i]);
+    if (view.status === "filled") view.filledWallId = await filledLogicalId(d.data());
+    return view;
+  }));
 }
 
 /** Admin only: hides or shows a request. A hidden request leaves every list, Studio and the filled push. */
@@ -359,7 +373,7 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
     fillerUid = str(wall.creatorUid) || (str(wall.email) ? (await findUserByEmail(str(wall.email)))?.id ?? "" : "");
   }
   const thumb = str(wall.wallpaper_thumb);
-  const logicalId = str(wall.id) || wallId;
+  const logicalId = logicalWallId(wall.id);
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
     if (!data || data.hidden === true) return null;
@@ -399,18 +413,19 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
  * walls by their `id` field, which differs from the doc id for uploads.
  */
 async function galleryIds(wallId: string): Promise<string[]> {
-  const logical = (doc: {id: string; data: admin.firestore.DocumentData}) => str(doc.data.id) || doc.id;
   try {
     const wall = await db.collection("walls").doc(wallId).get();
     if (!wall.exists) return [];
     const lead = {id: wallId, data: wall.data() ?? {}};
+    const leadId = logicalWallId(lead.data.id);
+    if (!leadId) return [];
     // ponytail: one scan of the protected walls per fill, as the Wall of the Day pick does; fills are a few a day.
     const snap = await protectedWalls().select(...SIMILAR_FIELDS).get();
-    const candidates = snap.docs.map((d) => ({id: d.id, data: d.data()}));
+    const candidates = snap.docs.map((d) => ({id: d.id, data: d.data()})).filter((c) => logicalWallId(c.data.id));
     const byDocId = new Map(candidates.map((c) => [c.id, c]));
     const others = similarWallIds(lead, candidates, await premiumCollections())
-      .map((id) => byDocId.get(id)).filter((c): c is typeof lead => c !== undefined).map(logical);
-    return [logical(lead), ...others];
+      .map((id) => logicalWallId(byDocId.get(id)?.data.id)).filter(Boolean);
+    return [...new Set([leadId, ...others])];
   } catch (err) {
     logger.warn("wallRequests: no similar walls for the filled push.", {wallId, err});
     return [];

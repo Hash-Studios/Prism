@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -9,11 +11,14 @@ import 'package:Prism/features/wall_requests/biz/wall_request_sheet_cubit.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../support/fake_app_analytics.dart';
 
 class _MockSheetCubit extends MockCubit<WallRequestSheetState> implements WallRequestSheetCubit {}
 
@@ -156,4 +161,74 @@ void main() {
     expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Neon')).onTap, isNull);
     expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Dark')).selected, isTrue);
   });
+
+  for (final bool upvoted in <bool>[false, true]) {
+    testWidgets('the root request sheet returns ${upvoted ? 'an upvote' : 'a creation'} to a nested caller', (
+      tester,
+    ) async {
+      final GlobalKey<NavigatorState> root = GlobalKey<NavigatorState>();
+      final GlobalKey<NavigatorState> nested = GlobalKey<NavigatorState>();
+      final StreamController<WallRequestSheetState> states = StreamController<WallRequestSheetState>();
+      whenListen(cubit, states.stream, initialState: const WallRequestSheetEditing());
+      when(() => cubit.close()).thenAnswer((_) async {});
+      getIt.registerFactory<WallRequestSheetCubit>(() => cubit);
+      AnalyticsRuntime.instance = FakeAppAnalytics();
+      toasts.overlayResolver = () => root.currentState?.overlay;
+      addTearDown(() async {
+        toasts.overlayResolver = null;
+        AnalyticsRuntime.reset();
+        await states.close();
+        await getIt.reset();
+      });
+      WallRequest? returned;
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: root,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Navigator(
+            key: nested,
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (BuildContext context) => Scaffold(
+                body: TextButton(
+                  onPressed: () async {
+                    returned = await showWallRequestSheet(
+                      context,
+                      source: WallRequestSourceValue.search,
+                      initialText: 'dark mountains',
+                    );
+                  },
+                  child: const Text('nested caller'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('nested caller'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(root.currentState!.canPop(), isTrue);
+      expect(nested.currentState!.canPop(), isFalse);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'dark mountains');
+
+      final WallRequest request = _request(voted: upvoted);
+      states.add(WallRequestSheetDone(request, upvoted: upvoted));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(returned, same(request));
+      expect(root.currentState!.canPop(), isFalse);
+      expect(nested.currentState!.canPop(), isFalse);
+      expect(find.text('nested caller'), findsOneWidget);
+      final String message = upvoted
+          ? "Upvoted. We'll tell you when it's filled."
+          : "Request sent. We'll tell you when it's filled.";
+      expect(find.text(message), findsOneWidget);
+      verify(() => cubit.close()).called(1);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

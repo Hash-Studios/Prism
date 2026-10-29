@@ -46,8 +46,8 @@ const votesOf = (store: Map<string, Doc>, requestId: string) =>
   [...store.keys()].filter((key) => key.startsWith(`wallRequests/${requestId}/votes/`));
 
 function captureMessages(t: TestContext) {
-  const messages: Array<{token?: string; data?: Record<string, string>}> = [];
-  t.mock.method(admin.messaging(), "send", async (message: {token?: string; data?: Record<string, string>}) => {
+  const messages: Array<admin.messaging.Message & {token?: string}> = [];
+  t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
     messages.push(message);
     return "id";
   });
@@ -580,7 +580,7 @@ test("notifyRequestFilled refuses text that no longer passes public checks", asy
 });
 
 test("notifyRequestFilled skips recipients if the request is hidden during gallery lookup", async (t) => {
-  const store = installFakeDb(t, notifySeed());
+  const store = installFakeDb(t, {...notifySeed(), "walls/w1": {id: "w1"}});
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
     store.set("wallRequests/r1", {...(store.get("wallRequests/r1") ?? {}), hidden: true});
     return {parameters: {}};
@@ -723,5 +723,187 @@ test("an upload fills by doc id, but the list and the push gallery use its logic
   for (const message of messages) {
     assert.equal(message.data?.wall_id, "wall_up.jpg");
     assert.equal(message.data?.wall_ids, "LOGIC1,LOGIC2");
+  }
+});
+
+function galleryConfig(t: TestContext) {
+  const previousBase = process.env.R2_PREVIEW_BASE_URL;
+  process.env.R2_PREVIEW_BASE_URL = "https://img.prismwalls.com";
+  t.after(() => {
+    if (previousBase === undefined) delete process.env.R2_PREVIEW_BASE_URL;
+    else process.env.R2_PREVIEW_BASE_URL = previousBase;
+  });
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
+}
+
+test("filled requests without a cached logical id resolve the existing uploaded wall without writing", async (t) => {
+  const store = installFakeDb(t, {
+    ...notifySeed({filledWallId: "upload.jpg", filledAt: at(NOW)}),
+    "walls/upload.jpg": protectedWall("UPLOAD1"),
+  });
+  const [row] = await listWallRequests("", "filled", false, NOW);
+  assert.equal(row.filledWallId, "UPLOAD1");
+  assert.equal(store.get("wallRequests/r1")?.filledWallLogicalId, undefined);
+});
+
+test("filled Studio requests resolve when the document and logical ids match", async (t) => {
+  installFakeDb(t, {
+    ...notifySeed({filledWallId: "studio_1", filledAt: at(NOW), filledBy: "studio"}),
+    "walls/studio_1": protectedWall("studio_1"),
+  });
+  const [row] = await listWallRequests("", "filled", false, NOW);
+  assert.equal(row.filledWallId, "studio_1");
+  assert.equal(row.filledBy, "studio");
+});
+
+for (const id of ["broken,id", "a".repeat(201), ""]) {
+  test(`fill and list do not expose an unusable logical id of length ${id.length}`, async (t) => {
+    const store = installFakeDb(t, {...fillSeed(), "walls/upload.jpg": protectedWall(id)});
+    assert.equal(await fillRequestFromWall("upload.jpg", {id, requestId: "r1"}, false), "r1");
+    assert.equal(store.get("wallRequests/r1")?.filledWallId, "upload.jpg");
+    assert.equal(store.get("wallRequests/r1")?.filledWallLogicalId, "");
+    const [row] = await listWallRequests("", "filled", false, NOW);
+    assert.equal(row.filledWallId, "");
+  });
+}
+
+test("an invalid cached id is resolved from the wall and a 200-character logical id remains valid", async (t) => {
+  const id = "a".repeat(200);
+  const store = installFakeDb(t, {
+    ...notifySeed({filledWallId: "upload.jpg", filledWallLogicalId: "bad,id", filledAt: at(NOW)}),
+    "walls/upload.jpg": protectedWall(id),
+  });
+  const [row] = await listWallRequests("", "filled", false, NOW);
+  assert.equal(row.filledWallId, id);
+  assert.equal(await fillRequestFromWall("upload.jpg", {id, requestId: "r1"}, false), "r1");
+  assert.equal(store.get("wallRequests/r1")?.filledWallLogicalId, id);
+});
+
+test("a deleted legacy wall has no gallery identity in the filled list", async (t) => {
+  installFakeDb(t, notifySeed({filledWallId: "deleted.jpg", filledAt: at(NOW)}));
+  const [row] = await listWallRequests("", "filled", false, NOW);
+  assert.equal(row.filledWallId, "");
+});
+
+test("open requests and filled requests with valid cached ids do not read walls", async (t) => {
+  installFakeDb(t, {
+    ...notifySeed({filledWallLogicalId: "CACHED", filledAt: at(NOW)}),
+    "wallRequests/open": request("neon city", "u1"),
+  });
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (path: string) => {
+    assert.notEqual(path, "walls");
+    return collection(path);
+  });
+  assert.equal((await listWallRequests("", "new", false, NOW))[0].filledWallId, "");
+  assert.equal((await listWallRequests("", "filled", false, NOW))[0].filledWallId, "CACHED");
+});
+
+test("filled pushes omit invalid similar ids", async (t) => {
+  galleryConfig(t);
+  installFakeDb(t, {
+    ...notifySeed({filledWallId: "upload.jpg"}),
+    "walls/upload.jpg": protectedWall("LEAD"),
+    "walls/a_bad": protectedWall("broken,id"),
+    "walls/b_oversize": protectedWall("a".repeat(201)),
+    "walls/c_first.jpg": protectedWall("OTHER"),
+    "walls/d_duplicate.jpg": protectedWall("OTHER"),
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(messages.length, 2);
+  for (const message of messages) {
+    assert.equal(message.data?.wall_id, "upload.jpg");
+    assert.equal(message.data?.wall_ids, "LEAD,OTHER");
+  }
+});
+
+test("filled push galleries contain each logical id once", async (t) => {
+  galleryConfig(t);
+  installFakeDb(t, {
+    ...notifySeed({filledWallId: "upload.jpg"}),
+    "walls/upload.jpg": protectedWall("LEAD"),
+    "walls/first.jpg": protectedWall("OTHER"),
+    "walls/duplicate.jpg": protectedWall("OTHER"),
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(messages.length, 2);
+  for (const message of messages) assert.equal(message.data?.wall_ids, "LEAD,OTHER");
+});
+
+test("an invalid lead cannot open an unrelated gallery", async (t) => {
+  galleryConfig(t);
+  installFakeDb(t, {
+    ...notifySeed({filledWallId: "upload.jpg"}),
+    "walls/upload.jpg": protectedWall("bad,id"),
+    "walls/other.jpg": protectedWall("OTHER"),
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(messages.length, 2);
+  for (const message of messages) {
+    assert.equal(message.data?.wall_id, "upload.jpg");
+    assert.equal(message.data?.wall_ids, undefined);
+  }
+});
+
+for (const lead of [undefined, protectedWall("ONLY"), protectedWall("bad,id")]) {
+  test(`filled push keeps its document fallback without a gallery for ${lead?.id ?? "missing"} lead`, async (t) => {
+    galleryConfig(t);
+    const seed = notifySeed({filledWallId: "upload.jpg"});
+    if (lead) seed["walls/upload.jpg"] = lead;
+    installFakeDb(t, seed);
+    const messages = captureMessages(t);
+    await notifyRequestFilled("r1", NOW);
+    assert.equal(messages.length, 2);
+    for (const message of messages) {
+      assert.equal(message.data?.wall_id, "upload.jpg");
+      assert.equal(message.data?.wall_ids, undefined);
+    }
+  });
+}
+
+test("a failed similar-wall scan keeps the document fallback push", async (t) => {
+  galleryConfig(t);
+  installFakeDb(t, {...notifySeed({filledWallId: "upload.jpg"}), "walls/upload.jpg": protectedWall("LEAD")});
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (path: string) => {
+    const ref = collection(path);
+    return path === "walls" ? new Proxy(ref, {get(target, key) {
+      if (key === "where") {
+        return () => {
+          throw new Error("scan unavailable");
+        };
+      }
+      return Reflect.get(target, key);
+    }}) : ref;
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(messages.length, 2);
+  for (const message of messages) {
+    assert.equal(message.data?.wall_id, "upload.jpg");
+    assert.equal(message.data?.wall_ids, undefined);
+  }
+});
+
+test("the maximum request text and four 200-character gallery ids stay under the push payload limit", async (t) => {
+  galleryConfig(t);
+  const ids = ["A", "B", "C", "D"].map((prefix) => prefix + "a".repeat(199));
+  installFakeDb(t, {
+    ...notifySeed({text: "山".repeat(80), filledWallId: "upload.jpg"}),
+    "walls/upload.jpg": protectedWall(ids[0]),
+    "walls/b.jpg": protectedWall(ids[1]),
+    "walls/c.jpg": protectedWall(ids[2]),
+    "walls/d.jpg": protectedWall(ids[3]),
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(messages.length, 2);
+  for (const message of messages) {
+    assert.equal(message.data?.wall_id, "upload.jpg");
+    assert.equal(message.data?.wall_ids, ids.join(","));
+    assert.ok(Buffer.byteLength(JSON.stringify(message), "utf8") < 4096);
   }
 });

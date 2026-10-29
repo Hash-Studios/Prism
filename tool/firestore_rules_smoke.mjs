@@ -606,6 +606,7 @@ const cases = [
   ['requester reads own hidden wall request', () => req('GET', 'wallRequests/hidden', null, Bu), 200],
   ['admin reads a hidden wall request', () => req('GET', 'wallRequests/hidden', null, ADM), 200],
   ['guest cannot list wall requests directly', () => runQuery(null, [fieldEquals('status', str('open')), fieldEquals('hidden', { booleanValue: false })], 'wallRequests'), 403],
+  ['stranger cannot list visible wall requests directly', () => runQuery(C, [fieldEquals('status', str('open')), fieldEquals('hidden', { booleanValue: false })], 'wallRequests'), 403],
   ['stranger cannot list wall requests without the hidden filter', () => runQuery(C, [fieldEquals('status', str('open'))], 'wallRequests'), 403],
   ['user cannot create a wall request directly', () => req('PATCH', 'wallRequests/direct', requestFields('c'), C), 403],
   ['user cannot set voteCount on a wall request', () => req('PATCH', 'wallRequests/open', { voteCount: { integerValue: '99' } }, C, ['voteCount']), 403],

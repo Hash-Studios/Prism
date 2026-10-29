@@ -1,20 +1,30 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
+import 'package:Prism/features/moods/views/pages/gallery_screen.dart';
 import 'package:Prism/features/wall_requests/biz/wall_requests_cubit.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/views/pages/wall_requests_page.dart';
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_row.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/fake_app_analytics.dart';
+
 class _MockWallRequestsCubit extends MockCubit<WallRequestsState> implements WallRequestsCubit {}
+
+class _MockGalleryCubit extends MockCubit<GalleryWallsState> implements GalleryWallsCubit {}
 
 WallRequest _request({
   String id = 'r1',
@@ -150,5 +160,52 @@ void main() {
     await tester.pump();
 
     verify(() => cubit.load(WallRequestTab.top)).called(2);
+  });
+
+  testWidgets('tapping a filled wall opens the real gallery route with its single logical id', (tester) async {
+    final AppRouter router = AppRouter();
+    final _MockGalleryCubit gallery = _MockGalleryCubit();
+    when(() => cubit.close()).thenAnswer((_) async {});
+    when(() => gallery.load(any())).thenAnswer((_) async {});
+    when(() => gallery.close()).thenAnswer((_) async {});
+    whenListen(gallery, const Stream<GalleryWallsState>.empty(), initialState: const GalleryWallsLoaded([]));
+    stub(
+      _state(
+        tabs: <WallRequestTab, WallRequestsTabState>{
+          WallRequestTab.filled: WallRequestsTabLoaded(<WallRequest>[
+            _request(status: WallRequestStatus.filled, filledWallId: 'logical-wall-1'),
+          ]),
+        },
+      ),
+    );
+    getIt.registerFactory<WallRequestsCubit>(() => cubit);
+    getIt.registerFactory<GalleryWallsCubit>(() => gallery);
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      router.dispose();
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(deepLinkBuilder: (_) => DeepLink(<PageRouteInfo>[WallRequestsRoute(tab: 'filled')])),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.bySemanticsLabel('Open the wall'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(router.current.name, GalleryRoute.name);
+    final GalleryScreen screen = tester.widget<GalleryScreen>(find.byType(GalleryScreen));
+    expect(screen.ids, 'logical-wall-1');
+    expect(screen.source, 'request');
+    verify(() => gallery.load(<String>['logical-wall-1'])).called(1);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 }

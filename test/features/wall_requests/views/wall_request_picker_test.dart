@@ -68,27 +68,37 @@ void main() {
   });
 
   /// Opens the picker from a button, as the upload flow does. [picked] receives what the sheet returns.
-  Future<void> openPicker(WidgetTester tester, void Function(WallRequest?) picked) async {
+  Future<void> openPicker(
+    WidgetTester tester,
+    void Function(WallRequest?) picked, {
+    GlobalKey<NavigatorState>? nestedNavigator,
+  }) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final Widget launcher = Builder(
+      builder: (BuildContext context) => Scaffold(
+        body: Center(
+          child: TextButton(
+            onPressed: () {
+              showWallRequestPicker(context).then(picked);
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (BuildContext context) => Scaffold(
-            body: Center(
-              child: TextButton(
-                onPressed: () {
-                  showWallRequestPicker(context).then(picked);
-                },
-                child: const Text('open'),
+        home: nestedNavigator == null
+            ? launcher
+            : Navigator(
+                key: nestedNavigator,
+                onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (_) => launcher),
               ),
-            ),
-          ),
-        ),
       ),
     );
     await tester.tap(find.text('open'));
@@ -135,13 +145,20 @@ void main() {
   });
 
   testWidgets('tapping a row pops with that request', (tester) async {
+    final GlobalKey<NavigatorState> nested = GlobalKey<NavigatorState>();
     WallRequest? picked;
-    await openPicker(tester, (WallRequest? value) => picked = value);
+    await openPicker(tester, (WallRequest? value) => picked = value, nestedNavigator: nested);
+    final NavigatorState root = Navigator.of(tester.element(find.byType(WallRequestPickerBody)), rootNavigator: true);
+    expect(root.canPop(), isTrue);
+    expect(nested.currentState!.canPop(), isFalse);
 
     await tester.tap(find.text('quiet forest lake'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(picked?.id, 'c');
+    expect(root.canPop(), isFalse);
+    expect(nested.currentState!.canPop(), isFalse);
+    expect(find.text('open'), findsOneWidget);
   });
 }
