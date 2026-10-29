@@ -11034,7 +11034,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get wallRemixDropLinkTooltip => 'Remover ligação de remix';
+  String get wallRemixDropLinkTooltip => 'Remover vínculo de remix';
 
   @override
   String get wallRemixUntitled => 'Sem título';
@@ -11065,10 +11065,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallRemixOfTooltip => 'Abrir o papel de parede original';
 
   @override
-  String get economyAiSubmitPromptNotice => 'Qualquer pessoa pode ver o seu prompt e remixar este papel de parede.';
+  String get economyAiSubmitPromptNotice => 'Qualquer pessoa pode ver seu prompt e remixar este papel de parede.';
 
   @override
-  String get notifPushWallRemixedTitle => 'O seu papel de parede foi remixado';
+  String get notifPushWallRemixedTitle => 'Seu papel de parede foi remixado';
 
   @override
   String notifPushWallRemixedBody(String remixerName, String wallTitle) {
@@ -11077,7 +11077,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String notifPushWallRemixedBodyUntitled(String remixerName) {
-    return '$remixerName remixou o seu papel de parede.';
+    return '$remixerName remixou seu papel de parede.';
   }
 }
 
