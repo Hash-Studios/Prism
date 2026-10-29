@@ -160,7 +160,7 @@ void main() {
     await tester.pumpAndSettle();
     final firstVisit = blocs.single;
     firstVisit.handleEvent = (event) {
-      if (event is CycleAccentColor) {
+      if (event is SelectAccentColor) {
         aState = aState.copyWith(accent: Colors.blue, colorChanged: true);
         firstVisit.states.add(aState);
       } else if (event is LoadRecommendations) {
@@ -173,7 +173,7 @@ void main() {
         firstVisit.states.add(aState);
       }
     };
-    await tester.tapAt(const Offset(195, 280));
+    firstVisit.add(const SelectAccentColor(color: Colors.blue));
     await tester.pumpAndSettle();
     expect((firstVisit.state as WallpaperDetailLoaded).tint, Colors.blue);
     final bTile = find.byKey(ValueKey((WallpaperSource.wallhaven, 'B')));
