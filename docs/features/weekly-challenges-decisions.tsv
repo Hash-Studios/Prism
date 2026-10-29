@@ -1,0 +1,16 @@
+id	status	subject	record	evidence
+D01	settled	Review completion	Wait for all pending admitted reviews, then pick and reserve the following UTC day.	User follow-up in this task
+D02	settled	Voting cutoff	Voting closes Monday 00:00 UTC regardless of pending reviews.	User instructions
+D03	pending	Admission design	Parent must review create-trigger transaction, trusted createTime, atomic lifetime count, and fourth-link stripping. No code before recorded review.	User instructions
+D04	settled	Submission route	Use existing create wall challengeId and server stripping. No new submission callable or client-write slots.	User instructions; functions/src/onWallSubmitted.ts; lib/data/upload/wallpaper/wallfirestore.dart
+D05	settled	Limits and ownership	Three lifetime entries include withdrawn and rejected. Server owns entries, votes, counts, and reservations.	User instructions
+D06	settled	Theme source	Use challengeThemes queue, then visible open request created during prior UTC week. Skip absent themes.	User instructions
+E01	observed	Existing vote limit	Requests define MAX_VOTE_CHANGES_PER_DAY = 200.	functions/src/wallRequests.ts
+E02	observed	WOTD checks	Existing scheduler runs 03:30 UTC. readyWall checks approval, isWotdEligible, and owned delivery.	functions/src/wallOfTheDay.ts
+D07	settled	FCM boundary	Stable inbox key does not guarantee exactly-once external FCM delivery.	User requirement; cross-system commit boundary
+E03	parent-reported	Baseline	Dependencies installed. Functions build passed. Tests 2191 passed, 16 skipped, 0 failed. No tracked lockfile changes.	User follow-up; /tmp/prism-challenge-baseline
+E04	parent-reported	Incomplete CI	make ci stopped at 313 pre-existing info-level findings before full Flutter tests. No feature proof.	User follow-up; /tmp/prism-challenge-baseline
+E05	observed	Local document and iOS tools	docs/DAILY_SHIPS_PLAN.md absent. xcrun and axe unavailable in current shell.	Local file and command lookup
+E06	reported-blocker	Other proof prerequisites	Mobbin unavailable; local Firebase wiring missing; external AI and GitHub upload need local-only adapters; another worktree holds emulator lock.	Task brief; not independently retested
+D08	planned	Seed	Proposed seedChallengeThemes script does not exist. Dry-run only in implementation scope. No real seed executed.	Current functions/src/scripts listing; user instructions
+D09	planned	Delivery gates	Backend tests, client routes, seven locales, analytics generation, Astra audit, exact tree checks, and dual-device proof remain required.	User instructions
