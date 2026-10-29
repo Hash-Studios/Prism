@@ -98,6 +98,33 @@ class SetWallpaperFlow {
     }
   }
 
+  /// The target the user last picked on the Set screen, or null.
+  static WallpaperTarget? lastTarget() {
+    try {
+      if (!getIt.isRegistered<SettingsLocalDataSource>()) return null;
+      final String saved = getIt<SettingsLocalDataSource>().get<String>(
+        PersistenceKeys.lastApplyTarget,
+        defaultValue: '',
+      );
+      for (final WallpaperTarget target in WallpaperTarget.values) {
+        if (target.name == saved) return target;
+      }
+    } catch (error) {
+      logger.w('SetWallpaperFlow: could not read the last target', error: error);
+    }
+    return null;
+  }
+
+  /// Remembers [target] so the next Set screen starts on it.
+  static void saveLastTarget(WallpaperTarget target) {
+    try {
+      if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
+      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.lastApplyTarget, target.name));
+    } catch (error) {
+      logger.w('SetWallpaperFlow: could not save the last target', error: error);
+    }
+  }
+
   /// Applies straight to the default target when one is saved, else opens the Set screen.
   /// Returns null when the user closed it.
   ///
