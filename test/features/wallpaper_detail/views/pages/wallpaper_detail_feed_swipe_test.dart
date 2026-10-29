@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
@@ -15,6 +19,8 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +34,22 @@ import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
+
+class _FailingViewedStore extends RecentlyViewedStore {
+  _FailingViewedStore() : super(SettingsLocalDataSource(InMemoryLocalStore()));
+
+  @override
+  Future<void> record(HistoryWall item) async => throw StateError('disk full');
+}
+
+class _DownloadHistory extends Fake implements SyncedHistoryStore {
+  @override
+  (String, int) recordingSession = ('owner-a', 0);
+  final List<HistoryWall> recorded = [];
+
+  @override
+  Future<void> record(HistoryWall item) async => recorded.add(item);
+}
 
 class _SemanticsNodeEntry {
   const _SemanticsNodeEntry({required this.owner, required this.node, required this.data});
@@ -92,6 +114,7 @@ Future<void> _pumpFeed(
   required FeedItemEntity open,
   TextDirection direction = TextDirection.ltr,
 }) async {
+  getIt<RecentlyViewedStore>();
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -119,6 +142,7 @@ void main() {
   final List<WallpaperDetailState> blocInitialStates = <WallpaperDetailState>[];
   final List<Stream<WallpaperDetailState>> blocStreams = <Stream<WallpaperDetailState>>[];
   final List<_MockDetailBloc> createdBlocs = <_MockDetailBloc>[];
+  late RecentlyViewedStore viewed;
 
   setUp(() async {
     blocWalls.clear();
@@ -129,6 +153,9 @@ void main() {
     offlineAssets.install();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+    getIt.registerLazySingleton<RecentlyViewedStore>(
+      () => viewed = RecentlyViewedStore(SettingsLocalDataSource(InMemoryLocalStore())),
+    );
     getIt.registerFactory<WallpaperDetailBloc>(() {
       final bloc = _MockDetailBloc();
       createdBlocs.add(bloc);
@@ -149,8 +176,111 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     await offlineAssets.dispose();
     await getIt.reset();
+  });
+
+  for (final String change in ['disposed', 'account', 'session']) {
+    testWidgets('a late download callback does not record history after $change changes', (tester) async {
+      final history = _DownloadHistory();
+      getIt.registerSingleton<SyncedHistoryStore>(history);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'owner-a'
+        ..loggedIn = true;
+      final a = _item('a');
+      blocWalls.add(a);
+      await _pumpFeed(tester, feed: [a], open: a);
+      final VoidCallback completed = tester.widget<DownloadButton>(find.byType(DownloadButton)).onDownloaded!;
+      if (change == 'disposed') {
+        await tester.pumpWidget(const SizedBox());
+      } else if (change == 'account') {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'owner-b'
+          ..loggedIn = true;
+      } else {
+        history.recordingSession = ('owner-a', 1);
+      }
+      completed();
+      await tester.pump();
+      expect(history.recorded, isEmpty);
+      expect(viewed.items(), isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
+  testWidgets('a completed download in the same mounted session records its wall', (tester) async {
+    final history = _DownloadHistory();
+    getIt.registerSingleton<SyncedHistoryStore>(history);
+    final a = _item('a');
+    blocWalls.add(a);
+    await _pumpFeed(tester, feed: [a], open: a);
+    tester.widget<DownloadButton>(find.byType(DownloadButton)).onDownloaded!();
+    await tester.pump();
+    expect(history.recorded.map((wall) => wall.id), ['a']);
+    expect(viewed.items().map((wall) => wall.id), ['a']);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an already loaded detail records a view only after two seconds', (tester) async {
+    final a = _item('a');
+    blocWalls.add(a);
+    await _pumpFeed(tester, feed: [a], open: a);
+    await tester.pump(const Duration(milliseconds: 1999));
+    expect(viewed.items(), isEmpty);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(viewed.items().map((wall) => wall.id), ['a']);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('rapid feed steps record only the wall that remains active for two seconds', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    final c = _item('c');
+    blocWalls.addAll([a, b, c]);
+    await _pumpFeed(tester, feed: [a, b, c], open: a);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
+    await tester.pumpAndSettle();
+    await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(viewed.items(), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    expect(viewed.items().map((wall) => wall.id), ['c']);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a viewing-history disk failure does not escape the detail dwell callback', (tester) async {
+    await getIt.unregister<RecentlyViewedStore>();
+    getIt.registerSingleton<RecentlyViewedStore>(_FailingViewedStore());
+    final a = _item('a');
+    blocWalls.add(a);
+    await _pumpFeed(tester, feed: [a], open: a);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(WallpaperQuickActionRegion), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the detail set action never receives a Prism original as its thumbnail', (tester) async {
+    const a = FeedItemEntity.prism(
+      id: 'original-as-thumb',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'original-as-thumb',
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/original.jpg',
+          thumbnailUrl: 'https://example.com/original.jpg',
+        ),
+      ),
+    );
+    blocWalls.add(a);
+    await _pumpFeed(tester, feed: [a], open: a);
+    expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).thumbnailUrl, isEmpty);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('a swipe left on the card shows the next wall of the feed', (tester) async {

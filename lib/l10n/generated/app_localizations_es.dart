@@ -10852,4 +10852,91 @@ class AppLocalizationsEs extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Nuevo en $folderName y $count más';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Puesto y descargado';
+
+  @override
+  String get historyDownloaded => 'Descargado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recientemente';
+
+  @override
+  String get historySyncedNote => 'Guardado en tu cuenta, así estos vuelven a aparecer en un teléfono nuevo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Inicia sesión para mantenerlos en un teléfono nuevo.';
+
+  @override
+  String get historyActionSet => 'Puesto';
+
+  @override
+  String get historyActionDownloaded => 'Descargado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action a las $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Esto borra la lista de aquí y de tu cuenta. Tus fondos de pantalla y descargas se mantienen igual.';
+
+  @override
+  String get historyClearViewedTitle => '¿Borrar vistos recientemente?';
+
+  @override
+  String get historyClearViewedBody => 'Esto quita de esta lista y de Inicio los fondos de pantalla que abriste.';
+
+  @override
+  String get historyClearViewedAction => 'Borrar vistos recientemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Los fondos de pantalla que pongas o descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Los fondos de pantalla que descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Aún no has visto nada';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Los fondos de pantalla que abras aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedOffTitle => 'El historial de visualización está desactivado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Activa Guardar historial de visualización para ver aquí los fondos de pantalla que abras.';
+
+  @override
+  String get historyViewedOffAction => 'Activar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir fondo de pantalla, visto a las $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Retoma donde lo dejaste';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir fondo de pantalla $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Guardar historial de visualización';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.';
+
+  @override
+  String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
 }

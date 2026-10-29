@@ -492,7 +492,7 @@ void main() {
 
       expect(opened, hasLength(1));
       expect(opened.single.url, _prism().fullUrl);
-      expect(opened.single.thumbnailUrl, _prism().thumbnailUrl);
+      expect(opened.single.thumbnailUrl, isEmpty, reason: 'a thumbnail identical to the Prism original is withheld');
       expect(opened.single.onAdjust, isNotNull);
       expect(client.requests, isEmpty);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));

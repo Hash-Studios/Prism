@@ -15,6 +15,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -232,6 +233,7 @@ Future<void> completeSignIn({
   Future<void> runBootstrap() async {
     operation.requireCurrent();
     final Future<void> favourites = _startFavouritesSync(user.uid);
+    final Future<void> history = restoreAccountHistory(user.uid);
     await PurchasesService.instance.checkAndPersistPremium();
     operation.requireCurrent();
     await CoinsService.instance.bootstrapForCurrentUser();
@@ -242,6 +244,7 @@ Future<void> completeSignIn({
     operation.requireCurrent();
     await CoinsService.instance.processPendingReferralIfEligible();
     await favourites;
+    await history;
   }
 
   late final Future<void> bootstrap;
