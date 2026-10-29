@@ -65,13 +65,15 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     if (cached != null) return cached;
 
     late final Future<String?> request;
-    request = _repository.requestText(requestId).then(
-      (String? text) => text,
-      onError: (Object error, StackTrace stackTrace) {
-        if (identical(_requestTexts[requestId], request)) _requestTexts.remove(requestId);
-        Error.throwWithStackTrace(error, stackTrace);
-      },
-    );
+    request = _repository
+        .requestText(requestId)
+        .then(
+          (String? text) => text,
+          onError: (Object error, StackTrace stackTrace) {
+            if (identical(_requestTexts[requestId], request)) _requestTexts.remove(requestId);
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+        );
     _requestTexts[requestId] = request;
     return request;
   }
