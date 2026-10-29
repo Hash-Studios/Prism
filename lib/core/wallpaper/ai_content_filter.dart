@@ -12,7 +12,11 @@ class AiContentFilter {
 
   static bool showsAi(SettingsLocalDataSource settings) => settings.get<bool>(settingKey, defaultValue: true);
 
-  static Future<void> setShowsAi(SettingsLocalDataSource settings, bool value) => settings.set(settingKey, value);
+  static Future<bool> setShowsAi(SettingsLocalDataSource settings, bool value) async {
+    if (showsAi(settings) == value) return false;
+    await settings.set(settingKey, value);
+    return true;
+  }
 
   /// Older AI walls have [PrismWallpaper.aiMetadata] but no flag.
   static bool isAi(PrismWallpaper wall) => wall.isAiGenerated || (wall.aiMetadata?.isNotEmpty ?? false);

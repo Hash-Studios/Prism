@@ -421,6 +421,19 @@ void main() {
       expect(collectionHasMore, isFalse);
     });
 
+    test('a failed next page is reported while the loaded page and cursor remain available', () async {
+      firestore.onQuery = (_) =>
+          List<FakeDocRow>.generate(24, (index) => (id: 'wall-$index', data: _wall('wall-$index')));
+      await getCollectionWithName('space');
+      firestore.queryError = StateError('offline');
+
+      await expectLater(seeMoreCollectionWithName(), throwsA(isA<StateError>()));
+
+      expect(anyCollectionWalls, hasLength(24));
+      expect(collectionHasMore, isTrue);
+      expect(firestore.querySpecs.last.startAfterDocId, 'wall-23');
+    });
+
     test('load more cannot use the previous collection cursor while an initial cache read is pending', () async {
       firestore.onQuery = (_) => List<FakeDocRow>.generate(24, (i) => (id: 'old-$i', data: _wall('old-$i')));
       await getCollectionWithName('a');

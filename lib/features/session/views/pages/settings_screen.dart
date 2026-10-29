@@ -155,6 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _viewedStore.addListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.addListener(_onAiSettingsChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     _showAi = AiContentFilter.showsAi(_settingsLocal);
@@ -439,9 +440,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountShowAiWallpapersSubtitle,
       value: _showAi,
       onChanged: (value) async {
+        if (_showAi == value) return;
         setState(() => _showAi = value);
+        if (!await setShowAiWallpapers(_settingsLocal, value)) return;
         _trackSettingsToggle(SettingValue.aiWallpapers, value);
-        await setShowAiWallpapers(_settingsLocal, value);
         if (!mounted) return;
         context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
       },
@@ -546,7 +548,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _viewedStore.removeListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.removeListener(_onAiSettingsChanged);
     super.dispose();
+  }
+
+  void _onAiSettingsChanged() {
+    if (!mounted) return;
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (_showAi == showAi) return;
+    setState(() => _showAi = showAi);
   }
 
   /// Follows changes made elsewhere, such as Turn on in History.

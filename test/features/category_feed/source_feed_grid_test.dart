@@ -19,6 +19,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +27,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../support/in_memory_local_store.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -48,6 +49,14 @@ void main() {
     id: 'last-wallpaper',
     wallpaper: PrismWallpaper(
       core: WallpaperCore(id: 'last-wallpaper', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+    ),
+  );
+
+  const aiItem = FeedItemEntity.prism(
+    id: 'ai-wallpaper',
+    wallpaper: PrismWallpaper(
+      core: WallpaperCore(id: 'ai-wallpaper', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      isAiGenerated: true,
     ),
   );
 
@@ -212,7 +221,7 @@ void main() {
 
   testWidgets('shows an empty state with a refresh when a loaded feed has no wallpapers', (tester) async {
     final bloc = streamedBloc(
-      CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space),
+      CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space, hasMore: false),
     );
 
     await tester.pumpWidget(host(bloc));
@@ -224,7 +233,7 @@ void main() {
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
   });
 
-  testWidgets('with AI walls hidden, an empty feed offers to show them again', (tester) async {
+  testWidgets('does not claim hidden AI walls exist when the feed is genuinely empty', (tester) async {
     await AiContentFilter.setShowsAi(settings, false);
     final bloc = streamedBloc(
       CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space, hasMore: false),
@@ -233,14 +242,104 @@ void main() {
     await tester.pumpWidget(host(bloc));
     await tester.pump();
 
-    expect(find.text('No human-made walls here yet'), findsOneWidget);
-    expect(find.text('No wallpapers here yet'), findsNothing);
-    await tester.tap(find.text('Show AI walls'));
-    await tester.pump();
-    await tester.pump();
-    expect(AiContentFilter.showsAi(settings), isTrue);
-    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+    expect(find.text('No wallpapers here yet'), findsOneWidget);
+    expect(find.text('No human-made walls here yet'), findsNothing);
+    expect(find.text('Show AI walls'), findsNothing);
   });
+
+  testWidgets('an empty filtered batch can continue paging without claiming AI walls exist', (tester) async {
+    await AiContentFilter.setShowsAi(settings, false);
+    final bloc = streamedBloc(
+      CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space, hasMore: true),
+    );
+
+    await tester.pumpWidget(host(bloc));
+    await tester.pump();
+
+    expect(find.text('No human-made walls here yet'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const CategoryFeedEvent.fetchMoreRequested())).called(1);
+  });
+
+  testWidgets('the continuation action renders the next page when it arrives', (tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    final controller = StreamController<CategoryFeedState>.broadcast(sync: true);
+    addTearDown(controller.close);
+    final initial = CategoryFeedState.initial().copyWith(status: LoadStatus.success, hasMore: true);
+    whenListen(bloc, controller.stream, initialState: initial);
+    when(() => bloc.add(any())).thenAnswer((event) {
+      if (event.positionalArguments.single == const CategoryFeedEvent.fetchMoreRequested()) {
+        controller.add(
+          initial.copyWith(status: LoadStatus.success, items: const <FeedItemEntity>[item], hasMore: false),
+        );
+      }
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<CategoryFeedBloc>.value(
+          value: bloc,
+          child: SourceFeedGrid<PrismFeedItem>(
+            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+            listName: ScrollListNameValue.wallpaperGrid,
+            sourceContextPrefix: 'test',
+            itemWrapper: (context, wall, tile) => Text(wall.id),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+
+    expect(find.text('last-wallpaper'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+    verify(() => bloc.add(const CategoryFeedEvent.fetchMoreRequested())).called(1);
+  });
+
+  for (final LoadStatus staleStatus in <LoadStatus>[LoadStatus.loading, LoadStatus.failure]) {
+    testWidgets('filters stale AI walls when the setting changes during ${staleStatus.name}', (tester) async {
+      await setShowAiWallpapers(settings, true);
+      final bloc = _MockCategoryFeedBloc();
+      final controller = StreamController<CategoryFeedState>.broadcast(sync: true);
+      addTearDown(controller.close);
+      whenListen(
+        bloc,
+        controller.stream,
+        initialState: CategoryFeedState.initial().copyWith(
+          status: staleStatus,
+          items: const <FeedItemEntity>[item, aiItem],
+          hasMore: true,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: BlocProvider<CategoryFeedBloc>.value(
+            value: bloc,
+            child: SourceFeedGrid<PrismFeedItem>(
+              surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+              listName: ScrollListNameValue.wallpaperGrid,
+              sourceContextPrefix: 'test',
+              itemWrapper: (context, wall, tile) => Text(wall.id, key: ValueKey<String>(wall.id)),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('ai-wallpaper'), findsOneWidget);
+      expect(find.text('last-wallpaper'), findsOneWidget);
+
+      await setShowAiWallpapers(settings, false);
+      await tester.pump();
+
+      expect(find.text('ai-wallpaper'), findsNothing);
+      expect(find.text('last-wallpaper'), findsOneWidget);
+    });
+  }
 
   testWidgets('shows an error with Try again when the feed failed and has no wallpapers', (tester) async {
     final bloc = streamedBloc(
@@ -254,6 +353,39 @@ void main() {
     await tester.tap(find.text('Try again'));
     await tester.pump();
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('shows and retries a failed next page when the filtered feed has no visible walls', (tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(
+      CategoryFeedState.initial().copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.failure,
+        hasMore: true,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<CategoryFeedBloc>.value(
+          value: bloc,
+          child: SourceFeedGrid<PrismFeedItem>(
+            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+            listName: ScrollListNameValue.wallpaperGrid,
+            sourceContextPrefix: 'test',
+            itemWrapper: (context, wall, tile) => Text(wall.id),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text("Couldn't load wallpapers"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+
+    verify(() => bloc.add(const CategoryFeedEvent.fetchMoreRequested())).called(1);
+    verifyNever(() => bloc.add(const CategoryFeedEvent.refreshRequested()));
   });
 
   testWidgets('keeps the final wallpaper when the feed has no more pages', (tester) async {

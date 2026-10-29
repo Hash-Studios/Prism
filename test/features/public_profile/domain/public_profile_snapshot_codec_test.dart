@@ -72,6 +72,25 @@ void main() {
     );
   });
 
+  test('AI metadata and model survive the snapshot round trip', () {
+    final WallDocDto source = WallDocDto.fromJson(<String, dynamic>{
+      'id': 'w',
+      'wallpaper_url': 'https://example.test/w.jpg',
+      'isAiGenerated': true,
+      'aiModel': 'Seedream 5 Lite',
+      'aiMetadata': <String, Object?>{'prompt': 'a fox'},
+    });
+    final Map<String, Object?> record = PublicProfileSnapshotCodec.encodeWalls(<PublicProfileSnapshotWall>[
+      (doc: source, documentId: 'wall-doc'),
+    ], hasMore: false);
+
+    final WallDocDto restored = PublicProfileSnapshotCodec.decodeWalls(record).single.doc;
+
+    expect(restored.isAiGenerated, isTrue);
+    expect(restored.aiModel, 'Seedream 5 Lite');
+    expect(restored.aiMetadata, <String, Object?>{'prompt': 'a fox'});
+  });
+
   test('a plain wall is not AI', () {
     expect(aiAfterRoundTrip(<String, dynamic>{}), isFalse);
   });

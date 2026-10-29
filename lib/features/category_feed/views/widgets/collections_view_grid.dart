@@ -43,6 +43,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
 
   bool seeMoreLoader = false;
   int _emptyPagesLoaded = 0;
+  bool _emptyPageLoadScheduled = false;
   bool _loadMoreFailed = false;
 
   Object? _wallValue(Map<String, dynamic> wall, String key) => wall[key];
@@ -70,7 +71,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       logger.w('Failed to refresh the collection.', error: error, stackTrace: stackTrace);
       if (mounted) toasts.error(context.l10n.wallpaperCollectionRefreshError);
     }
-    if (mounted) setState(() => _loadMoreFailed = false);
+    if (mounted) {
+      setState(() {
+        _loadMoreFailed = false;
+        _emptyPagesLoaded = 0;
+      });
+    }
   }
 
   Future<void> _loadMore() async {
@@ -126,15 +132,42 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
         : loaded;
     if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
     if (walls.isEmpty && hideAi && loaded.isNotEmpty) {
+      if (_loadMoreFailed) {
+        return PrismInlineState(
+          icon: Icons.error_outline_rounded,
+          title: context.l10n.wallpaperFeedWallsLoadError,
+          actionLabel: context.l10n.wallpaperTryAgain,
+          onAction: () => unawaited(_loadMore()),
+        );
+      }
       if (collectionHasMore && _emptyPagesLoaded < _maxEmptyPages) {
         // A page that hides every wall asks for the next one, up to _maxEmptyPages times.
-        if (!seeMoreLoader && !_loadMoreFailed) {
+        if (!seeMoreLoader && !_emptyPageLoadScheduled) {
+          _emptyPageLoadScheduled = true;
           _emptyPagesLoaded += 1;
+          final int settingsRevision = personalizedFeedSettingsRevision.value;
+          final List<Map<String, dynamic>> scheduledWalls = loaded;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_loadMore());
+            _emptyPageLoadScheduled = false;
+            if (!mounted) return;
+            if (settingsRevision != personalizedFeedSettingsRevision.value ||
+                !identical(anyCollectionWalls, scheduledWalls)) {
+              setState(() {});
+              return;
+            }
+            if (collectionHasMore && !seeMoreLoader) unawaited(_loadMore());
           });
         }
         return const Center(child: CircularProgressIndicator());
+      }
+      if (collectionHasMore) {
+        return PrismInlineState(
+          icon: Icons.auto_awesome_rounded,
+          title: context.l10n.wallpaperCollectionsEmptyTitle,
+          body: context.l10n.wallpaperCollectionsEmptyBody,
+          actionLabel: context.l10n.wallpaperTryAgain,
+          onAction: () => unawaited(_loadMore()),
+        );
       }
       return Center(
         child: PrismInlineState(

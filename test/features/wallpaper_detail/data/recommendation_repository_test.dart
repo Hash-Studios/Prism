@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -30,9 +31,13 @@ class _Firestore extends Fake implements FirestoreClient {
   final specs = <FirestoreQuerySpec>[];
   List<Map<String, dynamic>> rows = [];
   bool fail = false;
+  Completer<void>? queryEntered;
+  Completer<void>? queryGate;
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
     specs.add(spec);
+    queryEntered?.complete();
+    await queryGate?.future;
     if (fail) throw StateError('offline');
     return rows.map((row) => map(row, 'doc-${row['id']}')).toList();
   }
@@ -118,6 +123,48 @@ void main() {
       ('category', 'Nature'),
       ('review', true),
     ]);
+  });
+
+  test('AI recommendations hide walls with metadata even when the legacy flag is absent', () async {
+    await AiContentFilter.setShowsAi(settings, false);
+    firestore.rows = [
+      {
+        'id': 'metadata-ai',
+        'category': 'Nature',
+        'review': true,
+        'aiMetadata': {'prompt': 'a fox'},
+      },
+      {'id': 'flag-ai', 'category': 'Nature', 'review': true, 'isAiGenerated': true},
+      {'id': 'human', 'category': 'Nature', 'review': true},
+    ];
+
+    final RecommendationPage page = await repository.load(current: _item('current'), sessionKey: 'ai-filter');
+
+    expect(page.items.map((item) => item.id), ['human']);
+    expect(page.nextCursor, isNull);
+  });
+
+  test('AI setting is applied when an in-flight recommendation query completes', () async {
+    await AiContentFilter.setShowsAi(settings, true);
+    firestore.rows = [
+      {
+        'id': 'metadata-ai',
+        'category': 'Nature',
+        'review': true,
+        'aiMetadata': {'prompt': 'a fox'},
+      },
+      {'id': 'human', 'category': 'Nature', 'review': true},
+    ];
+    firestore.queryEntered = Completer<void>();
+    firestore.queryGate = Completer<void>();
+
+    final pendingPage = repository.load(current: _item('current'), sessionKey: 'ai-toggle-race');
+    await firestore.queryEntered!.future;
+    await AiContentFilter.setShowsAi(settings, false);
+    firestore.queryGate!.complete();
+
+    final page = await pendingPage;
+    expect(page.items.map((item) => item.id), ['human']);
   });
 
   test('Wallhaven visits do not share each other or search cursors; release is scoped', () async {

@@ -35,6 +35,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late SettingsLocalDataSource settings;
+  late FakeAppAnalytics analytics;
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -42,7 +43,8 @@ void main() {
   });
 
   setUp(() async {
-    AnalyticsRuntime.instance = FakeAppAnalytics();
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
     await getIt.reset();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
@@ -103,13 +105,18 @@ void main() {
   }
 
   Future<void> openTune(WidgetTester tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial());
     await pumpApp(
       tester,
-      Builder(
-        builder: (context) => Scaffold(
-          body: TextButton(
-            onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
-            child: const Text('Open tune'),
+      BlocProvider<CategoryFeedBloc>.value(
+        value: bloc,
+        child: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+              child: const Text('Open tune'),
+            ),
           ),
         ),
       ),
@@ -162,4 +169,94 @@ void main() {
     expect(tester.widget<Switch>(find.descendant(of: row.first, matching: find.byType(Switch))).value, isTrue);
     handle.dispose();
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('saving an AI setting change refreshes once and tracks one toggle', (tester) async {
+    personalizedFeedSettingsRevision.value = 0;
+    var revisionChanges = 0;
+    void countRevision() => revisionChanges++;
+    personalizedFeedSettingsRevision.addListener(countRevision);
+    addTearDown(() => personalizedFeedSettingsRevision.removeListener(countRevision));
+
+    await openTune(tester);
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(AiContentFilter.showsAi(settings), isFalse);
+    expect(revisionChanges, 1);
+    expect(analytics.events.where((event) => event.eventName == 'settings_toggle_changed'), hasLength(1));
+  });
+
+  testWidgets('a shared AI setting change updates an already-open Settings screen', (tester) async {
+    personalizedFeedSettingsRevision.value = 0;
+    await pumpSettings(tester);
+    expect(
+      tester
+          .widget<Switch>(
+            find.descendant(
+              of: find
+                  .ancestor(of: find.text('Show AI-generated wallpapers'), matching: find.byType(MergeSemantics))
+                  .first,
+              matching: find.byType(Switch),
+            ),
+          )
+          .value,
+      isTrue,
+    );
+
+    await setShowAiWallpapers(settings, false);
+    await tester.pump();
+
+    expect(AiContentFilter.showsAi(settings), isFalse);
+    expect(
+      tester
+          .widget<Switch>(
+            find.descendant(
+              of: find
+                  .ancestor(of: find.text('Show AI-generated wallpapers'), matching: find.byType(MergeSemantics))
+                  .first,
+              matching: find.byType(Switch),
+            ),
+          )
+          .value,
+      isFalse,
+    );
+    expect(personalizedFeedSettingsRevision.value, 1);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  test('a no-op shared AI setting write does not publish a revision', () async {
+    personalizedFeedSettingsRevision.value = 0;
+
+    expect(await setShowAiWallpapers(settings, true), isFalse);
+    expect(personalizedFeedSettingsRevision.value, 0);
+  });
+
+  testWidgets('Tune does not track an AI change already made by another caller', (tester) async {
+    personalizedFeedSettingsRevision.value = 0;
+    await openTune(tester);
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+
+    await setShowAiWallpapers(settings, false);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(AiContentFilter.showsAi(settings), isFalse);
+    expect(analytics.events.where((event) => event.eventName == 'settings_toggle_changed'), isEmpty);
+  });
+
+  testWidgets('Tune persists its selected AI value when the setting changes while the sheet is open', (tester) async {
+    personalizedFeedSettingsRevision.value = 0;
+    await openTune(tester);
+    await setShowAiWallpapers(settings, false);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(AiContentFilter.showsAi(settings), isTrue);
+    expect(analytics.events.where((event) => event.eventName == 'settings_toggle_changed'), hasLength(1));
+  });
 }

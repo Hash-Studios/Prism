@@ -37,14 +37,32 @@ class _UserProfileGridState extends State<UserProfileGrid> {
   static const int _maxEmptyPages = 5;
 
   int _emptyPagesLoaded = 0;
+  bool _emptyPageLoadScheduled = false;
+  String? _lastProfileId;
+  LoadStatus? _lastStatus;
 
   bool get ownProfile => widget.ownProfile;
 
   /// A page that hides every wall asks for the next one, up to [_maxEmptyPages] times.
-  void _loadMoreWhileEmpty(PublicProfileBloc bloc) {
-    _emptyPagesLoaded += 1;
+  void _loadMoreWhileEmpty(PublicProfileBloc bloc, SettingsLocalDataSource settings, String profileId) {
+    if (_emptyPageLoadScheduled) return;
+    _emptyPageLoadScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+      _emptyPageLoadScheduled = false;
+      final PublicProfileState current = bloc.state;
+      if (!mounted ||
+          bloc.isClosed ||
+          ownProfile ||
+          AiContentFilter.showsAi(settings) ||
+          current.profileId != profileId ||
+          current.status != LoadStatus.success ||
+          current.isFetchingMoreWalls ||
+          !current.hasMoreWalls ||
+          _emptyPagesLoaded >= _maxEmptyPages) {
+        return;
+      }
+      _emptyPagesLoaded += 1;
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
     });
   }
 
@@ -62,6 +80,15 @@ class _UserProfileGridState extends State<UserProfileGrid> {
     final bool hideAi = !ownProfile && !AiContentFilter.showsAi(settings);
     return BlocBuilder<PublicProfileBloc, PublicProfileState>(
       builder: (context, state) {
+        if (_lastProfileId != state.profileId) {
+          _lastProfileId = state.profileId;
+          _emptyPagesLoaded = 0;
+          _emptyPageLoadScheduled = false;
+        } else if (state.status == LoadStatus.loading && _lastStatus != LoadStatus.loading) {
+          // A refresh of this same profile starts a new bounded hidden-page scan.
+          _emptyPagesLoaded = 0;
+        }
+        _lastStatus = state.status;
         if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.walls.isEmpty)) {
           return const SliverToBoxAdapter(child: LoadingCards());
         }
@@ -78,11 +105,29 @@ class _UserProfileGridState extends State<UserProfileGrid> {
         );
         if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
         final bool morePagesToTry = hideAi && state.hasMoreWalls && !failed && _emptyPagesLoaded < _maxEmptyPages;
+        if (walls.isEmpty && hideAi && state.isFetchingMoreWalls) {
+          return const SliverToBoxAdapter(child: LoadingCards());
+        }
         if (walls.isEmpty && morePagesToTry) {
-          if (!state.isFetchingMoreWalls && state.status != LoadStatus.loading) _loadMoreWhileEmpty(bloc);
+          if (!state.isFetchingMoreWalls && state.status != LoadStatus.loading) {
+            _loadMoreWhileEmpty(bloc, settings, state.profileId);
+          }
           return const SliverToBoxAdapter(child: LoadingCards());
         }
         if (walls.isEmpty && hideAi && !failed && state.walls.isNotEmpty) {
+          if (state.hasMoreWalls) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+                child: PrismInlineState(
+                  icon: Icons.auto_awesome_rounded,
+                  title: context.l10n.accountNoWallpapersYet,
+                  actionLabel: context.l10n.wallpaperTryAgain,
+                  onAction: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                ),
+              ),
+            );
+          }
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
@@ -92,7 +137,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                 actionLabel: context.l10n.feedShowAiWalls,
                 onAction: () async {
                   await setShowAiWallpapers(settings, true);
-                  bloc.add(const PublicProfileEvent.refreshRequested());
+                  if (mounted && !bloc.isClosed) bloc.add(const PublicProfileEvent.refreshRequested());
                 },
               ),
             ),

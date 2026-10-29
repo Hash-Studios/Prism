@@ -22,6 +22,7 @@ class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileS
 
 void main() {
   setUpFavouriteCounts();
+  setUpAll(() => registerFallbackValue(const PublicProfileEvent.refreshRequested()));
   setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
   tearDown(() async {
     if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
@@ -30,6 +31,7 @@ void main() {
 
   setUp(() {
     bloc = _MockPublicProfileBloc();
+    when(() => bloc.isClosed).thenReturn(false);
   });
 
   Future<void> pumpGrid(WidgetTester tester, PublicProfileState state, {bool ownProfile = false}) async {
@@ -253,5 +255,137 @@ void main() {
       expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isTrue);
       verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
     });
+
+    testWidgets('does not refresh a profile after the AI setting write completes post-disposal', (tester) async {
+      final InMemoryLocalStore store = InMemoryLocalStore();
+      final SettingsLocalDataSource initialSettings = SettingsLocalDataSource(store);
+      await AiContentFilter.setShowsAi(initialSettings, false);
+      await getIt.unregister<SettingsLocalDataSource>();
+      final _DelayedSettingsLocalDataSource settings = _DelayedSettingsLocalDataSource(store);
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: false,
+        ),
+      );
+
+      await tester.tap(find.text('Show AI walls'));
+      await tester.pumpWidget(const SizedBox.shrink());
+      settings.release.complete();
+      await tester.pump();
+
+      verifyNever(() => bloc.add(const PublicProfileEvent.refreshRequested()));
+    });
+
+    testWidgets('shows retry after the next hidden page fails instead of claiming the profile is exhausted', (
+      tester,
+    ) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.failure,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: true,
+        ),
+      );
+
+      expect(find.text('Could not load wallpapers'), findsOneWidget);
+      expect(find.text('No human-made walls here yet'), findsNothing);
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('bounds hidden-page scans at five, exposes a fetching retry, and resets the cap on refresh', (
+      tester,
+    ) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[
+          const PublicProfileWallEntity(id: 'ai-0', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.isClosed).thenReturn(false);
+      when(() => bloc.close()).thenAnswer((_) async {});
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var page = 1; page < 5; page++) {
+        state = state.copyWith(
+          walls: <PublicProfileWallEntity>[
+            ...state.walls,
+            PublicProfileWallEntity(id: 'ai-$page', isAiGenerated: true, wallpaperUrl: ''),
+          ],
+        );
+        states.add(state);
+        await tester.pump();
+        await tester.pump();
+      }
+
+      expect(fetchMoreCalls, 5);
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'ai-cap', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      expect(fetchMoreCalls, 6);
+      state = state.copyWith(isFetchingMoreWalls: true);
+      states.add(state);
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsOneWidget);
+
+      state = state.copyWith(status: LoadStatus.loading, isFetchingMoreWalls: false);
+      states.add(state);
+      await tester.pump();
+      state = state.copyWith(status: LoadStatus.success);
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(fetchMoreCalls, 7);
+    });
   });
+}
+
+class _DelayedSettingsLocalDataSource extends SettingsLocalDataSource {
+  _DelayedSettingsLocalDataSource(super.store);
+
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    await release.future;
+    await super.set(key, value);
+  }
 }

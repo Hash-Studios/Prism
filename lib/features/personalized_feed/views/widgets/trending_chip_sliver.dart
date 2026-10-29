@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
@@ -16,11 +17,13 @@ class TrendingChipSliver extends StatelessWidget {
     required this.bloc,
     required this.crossAxisCount,
     required this.tileMemCacheHeight,
+    this.showAi = true,
   });
 
   final TrendingBloc bloc;
   final int crossAxisCount;
   final int tileMemCacheHeight;
+  final bool showAi;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,8 @@ class TrendingChipSliver extends StatelessWidget {
   }
 
   Widget _walls(BuildContext context, TrendingState state) {
-    if (state.walls.isEmpty) {
+    final walls = state.walls.where((wall) => showAi || !AiContentFilter.isAi(wall)).toList(growable: false);
+    if (walls.isEmpty) {
       if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
         return const SliverToBoxAdapter(child: LoadingCards(useFeedLayout: true));
       }
@@ -53,7 +57,7 @@ class TrendingChipSliver extends StatelessWidget {
           spacing: PrismFeedLayout.gridSpacing,
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
-          final wall = state.walls[index];
+          final wall = walls[index];
           return KeyedSubtree(
             key: ValueKey<String>(wall.id),
             child: WallpaperTile(
@@ -65,7 +69,7 @@ class TrendingChipSliver extends StatelessWidget {
               overlay: boostedTagFor(wall),
             ),
           );
-        }, childCount: state.walls.length),
+        }, childCount: walls.length),
       ),
     );
   }

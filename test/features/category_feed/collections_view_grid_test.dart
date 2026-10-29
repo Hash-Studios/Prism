@@ -6,15 +6,16 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -25,8 +26,9 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_feed_cache_local_data_source.dart';
-import '../../support/in_memory_local_store.dart';
+import '../../support/fake_firestore_client.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _FailingHttpOverrides extends HttpOverrides {
   @override
@@ -104,6 +106,164 @@ void main() {
     expect(find.byType(PrismWallTile), findsNothing);
     expect(find.text('Show AI walls'), findsOneWidget);
   });
+
+  testWidgets('a failed hidden-page load shows retry instead of a spinner or a no-human claim', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _PagingFailureFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('ai').catchError((Object _) {});
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    for (int i = 0; i < 4 && firestore.nextPageCalls == 0; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(firestore.nextPageCalls, 1);
+    expect(find.text("Couldn't load wallpapers"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('No human-made walls here yet'), findsNothing);
+  });
+
+  testWidgets('bounds automatic hidden-page loads at five and continues when the user retries', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _AiPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('ai');
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    for (int i = 0; i < 20 && firestore.nextPageCalls < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 5);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    for (int i = 0; i < 10 && firestore.nextPageCalls < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 6);
+    expect(find.text('No human-made walls here yet'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('skips a scheduled hidden-page request after collection contents change', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _AiPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('ai');
+    tester.binding.addPostFrameCallback((_) {
+      anyCollectionWalls = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'human',
+          'wallpaper_thumb': 'https://example.test/human-thumb.jpg',
+          'wallpaper_url': 'https://example.test/human.jpg',
+        },
+      ];
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump();
+
+    expect(firestore.nextPageCalls, 0);
+    expect(find.byType(PrismWallTile), findsOneWidget);
+  });
+
+  testWidgets('rebuilds after a scheduled hidden-page request is invalidated by the AI setting', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _AiPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await getIt.unregister<SettingsLocalDataSource>();
+    final settings = _MutableSettingsLocalDataSource()..values[AiContentFilter.settingKey] = false;
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await getCollectionWithName('ai');
+    tester.binding.addPostFrameCallback((_) {
+      unawaited(setShowAiWallpapers(settings, true));
+      personalizedFeedSettingsRevision.value++;
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump();
+
+    expect(firestore.nextPageCalls, 0);
+    expect(find.byType(PrismWallTile), findsWidgets);
+  });
+
   testWidgets('a refresh failing after disposal does not read localization from the old context', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -479,6 +639,66 @@ void main() {
 }
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _PagingFailureFirestore extends FakeFirestoreClient {
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag == 'collections.getCollectionWithName') {
+      return List<T>.generate(
+        24,
+        (index) => map(<String, dynamic>{
+          'id': 'ai-$index',
+          'isAiGenerated': true,
+          'wallpaper_thumb': 'https://example.test/ai-$index-thumb.jpg',
+          'wallpaper_url': 'https://example.test/ai-$index.jpg',
+        }, 'ai-$index'),
+      );
+    }
+    nextPageCalls += 1;
+    throw StateError('offline');
+  }
+}
+
+class _AiPagesFirestore extends FakeFirestoreClient {
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    final bool isNextPage = spec.sourceTag == 'collections.seeMoreCollectionWithName';
+    final int page = isNextPage ? ++nextPageCalls + 1 : 1;
+    final int count = page == 7 ? 1 : 24;
+    return List<T>.generate(
+      count,
+      (index) => map(<String, dynamic>{
+        'id': 'ai-$page-$index',
+        'isAiGenerated': true,
+        'wallpaper_thumb': 'https://example.test/ai-$page-$index-thumb.jpg',
+        'wallpaper_url': 'https://example.test/ai-$page-$index.jpg',
+      }, 'ai-$page-$index'),
+    );
+  }
+}
+
+class _MutableSettingsLocalDataSource extends SettingsLocalDataSource {
+  _MutableSettingsLocalDataSource() : super(InMemoryLocalStore());
+
+  final Map<String, Object?> values = <String, Object?>{};
+
+  @override
+  T get<T>(String key, {T? defaultValue, bool hasDefault = false}) {
+    final Object? value = values[key];
+    if (value is T) return value;
+    if (hasDefault || defaultValue != null || null is T) return defaultValue as T;
+    throw StateError('Missing settings value for "$key".');
+  }
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    values[key] = value;
+  }
+}
 
 class _DelayedRefreshFirestore extends _FailingFirestore {
   final Completer<void> release = Completer<void>();

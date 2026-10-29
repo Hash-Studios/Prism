@@ -4,6 +4,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'wall_doc_dto.freezed.dart';
 part 'wall_doc_dto.g.dart';
 
+bool _firestoreBool(Object? value) => value == true;
+String _firestoreAiModel(Object? value) => value is String ? value : '';
+
 @freezed
 abstract class WallDocDto with _$WallDocDto {
   const factory WallDocDto({
@@ -21,8 +24,8 @@ abstract class WallDocDto with _$WallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
     @Default(false) bool review,
-    @Default(false) bool isAiGenerated,
-    @FirestoreStringConverter() @Default('') String aiModel,
+    @JsonKey(fromJson: _firestoreBool) @Default(false) bool isAiGenerated,
+    @JsonKey(fromJson: _firestoreAiModel) @Default('') String aiModel,
     @JsonKey(name: 'aiMetadata')
     @FirestoreJsonMapConverter()
     @Default(<String, Object?>{})

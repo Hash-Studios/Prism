@@ -14,6 +14,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
+    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -88,6 +90,7 @@ class MoodRepositoryImpl implements MoodRepository {
   Stream<void> watchVisibilityChanges() {
     return Stream<void>.multi((controller) {
       Set<String> blocked = <String>{..._userBlockRepository.cachedBlockedCreatorUids};
+      bool showAi = AiContentFilter.showsAi(_settingsLocal);
       final StreamSubscription<Set<String>> subscription = _userBlockRepository.watchBlockedCreatorUids().listen(
         (next) {
           if (next.length == blocked.length && next.containsAll(blocked)) return;
@@ -97,10 +100,21 @@ class MoodRepositoryImpl implements MoodRepository {
         onError: controller.addError,
         onDone: controller.close,
       );
+      void onSettingsChanged() {
+        final bool nextShowAi = AiContentFilter.showsAi(_settingsLocal);
+        if (nextShowAi == showAi) return;
+        showAi = nextShowAi;
+        controller.add(null);
+      }
+
+      personalizedFeedSettingsRevision.addListener(onSettingsChanged);
       controller
         ..onPause = subscription.pause
         ..onResume = subscription.resume
-        ..onCancel = subscription.cancel;
+        ..onCancel = () async {
+          personalizedFeedSettingsRevision.removeListener(onSettingsChanged);
+          await subscription.cancel();
+        };
     }, isBroadcast: true);
   }
 

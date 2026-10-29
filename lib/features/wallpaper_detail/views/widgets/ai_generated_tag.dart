@@ -74,7 +74,7 @@ class AiGeneratedTag extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => _open(context),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
           child: Align(
             alignment: Alignment.centerLeft,
             widthFactor: 1,

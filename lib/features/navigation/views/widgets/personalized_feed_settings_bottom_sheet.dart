@@ -30,9 +30,10 @@ final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0
 
 /// Stores the one AI setting that the Settings switch, the Tune sheet chip and the empty feed action share. The caller
 /// refreshes any feed bloc it holds.
-Future<void> setShowAiWallpapers(SettingsLocalDataSource settings, bool value) async {
-  await AiContentFilter.setShowsAi(settings, value);
-  personalizedFeedSettingsRevision.value += 1;
+Future<bool> setShowAiWallpapers(SettingsLocalDataSource settings, bool value, {bool notify = true}) async {
+  if (!await AiContentFilter.setShowsAi(settings, value)) return false;
+  if (notify) personalizedFeedSettingsRevision.value += 1;
+  return true;
 }
 
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async {
@@ -51,13 +52,8 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
   }
   final FeedMix currentMix = FeedMix.parse(settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
   final bool hideAi = !AiContentFilter.showsAi(settingsLocal);
-  // Read before the sheet opens: the sheet's own context may not see the bloc, and the tests do not provide one.
-  CategoryFeedBloc? feedBloc;
-  try {
-    feedBloc = context.read<CategoryFeedBloc>();
-  } on ProviderNotFoundException {
-    feedBloc = null;
-  }
+  // Read before the sheet opens because the sheet's own context is below the route-level provider.
+  final CategoryFeedBloc feedBloc = context.read<CategoryFeedBloc>();
 
   await showPrismSheet<void>(
     context,
@@ -73,12 +69,10 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
           return false;
         }
         await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
-        if (hideAiNext != hideAi) {
-          await setShowAiWallpapers(settingsLocal, !hideAiNext);
-          feedBloc?.add(const CategoryFeedEvent.refreshRequested());
-          unawaited(
-            analytics.track(SettingsToggleChangedEvent(setting: SettingValue.aiWallpapers, value: !hideAiNext)),
-          );
+        final bool showAiNext = !hideAiNext;
+        if (await setShowAiWallpapers(settingsLocal, showAiNext, notify: false)) {
+          feedBloc.add(const CategoryFeedEvent.refreshRequested());
+          unawaited(analytics.track(SettingsToggleChangedEvent(setting: SettingValue.aiWallpapers, value: showAiNext)));
         }
         return true;
       },
@@ -212,12 +206,13 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     setState(() => _saving = true);
     try {
       final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix, _hideAi);
-      if (!mounted) return;
       if (saved) {
         personalizedFeedSettingsRevision.value += 1;
+        if (!mounted) return;
         Navigator.of(context).pop();
         return;
       }
+      if (!mounted) return;
     } catch (_) {
       if (!mounted) return;
     }

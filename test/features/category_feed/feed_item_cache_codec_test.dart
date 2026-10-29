@@ -56,6 +56,23 @@ void main() {
     expect(decoded.wallpaper.firestoreDocumentId, 'doc-p1');
   });
 
+  test('AI flag, model, and metadata survive a cache JSON round trip', () {
+    final FeedItemEntity item = FeedItemEntity.prism(
+      id: 'ai-wall',
+      wallpaper: PrismWallpaper(
+        core: _core('ai-wall', WallpaperSource.prism),
+        isAiGenerated: true,
+        aiModel: 'Seedream 5 Lite',
+        aiMetadata: const <String, Object?>{'prompt': 'a lake'},
+      ),
+    );
+
+    final PrismFeedItem decoded = decodeFeedItem(_viaJson(item))! as PrismFeedItem;
+    expect(decoded.wallpaper.isAiGenerated, isTrue);
+    expect(decoded.wallpaper.aiModel, 'Seedream 5 Lite');
+    expect(decoded.wallpaper.aiMetadata, <String, Object?>{'prompt': 'a lake'});
+  });
+
   test('the Depth Effect tier survives a JSON round trip, and a wall without one stays unchecked', () {
     for (final WallDepthTier tier in WallDepthTier.values) {
       final item = FeedItemEntity.prism(

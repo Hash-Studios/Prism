@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -18,6 +19,7 @@ class PagedChipSliver extends StatelessWidget {
     required this.emptyTitle,
     required this.crossAxisCount,
     required this.tileMemCacheHeight,
+    this.showAi = true,
     this.emptyBody,
     this.emptyActionLabel,
     this.onEmptyAction,
@@ -31,13 +33,15 @@ class PagedChipSliver extends StatelessWidget {
   final VoidCallback? onEmptyAction;
   final int crossAxisCount;
   final int tileMemCacheHeight;
+  final bool showAi;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PagedFeedBloc, PagedFeedState>(
       bloc: bloc,
       builder: (context, state) {
-        if (state.items.isEmpty) {
+        final List<FeedItemEntity> items = AiContentFilter.filterFeedItems(state.items, showAi: showAi);
+        if (items.isEmpty) {
           if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
             return const SliverToBoxAdapter(child: LoadingCards(useFeedLayout: true));
           }
@@ -49,6 +53,35 @@ class PagedChipSliver extends StatelessWidget {
                 body: context.l10n.wallpaperCheckConnection,
                 actionLabel: context.l10n.wallpaperTryAgain,
                 onAction: () => bloc.add(const PagedFeedEvent.refreshRequested()),
+              ),
+            );
+          }
+          if (state.status == LoadStatus.success && state.hasMore) {
+            if (state.isFetchingMore) {
+              return SliverToBoxAdapter(child: FeedLoadingMore(columns: crossAxisCount));
+            }
+            if (state.actionStatus == ActionStatus.failure && !state.isFetchingMore) {
+              return SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(PrismSpace.md),
+                  child: Center(
+                    child: PrismButton(
+                      label: context.l10n.wallpaperFeedLoadMoreError,
+                      variant: PrismButtonVariant.ghost,
+                      size: PrismButtonSize.compact,
+                      onPressed: () => bloc.add(const PagedFeedEvent.fetchMoreRequested()),
+                    ),
+                  ),
+                ),
+              );
+            }
+            return SliverToBoxAdapter(
+              child: GlintState(
+                kind: GlintStateKind.empty,
+                title: emptyTitle,
+                body: emptyBody,
+                actionLabel: context.l10n.wallpaperTryAgain,
+                onAction: () => bloc.add(const PagedFeedEvent.fetchMoreRequested()),
               ),
             );
           }
@@ -74,7 +107,7 @@ class PagedChipSliver extends StatelessWidget {
                   spacing: PrismFeedLayout.gridSpacing,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final FeedItemEntity item = state.items[index];
+                  final FeedItemEntity item = items[index];
                   return KeyedSubtree(
                     key: ValueKey<String>(item.id),
                     child: FeedWallTile(
@@ -82,10 +115,10 @@ class PagedChipSliver extends StatelessWidget {
                       index: index,
                       crossAxisCount: crossAxisCount,
                       memCacheHeight: tileMemCacheHeight,
-                      feed: state.items,
+                      feed: items,
                     ),
                   );
-                }, childCount: state.items.length),
+                }, childCount: items.length),
               ),
             ),
             SliverToBoxAdapter(child: _footer(context, state)),

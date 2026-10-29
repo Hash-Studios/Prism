@@ -84,12 +84,15 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     final query = visit.query;
     final kind = visit.kind;
     final blocked = await blocks().getBlockedCreatorUids(waitForInitialLoad: true);
-    final showAnime = AnimeContentFilter.showsAnime(settings());
-    final showAi = AiContentFilter.showsAi(settings());
-    List<FeedItemEntity> visible(List<FeedItemEntity> rows) => AiContentFilter.filterFeedItems(
-      AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(rows, blocked), showAnime: showAnime),
-      showAi: showAi,
-    );
+    List<FeedItemEntity> visible(List<FeedItemEntity> rows) {
+      final showAnime = AnimeContentFilter.showsAnime(settings());
+      final showAi = AiContentFilter.showsAi(settings());
+      return AiContentFilter.filterFeedItems(
+        AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(rows, blocked), showAnime: showAnime),
+        showAi: showAi,
+      );
+    }
+
     try {
       visit.ensureActive();
       final page = switch (current) {

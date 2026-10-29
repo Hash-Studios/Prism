@@ -28,10 +28,11 @@ void main() {
     final settings = SettingsLocalDataSource(InMemoryLocalStore());
     expect(AiContentFilter.showsAi(settings), isTrue);
 
-    await AiContentFilter.setShowsAi(settings, false);
+    expect(await AiContentFilter.setShowsAi(settings, false), isTrue);
     expect(AiContentFilter.showsAi(settings), isFalse);
+    expect(await AiContentFilter.setShowsAi(settings, false), isFalse);
 
-    await AiContentFilter.setShowsAi(settings, true);
+    expect(await AiContentFilter.setShowsAi(settings, true), isTrue);
     expect(AiContentFilter.showsAi(settings), isTrue);
   });
 

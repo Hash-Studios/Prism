@@ -78,41 +78,42 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
     }
   }
 
-  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
-
   void _loadMore() => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.fetchMoreRequested());
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: personalizedFeedSettingsRevision,
+      builder: (context, _, _) => _buildGrid(context),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
+    final bool showAi = AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
     final List<FeedItemEntity> walls = state.items
         .where((item) => item is T || (widget.includePrism && item is PrismFeedItem))
+        .where((item) => showAi || item is! PrismFeedItem || !AiContentFilter.isAi(item.wallpaper))
         .toList(growable: false);
 
     if (walls.isEmpty) {
       if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
         return const LoadingCards();
       }
-      final bool failed = state.status == LoadStatus.failure;
-      if (state.status == LoadStatus.success && !state.hasMore && !AiContentFilter.showsAi(_settings)) {
-        return Center(
-          child: PrismInlineState(
-            icon: Icons.auto_awesome_rounded,
-            title: context.l10n.feedNoHumanWalls,
-            actionLabel: context.l10n.feedShowAiWalls,
-            onAction: () async {
-              await setShowAiWallpapers(_settings, true);
-              if (mounted) unawaited(_refresh());
-            },
-          ),
-        );
-      }
+      final bool failed = state.status == LoadStatus.failure || state.actionStatus == ActionStatus.failure;
+      final bool canContinue = state.status == LoadStatus.success && state.hasMore;
       return RefreshableGlintState(
         kind: failed ? GlintStateKind.error : GlintStateKind.empty,
         title: failed ? context.l10n.wallpaperFeedWallsLoadError : context.l10n.wallpaperCategoryFeedEmptyTitle,
         body: failed ? context.l10n.wallpaperCheckConnection : context.l10n.wallpaperCategoryFeedEmptyBody,
-        actionLabel: failed ? context.l10n.wallpaperTryAgain : context.l10n.wallpaperRefresh,
-        onAction: () => unawaited(_refresh()),
+        actionLabel: failed || canContinue ? context.l10n.wallpaperTryAgain : context.l10n.wallpaperRefresh,
+        onAction: () {
+          if (canContinue) {
+            _loadMore();
+          } else {
+            unawaited(_refresh());
+          }
+        },
         onRefresh: _refresh,
       );
     }

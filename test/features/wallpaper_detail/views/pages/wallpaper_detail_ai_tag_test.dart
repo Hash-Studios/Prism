@@ -14,6 +14,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.d
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -114,18 +115,34 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-            body: AiGeneratedTag(wallpaper: wall, reportDocId: docId, reportSubtitle: 'prism-1'),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: AiGeneratedTag(wallpaper: wall, reportDocId: docId, reportSubtitle: 'prism-1'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    testWidgets('the tap target is at least 44 by 44', (tester) async {
+    testWidgets('the tap target is at least 48 by 48', (tester) async {
       await pumpTag(tester, _wall(isAiGenerated: true));
+      final SemanticsHandle semantics = tester.ensureSemantics();
 
       final Size size = tester.getSize(find.byType(AiGeneratedTag));
-      expect(size.width, greaterThanOrEqualTo(44));
-      expect(size.height, greaterThanOrEqualTo(44));
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+
+      final SemanticsNode node = tester.getSemantics(find.byType(AiGeneratedTag));
+      final SemanticsData data = node.getSemanticsData();
+      expect(node.label, 'AI-generated');
+      expect(data.flagsCollection.isButton, isTrue);
+      expect(data.hasAction(SemanticsAction.tap), isTrue);
+      semantics.dispose();
     });
 
     testWidgets('tapping names the model and offers Report wrong label', (tester) async {
